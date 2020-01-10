@@ -1,13 +1,20 @@
-package converters
+package provisioning
 
 import (
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	kymaSystemNamespace      = "kyma-system"
+	kymaIntegrationNamespace = "kyma-integration"
 )
 
 func TestOperationStatusToGQLOperationStatus(t *testing.T) {
@@ -57,9 +64,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		region := "region"
 		zone := "zone"
 		kubeversion := "kubeversion"
-		version := kymaVersion
-		backup := gqlschema.KymaModuleBackup
-		backupInit := gqlschema.KymaModuleBackupInit
 		kubeconfig := "kubeconfig"
 		secretName := "secretName"
 
@@ -85,13 +89,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					KubernetesVersion: "kubeversion",
 					ClusterID:         "runtimeID",
 				},
-				Kubeconfig: &kubeconfig,
-				KymaConfig: model.KymaConfig{
-					ID:        "id",
-					Release:   fixKymaRelease(),
-					Modules:   fixKymaModules(),
-					ClusterID: "runtimeID",
-				},
+				Kubeconfig:            &kubeconfig,
+				KymaConfig:            fixKymaConfig(),
 				CredentialsSecretName: secretName,
 			},
 		}
@@ -122,10 +121,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					BootDiskSizeGb:    &bootDiskSize,
 					KubernetesVersion: &kubeversion,
 				},
-				KymaConfig: &gqlschema.KymaConfig{
-					Version: &version,
-					Modules: []*gqlschema.KymaModule{&backup, &backupInit},
-				},
+				KymaConfig:            fixKymaGraphQLConfig(),
 				Kubeconfig:            &kubeconfig,
 				CredentialsSecretName: &secretName,
 			},
@@ -149,9 +145,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		zone := "zone"
 		volume := 256
 		kubeversion := "kubeversion"
-		version := kymaVersion
-		backup := gqlschema.KymaModuleBackup
-		backupInit := gqlschema.KymaModuleBackupInit
 		kubeconfig := "kubeconfig"
 		provider := "GCP"
 		seed := "gcp-eu1"
@@ -195,11 +188,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:         unavailable,
 					GardenerProviderConfig: gardenerProviderConfig,
 				},
-				Kubeconfig: &kubeconfig,
-				KymaConfig: model.KymaConfig{
-					Release: fixKymaRelease(),
-					Modules: fixKymaModules(),
-				},
+				Kubeconfig:            &kubeconfig,
+				KymaConfig:            fixKymaConfig(),
 				CredentialsSecretName: secretName,
 			},
 		}
@@ -241,10 +231,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						Zone: &zone,
 					},
 				},
-				KymaConfig: &gqlschema.KymaConfig{
-					Version: &version,
-					Modules: []*gqlschema.KymaModule{&backup, &backupInit},
-				},
+				KymaConfig:            fixKymaGraphQLConfig(),
 				Kubeconfig:            &kubeconfig,
 				CredentialsSecretName: &secretName,
 			},
@@ -258,10 +245,101 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 	})
 }
 
-func fixKymaModules() []model.KymaConfigModule {
-	return []model.KymaConfigModule{
-		{ID: "id", KymaConfigID: "id", Module: model.KymaModule("Backup")},
-		{ID: "id", KymaConfigID: "id", Module: model.KymaModule("BackupInit")},
+func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
+	return &gqlschema.KymaConfig{
+		Version: util.StringPtr(kymaVersion),
+		Components: []*gqlschema.ComponentConfiguration{
+			{
+				Component:     clusterEssentialsComponent,
+				Namespace:     kymaSystemNamespace,
+				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
+			},
+			{
+				Component: coreComponent,
+				Namespace: kymaSystemNamespace,
+				Configuration: []*gqlschema.ConfigEntry{
+					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
+				},
+			},
+			{
+				Component: applicationConnectorComponent,
+				Namespace: kymaIntegrationNamespace,
+				Configuration: []*gqlschema.ConfigEntry{
+					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
+				},
+			},
+		},
+		Configuration: []*gqlschema.ConfigEntry{
+			fixGQLConfigEntry("global.config.key", "globalValue", util.BoolPtr(false)),
+			fixGQLConfigEntry("global.config.key2", "globalValue2", util.BoolPtr(false)),
+			fixGQLConfigEntry("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
+		},
+	}
+}
+
+func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
+	return &gqlschema.ConfigEntry{
+		Key:    key,
+		Value:  val,
+		Secret: secret,
+	}
+}
+
+func fixKymaConfig() model.KymaConfig {
+	return model.KymaConfig{
+		ID:                  "id",
+		Release:             fixKymaRelease(),
+		Components:          fixKymaComponents(),
+		GlobalConfiguration: fixGlobalConfig(),
+		ClusterID:           "runtimeID",
+	}
+}
+
+func fixGlobalConfig() model.Configuration {
+	return model.Configuration{
+		ConfigEntries: []model.ConfigEntry{
+			model.NewConfigEntry("global.config.key", "globalValue", false),
+			model.NewConfigEntry("global.config.key2", "globalValue2", false),
+			model.NewConfigEntry("global.secret.key", "globalSecretValue", true),
+		},
+	}
+}
+
+func fixKymaComponents() []model.KymaComponentConfig {
+	return []model.KymaComponentConfig{
+		{
+			ID:            "id",
+			KymaConfigID:  "id",
+			Component:     clusterEssentialsComponent,
+			Namespace:     kymaSystemNamespace,
+			Configuration: model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+		},
+		{
+			ID:           "id",
+			KymaConfigID: "id",
+			Component:    coreComponent,
+			Namespace:    kymaSystemNamespace,
+			Configuration: model.Configuration{
+				ConfigEntries: []model.ConfigEntry{
+					model.NewConfigEntry("test.config.key", "value", false),
+					model.NewConfigEntry("test.config.key2", "value2", false),
+				},
+			},
+		},
+		{
+			ID:           "id",
+			KymaConfigID: "id",
+			Component:    applicationConnectorComponent,
+			Namespace:    kymaIntegrationNamespace,
+			Configuration: model.Configuration{
+				ConfigEntries: []model.ConfigEntry{
+					model.NewConfigEntry("test.config.key", "value", false),
+					model.NewConfigEntry("test.secret.key", "secretValue", true),
+				},
+			},
+		},
 	}
 }
 

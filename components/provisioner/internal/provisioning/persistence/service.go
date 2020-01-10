@@ -18,7 +18,7 @@ type Service interface {
 	SetProvisioningStarted(runtimeID string, runtimeConfig model.Cluster) (model.Operation, dberrors.Error)
 	SetDeprovisioningStarted(runtimeID string) (model.Operation, dberrors.Error)
 	SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error)
-	UpdateClusterData(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error // TODO - set provisioning finished?
+	UpdateClusterData(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error
 	CleanupClusterData(runtimeID string) dberrors.Error
 	GetClusterData(runtimeID string) (model.Cluster, dberrors.Error)
 

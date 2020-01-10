@@ -66,8 +66,8 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 }
 
 func validateInput(config gqlschema.ProvisionRuntimeInput) error {
-	if len(config.KymaConfig.Modules) == 0 {
-		return errors.New("cannot provision Runtime since Kyma modules list is empty")
+	if len(config.KymaConfig.Components) == 0 {
+		return errors.New("cannot provision Runtime since Kyma components list is empty")
 	}
 
 	if config.RuntimeInput == nil {

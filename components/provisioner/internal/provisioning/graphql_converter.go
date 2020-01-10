@@ -1,4 +1,4 @@
-package converters
+package provisioning
 
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -112,16 +112,39 @@ func (c graphQLConverter) gcpConfigToGraphQLConfig(config model.GCPConfig) gqlsc
 }
 
 func (c graphQLConverter) kymaConfigToGraphQLConfig(config model.KymaConfig) *gqlschema.KymaConfig {
-	var modules []*gqlschema.KymaModule
-	for _, module := range config.Modules {
-		kymaModule := gqlschema.KymaModule(module.Module)
-		modules = append(modules, &kymaModule)
+	var components []*gqlschema.ComponentConfiguration
+	for _, cmp := range config.Components {
+
+		component := gqlschema.ComponentConfiguration{
+			Component:     string(cmp.Component),
+			Namespace:     cmp.Namespace,
+			Configuration: c.configurationToGraphQLConfig(cmp.Configuration),
+		}
+
+		components = append(components, &component)
 	}
 
 	return &gqlschema.KymaConfig{
-		Version: &config.Release.Version,
-		Modules: modules,
+		Version:       &config.Release.Version,
+		Components:    components,
+		Configuration: c.configurationToGraphQLConfig(config.GlobalConfiguration),
 	}
+}
+
+func (c graphQLConverter) configurationToGraphQLConfig(cfg model.Configuration) []*gqlschema.ConfigEntry {
+	configuration := make([]*gqlschema.ConfigEntry, 0, len(cfg.ConfigEntries))
+
+	for _, configEntry := range cfg.ConfigEntries {
+		secret := configEntry.Secret
+
+		configuration = append(configuration, &gqlschema.ConfigEntry{
+			Key:    configEntry.Key,
+			Value:  configEntry.Value,
+			Secret: &secret,
+		})
+	}
+
+	return configuration
 }
 
 func (c graphQLConverter) operationTypeToGraphQLType(operationType model.OperationType) gqlschema.OperationType {

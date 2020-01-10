@@ -253,3 +253,9 @@ func (fp *GqlFieldsProvider) ForEventingConfiguration() string {
 	return `
 		defaultURL`
 }
+
+func (fp *GqlFieldsProvider) ForViewer() string {
+	return `
+		id
+		type`
+}

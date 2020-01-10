@@ -8,8 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
-
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
 	uuidMocks "github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
 
@@ -29,7 +27,6 @@ import (
 
 const (
 	kubeconfigFile = "kubeconfig data"
-	kymaVersion    = "1.5"
 )
 
 var (
@@ -45,8 +42,8 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	releaseRepo := &releaseMocks.Repository{}
 	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 
-	inputConverter := converters.NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo)
-	graphQLConverter := converters.NewGraphQLConverter()
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo)
+	graphQLConverter := NewGraphQLConverter()
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GcpConfig: &gqlschema.GCPConfigInput{
@@ -61,10 +58,8 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		},
 	}
 
-	kymaConfig := &gqlschema.KymaConfigInput{
-		Version: kymaVersion,
-		Modules: gqlschema.AllKymaModule,
-	}
+	kymaConfigInput := fixKymaGraphQLConfigInput()
+	expectedGlobalConfig := fixGlobalConfig()
 
 	runtimeInput := &gqlschema.RuntimeInput{
 		Name:        "test runtime",
@@ -76,7 +71,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		RuntimeInput:  runtimeInput,
 		ClusterConfig: clusterConfig,
 		Credentials:   &gqlschema.CredentialsInput{},
-		KymaConfig:    kymaConfig,
+		KymaConfig:    kymaConfigInput,
 	}
 
 	t.Run("Should start runtime provisioning and return operation ID", func(t *testing.T) {
@@ -89,6 +84,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
 		operation := model.Operation{ID: expOperationID}
 
+
 		directorServiceMock := &directormock.DirectorClient{}
 		directorServiceMock.On("CreateRuntime", mock.Anything).Return(expRuntimeID, nil)
 
@@ -97,7 +93,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		persistenceServiceMock.On("UpdateClusterData", expRuntimeID, kubeconfigFile, []byte("")).Return(nil)
 		persistenceServiceMock.On("SetOperationAsSucceeded", expOperationID).Return(nil)
 		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
-		installationSvc.On("InstallKyma", expRuntimeID, kubeconfigFile, kymaRelease).Return(nil)
+		installationSvc.On("InstallKyma", expRuntimeID, kubeconfigFile, kymaRelease, expectedGlobalConfig, mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
 
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock)
 
@@ -154,7 +150,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		persistenceServiceMock.On("UpdateClusterData", expRuntimeID, kubeconfigFile, []byte("")).Return(nil)
 		persistenceServiceMock.On("SetOperationAsSucceeded", expOperationID).Return(nil)
 		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
-		installationSvc.On("InstallKyma", expRuntimeID, kubeconfigFile, kymaRelease).Return(nil)
+		installationSvc.On("InstallKyma", expRuntimeID, kubeconfigFile, kymaRelease, expectedGlobalConfig, mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
 
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock)
 
@@ -190,7 +186,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		persistenceServiceMock.On("SetProvisioningStarted", expRuntimeID, mock.Anything).Return(operation, nil)
 		persistenceServiceMock.On("UpdateClusterData", expRuntimeID, kubeconfigFile, []byte("")).Return(nil)
 		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
-		installationSvc.On("InstallKyma", expRuntimeID, kubeconfigFile, kymaRelease).Return(errors.New("error"))
+		installationSvc.On("InstallKyma", expRuntimeID, kubeconfigFile, kymaRelease, expectedGlobalConfig, mock.AnythingOfType("[]model.KymaComponentConfig")).Return(errors.New("error"))
 		persistenceServiceMock.On("SetOperationAsFailed", expOperationID, mock.AnythingOfType("string")).Return(nil)
 
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock)
@@ -243,8 +239,8 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	releaseRepo := &releaseMocks.Repository{}
 	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 
-	inputConverter := converters.NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo)
-	graphQLConverter := converters.NewGraphQLConverter()
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo)
+	graphQLConverter := NewGraphQLConverter()
 
 	t.Run("Should start runtime deprovisioning and return operation ID", func(t *testing.T) {
 		//given
@@ -329,8 +325,8 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 	releaseRepo := &releaseMocks.Repository{}
 	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 
-	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo)
-	graphQLConverter := converters.NewGraphQLConverter()
+	inputConverter := NewInputConverter(uuidGenerator, releaseRepo)
+	graphQLConverter := NewGraphQLConverter()
 
 	t.Run("Should return operation status", func(t *testing.T) {
 		//given

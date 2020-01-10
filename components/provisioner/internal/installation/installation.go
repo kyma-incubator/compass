@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -26,7 +28,7 @@ type InstallationHandler func(*rest.Config, ...installation.InstallationOption) 
 
 //go:generate mockery -name=Service
 type Service interface {
-	InstallKyma(runtimeId, kubeconfigRaw string, release model.Release) error
+	InstallKyma(runtimeId, kubeconfigRaw string, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
 }
 
 func NewInstallationService(installationTimeout time.Duration, installationHandler InstallationHandler, installErrFailureThreshold int) Service {
@@ -43,7 +45,7 @@ type installationService struct {
 	installationHandler                InstallationHandler
 }
 
-func (s *installationService) InstallKyma(runtimeId, kubeconfigRaw string, release model.Release) error {
+func (s *installationService) InstallKyma(runtimeId, kubeconfigRaw string, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
 	kubeconfig, err := clientcmd.NewClientConfigFromBytes([]byte(kubeconfigRaw))
 	if err != nil {
 		return fmt.Errorf("error constructing kubeconfig from raw config: %s", err.Error())
@@ -54,7 +56,11 @@ func (s *installationService) InstallKyma(runtimeId, kubeconfigRaw string, relea
 		return fmt.Errorf("failed to get client kubeconfig from parsed config: %s", err.Error())
 	}
 
-	kymaInstaller, err := s.installationHandler(clientConfig, installation.WithTillerWaitTime(tillerWaitTime))
+	kymaInstaller, err := s.installationHandler(
+		clientConfig,
+		installation.WithTillerWaitTime(tillerWaitTime),
+		installation.WithInstallationCRModification(getInstallationCRModificationFunc(componentsConfig)),
+	)
 	if err != nil {
 		return pkgErrors.Wrap(err, "Failed to create Kyma installer")
 	}
@@ -62,7 +68,7 @@ func (s *installationService) InstallKyma(runtimeId, kubeconfigRaw string, relea
 	installationConfig := installation.Installation{
 		TillerYaml:    release.TillerYAML,
 		InstallerYaml: release.InstallerYAML,
-		Configuration: installation.Configuration{},
+		Configuration: newInstallationConfiguration(globalConfig, componentsConfig),
 	}
 
 	err = kymaInstaller.PrepareInstallation(installationConfig)
@@ -113,5 +119,58 @@ func (s *installationService) waitForInstallation(runtimeId string, stateChannel
 		default:
 			time.Sleep(1 * time.Second)
 		}
+	}
+}
+
+func getInstallationCRModificationFunc(componentsConfig []model.KymaComponentConfig) func(*v1alpha1.Installation) {
+	return func(installation *v1alpha1.Installation) {
+		components := make([]v1alpha1.KymaComponent, 0, len(componentsConfig))
+
+		for _, cc := range componentsConfig {
+			components = append(components, v1alpha1.KymaComponent{
+				Name:      string(cc.Component),
+				Namespace: cc.Namespace,
+			})
+		}
+
+		installation.Spec.Components = components
+	}
+}
+
+func newInstallationConfiguration(globalConfg model.Configuration, componentsConfig []model.KymaComponentConfig) installation.Configuration {
+	installationConfig := installation.Configuration{
+		Configuration:          make([]installation.ConfigEntry, 0, len(globalConfg.ConfigEntries)),
+		ComponentConfiguration: make([]installation.ComponentConfiguration, 0, len(componentsConfig)),
+	}
+
+	installationConfig.Configuration = toInstallationConfigEntries(globalConfg.ConfigEntries)
+
+	for _, componentCfg := range componentsConfig {
+		installationComponentConfig := installation.ComponentConfiguration{
+			Component:     string(componentCfg.Component),
+			Configuration: toInstallationConfigEntries(componentCfg.Configuration.ConfigEntries),
+		}
+
+		installationConfig.ComponentConfiguration = append(installationConfig.ComponentConfiguration, installationComponentConfig)
+	}
+
+	return installationConfig
+}
+
+func toInstallationConfigEntries(entries []model.ConfigEntry) []installation.ConfigEntry {
+	installationCfgEntries := make([]installation.ConfigEntry, 0, len(entries))
+
+	for _, e := range entries {
+		installationCfgEntries = append(installationCfgEntries, toInstallationConfigEntry(e))
+	}
+
+	return installationCfgEntries
+}
+
+func toInstallationConfigEntry(entry model.ConfigEntry) installation.ConfigEntry {
+	return installation.ConfigEntry{
+		Key:    entry.Key,
+		Value:  entry.Value,
+		Secret: entry.Secret,
 	}
 }

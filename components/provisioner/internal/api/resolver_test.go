@@ -50,7 +50,12 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
-			Modules: gqlschema.AllKymaModule,
+			Components: []*gqlschema.ComponentConfigurationInput{
+				{
+					Component:     "core",
+					Configuration: nil,
+				},
+			},
 		}
 
 		expOperationID := "ec781980-0533-4098-aab7-96b535569732"
@@ -97,7 +102,12 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
-			Modules: gqlschema.AllKymaModule,
+			Components: []*gqlschema.ComponentConfigurationInput{
+				{
+					Component:     "core",
+					Configuration: nil,
+				},
+			},
 		}
 
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
@@ -136,7 +146,12 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
-			Modules: gqlschema.AllKymaModule,
+			Components: []*gqlschema.ComponentConfigurationInput{
+				{
+					Component:     "core",
+					Configuration: nil,
+				},
+			},
 		}
 
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}

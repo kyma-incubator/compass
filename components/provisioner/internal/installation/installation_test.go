@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 
 	"github.com/stretchr/testify/assert"
@@ -22,6 +25,9 @@ const (
 	installerYAML = "installerYAML"
 
 	installErrFailureThreshold = 5
+
+	kymaSystemNamespace      = "kyma-system"
+	kymaIntegrationNamespace = "kyma-integration"
 )
 
 const (
@@ -53,10 +59,25 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 	kymaVersion := "1.7.0"
 	kymaRelease := model.Release{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
 
+	globalConfig := fixGlobalConfig()
+	componentsConfig := fixComponentsConfig()
+
+	defaultExpectedInstallation := installation.Installation{
+		TillerYaml:    tillerYAML,
+		InstallerYaml: installerYAML,
+		Configuration: installation.Configuration{
+			Configuration:          make([]installation.ConfigEntry, 0),
+			ComponentConfiguration: make([]installation.ComponentConfiguration, 0),
+		},
+	}
+
 	for _, testCase := range []struct {
-		description      string
-		installationMock func(chan installation.InstallationState, chan error)
-		shouldFail       bool
+		description          string
+		installationMock     func(chan installation.InstallationState, chan error)
+		globalConfig         model.Configuration
+		componentsConfig     []model.KymaComponentConfig
+		shouldFail           bool
+		expectedInstallation installation.Installation
 	}{
 		{
 			description: "should install Kyma successfully",
@@ -65,7 +86,26 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 				close(errChannel)
 				close(stateChan)
 			},
-			shouldFail: false,
+			globalConfig:     fixGlobalConfig(),
+			componentsConfig: fixComponentsConfig(),
+			shouldFail:       false,
+			expectedInstallation: installation.Installation{
+				TillerYaml:    tillerYAML,
+				InstallerYaml: installerYAML,
+				Configuration: expectedInstallationConfig(),
+			},
+		},
+		{
+			description: "should install Kyma with empty configs",
+			installationMock: func(stateChan chan installation.InstallationState, errChannel chan error) {
+				stateChan <- installation.InstallationState{State: "Installed"}
+				close(errChannel)
+				close(stateChan)
+			},
+			globalConfig:         model.Configuration{},
+			componentsConfig:     []model.KymaComponentConfig{},
+			shouldFail:           false,
+			expectedInstallation: defaultExpectedInstallation,
 		},
 		{
 			description: "should continue installation if error threshold not exceeded",
@@ -78,7 +118,10 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 				close(stateChan)
 				close(errChannel)
 			},
-			shouldFail: false,
+			globalConfig:         model.Configuration{},
+			componentsConfig:     []model.KymaComponentConfig{},
+			shouldFail:           false,
+			expectedInstallation: defaultExpectedInstallation,
 		},
 		{
 			description: "should fail if error threshold exceeded",
@@ -91,7 +134,10 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 				close(stateChan)
 				close(errChannel)
 			},
-			shouldFail: true,
+			globalConfig:         model.Configuration{},
+			componentsConfig:     []model.KymaComponentConfig{},
+			shouldFail:           true,
+			expectedInstallation: defaultExpectedInstallation,
 		},
 		{
 			description: "should fail if error different than installation error occurred",
@@ -102,27 +148,24 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 				close(stateChan)
 				close(errChannel)
 			},
-			shouldFail: true,
+			globalConfig:         model.Configuration{},
+			componentsConfig:     []model.KymaComponentConfig{},
+			shouldFail:           true,
+			expectedInstallation: defaultExpectedInstallation,
 		},
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
 			// given
-			expectedInstallation := installation.Installation{
-				TillerYaml:    tillerYAML,
-				InstallerYaml: installerYAML,
-				Configuration: installation.Configuration{},
-			}
-
 			stateChannel := make(chan installation.InstallationState)
 			errChannel := make(chan error)
 
-			installationHandlerConstructor := newMockInstallerHandler(t, expectedInstallation, stateChannel, errChannel)
+			installationHandlerConstructor := newMockInstallerHandler(t, testCase.expectedInstallation, stateChannel, errChannel)
 			installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
 
 			go testCase.installationMock(stateChannel, errChannel)
 
 			// when
-			err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease)
+			err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease, testCase.globalConfig, testCase.componentsConfig)
 
 			// then
 			if testCase.shouldFail {
@@ -139,7 +182,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
 
 		// when
-		err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease)
+		err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease, globalConfig, componentsConfig)
 
 		// then
 		require.Error(t, err)
@@ -151,7 +194,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
 
 		// when
-		err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease)
+		err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease, globalConfig, componentsConfig)
 
 		// then
 		require.Error(t, err)
@@ -162,10 +205,54 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, nil, installErrFailureThreshold)
 
 		// when
-		err := installationSvc.InstallKyma(runtimeId, "", kymaRelease)
+		err := installationSvc.InstallKyma(runtimeId, "", kymaRelease, globalConfig, componentsConfig)
 
 		// then
 		require.Error(t, err)
+	})
+
+}
+
+func Test_getInstallationCRModificationFunc(t *testing.T) {
+
+	newInstallationCR := func() *v1alpha1.Installation {
+		return &v1alpha1.Installation{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      "kyma-installation",
+				Namespace: "default",
+			},
+			Spec: v1alpha1.InstallationSpec{},
+		}
+	}
+
+	t.Run("should create modification func", func(t *testing.T) {
+		// given
+		componentsConfig := fixComponentsConfig()
+		installationCR := newInstallationCR()
+
+		// when
+		modificationFunc := getInstallationCRModificationFunc(componentsConfig)
+
+		modificationFunc(installationCR)
+
+		// then
+		require.Equal(t, 3, len(installationCR.Spec.Components))
+		assertComponent(t, "cluster-essentials", kymaSystemNamespace, installationCR.Spec.Components[0])
+		assertComponent(t, "core", kymaSystemNamespace, installationCR.Spec.Components[1])
+		assertComponent(t, "application-connector", kymaIntegrationNamespace, installationCR.Spec.Components[2])
+	})
+
+	t.Run("should have no components if configuration is empty", func(t *testing.T) {
+		// given
+		installationCR := newInstallationCR()
+
+		// when
+		modificationFunc := getInstallationCRModificationFunc(nil)
+
+		modificationFunc(installationCR)
+
+		// then
+		require.Equal(t, 0, len(installationCR.Spec.Components))
 	})
 
 }
@@ -220,4 +307,91 @@ func (i errorInstallerMock) PrepareInstallation(installation installation.Instal
 
 func (i errorInstallerMock) StartInstallation(context context.Context) (<-chan installation.InstallationState, <-chan error, error) {
 	return nil, nil, i.startInstallationError
+}
+
+func assertComponent(t *testing.T, expectedName, expectedNamespace string, component v1alpha1.KymaComponent) {
+	assert.Equal(t, expectedName, component.Name)
+	assert.Equal(t, expectedNamespace, component.Namespace)
+}
+
+func expectedInstallationConfig() installation.Configuration {
+	return installation.Configuration{
+		Configuration: []installation.ConfigEntry{
+			fixInstallationConfigEntry("global.config.key", "globalValue", false),
+			fixInstallationConfigEntry("global.config.key2", "globalValue2", false),
+			fixInstallationConfigEntry("global.secret.key", "globalSecretValue", true),
+		},
+		ComponentConfiguration: []installation.ComponentConfiguration{
+			{
+				Component:     "cluster-essentials",
+				Configuration: make([]installation.ConfigEntry, 0),
+			},
+			{
+				Component: "core",
+				Configuration: []installation.ConfigEntry{
+					fixInstallationConfigEntry("test.config.key", "value", false),
+					fixInstallationConfigEntry("test.config.key2", "value2", false),
+				},
+			},
+			{
+				Component: "application-connector",
+				Configuration: []installation.ConfigEntry{
+					fixInstallationConfigEntry("test.config.key", "value", false),
+					fixInstallationConfigEntry("test.secret.key", "secretValue", true),
+				},
+			},
+		},
+	}
+}
+
+func fixComponentsConfig() []model.KymaComponentConfig {
+	return []model.KymaComponentConfig{
+		{
+			ID:            "id",
+			KymaConfigID:  "id",
+			Component:     "cluster-essentials",
+			Namespace:     kymaSystemNamespace,
+			Configuration: model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+		},
+		{
+			ID:           "id",
+			KymaConfigID: "id",
+			Component:    "core",
+			Namespace:    kymaSystemNamespace,
+			Configuration: model.Configuration{
+				ConfigEntries: []model.ConfigEntry{
+					model.NewConfigEntry("test.config.key", "value", false),
+					model.NewConfigEntry("test.config.key2", "value2", false),
+				},
+			},
+		},
+		{
+			ID:           "id",
+			KymaConfigID: "id",
+			Component:    "application-connector",
+			Namespace:    kymaIntegrationNamespace,
+			Configuration: model.Configuration{
+				ConfigEntries: []model.ConfigEntry{
+					model.NewConfigEntry("test.config.key", "value", false),
+					model.NewConfigEntry("test.secret.key", "secretValue", true),
+				},
+			},
+		},
+	}
+}
+
+func fixGlobalConfig() model.Configuration {
+	return model.Configuration{ConfigEntries: []model.ConfigEntry{
+		model.NewConfigEntry("global.config.key", "globalValue", false),
+		model.NewConfigEntry("global.config.key2", "globalValue2", false),
+		model.NewConfigEntry("global.secret.key", "globalSecretValue", true),
+	}}
+}
+
+func fixInstallationConfigEntry(key, val string, secret bool) installation.ConfigEntry {
+	return installation.ConfigEntry{
+		Key:    key,
+		Value:  val,
+		Secret: secret,
+	}
 }

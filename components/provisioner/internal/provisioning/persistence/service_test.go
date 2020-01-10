@@ -58,9 +58,9 @@ func TestSetProvisioning(t *testing.T) {
 			TillerYAML:    "tiller: yaml",
 			InstallerYAML: "installer: yaml",
 		},
-		Modules: []model.KymaConfigModule{
-			{ID: "id1", Module: model.KymaModule("core")},
-			{ID: "id2", Module: model.KymaModule("monitoring")},
+		Components: []model.KymaComponentConfig{
+			{ID: "id1", Component: model.KymaComponent("core")},
+			{ID: "id2", Component: model.KymaComponent("monitoring")},
 		},
 	}
 
@@ -169,7 +169,7 @@ func TestSetProvisioning(t *testing.T) {
 		uuidGenerator.AssertExpectations(t)
 	})
 
-	t.Run("Should rollback transaction when failed to insert record to KymaConfig or KymaConfigModule table", func(t *testing.T) {
+	t.Run("Should rollback transaction when failed to insert record to KymaConfig or KymaComponentConfig table", func(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
@@ -411,9 +411,9 @@ func TestGetRuntimeStatus(t *testing.T) {
 			TillerYAML:    "tiller: yaml",
 			InstallerYAML: "installer: yaml",
 		},
-		Modules: []model.KymaConfigModule{
-			{ID: "id1", Module: model.KymaModule("core")},
-			{ID: "id2", Module: model.KymaModule("monitoring")},
+		Components: []model.KymaComponentConfig{
+			{ID: "id1", Component: model.KymaComponent("core")},
+			{ID: "id2", Component: model.KymaComponent("monitoring")},
 		},
 	}
 
@@ -525,9 +525,9 @@ func TestGetClusterData(t *testing.T) {
 			TillerYAML:    "tiller: yaml",
 			InstallerYAML: "installer: yaml",
 		},
-		Modules: []model.KymaConfigModule{
-			{ID: "id1", Module: model.KymaModule("core")},
-			{ID: "id2", Module: model.KymaModule("monitoring")},
+		Components: []model.KymaComponentConfig{
+			{ID: "id1", Component: model.KymaComponent("core")},
+			{ID: "id2", Component: model.KymaComponent("monitoring")},
 		},
 	}
 

@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
@@ -24,7 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/typed/core/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
@@ -40,8 +39,9 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 	uuidGenerator := uuid.NewUUIDGenerator()
 	installationService := installation.NewInstallationService(config.Installation.Timeout, installationSDK.NewKymaInstaller, config.Installation.ErrorsCountFailureThreshold)
 
-	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo)
-	graphQLConverter := converters.NewGraphQLConverter()
+	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo)
+	graphQLConverter := provisioning.NewGraphQLConverter()
+
 	if config.SkipCertVerification == true {
 		logrus.Info("TLS certificate verification is off")
 	} else {
@@ -50,7 +50,7 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 
 	logrus.Infof("Director endpoint %s", config.DirectorURL)
 
-	client := &http.Client{
+	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: config.SkipCertVerification},
 		},
@@ -58,7 +58,7 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 	}
 
 	gqlClient := graphql.NewGraphQLClient(config.DirectorURL, true, config.SkipCertVerification)
-	oauthClient := oauth.NewOauthClient(client, secrets, config.OauthCredentialsSecretName)
+	oauthClient := oauth.NewOauthClient(httpClient, secrets, config.OauthCredentialsSecretName)
 
 	directorClient := director.NewDirectorClient(gqlClient, oauthClient, config.DefaultTenant)
 

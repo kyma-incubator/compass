@@ -16,10 +16,7 @@ func TestDifferentTenantAccessDenied(t *testing.T) {
 	notExistingTenant := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
 	t.Log("Get Dex id_token")
-	config, err := idtokenprovider.NewConfigFromEnv()
-	require.NoError(t, err)
-
-	dexToken, err := idtokenprovider.Authenticate(config)
+	dexToken, err := idtokenprovider.GetDexToken()
 	require.NoError(t, err)
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
@@ -29,7 +26,7 @@ func TestDifferentTenantAccessDenied(t *testing.T) {
 		Name:         "app-tmh-test",
 		ProviderName: "compass",
 	}
-	_, err = createApplicationWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
+	_, err = registerApplicationWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
 	assert.Error(t, err)
 	assert.Equal(t, "graphql: server returned a non-200 status code: 403", err.Error())
 }

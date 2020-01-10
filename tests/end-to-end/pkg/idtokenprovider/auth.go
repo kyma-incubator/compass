@@ -17,3 +17,17 @@ func Authenticate(config Config) (string, error) {
 	token, err := idTokenProvider.fetchIdToken()
 	return token, err
 }
+
+func GetDexToken() (string, error) {
+	config, err := NewConfigFromEnv()
+	if err != nil {
+		return "", err
+	}
+
+	dexToken, err := Authenticate(config)
+	if err != nil {
+		return "", err
+	}
+
+	return dexToken, nil
+}

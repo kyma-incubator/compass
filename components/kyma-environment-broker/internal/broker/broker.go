@@ -57,12 +57,21 @@ type ProvisioningParameters struct {
 	MaxUnavailable *int    `json:"maxUnavailable"`
 }
 
+var enabledPlanIDs = map[string]struct{}{
+	azurePlanID: {},
+	// add plan IDs which must be enabled
+}
+
 // Services gets the catalog of services offered by the service broker
 //   GET /v2/catalog
 func (b *KymaEnvBroker) Services(ctx context.Context) ([]domain.Service, error) {
 	availableServicePlans := []domain.ServicePlan{}
 
 	for _, plan := range plans {
+		// filter out not enabled plans
+		if _, exists := enabledPlanIDs[plan.planDefinition.ID]; !exists {
+			continue
+		}
 		p := plan.planDefinition
 		err := json.Unmarshal(plan.provisioningRawSchema, &p.Schemas.Instance.Create.Parameters)
 		if err != nil {
@@ -130,14 +139,8 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 
 	// add values, which will be deprecated and replaced by other secret data provided by the caller
 	switch details.PlanID {
-	case gcpPlanID:
-		input.ClusterConfig.GardenerConfig.TargetSecret = b.Config.GCPSecretName
-	case defaultPlanID:
-		input.ClusterConfig.GardenerConfig.TargetSecret = b.Config.GCPSecretName
 	case azurePlanID:
 		input.ClusterConfig.GardenerConfig.TargetSecret = b.Config.AzureSecretName
-	case awsPlanID:
-		input.ClusterConfig.GardenerConfig.TargetSecret = b.Config.AWSSecretName
 	default:
 		return domain.ProvisionedServiceSpec{}, errors.Wrapf(err, "unknown Plan ID %s", details.PlanID)
 	}
@@ -195,7 +198,7 @@ func (b *KymaEnvBroker) GetInstance(ctx context.Context, instanceID string) (dom
 
 	spec := domain.GetInstanceDetailsSpec{
 		ServiceID:    kymaServiceID,
-		PlanID:       defaultPlanID,
+		PlanID:       azurePlanID, // todo: read the ID from the storage
 		DashboardURL: fixedDummyURL,
 	}
 	return spec, nil
