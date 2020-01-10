@@ -8,11 +8,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gocraft/dbr"
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
 
-	"github.com/gocraft/dbr"
 	"github.com/lib/pq"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"

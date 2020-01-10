@@ -31,7 +31,7 @@ func newProvisioningParamsBuilder(ip inputProvider) *provisioningParamsBuilder {
 	builder := &provisioningParamsBuilder{
 		input: &gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: ip.Defaults(),
-			KymaConfig:    &gqlschema.KymaConfigInput{Version: "1.6", Modules: gqlschema.AllKymaModule},
+			KymaConfig:    &gqlschema.KymaConfigInput{Version: "1.6"},
 		},
 		provider: ip,
 	}

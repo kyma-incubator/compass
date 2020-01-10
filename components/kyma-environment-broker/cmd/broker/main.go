@@ -58,18 +58,10 @@ func main() {
 	db, err := storage.New(cfg.Database.ConnectionURL())
 	fatalOnError(err)
 
-	dumper, err := broker.NewDumper()
+	broker, err := broker.NewBroker(provisionerClient, cfg.Provisioning, db.Instances())
 	fatalOnError(err)
 
-	kymaBrokerService := &broker.KymaEnvBroker{
-		Dumper:            dumper,
-		ProvisionerClient: provisionerClient,
-		Storage:           db,
-
-		Config: cfg.Provisioning,
-	}
-
-	brokerAPI := brokerapi.New(kymaBrokerService, logger, brokerCredentials)
+	brokerAPI := brokerapi.New(broker, logger, brokerCredentials)
 	r := handlers.LoggingHandler(os.Stdout, brokerAPI)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))

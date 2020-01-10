@@ -11,8 +11,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/pivotal-cf/brokerapi/domain"
-	"github.com/pivotal-cf/brokerapi/domain/apiresponses"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/pkg/errors"
 	"github.com/sanity-io/litter"
 )
@@ -37,10 +37,10 @@ type ProvisioningConfig struct {
 type KymaEnvBroker struct {
 	Dumper *Dumper
 
-	ProvisionerClient provisioner.Client
 	Config            ProvisioningConfig
+	ProvisionerClient provisioner.Client
 
-	Storage storage.BrokerStorage
+	InstancesStorage storage.Instances
 }
 
 var enabledPlanIDs = map[string]struct{}{
@@ -48,16 +48,17 @@ var enabledPlanIDs = map[string]struct{}{
 	// add plan IDs which must be enabled
 }
 
-func NewBroker(pCli provisioner.Client, cfg ProvisioningConfig) (*KymaEnvBroker, error) {
+func NewBroker(pCli provisioner.Client, cfg ProvisioningConfig, instStorage storage.Instances) (*KymaEnvBroker, error) {
 	dumper, err := NewDumper()
 	if err != nil {
 		return nil, err
 	}
 
 	return &KymaEnvBroker{
-		ProvisionerClient:   pCli,
-		Dumper:              dumper,
-		Config:              cfg,
+		ProvisionerClient: pCli,
+		Dumper:            dumper,
+		Config:            cfg,
+		InstancesStorage:  instStorage,
 	}, nil
 }
 
@@ -156,7 +157,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	if resp.RuntimeID == nil {
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusInternalServerError, fmt.Sprintf("could not provision runtime, runtime ID not provided (instanceID %s)", instanceID))
 	}
-	err = b.Storage.Instances().Insert(internal.Instance{
+	err = b.InstancesStorage.Insert(internal.Instance{
 		InstanceID:             instanceID,
 		GlobalAccountID:        ersContext.GlobalAccountID,
 		RuntimeID:              *resp.RuntimeID,
@@ -186,8 +187,7 @@ func (b *KymaEnvBroker) Deprovision(ctx context.Context, instanceID string, deta
 	b.Dumper.Dump("Deprovision details:", details)
 	b.Dumper.Dump("Deprovision asyncAllowed:", asyncAllowed)
 
-	// todo: read from storage
-	instance, err := b.Storage.Instances().GetByID(instanceID)
+	instance, err := b.InstancesStorage.GetByID(instanceID)
 	if err != nil {
 		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponseBuilder(fmt.Errorf("instance not found"), http.StatusBadRequest, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
 	}

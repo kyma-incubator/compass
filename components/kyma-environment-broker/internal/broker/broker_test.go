@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/automock"
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/pivotal-cf/brokerapi/domain"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +24,10 @@ const (
 
 func TestBroker_Services(t *testing.T) {
 	// given
-	broker, err := broker.NewBroker(nil, broker.ProvisioningConfig{})
+	instStorage := &automock.Instances{}
+	defer instStorage.AssertExpectations(t)
+
+	broker, err := broker.NewBroker(nil, broker.ProvisioningConfig{}, instStorage)
 	require.NoError(t, err)
 
 	// when
@@ -37,12 +43,28 @@ func TestBroker_ProvisioningScenario(t *testing.T) {
 	// given
 	const instID = "inst-id"
 	const clusterName = "cluster-testing"
+	params := fmt.Sprintf(`{"name": "%s"}`, clusterName)
+
+	instStorage := &automock.Instances{}
+	defer instStorage.AssertExpectations(t)
+	dashboardURL := "https://dummy.dashboard.com"
+	instStorage.On("Insert", internal.Instance{
+		InstanceID:             instID,
+		RuntimeID:              "",
+		GlobalAccountID:        "",
+		ServiceID:              serviceID,
+		ServicePlanID:          planID,
+		DashboardURL:           dashboardURL,
+		ProvisioningParameters: params,
+	}).Return(nil).Once()
+
 	fCli := provisioner.NewFakeClient()
-	broker, err := broker.NewBroker(fCli, broker.ProvisioningConfig{})
+
+	kymaEnvBroker, err := broker.NewBroker(fCli, broker.ProvisioningConfig{}, instStorage)
 	require.NoError(t, err)
 
 	// when
-	res, err := broker.Provision(context.TODO(), instID, domain.ProvisionDetails{
+	res, err := kymaEnvBroker.Provision(context.TODO(), instID, domain.ProvisionDetails{
 		ServiceID:     serviceID,
 		PlanID:        planID,
 		RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -54,7 +76,7 @@ func TestBroker_ProvisioningScenario(t *testing.T) {
 	assert.Equal(t, clusterName, fCli.GetProvisionRuntimeInput(0).ClusterConfig.GardenerConfig.Name)
 
 	// when
-	op, err := broker.LastOperation(context.TODO(), instID, domain.PollDetails{
+	op, err := kymaEnvBroker.LastOperation(context.TODO(), instID, domain.PollDetails{
 		ServiceID:     serviceID,
 		PlanID:        planID,
 		OperationData: res.OperationData,
@@ -66,7 +88,7 @@ func TestBroker_ProvisioningScenario(t *testing.T) {
 
 	// when
 	fCli.FinishProvisionerOperation(res.OperationData, schema.OperationStateSucceeded)
-	op, err = broker.LastOperation(context.TODO(), instID, domain.PollDetails{
+	op, err = kymaEnvBroker.LastOperation(context.TODO(), instID, domain.PollDetails{
 		ServiceID:     serviceID,
 		PlanID:        planID,
 		OperationData: res.OperationData,

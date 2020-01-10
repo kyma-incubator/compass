@@ -24,13 +24,66 @@
 #   go-tests = true
 #   unused-packages = true
 
-[[constraint]]
-  name = "github.com/pivotal-cf/brokerapi"
-  version = "6.5.2"
 
 [[constraint]]
+  name = "code.cloudfoundry.org/lager"
+  version = "2.0.0"
+
+[[constraint]]
+  name = "github.com/Masterminds/sprig"
+  version = "2.22.0"
+
+[[constraint]]
+  name = "github.com/gocraft/dbr"
+  version = "2.6.1"
+
+[[constraint]]
+  name = "github.com/google/uuid"
+  version = "1.1.1"
+
+[[constraint]]
+  name = "github.com/gorilla/handlers"
+  version = "1.4.2"
+
+[[constraint]]
+  revision = "9aebb389a40600880243fb04efea85c2d1408a33"
   name = "github.com/kyma-incubator/compass"
-  revision = "9598d0237b6a4c61dd92302fe9bab3e247a85f17"
+
+[[constraint]]
+  name = "github.com/lib/pq"
+  version = "1.3.0"
+
+[[constraint]]
+  name = "github.com/machinebox/graphql"
+  version = "0.2.2"
+
+[[constraint]]
+  name = "github.com/pivotal-cf/brokerapi"
+  version = "7.1.0"
+
+[[constraint]]
+  name = "github.com/pkg/errors"
+  version = "0.8.1"
+
+[[constraint]]
+  name = "github.com/sanity-io/litter"
+  version = "1.2.0"
+
+[[constraint]]
+  name = "github.com/sirupsen/logrus"
+  version = "1.4.2"
+
+[[constraint]]
+  name = "github.com/stretchr/testify"
+  version = "1.4.0"
+
+[[constraint]]
+  name = "github.com/testcontainers/testcontainers-go"
+  version = "0.0.10"
+
+[[constraint]]
+  name = "github.com/vrischmann/envconfig"
+  version = "1.2.0"
 
 [prune]
   go-tests = true
