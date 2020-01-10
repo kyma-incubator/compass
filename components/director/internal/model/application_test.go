@@ -37,7 +37,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 				},
 				HealthCheckURL:      &url,
 				IntegrationSystemID: &intSysID,
-				ProviderName:        providerName,
+				ProviderName:        &providerName,
 			},
 			Expected: &model.Application{
 				Name:                "Foo",
@@ -46,7 +46,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 				Description:         &desc,
 				HealthCheckURL:      &url,
 				IntegrationSystemID: &intSysID,
-				ProviderName:        providerName,
+				ProviderName:        &providerName,
 				Status: &model.ApplicationStatus{
 					Timestamp: timestamp,
 					Condition: model.ApplicationStatusConditionUnknown,
@@ -76,7 +76,7 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 	//GIVEN
 	filledAppUpdate := model.ApplicationUpdateInput{
 		Name:                "",
-		ProviderName:        "provider name",
+		ProviderName:        str.Ptr("provider name"),
 		Description:         str.Ptr("description"),
 		HealthCheckURL:      str.Ptr("https://kyma-project.io"),
 		IntegrationSystemID: str.Ptr("int sys id"),

@@ -58,22 +58,27 @@ func TestApplicationRegisterInput_Validate_Name(t *testing.T) {
 func TestApplicationRegisterInput_Validate_ProviderName(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         string
+		Value         *string
 		ExpectedValid bool
 	}{
 		{
 			Name:          "ExpectedValid",
-			Value:         "provider-name",
+			Value:         str.Ptr("provider-name"),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Nil",
+			Value:         nil,
 			ExpectedValid: true,
 		},
 		{
 			Name:          "Empty string",
-			Value:         inputvalidationtest.EmptyString,
-			ExpectedValid: false,
+			Value:         str.Ptr(inputvalidationtest.EmptyString),
+			ExpectedValid: true,
 		},
 		{
 			Name:          "String longer than 256 chars",
-			Value:         inputvalidationtest.String257Long,
+			Value:         str.Ptr(inputvalidationtest.String257Long),
 			ExpectedValid: false,
 		},
 	}
@@ -446,22 +451,27 @@ func TestApplicationUpdateInput_Validate_Name(t *testing.T) {
 func TestApplicationUpdateInput_Validate_ProviderName(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         string
+		Value         *string
 		ExpectedValid bool
 	}{
 		{
 			Name:          "ExpectedValid",
-			Value:         "provider-name",
+			Value:         str.Ptr("provider-name"),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Nil",
+			Value:         nil,
 			ExpectedValid: true,
 		},
 		{
 			Name:          "Empty string",
-			Value:         inputvalidationtest.EmptyString,
-			ExpectedValid: false,
+			Value:         str.Ptr(inputvalidationtest.EmptyString),
+			ExpectedValid: true,
 		},
 		{
-			Name:          "String longer than 128 chars",
-			Value:         inputvalidationtest.String257Long,
+			Name:          "String longer than 256 chars",
+			Value:         str.Ptr(inputvalidationtest.String257Long),
 			ExpectedValid: false,
 		},
 	}
@@ -580,14 +590,12 @@ func TestApplicationUpdateInput_Validate_HealthCheckURL(t *testing.T) {
 
 func fixValidApplicationUpdateInput() graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
-		Name:         "application",
-		ProviderName: "provider-name",
+		Name: "application",
 	}
 }
 
 func fixValidApplicationCreateInput() graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
-		Name:         "application",
-		ProviderName: "provider-name",
+		Name: "application",
 	}
 }

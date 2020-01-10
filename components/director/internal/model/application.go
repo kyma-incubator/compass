@@ -8,7 +8,7 @@ import (
 
 type Application struct {
 	ID                  string
-	ProviderName        string
+	ProviderName        *string
 	Tenant              string
 	Name                string
 	Description         *string
@@ -47,7 +47,7 @@ type ApplicationPage struct {
 
 type ApplicationRegisterInput struct {
 	Name                string
-	ProviderName        string
+	ProviderName        *string
 	Description         *string
 	Labels              map[string]interface{}
 	HealthCheckURL      *string
@@ -80,7 +80,7 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, condition 
 
 type ApplicationUpdateInput struct {
 	Name                string
-	ProviderName        string
+	ProviderName        *string
 	Description         *string
 	HealthCheckURL      *string
 	IntegrationSystemID *string

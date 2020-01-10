@@ -215,7 +215,7 @@ func fixModelApplicationCreateInput(name string) model.ApplicationRegisterInput 
 func fixGQLApplicationCreateInput(name string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
 		Name:           name,
-		ProviderName:   testProviderName,
+		ProviderName:   &testProviderName,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,
 	}
