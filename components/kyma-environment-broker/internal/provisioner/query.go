@@ -10,6 +10,12 @@ func (qp queryProvider) provisionRuntime(runtimeID string, config string) string
 }`, runtimeID, config)
 }
 
+func (qp queryProvider) provisionRuntimeV2(config string) string {
+	return fmt.Sprintf(`mutation {
+	result: provisionRuntime(config: %s)
+}`, config)
+}
+
 func (qp queryProvider) upgradeRuntime(runtimeID string, config string) string {
 	return fmt.Sprintf(`mutation {
 	result: upgradeRuntime(id: "%s", config: %s)
