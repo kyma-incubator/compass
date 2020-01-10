@@ -1,6 +1,6 @@
 # Security
 
-The Connectivity Adapter must provide seamless support for currently used security mechanisms. In the legacy approach, we support two flavors for securing the communication between the clients and the API. The main traffic is secured by the client credentials and for establishing the trusted relation, the one-time tokens are used. The Compass API also offers similar security mechanisms. This document describes how legacy calls can be handled to fulfill the security requirements of the Compass API.
+The Connectivity Adapter must provide seamless support for currently used security mechanisms. In the legacy approach, we support two flavors for securing the communication between the clients and the API. The main traffic is secured by the client certificates and for establishing the trusted relation, the one-time tokens are used. The Compass API also offers similar security mechanisms. This document describes how legacy calls can be handled to fulfill the security requirements of the Compass API.
 
 ## Details
 
