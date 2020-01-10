@@ -3,8 +3,9 @@ package e2e
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"os"
+
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -69,7 +70,7 @@ func TestCompassAuth(t *testing.T) {
 	assert.Equal(t, intSysOauthCredentialData, credentialDataFromDB)
 
 	t.Log("Remove application to check if the oAuth token is still valid")
-	deleteApplication(t, ctx, oauthGraphQLClient, tenant, appByIntSys.ID)
+	unregisterApplication(t, ctx, oauthGraphQLClient, tenant, appByIntSys.ID)
 
 	t.Log("Remove Integration System")
 	unregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)

@@ -45,12 +45,12 @@
   version = "v1.0.3"
 
 [[projects]]
-  digest = "1:320e7ead93de9fd2b0e59b50fd92a4d50c1f8ab455d96bc2eb083267453a9709"
+  digest = "1:c68aba66f5db6052fd838d9a7d60d8859f8c11b8c1d9ac9758f69c7a51efc07a"
   name = "github.com/asaskevich/govalidator"
   packages = ["."]
   pruneopts = "UT"
-  revision = "ccb8e960c48f04d6935e72476ae4a51028f9e22f"
-  version = "v9"
+  revision = "475eaeb164960a651e97470412a7d3b0c5036105"
+  version = "v10"
 
 [[projects]]
   digest = "1:6062abf6317d3d6963496e01e22264a2e8a7e3b35e2917aa00ed3d182f569be6"
@@ -88,14 +88,15 @@
   version = "v3.6.0"
 
 [[projects]]
-  digest = "1:7b9d9b866ab20f5d6b9efb59b2c45c55d6f73fbb8e69147e536fc2b3c6e17f96"
+  digest = "1:582e25eccee928dc12416ea4c23b6dae8f3b5687730632aa1473ebebe80a2359"
   name = "github.com/gogo/protobuf"
   packages = [
     "proto",
     "sortkeys",
   ]
   pruneopts = "UT"
-  revision = "65acae22fc9d"
+  revision = "5628607bb4c51c3157aacc3a50f0ab707582b805"
+  version = "v1.3.1"
 
 [[projects]]
   digest = "1:a6181aca1fd5e27103f9a920876f29ac72854df7345a39f3b01e61c8c94cc8af"
@@ -177,7 +178,7 @@
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "e5d75546a1cd925f7800451c37036e4046efb7de"
+  revision = "d70e18706abe6b4aeda91369ba897d61c4e8b91d"
 
 [[projects]]
   branch = "master"
@@ -251,8 +252,8 @@
     "validator/rules",
   ]
   pruneopts = "UT"
-  revision = "6b4a7854a7ef7ee3f626490d1e2d22a823828fc6"
-  version = "v1.2.0"
+  revision = "1315dbaf2eab07d828e3e198a9a699e686b2b594"
+  version = "v1.2.1"
 
 [[projects]]
   digest = "1:bb32a7e267540d9f2d26753426d5e360c5bd858b9b78e26b9f0c99219024d8f5"
@@ -295,7 +296,7 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "53104e6ec876ad4e22ad27cce588b01392043c1b"
+  revision = "61a87790db17894570dfb32dbaa0a4af9ce60cb4"
 
 [[projects]]
   branch = "master"
@@ -314,11 +315,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:21fdc4d02e91b37ce39866d3a949a4b54220f3acb839ccb0b3ae0497df638903"
+  digest = "1:e13350b7207ecc34977340d53522e0335dd36ed86ca7c346a36d2e88eb0fadfc"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "04cbcbbfeed8aa0b2b010b2ddab558e9f717fd3e"
+  revision = "548cf772de5052aa878ccb47cdeb7d262b75c8ec"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -347,7 +348,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1806c19944b7a6d56769a39235a81a0803e622ad3d7f3613df218e1497b394ce"
+  digest = "1:2da7a1d21cc4dd499d07100def20b1372224d335df13bd403cbc15fc0b8d96a6"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -364,7 +365,7 @@
     "internal/semver",
   ]
   pruneopts = "UT"
-  revision = "7b8e75db28f4b09dc0b853eadee5b034956bcb9e"
+  revision = "e2f26524b78cce00305e6af91fbd13ab567aaaa3"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"

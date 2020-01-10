@@ -72,7 +72,7 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	saveExample(t, updateIntegrationSystemRequest.Query(), "update integration system")
 }
 
-func TestunregisterIntegrationSystem(t *testing.T) {
+func TestUnregisterIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "int-system"
