@@ -1,4 +1,4 @@
-package e2e
+package gateway_integration_tests
 
 import (
 	"crypto/tls"

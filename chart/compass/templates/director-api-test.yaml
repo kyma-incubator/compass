@@ -1,7 +1,7 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: {{ .Chart.Name }}-director-api-tests
+  name: {{ .Chart.Name }}-director-api
   labels:
     app: {{ .Chart.Name }}-director-tests
     app.kubernetes.io/name: {{ .Chart.Name }}-director-tests

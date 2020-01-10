@@ -1,11 +1,10 @@
-# Compass End-To-End tests
+# Director tests
 
-Compass end-to-end consists of acceptance tests.
-Director folder contains tests of GraphQL API for managing Applications and Runtimes.
+Director tests consists of acceptance tests.
 
 ## Usage
 
-The E2E binary allows to override some configuration parameters. You can specify following environment variables.
+The binary allows to override some configuration parameters. You can specify following environment variables.
 
 | ENV                         | Default                         | Description                                       |
 |-----------------------------|---------------------------------|---------------------------------------------------|

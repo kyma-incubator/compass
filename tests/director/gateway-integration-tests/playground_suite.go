@@ -1,4 +1,4 @@
-package auth_related_tests
+package gateway_integration_tests
 
 import (
 	"crypto/tls"

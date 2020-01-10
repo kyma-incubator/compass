@@ -3,6 +3,8 @@ APP_PATH = components/director
 ENTRYPOINT = cmd/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20190913-65b55d1
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
+export GO111MODULE = on
+export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
 
 include $(SCRIPTS_DIR)/generic_make_go.mk
 VERIFY_IGNORE := /vendor\|/automock\|/testdata
@@ -10,13 +12,16 @@ VERIFY_IGNORE := /vendor\|/automock\|/testdata
 verify:: gqlgen check-gqlgen
 
 errcheck-local:
-	 GO111MODULE="on" errcheck -blank -asserts -ignoregenerated ./...
+	errcheck -blank -asserts -ignoregenerated ./...
 
 test-local:
-	GO111MODULE=on go test ./...
+	go test ./...
 
-resolve-local: ;
+resolve-local:
+	@echo ${SKIP_STEP_MESSAGE}
 
-ensure-local: ;
+ensure-local:
+	@echo ${SKIP_STEP_MESSAGE}
 
-dep-status-local: ;
+dep-status-local:
+	@echo ${SKIP_STEP_MESSAGE}

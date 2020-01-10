@@ -11,7 +11,6 @@ COPY . .
 # Build app
 #
 
-RUN go version
 RUN go build -v -o main ./cmd/main.go
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 

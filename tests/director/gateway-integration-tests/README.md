@@ -1,6 +1,13 @@
-#  Director auth tests
+#  Gateway Integration tests
 
-Compass end to end test scenario consists of the following steps:
+Gateway Integration tests is a collection of the following tests:
+- Playground tests checks if Playground is available through Gateway
+- Viewer tests checks correctness of the `viewer` mutation.
+- Tenant Mapping Handler checks tenant separation
+- Compass Authentication checks different access methods to Director via Gateway
+
+## Director authentication test scenario
+Director authentication test scenario consists of the following steps:
 - Get a Dex token, register the Integration System using this token, and request client credentials for the IntegrationSystem
 - Call Hydra for OAuth 2.0 access token with client_id and client_secret pair - https://github.com/kyma-incubator/examples/tree/master/ory-hydra/scenarios/client-credentials
 - Register an Application as the Integration System
@@ -25,4 +32,4 @@ To run the test locally, set these environment variables:
 | GATEWAY_CLIENT_CERTS_SUBDOMAIN | Default gateway for handling requests with a certificate | compass-gateway-mtls |
 | GATEWAY_OAUTH20_SUBDOMAIN | Default gateway for handling requests with an OAuth access token | compass-gateway-auth-oauth|
 
-Then run `go test ./... -count=1 -v` inside `./tests/director-tests/auth-related-tests` directory.
+Then run `go test ./... -count=1 -v` inside `./tests/director/gateway-integration-tests` directory.

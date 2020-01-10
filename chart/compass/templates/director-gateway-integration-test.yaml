@@ -1,7 +1,7 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: {{ .Chart.Name }}-director-auth-related-tests
+  name: {{ .Chart.Name }}-gateway-integration
   labels:
     app: {{ .Chart.Name }}-e2e-tests
     app.kubernetes.io/name: {{ .Chart.Name }}-e2e-tests

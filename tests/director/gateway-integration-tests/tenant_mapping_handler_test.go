@@ -1,12 +1,12 @@
-package auth_related_tests
+package gateway_integration_tests
 
 import (
 	"context"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/director-tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/director-tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

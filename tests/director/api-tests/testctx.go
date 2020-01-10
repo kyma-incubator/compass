@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/director-tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/avast/retry-go"
 
-	"github.com/kyma-incubator/compass/tests/director-tests/pkg/jwtbuilder"
+	"github.com/kyma-incubator/compass/tests/director/pkg/jwtbuilder"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )

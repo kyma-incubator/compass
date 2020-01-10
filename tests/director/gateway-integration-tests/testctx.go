@@ -1,4 +1,4 @@
-package auth_related_tests
+package gateway_integration_tests
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/director-tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
 
 	"github.com/sirupsen/logrus"
 

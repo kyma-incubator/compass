@@ -4,7 +4,7 @@ BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20190913
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 DIRECTOR_GRAPHQL_API = "http://compass-dev-director:3000"
 export DIRECTOR_GRAPHQL_API
-
+export GO111MODULE = on
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
 .PHONY: generate-director-examples clean-up
@@ -16,9 +16,8 @@ verify:: generate-director-examples
 $(eval $(call test-local))
 
 # We have to override test-local, because we need to run director with database as docker containers and connected with custom network
-# and the container itsefl has to be connected to the network
+# and the container itself has to be connected to the network
 test-local: ;
-
 
 generate-director-examples:
 	@echo make generate-director-examples
@@ -42,7 +41,7 @@ clean-up:
 	@docker network rm gen-examples-network
 
 errcheck-local:
-	 GO111MODULE="on" errcheck -blank -asserts -ignoregenerated ./...
+	errcheck -blank -asserts -ignoregenerated ./...
 
 resolve-local: ;
 

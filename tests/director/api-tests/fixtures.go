@@ -3,7 +3,7 @@ package api
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/tests/director-tests/pkg/ptr"
+	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )

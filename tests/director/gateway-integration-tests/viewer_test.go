@@ -1,4 +1,4 @@
-package e2e
+package gateway_integration_tests
 
 import (
 	"context"
@@ -6,10 +6,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

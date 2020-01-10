@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/kyma-incubator/compass/tests/director-tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
 
 	gcli "github.com/machinebox/graphql"
 )
