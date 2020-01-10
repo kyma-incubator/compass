@@ -182,6 +182,7 @@ func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	return r.app.Applications(ctx, filter, first, after)
 }
+
 func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
 	return r.app.Application(ctx, id)
 }

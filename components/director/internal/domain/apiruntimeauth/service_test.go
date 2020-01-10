@@ -7,8 +7,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/assert"
