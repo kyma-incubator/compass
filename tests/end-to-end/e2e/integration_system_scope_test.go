@@ -26,7 +26,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	t.Log("Request Integration System with Dex id token")
+	t.Log("Register Integration System with Dex id token")
 	intSys := registerIntegrationSystem(t, ctx, dexGraphQLClient, tenant, "integration-system")
 
 	t.Log("Request Client Credentials for Integration System")
