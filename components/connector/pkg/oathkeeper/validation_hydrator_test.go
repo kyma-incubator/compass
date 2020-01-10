@@ -41,16 +41,47 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 	marshalledSession, err := json.Marshal(emptyAuthSession())
 	require.NoError(t, err)
 
-	createAuthRequestWithToken := func(t *testing.T) *http.Request {
+	createAuthRequestWithTokenHeader := func(t *testing.T) *http.Request {
 		req, err := http.NewRequest(http.MethodPost, "", bytes.NewBuffer(marshalledSession))
 		require.NoError(t, err)
 		req.Header.Add(ConnectorTokenHeader, token)
 		return req
 	}
 
-	t.Run("should resolve token and add header to response", func(t *testing.T) {
+	createAuthRequestWithTokenQueryParam := func(t *testing.T) *http.Request {
+		req, err := http.NewRequest(http.MethodPost, "?token="+token, bytes.NewBuffer(marshalledSession))
+		require.NoError(t, err)
+		return req
+	}
+
+	t.Run("should resolve token from header and add header to response", func(t *testing.T) {
 		// given
-		req := createAuthRequestWithToken(t)
+		req := createAuthRequestWithTokenHeader(t)
+		rr := httptest.NewRecorder()
+
+		tokenService := &mocks.Service{}
+		tokenService.On("Resolve", token).Return(tokenData, nil)
+		tokenService.On("Delete", token).Return(nil)
+
+		validator := NewValidationHydrator(tokenService, nil, nil)
+
+		// when
+		validator.ResolveConnectorTokenHeader(rr, req)
+
+		// then
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		var authSession AuthenticationSession
+		err = json.NewDecoder(rr.Body).Decode(&authSession)
+		require.NoError(t, err)
+
+		assert.Equal(t, []string{clientId}, authSession.Header[ClientIdFromTokenHeader])
+		mock.AssertExpectationsForObjects(t, tokenService)
+	})
+
+	t.Run("should resolve token from query params and add header to response", func(t *testing.T) {
+		// given
+		req := createAuthRequestWithTokenQueryParam(t)
 		rr := httptest.NewRecorder()
 
 		tokenService := &mocks.Service{}
@@ -75,7 +106,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should not modify authentication session if failed to resolved token", func(t *testing.T) {
 		// given
-		req := createAuthRequestWithToken(t)
+		req := createAuthRequestWithTokenHeader(t)
 		rr := httptest.NewRecorder()
 
 		tokenService := &mocks.Service{}
