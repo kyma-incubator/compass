@@ -129,7 +129,7 @@ input ApplicationFromTemplateInput {
 
 input ApplicationRegisterInput {
 	name: String!
-	providerName: String!
+	providerName: String
 	description: String
 	labels: Labels
 	webhooks: [WebhookInput!]
@@ -150,7 +150,7 @@ input ApplicationTemplateInput {
 
 input ApplicationUpdateInput {
 	name: String!
-	providerName: String!
+	providerName: String
 	description: String
 	healthCheckURL: String
 	integrationSystemID: ID
@@ -328,7 +328,7 @@ type APISpec {
 type Application {
 	id: ID!
 	name: String!
-	providerName: String!
+	providerName: String
 	description: String
 	integrationSystemID: ID
 	labels(key: String): Labels

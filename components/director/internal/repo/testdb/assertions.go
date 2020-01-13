@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func AssertSqlNullString(t *testing.T, in sql.NullString, text *string) {
+func AssertSqlNullStringEqualTo(t *testing.T, in sql.NullString, text *string) {
 	if text != nil {
 		sqlStr := sql.NullString{}
 		err := sqlStr.Scan(*text)
