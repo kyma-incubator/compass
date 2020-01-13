@@ -30,6 +30,19 @@ const (
 
 func Test_E2E_Gardener(t *testing.T) {
 	gardenerInputs := map[string]gqlschema.GardenerConfigInput{
+		//At the moment, only Azure config is used
+		GCP: {
+			MachineType:  "n1-standard-4",
+			DiskType:     "pd-standard",
+			Region:       "europe-west4",
+			Seed:         "gcp-eu1",
+			TargetSecret: config.GardenerGCPSecret,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				GcpConfig: &gqlschema.GCPProviderConfigInput{
+					Zone: "europe-west4-a",
+				},
+			},
+		},
 		Azure: {
 			MachineType:  "Standard_D2_v3",
 			DiskType:     "Standard_LRS",
@@ -51,12 +64,12 @@ func Test_E2E_Gardener(t *testing.T) {
 		runtimeId := uuid.New().String()
 
 		// Provision runtime
-		credentialsInput := gqlschema.CredentialsInput{SecretName: testSuite.GCPCredentialsSecretName}
+		credentialsInput := gqlschema.CredentialsInput{SecretName: testSuite.GardenerCredentialsSecretName}
 
 		provisioningInput := gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{
-					Name:                   provider + "-test",
+					Name:                   toLowerCase(provider) + "-" + randStringBytes(3) + "-test",
 					ProjectName:            config.GardenerProjectName,
 					KubernetesVersion:      "1.15.4",
 					NodeCount:              3,
@@ -76,7 +89,7 @@ func Test_E2E_Gardener(t *testing.T) {
 				},
 			},
 			Credentials: &credentialsInput,
-			KymaConfig:  &gqlschema.KymaConfigInput{Version: "1.8", Modules: gqlschema.AllKymaModule},
+			KymaConfig:  &gqlschema.KymaConfigInput{Version: "1.8.0", Modules: gqlschema.AllKymaModule},
 		}
 
 		logrus.Infof("Provisioning %s runtime on %s...", runtimeId, provider)
@@ -87,7 +100,6 @@ func Test_E2E_Gardener(t *testing.T) {
 
 		var provisioningOperationStatus gqlschema.OperationStatus
 
-		//Check if another provisioning of the same cluster can start while previous one is in progress
 		err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
 			func() error {
 				logrus.Infof("Waiting for provisioning to finish...")
@@ -172,7 +184,6 @@ func Test_E2e(t *testing.T) {
 
 	var provisioningOperationStatus gqlschema.OperationStatus
 
-	//Check if another provisioning of the same cluster can start while previous one is in progress
 	err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
 		func() error {
 			logrus.Infof("Waiting for provisioning to finish...")
@@ -262,7 +273,8 @@ func assertGCPRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntim
 	ClusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(gqlschema.GCPConfig)
 
 	if !ok {
-		t.Failed()
+		t.Error("Cluster Config does not match GCPConfig type")
+		t.FailNow()
 	}
 
 	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GcpConfig.Name, ClusterConfig.Name)
@@ -285,8 +297,11 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 	ClusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(gqlschema.GardenerConfig)
 
 	if !ok {
-		t.Failed()
+		t.Error("Cluster Config does not match GardenerConfig type")
+		t.FailNow()
 	}
+
+	assert.Equal(t, input.ClusterConfig.GardenerConfig.Name, ClusterConfig.Name)
 
 	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Name, ClusterConfig.Name)
 	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Region, ClusterConfig.Region)

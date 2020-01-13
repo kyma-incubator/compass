@@ -32,10 +32,10 @@ import (
 const (
 	provisionerCredentialsSecretKey = "credentials"
 
-	ProvisioningTimeout   = 25 * time.Minute
-	DeprovisioningTimeout = 15 * time.Minute
+	ProvisioningTimeout   = 60 * time.Minute
+	DeprovisioningTimeout = 60 * time.Minute
 
-	checkInterval = 2 * time.Second
+	checkInterval = 10 * time.Second
 
 	Azure = "Azure"
 	GCP = "GCP"

@@ -61,7 +61,7 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
         projectName: "{{ .ProjectName }}"
 		kubernetesVersion: "{{ .KubernetesVersion }}"
 		nodeCount: {{ .NodeCount }}
-		volumeSizeGb: {{ .VolumeSizeGb }}
+		volumeSizeGB: {{ .VolumeSizeGb }}
 		machineType: "{{ .MachineType }}"
 		region: "{{ .Region }}"
 		provider: "{{ .Provider }}"
@@ -79,8 +79,11 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 
 func (g *graphqlizer) ProviderSpecificInputToGraphQL(in *gqlschema.ProviderSpecificInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-		{{- if .AzureProviderConfigInput }}
-		azureConfig: {{ AzureProviderConfigInputToGraphQL .AzureProviderConfigInput }}
+		{{- if .AzureConfig }}
+		azureConfig: {{ AzureProviderConfigInputToGraphQL .AzureConfig }}
+		{{- end }}
+		{{- if .GcpConfig }}
+		gcpConfig: {{ GcpProviderConfigInputToGraphQL .GcpConfig }}
 		{{- end }}
 	}`)
 }
@@ -88,6 +91,12 @@ func (g *graphqlizer) ProviderSpecificInputToGraphQL(in *gqlschema.ProviderSpeci
 func (g *graphqlizer) AzureProviderConfigInputToGraphQL(in *gqlschema.AzureProviderConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		vnetCidr: "{{ .VnetCidr }}"
+	}`)
+}
+
+func (g *graphqlizer) GcpProviderConfigInputToGraphQL(in *gqlschema.GCPProviderConfigInput) (string, error) {
+	return g.genericToGraphQL(in, `{
+		zone: "{{ .Zone }}"
 	}`)
 }
 
@@ -137,6 +146,7 @@ func (g *graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["GardenerConfigInputToGraphQL"] = g.GardenerConfigInputToGraphQL
 	fm["ProviderSpecificInputToGraphQL"] = g.ProviderSpecificInputToGraphQL
 	fm["AzureProviderConfigInputToGraphQL"] = g.AzureProviderConfigInputToGraphQL
+	fm["GcpProviderConfigInputToGraphQL"] = g.GcpProviderConfigInputToGraphQL
 	fm["GCPConfigInputToGraphQL"] = g.GCPConfigInputToGraphQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)

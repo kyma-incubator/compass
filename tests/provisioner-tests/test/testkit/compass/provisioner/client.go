@@ -92,12 +92,14 @@ func (c client) ReconnectRuntimeAgent(runtimeID string) (string, error) {
 type RuntimeStatus struct {
 	LastOperationStatus     *schema.OperationStatus         `json:"lastOperationStatus"`
 	RuntimeConnectionStatus *schema.RuntimeConnectionStatus `json:"runtimeConnectionStatus"`
-	RuntimeConfiguration    struct {
-		ClusterConfig         interface{}        `json:"clusterConfig"`
-		KymaConfig            *schema.KymaConfig `json:"kymaConfig"`
-		Kubeconfig            *string            `json:"kubeconfig"`
-		CredentialsSecretName *string            `json:"credentialsSecretName"`
-	} `json:"runtimeConfiguration"`
+	RuntimeConfiguration    RuntimeConfiguration            `json:"runtimeConfiguration"`
+}
+
+type RuntimeConfiguration struct {
+	ClusterConfig         interface{}        `json:"clusterConfig"`
+	KymaConfig            *schema.KymaConfig `json:"kymaConfig"`
+	Kubeconfig            *string            `json:"kubeconfig"`
+	CredentialsSecretName *string            `json:"credentialsSecretName"`
 }
 
 func (c client) RuntimeStatus(runtimeID string) (RuntimeStatus, error) {
