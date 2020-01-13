@@ -12,8 +12,10 @@ func (qp queryProvider) provisionRuntime(runtimeID string, config string) string
 
 func (qp queryProvider) provisionRuntimeV2(config string) string {
 	return fmt.Sprintf(`mutation {
-	result: provisionRuntime(config: %s)
-}`, config)
+	result: provisionRuntime(config: %s) {
+		%s
+}
+}`, config, operationStatusData())
 }
 
 func (qp queryProvider) upgradeRuntime(runtimeID string, config string) string {
@@ -58,7 +60,7 @@ func runtimeStatusData() string {
 				clusterConfig { 
 					%s
 				} 
-				kymaConfig { version modules } 
+				kymaConfig { version } 
 			}`, clusterConfig())
 }
 
