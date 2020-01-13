@@ -814,8 +814,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
 
 	appInput := graphql.ApplicationRegisterInput{
-		Name:         name,
-		ProviderName: "compass",
+		Name: name,
 		Labels: &graphql.Labels{
 			scenariosLabel: []string{"Christmas", "New Year"},
 		},

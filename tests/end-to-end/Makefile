@@ -31,7 +31,7 @@ generate-director-examples:
 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
 		$(DOCKER_CREATE_OPTS) 	./gen-examples.sh
 	@docker network rm gen-examples-network
-	@if [ -n "$$(git status -s ../../examples )" ]; then \
+	@if [ -n "$$(git status -s ../../components/director/examples )" ]; then \
 		echo -e "✗ Code and examples are out-of-sync" \
 		git status -s ; \
 		exit 1; \

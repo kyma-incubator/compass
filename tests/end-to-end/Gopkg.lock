@@ -166,19 +166,21 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:15bb0282ed18a1beca2b81986cf2fed355777b45f3bcb12edf878a7f3309092f"
+  digest = "1:990c71b99cf3c2507891209657a453952c95a8b73e2014132c6039853a911fa3"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/connector/pkg/graphql/externalschema",
     "components/director/internal/model",
+    "components/director/pkg/apperrors",
     "components/director/pkg/graphql",
     "components/director/pkg/inputvalidation",
     "components/director/pkg/jsonschema",
     "components/director/pkg/pagination",
     "components/director/pkg/scalar",
+    "components/director/pkg/str",
   ]
   pruneopts = "UT"
-  revision = "d70e18706abe6b4aeda91369ba897d61c4e8b91d"
+  revision = "d98919c9143a9362244d9827889b8aa70dfe141d"
 
 [[projects]]
   branch = "master"
@@ -436,6 +438,7 @@
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
+    "github.com/kyma-incubator/compass/components/director/pkg/str",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
