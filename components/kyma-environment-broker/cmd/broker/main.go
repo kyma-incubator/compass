@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
@@ -26,6 +28,7 @@ type Config struct {
 	Port string `envconfig:"default=8080"`
 
 	Provisioning broker.ProvisioningConfig
+	Director     director.Config
 	Database     storage.Config
 
 	// feature flag indicates whether use Provisioner API which returns RuntimeID
@@ -58,10 +61,10 @@ func main() {
 	db, err := storage.New(cfg.Database.ConnectionURL())
 	fatalOnError(err)
 
-	broker, err := broker.NewBroker(provisionerClient, cfg.Provisioning, db.Instances())
+	kymaEnvBroker, err := broker.NewBroker(provisionerClient, cfg.Provisioning, db.Instances())
 	fatalOnError(err)
 
-	brokerAPI := brokerapi.New(broker, logger, brokerCredentials)
+	brokerAPI := brokerapi.New(kymaEnvBroker, logger, brokerCredentials)
 	r := handlers.LoggingHandler(os.Stdout, brokerAPI)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
