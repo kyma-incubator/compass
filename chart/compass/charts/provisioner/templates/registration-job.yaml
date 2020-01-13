@@ -36,7 +36,7 @@ metadata:
   annotations:
     "helm.sh/hook": post-install, post-upgrade
     "helm.sh/hook-weight": "1"
-    "helm.sh/hook-delete-policy": before-hook-creation ## TODO
+    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   backoffLimit: 0
   template:
@@ -60,9 +60,7 @@ spec:
               TOKEN_PAYLOAD='{"scopes": "'${SCOPES}'","tenant":"{{ .Values.global.defaultTenant }}"}'
               ENCODED_TOKEN_PAYLOAD=$(echo -e ${TOKEN_PAYLOAD} | base64 | tr -d \\n)
               INTERNAL_TOKEN="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.${ENCODED_TOKEN_PAYLOAD//=}."
-
-              # TODO - consider providing this value in charts
-              SECRET_NAME="{{ template "fullname" . }}-registration"
+              SECRET_NAME={{ .Values.secrets.integrationSystemCredentials.name }}
 
               function wait_for_access_to_api_server() {
                 local cnt=0
@@ -113,40 +111,40 @@ spec:
               }
 
               function register_provisioner() {
-              set +o pipefail
-              echo "Compass Provisioner registration as integration system - in progress."
+                set +o pipefail
+                echo "Compass Provisioner registration as integration system - in progress."
 
-              RESPONSE_BODY=$(curl -k "${DIRECTOR_URL}" \
-                -H 'Content-Type: application/json' \
-                -H "authorization: Bearer ${INTERNAL_TOKEN}" \
-                --data-binary '{
-                  "query":"mutation registerIntegrationSystem {\n  result: registerIntegrationSystem(\n    in: { name: \"compass-provisioner\", description: \"Compass Provisioner\" }\n  ) {\n    id\n  }\n}\n"
-                }')
-              echo $RESPONSE_BODY
+                RESPONSE_BODY=$(curl -k "${DIRECTOR_URL}" \
+                  -H 'Content-Type: application/json' \
+                  -H "authorization: Bearer ${INTERNAL_TOKEN}" \
+                  --data-binary '{
+                    "query":"mutation registerIntegrationSystem {\n  result: registerIntegrationSystem(\n    in: { name: \"compass-provisioner\", description: \"Compass Provisioner\" }\n  ) {\n    id\n  }\n}\n"
+                  }')
+                echo $RESPONSE_BODY
 
-              INTEGRATION_SYSTEM_ID=$(echo $RESPONSE_BODY | jq -e '.data .result .id')
-              INTEGRATION_SYSTEM_ID="${INTEGRATION_SYSTEM_ID:1:${#INTEGRATION_SYSTEM_ID}-2}"
+                INTEGRATION_SYSTEM_ID=$(echo $RESPONSE_BODY | jq -e '.data .result .id')
+                INTEGRATION_SYSTEM_ID="${INTEGRATION_SYSTEM_ID:1:${#INTEGRATION_SYSTEM_ID}-2}"
 
-              CREDENTIAL_RESPONSE_BODY=$(curl -k "${DIRECTOR_URL}" \
-                -H 'Content-Type: application/json' \
-                -H 'Accept: application/json' \
-                -H 'Connection: keep-alive' \
-                -H "authorization: Bearer ${INTERNAL_TOKEN}" \
-                --data-binary '{"query":"mutation requestCredentials {\n\trequestClientCredentialsForIntegrationSystem (id : \"'"$INTEGRATION_SYSTEM_ID"'\") {\n    id\n    auth {\n      credential {\n        ... on BasicCredentialData {\n            username\n            password\n        }\n        ...  on OAuthCredentialData {\n            clientId\n            clientSecret\n            url\n        }\n      }\n    }\n  }\n}\n"
-               }')
+                CREDENTIAL_RESPONSE_BODY=$(curl -k "${DIRECTOR_URL}" \
+                  -H 'Content-Type: application/json' \
+                  -H 'Accept: application/json' \
+                  -H 'Connection: keep-alive' \
+                  -H "authorization: Bearer ${INTERNAL_TOKEN}" \
+                  --data-binary '{"query":"mutation requestCredentials {\n\trequestClientCredentialsForIntegrationSystem (id : \"'"$INTEGRATION_SYSTEM_ID"'\") {\n    id\n    auth {\n      credential {\n        ... on BasicCredentialData {\n            username\n            password\n        }\n        ...  on OAuthCredentialData {\n            clientId\n            clientSecret\n            url\n        }\n      }\n    }\n  }\n}\n"
+                 }')
 
-              CLIENT_ID=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .clientId')
-              CLIENT_SECRET=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .clientSecret')
-              TOKENS_ENDPOINT=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .url')
+                CLIENT_ID=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .clientId')
+                CLIENT_SECRET=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .clientSecret')
+                TOKENS_ENDPOINT=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .url')
 
-              CLIENT_ID="${CLIENT_ID:1:${#CLIENT_ID}-2}"
-              CLIENT_SECRET="${CLIENT_SECRET:1:${#CLIENT_SECRET}-2}"
-              TOKENS_ENDPOINT="${TOKENS_ENDPOINT:1:${#TOKENS_ENDPOINT}-2}"
+                CLIENT_ID="${CLIENT_ID:1:${#CLIENT_ID}-2}"
+                CLIENT_SECRET="${CLIENT_SECRET:1:${#CLIENT_SECRET}-2}"
+                TOKENS_ENDPOINT="${TOKENS_ENDPOINT:1:${#TOKENS_ENDPOINT}-2}"
 
-              kubectl create secret generic compass-provisioner-registration --from-literal=client_id=$CLIENT_ID --from-literal=client_secret=$CLIENT_SECRET --from-literal=tokens_endpoint=$TOKENS_ENDPOINT -n {{ .Release.Namespace }}
+                kubectl create secret generic ${SECRET_NAME} --from-literal=client_id=$CLIENT_ID --from-literal=client_secret=$CLIENT_SECRET --from-literal=tokens_endpoint=$TOKENS_ENDPOINT -n {{ .Release.Namespace }}
 
-              echo "Compass Provisioner registration as integration system and requesting credentials - finished."
-              set -o pipefail
+                echo "Compass Provisioner registration as integration system and requesting credentials - finished."
+                set -o pipefail
               }
 
               function kill_proxy_and_exit() {
@@ -158,6 +156,16 @@ spec:
 
               echo "Waiting for access to API Server..."
               wait_for_access_to_api_server
+
+              echo "Checking if secret with credentials exists..."
+
+              set +o errexit
+              kubectl get secret ${SECRET_NAME} -n {{ .Release.Namespace }} > /dev/null 2>&1
+              if [[ $? -eq 0 ]]; then
+                echo "Secret ${SECRET_NAME} already exists."
+                kill_proxy_and_exit
+              fi
+              set -o errexit
 
               director_readiness
               register_provisioner

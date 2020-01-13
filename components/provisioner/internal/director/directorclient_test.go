@@ -42,7 +42,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 
 	expectedRequest := gcli.NewRequest(expectedRegisterRuntimeQuery)
 	expectedRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
-	expectedRequest.Header.Set(TenantKey, tenantValue)
+	expectedRequest.Header.Set(TenantHeader, tenantValue)
 
 	inputDescription := "runtime description"
 
@@ -254,7 +254,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 
 	expectedRequest := gcli.NewRequest(expectedDeleteRuntimeQuery)
 	expectedRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
-	expectedRequest.Header.Set(TenantKey, tenantValue)
+	expectedRequest.Header.Set(TenantHeader, tenantValue)
 
 	t.Run("Should unregister runtime of given ID and return no error when the Director access token is valid", func(t *testing.T) {
 		// given

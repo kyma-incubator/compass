@@ -2,6 +2,10 @@ package main
 
 import (
 	"crypto/tls"
+	"net/http"
+	"path/filepath"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
@@ -17,9 +21,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/pkg/errors"
-	"net/http"
-	"path/filepath"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
@@ -42,23 +43,8 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
-	if config.SkipCertVerification == true {
-		logrus.Info("TLS certificate verification for accessing Director is turned off")
-	} else {
-		logrus.Info("TLS certificate verification for accessing Director is turned on")
-	}
-
-	logrus.Infof("Using director endpoint: %s", config.DirectorURL)
-
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: config.SkipCertVerification},
-		},
-		Timeout: 30 * time.Second,
-	}
-
-	gqlClient := graphql.NewGraphQLClient(config.DirectorURL, true, config.SkipCertVerification)
-	oauthClient := oauth.NewOauthClient(httpClient, secrets, config.OauthCredentialsSecretName)
+	gqlClient := graphql.NewGraphQLClient(config.DirectorURL, true, config.SkipDirectorCertVerification)
+	oauthClient := oauth.NewOauthClient(newHTTPClient(config.SkipDirectorCertVerification), secrets, config.OauthCredentialsSecretName)
 
 	directorClient := director.NewDirectorClient(gqlClient, oauthClient, config.DefaultTenant)
 
@@ -107,4 +93,13 @@ func initRepositories(config config, connectionString string) (persistence.Servi
 	releaseRepo := release.NewReleaseRepository(connection, uuid.NewUUIDGenerator())
 
 	return persistenceService, releaseRepo, nil
+}
+
+func newHTTPClient(skipCertVeryfication bool) *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: skipCertVeryfication},
+		},
+		Timeout: 30 * time.Second,
+	}
 }

@@ -59,7 +59,6 @@ func NewProvisioningService(persistenceService persistence.Service, inputConvert
 }
 
 func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, string, <-chan struct{}, error) {
-
 	runtimeInput := config.RuntimeInput
 
 	runtimeID, err := r.directorService.CreateRuntime(runtimeInput)
@@ -67,18 +66,15 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (stri
 		return "", "", nil, err
 	}
 
-	err = r.checkProvisioningRuntimeConditions(runtimeID)
-	if err != nil {
-		return "", "", nil, err
-	}
-
 	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config)
 	if err != nil {
+		r.unregisterFailedRuntime(runtimeID)
 		return "", "", nil, err
 	}
 
 	operation, err := r.persistenceService.SetProvisioningStarted(runtimeID, cluster)
 	if err != nil {
+		r.unregisterFailedRuntime(runtimeID)
 		return "", "", nil, err
 	}
 
@@ -86,32 +82,14 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (stri
 
 	go r.startProvisioning(operation.ID, cluster, finished)
 
-	return operation.ID, runtimeID, finished, err
+	return operation.ID, runtimeID, finished, nil
 }
 
-func (r *service) checkProvisioningRuntimeConditions(id string) error {
-
-	lastOperation, err := r.persistenceService.GetLastOperation(id)
-
-	if err == nil && !lastProvisioningFailed(lastOperation) {
-		return errors.New(fmt.Sprintf("cannot provision runtime. Runtime %s already provisioned", id))
+func (r *service) unregisterFailedRuntime(id string) {
+	err := r.directorService.DeleteRuntime(id)
+	if err != nil {
+		log.Warnf("Failed to unregister failed Runtime %s", id)
 	}
-
-	if err != nil && err.Code() != dberrors.CodeNotFound {
-		return err
-	}
-
-	if lastProvisioningFailed(lastOperation) {
-		if _, dbErr := r.CleanupRuntimeData(id); dbErr != nil {
-			return dbErr
-		}
-	}
-
-	return nil
-}
-
-func lastProvisioningFailed(operation model.Operation) bool {
-	return operation.Type == model.Provision && operation.State == model.Failed
 }
 
 func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error) {
@@ -127,12 +105,6 @@ func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 	cluster, dberr := r.persistenceService.GetClusterData(id)
 	if dberr != nil {
 		return "", nil, dberr
-	}
-
-	unregErr := r.directorService.DeleteRuntime(id)
-
-	if unregErr != nil {
-		return "", nil, unregErr
 	}
 
 	operation, err := r.persistenceService.SetDeprovisioningStarted(id)
@@ -173,26 +145,27 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
+// TODO: remove it?
 func (r *service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeDataResult, error) {
-	err := r.persistenceService.CleanupClusterData(id)
+	dbErr := r.persistenceService.CleanupClusterData(id)
 
-	if err != nil {
-		if err.Code() == dberrors.CodeNotFound {
+	if dbErr != nil {
+		if dbErr.Code() == dberrors.CodeNotFound {
 			message := fmt.Sprintf("Runtime with ID %s not found in the database", id)
 			return &gqlschema.CleanUpRuntimeDataResult{ID: id, Message: &message}, nil
 		}
 
-		if err.Code() == dberrors.CodeInternal {
-			message := fmt.Sprintf("Could not clean data for Runtime with ID %s: %s", id, err)
+		if dbErr.Code() == dberrors.CodeInternal {
+			message := fmt.Sprintf("Could not clean data for Runtime with ID %s: %s", id, dbErr)
 			return nil, errors.New(message)
 		}
 	}
 
-	unregErr := r.directorService.DeleteRuntime(id)
+	err := r.directorService.DeleteRuntime(id)
 
 	var message string
 
-	if unregErr != nil {
+	if err != nil {
 		message = fmt.Sprintf("Successfully cleaned up data for Runtime with ID %s only from Provisioner database", id)
 	} else {
 		message = fmt.Sprintf("Successfully cleaned up data for Runtime with ID %s from Provisioner and Director", id)
@@ -249,10 +222,19 @@ func (r *service) startDeprovisioning(operationID string, cluster model.Cluster,
 		return
 	}
 
+	err = r.directorService.DeleteRuntime(cluster.ID)
+	if err != nil {
+		log.Errorf("Deprovisioning finished. Failed to unregister Runtime %s: %s", cluster.ID, err.Error())
+		r.setOperationAsFailed(operationID, err.Error())
+		return
+	}
+
 	log.Infof("Deprovisioning runtime %s finished successfully. Operation %s finished. Setting status to success.", cluster.ID, operationID)
 	updateOperationStatus(func() error {
 		return r.persistenceService.SetOperationAsSucceeded(operationID)
 	})
+
+	// TODO: should we delete the cluster from database now?
 }
 
 func (r *service) setOperationAsFailed(operationID, message string) {

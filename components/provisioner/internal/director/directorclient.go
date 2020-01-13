@@ -2,6 +2,7 @@ package director
 
 import (
 	"fmt"
+
 	gql "github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -12,7 +13,7 @@ import (
 
 const (
 	AuthorizationHeader = "Authorization"
-	TenantKey           = "tenant"
+	TenantHeader        = "Tenant"
 )
 
 //go:generate mockery -name=DirectorClient
@@ -55,21 +56,19 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string,
 		}
 	}
 
-	var response CreateRuntimeResponse
-
-	graphQLized, err := cc.graphqlizer.RuntimeInputToGraphQL(*config)
-
+	runtimeInput, err := cc.graphqlizer.RuntimeInputToGraphQL(*config)
 	if err != nil {
 		log.Infof("Failed to create graphQLized Runtime input")
 		return "", err
 	}
 
-	runtimeQuery := cc.queryProvider.createRuntimeMutation(graphQLized)
+	runtimeQuery := cc.queryProvider.createRuntimeMutation(runtimeInput)
 
 	req := gcli.NewRequest(runtimeQuery)
 	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", cc.token.AccessToken))
-	req.Header.Set(TenantKey, cc.tenant)
+	req.Header.Set(TenantHeader, cc.tenant)
 
+	var response CreateRuntimeResponse
 	err = cc.gqlClient.Do(req, &response)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to register runtime in Director. Request failed")
@@ -80,7 +79,7 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string,
 		return "", errors.Errorf("Failed to register runtime in Director: Received nil response.")
 	}
 
-	log.Infof("Successfully sent GraphQL mutation to Director to register runtime %s for tenant %s", config.Name, cc.tenant)
+	log.Infof("Successfully registered Runtime %s in Director for tenant %s", config.Name, cc.tenant)
 
 	return response.Result.ID, nil
 }
@@ -93,13 +92,12 @@ func (cc *directorClient) DeleteRuntime(id string) error {
 		}
 	}
 
-	var response DeleteRuntimeResponse
-
 	runtimeQuery := cc.queryProvider.deleteRuntimeMutation(id)
 	req := gcli.NewRequest(runtimeQuery)
 	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", cc.token.AccessToken))
-	req.Header.Set(TenantKey, cc.tenant)
+	req.Header.Set(TenantHeader, cc.tenant)
 
+	var response DeleteRuntimeResponse
 	err := cc.gqlClient.Do(req, &response)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unregister runtime %s in Director")
@@ -113,14 +111,13 @@ func (cc *directorClient) DeleteRuntime(id string) error {
 		return errors.Errorf("Failed to unregister correctly the runtime %s in Director: Received bad Runtime id in response", id)
 	}
 
-	log.Infof("Successfully sent GraphQL mutation to Director to delete runtime %s for tenant %s", id, cc.tenant)
+	log.Infof("Successfully unregistered Runtime %s in Director for tenant %s", id, cc.tenant)
 
 	return nil
 }
 
 func (cc *directorClient) getToken() error {
 	token, err := cc.oauthClient.GetAuthorizationToken()
-
 	if err != nil {
 		return errors.Wrap(err, "Error while obtaining token")
 	}

@@ -3,16 +3,17 @@ package oauth
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	core "k8s.io/client-go/kubernetes/typed/core/v1"
-	"net/http"
-	"testing"
-	"time"
 )
 
 const (
@@ -56,7 +57,7 @@ func TestOauthClient_GetAuthorizationToken(t *testing.T) {
 		secrets := coreV1.CoreV1().Secrets(namespace)
 
 		createFakeCredentialsSecret(t, secrets, credentials)
-		defer deleteSecret(t, secrets)
+		defer deleteSecret(t, secrets) // TODO: is that needed?
 
 		oauthClient := NewOauthClient(client, secrets, secretName)
 
@@ -73,7 +74,7 @@ func TestOauthClient_GetAuthorizationToken(t *testing.T) {
 
 func NewTestClient(fn RoundTripFunc) *http.Client {
 	return &http.Client{
-		Transport: RoundTripFunc(fn),
+		Transport: fn,
 	}
 }
 

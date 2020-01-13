@@ -3,14 +3,16 @@ package oauth
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kubernetes/client-go/kubernetes/typed/core/v1"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	v1 "github.com/kubernetes/client-go/kubernetes/typed/core/v1"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	log "github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 //go:generate mockery -name=Client
@@ -57,7 +59,6 @@ func (c *oauthClient) getCredentials() (credentials, error) {
 }
 
 func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, error) {
-
 	log.Infof("Getting authorisation token for credentials to access Director from endpoint: %s", credentials.tokensEndpoint)
 
 	form := url.Values{}
@@ -65,7 +66,6 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 	form.Add(scopeFieldName, scopes)
 
 	request, err := http.NewRequest(http.MethodPost, credentials.tokensEndpoint, strings.NewReader(form.Encode()))
-
 	if err != nil {
 		log.Errorf("Failed to create authorisation token request")
 		return Token{}, err
@@ -75,19 +75,18 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 
 	request.SetBasicAuth(credentials.clientID, credentials.clientSecret)
 	request.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
-	response, err := c.httpClient.Do(request)
 
+	response, err := c.httpClient.Do(request)
 	if err != nil {
 		return Token{}, err
 	}
+	defer util.Close(response.Body)
 
 	if response.StatusCode != http.StatusOK {
 		return Token{}, fmt.Errorf("Get token call returned unexpected status code, %d, %s", response.StatusCode, response.Status)
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
-
-	defer response.Body.Close()
 	if err != nil {
 		return Token{}, fmt.Errorf("Failed to read token response body from '%s': %s", credentials.tokensEndpoint, err.Error())
 	}

@@ -78,8 +78,8 @@ spec:
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_OAUTH_CREDENTIALS_SECRET_NAME
-              value: "compass-provisioner-registration"
-            - name: APP_SKIP_CERT_VERIFICATION
+              value: "{{ .Values.secrets.integrationSystemCredentials.name }}"
+            - name: APP_SKIP_DIRECTOR_CERT_VERIFICATION
               value: "{{ .Values.global.isLocalEnv }}"
             - name: APP_INSTALLATION_TIMEOUT
               value: "{{ .Values.installation.timeout }}"

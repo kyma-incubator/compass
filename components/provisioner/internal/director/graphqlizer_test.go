@@ -1,10 +1,12 @@
 package director
 
 import (
+	"testing"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestGraphqlizer_RuntimeInputToGraphQL(t *testing.T) {
@@ -12,7 +14,7 @@ func TestGraphqlizer_RuntimeInputToGraphQL(t *testing.T) {
 		//given
 		runtimeInput := gqlschema.RuntimeInput{
 			Name:        "test runtime",
-			Description: stringPointer("wow, this is nice description!"),
+			Description: util.StringPtr("wow, this is nice description!"),
 			Labels:      &gqlschema.Labels{"Label": []string{"yup", "indeed"}},
 		}
 
@@ -33,8 +35,24 @@ func TestGraphqlizer_RuntimeInputToGraphQL(t *testing.T) {
 		//then
 		assert.Equal(t, expectedGraphlizedInput, actual)
 	})
-}
 
-func stringPointer(str string) *string {
-	return &str
+	t.Run("Should return valid graphqlized runtime input if optional fields are empty", func(t *testing.T) {
+		//given
+		runtimeInput := gqlschema.RuntimeInput{
+			Name: "test runtime",
+		}
+
+		expectedGraphlizedInput := `{
+		name: "test runtime",
+	}`
+
+		var graph graphqlizer
+
+		//when
+		actual, err := graph.RuntimeInputToGraphQL(runtimeInput)
+		require.NoError(t, err)
+
+		//then
+		assert.Equal(t, expectedGraphlizedInput, actual)
+	})
 }
