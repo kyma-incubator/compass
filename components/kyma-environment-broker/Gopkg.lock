@@ -255,11 +255,9 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:3909365ada83649f0a2fd0014deadb3c2be37637d6ee8e536e4c3504d8a011af"
+  digest = "1:9fbfadf72bec89c4e83dd0b553820a16bf0be0f62431ac68e22937f6158be5f7"
   name = "github.com/kyma-incubator/compass"
   packages = [
-    "components/director/pkg/apperrors",
-    "components/director/pkg/str",
     "components/provisioner/pkg/gqlschema",
     "tests/provisioner-tests/test/testkit/graphql",
   ]
@@ -397,19 +395,10 @@
   version = "v1.4.2"
 
 [[projects]]
-  digest = "1:ac83cf90d08b63ad5f7e020ef480d319ae890c208f8524622a2f3136e2686b02"
-  name = "github.com/stretchr/objx"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "477a77ecc69700c7cdeb1fa9e129548e1c1c393c"
-  version = "v0.1.1"
-
-[[projects]]
-  digest = "1:86562a966508283e1ce3f6de0be5a7d813070271d6e14dc5af3cd5863fee03a4"
+  digest = "1:99d32780e5238c2621fff621123997c3e3cca96db8be13179013aea77dfab551"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
-    "mock",
     "require",
   ]
   pruneopts = "UT"
@@ -531,7 +520,6 @@
     "github.com/gocraft/dbr",
     "github.com/google/uuid",
     "github.com/gorilla/handlers",
-    "github.com/kyma-incubator/compass/components/director/pkg/str",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
     "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql",
     "github.com/lib/pq",
@@ -544,7 +532,6 @@
     "github.com/sanity-io/litter",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
-    "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
     "github.com/testcontainers/testcontainers-go",
     "github.com/testcontainers/testcontainers-go/wait",
