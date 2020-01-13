@@ -1,6 +1,6 @@
 # Provide REST Adapter for Compass Graphql API
 Compass GraphQL API is not compatible with Application Connector REST API.
-To avoid rewriting integration layer for  Application Connector clients, we can provide adapter that translates
+To avoid rewriting integration layer for  Application Connector clients, we can provide Adapter that translates
 Application Connector API to Compass API.
 
 
@@ -18,13 +18,13 @@ a new Controller has to be implemented.
 the status of TokenRequest will be populated differently, depending on whether the Application CR comes from Agent or was created manually.
 
 AFAIK, creating an Application was a manual step usually performed in UI. Because of that, we should consider
-not introducing previously mentioned controller, and just instruct Admins to create an Application using Compass UI. 
+not introducing previously mentioned Controller, and just instruct Admins to create an Application using Compass UI. 
 
 2. Get a client certificate
 
 When creating a TokenRequest, the Controller updates the status and provides token and configuration URL fields.
 There is an open question, if we should support getting token by creating TokenRequest.
-If so, Agent should be responsible with setting status of TokenRequest.
+If so, Agent should be responsible for setting the status of TokenRequest.
 
 After calling the `/v1/applications/signingRequests/info` endpoint, the following data is returned:
 ```json
@@ -45,8 +45,8 @@ After calling the `/v1/applications/signingRequests/info` endpoint, the followin
 }
 ```
 
-`csrUrl` should point to the adapter's `/v1/applications/certificates`.
-`certificate` field is populated by adapter by calling Connector's GraphQL query `configuration`. 
+`csrUrl` should point to the Adapter's `/v1/applications/certificates`.
+`certificate` field is populated by Adapter by calling Connector's GraphQL `configuration` query. 
 
 3. Register a service
 
