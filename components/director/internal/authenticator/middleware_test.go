@@ -132,7 +132,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		//when
 		middleware(handler).ServeHTTP(rr, req)
 		//then
-		assert.Equal(t, "{\"errors\":[\"while parsing token: unexpected signing method: none\n\"]}\n", rr.Body.String())
+		assert.Equal(t, "{\"errors\":[\"while parsing token: unexpected signing method: none\"]}\n", rr.Body.String())
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 
 	})
@@ -173,7 +173,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		//then
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
-		assert.Equal(t, "while parsing token: crypto/rsa: verification error\n", rr.Body.String())
+		assert.Equal(t, "{\"errors\":[\"while parsing token: crypto/rsa: verification error\"]}\n", rr.Body.String())
 	})
 }
 
