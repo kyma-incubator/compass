@@ -165,7 +165,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "optional-provider-name"
+  branch = "master"
   digest = "1:990c71b99cf3c2507891209657a453952c95a8b73e2014132c6039853a911fa3"
   name = "github.com/kyma-incubator/compass"
   packages = [
@@ -180,8 +180,7 @@
     "components/director/pkg/str",
   ]
   pruneopts = "UT"
-  revision = "e9eaeddc28979f2deed97036863a8b5d43998c19"
-  source = "github.com/dbadura/compass"
+  revision = "d98919c9143a9362244d9827889b8aa70dfe141d"
 
 [[projects]]
   branch = "master"
