@@ -119,11 +119,6 @@ enum RuntimeAgentConnectionStatus {
     Disconnected
 }
 
-type CleanUpRuntimeDataResult {
-    id: String!
-    message: String
-}
-
 # Inputs
 
 scalar Labels
@@ -235,7 +230,6 @@ type Mutation {
     provisionRuntime(config: ProvisionRuntimeInput!): OperationStatus
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): String!
     deprovisionRuntime(id: String!): String!
-    cleanupRuntimeData(id: String!): CleanUpRuntimeDataResult!
 
     # Compass Runtime Agent Connection Management
     reconnectRuntimeAgent(id: String!): String!

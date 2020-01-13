@@ -53,11 +53,6 @@ type ComplexityRoot struct {
 		VnetCidr func(childComplexity int) int
 	}
 
-	CleanUpRuntimeDataResult struct {
-		ID      func(childComplexity int) int
-		Message func(childComplexity int) int
-	}
-
 	ComponentConfiguration struct {
 		Component     func(childComplexity int) int
 		Configuration func(childComplexity int) int
@@ -116,7 +111,6 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CleanupRuntimeData    func(childComplexity int, id string) int
 		DeprovisionRuntime    func(childComplexity int, id string) int
 		ProvisionRuntime      func(childComplexity int, config ProvisionRuntimeInput) int
 		ReconnectRuntimeAgent func(childComplexity int, id string) int
@@ -159,7 +153,6 @@ type MutationResolver interface {
 	ProvisionRuntime(ctx context.Context, config ProvisionRuntimeInput) (*OperationStatus, error)
 	UpgradeRuntime(ctx context.Context, id string, config UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(ctx context.Context, id string) (string, error)
-	CleanupRuntimeData(ctx context.Context, id string) (*CleanUpRuntimeDataResult, error)
 	ReconnectRuntimeAgent(ctx context.Context, id string) (string, error)
 }
 type QueryResolver interface {
@@ -216,20 +209,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AzureProviderConfig.VnetCidr(childComplexity), true
-
-	case "CleanUpRuntimeDataResult.id":
-		if e.complexity.CleanUpRuntimeDataResult.ID == nil {
-			break
-		}
-
-		return e.complexity.CleanUpRuntimeDataResult.ID(childComplexity), true
-
-	case "CleanUpRuntimeDataResult.message":
-		if e.complexity.CleanUpRuntimeDataResult.Message == nil {
-			break
-		}
-
-		return e.complexity.CleanUpRuntimeDataResult.Message(childComplexity), true
 
 	case "ComponentConfiguration.component":
 		if e.complexity.ComponentConfiguration.Component == nil {
@@ -482,18 +461,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.KymaConfig.Version(childComplexity), true
-
-	case "Mutation.cleanupRuntimeData":
-		if e.complexity.Mutation.CleanupRuntimeData == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_cleanupRuntimeData_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CleanupRuntimeData(childComplexity, args["id"].(string)), true
 
 	case "Mutation.deprovisionRuntime":
 		if e.complexity.Mutation.DeprovisionRuntime == nil {
@@ -863,11 +830,6 @@ enum RuntimeAgentConnectionStatus {
     Disconnected
 }
 
-type CleanUpRuntimeDataResult {
-    id: String!
-    message: String
-}
-
 # Inputs
 
 scalar Labels
@@ -979,7 +941,6 @@ type Mutation {
     provisionRuntime(config: ProvisionRuntimeInput!): OperationStatus
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): String!
     deprovisionRuntime(id: String!): String!
-    cleanupRuntimeData(id: String!): CleanUpRuntimeDataResult!
 
     # Compass Runtime Agent Connection Management
     reconnectRuntimeAgent(id: String!): String!
@@ -997,20 +958,6 @@ type Query {
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
-
-func (ec *executionContext) field_Mutation_cleanupRuntimeData_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
 
 func (ec *executionContext) field_Mutation_deprovisionRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -1260,57 +1207,6 @@ func (ec *executionContext) _AzureProviderConfig_vnetCidr(ctx context.Context, f
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.VnetCidr, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _CleanUpRuntimeDataResult_id(ctx context.Context, field graphql.CollectedField, obj *CleanUpRuntimeDataResult) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "CleanUpRuntimeDataResult",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _CleanUpRuntimeDataResult_message(ctx context.Context, field graphql.CollectedField, obj *CleanUpRuntimeDataResult) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "CleanUpRuntimeDataResult",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Message, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -2294,40 +2190,6 @@ func (ec *executionContext) _Mutation_deprovisionRuntime(ctx context.Context, fi
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_cleanupRuntimeData(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_cleanupRuntimeData_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CleanupRuntimeData(rctx, args["id"].(string))
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*CleanUpRuntimeDataResult)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNCleanUpRuntimeDataResult2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeDataResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_reconnectRuntimeAgent(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4273,35 +4135,6 @@ func (ec *executionContext) _AzureProviderConfig(ctx context.Context, sel ast.Se
 	return out
 }
 
-var cleanUpRuntimeDataResultImplementors = []string{"CleanUpRuntimeDataResult"}
-
-func (ec *executionContext) _CleanUpRuntimeDataResult(ctx context.Context, sel ast.SelectionSet, obj *CleanUpRuntimeDataResult) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, cleanUpRuntimeDataResultImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("CleanUpRuntimeDataResult")
-		case "id":
-			out.Values[i] = ec._CleanUpRuntimeDataResult_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "message":
-			out.Values[i] = ec._CleanUpRuntimeDataResult_message(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var componentConfigurationImplementors = []string{"ComponentConfiguration"}
 
 func (ec *executionContext) _ComponentConfiguration(ctx context.Context, sel ast.SelectionSet, obj *ComponentConfiguration) graphql.Marshaler {
@@ -4564,11 +4397,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deprovisionRuntime":
 			out.Values[i] = ec._Mutation_deprovisionRuntime(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "cleanupRuntimeData":
-			out.Values[i] = ec._Mutation_cleanupRuntimeData(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -5022,20 +4850,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNCleanUpRuntimeDataResult2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeDataResult(ctx context.Context, sel ast.SelectionSet, v CleanUpRuntimeDataResult) graphql.Marshaler {
-	return ec._CleanUpRuntimeDataResult(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNCleanUpRuntimeDataResult2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeDataResult(ctx context.Context, sel ast.SelectionSet, v *CleanUpRuntimeDataResult) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._CleanUpRuntimeDataResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNClusterConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfigInput(ctx context.Context, v interface{}) (ClusterConfigInput, error) {

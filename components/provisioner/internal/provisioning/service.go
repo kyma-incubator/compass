@@ -16,7 +16,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/hydroform/types"
 )
@@ -31,7 +30,6 @@ type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, string, <-chan struct{}, error)
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(id string) (string, <-chan struct{}, error)
-	CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeDataResult, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error)
@@ -143,35 +141,6 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 	}
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
-}
-
-// TODO: remove it?
-func (r *service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeDataResult, error) {
-	dbErr := r.persistenceService.CleanupClusterData(id)
-
-	if dbErr != nil {
-		if dbErr.Code() == dberrors.CodeNotFound {
-			message := fmt.Sprintf("Runtime with ID %s not found in the database", id)
-			return &gqlschema.CleanUpRuntimeDataResult{ID: id, Message: &message}, nil
-		}
-
-		if dbErr.Code() == dberrors.CodeInternal {
-			message := fmt.Sprintf("Could not clean data for Runtime with ID %s: %s", id, dbErr)
-			return nil, errors.New(message)
-		}
-	}
-
-	err := r.directorService.DeleteRuntime(id)
-
-	var message string
-
-	if err != nil {
-		message = fmt.Sprintf("Successfully cleaned up data for Runtime with ID %s only from Provisioner database", id)
-	} else {
-		message = fmt.Sprintf("Successfully cleaned up data for Runtime with ID %s from Provisioner and Director", id)
-	}
-
-	return &gqlschema.CleanUpRuntimeDataResult{ID: id, Message: &message}, nil
 }
 
 func (r *service) startProvisioning(operationID string, cluster model.Cluster, finished chan<- struct{}) {

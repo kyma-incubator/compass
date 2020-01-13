@@ -16,7 +16,6 @@ import (
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	persistenceMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/hydroform/types"
@@ -298,70 +297,6 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 		hydroformMock.AssertExpectations(t)
 		persistenceServiceMock.AssertExpectations(t)
 		uuidGenerator.AssertExpectations(t)
-	})
-}
-
-func TestCleanUpRuntimeData(t *testing.T) {
-	t.Run("Should fail to get Clean Up Runtime Data result when Runtime ID not found in database", func(t *testing.T) {
-		// given
-		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
-
-		persistenceServiceMock := &persistenceMocks.Service{}
-		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(dberrors.NotFound("Could not find given Runtime in database"))
-
-		directorServiceMock := &directormock.DirectorClient{}
-		directorServiceMock.On("DeleteRuntime", runtimeID).Return(nil)
-
-		provisioningService := NewProvisioningService(persistenceServiceMock, nil, nil, nil, nil, directorServiceMock)
-
-		// when
-		result, err := provisioningService.CleanupRuntimeData(runtimeID)
-
-		// then
-		require.NoError(t, err)
-		assert.Equal(t, runtimeID, result.ID)
-		assert.NotEmpty(t, result.Message)
-		persistenceServiceMock.AssertExpectations(t)
-	})
-
-	t.Run("Should fail to get Clean Up Runtime Data result when internal database error occurs", func(t *testing.T) {
-		// given
-		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
-
-		persistenceServiceMock := &persistenceMocks.Service{}
-		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(dberrors.Internal("Internal database error occurred"))
-
-		provisioningService := NewProvisioningService(persistenceServiceMock, nil, nil, nil, nil, nil)
-
-		// when
-		result, err := provisioningService.CleanupRuntimeData(runtimeID)
-
-		// then
-		require.Error(t, err)
-		require.Nil(t, result)
-		persistenceServiceMock.AssertExpectations(t)
-	})
-
-	t.Run("Should pass and return Runtime ID and Clean Up Runtime Data result when data for given Runtime gets deleted", func(t *testing.T) {
-		// given
-		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
-
-		persistenceServiceMock := &persistenceMocks.Service{}
-		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(nil)
-
-		directorServiceMock := &directormock.DirectorClient{}
-		directorServiceMock.On("DeleteRuntime", runtimeID).Return(nil)
-
-		provisioningService := NewProvisioningService(persistenceServiceMock, nil, nil, nil, nil, directorServiceMock)
-
-		// when
-		result, err := provisioningService.CleanupRuntimeData(runtimeID)
-
-		// then
-		require.NoError(t, err)
-		assert.Equal(t, runtimeID, result.ID)
-		assert.NotEmpty(t, result.Message)
-		persistenceServiceMock.AssertExpectations(t)
 	})
 }
 

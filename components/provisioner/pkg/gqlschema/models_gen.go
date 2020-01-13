@@ -42,11 +42,6 @@ type AzureProviderConfigInput struct {
 	VnetCidr string `json:"vnetCidr"`
 }
 
-type CleanUpRuntimeDataResult struct {
-	ID      string  `json:"id"`
-	Message *string `json:"message"`
-}
-
 type ClusterConfigInput struct {
 	GardenerConfig *GardenerConfigInput `json:"gardenerConfig"`
 	GcpConfig      *GCPConfigInput      `json:"gcpConfig"`
