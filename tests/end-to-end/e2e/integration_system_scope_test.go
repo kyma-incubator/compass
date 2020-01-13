@@ -6,6 +6,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/ptr"
+
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/idtokenprovider"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -39,7 +41,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 		t.Log("Register an application")
 		appInput := graphql.ApplicationRegisterInput{
 			Name:                "app",
-			ProviderName:        "compass",
+			ProviderName:        ptr.String("compass"),
 			IntegrationSystemID: &intSys.ID,
 		}
 		appByIntSys := registerApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)
@@ -61,7 +63,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			Description: nil,
 			ApplicationInput: &graphql.ApplicationRegisterInput{
 				Name:         "test",
-				ProviderName: "test",
+				ProviderName: ptr.String("test"),
 			},
 			Placeholders: nil,
 			AccessLevel:  "GLOBAL",
