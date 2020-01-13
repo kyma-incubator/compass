@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/automock"
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
@@ -24,10 +24,8 @@ const (
 
 func TestBroker_Services(t *testing.T) {
 	// given
-	instStorage := &automock.Instances{}
-	defer instStorage.AssertExpectations(t)
-
-	broker, err := broker.NewBroker(nil, broker.ProvisioningConfig{}, instStorage)
+	memStorage := storage.NewMemoryStorage()
+	broker, err := broker.NewBroker(nil, broker.ProvisioningConfig{}, memStorage.Instances())
 	require.NoError(t, err)
 
 	// when
@@ -43,24 +41,11 @@ func TestBroker_ProvisioningScenario(t *testing.T) {
 	// given
 	const instID = "inst-id"
 	const clusterName = "cluster-testing"
-	params := fmt.Sprintf(`{"name": "%s"}`, clusterName)
-
-	instStorage := &automock.Instances{}
-	defer instStorage.AssertExpectations(t)
-	dashboardURL := "https://dummy.dashboard.com"
-	instStorage.On("Insert", internal.Instance{
-		InstanceID:             instID,
-		RuntimeID:              "",
-		GlobalAccountID:        "",
-		ServiceID:              serviceID,
-		ServicePlanID:          planID,
-		DashboardURL:           dashboardURL,
-		ProvisioningParameters: params,
-	}).Return(nil).Once()
 
 	fCli := provisioner.NewFakeClient()
+	memStorage := storage.NewMemoryStorage()
 
-	kymaEnvBroker, err := broker.NewBroker(fCli, broker.ProvisioningConfig{}, instStorage)
+	kymaEnvBroker, err := broker.NewBroker(fCli, broker.ProvisioningConfig{}, memStorage.Instances())
 	require.NoError(t, err)
 
 	// when
@@ -74,6 +59,10 @@ func TestBroker_ProvisioningScenario(t *testing.T) {
 
 	// then
 	assert.Equal(t, clusterName, fCli.GetProvisionRuntimeInput(0).ClusterConfig.GardenerConfig.Name)
+
+	inst, err := memStorage.Instances().GetByID(instID)
+	require.NoError(t, err)
+	assert.Equal(t, inst.InstanceID, instID)
 
 	// when
 	op, err := kymaEnvBroker.LastOperation(context.TODO(), instID, domain.PollDetails{

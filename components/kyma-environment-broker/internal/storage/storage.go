@@ -2,7 +2,8 @@ package storage
 
 import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/entity"
+	memory "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/driver/memory"
+	postgres "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/driver/postsql"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
 )
 
@@ -19,8 +20,14 @@ func New(connectionURL string) (BrokerStorage, error) {
 	fact := dbsession.NewFactory(connection)
 
 	return storage{
-		instance: entity.NewInstance(fact),
+		instance: postgres.NewInstance(fact),
 	}, nil
+}
+
+func NewMemoryStorage() BrokerStorage {
+	return storage{
+		instance: memory.NewInstance(),
+	}
 }
 
 type storage struct {

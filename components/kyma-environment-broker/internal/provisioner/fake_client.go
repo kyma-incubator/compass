@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/google/uuid"
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
@@ -49,6 +47,7 @@ func (c *fakeClient) ProvisionRuntime(id string, config schema.ProvisionRuntimeI
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	rid := uuid.New().String()
 	opId := uuid.New().String()
 	c.runtimes = append(c.runtimes, runtime{
 		runtimeInput: config,
@@ -56,14 +55,14 @@ func (c *fakeClient) ProvisionRuntime(id string, config schema.ProvisionRuntimeI
 	c.operations = map[string]schema.OperationStatus{
 		opId: {
 			ID:        &opId,
+			RuntimeID: &rid,
 			Operation: schema.OperationTypeProvision,
 			State:     schema.OperationStateInProgress,
 		},
 	}
 	return schema.OperationStatus{
-		ID: &opId,
-		// generate and pass runtimeID, fails unit tests
-		RuntimeID: str.Ptr(""),
+		RuntimeID: &rid,
+		ID:        &opId,
 	}, nil
 }
 

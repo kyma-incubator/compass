@@ -1,4 +1,4 @@
-package entity
+package postsql
 
 import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
