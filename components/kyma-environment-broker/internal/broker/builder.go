@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
@@ -18,7 +19,7 @@ func NewInputBuilderForPlan(planID string) (*provisioningParamsBuilder, bool) {
 
 type inputProvider interface {
 	Defaults() *gqlschema.ClusterConfigInput
-	ApplyParameters(input *gqlschema.ClusterConfigInput, params *ProvisioningParameters)
+	ApplyParameters(input *gqlschema.ClusterConfigInput, params *internal.ProvisioningParametersDTO)
 }
 
 type provisioningParamsBuilder struct {
@@ -30,14 +31,14 @@ func newProvisioningParamsBuilder(ip inputProvider) *provisioningParamsBuilder {
 	builder := &provisioningParamsBuilder{
 		input: &gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: ip.Defaults(),
-			KymaConfig:    &gqlschema.KymaConfigInput{Version: "1.6", Modules: gqlschema.AllKymaModule},
+			KymaConfig:    &gqlschema.KymaConfigInput{Version: "1.6"},
 		},
 		provider: ip,
 	}
 	return builder
 }
 
-func (b *provisioningParamsBuilder) ApplyParameters(params *ProvisioningParameters) {
+func (b *provisioningParamsBuilder) ApplyParameters(params *internal.ProvisioningParametersDTO) {
 	b.input.ClusterConfig.GardenerConfig.Name = params.Name
 	updateInt(&b.input.ClusterConfig.GardenerConfig.NodeCount, params.NodeCount)
 	updateInt(&b.input.ClusterConfig.GardenerConfig.MaxUnavailable, params.MaxUnavailable)
@@ -48,7 +49,7 @@ func (b *provisioningParamsBuilder) ApplyParameters(params *ProvisioningParamete
 	updateString(&b.input.ClusterConfig.GardenerConfig.MachineType, params.MachineType)
 	updateInt(&b.input.ClusterConfig.GardenerConfig.VolumeSizeGb, params.VolumeSizeGb)
 
-	b.provider.ApplyParameters(b.input.ClusterConfig, params) //applySpecificParams
+	b.provider.ApplyParameters(b.input.ClusterConfig, params)
 }
 
 func (b *provisioningParamsBuilder) ClusterConfigInput() *gqlschema.ProvisionRuntimeInput {

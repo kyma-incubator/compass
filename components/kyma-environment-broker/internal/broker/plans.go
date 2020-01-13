@@ -1,7 +1,7 @@
 package broker
 
 import (
-	"github.com/pivotal-cf/brokerapi/domain"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 const (
