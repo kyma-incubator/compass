@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 
 	log "github.com/sirupsen/logrus"
 
@@ -32,34 +33,52 @@ func NewResolver(provisioningService provisioning.Service) *Resolver {
 	}
 }
 
-func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config gqlschema.ProvisionRuntimeInput) (string, error) {
-	log.Infof("Requested provisioning of Runtime %s.", id)
-
+func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.ProvisionRuntimeInput) (*gqlschema.OperationStatus, error) {
 	err := validateInput(config)
 	if err != nil {
-		log.Errorf("Failed to provision Runtime %s: %s", id, err)
-		return "", err
+		log.Errorf("Failed to provision Runtime %s", err)
+		return nil, err
 	}
 
-	if config.ClusterConfig.GcpConfig != nil && config.ClusterConfig.GardenerConfig == nil {
-		err := fmt.Errorf("Provisioning on GCP is currently not supported, Runtime ID: %s", id)
-		log.Errorf(err.Error())
-		return "", err
-	}
+	tenant, err := getTenant(ctx)
 
-	operationID, _, err := r.provisioning.ProvisionRuntime(id, config)
 	if err != nil {
-		log.Errorf("Failed to provision Runtime %s: %s", id, err)
-		return "", err
+		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
+		return nil, err
 	}
-	log.Infof("Provisioning stared for Runtime %s. Operation id %s", id, operationID)
 
-	return operationID, nil
+	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
+	if config.ClusterConfig.GcpConfig != nil && config.ClusterConfig.GardenerConfig == nil {
+		err := fmt.Errorf("Provisioning on GCP is currently not supported, Runtime : %s", config.RuntimeInput.Name)
+		strError := err.Error()
+		log.Errorf(strError)
+		return nil, err
+	}
+
+	operationID, runtimeID, _, err := r.provisioning.ProvisionRuntime(config, tenant)
+	if err != nil {
+		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
+		return nil, err
+	}
+	log.Infof("Provisioning started for Runtime %s. Operation id %s", config.RuntimeInput.Name, operationID)
+
+	messageProvisioningStarted := "Provisioning started"
+
+	return &gqlschema.OperationStatus{
+		ID:        &operationID,
+		Operation: gqlschema.OperationTypeProvision,
+		Message:   &messageProvisioningStarted,
+		RuntimeID: &runtimeID,
+	}, nil
 }
 
 func validateInput(config gqlschema.ProvisionRuntimeInput) error {
 	if len(config.KymaConfig.Components) == 0 {
 		return errors.New("cannot provision Runtime since Kyma components list is empty")
+	}
+
+	if config.RuntimeInput == nil {
+		return errors.New("cannot provision Runtime since runtime input is missing")
 	}
 
 	if config.Credentials == nil {
@@ -72,9 +91,16 @@ func validateInput(config gqlschema.ProvisionRuntimeInput) error {
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
 	log.Infof("Requested deprovisioning of Runtime %s.", id)
 
-	operationID, _, err := r.provisioning.DeprovisionRuntime(id)
+	tenant, err := getTenant(ctx)
+
 	if err != nil {
-		log.Errorf("Failed to provision Runtime %s: %s", id, err)
+		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
+		return "", err
+	}
+
+	operationID, _, err := r.provisioning.DeprovisionRuntime(id, tenant)
+	if err != nil {
+		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
 		return "", err
 	}
 	log.Infof("Deprovisioning started for Runtime %s. Operation id %s", id, operationID)
@@ -116,15 +142,11 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 	return status, nil
 }
 
-func (r *Resolver) CleanupRuntimeData(ctx context.Context, id string) (*gqlschema.CleanUpRuntimeDataResult, error) {
-	log.Infof("Requested cleaning up Runtime data for Runtime %s.", id)
+func getTenant(ctx context.Context) (string, error) {
+	tenant, ok := ctx.Value(middlewares.TenantHeader).(string)
 
-	res, err := r.provisioning.CleanupRuntimeData(id)
-	if err != nil {
-		log.Errorf("Failed to cleanup data for Runtime %s: %s", id, err)
-		return nil, err
+	if !ok || tenant == "" {
+		return "", errors.New("cannot provision runtime since tenant header is empty")
 	}
-	log.Infof("Cleaning up Runtime data for Runtime %s succeeded.", id)
-
-	return res, nil
+	return tenant, nil
 }

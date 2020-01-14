@@ -1,11 +1,19 @@
 package main
 
 import (
+	"crypto/tls"
+	"net/http"
+	"path/filepath"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
@@ -13,8 +21,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/pkg/errors"
-
-	"path/filepath"
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
@@ -37,7 +43,12 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
-	return provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformService, installationService)
+	gqlClient := graphql.NewGraphQLClient(config.DirectorURL, true, config.SkipDirectorCertVerification)
+	oauthClient := oauth.NewOauthClient(newHTTPClient(config.SkipDirectorCertVerification), secrets, config.OauthCredentialsSecretName)
+
+	directorClient := director.NewDirectorClient(gqlClient, oauthClient)
+
+	return provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformService, installationService, directorClient)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
@@ -82,4 +93,13 @@ func initRepositories(config config, connectionString string) (persistence.Servi
 	releaseRepo := release.NewReleaseRepository(connection, uuid.NewUUIDGenerator())
 
 	return persistenceService, releaseRepo, nil
+}
+
+func newHTTPClient(skipCertVeryfication bool) *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: skipCertVeryfication},
+		},
+		Timeout: 30 * time.Second,
+	}
 }

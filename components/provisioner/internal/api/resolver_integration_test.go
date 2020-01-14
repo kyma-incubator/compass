@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	"testing"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/hydroform/types"
 
+	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	hydroformmocks "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
@@ -39,6 +41,7 @@ const (
 	clusterEssentialsComponent    = "cluster-essentials"
 	coreComponent                 = "core"
 	applicationConnectorComponent = "application-connector"
+	tenant                        = "tenant"
 )
 
 func waitForOperationCompleted(provisioningService provisioning.Service, operationID string, seconds uint) error {
@@ -185,7 +188,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	uuidGenerator := uuid.NewUUIDGenerator()
 
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middlewares.TenantHeader, tenant)
 
 	cleanupNetwork, err := testutils.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
@@ -207,34 +210,53 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
 
+	runtimeInput := &gqlschema.RuntimeInput{
+		Name:        "test runtime",
+		Description: new(string),
+	}
+
 	clusterConfigurations := getTestClusterConfigurations()
 
 	for _, cfg := range clusterConfigurations {
 		t.Run(cfg.description, func(t *testing.T) {
 
-			fullConfig := gqlschema.ProvisionRuntimeInput{ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
+			directorServiceMock := &directormock.DirectorClient{}
+			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(cfg.runtimeID, nil)
+			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
+
+			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
 			dbSessionFactory := dbsession.NewFactory(connection)
 			persistenceService := persistence.NewService(dbSessionFactory, uuidGenerator)
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository)
 			graphQLConverter := provisioning.NewGraphQLConverter()
-			provisioningService := provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformServiceMock, installationServiceMock)
+			provisioningService := provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformServiceMock, installationServiceMock, directorServiceMock)
 			provisioner := NewResolver(provisioningService)
 
 			err := insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
 			require.NoError(t, err)
 
-			operationID, err := provisioner.ProvisionRuntime(ctx, cfg.runtimeID, fullConfig)
+			status, err := provisioner.ProvisionRuntime(ctx, fullConfig)
+
+			require.NotNil(t, status)
+			if status != nil {
+				require.NotNil(t, status.RuntimeID)
+
+				if status.RuntimeID != nil {
+					assert.Equal(t, cfg.runtimeID, *status.RuntimeID)
+				}
+			}
+
 			require.NoError(t, err)
 
 			messageProvisioningStarted := "Provisioning started"
 
 			statusForProvisioningStarted := &gqlschema.OperationStatus{
-				ID:        &operationID,
+				ID:        status.ID,
 				Operation: gqlschema.OperationTypeProvision,
 				State:     gqlschema.OperationStateInProgress,
-				RuntimeID: &cfg.runtimeID,
+				RuntimeID: status.RuntimeID,
 				Message:   &messageProvisioningStarted,
 			}
 
@@ -244,16 +266,16 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, statusForProvisioningStarted, runtimeStatusProvisioningStarted.LastOperationStatus)
 			assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioningStarted.RuntimeConfiguration.KymaConfig)
 
-			err = waitForOperationCompleted(provisioningService, operationID, 3)
+			err = waitForOperationCompleted(provisioningService, *status.ID, 3)
 			require.NoError(t, err)
 
 			messageProvisioningSucceeded := "Operation succeeded."
 
 			statusForProvisioningSucceeded := &gqlschema.OperationStatus{
-				ID:        &operationID,
+				ID:        status.ID,
 				Operation: gqlschema.OperationTypeProvision,
 				State:     gqlschema.OperationStateSucceeded,
-				RuntimeID: &cfg.runtimeID,
+				RuntimeID: status.RuntimeID,
 				Message:   &messageProvisioningSucceeded,
 			}
 
