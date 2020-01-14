@@ -37,7 +37,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		scopesGetterMock := getScopesGetterMock()
 		scopesGetterMock.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return(expectedScopes, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, scopesGetterMock)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, scopesGetterMock, nil)
 
 		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.CertificateFlow)
 
@@ -72,7 +72,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -106,7 +106,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -127,7 +127,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(&model.SystemAuth{}, errors.New("some-error")).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -145,7 +145,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -167,7 +167,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -196,7 +196,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -223,7 +223,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -253,7 +253,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -276,7 +276,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -302,7 +302,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		scopesGetterMock := getScopesGetterMock()
 		scopesGetterMock.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return([]string{}, errors.New("some-error")).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, scopesGetterMock)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, scopesGetterMock, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.CertificateFlow)
 

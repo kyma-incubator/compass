@@ -90,8 +90,8 @@ func (d *ReqData) GetAuthID() (string, AuthFlow, error) {
 	return "", "", errors.New("unable to find valid auth ID")
 }
 
-// GetTenantID returns tenant ID from the parsed request input if it is defined
-func (d *ReqData) GetTenantID() (string, error) {
+// GetExternalTenantID returns external tenant ID from the parsed request input if it is defined
+func (d *ReqData) GetExternalTenantID() (string, error) {
 	if tenantVal := d.Body.Header.Get(TenantKey); tenantVal != "" {
 		return tenantVal, nil
 	}

@@ -125,7 +125,7 @@ func TestReqData_GetAuthID(t *testing.T) {
 	})
 }
 
-func TestReqData_GetTenantID(t *testing.T) {
+func TestReqData_GetExternalTenantID(t *testing.T) {
 	t.Run("returns tenant ID when it is specified in the Header map", func(t *testing.T) {
 		expectedTenant := "f640a8e6-2ce4-450c-bd1c-cba9397f9d79"
 		reqData := ReqData{
@@ -134,7 +134,7 @@ func TestReqData_GetTenantID(t *testing.T) {
 			},
 		}
 
-		tenant, err := reqData.GetTenantID()
+		tenant, err := reqData.GetExternalTenantID()
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenant, tenant)
@@ -150,7 +150,7 @@ func TestReqData_GetTenantID(t *testing.T) {
 			},
 		}
 
-		tenant, err := reqData.GetTenantID()
+		tenant, err := reqData.GetExternalTenantID()
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenant, tenant)
@@ -166,7 +166,7 @@ func TestReqData_GetTenantID(t *testing.T) {
 			},
 		}
 
-		tenant, err := reqData.GetTenantID()
+		tenant, err := reqData.GetExternalTenantID()
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenant, tenant)
@@ -181,7 +181,7 @@ func TestReqData_GetTenantID(t *testing.T) {
 			},
 		}
 
-		_, err := reqData.GetTenantID()
+		_, err := reqData.GetExternalTenantID()
 
 		require.EqualError(t, err, "while parsing the value for tenant: unable to cast the value to a string type")
 	})
@@ -189,7 +189,7 @@ func TestReqData_GetTenantID(t *testing.T) {
 	t.Run("returns error when tenant ID is not specified", func(t *testing.T) {
 		reqData := ReqData{}
 
-		_, err := reqData.GetTenantID()
+		_, err := reqData.GetExternalTenantID()
 
 		require.Error(t, err)
 		require.Implements(t, (*apperrors.KeyDoesNotExist)(nil), err)

@@ -5,34 +5,28 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
-
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
+	"github.com/kyma-incubator/compass/components/director/internal/domain"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/healthz"
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
-
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
-	"github.com/kyma-project/kyma/components/console-backend-service/pkg/executor"
-	"github.com/kyma-project/kyma/components/console-backend-service/pkg/signal"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
-
-	log "github.com/sirupsen/logrus"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain"
-	"github.com/kyma-incubator/compass/components/director/internal/healthz"
-
-	"github.com/pkg/errors"
+	"github.com/kyma-project/kyma/components/console-backend-service/pkg/executor"
+	"github.com/kyma-project/kyma/components/console-backend-service/pkg/signal"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 )
 
@@ -172,9 +166,12 @@ func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersS
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating StaticUser repository instance")
 	}
+	tenantStorageConverter := tenant.NewConverter()
+	tenantStorageRepo := tenant.NewRepository(tenantStorageConverter)
+	tenantStorageSvc := tenant.NewService(tenantStorageRepo, uidSvc)
 
-	mapperForUser := tenantmapping.NewMapperForUser(staticUsersRepo)
-	mapperForSystemAuth := tenantmapping.NewMapperForSystemAuth(systemAuthSvc, scopeProvider)
+	mapperForUser := tenantmapping.NewMapperForUser(staticUsersRepo, tenantStorageSvc)
+	mapperForSystemAuth := tenantmapping.NewMapperForSystemAuth(systemAuthSvc, scopeProvider, tenantStorageSvc)
 
 	reqDataParser := tenantmapping.NewReqDataParser()
 

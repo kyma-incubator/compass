@@ -1,6 +1,7 @@
 package tenantmapping
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -12,18 +13,20 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewMapperForUser(staticUserRepo StaticUserRepository) *mapperForUser {
+func NewMapperForUser(staticUserRepo StaticUserRepository, tenantStorageService TenantStorageService) *mapperForUser {
 	return &mapperForUser{
-		staticUserRepo: staticUserRepo,
+		staticUserRepo:       staticUserRepo,
+		tenantStorageService: tenantStorageService,
 	}
 }
 
 type mapperForUser struct {
-	staticUserRepo StaticUserRepository
+	staticUserRepo       StaticUserRepository
+	tenantStorageService TenantStorageService
 }
 
-func (m *mapperForUser) GetObjectContext(reqData ReqData, username string) (ObjectContext, error) {
-	var tenant, scopes string
+func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
+	var externalTenant, scopes string
 
 	staticUser, err := m.staticUserRepo.Get(username)
 	if err != nil {
@@ -39,16 +42,21 @@ func (m *mapperForUser) GetObjectContext(reqData ReqData, username string) (Obje
 		scopes = strings.Join(staticUser.Scopes, " ")
 	}
 
-	tenant, err = reqData.GetTenantID()
+	externalTenant, err = reqData.GetExternalTenantID()
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while fetching tenant")
 	}
 
-	if !hasValidTenant(staticUser.Tenants, tenant) {
+	if !hasValidTenant(staticUser.Tenants, externalTenant) {
 		return ObjectContext{}, errors.New("tenant mismatch")
 	}
 
-	return NewObjectContext(scopes, tenant, staticUser.Username, consumer.User), nil
+	internalTenant, err := m.tenantStorageService.GetInternalTenant(ctx, externalTenant)
+	if err != nil {
+		return ObjectContext{}, errors.Wrap(err, "while mapping external to internal tenant")
+	}
+
+	return NewObjectContext(scopes, internalTenant, staticUser.Username, consumer.User), nil
 }
 
 func hasValidTenant(assignedTenants []uuid.UUID, tenant string) bool {

@@ -53,7 +53,7 @@ func TestHandler(t *testing.T) {
 		transactMock := getTransactMock()
 
 		mapperForUserMock := getMapperForUserMock()
-		mapperForUserMock.On("GetObjectContext", reqDataMock, username).Return(objCtxMock, nil).Once()
+		mapperForUserMock.On("GetObjectContext", mock.Anything, reqDataMock, username).Return(objCtxMock, nil).Once()
 
 		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, mapperForUserMock, nil)
 		handler.ServeHTTP(w, req)
