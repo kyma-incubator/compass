@@ -84,6 +84,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (stri
 }
 
 func (r *service) unregisterFailedRuntime(id string) {
+	log.Infof("Unregistering failed Runtime %s...", id)
 	err := r.directorService.DeleteRuntime(id)
 	if err != nil {
 		log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())
@@ -202,8 +203,6 @@ func (r *service) startDeprovisioning(operationID string, cluster model.Cluster,
 	updateOperationStatus(func() error {
 		return r.persistenceService.SetOperationAsSucceeded(operationID)
 	})
-
-	// TODO: should we delete the cluster from database now?
 }
 
 func (r *service) setOperationAsFailed(operationID, message string) {

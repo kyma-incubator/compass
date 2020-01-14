@@ -21,14 +21,14 @@ import (
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
 type config struct {
-	Address                      string `envconfig:"default=127.0.0.1:3050"`
+	Address                      string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint                  string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint        string `envconfig:"default=/graphql"`
 	CredentialsNamespace         string `envconfig:"default=compass-system"`
 	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
 	DefaultTenant                string `envconfig:"default=3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
-	OauthCredentialsSecretName   string `envconfig:"default=compass-provisioner-registration"`
+	OauthCredentialsSecretName   string `envconfig:"default=compass-provisioner-credentials"`
 
 	Database struct {
 		User     string `envconfig:"default=postgres"`

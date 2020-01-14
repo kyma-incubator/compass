@@ -30,7 +30,9 @@ const (
 	}) { id } }`
 
 	expectedDeleteRuntimeQuery = `mutation {
-	result: deleteRuntime(id: test-runtime-ID-12345)}`
+	result: unregisterRuntime(id: "test-runtime-ID-12345") {
+		id
+}}`
 )
 
 var (

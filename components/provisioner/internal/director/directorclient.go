@@ -31,6 +31,7 @@ type directorClient struct {
 	oauthClient   oauth.Client
 }
 
+// TODO: tenant should be taken from the header not as an env
 func NewDirectorClient(gqlClient gql.Client, oauthClient oauth.Client, tenant string) DirectorClient {
 	return &directorClient{
 		gqlClient:     gqlClient,
