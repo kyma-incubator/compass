@@ -57,7 +57,6 @@ func TestOauthClient_GetAuthorizationToken(t *testing.T) {
 		secrets := coreV1.CoreV1().Secrets(namespace)
 
 		createFakeCredentialsSecret(t, secrets, credentials)
-		defer deleteSecret(t, secrets) // TODO: is that needed?
 
 		oauthClient := NewOauthClient(client, secrets, secretName)
 
@@ -104,10 +103,5 @@ func createFakeCredentialsSecret(t *testing.T, secrets core.SecretInterface, cre
 
 	_, err := secrets.Create(secret)
 
-	require.NoError(t, err)
-}
-
-func deleteSecret(t *testing.T, secrets core.SecretInterface) {
-	err := secrets.Delete(secretName, &meta.DeleteOptions{})
 	require.NoError(t, err)
 }
