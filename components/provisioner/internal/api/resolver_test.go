@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/mocks"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestResolver_ProvisionRuntime(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middlewares.TenantHeader, tenant)
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -68,7 +69,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			KymaConfig:    kymaConfig,
 		}
 
-		provisioningService.On("ProvisionRuntime", config).Return(expOperationID, expRuntimeID, nil, nil)
+		provisioningService.On("ProvisionRuntime", config, tenant).Return(expOperationID, expRuntimeID, nil, nil)
 
 		//when
 		status, err := provisioner.ProvisionRuntime(ctx, config)
@@ -156,7 +157,39 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
-		provisioningService.On("ProvisionRuntime", config).Return("", "", nil, errors.New("Provisioning failed"))
+		provisioningService.On("ProvisionRuntime", config, tenant).Return("", "", nil, errors.New("Provisioning failed"))
+
+		//when
+		status, err := provisioner.ProvisionRuntime(ctx, config)
+
+		//then
+		require.Error(t, err)
+		assert.Nil(t, status)
+	})
+
+	t.Run("Should fail when tenant header is not passed to context", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		provisioner := NewResolver(provisioningService)
+
+		kymaConfig := &gqlschema.KymaConfigInput{
+			Version: "1.5",
+			Components: []*gqlschema.ComponentConfigurationInput{
+				{
+					Component:     "core",
+					Configuration: nil,
+				},
+			},
+		}
+
+		config := gqlschema.ProvisionRuntimeInput{
+			RuntimeInput:  runtimeInput,
+			ClusterConfig: clusterConfig,
+			Credentials:   providerCredentials,
+			KymaConfig:    kymaConfig,
+		}
+
+		ctx := context.Background()
 
 		//when
 		status, err := provisioner.ProvisionRuntime(ctx, config)
@@ -168,7 +201,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 }
 
 func TestResolver_DeprovisionRuntime(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middlewares.TenantHeader, tenant)
 	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
 
 	t.Run("Should start deprovisioning and return operation ID", func(t *testing.T) {
@@ -178,7 +211,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
-		provisioningService.On("DeprovisionRuntime", runtimeID).Return(expectedID, nil, nil)
+		provisioningService.On("DeprovisionRuntime", runtimeID, tenant).Return(expectedID, nil, nil)
 
 		//when
 		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID)
@@ -193,7 +226,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		provisioner := NewResolver(provisioningService)
 
-		provisioningService.On("DeprovisionRuntime", runtimeID).Return("", nil, errors.New("Deprovisioning fails because reasons"))
+		provisioningService.On("DeprovisionRuntime", runtimeID, tenant).Return("", nil, errors.New("Deprovisioning fails because reasons"))
 
 		//when
 		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID)
@@ -201,6 +234,25 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		//then
 		require.Error(t, err)
 		assert.Empty(t, operationID)
+	})
+
+	t.Run("Should fail when tenant header is not passed to context", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		provisioner := NewResolver(provisioningService)
+
+		expectedID := "ec781980-0533-4098-aab7-96b535569732"
+
+		provisioningService.On("DeprovisionRuntime", runtimeID, tenant).Return(expectedID, nil, nil)
+
+		ctx := context.Background()
+
+		//when
+		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID)
+
+		//then
+		require.Error(t, err)
+		require.Empty(t, operationID)
 	})
 }
 
