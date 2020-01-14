@@ -106,9 +106,9 @@ global:
   connectivity_adapter:
     port: 8080
     tls:
-      host: connectivity-gateway
+      host: adapter-gateway
     mtls:
-      host: connectivity-gateway-mtls
+      host: adapter-gateway-mtls
 
   ingress:
     domainName: kyma.local
