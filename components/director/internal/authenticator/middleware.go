@@ -2,6 +2,7 @@ package authenticator
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -46,7 +47,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			bearerToken, err := a.getBearerToken(r)
 			if err != nil {
 				log.Error(errors.Wrap(err, "while getting token from header"))
-				http.Error(w, err.Error(), http.StatusBadRequest)
+				a.writeError(w, err.Error(), http.StatusBadRequest)
 				return
 			}
 
@@ -58,11 +59,11 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 
 				vErr, ok := err.(*jwt.ValidationError)
 				if !ok || !isInvalidTenantError(vErr.Inner) {
-					http.Error(w, wrappedErr.Error(), http.StatusUnauthorized)
+					a.writeError(w, wrappedErr.Error(), http.StatusUnauthorized)
 					return
 				}
 
-				http.Error(w, fmt.Sprintf("forbidden: %s", err.Error()), http.StatusForbidden)
+				a.writeError(w, fmt.Sprintf("forbidden: %s", err.Error()), http.StatusForbidden)
 				return
 			}
 
@@ -114,5 +115,20 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 		}
 
 		return nil, unsupportedErr
+	}
+}
+
+type errorResponse struct {
+	Errors []string `json:"errors"`
+}
+
+func (a *Authenticator) writeError(w http.ResponseWriter, message string, statusCode int) {
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json")
+
+	resp := errorResponse{Errors: []string{message}}
+	err := json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		log.Error(err, "while encoding data")
 	}
 }
