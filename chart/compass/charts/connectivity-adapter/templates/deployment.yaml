@@ -19,8 +19,7 @@ spec:
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          #image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connectivity_adapter.dir }}connectivity-adapter:{{ .Values.global.images.connectivity_adapter.version }}
-          image: crabtree/ctr-node-httpapp
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connectivity_adapter.dir }}connectivity-adapter:{{ .Values.global.images.connectivity_adapter.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http

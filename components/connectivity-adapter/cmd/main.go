@@ -24,5 +24,4 @@ func dummy(rw http.ResponseWriter, req *http.Request) {
 	fmt.Printf("%+v", req.Header)
 
 	rw.WriteHeader(http.StatusOK)
-	rw.Write([]byte("OK"))
 }
