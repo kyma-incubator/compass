@@ -451,6 +451,18 @@ type EventSpec {
 	fetchRequest: FetchRequest
 }
 
+type ExternalTenant {
+	id: ID!
+	name: String
+	provider: String
+}
+
+type ExternalTenantPage implements Pageable {
+	data: [ExternalTenant!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 """
 Compass performs fetch to validate if request is correct and stores a copy
 """
@@ -666,6 +678,7 @@ type Query {
 	"""
 	integrationSystem(id: ID!): IntegrationSystem @hasScopes(path: "graphql.query.integrationSystem")
 	viewer: Viewer! @hasScopes(path: "graphql.query.viewer")
+	externalTenants(first: Int = 100, after: PageCursor): ExternalTenantPage! @hasScopes(path: "graphql.query.externalTenants")
 }
 
 type Mutation {

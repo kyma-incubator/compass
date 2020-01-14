@@ -25,12 +25,12 @@
   version = "v0.9.3"
 
 [[projects]]
-  digest = "1:c84a587136cb69cecc11f3dbe9f9001444044c0dba74997b07f7e4c150b07cda"
+  digest = "1:5e525de85b5793f1eea106a0ea829690f2675e251e5694ed6d759c63c7631c3e"
   name = "github.com/DATA-DOG/go-sqlmock"
   packages = ["."]
   pruneopts = "UT"
-  revision = "3f9954f6f6697845b082ca57995849ddf614f450"
-  version = "v1.3.3"
+  revision = "012d92843b006e16d4c4d699b94b5148e76020e7"
+  version = "v1.4.0"
 
 [[projects]]
   digest = "1:3b10c6fd33854dc41de2cf78b7bae105da94c2789b6fa5b9ac9e593ea43484ac"
@@ -41,12 +41,12 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:a5f0485ed2aad9b9c6a730815d1f2bc92b0acc126d7ee8e36c1a51882fc284f5"
+  digest = "1:f313598719f69ec4edbcd75b0f2ef1c8ed9e00f6ff3d7583ac3966db2d70d326"
   name = "github.com/Masterminds/semver"
   packages = ["."]
   pruneopts = "UT"
-  revision = "25911d36c978be5eb3e81847734874fd4e1dc6c7"
-  version = "v3.0.2"
+  revision = "910aa146bd66780c2815d652b92a7fc5331e533c"
+  version = "v3.0.3"
 
 [[projects]]
   digest = "1:b565deb585c50ab8e94fe5d6c9903f1495970b97814803e4ab0e70c0a9c87a30"
@@ -65,12 +65,12 @@
   version = "v1.0.3"
 
 [[projects]]
-  digest = "1:320e7ead93de9fd2b0e59b50fd92a4d50c1f8ab455d96bc2eb083267453a9709"
+  digest = "1:c68aba66f5db6052fd838d9a7d60d8859f8c11b8c1d9ac9758f69c7a51efc07a"
   name = "github.com/asaskevich/govalidator"
   packages = ["."]
   pruneopts = "UT"
-  revision = "ccb8e960c48f04d6935e72476ae4a51028f9e22f"
-  version = "v9"
+  revision = "475eaeb164960a651e97470412a7d3b0c5036105"
+  version = "v10"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -223,15 +223,15 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:ae6f5b200de028cbda56dac563997c1e907843fa49c3baa4a2011eb707a20bd2"
+  digest = "1:6476fdd3eea301283ffe0abb60fd98b2a2abdbdfd754bbb5b44d409ec9acf401"
   name = "github.com/kyma-project/kyma"
   packages = [
     "components/console-backend-service/pkg/executor",
     "components/console-backend-service/pkg/signal",
   ]
   pruneopts = "UT"
-  revision = "0559e17e79799aa1f32fb66a422f6c2277c95d6b"
-  version = "1.7.0"
+  revision = "119010d0810e5e1e23b78e1058f2b0fbea293ae9"
+  version = "1.9.0"
 
 [[projects]]
   digest = "1:aea1c53d4757225e70d19ddd87e7843a25897b3c4f3901a2ab07e04586a5b76a"
@@ -247,7 +247,7 @@
   version = "v0.9.0"
 
 [[projects]]
-  digest = "1:12cb143f2148bf54bcd9fe622abac17325e85eeb1d84b8ec6caf1c80232108fd"
+  digest = "1:9ff22c26414baf7deaf74f2a788fe7b97666048bcbe346c52cfe823442abbdfb"
   name = "github.com/lib/pq"
   packages = [
     ".",
@@ -255,8 +255,8 @@
     "scram",
   ]
   pruneopts = "UT"
-  revision = "3427c32cb71afc948325f299f040e53c1dd78979"
-  version = "v1.2.0"
+  revision = "99274577be97ac9b1d95a2d61d566dc9b7cc6a54"
+  version = "v1.3.0"
 
 [[projects]]
   branch = "master"
@@ -347,8 +347,8 @@
     "validator/rules",
   ]
   pruneopts = "UT"
-  revision = "6b4a7854a7ef7ee3f626490d1e2d22a823828fc6"
-  version = "v1.2.0"
+  revision = "1315dbaf2eab07d828e3e198a9a699e686b2b594"
+  version = "v1.2.1"
 
 [[projects]]
   digest = "1:bb32a7e267540d9f2d26753426d5e360c5bd858b9b78e26b9f0c99219024d8f5"
@@ -390,11 +390,11 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "ac88ee75c92c889b97e05591e9a39b6480c538b3"
+  revision = "61a87790db17894570dfb32dbaa0a4af9ce60cb4"
 
 [[projects]]
   branch = "master"
-  digest = "1:45d1226bded9ce3b96ed5a0ba7de749dd6142058e47b0c5993501e38c394dfa7"
+  digest = "1:8b0cbc3c499fd0c6b85289a3f2073eb448aec6984934be19353d6d5a017fac07"
   name = "golang.org/x/net"
   packages = [
     "http/httpguts",
@@ -403,15 +403,15 @@
     "idna",
   ]
   pruneopts = "UT"
-  revision = "fc4aabc6c91483155dade6fbb627cc953a723260"
+  revision = "c0dbc17a35534bf2e581d7a942408dc936316da4"
 
 [[projects]]
   branch = "master"
-  digest = "1:fc96eb481f72e9a5edeb4bb3f3610d3b9384c036f7c1e39f8c0dedff23d0c34d"
+  digest = "1:e13350b7207ecc34977340d53522e0335dd36ed86ca7c346a36d2e88eb0fadfc"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "e882bf8e40c23f260d489ef820e5e8eead5e76e3"
+  revision = "548cf772de5052aa878ccb47cdeb7d262b75c8ec"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -440,7 +440,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:54df367376d634844d5d7d9f0e49ee62d834f211bca5af016b5cc899ae0477e4"
+  digest = "1:5d700aa3e82183214dff00fbeb6a570a35572be9fbfe67b574e454e5bb232b57"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -456,10 +456,9 @@
     "internal/imports",
     "internal/module",
     "internal/semver",
-    "internal/span",
   ]
   pruneopts = "UT"
-  revision = "07fc4c7f2b9857711f6306c76424246e8d6eab64"
+  revision = "e2f26524b78cce00305e6af91fbd13ab567aaaa3"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
@@ -470,12 +469,12 @@
   version = "v0.9.1"
 
 [[projects]]
-  digest = "1:f26a5d382387e03a40d1471dddfba85dfff9bf05352d7e42d37612677c4d3c5c"
+  digest = "1:b75b3deb2bce8bc079e16bb2aecfe01eb80098f5650f9e93e5643ca8b7b73737"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f90ceb4f409096b60e2e9076b38b304b8246e5fa"
-  version = "v2.2.5"
+  revision = "1f64d6156d11335c3f22d9330b0ad14fc1e789ce"
+  version = "v2.2.7"
 
 [[projects]]
   digest = "1:7a2c7542693e1878fea119497f18374f2917473929740f175eda368d5b313103"

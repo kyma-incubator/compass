@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/stretchr/testify/assert"
 

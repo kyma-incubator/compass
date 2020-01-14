@@ -223,6 +223,20 @@ type EventSpecInput struct {
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
+type ExternalTenant struct {
+	ID       string  `json:"id"`
+	Name     *string `json:"name"`
+	Provider *string `json:"provider"`
+}
+
+type ExternalTenantPage struct {
+	Data       []*ExternalTenant `json:"data"`
+	PageInfo   *PageInfo         `json:"pageInfo"`
+	TotalCount int               `json:"totalCount"`
+}
+
+func (ExternalTenantPage) IsPageable() {}
+
 // Compass performs fetch to validate if request is correct and stores a copy
 type FetchRequest struct {
 	URL    string              `json:"url"`
