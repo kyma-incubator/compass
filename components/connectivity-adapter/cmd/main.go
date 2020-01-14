@@ -21,7 +21,7 @@ func healthz(rw http.ResponseWriter, req *http.Request) {
 }
 
 func dummy(rw http.ResponseWriter, req *http.Request) {
-	fmt.Printf("%+v", req.Header)
+	fmt.Printf("%+v\n", req.Header)
 
 	rw.WriteHeader(http.StatusOK)
 }
