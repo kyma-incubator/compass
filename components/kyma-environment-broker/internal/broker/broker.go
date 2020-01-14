@@ -163,7 +163,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 		RuntimeID:              *resp.RuntimeID,
 		ServiceID:              details.ServiceID,
 		ServicePlanID:          details.PlanID,
-		DashboardURL:           fixedDummyURL,
+		DashboardURL:           "",
 		ProvisioningParameters: string(details.RawParameters),
 	})
 	if err != nil {
@@ -173,7 +173,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	spec := domain.ProvisionedServiceSpec{
 		IsAsync:       true,
 		OperationData: *resp.ID,
-		DashboardURL:  fixedDummyURL,
+		DashboardURL:  "",
 	}
 	b.Dumper.Dump("Returned provisioned service spec:", spec)
 
@@ -208,18 +208,23 @@ func (b *KymaEnvBroker) Deprovision(ctx context.Context, instanceID string, deta
 func (b *KymaEnvBroker) GetInstance(ctx context.Context, instanceID string) (domain.GetInstanceDetailsSpec, error) {
 	b.Dumper.Dump("GetInstance instanceID:", instanceID)
 
-	runtimeStatus, err := b.ProvisionerClient.GCPRuntimeStatus(instanceID)
+	inst, err := b.InstancesStorage.GetByID(instanceID)
 	if err != nil {
-		return domain.GetInstanceDetailsSpec{}, errors.Wrapf(err, "while calling for runtime status")
+		return domain.GetInstanceDetailsSpec{}, errors.Wrapf(err, "while getting instance from storage")
 	}
 
-	b.Dumper.Dump("GCP Runtime Status cluster config:", runtimeStatus.RuntimeConfiguration.ClusterConfig)
-	b.Dumper.Dump("GCP Runtime Status Kyma config:", runtimeStatus.RuntimeConfiguration.KymaConfig)
+	decodedParams := make(map[string]interface{})
+	err = json.Unmarshal([]byte(inst.ProvisioningParameters), &decodedParams)
+	if err != nil {
+		b.Dumper.Dump("unable to decode instance parameters for instanceID: ", instanceID)
+		b.Dumper.Dump("  parameters: ", inst.ProvisioningParameters)
+	}
 
 	spec := domain.GetInstanceDetailsSpec{
-		ServiceID:    kymaServiceID,
-		PlanID:       azurePlanID, // todo: read the ID from the storage
-		DashboardURL: fixedDummyURL,
+		ServiceID:    inst.ServiceID,
+		PlanID:       inst.ServicePlanID,
+		DashboardURL: "",
+		Parameters:   decodedParams,
 	}
 	return spec, nil
 }
@@ -251,6 +256,19 @@ func (b *KymaEnvBroker) LastOperation(ctx context.Context, instanceID string, de
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
 		lastOpStatus = domain.Succeeded
+
+		// todo: this is a temporary solution until the dashboard url is saved in the director
+		b.Dumper.Dump("Saving dummy dashboard url for instance ID: ", instanceID)
+		inst, err := b.InstancesStorage.GetByID(instanceID)
+		if err != nil {
+			b.Dumper.Dump("Got error: ", err)
+		}
+		inst.DashboardURL = fixedDummyURL
+		err = b.InstancesStorage.Update(*inst)
+		if err != nil {
+			b.Dumper.Dump("Got error: ", err)
+		}
+
 	case gqlschema.OperationStateInProgress:
 		lastOpStatus = domain.InProgress
 	case gqlschema.OperationStatePending:
