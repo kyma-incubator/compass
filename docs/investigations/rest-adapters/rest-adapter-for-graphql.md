@@ -96,6 +96,6 @@ TODO:
 ![](adpters.svg)
 
 Kyma Integration Layer, implemented as a part of the external solution, reads the status of the TokenRequest that returns a URL pointing to Adapters.
-Adapters proxy calls to Compass components (REST --> GraphQL) and perform type conversions. 
-Still, the open question is how to propagate credentials. For example, the Adapter endpoint is reached using a client certificate. Can we propagate
-that certificate when making a call to Compass components?
+Adapters proxy calls to Compass components (REST --> GraphQL) and perform type conversions.
+
+For the security model details [see this document](./security.md)
