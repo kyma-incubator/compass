@@ -26,6 +26,8 @@ import (
 
 const (
 	kubeconfigFile = "kubeconfig data"
+
+	tenant = "tenant"
 )
 
 var (
@@ -84,7 +86,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		operation := model.Operation{ID: expOperationID}
 
 		directorServiceMock := &directormock.DirectorClient{}
-		directorServiceMock.On("CreateRuntime", mock.Anything).Return(expRuntimeID, nil)
+		directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(expRuntimeID, nil)
 
 		persistenceServiceMock.On("SetProvisioningStarted", expRuntimeID, mock.Anything).Return(operation, nil)
 		persistenceServiceMock.On("UpdateClusterData", expRuntimeID, kubeconfigFile, []byte("")).Return(nil)
@@ -95,7 +97,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock)
 
 		//when
-		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput)
+		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -113,12 +115,12 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	t.Run("Should fail runtime provisioning after failing Registering Runtime in Director", func(t *testing.T) {
 		//given
 		directorServiceMock := &directormock.DirectorClient{}
-		directorServiceMock.On("CreateRuntime", mock.Anything).Return("", errors.New("Some error"))
+		directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return("", errors.New("Some error"))
 
 		service := NewProvisioningService(nil, nil, nil, nil, nil, directorServiceMock)
 
 		//when
-		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput)
+		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
 
 		// then
 		assert.Error(t, err)
@@ -139,7 +141,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		operation := model.Operation{ID: expOperationID}
 
 		directorServiceMock := &directormock.DirectorClient{}
-		directorServiceMock.On("CreateRuntime", mock.Anything).Return(expRuntimeID, nil)
+		directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(expRuntimeID, nil)
 		persistenceServiceMock.On("SetProvisioningStarted", expRuntimeID, mock.Anything).Return(operation, nil)
 		persistenceServiceMock.On("UpdateClusterData", expRuntimeID, kubeconfigFile, []byte("")).Return(nil)
 		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
@@ -149,7 +151,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock)
 
 		//when
-		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput)
+		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -185,18 +187,18 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		operation := model.Operation{ID: expOperationID}
 
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-		persistenceServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
+		persistenceServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything, mock.Anything).Return(operation, nil)
 		persistenceServiceMock.On("GetClusterData", runtimeID).Return(model.Cluster{ID: runtimeID, TerraformState: []byte("{}"), ClusterConfig: model.GCPConfig{}}, nil)
 		persistenceServiceMock.On("SetOperationAsSucceeded", expOperationID).Return(nil)
 		hydroformMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		directorServiceMock := &directormock.DirectorClient{}
-		directorServiceMock.On("DeleteRuntime", runtimeID).Return(nil)
+		directorServiceMock.On("DeleteRuntime", runtimeID, mock.Anything).Return(nil)
 
 		resolver := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, nil, directorServiceMock)
 
 		//when
-		opt, finished, err := resolver.DeprovisionRuntime(runtimeID)
+		opt, finished, err := resolver.DeprovisionRuntime(runtimeID, tenant)
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -218,7 +220,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, nil, nil)
 
 		//when
-		_, _, err := resolver.DeprovisionRuntime(runtimeID)
+		_, _, err := resolver.DeprovisionRuntime(runtimeID, tenant)
 
 		//then
 		require.Error(t, err)
@@ -239,15 +241,15 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 		persistenceServiceMock.On("GetClusterData", runtimeID).Return(model.Cluster{ID: runtimeID, TerraformState: []byte("{}"), ClusterConfig: model.GCPConfig{}}, nil)
-		persistenceServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
+		persistenceServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything, mock.Anything).Return(operation, nil)
 		hydroformMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-		directorServiceMock.On("DeleteRuntime", runtimeID).Return(errors.New("Some error!"))
+		directorServiceMock.On("DeleteRuntime", runtimeID, mock.Anything).Return(errors.New("Some error!"))
 		persistenceServiceMock.On("SetOperationAsFailed", expOperationID, "Some error!").Return(nil)
 
 		service := NewProvisioningService(persistenceServiceMock, nil, nil, hydroformMock, nil, directorServiceMock)
 
 		//when
-		_, doneChan, err := service.DeprovisionRuntime(runtimeID)
+		_, doneChan, err := service.DeprovisionRuntime(runtimeID, tenant)
 		require.NoError(t, err)
 
 		_ = <-doneChan //

@@ -46,7 +46,7 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 	gqlClient := graphql.NewGraphQLClient(config.DirectorURL, true, config.SkipDirectorCertVerification)
 	oauthClient := oauth.NewOauthClient(newHTTPClient(config.SkipDirectorCertVerification), secrets, config.OauthCredentialsSecretName)
 
-	directorClient := director.NewDirectorClient(gqlClient, oauthClient, config.DefaultTenant)
+	directorClient := director.NewDirectorClient(gqlClient, oauthClient)
 
 	return provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformService, installationService, directorClient)
 }

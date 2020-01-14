@@ -27,9 +27,9 @@ const (
 
 //go:generate mockery -name=Service
 type Service interface {
-	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, string, <-chan struct{}, error)
+	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string) (string, string, <-chan struct{}, error)
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(id string) (string, <-chan struct{}, error)
+	DeprovisionRuntime(id, tenant string) (string, <-chan struct{}, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error)
@@ -56,23 +56,23 @@ func NewProvisioningService(persistenceService persistence.Service, inputConvert
 	}
 }
 
-func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, string, <-chan struct{}, error) {
+func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string) (string, string, <-chan struct{}, error) {
 	runtimeInput := config.RuntimeInput
 
-	runtimeID, err := r.directorService.CreateRuntime(runtimeInput)
+	runtimeID, err := r.directorService.CreateRuntime(runtimeInput, tenant)
 	if err != nil {
 		return "", "", nil, err
 	}
 
 	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config)
 	if err != nil {
-		r.unregisterFailedRuntime(runtimeID)
+		r.unregisterFailedRuntime(runtimeID, tenant)
 		return "", "", nil, err
 	}
 
 	operation, err := r.persistenceService.SetProvisioningStarted(runtimeID, cluster)
 	if err != nil {
-		r.unregisterFailedRuntime(runtimeID)
+		r.unregisterFailedRuntime(runtimeID, tenant)
 		return "", "", nil, err
 	}
 
@@ -83,15 +83,15 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (stri
 	return operation.ID, runtimeID, finished, nil
 }
 
-func (r *service) unregisterFailedRuntime(id string) {
+func (r *service) unregisterFailedRuntime(id, tenant string) {
 	log.Infof("Unregistering failed Runtime %s...", id)
-	err := r.directorService.DeleteRuntime(id)
+	err := r.directorService.DeleteRuntime(id, tenant)
 	if err != nil {
 		log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())
 	}
 }
 
-func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error) {
+func (r *service) DeprovisionRuntime(id, tenant string) (string, <-chan struct{}, error) {
 	lastOperation, err := r.persistenceService.GetLastOperation(id)
 	if err != nil {
 		return "", nil, err
@@ -113,7 +113,7 @@ func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 
 	finished := make(chan struct{})
 
-	go r.startDeprovisioning(operation.ID, cluster, finished)
+	go r.startDeprovisioning(operation.ID, tenant, cluster, finished)
 
 	return operation.ID, finished, nil
 }
@@ -182,7 +182,7 @@ func (r *service) startProvisioning(operationID string, cluster model.Cluster, f
 	})
 }
 
-func (r *service) startDeprovisioning(operationID string, cluster model.Cluster, finished chan<- struct{}) {
+func (r *service) startDeprovisioning(operationID, tenant string, cluster model.Cluster, finished chan<- struct{}) {
 	defer close(finished)
 	log.Infof("Deprovisioning runtime %s is starting", cluster.ID)
 	err := r.hydroform.DeprovisionCluster(cluster)
@@ -192,7 +192,7 @@ func (r *service) startDeprovisioning(operationID string, cluster model.Cluster,
 		return
 	}
 
-	err = r.directorService.DeleteRuntime(cluster.ID)
+	err = r.directorService.DeleteRuntime(cluster.ID, tenant)
 	if err != nil {
 		log.Errorf("Deprovisioning finished. Failed to unregister Runtime %s: %s", cluster.ID, err.Error())
 		r.setOperationAsFailed(operationID, err.Error())

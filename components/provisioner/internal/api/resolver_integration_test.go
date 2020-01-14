@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	"testing"
 	"time"
 
@@ -40,6 +41,7 @@ const (
 	clusterEssentialsComponent    = "cluster-essentials"
 	coreComponent                 = "core"
 	applicationConnectorComponent = "application-connector"
+	tenant                        = "tenant"
 )
 
 func waitForOperationCompleted(provisioningService provisioning.Service, operationID string, seconds uint) error {
@@ -186,7 +188,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	uuidGenerator := uuid.NewUUIDGenerator()
 
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middlewares.TenantHeader, tenant)
 
 	cleanupNetwork, err := testutils.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
@@ -219,8 +221,8 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 		t.Run(cfg.description, func(t *testing.T) {
 
 			directorServiceMock := &directormock.DirectorClient{}
-			directorServiceMock.On("CreateRuntime", mock.Anything).Return(cfg.runtimeID, nil)
-			directorServiceMock.On("DeleteRuntime", mock.Anything).Return(nil)
+			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(cfg.runtimeID, nil)
+			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
