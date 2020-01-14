@@ -42,6 +42,11 @@ type AzureProviderConfigInput struct {
 	VnetCidr string `json:"vnetCidr"`
 }
 
+type CleanUpRuntimeDataResult struct {
+	ID      string  `json:"id"`
+	Message *string `json:"message"`
+}
+
 type ClusterConfigInput struct {
 	GardenerConfig *GardenerConfigInput `json:"gardenerConfig"`
 	GcpConfig      *GCPConfigInput      `json:"gcpConfig"`
@@ -136,7 +141,6 @@ type GardenerConfig struct {
 func (GardenerConfig) IsClusterConfig() {}
 
 type GardenerConfigInput struct {
-	Name                   string                 `json:"name"`
 	ProjectName            string                 `json:"projectName"`
 	KubernetesVersion      string                 `json:"kubernetesVersion"`
 	NodeCount              int                    `json:"nodeCount"`
@@ -182,13 +186,14 @@ type ProviderSpecificInput struct {
 }
 
 type ProvisionRuntimeInput struct {
-	RuntimeInput  *RuntimeInput       `json:"runtimeInput"`
+	Name          string              `json:"name"`
 	ClusterConfig *ClusterConfigInput `json:"clusterConfig"`
 	Credentials   *CredentialsInput   `json:"credentials"`
 	KymaConfig    *KymaConfigInput    `json:"kymaConfig"`
 }
 
 type RuntimeConfig struct {
+	Name                  string        `json:"name"`
 	ClusterConfig         ClusterConfig `json:"clusterConfig"`
 	CredentialsSecretName *string       `json:"credentialsSecretName"`
 	KymaConfig            *KymaConfig   `json:"kymaConfig"`
@@ -198,12 +203,6 @@ type RuntimeConfig struct {
 type RuntimeConnectionStatus struct {
 	Status RuntimeAgentConnectionStatus `json:"status"`
 	Errors []*Error                     `json:"errors"`
-}
-
-type RuntimeInput struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
-	Labels      *Labels `json:"labels"`
 }
 
 type RuntimeStatus struct {
