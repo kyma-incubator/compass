@@ -5,6 +5,7 @@ CREATE TABLE cluster
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     kubeconfig text,
     terraform_state bytea,
+    tenant varchar(256) NOT NULL,
     credentials_secret_name varchar(256) NOT NULL,
     creation_timestamp timestamp without time zone NOT NULL
 );

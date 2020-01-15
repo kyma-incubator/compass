@@ -21,6 +21,7 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 		Pair("terraform_state", cluster.TerraformState).
 		Pair("credentials_secret_name", cluster.CredentialsSecretName).
 		Pair("creation_timestamp", cluster.CreationTimestamp).
+		Pair("tenant", cluster.Tenant).
 		Exec()
 
 	if err != nil {

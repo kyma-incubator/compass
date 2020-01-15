@@ -14,6 +14,7 @@ import (
 
 type Resolver struct {
 	provisioning provisioning.Service
+	validator    Validator
 }
 
 func (r *Resolver) Mutation() gqlschema.MutationResolver {
@@ -27,14 +28,15 @@ func (r *Resolver) Query() gqlschema.QueryResolver {
 	}
 }
 
-func NewResolver(provisioningService provisioning.Service) *Resolver {
+func NewResolver(provisioningService provisioning.Service, validator Validator) *Resolver {
 	return &Resolver{
 		provisioning: provisioningService,
+		validator:    validator,
 	}
 }
 
 func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.ProvisionRuntimeInput) (*gqlschema.OperationStatus, error) {
-	err := validateInput(config)
+	err := r.validator.ValidateInput(config)
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s", err)
 		return nil, err
@@ -72,26 +74,17 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 	}, nil
 }
 
-func validateInput(config gqlschema.ProvisionRuntimeInput) error {
-	if len(config.KymaConfig.Components) == 0 {
-		return errors.New("cannot provision Runtime since Kyma components list is empty")
-	}
-
-	if config.RuntimeInput == nil {
-		return errors.New("cannot provision Runtime since runtime input is missing")
-	}
-
-	if config.Credentials == nil {
-		return errors.New("cannot provision Runtime since credentials are missing")
-	}
-
-	return nil
-}
-
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
 	log.Infof("Requested deprovisioning of Runtime %s.", id)
 
 	tenant, err := getTenant(ctx)
+
+	if err != nil {
+		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
+		return "", err
+	}
+
+	err = r.validator.ValidateTenant(id, tenant)
 
 	if err != nil {
 		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
@@ -118,6 +111,20 @@ func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string
 
 func (r *Resolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
 	log.Infof("Requested to get status for Runtime %s.", runtimeID)
+
+	tenant, err := getTenant(ctx)
+
+	if err != nil {
+		log.Errorf("Failed to get status for Runtime %s: %s", runtimeID, err)
+		return nil, err
+	}
+
+	err = r.validator.ValidateTenant(runtimeID, tenant)
+
+	if err != nil {
+		log.Errorf("Failed to get status for Runtime %s: %s", runtimeID, err)
+		return nil, err
+	}
 
 	status, err := r.provisioning.RuntimeStatus(runtimeID)
 	if err != nil {

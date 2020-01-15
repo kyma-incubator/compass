@@ -64,7 +64,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 		return "", "", nil, err
 	}
 
-	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config)
+	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config, tenant)
 	if err != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
 		return "", "", nil, err

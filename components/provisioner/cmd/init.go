@@ -78,7 +78,7 @@ func newResolver(config config, persistenceService persistence.Service, releaseR
 		return nil, errors.Wrap(err, "Failed to create secrets interface")
 	}
 
-	return api.NewResolver(newProvisioningService(config, persistenceService, secretInterface, releaseRepo)), nil
+	return api.NewResolver(newProvisioningService(config, persistenceService, secretInterface, releaseRepo), api.NewValidator(persistenceService)), nil
 }
 
 func initRepositories(config config, connectionString string) (persistence.Service, release.Repository, error) {

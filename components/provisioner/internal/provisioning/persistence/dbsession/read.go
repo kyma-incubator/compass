@@ -12,11 +12,30 @@ type readSession struct {
 	session *dbr.Session
 }
 
+func (r readSession) GetTenant(runtimeID string) (string, dberrors.Error) {
+	var tenant string
+
+	err := r.session.
+		Select("tenant").
+		From("cluster").
+		Where(dbr.Eq("cluster.id", runtimeID)).
+		LoadOne(&tenant)
+
+	if err != nil {
+		if err != dbr.ErrNotFound {
+			return "", dberrors.NotFound("Cannot find Tenant for runtimeID:'%s", runtimeID)
+		}
+
+		return "", dberrors.Internal("Failed to get Tenant: %s", err)
+	}
+	return tenant, nil
+}
+
 func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error) {
 	var cluster model.Cluster
 
 	err := r.session.
-		Select("id", "kubeconfig", "terraform_state", "credentials_secret_name", "creation_timestamp").
+		Select("id", "kubeconfig", "terraform_state", "credentials_secret_name", "creation_timestamp", "tenant").
 		From("cluster").
 		Where(dbr.Eq("cluster.id", runtimeID)).
 		LoadOne(&cluster)
