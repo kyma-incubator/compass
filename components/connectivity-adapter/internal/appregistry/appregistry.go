@@ -7,10 +7,12 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/service"
 )
 
-type Config struct{}
+type Config struct{
+	DirectorURL string `envconfig:"default=http://127.0.0.1:3000/graphql"`
+}
 
 func RegisterHandler(router *mux.Router, cfg Config) {
-	serviceHandler := service.NewHandler()
+	serviceHandler := service.NewHandler(cfg.DirectorURL)
 
 	router.HandleFunc("/services", serviceHandler.List).Methods(http.MethodGet)
 	router.HandleFunc("/services", serviceHandler.Create).Methods(http.MethodPost)
