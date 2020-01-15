@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
-
-	"log"
 
 	retry "github.com/avast/retry-go"
 	"github.com/pkg/errors"

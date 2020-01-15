@@ -3,7 +3,7 @@ package graphql
 type Application struct {
 	ID                  string             `json:"id"`
 	Name                string             `json:"name"`
-	ProviderName        string             `json:"ProviderName"`
+	ProviderName        *string            `json:"providerName"`
 	IntegrationSystemID *string            `json:"integrationSystemID"`
 	Description         *string            `json:"description"`
 	Status              *ApplicationStatus `json:"status"`

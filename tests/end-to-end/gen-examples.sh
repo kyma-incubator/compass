@@ -40,6 +40,7 @@ function cleanup() {
     echo -e "${GREEN}Cleaning up...${NC}"
     docker rm --force ${POSTGRES_CONTAINER} || true
     docker rm --force ${DIRECTOR_CONTAINER} || true
+    docker network rm ${NETWORK} > /dev/null 2>&1 || true
 }
 
 trap cleanup EXIT
@@ -104,7 +105,7 @@ export DIRECTOR_URL="http://${DIRECTOR_URL}:${APP_PORT}"
 DIRECTOR_HEALTHZ_URL="${DIRECTOR_URL}/healthz" ./wait-for-director.sh
 
 echo -e "${GREEN}Removing previous GraphQL examples...${NC}"
-rm -r "${LOCAL_ROOT_PATH}/components/director/examples/"
+rm -r "${LOCAL_ROOT_PATH}"/components/director/examples/*
 
 echo -e "${GREEN}Running Director tests with generating examples...${NC}"
 go test -c "${SCRIPT_DIR}/director/" -tags ignore_external_dependencies

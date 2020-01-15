@@ -49,7 +49,7 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 
 		ctx := context.Background()
 		appID := createApplicationForCertPlaygroundTest(t, ctx, tenant, dexGQLClient)
-		defer deleteApplication(t, ctx, dexGQLClient, tenant, appID)
+		defer unregisterApplication(t, ctx, dexGQLClient, tenant, appID)
 
 		oneTimeToken := generateOneTimeTokenForApplication(t, ctx, dexGQLClient, tenant, appID)
 		certChain, clientKey := generateClientCertForApplication(t, oneTimeToken)
@@ -90,8 +90,7 @@ func getClientWithCert(certificates []*x509.Certificate, key *rsa.PrivateKey) *h
 
 func createApplicationForCertPlaygroundTest(t *testing.T, ctx context.Context, tenant string, cli *gcli.Client) string {
 	appInput := graphql.ApplicationRegisterInput{
-		Name:         "cert-playground-test",
-		ProviderName: "playground-test",
+		Name: "cert-playground-test",
 	}
 	app := registerApplicationFromInputWithinTenant(t, ctx, cli, tenant, appInput)
 	require.NotEmpty(t, app.ID)

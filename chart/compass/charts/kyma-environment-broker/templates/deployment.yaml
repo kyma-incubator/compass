@@ -45,11 +45,43 @@ spec:
               value: "{{ .Values.broker.port }}"
             - name: APP_AUTH_USERNAME
               value: "{{ .Values.broker.username }}"
+            - name: APP_PROCESS_RUNTIME_ID
+              value: "{{ .Values.provisioner.processRuntimeID }}"
             - name: APP_AUTH_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "kyma-env-broker.fullname" . }}
                   key: broker-password
+            - name: APP_DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-username
+            - name: APP_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-password
+            - name: APP_DATABASE_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: APP_DATABASE_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: APP_DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-brokerDatabaseName
+            - name: APP_DATABASE_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-sslMode
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

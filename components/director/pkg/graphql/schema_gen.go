@@ -2507,7 +2507,7 @@ input ApplicationFromTemplateInput {
 
 input ApplicationRegisterInput {
 	name: String!
-	providerName: String!
+	providerName: String
 	description: String
 	labels: Labels
 	webhooks: [WebhookInput!]
@@ -2528,7 +2528,7 @@ input ApplicationTemplateInput {
 
 input ApplicationUpdateInput {
 	name: String!
-	providerName: String!
+	providerName: String
 	description: String
 	healthCheckURL: String
 	integrationSystemID: ID
@@ -2706,7 +2706,7 @@ type APISpec {
 type Application {
 	id: ID!
 	name: String!
-	providerName: String!
+	providerName: String
 	description: String
 	integrationSystemID: ID
 	labels(key: String): Labels
@@ -3111,6 +3111,10 @@ type Mutation {
 	- [update integration system](examples/update-integration-system/update-integration-system.graphql)
 	"""
 	updateIntegrationSystem(id: ID!, in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.updateIntegrationSystem")
+	"""
+	**Examples**
+	- [unregister integration system](examples/unregister-integration-system/unregister-integration-system.graphql)
+	"""
 	unregisterIntegrationSystem(id: ID!): IntegrationSystem! @hasScopes(path: "graphql.mutation.unregisterIntegrationSystem")
 	"""
 	**Examples**
@@ -5539,15 +5543,12 @@ func (ec *executionContext) _Application_providerName(ctx context.Context, field
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_description(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -15340,7 +15341,7 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			}
 		case "providerName":
 			var err error
-			it.ProviderName, err = ec.unmarshalNString2string(ctx, v)
+			it.ProviderName, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15454,7 +15455,7 @@ func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Con
 			}
 		case "providerName":
 			var err error
-			it.ProviderName, err = ec.unmarshalNString2string(ctx, v)
+			it.ProviderName, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -16336,9 +16337,6 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			}
 		case "providerName":
 			out.Values[i] = ec._Application_providerName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "description":
 			out.Values[i] = ec._Application_description(ctx, field, obj)
 		case "integrationSystemID":

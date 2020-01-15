@@ -43,6 +43,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [register runtime](./register-runtime/register-runtime.graphql)
 - [set application label](./set-application-label/set-application-label.graphql)
 - [unregister application](./unregister-application/unregister-application.graphql)
+- [unregister integration system](./unregister-integration-system/unregister-integration-system.graphql)
 - [unregister runtime](./unregister-runtime/unregister-runtime.graphql)
 - [update api definition](./update-api-definition/update-api-definition.graphql)
 - [update application](./update-application/update-application.graphql)

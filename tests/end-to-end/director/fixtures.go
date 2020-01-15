@@ -65,12 +65,13 @@ func fixRuntimeInput(placeholder string) graphql.RuntimeInput {
 func fixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 	appTemplateDesc := "app-template-desc"
 	placeholderDesc := "new-placeholder-desc"
+	providerName := "compass-tests"
 	appTemplateInput := graphql.ApplicationTemplateInput{
 		Name:        name,
 		Description: &appTemplateDesc,
 		ApplicationInput: &graphql.ApplicationRegisterInput{
 			Name:         "app",
-			ProviderName: "compass",
+			ProviderName: &providerName,
 			Description:  ptr.String("test {{new-placeholder}}"),
 			Labels: &graphql.Labels{
 				"a": []string{"b", "c"},

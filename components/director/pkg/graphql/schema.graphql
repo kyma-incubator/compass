@@ -129,7 +129,7 @@ input ApplicationFromTemplateInput {
 
 input ApplicationRegisterInput {
 	name: String!
-	providerName: String!
+	providerName: String
 	description: String
 	labels: Labels
 	webhooks: [WebhookInput!]
@@ -150,7 +150,7 @@ input ApplicationTemplateInput {
 
 input ApplicationUpdateInput {
 	name: String!
-	providerName: String!
+	providerName: String
 	description: String
 	healthCheckURL: String
 	integrationSystemID: ID
@@ -328,7 +328,7 @@ type APISpec {
 type Application {
 	id: ID!
 	name: String!
-	providerName: String!
+	providerName: String
 	description: String
 	integrationSystemID: ID
 	labels(key: String): Labels
@@ -733,6 +733,10 @@ type Mutation {
 	- [update integration system](examples/update-integration-system/update-integration-system.graphql)
 	"""
 	updateIntegrationSystem(id: ID!, in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.updateIntegrationSystem")
+	"""
+	**Examples**
+	- [unregister integration system](examples/unregister-integration-system/unregister-integration-system.graphql)
+	"""
 	unregisterIntegrationSystem(id: ID!): IntegrationSystem! @hasScopes(path: "graphql.mutation.unregisterIntegrationSystem")
 	"""
 	**Examples**

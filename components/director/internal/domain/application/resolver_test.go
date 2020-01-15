@@ -24,7 +24,7 @@ import (
 
 var contextParam = txtest.CtxWithDBMatcher()
 
-func TestResolver_CreateApplication(t *testing.T) {
+func TestResolver_RegisterApplication(t *testing.T) {
 	// given
 	modelApplication := fixModelApplication("foo", "tenant-foo", "Foo", "Lorem ipsum")
 	gqlApplication := fixGQLApplication("foo", "Foo", "Lorem ipsum")

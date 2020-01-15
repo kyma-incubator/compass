@@ -24,6 +24,7 @@ type hydraToken struct {
 }
 
 const applicationScopes = "application:read application:write"
+const integrationSystemScopes = "application:read application:write application_template:read application_template:write runtime:read runtime:write"
 
 func fetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL string, scopes string) (*hydraToken, error) {
 	form := url.Values{}

@@ -16,7 +16,7 @@ global:
       version: "PR-391"
     director:
       dir:
-      version: "PR-611"
+      version: "PR-636"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -25,7 +25,7 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-595"
+      version: "PR-622"
     provisioner:
       dir:
       version: "PR-552"
@@ -36,11 +36,11 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-554"
+      version: "PR-610"
     tests:
       e2e:
         dir:
-        version: "PR-607"
+        version: "PR-637"
       connector:
         dir:
         version: "02e8358c"
@@ -115,6 +115,7 @@ global:
       enabled: true
       directorDBName: "postgres"
       provisionerDBName: "provisioner"
+      brokerDBName: "broker"
     # Values for GCP managed PostgreSQL database
     managedGCP:
       serviceAccountKey: ""
@@ -123,6 +124,7 @@ global:
       dbPassword: ""
       directorDBName: ""
       provisionerDBName: ""
+      brokerDBName: ""
       host: "localhost"
       hostPort: "5432"
       sslMode: ""

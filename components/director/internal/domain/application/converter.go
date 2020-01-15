@@ -38,7 +38,7 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		StatusTimestamp:     in.Status.Timestamp,
 		HealthCheckURL:      repo.NewNullableString(in.HealthCheckURL),
 		IntegrationSystemID: repo.NewNullableString(in.IntegrationSystemID),
-		ProviderName:        in.ProviderName,
+		ProviderName:        repo.NewNullableString(in.ProviderName),
 	}, nil
 }
 
@@ -58,7 +58,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 		},
 		IntegrationSystemID: repo.StringPtrFromNullableString(entity.IntegrationSystemID),
 		HealthCheckURL:      repo.StringPtrFromNullableString(entity.HealthCheckURL),
-		ProviderName:        entity.ProviderName,
+		ProviderName:        repo.StringPtrFromNullableString(entity.ProviderName),
 	}
 }
 

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 
 	"code.cloudfoundry.org/lager"
@@ -24,6 +26,10 @@ type Config struct {
 	Port string `envconfig:"default=8080"`
 
 	Provisioning broker.ProvisioningConfig
+	Database     storage.Config
+
+	// feature flag indicates whether use Provisioner API which returns RuntimeID
+	ProcessRuntimeID bool `envconfig:"default=false"`
 }
 
 func main() {
@@ -42,19 +48,20 @@ func main() {
 		Password: cfg.Auth.Password,
 	}
 
-	dumper, err := broker.NewDumper()
-	fatalOnError(err)
-
-	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
-
-	kymaBrokerService := &broker.KymaEnvBroker{
-		Dumper:            dumper,
-		ProvisionerClient: provisionerClient,
-
-		Config: cfg.Provisioning,
+	var provisionerClient provisioner.Client
+	if cfg.ProcessRuntimeID {
+		provisionerClient = provisioner.NewProvisionerClientV2(cfg.Provisioning.URL, true)
+	} else {
+		provisionerClient = provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 	}
 
-	brokerAPI := brokerapi.New(kymaBrokerService, logger, brokerCredentials)
+	db, err := storage.New(cfg.Database.ConnectionURL())
+	fatalOnError(err)
+
+	broker, err := broker.NewBroker(provisionerClient, cfg.Provisioning, db.Instances())
+	fatalOnError(err)
+
+	brokerAPI := brokerapi.New(broker, logger, brokerCredentials)
 	r := handlers.LoggingHandler(os.Stdout, brokerAPI)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))

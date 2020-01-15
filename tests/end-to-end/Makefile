@@ -19,7 +19,7 @@ $(eval $(call test-local))
 # and the container itsefl has to be connected to the network
 test-local: ;
 
-generate-director-examples:
+generate-director-examples: clean-up
 	@echo make generate-director-examples
 	@docker network create --driver bridge gen-examples-network
 	@docker run $(DOCKER_INTERACTIVE) \
@@ -30,12 +30,12 @@ generate-director-examples:
 		--network=gen-examples-network \
 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
 		$(DOCKER_CREATE_OPTS) 	./gen-examples.sh
-	@docker network rm gen-examples-network
-	@if [ -n "$$(git status -s ../../examples )" ]; then \
+	@docker network rm gen-examples-network > /dev/null 2>&1
+	@if [ -n "$$(git status -s ../../components/director/examples )" ]; then \
 		echo -e "✗ Code and examples are out-of-sync" \
 		git status -s ; \
 		exit 1; \
 	fi;
 
 clean-up:
-	@docker network rm gen-examples-network
+	@docker network rm gen-examples-network > /dev/null 2>&1 || true

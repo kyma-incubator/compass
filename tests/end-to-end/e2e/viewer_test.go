@@ -53,8 +53,7 @@ func TestViewerQuery(t *testing.T) {
 
 	t.Run("Test viewer as Application", func(t *testing.T) {
 		appInput := graphql.ApplicationRegisterInput{
-			Name:         "test-app",
-			ProviderName: "compass",
+			Name: "test-app",
 			Labels: &graphql.Labels{
 				"scenarios": []interface{}{"DEFAULT"},
 			},
@@ -64,7 +63,7 @@ func TestViewerQuery(t *testing.T) {
 		app := registerApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, appInput)
 
 		t.Logf("Registered Application with [id=%s]", app.ID)
-		defer deleteApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+		defer unregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 
 		t.Log("Request Client Credentials for Application")
 		appAuth := requestClientCredentialsForApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
