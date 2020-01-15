@@ -21,10 +21,14 @@ import (
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
 type config struct {
-	Address               string `envconfig:"default=127.0.0.1:3000"`
-	APIEndpoint           string `envconfig:"default=/graphql"`
-	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
-	CredentialsNamespace  string `envconfig:"default=compass-system"`
+	Address                      string `envconfig:"default=127.0.0.1:3000"`
+	APIEndpoint                  string `envconfig:"default=/graphql"`
+	PlaygroundAPIEndpoint        string `envconfig:"default=/graphql"`
+	CredentialsNamespace         string `envconfig:"default=compass-system"`
+	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
+	DefaultTenant                string `envconfig:"default=3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
+	SkipDirectorCertVerification bool   `envconfig:"default=false"`
+	OauthCredentialsSecretName   string `envconfig:"default=compass-provisioner-credentials"`
 
 	Database struct {
 		User     string `envconfig:"default=postgres"`
@@ -44,10 +48,12 @@ type config struct {
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("Address: %s, APIEndpoint: %s, CredentialsNamespace: %s "+
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, CredentialsNamespace: %s, "+
+		"DirectorURL: %s, DefaultTenant: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s"+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, DatabaseSchemaFilePath: %s",
 		c.Address, c.APIEndpoint, c.CredentialsNamespace,
+		c.DirectorURL, c.DefaultTenant, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode, c.Database.SchemaFilePath)
 }
@@ -70,7 +76,7 @@ func main() {
 	resolver, err := newResolver(cfg, persistenceService, releaseRepository)
 	exitOnError(err, "Failed to initialize GraphQL resolver ")
 
-	client := &http.Client{Timeout: release.Timeout}
+	client := newHTTPClient(false)
 	logger := log.WithField("Component", "Artifact Downloader")
 	downloader := release.NewArtifactsDownloader(releaseRepository, 5, false, client, logger)
 

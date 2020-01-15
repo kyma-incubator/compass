@@ -32,34 +32,46 @@ func NewResolver(provisioningService provisioning.Service) *Resolver {
 	}
 }
 
-func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config gqlschema.ProvisionRuntimeInput) (string, error) {
-	log.Infof("Requested provisioning of Runtime %s.", id)
-
+func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.ProvisionRuntimeInput) (*gqlschema.OperationStatus, error) {
+	log.Infof("Requested provisioning of RUNTIME %s.", config.RuntimeInput.Name)
 	err := validateInput(config)
 	if err != nil {
-		log.Errorf("Failed to provision Runtime %s: %s", id, err)
-		return "", err
+		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
+		return nil, err
 	}
 
+	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
 	if config.ClusterConfig.GcpConfig != nil && config.ClusterConfig.GardenerConfig == nil {
-		err := fmt.Errorf("Provisioning on GCP is currently not supported, Runtime ID: %s", id)
-		log.Errorf(err.Error())
-		return "", err
+		err := fmt.Errorf("Provisioning on GCP is currently not supported, Runtime : %s", config.RuntimeInput.Name)
+		strError := err.Error()
+		log.Errorf(strError)
+		return nil, err
 	}
 
-	operationID, _, err := r.provisioning.ProvisionRuntime(id, config)
+	operationID, runtimeID, _, err := r.provisioning.ProvisionRuntime(config)
 	if err != nil {
-		log.Errorf("Failed to provision Runtime %s: %s", id, err)
-		return "", err
+		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
+		return nil, err
 	}
-	log.Infof("Provisioning stared for Runtime %s. Operation id %s", id, operationID)
+	log.Infof("Provisioning started for Runtime %s. Operation id %s", config.RuntimeInput.Name, operationID)
 
-	return operationID, nil
+	messageProvisioningStarted := "Provisioning started"
+
+	return &gqlschema.OperationStatus{
+		ID:        &operationID,
+		Operation: gqlschema.OperationTypeProvision,
+		Message:   &messageProvisioningStarted,
+		RuntimeID: &runtimeID,
+	}, nil
 }
 
 func validateInput(config gqlschema.ProvisionRuntimeInput) error {
 	if len(config.KymaConfig.Components) == 0 {
 		return errors.New("cannot provision Runtime since Kyma components list is empty")
+	}
+
+	if config.RuntimeInput == nil {
+		return errors.New("cannot provision Runtime since runtime input is missing")
 	}
 
 	if config.Credentials == nil {
@@ -114,17 +126,4 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 	log.Infof("Getting Runtime operation status for Operation %s succeeded.", operationID)
 
 	return status, nil
-}
-
-func (r *Resolver) CleanupRuntimeData(ctx context.Context, id string) (*gqlschema.CleanUpRuntimeDataResult, error) {
-	log.Infof("Requested cleaning up Runtime data for Runtime %s.", id)
-
-	res, err := r.provisioning.CleanupRuntimeData(id)
-	if err != nil {
-		log.Errorf("Failed to cleanup data for Runtime %s: %s", id, err)
-		return nil, err
-	}
-	log.Infof("Cleaning up Runtime data for Runtime %s succeeded.", id)
-
-	return res, nil
 }
