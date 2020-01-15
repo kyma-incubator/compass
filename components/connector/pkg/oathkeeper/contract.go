@@ -5,6 +5,8 @@ import "net/http"
 const (
 	ConnectorTokenHeader string = "Connector-Token"
 
+	ConnectorTokenQueryParam string = "token"
+
 	ClientIdFromTokenHeader       = "Client-Id-From-Token"
 	ClientIdFromCertificateHeader = "Client-Id-From-Certificate"
 	ClientCertificateHashHeader   = "Client-Certificate-Hash"
