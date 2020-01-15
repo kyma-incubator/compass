@@ -59,6 +59,17 @@ func fixEntityTenantMapping(id, name string) *tenant.Entity {
 	}
 }
 
+func fixInactiveEntityTenantMapping(id, name string) *tenant.Entity {
+	return &tenant.Entity{
+		ID:             id,
+		Name:           name,
+		ExternalTenant: testExternal,
+		InternalTenant: testInternal,
+		ProviderName:   "Compass",
+		Status:         tenant.Inactive,
+	}
+}
+
 type sqlRow struct {
 	id             string
 	name           string

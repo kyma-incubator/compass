@@ -36,7 +36,7 @@ func NewRepository(conv Converter) *pgRepository {
 		existQuerierGlobal:    repo.NewExistQuerierGlobal(tableName),
 		singleGetterGlobal:    repo.NewSingleGetterGlobal(tableName, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(tableName, tableColumns),
-		updaterGlobal:         repo.NewUpdaterGlobal(tableName, []string{"name", "external_id", "internal_id", "provider_name"}, []string{"id"}),
+		updaterGlobal:         repo.NewUpdaterGlobal(tableName, []string{"name", "external_tenant", "internal_tenant", "provider_name", "status"}, []string{"id"}),
 		deleterGlobal:         repo.NewDeleterGlobal(tableName),
 		conv:                  conv,
 	}
@@ -95,11 +95,11 @@ func (r *pgRepository) ExistsByInternalTenant(ctx context.Context, id string) (b
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("internal_tenant", id)})
 }
 
-func (r *pgRepository) List(ctx context.Context, pageSize int, cursor string) (model.TenantMappingPage, error) {
+func (r *pgRepository) List(ctx context.Context, pageSize int, cursor string) (*model.TenantMappingPage, error) {
 	var entityCollection EntityCollection
 	page, totalCount, err := r.pageableQuerierGlobal.ListGlobal(ctx, pageSize, cursor, "id", &entityCollection)
 	if err != nil {
-		return model.TenantMappingPage{}, err
+		return &model.TenantMappingPage{}, err
 	}
 
 	var items []*model.TenantMapping
@@ -108,9 +108,19 @@ func (r *pgRepository) List(ctx context.Context, pageSize int, cursor string) (m
 		tmModel := r.conv.FromEntity(&entity)
 		items = append(items, tmModel)
 	}
-	return model.TenantMappingPage{
+	return &model.TenantMappingPage{
 		Data:       items,
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+func (r *pgRepository) Update(ctx context.Context, model *model.TenantMapping) error {
+	if model == nil {
+		return errors.New("model can not be empty")
+	}
+
+	entity := r.conv.ToEntity(model)
+
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 }

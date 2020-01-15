@@ -9,10 +9,10 @@ provider_name varchar(256),
 status tenant_status
 );
 
-insert into tenant_mapping(internal_id)
+insert into tenant_mapping(internal_tenant)
 select tenant_id from applications a2 union select tenant_id from runtimes r2;
 
-update tenant_mapping set external_id = internal_id;
+update tenant_mapping set external_tenant = internal_tenant;
 
 update tenant_mapping set provider_name = 'Compass', status = 'Active';
 

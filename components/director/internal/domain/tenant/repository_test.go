@@ -491,3 +491,54 @@ func TestPgRepository_List(t *testing.T) {
 		require.Nil(t, result.Data)
 	})
 }
+
+func TestPgRepository_Update(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		tenantMappingModel := fixInactiveModelTenantMapping(testID, testName)
+		tenantMappingEntity := fixInactiveEntityTenantMapping(testID, testName)
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", tenantMappingModel).Return(tenantMappingEntity).Once()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.tenant_mapping SET name = ?, external_tenant = ?, internal_tenant = ?, provider_name = ?, status = ? WHERE id = ? `)).
+			WithArgs(testName, testExternal, testInternal, "Compass", model.Inactive, testID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		err := tenantMappingRepo.Update(ctx, tenantMappingModel)
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Error when updating", func(t *testing.T) {
+		// GIVEN
+		tenantMappingModel := fixInactiveModelTenantMapping(testID, testName)
+		tenantMappingEntity := fixInactiveEntityTenantMapping(testID, testName)
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", tenantMappingModel).Return(tenantMappingEntity).Once()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.tenant_mapping SET name = ?, external_tenant = ?, internal_tenant = ?, provider_name = ?, status = ? WHERE id = ? `)).
+			WithArgs(testName, testExternal, testInternal, "Compass", model.Inactive, testID).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		err := tenantMappingRepo.Update(ctx, tenantMappingModel)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testError.Error())
+	})
+}

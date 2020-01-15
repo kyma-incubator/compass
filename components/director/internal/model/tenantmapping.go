@@ -26,8 +26,28 @@ type TenantMappingPage struct {
 	TotalCount int
 }
 
+func (t TenantMapping) IsIn(tenantsPage TenantMappingPage) bool {
+	for _, tenant := range tenantsPage.Data {
+		if tenant.ExternalTenant == t.ExternalTenant {
+			return true
+		}
+	}
+	return false
+}
+
 type TenantMappingInput struct {
 	Name           string
 	ExternalTenant string
 	Provider       string
+}
+
+func (i *TenantMappingInput) ToTenantMapping(id, internalTenant string) *TenantMapping {
+	return &TenantMapping{
+		ID:             id,
+		Name:           i.Name,
+		ExternalTenant: i.ExternalTenant,
+		InternalTenant: internalTenant,
+		Provider:       i.Provider,
+		Status:         Active,
+	}
 }
