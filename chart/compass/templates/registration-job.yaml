@@ -60,7 +60,8 @@ spec:
               TOKEN_PAYLOAD='{"scopes": "'${SCOPES}'","tenant":"{{ .Values.global.defaultTenant }}"}'
               ENCODED_TOKEN_PAYLOAD=$(echo -e ${TOKEN_PAYLOAD} | base64 | tr -d \\n)
               INTERNAL_TOKEN="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.${ENCODED_TOKEN_PAYLOAD//=}."
-              SECRET_NAME={{ .Values.secrets.integrationSystemCredentials.name }}
+              PROVISIONER_SECRET_NAME={{ .Values.global.provisioner.secrets.integrationSystemCredentials.name }}
+              BROKER_SECRET_NAME={{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}
 
               function wait_for_access_to_api_server() {
                 local cnt=0
@@ -141,10 +142,69 @@ spec:
                 CLIENT_SECRET="${CLIENT_SECRET:1:${#CLIENT_SECRET}-2}"
                 TOKENS_ENDPOINT="${TOKENS_ENDPOINT:1:${#TOKENS_ENDPOINT}-2}"
 
-                kubectl create secret generic ${SECRET_NAME} --from-literal=client_id=$CLIENT_ID --from-literal=client_secret=$CLIENT_SECRET --from-literal=tokens_endpoint=$TOKENS_ENDPOINT -n {{ .Release.Namespace }}
+                kubectl create secret generic ${PROVISIONER_SECRET_NAME} --from-literal=client_id=$CLIENT_ID --from-literal=client_secret=$CLIENT_SECRET --from-literal=tokens_endpoint=$TOKENS_ENDPOINT -n {{ .Release.Namespace }}
 
                 echo "Compass Provisioner registration as integration system and requesting credentials - finished."
                 set -o pipefail
+              }
+
+              function register_broker() {
+                set +o pipefail
+                echo "Kyma environment broker registration as integration system - in progress."
+
+                RESPONSE_BODY=$(curl -k "${DIRECTOR_URL}" \
+                  -H 'Content-Type: application/json' \
+                  -H "authorization: Bearer ${INTERNAL_TOKEN}" \
+                  --data-binary '{
+                    "query":"mutation registerIntegrationSystem {\n  result: registerIntegrationSystem(\n    in: { name: \"compass-kyma-broker\", description: \"Compass Kyma Environment Broker\" }\n  ) {\n    id\n  }\n}\n"
+                  }')
+                echo $RESPONSE_BODY
+
+                INTEGRATION_SYSTEM_ID=$(echo $RESPONSE_BODY | jq -e '.data .result .id')
+                INTEGRATION_SYSTEM_ID="${INTEGRATION_SYSTEM_ID:1:${#INTEGRATION_SYSTEM_ID}-2}"
+
+                CREDENTIAL_RESPONSE_BODY=$(curl -k "${DIRECTOR_URL}" \
+                  -H 'Content-Type: application/json' \
+                  -H 'Accept: application/json' \
+                  -H 'Connection: keep-alive' \
+                  -H "authorization: Bearer ${INTERNAL_TOKEN}" \
+                  --data-binary '{"query":"mutation requestCredentials {\n\trequestClientCredentialsForIntegrationSystem (id : \"'"$INTEGRATION_SYSTEM_ID"'\") {\n    id\n    auth {\n      credential {\n        ... on BasicCredentialData {\n            username\n            password\n        }\n        ...  on OAuthCredentialData {\n            clientId\n            clientSecret\n            url\n        }\n      }\n    }\n  }\n}\n"
+                 }')
+
+                CLIENT_ID=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .clientId')
+                CLIENT_SECRET=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .clientSecret')
+                TOKENS_ENDPOINT=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .url')
+
+                CLIENT_ID="${CLIENT_ID:1:${#CLIENT_ID}-2}"
+                CLIENT_SECRET="${CLIENT_SECRET:1:${#CLIENT_SECRET}-2}"
+                TOKENS_ENDPOINT="${TOKENS_ENDPOINT:1:${#TOKENS_ENDPOINT}-2}"
+
+                kubectl create secret generic ${BROKER_SECRET_NAME} --from-literal=client_id=$CLIENT_ID --from-literal=client_secret=$CLIENT_SECRET --from-literal=tokens_endpoint=$TOKENS_ENDPOINT -n {{ .Release.Namespace }}
+
+                echo "Kyma environment broker registration as integration system and requesting credentials - finished."
+                set -o pipefail
+              }
+
+              function ensure_broker_secret() {
+                set +o errexit
+                kubectl get secret ${BROKER_SECRET_NAME} -n {{ .Release.Namespace }} > /dev/null 2>&1
+                if [[ $? -nq 0 ]]; then
+                  register_broker
+                else
+                  echo "Secret ${BROKER_SECRET_NAME} already exists."
+                fi
+                set -o errexit
+              }
+
+              function ensure_provisioner_secret() {
+                set +o errexit
+                kubectl get secret ${PROVISIONER_SECRET_NAME} -n {{ .Release.Namespace }} > /dev/null 2>&1
+                if [[ $? -nq 0 ]]; then
+                  register_provisioner
+                else
+                  echo "Secret ${PROVISIONER_SECRET_NAME} already exists."
+                fi
+                set -o errexit
               }
 
               function kill_proxy_and_exit() {
@@ -157,16 +217,13 @@ spec:
               echo "Waiting for access to API Server..."
               wait_for_access_to_api_server
 
-              echo "Checking if secret with credentials exists..."
-
-              set +o errexit
-              kubectl get secret ${SECRET_NAME} -n {{ .Release.Namespace }} > /dev/null 2>&1
-              if [[ $? -eq 0 ]]; then
-                echo "Secret ${SECRET_NAME} already exists."
-                kill_proxy_and_exit
-              fi
-              set -o errexit
-
+              echo "Checking if director is available..."
               director_readiness
-              register_provisioner
+
+              echo "Checking if provisioner secret with credentials exists..."
+              ensure_provisioner_secret
+
+              echo "Checking if broker secret with credentials exists..."
+              ensure_broker_secret
+
               kill_proxy_and_exit

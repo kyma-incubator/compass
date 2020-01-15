@@ -79,9 +79,17 @@ global:
     caKey: ""
     caCertificate: ""
 
+  kyma_environment_broker:
+    secrets:
+      integrationSystemCredentials:
+        name: compass-broker-credentials
+
   provisioner:
     graphql:
       port: 3000
+    secrets:
+      integrationSystemCredentials:
+        name: compass-provisioner-credentials
 
   gateway:
     port: 3000
