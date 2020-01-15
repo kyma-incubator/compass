@@ -1,12 +1,12 @@
 #  Gateway Integration tests
 
-Gateway Integration tests is a collection of the following tests:
-- Playground tests checks if Playground is available through Gateway
-- Viewer tests checks correctness of the `viewer` mutation.
+Gateway Integration tests are a collection of the following tests:
+- Playground tests check if Playground is available through Gateway
+- Viewer tests check the correctness of the `viewer` mutation
 - Tenant Mapping Handler checks tenant separation
 - Compass Authentication checks different access methods to Director via Gateway
 
-## Director authentication test scenario
+## Compass authentication test scenario
 Director authentication test scenario consists of the following steps:
 - Get a Dex token, register the Integration System using this token, and request client credentials for the IntegrationSystem
 - Call Hydra for OAuth 2.0 access token with client_id and client_secret pair - https://github.com/kyma-incubator/examples/tree/master/ory-hydra/scenarios/client-credentials

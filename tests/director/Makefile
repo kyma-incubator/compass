@@ -5,6 +5,7 @@ SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 DIRECTOR_GRAPHQL_API = "http://compass-dev-director:3000"
 export DIRECTOR_GRAPHQL_API
 export GO111MODULE = on
+export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
 .PHONY: generate-director-examples clean-up
@@ -43,8 +44,11 @@ clean-up:
 errcheck-local:
 	errcheck -blank -asserts -ignoregenerated ./...
 
-resolve-local: ;
+resolve-local:
+	@echo ${SKIP_STEP_MESSAGE}
 
-ensure-local: ;
+ensure-local:
+	@echo ${SKIP_STEP_MESSAGE}
 
-dep-status-local: ;
+dep-status-local:
+	@echo ${SKIP_STEP_MESSAGE}
