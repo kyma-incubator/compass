@@ -7,14 +7,13 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/pkg/errors"
-	"github.com/sanity-io/litter"
 )
 
 const (
@@ -115,6 +114,9 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	if err != nil {
 		return domain.ProvisionedServiceSpec{}, errors.Wrap(err, "while decoding context")
 	}
+	if ersContext.GlobalAccountID == "" {
+		return domain.ProvisionedServiceSpec{}, errors.New("GlobalAccountID parameter cannot be empty")
+	}
 	b.Dumper.Dump("ERS context:", ersContext)
 
 	if details.ServiceID != kymaServiceID {
@@ -150,7 +152,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	}
 
 	b.Dumper.Dump("Created provisioning input:", input)
-	resp, err := b.ProvisionerClient.ProvisionRuntime(instanceID, *input)
+	resp, err := b.ProvisionerClient.ProvisionRuntime(ersContext.GlobalAccountID, instanceID, *input)
 	if err != nil {
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not provision runtime, instanceID %s", instanceID))
 	}
@@ -192,7 +194,7 @@ func (b *KymaEnvBroker) Deprovision(ctx context.Context, instanceID string, deta
 		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponseBuilder(fmt.Errorf("instance not found"), http.StatusBadRequest, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
 	}
 
-	opID, err := b.ProvisionerClient.DeprovisionRuntime(instance.RuntimeID)
+	opID, err := b.ProvisionerClient.DeprovisionRuntime(instance.GlobalAccountID, instance.RuntimeID)
 	if err != nil {
 		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
 	}
@@ -245,7 +247,12 @@ func (b *KymaEnvBroker) LastOperation(ctx context.Context, instanceID string, de
 	b.Dumper.Dump("LastOperation instanceID:", instanceID)
 	b.Dumper.Dump("LastOperation details:", details)
 
-	status, err := b.ProvisionerClient.RuntimeOperationStatus(details.OperationData)
+	instance, err := b.InstancesStorage.GetByID(instanceID)
+	if err != nil {
+		return domain.LastOperation{}, errors.Wrapf(err, "while getting instance from storage")
+	}
+
+	status, err := b.ProvisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, details.OperationData)
 	if err != nil {
 		b.Dumper.Dump("Got error: ", err)
 		return domain.LastOperation{}, errors.Wrapf(err, "while getting last operation")
@@ -290,7 +297,7 @@ func (b *KymaEnvBroker) LastOperation(ctx context.Context, instanceID string, de
 // Bind creates a new service binding
 //   PUT /v2/service_instances/{instance_id}/service_bindings/{binding_id}
 func (b *KymaEnvBroker) Bind(ctx context.Context, instanceID, bindingID string, details domain.BindDetails, asyncAllowed bool) (domain.Binding, error) {
-	litter.Dump("Bind instanceID:", instanceID)
+	b.Dumper.Dump("Bind instanceID:", instanceID)
 	b.Dumper.Dump("Bind details:", details)
 	b.Dumper.Dump("Bind asyncAllowed:", asyncAllowed)
 
