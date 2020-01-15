@@ -43,7 +43,7 @@ global:
     tests:
       e2e:
         dir:
-        version: "PR-637"
+        version: "PR-656"
       connector:
         dir:
         version: "02e8358c"
