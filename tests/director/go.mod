@@ -1,4 +1,4 @@
-module github.com/kyma-incubator/compass/tests/director-tests
+module github.com/kyma-incubator/compass/tests/director
 
 go 1.13
 
@@ -17,10 +17,11 @@ require (
 	github.com/vrischmann/envconfig v1.2.0
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876 // indirect
+	golang.org/x/exp v0.0.0-20191227195350-da58074b4299 // indirect
 	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
 	golang.org/x/sys v0.0.0-20191228213918-04cbcbbfeed8 // indirect
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 	k8s.io/apimachinery v0.17.0 // indirect
 )
 
-replace github.com/kyma-incubator/compass/components/director => github.com/aszecowka/compass/components/director v0.0.0-20200110114546-cc2fc148edd2
+replace github.com/kyma-incubator/compass/components/director => github.com/aszecowka/compass/components/director v0.0.0-20200114153347-d47b6857869b
