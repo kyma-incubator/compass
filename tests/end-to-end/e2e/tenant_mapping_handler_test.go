@@ -27,5 +27,5 @@ func TestDifferentTenantAccessDenied(t *testing.T) {
 	}
 	_, err = registerApplicationWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
 	assert.Error(t, err)
-	assert.Equal(t, "graphql: server returned a non-200 status code: 403", err.Error())
+	assert.Equal(t, "graphql: forbidden: invalid tenant", err.Error())
 }
