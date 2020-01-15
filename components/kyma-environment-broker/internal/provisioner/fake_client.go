@@ -43,7 +43,7 @@ func (c *fakeClient) FinishProvisionerOperation(id string, state schema.Operatio
 
 // Provisioner Client methods
 
-func (c *fakeClient) ProvisionRuntime(id string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
+func (c *fakeClient) ProvisionRuntime(accountID, id string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -66,23 +66,23 @@ func (c *fakeClient) ProvisionRuntime(id string, config schema.ProvisionRuntimeI
 	}, nil
 }
 
-func (c *fakeClient) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error) {
+func (c *fakeClient) UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 
-func (c *fakeClient) DeprovisionRuntime(runtimeID string) (string, error) {
+func (c *fakeClient) DeprovisionRuntime(accountID, runtimeID string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 
-func (c *fakeClient) ReconnectRuntimeAgent(runtimeID string) (string, error) {
+func (c *fakeClient) ReconnectRuntimeAgent(accountID, runtimeID string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 
-func (c *fakeClient) GCPRuntimeStatus(runtimeID string) (GCPRuntimeStatus, error) {
+func (c *fakeClient) GCPRuntimeStatus(accountID, runtimeID string) (GCPRuntimeStatus, error) {
 	return GCPRuntimeStatus{}, fmt.Errorf("not implemented")
 }
 
-func (c *fakeClient) RuntimeOperationStatus(operationID string) (schema.OperationStatus, error) {
+func (c *fakeClient) RuntimeOperationStatus(accountID, operationID string) (schema.OperationStatus, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
