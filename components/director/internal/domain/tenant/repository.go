@@ -65,10 +65,10 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.TenantMapping
 	return r.conv.FromEntity(&entity), nil
 }
 
-func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenant string) (*model.TenantMapping, error) {
+func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenant, provider string) (*model.TenantMapping, error) {
 	var entity Entity
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("external_tenant", externalTenant),
-		repo.NewNotEqualCondition("status", string(Inactive))}, repo.NoOrderBy, &entity); err != nil {
+		repo.NewEqualCondition("provider_name", provider), repo.NewNotEqualCondition("status", string(Inactive))}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 	return r.conv.FromEntity(&entity), nil
@@ -87,8 +87,9 @@ func (r *pgRepository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-func (r *pgRepository) ExistsByExternalTenant(ctx context.Context, id string) (bool, error) {
-	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("external_tenant", id)})
+func (r *pgRepository) ExistsByExternalTenant(ctx context.Context, externalTenant, provider string) (bool, error) {
+	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("external_tenant", externalTenant),
+		repo.NewEqualCondition("provider_name", provider)})
 }
 
 func (r *pgRepository) ExistsByInternalTenant(ctx context.Context, id string) (bool, error) {

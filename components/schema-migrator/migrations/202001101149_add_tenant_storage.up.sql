@@ -3,11 +3,14 @@ create type tenant_status AS ENUM ('Active', 'Inactive');
 create table tenant_mapping(
 id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
 name varchar(256),
-external_tenant varchar(256) unique,
+external_tenant varchar(256),
 internal_tenant uuid unique,
 provider_name varchar(256),
 status tenant_status
 );
+
+alter table tenant_mapping
+add unique (external_tenant, provider_name)
 
 insert into tenant_mapping(internal_tenant)
 select tenant_id from applications a2 union select tenant_id from runtimes r2;

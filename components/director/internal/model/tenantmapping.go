@@ -28,7 +28,7 @@ type TenantMappingPage struct {
 
 func (t TenantMapping) IsIn(tenantsPage TenantMappingPage) bool {
 	for _, tenant := range tenantsPage.Data {
-		if tenant.ExternalTenant == t.ExternalTenant {
+		if (tenant.ExternalTenant == t.ExternalTenant) && (tenant.Provider == t.Provider) {
 			return true
 		}
 	}

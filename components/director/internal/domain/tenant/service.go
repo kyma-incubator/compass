@@ -13,13 +13,12 @@ import (
 type TenantMappingRepository interface {
 	Create(ctx context.Context, item model.TenantMapping) error
 	Get(ctx context.Context, id string) (*model.TenantMapping, error)
-	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.TenantMapping, error)
+	GetByExternalTenant(ctx context.Context, externalTenant, provider string) (*model.TenantMapping, error)
 	GetByInternalTenant(ctx context.Context, internalTenant string) (*model.TenantMapping, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.TenantMappingPage, error)
-	ExistsByExternalTenant(ctx context.Context, id string) (bool, error)
+	ExistsByExternalTenant(ctx context.Context, externalTenant, provider string) (bool, error)
 	Update(ctx context.Context, model model.TenantMapping) error
-	Delete(ctx context.Context, id string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -72,13 +71,7 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 //Just a prototype
 func (s *service) Sync(ctx context.Context, tenantInputs []model.TenantMappingInput) error {
 
-	var tenants []model.TenantMapping
-
-	for _, tenant := range tenantInputs {
-		id := s.uidService.Generate()
-		internalTenant := s.uidService.Generate()
-		tenants = append(tenants, *tenant.ToTenantMapping(id, internalTenant))
-	}
+	tenants := s.multipleToTenantMapping(tenantInputs)
 
 	tenantsFromDb, err := s.tenantMappingRepo.List(ctx, 100, "")
 	if err != nil {
@@ -89,18 +82,45 @@ func (s *service) Sync(ctx context.Context, tenantInputs []model.TenantMappingIn
 		if tenant.IsIn(*tenantsFromDb) {
 			continue
 		}
-		err := s.markAsInactive(ctx, tenant)
+
+		toDelete, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenant.ExternalTenant, tenant.Provider)
+		if err != nil {
+			return errors.Wrap(err, "while getting the tenant to delete")
+		}
+
+		err = s.markAsInactive(ctx, *toDelete)
 		if err != nil {
 			return errors.Wrap(err, "while syncing tenants")
 		}
 	}
-	err = s.AbsolutelyNotUpsert(ctx, tenants)
+
+	err = s.upsert(ctx, tenants)
 	return nil
 }
 
-func (s *service) AbsolutelyNotUpsert(ctx context.Context, tenants []model.TenantMapping) error {
+func (s *service) multipleToTenantMapping(tenantInputs []model.TenantMappingInput) []model.TenantMapping {
+	var tenants []model.TenantMapping
+
+	for _, tenant := range tenantInputs {
+		id := s.uidService.Generate()
+		internalTenant := s.uidService.Generate()
+		tenants = append(tenants, *tenant.ToTenantMapping(id, internalTenant))
+	}
+	return tenants
+}
+
+func (s *service) AbsolutelyNotUpsert(ctx context.Context, tenantInputs []model.TenantMappingInput) error {
+	tenants := s.multipleToTenantMapping(tenantInputs)
+	err := s.upsert(ctx, tenants)
+	if err != nil {
+		return errors.Wrap(err, "while UPSERTING? many")
+	}
+	return nil
+}
+
+func (s *service) upsert(ctx context.Context, tenants []model.TenantMapping) error {
 	for _, tenant := range tenants {
-		exists, err := s.tenantMappingRepo.ExistsByExternalTenant(ctx, tenant.ExternalTenant)
+		exists, err := s.tenantMappingRepo.ExistsByExternalTenant(ctx, tenant.ExternalTenant, tenant.Provider)
 		if err != nil {
 			return errors.Wrap(err, "while checking the existance of tenant")
 		}
@@ -114,6 +134,8 @@ func (s *service) AbsolutelyNotUpsert(ctx context.Context, tenants []model.Tenan
 	}
 	return nil
 }
+
+//func (s *service) Delete(ctx context.Context)
 
 func (s *service) markAsInactive(ctx context.Context, tenant model.TenantMapping) error {
 	tenant.Status = model.Inactive
