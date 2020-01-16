@@ -19,8 +19,10 @@ func NewConverter(legacyConnectorURL string) *converter {
 
 func (c converter) ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTimeTokenForRuntime {
 	return graphql.OneTimeTokenForRuntime{
-		Token:        model.Token,
-		ConnectorURL: model.ConnectorURL,
+		TokenWithURL: graphql.TokenWithURL{
+			Token:        model.Token,
+			ConnectorURL: model.ConnectorURL,
+		},
 	}
 }
 
@@ -36,8 +38,10 @@ func (c converter) ToGraphQLForApplication(model model.OneTimeToken) (graphql.On
 	legacyConnectorURL.RawQuery += fmt.Sprintf("token=%s", model.Token)
 
 	return graphql.OneTimeTokenForApplication{
-		Token:              model.Token,
-		ConnectorURL:       model.ConnectorURL,
+		TokenWithURL: graphql.TokenWithURL{
+			Token:        model.Token,
+			ConnectorURL: model.ConnectorURL,
+		},
 		LegacyConnectorURL: legacyConnectorURL.String(),
 	}, nil
 }

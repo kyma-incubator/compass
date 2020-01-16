@@ -77,7 +77,7 @@ func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id str
 	return &gqlToken, nil
 }
 
-func (r *Resolver) RawEncoded(ctx context.Context, obj graphql.OneTimeToken) (*string, error) {
+func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.TokenWithURL) (*string, error) {
 	if obj == nil {
 		return nil, errors.New("Token was nil")
 	}
@@ -92,7 +92,7 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj graphql.OneTimeToken) (*s
 	return &rawBaseEncoded, nil
 }
 
-func (r *Resolver) Raw(ctx context.Context, obj graphql.OneTimeToken) (*string, error) {
+func (r *Resolver) Raw(ctx context.Context, obj *graphql.TokenWithURL) (*string, error) {
 	if obj == nil {
 		return nil, errors.New("Token was nil")
 	}

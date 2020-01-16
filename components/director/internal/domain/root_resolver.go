@@ -445,19 +445,19 @@ func (r *integrationSystemResolver) Auths(ctx context.Context, obj *graphql.Inte
 type oneTimeTokenForApplicationResolver struct{ *RootResolver }
 
 func (r *oneTimeTokenForApplicationResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeTokenForApplication) (*string, error) {
-	return r.token.RawEncoded(ctx, obj)
+	return r.token.RawEncoded(ctx, &obj.TokenWithURL)
 }
 
 func (r *oneTimeTokenForApplicationResolver) Raw(ctx context.Context, obj *graphql.OneTimeTokenForApplication) (*string, error) {
-	return r.token.Raw(ctx, obj)
+	return r.token.Raw(ctx, &obj.TokenWithURL)
 }
 
 type oneTimeTokenForRuntimeResolver struct{ *RootResolver }
 
 func (r *oneTimeTokenForRuntimeResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeTokenForRuntime) (*string, error) {
-	return r.token.RawEncoded(ctx, obj)
+	return r.token.RawEncoded(ctx, &obj.TokenWithURL)
 }
 
 func (r *oneTimeTokenForRuntimeResolver) Raw(ctx context.Context, obj *graphql.OneTimeTokenForRuntime) (*string, error) {
-	return r.token.Raw(ctx, obj)
+	return r.token.Raw(ctx, &obj.TokenWithURL)
 }

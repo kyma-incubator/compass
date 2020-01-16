@@ -1,16 +1,19 @@
 package graphql
 
+type TokenWithURL struct {
+	Token        string `json:"token"`
+	ConnectorURL string `json:"connectorURL"`
+}
+
 type OneTimeTokenForApplication struct {
-	Token              string `json:"token"`
-	ConnectorURL       string `json:"connectorURL"`
+	TokenWithURL
 	LegacyConnectorURL string `json:"legacyConnectorURL"`
 }
 
 func (t *OneTimeTokenForApplication) IsOneTimeToken() {}
 
 type OneTimeTokenForRuntime struct {
-	Token        string `json:"token"`
-	ConnectorURL string `json:"connectorURL"`
+	TokenWithURL
 }
 
 func (t *OneTimeTokenForRuntime) IsOneTimeToken() {}
