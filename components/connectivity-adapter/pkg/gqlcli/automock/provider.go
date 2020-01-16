@@ -2,7 +2,7 @@
 
 package automock
 
-import graphql "github.com/machinebox/graphql"
+import gqlcli "github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 import http "net/http"
 import mock "github.com/stretchr/testify/mock"
 
@@ -12,15 +12,15 @@ type Provider struct {
 }
 
 // GQLClient provides a mock function with given fields: rq
-func (_m *Provider) GQLClient(rq *http.Request) *graphql.Client {
+func (_m *Provider) GQLClient(rq *http.Request) gqlcli.GraphQLClient {
 	ret := _m.Called(rq)
 
-	var r0 *graphql.Client
-	if rf, ok := ret.Get(0).(func(*http.Request) *graphql.Client); ok {
+	var r0 gqlcli.GraphQLClient
+	if rf, ok := ret.Get(0).(func(*http.Request) gqlcli.GraphQLClient); ok {
 		r0 = rf(rq)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*graphql.Client)
+			r0 = ret.Get(0).(gqlcli.GraphQLClient)
 		}
 	}
 
