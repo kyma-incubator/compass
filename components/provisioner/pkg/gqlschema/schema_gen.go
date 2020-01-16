@@ -753,7 +753,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
-    name: String!
+    name: String
     clusterConfig: ClusterConfig
     credentialsSecretName: String
     kymaConfig: KymaConfig
@@ -880,7 +880,7 @@ type CleanUpRuntimeDataResult {
 # Inputs
 
 input ProvisionRuntimeInput {
-    name: String!                        # Name of runtime sepcified by user
+    name: String!                       # Name of runtime sepcified by Compass Director
     clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
     credentials: CredentialsInput!      # Credentials
     kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
@@ -966,6 +966,7 @@ input ComponentConfigurationInput {
 
 
 input UpgradeRuntimeInput {
+    name: String!                       # Name of runtime
     clusterConfig: UpgradeClusterInput  # Configuration of the cluster to upgrade
     kymaConfig: KymaConfigInput         # Configuration of the Kyma Runtime to upgrade
 }
@@ -2634,15 +2635,12 @@ func (ec *executionContext) _RuntimeConfig_name(ctx context.Context, field graph
 		return obj.Name, nil
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeConfig_clusterConfig(ctx context.Context, field graphql.CollectedField, obj *RuntimeConfig) graphql.Marshaler {
@@ -4157,6 +4155,12 @@ func (ec *executionContext) unmarshalInputUpgradeRuntimeInput(ctx context.Contex
 
 	for k, v := range asMap {
 		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "clusterConfig":
 			var err error
 			it.ClusterConfig, err = ec.unmarshalOUpgradeClusterInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeClusterInput(ctx, v)
@@ -4696,9 +4700,6 @@ func (ec *executionContext) _RuntimeConfig(ctx context.Context, sel ast.Selectio
 			out.Values[i] = graphql.MarshalString("RuntimeConfig")
 		case "name":
 			out.Values[i] = ec._RuntimeConfig_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "clusterConfig":
 			out.Values[i] = ec._RuntimeConfig_clusterConfig(ctx, field, obj)
 		case "credentialsSecretName":
