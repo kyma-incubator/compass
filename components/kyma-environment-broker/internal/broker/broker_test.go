@@ -36,6 +36,19 @@ func TestBroker_Services(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, services, 1)
 	assert.Len(t, services[0].Plans, 1)
+
+	// assert provisioning schema
+	componentItem := services[0].Plans[0].Schemas.Instance.Create.Parameters["properties"].(map[string]interface{})["components"]
+	componentJSON, err := json.Marshal(componentItem)
+	require.NoError(t, err)
+	assert.JSONEq(t, `
+		{
+		  "type": "array",
+		  "items": {
+			  "type": "string",
+			  "enum": ["monitoring", "kiali", "loki", "jaeger"]
+		  }
+		}`, string(componentJSON))
 }
 
 func TestBroker_ProvisioningScenario(t *testing.T) {
