@@ -16,6 +16,8 @@ spec:
         app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      serviceAccount: {{ include "kyma-env-broker.fullname" . }}
+      serviceAccountName: {{ include "kyma-env-broker.fullname" . }}
     {{ if .Values.global.isLocalEnv }}
       hostAliases:
         - ip: {{ .Values.global.minikubeIP }}
@@ -55,7 +57,15 @@ spec:
               value: "{{ .Values.broker.username }}"
             - name: APP_PROCESS_RUNTIME_ID
               value: "{{ .Values.provisioner.processRuntimeID }}"
-            - name: APP_AUTH_PASSWORD
+            - name: APP_DIRECTOR_DEFAULT_TENANT
+              value: "{{ .Values.global.defaultTenant }}"
+            - name: APP_DIRECTOR_URL
+              value: "http://compass-director.compass-system.svc.cluster.local:3000/graphql"
+            - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
+              value: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
+            - name: APP_DIRECTOR_SKIP_CERT_VERIFICATION
+              value: "{{ .Values.global.isLocalEnv }}"
+            - name: APP_DIRECTOR_AUTH_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "kyma-env-broker.fullname" . }}
@@ -90,14 +100,6 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            - name: APP_DEFAULT_TENANT
-              value: "{{ .Values.global.defaultTenant }}"
-            - name: APP_DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
-            - name: APP_OAUTH_CREDENTIALS_SECRET_NAME
-              value: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
-            - name: APP_SKIP_DIRECTOR_CERT_VERIFICATION
-              value: "{{ .Values.global.isLocalEnv }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
