@@ -8,7 +8,7 @@ require (
 	github.com/avast/retry-go v2.4.3+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/google/uuid v1.1.1
-	github.com/kyma-incubator/compass/components/director v0.0.0-00010101000000-000000000000
+	github.com/kyma-incubator/compass v0.0.0-20200116140731-1e3295c419ae // indirect
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.2.0 // indirect
 	github.com/pkg/errors v0.8.1
@@ -23,5 +23,3 @@ require (
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 	k8s.io/apimachinery v0.17.0 // indirect
 )
-
-replace github.com/kyma-incubator/compass/components/director => github.com/aszecowka/compass/components/director v0.0.0-20200116080328-9c0f3f9e57fc
