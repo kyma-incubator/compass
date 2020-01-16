@@ -1,10 +1,10 @@
-#  Gateway Integration tests
+#  Gateway integration tests
 
-Gateway Integration tests are a collection of the following tests:
-- Playground tests check if Playground is available through Gateway
+Gateway integration tests are a collection of the following tests:
+- Playground tests check if the playground is available through Gateway
 - Viewer tests check the correctness of the `viewer` mutation
 - Tenant Mapping Handler checks tenant separation
-- Compass Authentication checks different access methods to Director via Gateway
+- Compass Authentication checks different methods of access to Director via Gateway
 
 ## Compass authentication test scenario
 Director authentication test scenario consists of the following steps:
@@ -32,4 +32,4 @@ To run the test locally, set these environment variables:
 | GATEWAY_CLIENT_CERTS_SUBDOMAIN | Default gateway for handling requests with a certificate | compass-gateway-mtls |
 | GATEWAY_OAUTH20_SUBDOMAIN | Default gateway for handling requests with an OAuth access token | compass-gateway-auth-oauth|
 
-Then run `go test ./... -count=1 -v` inside `./tests/director/gateway-integration-tests` directory.
+Then run `go test ./... -count=1 -v` inside the `./tests/director/gateway-integration-tests` directory.
