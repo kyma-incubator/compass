@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
+	"time"
 )
 
 type writeSession struct {
@@ -39,6 +40,7 @@ func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
 		Set("service_plan_id", instance.ServicePlanID).
 		Set("dashboard_url", instance.DashboardURL).
 		Set("provisioning_parameters", instance.ProvisioningParameters).
+		Set("updated_at", time.Now()).
 		Exec()
 	if err != nil {
 		if err == dbr.ErrNotFound {
