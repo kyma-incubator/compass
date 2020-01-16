@@ -136,7 +136,6 @@ type GardenerConfig struct {
 func (GardenerConfig) IsClusterConfig() {}
 
 type GardenerConfigInput struct {
-	Name                   string                 `json:"name"`
 	ProjectName            string                 `json:"projectName"`
 	KubernetesVersion      string                 `json:"kubernetesVersion"`
 	NodeCount              int                    `json:"nodeCount"`
@@ -189,7 +188,6 @@ type ProvisionRuntimeInput struct {
 }
 
 type RuntimeConfig struct {
-	Name                  *string       `json:"name"`
 	ClusterConfig         ClusterConfig `json:"clusterConfig"`
 	CredentialsSecretName *string       `json:"credentialsSecretName"`
 	KymaConfig            *KymaConfig   `json:"kymaConfig"`
@@ -218,7 +216,6 @@ type UpgradeClusterInput struct {
 }
 
 type UpgradeRuntimeInput struct {
-	Name          string               `json:"name"`
 	ClusterConfig *UpgradeClusterInput `json:"clusterConfig"`
 	KymaConfig    *KymaConfigInput     `json:"kymaConfig"`
 }

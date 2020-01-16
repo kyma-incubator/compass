@@ -857,7 +857,6 @@ input ClusterConfigInput {
 }
 
 input GardenerConfigInput {
-    name: String!                                   # Name of the cluster to create
     projectName: String!                            # Gardener project in which the cluster is created
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     nodeCount: Int!                                 # Number of nodes to create
@@ -926,9 +925,7 @@ input ComponentConfigurationInput {
     configuration: [ConfigEntryInput]     # Component specific configuration
 }
 
-
 input UpgradeRuntimeInput {
-    name: String!                       # Name of runtime
     clusterConfig: UpgradeClusterInput  # Configuration of the cluster to upgrade
     kymaConfig: KymaConfigInput         # Configuration of the Kyma Runtime to upgrade
 }
@@ -3760,12 +3757,6 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 
 	for k, v := range asMap {
 		switch k {
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "projectName":
 			var err error
 			it.ProjectName, err = ec.unmarshalNString2string(ctx, v)
@@ -4018,12 +4009,6 @@ func (ec *executionContext) unmarshalInputUpgradeRuntimeInput(ctx context.Contex
 
 	for k, v := range asMap {
 		switch k {
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "clusterConfig":
 			var err error
 			it.ClusterConfig, err = ec.unmarshalOUpgradeClusterInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeClusterInput(ctx, v)
