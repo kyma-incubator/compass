@@ -1,7 +1,6 @@
 
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
-    name: String
     clusterConfig: ClusterConfig
     credentialsSecretName: String
     kymaConfig: KymaConfig
@@ -120,15 +119,18 @@ enum RuntimeAgentConnectionStatus {
     Disconnected
 }
 
-type CleanUpRuntimeDataResult {
-    id: String!
-    message: String
-}
-
 # Inputs
 
+scalar Labels
+
+input RuntimeInput {
+    name: String!           # Name of the Runtime
+    description: String     # Runtime description
+    labels: Labels
+}
+
 input ProvisionRuntimeInput {
-    name: String!                       # Name of runtime sepcified by Compass Director
+    runtimeInput: RuntimeInput!         # Configuration of the Runtime to register in Director
     clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
     credentials: CredentialsInput!      # Credentials
     kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
@@ -144,6 +146,7 @@ input ClusterConfigInput {
 }
 
 input GardenerConfigInput {
+    name: String!                                   # Name of the cluster to create
     projectName: String!                            # Gardener project in which the cluster is created
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     nodeCount: Int!                                 # Number of nodes to create
@@ -214,7 +217,6 @@ input ComponentConfigurationInput {
 
 
 input UpgradeRuntimeInput {
-    name: String!                       # Name of runtime
     clusterConfig: UpgradeClusterInput  # Configuration of the cluster to upgrade
     kymaConfig: KymaConfigInput         # Configuration of the Kyma Runtime to upgrade
 }
@@ -225,10 +227,9 @@ input UpgradeClusterInput {
 
 type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
-    provisionRuntime(id: String!, config: ProvisionRuntimeInput!): String!
+    provisionRuntime(config: ProvisionRuntimeInput!): OperationStatus
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): String!
     deprovisionRuntime(id: String!): String!
-    cleanupRuntimeData(id: String!): CleanUpRuntimeDataResult!
 
     # Compass Runtime Agent Connection Management
     reconnectRuntimeAgent(id: String!): String!
