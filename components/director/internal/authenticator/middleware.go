@@ -119,14 +119,18 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 }
 
 type errorResponse struct {
-	Errors []string `json:"errors"`
+	Errors []gqlError `json:"errors"`
+}
+
+type gqlError struct {
+	Message string `json:"message"`
 }
 
 func (a *Authenticator) writeError(w http.ResponseWriter, message string, statusCode int) {
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
 
-	resp := errorResponse{Errors: []string{message}}
+	resp := errorResponse{Errors: []gqlError{{Message: message}}}
 	err := json.NewEncoder(w).Encode(resp)
 	if err != nil {
 		log.Error(err, "while encoding data")

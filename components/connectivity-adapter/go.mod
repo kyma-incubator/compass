@@ -9,4 +9,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/vektah/gqlparser v1.2.1 // indirect
+	github.com/gorilla/mux v1.7.3
+	github.com/vrischmann/envconfig v1.2.0
 )
