@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
-	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -16,16 +15,17 @@ import (
 const serviceIDVarKey = "serviceId"
 
 type Handler struct {
-	directorURL string
+	cliProvider gqlcli.Provider
 }
 
-func NewHandler(directorURL string) *Handler {
-	return &Handler{directorURL: directorURL}
+func NewHandler(cliProvider gqlcli.Provider) *Handler {
+	return &Handler{
+		cliProvider: cliProvider,
+	}
 }
 
 func (h *Handler) Create(rw http.ResponseWriter, rq *http.Request) {
 	log.Println("Create")
-
 	rw.WriteHeader(http.StatusOK)
 }
 
@@ -45,9 +45,10 @@ func (h *Handler) Update(rw http.ResponseWriter, rq *http.Request) {
 }
 
 func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
-	gqlCli := h.gqlClient(request)
+	gqlCli := h.cliProvider.GQLClient(request)
 
 	vars := mux.Vars(request)
+
 	id := vars[serviceIDVarKey]
 	gqlRequest := prepareUnregisterApplicationRequest(id)
 
@@ -65,8 +66,4 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	writer.WriteHeader(http.StatusNoContent)
-}
-
-func (h *Handler) gqlClient(rq *http.Request) *gcli.Client {
-	return gqlcli.NewAuthorizedGraphQLClient(h.directorURL, rq)
 }

@@ -1,6 +1,7 @@
 package appregistry
 
 import (
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -12,7 +13,8 @@ type Config struct{
 }
 
 func RegisterHandler(router *mux.Router, cfg Config) {
-	serviceHandler := service.NewHandler(cfg.DirectorURL)
+	gqlCliProvider := gqlcli.NewProvider(cfg.DirectorURL)
+	serviceHandler := service.NewHandler(gqlCliProvider)
 
 	router.HandleFunc("/services", serviceHandler.List).Methods(http.MethodGet)
 	router.HandleFunc("/services", serviceHandler.Create).Methods(http.MethodPost)
