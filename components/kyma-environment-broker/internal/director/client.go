@@ -5,12 +5,19 @@ import (
 	"github.com/pkg/errors"
 )
 
-type directorClient struct {
-	token       oauth.Token
-	oauthClient oauth.Client
+func NewDirectorClient(oauthClient oauth.Client) *directorClient {
+	return &directorClient{
+		oauthClient: oauthClient,
+	}
 }
 
-func (cc *directorClient) getToken() error {
+// TODO: wrap interface
+type directorClient struct {
+	oauthClient oauth.Client
+	token       oauth.Token
+}
+
+func (cc *directorClient) setToken() error {
 	token, err := cc.oauthClient.GetAuthorizationToken()
 	if err != nil {
 		return errors.Wrap(err, "Error while obtaining token")

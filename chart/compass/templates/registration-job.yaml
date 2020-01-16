@@ -188,7 +188,7 @@ spec:
               function ensure_broker_secret() {
                 set +o errexit
                 kubectl get secret ${BROKER_SECRET_NAME} -n {{ .Release.Namespace }} > /dev/null 2>&1
-                if [[ $? -nq 0 ]]; then
+                if [[ $? -ne 0 ]]; then
                   register_broker
                 else
                   echo "Secret ${BROKER_SECRET_NAME} already exists."
@@ -199,7 +199,7 @@ spec:
               function ensure_provisioner_secret() {
                 set +o errexit
                 kubectl get secret ${PROVISIONER_SECRET_NAME} -n {{ .Release.Namespace }} > /dev/null 2>&1
-                if [[ $? -nq 0 ]]; then
+                if [[ $? -ne 0 ]]; then
                   register_provisioner
                 else
                   echo "Secret ${PROVISIONER_SECRET_NAME} already exists."

@@ -298,8 +298,8 @@
   name = "github.com/kubernetes/client-go"
   packages = ["kubernetes/typed/core/v1"]
   pruneopts = "UT"
-  revision = "78d2af792babf2dd937ba2e2a8d99c753a5eda89"
-  version = "v12.0.0"
+  revision = "8cba805ad12d699a43f2fe96dbfbcf3042133e89"
+  version = "kubernetes-1.15.6"
 
 [[projects]]
   digest = "1:9fbfadf72bec89c4e83dd0b553820a16bf0be0f62431ac68e22937f6158be5f7"
@@ -456,6 +456,14 @@
   pruneopts = "UT"
   revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
   version = "v1.4.2"
+
+[[projects]]
+  digest = "1:524b71991fc7d9246cc7dc2d9e0886ccb97648091c63e30eef619e6862c955dd"
+  name = "github.com/spf13/pflag"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "2e9d26c8c37aae03e3f9d4e90b7116f5accb7cab"
+  version = "v1.0.5"
 
 [[projects]]
   digest = "1:99d32780e5238c2621fff621123997c3e3cca96db8be13179013aea77dfab551"
@@ -741,7 +749,7 @@
   version = "v0.17.0"
 
 [[projects]]
-  digest = "1:bb2723bcb34d435bed8d61263b1ab10de031431bbe14cf0fa7737e4740548182"
+  digest = "1:0522b8b246e26b872db31b5411294011d3988762268d24965c0026bdc613042d"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -829,18 +837,23 @@
     "rest",
     "rest/watch",
     "testing",
+    "tools/auth",
+    "tools/clientcmd",
     "tools/clientcmd/api",
+    "tools/clientcmd/api/latest",
+    "tools/clientcmd/api/v1",
     "tools/metrics",
     "tools/reference",
     "transport",
     "util/cert",
     "util/connrotation",
     "util/flowcontrol",
+    "util/homedir",
     "util/keyutil",
   ]
   pruneopts = "UT"
-  revision = "6ee68ca5fd8355d024d02f9db0b3b667e8357a0f"
-  version = "v11.0.0"
+  revision = "78d2af792babf2dd937ba2e2a8d99c753a5eda89"
+  version = "v12.0.0"
 
 [[projects]]
   digest = "1:93e82f25d75aba18436ad1ac042cb49493f096011f2541075721ed6f9e05c044"
@@ -902,8 +915,12 @@
     "github.com/vrischmann/envconfig",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/fake",
     "k8s.io/client-go/kubernetes/typed/core/v1",
+    "k8s.io/client-go/rest",
+    "k8s.io/client-go/tools/clientcmd",
+    "k8s.io/client-go/util/homedir",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
