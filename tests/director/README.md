@@ -4,7 +4,7 @@ Director tests consists of acceptance tests.
 
 ## Usage
 
-The binary allows to override some configuration parameters. You can specify following environment variables.
+The binary allows you to override some configuration parameters. You can specify the following environment variables:
 
 | ENV                         | Default                         | Description                                       |
 |-----------------------------|---------------------------------|---------------------------------------------------|
