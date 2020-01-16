@@ -1,6 +1,8 @@
 # Director tests
 
-Director tests consists of acceptance tests.
+Director tests consists of acceptance tests for Director:
+- `api-tests` verifies Director GraphQL API 
+-  `gateway-integration-tests` verifies access to the Director API via Gateway
 
 ## Usage
 
