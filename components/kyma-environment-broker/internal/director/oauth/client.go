@@ -9,6 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
+
 	v1 "github.com/kubernetes/client-go/kubernetes/typed/core/v1"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,6 +21,7 @@ import (
 //go:generate mockery -name=Client
 type Client interface {
 	GetAuthorizationToken() (Token, error)
+	WaitForCredentials() error
 }
 
 type oauthClient struct {
@@ -42,9 +47,23 @@ func (c *oauthClient) GetAuthorizationToken() (Token, error) {
 	return c.getAuthorizationToken(credentials)
 }
 
+func (c *oauthClient) WaitForCredentials() error {
+	err := wait.Poll(time.Second, time.Minute*3, func() (bool, error) {
+		_, err := c.secretsClient.Get(c.secretName, metav1.GetOptions{})
+		switch {
+		case apierrors.IsNotFound(err):
+			return false, nil
+		case err != nil:
+			return false, errors.Wrapf(err, "while waiting for secret %s", c.secretName)
+		}
+		return true, nil
+	})
+
+	return errors.Wrapf(err, "while waiting for secret %s", c.secretName)
+}
+
 func (c *oauthClient) getCredentials() (credentials, error) {
 	secret, err := c.secretsClient.Get(c.secretName, metav1.GetOptions{})
-
 	if err != nil {
 		return credentials{}, err
 	}

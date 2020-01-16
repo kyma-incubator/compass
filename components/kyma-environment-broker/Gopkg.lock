@@ -703,7 +703,7 @@
   version = "v0.17.0"
 
 [[projects]]
-  digest = "1:733fd78d0355b812c58edeed751c54d87c5373824873836ae68fa07845e386f7"
+  digest = "1:977669a841597d700ef9e9f61f717280c5fc5a4c38d2a1b9c2cefb82e6414f6c"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/errors",
@@ -738,6 +738,7 @@
     "pkg/util/strategicpatch",
     "pkg/util/validation",
     "pkg/util/validation/field",
+    "pkg/util/wait",
     "pkg/util/yaml",
     "pkg/version",
     "pkg/watch",
@@ -914,7 +915,9 @@
     "github.com/testcontainers/testcontainers-go/wait",
     "github.com/vrischmann/envconfig",
     "k8s.io/api/core/v1",
+    "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/apimachinery/pkg/util/wait",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/fake",
     "k8s.io/client-go/kubernetes/typed/core/v1",

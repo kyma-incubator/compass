@@ -75,6 +75,7 @@ func main() {
 	secrets, err := newSecretsInterface(cfg.Director.CredentialsNamespace)
 	fatalOnError(err)
 	oauthClient := oauth.NewOauthClient(newHTTPClient(false), secrets, cfg.Director.OauthCredentialsSecretName)
+	fatalOnError(oauthClient.WaitForCredentials())
 	tkn, err := oauthClient.GetAuthorizationToken()
 	fatalOnError(err)
 	fmt.Println("DUPA:", tkn.AccessToken)

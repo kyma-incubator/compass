@@ -8,6 +8,7 @@ import (
 func NewDirectorClient(oauthClient oauth.Client) *directorClient {
 	return &directorClient{
 		oauthClient: oauthClient,
+		token:       oauth.Token{},
 	}
 }
 
