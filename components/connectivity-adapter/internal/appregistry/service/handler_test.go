@@ -10,6 +10,9 @@ import (
 	"strings"
 	"testing"
 
+	gcli "github.com/machinebox/graphql"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli/automock"
 	"github.com/pkg/errors"
@@ -24,7 +27,7 @@ const url = "http://doesnt.really/matter"
 func TestHandler_Delete(t *testing.T) {
 	id := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	httpReq := fixRequest(id, strings.NewReader(""))
-	gqlReq := prepareUnregisterApplicationRequest(id)
+	expectedGQLReq := prepareUnregisterApplicationRequest(id)
 	notFoundErr := fmt.Errorf("graphql: while getting Application with ID %s: Object was not found", id)
 	internalErr := errors.New("Post http://127.0.0.1:3000/graphql: dial tcp 127.0.0.1:3000: connect: connection refused")
 
@@ -65,13 +68,8 @@ func TestHandler_Delete(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			logger, hook := test.NewNullLogger()
 
-			cli := &automock.GraphQLClient{}
-			cli.On("Run", context.Background(), gqlReq, nil).Return(tc.GraphQLClientErr).Once()
-			defer cli.AssertExpectations(t)
-
-			cliProvider := &automock.Provider{}
-			cliProvider.On("GQLClient", httpReq).Return(cli).Once()
-			defer cliProvider.AssertExpectations(t)
+			cli, cliProvider := fixClientAndProviderMocks(httpReq, expectedGQLReq, tc.GraphQLClientErr)
+			defer mock.AssertExpectationsForObjects(t, cli, cliProvider)
 
 			w := httptest.NewRecorder()
 
@@ -96,7 +94,8 @@ func TestHandler_Delete(t *testing.T) {
 }
 
 func fixRequest(id string, body io.Reader) *http.Request {
-	req := httptest.NewRequest(http.MethodDelete, url, body)
+	req := httptest.NewRequest(http.MethodDelete,
+		url, body)
 	req = mux.SetURLVars(req, map[string]string{serviceIDVarKey: id})
 	return req
 }
@@ -104,4 +103,14 @@ func fixRequest(id string, body io.Reader) *http.Request {
 func closeRequestBody(t *testing.T, resp *http.Response) {
 	err := resp.Body.Close()
 	require.NoError(t, err)
+}
+
+func fixClientAndProviderMocks(httpReq *http.Request, expectedGQLReq *gcli.Request, gqlCliError error) (*automock.GraphQLClient, *automock.Provider) {
+	cli := &automock.GraphQLClient{}
+	cli.On("Run", context.Background(), expectedGQLReq, nil).Return(gqlCliError).Once()
+
+	cliProvider := &automock.Provider{}
+	cliProvider.On("GQLClient", httpReq).Return(cli).Once()
+
+	return cli, cliProvider
 }
