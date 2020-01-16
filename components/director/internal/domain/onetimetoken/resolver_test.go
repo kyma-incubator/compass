@@ -205,7 +205,7 @@ func TestResolver_RawEncoded(t *testing.T) {
 		r := onetimetoken.NewTokenResolver(nil, nil, nil)
 
 		//WHEN
-		baseEncodedToken, err := r.RawEncoded(ctx, tokenGraphql)
+		baseEncodedToken, err := r.RawEncoded(ctx, &tokenGraphql)
 
 		//THEN
 		require.NoError(t, err)
@@ -221,17 +221,6 @@ func TestResolver_RawEncoded(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-	})
-
-	t.Run("Error - unmarshallable param", func(t *testing.T) {
-		//GIVEN
-		r := onetimetoken.NewTokenResolver(nil, nil, nil)
-
-		//WHEN
-		_, err := r.RawEncoded(ctx, make(chan int))
-
-		//THEN
-		require.EqualError(t, err, "while marshalling object to JSON: json: unsupported type: chan int")
 	})
 }
 
@@ -262,16 +251,5 @@ func TestResolver_Raw(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-	})
-
-	t.Run("Error - unmarshallable param", func(t *testing.T) {
-		//GIVEN
-		r := onetimetoken.NewTokenResolver(nil, nil, nil)
-
-		//WHEN
-		_, err := r.Raw(ctx, make(chan int))
-
-		//THEN
-		require.EqualError(t, err, "while marshalling object to JSON: json: unsupported type: chan int")
 	})
 }
