@@ -3,44 +3,47 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 )
 
 const serviceIDVarKey = "serviceId"
 
 type Handler struct {
 	cliProvider gqlcli.Provider
+	logger      *log.Logger
 }
 
-func NewHandler(cliProvider gqlcli.Provider) *Handler {
+func NewHandler(cliProvider gqlcli.Provider, logger *log.Logger) *Handler {
 	return &Handler{
 		cliProvider: cliProvider,
+		logger:      logger,
 	}
 }
 
 func (h *Handler) Create(rw http.ResponseWriter, rq *http.Request) {
-	log.Println("Create")
+	h.logger.Println("Create")
 	rw.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) Get(rw http.ResponseWriter, rq *http.Request) {
-	log.Println("Get")
+	h.logger.Println("Get")
 	rw.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) List(rw http.ResponseWriter, rq *http.Request) {
-	log.Println("List")
+	h.logger.Println("List")
 	rw.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) Update(rw http.ResponseWriter, rq *http.Request) {
-	log.Println("Update")
+	h.logger.Println("Update")
 	rw.WriteHeader(http.StatusOK)
 }
 
@@ -60,7 +63,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 
-		log.Error(errors.Wrapf(err, "while deleting service with ID %s", id))
+		h.logger.Error(errors.Wrapf(err, "while deleting service with ID %s", id))
 		reqerror.WriteError(writer, err, apperrors.CodeInternal)
 		return
 	}

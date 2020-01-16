@@ -2,14 +2,15 @@ package reqerror
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 )
 
 const (
-	HeaderContentTypeKey = "Content-Type"
+	HeaderContentTypeKey   = "Content-Type"
 	HeaderContentTypeValue = "application/json;charset=UTF-8"
 )
 
@@ -28,7 +29,7 @@ func WriteErrorMessage(writer http.ResponseWriter, errMessage string, appErrorCo
 
 	response := ErrorResponse{
 		Error: errMessage,
-		Code: appErrorCode,
+		Code:  appErrorCode,
 	}
 
 	err := json.NewEncoder(writer).Encode(response)

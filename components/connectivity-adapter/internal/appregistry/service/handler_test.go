@@ -2,55 +2,106 @@ package service
 
 import (
 	"context"
-	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli/automock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli/automock"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const url = "http://doesnt.really/matter"
 
 func TestHandler_Delete(t *testing.T) {
 	id := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	req := fixRequest(id, strings.NewReader(""))
-
-	w := httptest.NewRecorder()
-
+	httpReq := fixRequest(id, strings.NewReader(""))
 	gqlReq := prepareUnregisterApplicationRequest(id)
+	notFoundErr := fmt.Errorf("graphql: while getting Application with ID %s: Object was not found", id)
+	internalErr := errors.New("Post http://127.0.0.1:3000/graphql: dial tcp 127.0.0.1:3000: connect: connection refused")
 
-	cli := &automock.GraphQLClient{}
-	cli.On("Run", context.Background(), gqlReq, nil).Return(nil).Once()
+	testCases := []struct {
+		Name                       string
+		GraphQLClientErr           error
+		LoggerAssertionsFn         func(t *testing.T, hook *test.Hook)
+		ExpectedResponseStatusCode int
+		ExpectedResponseBody       string
+	}{
+		{
+			Name:                       "Success",
+			GraphQLClientErr:           nil,
+			ExpectedResponseBody:       "",
+			ExpectedResponseStatusCode: http.StatusNoContent,
+		},
+		{
+			Name:                       "Not found",
+			GraphQLClientErr:           notFoundErr,
+			ExpectedResponseBody:       fmt.Sprintf("{\"code\":2,\"error\":\"entity with ID %s not found\"}\n", id),
+			ExpectedResponseStatusCode: http.StatusNotFound,
+		},
+		{
+			Name: "Error",
+			LoggerAssertionsFn: func(t *testing.T, hook *test.Hook) {
+				assert.Equal(t, 1, len(hook.AllEntries()))
+				entry := hook.LastEntry()
+				require.NotNil(t, entry)
+				assert.Equal(t, log.ErrorLevel, entry.Level)
+				assert.Equal(t, fmt.Sprintf("while deleting service with ID %s: %s", id, internalErr.Error()), entry.Message)
+			},
+			GraphQLClientErr:           internalErr,
+			ExpectedResponseBody:       fmt.Sprintf("{\"code\":1,\"error\":\"%s\"}\n", internalErr.Error()),
+			ExpectedResponseStatusCode: http.StatusInternalServerError,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			logger, hook := test.NewNullLogger()
 
-	cliProvider := &automock.Provider{}
-	cliProvider.On("GQLClient", req).Return(cli).Once()
-	defer cli.AssertExpectations(t)
-	defer cliProvider.AssertExpectations(t)
+			cli := &automock.GraphQLClient{}
+			cli.On("Run", context.Background(), gqlReq, nil).Return(tc.GraphQLClientErr).Once()
+			defer cli.AssertExpectations(t)
 
-	handler := NewHandler(cliProvider)
+			cliProvider := &automock.Provider{}
+			cliProvider.On("GQLClient", httpReq).Return(cli).Once()
+			defer cliProvider.AssertExpectations(t)
 
-	handler.Delete(w, req)
+			w := httptest.NewRecorder()
 
-	resp := w.Result()
-	defer func() {
-		err := resp.Body.Close()
-		require.NoError(t, err)
-	}()
+			handler := NewHandler(cliProvider, logger)
 
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
+			handler.Delete(w, httpReq)
 
-	assert.Equal(t, "", string(bodyBytes))
+			resp := w.Result()
+			defer closeRequestBody(t, resp)
+
+			bodyBytes, err := ioutil.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			assert.Equal(t, tc.ExpectedResponseStatusCode, resp.StatusCode)
+			assert.Equal(t, tc.ExpectedResponseBody, string(bodyBytes))
+
+			if tc.LoggerAssertionsFn != nil {
+				tc.LoggerAssertionsFn(t, hook)
+			}
+		})
+	}
 }
 
 func fixRequest(id string, body io.Reader) *http.Request {
 	req := httptest.NewRequest(http.MethodDelete, url, body)
 	req = mux.SetURLVars(req, map[string]string{serviceIDVarKey: id})
 	return req
+}
+
+func closeRequestBody(t *testing.T, resp *http.Response) {
+	err := resp.Body.Close()
+	require.NoError(t, err)
 }

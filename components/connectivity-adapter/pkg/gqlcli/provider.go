@@ -2,12 +2,13 @@ package gqlcli
 
 import (
 	"context"
-	gcli "github.com/machinebox/graphql"
 	"net/http"
+
+	gcli "github.com/machinebox/graphql"
 )
 
 //go:generate mockery -name=GraphQLClient -output=automock -outpkg=automock -case=underscore
-type GraphQLClient interface{
+type GraphQLClient interface {
 	Run(ctx context.Context, req *gcli.Request, resp interface{}) error
 }
 
@@ -24,7 +25,6 @@ func NewProvider(url string) *graphQLClientProvider {
 	return &graphQLClientProvider{url: url}
 }
 
-func (p *graphQLClientProvider) GQLClient(rq *http.Request) *gcli.Client {
+func (p *graphQLClientProvider) GQLClient(rq *http.Request) GraphQLClient {
 	return NewAuthorizedGraphQLClient(p.url, rq)
 }
-

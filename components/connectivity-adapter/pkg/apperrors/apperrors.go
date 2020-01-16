@@ -3,7 +3,7 @@ package apperrors
 import "strings"
 
 const (
-	CodeInternal                 = iota + 1
+	CodeInternal = iota + 1
 	CodeNotFound
 	CodeAlreadyExists
 	CodeWrongInput

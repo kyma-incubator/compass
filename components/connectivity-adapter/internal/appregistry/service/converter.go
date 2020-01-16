@@ -5,7 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-type converter struct {}
+type converter struct{}
 
 func NewConverter() *converter {
 	return &converter{}
@@ -22,4 +22,3 @@ func (c *converter) GraphQLToDetailsModel(in graphql.Application) model.ServiceD
 func (c *converter) GraphQLToModel(in graphql.Application) model.Service {
 	panic("not implemented")
 }
-

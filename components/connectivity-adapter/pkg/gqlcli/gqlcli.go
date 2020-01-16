@@ -2,9 +2,10 @@ package gqlcli
 
 import (
 	"crypto/tls"
-	gcli "github.com/machinebox/graphql"
 	"net/http"
 	"time"
+
+	gcli "github.com/machinebox/graphql"
 )
 
 const AuthorizationHeaderKey = "Authorization"
