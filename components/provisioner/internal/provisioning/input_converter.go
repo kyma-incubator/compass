@@ -73,6 +73,7 @@ func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.Clu
 
 func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
 	id := c.uuidGenerator.New()
+	name := util.Truncate(c.uuidGenerator.New(), 14)
 
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 
@@ -82,7 +83,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 
 	return model.GardenerConfig{
 		ID:                     id,
-		Name:                   input.Name,
+		Name:                   name,
 		ProjectName:            input.ProjectName,
 		KubernetesVersion:      input.KubernetesVersion,
 		NodeCount:              input.NodeCount,

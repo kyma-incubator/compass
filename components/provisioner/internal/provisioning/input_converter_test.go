@@ -77,7 +77,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	gardenerGCPQGLInput := gqlschema.ProvisionRuntimeInput{
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:              "Something",
 				ProjectName:       "Project",
 				KubernetesVersion: "version",
 				NodeCount:         3,
@@ -111,7 +110,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "Something",
+			Name:                   "veryLongIDThat",
 			ProjectName:            "Project",
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
@@ -140,7 +139,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	gardenerAzureQGLInput := gqlschema.ProvisionRuntimeInput{
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:              "Something",
 				ProjectName:       "Project",
 				KubernetesVersion: "version",
 				NodeCount:         3,
@@ -174,7 +172,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "Something",
+			Name:                   "veryLongIDThat",
 			ProjectName:            "Project",
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
@@ -208,7 +206,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	gardenerAWSQGLInput := gqlschema.ProvisionRuntimeInput{
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:              "Something",
 				ProjectName:       "Project",
 				KubernetesVersion: "version",
 				NodeCount:         3,
@@ -242,7 +239,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "Something",
+			Name:                   "veryLongIDThat",
 			ProjectName:            "Project",
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
@@ -305,6 +302,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			//given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			uuidGeneratorMock.On("New").Return("id").Times(5)
+			uuidGeneratorMock.On("New").Return("veryLongIDThatHasMoreThanFourteenCharacters")
 
 			inputConverter := NewInputConverter(uuidGeneratorMock, readSession)
 
