@@ -8,3 +8,11 @@ func ToCertInfo(configuration schema.Configuration) CertInfo {
 		KeyAlgorithm: configuration.CertificateSigningRequestInfo.KeyAlgorithm,
 	}
 }
+
+func ToCertResponse(result schema.CertificationResult) CertResponse {
+	return CertResponse{
+		CRTChain:  result.CertificateChain,
+		CaCRT:     result.CaCertificate,
+		ClientCRT: result.ClientCertificate,
+	}
+}

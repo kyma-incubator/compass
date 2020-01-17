@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/compass"
 	"github.com/pkg/errors"
@@ -18,8 +19,21 @@ func RegisterHandler(router *mux.Router, config Config) error {
 		return errors.Wrap(err, "Failed to initialize compass client")
 	}
 
-	signingRequestInfoHandler := NewSigningRequestInfo(client, config.AdapterBaseURL)
+	signingRequestInfoHandler := NewSigningRequestInfoHandler(client, config.AdapterBaseURL)
 	router.HandleFunc("/signingRequests/info", http.HandlerFunc(signingRequestInfoHandler.GetSigningRequestInfo)).Methods(http.MethodGet)
 
+	certificatesHandler := NewCertificatesHandler(client)
+	router.HandleFunc("/certificates", certificatesHandler.SignCSR)
+
 	return nil
+}
+
+func respond(w http.ResponseWriter, statusCode int) {
+	w.Header().Set(HeaderContentType, ContentTypeApplicationJson)
+	w.WriteHeader(statusCode)
+}
+
+func respondWithBody(w http.ResponseWriter, statusCode int, responseBody interface{}) {
+	respond(w, statusCode)
+	json.NewEncoder(w).Encode(responseBody)
 }

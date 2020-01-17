@@ -3,6 +3,7 @@ package compass
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -23,6 +24,7 @@ type client struct {
 
 type Client interface {
 	Configuration(headers map[string]string) (schema.Configuration, error)
+	SignCSR(csr string, headers map[string]string) (schema.CertificationResult, error)
 }
 
 func NewClient(graphqlEndpoint string, enableLogging, insecureConfigFetch bool) (Client, error) {
@@ -47,23 +49,6 @@ func NewClient(graphqlEndpoint string, enableLogging, insecureConfigFetch bool) 
 	return client, nil
 }
 
-func NewConnectorClient(graphqlEndpoint string) Client {
-
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	gqlClient := graphql.NewClient(graphqlEndpoint, graphql.WithHTTPClient(httpClient))
-
-	return &client{
-		gqlClient: gqlClient,
-	}
-}
-
 func (c client) Configuration(headers map[string]string) (schema.Configuration, error) {
 	query := `query{
  		result: configuration()
@@ -74,15 +59,30 @@ func (c client) Configuration(headers map[string]string) (schema.Configuration, 
 		}	
      }`
 
-	req := graphql.NewRequest(query)
-
-	applyHeaders(req, headers)
-
 	var response ConfigurationResponse
 
-	err := c.execute(req, &response)
+	err := c.execute(headers, query, &response)
 	if err != nil {
 		return schema.Configuration{}, errors.Wrap(err, "Failed to get configuration")
+	}
+
+	return response.Result, nil
+}
+
+func (c client) SignCSR(csr string, headers map[string]string) (schema.CertificationResult, error) {
+	query := fmt.Sprintf(`mutation {
+	result: signCertificateSigningRequest(csr: "%s")
+  	{
+	 	certificateChain
+		caCertificate
+		clientCertificate
+	}
+    }`, csr)
+
+	var response CertificateResponse
+	err := c.execute(headers, query, &response)
+	if err != nil {
+		return schema.CertificationResult{}, errors.Wrap(err, "Failed to sign csr")
 	}
 
 	return response.Result, nil
@@ -92,13 +92,21 @@ type ConfigurationResponse struct {
 	Result schema.Configuration `json:"result"`
 }
 
+type CertificateResponse struct {
+	Result schema.CertificationResult `json:"result"`
+}
+
 func applyHeaders(req *graphql.Request, headers map[string]string) {
 	for h, val := range headers {
 		req.Header.Set(h, val)
 	}
 }
 
-func (c *client) execute(req *graphql.Request, res interface{}) error {
+func (c *client) execute(headers map[string]string, query string, res interface{}) error {
+
+	req := graphql.NewRequest(query)
+	applyHeaders(req, headers)
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

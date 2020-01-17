@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/compass"
@@ -33,7 +32,7 @@ type csrInfoHandler struct {
 	client     compass.Client
 }
 
-func NewSigningRequestInfo(client compass.Client, baseURL string) csrInfoHandler {
+func NewSigningRequestInfoHandler(client compass.Client, baseURL string) csrInfoHandler {
 	return csrInfoHandler{
 		client:     client,
 		getInfoURL: "",
@@ -43,10 +42,6 @@ func NewSigningRequestInfo(client compass.Client, baseURL string) csrInfoHandler
 
 func (ih *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Request) {
 	log.Println("Starting GetSigningRequestInfo")
-
-	for queryParam := range r.URL.Query() {
-		log.Println("Header: " + queryParam + ":" + r.URL.Query().Get(queryParam))
-	}
 
 	clientIdFromToken := r.Header.Get(oathkeeper.ClientIdFromTokenHeader)
 	if clientIdFromToken == "" {
@@ -93,14 +88,4 @@ func (ih *csrInfoHandler) makeApiURLs(clientIdFromToken string) connector.Api {
 			EventsURL:   ih.baseURL + fmt.Sprintf(EventsEndpointFormat, clientIdFromToken),
 		},
 	}
-}
-
-func Respond(w http.ResponseWriter, statusCode int) {
-	w.Header().Set(HeaderContentType, ContentTypeApplicationJson)
-	w.WriteHeader(statusCode)
-}
-
-func respondWithBody(w http.ResponseWriter, statusCode int, responseBody interface{}) {
-	Respond(w, statusCode)
-	json.NewEncoder(w).Encode(responseBody)
 }
