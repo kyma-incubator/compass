@@ -6,18 +6,12 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"k8s.io/client-go/kubernetes"
-	restclient "k8s.io/client-go/rest"
-
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
@@ -28,8 +22,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/pivotal-cf/brokerapi"
 	"github.com/vrischmann/envconfig"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 )
 
 // Config holds configuration for the whole application
@@ -72,10 +64,14 @@ func main() {
 		provisionerClient = provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 	}
 
-	secrets, err := newSecretsInterface(cfg.Director.Namespace)
+	k8sCfg, err := config.GetConfig()
 	fatalOnError(err)
-	oauthClient := oauth.NewOauthClient(newHTTPClient(cfg.Director.SkipCertVerification), secrets, cfg.Director.OauthCredentialsSecretName)
+	cli, err := client.New(k8sCfg, client.Options{})
+	fatalOnError(err)
+
+	oauthClient := oauth.NewOauthClient(newHTTPClient(cfg.Director.SkipCertVerification), cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
 	fatalOnError(oauthClient.WaitForCredentials())
+
 	tkn, err := oauthClient.GetAuthorizationToken()
 	fatalOnError(err)
 	fmt.Println("DUPA:", tkn.AccessToken)
@@ -100,27 +96,6 @@ func newHTTPClient(skipCertVeryfication bool) *http.Client {
 		},
 		Timeout: 30 * time.Second,
 	}
-}
-
-func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
-	k8sConfig, err := restclient.InClusterConfig()
-	if err != nil {
-		logrus.Warnf("Failed to read in cluster config: %s", err.Error())
-		logrus.Info("Trying to initialize with local config")
-		home := homedir.HomeDir()
-		k8sConfPath := filepath.Join(home, ".kube", "config")
-		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)
-		if err != nil {
-			return nil, errors.Errorf("failed to read k8s in-cluster configuration, %s", err.Error())
-		}
-	}
-
-	coreClientset, err := kubernetes.NewForConfig(k8sConfig)
-	if err != nil {
-		return nil, errors.Errorf("failed to create k8s core client, %s", err.Error())
-	}
-
-	return coreClientset.CoreV1().Secrets(namespace), nil
 }
 
 func fatalOnError(err error) {

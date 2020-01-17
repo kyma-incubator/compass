@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/runtime"
 	"net/http"
 	"testing"
 	"time"
@@ -12,8 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
-	core "k8s.io/client-go/kubernetes/typed/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -53,13 +53,8 @@ func TestOauthClient_GetAuthorizationToken(t *testing.T) {
 			}
 		})
 
-		coreV1 := fake.NewSimpleClientset()
-		secrets := coreV1.CoreV1().Secrets(namespace)
-
-		createFakeCredentialsSecret(t, secrets, credentials)
-		defer deleteSecret(t, secrets) // TODO: is that needed?
-
-		oauthClient := NewOauthClient(client, secrets, secretName)
+		cli := fake.NewFakeClientWithScheme(runtime.NewScheme(), fixCredentialsSecret(credentials))
+		oauthClient := NewOauthClient(client, cli, secretName, namespace)
 
 		//when
 		responseToken, err := oauthClient.GetAuthorizationToken()
@@ -84,9 +79,8 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req), nil
 }
 
-func createFakeCredentialsSecret(t *testing.T, secrets core.SecretInterface, credentials credentials) {
-
-	secret := &v1.Secret{
+func fixCredentialsSecret(credentials credentials) *v1.Secret {
+	return &v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
 			Name:      secretName,
 			Namespace: namespace,
@@ -101,13 +95,5 @@ func createFakeCredentialsSecret(t *testing.T, secrets core.SecretInterface, cre
 			tokensEndpointKey: []byte(credentials.tokensEndpoint),
 		},
 	}
-
-	_, err := secrets.Create(secret)
-
-	require.NoError(t, err)
 }
 
-func deleteSecret(t *testing.T, secrets core.SecretInterface) {
-	err := secrets.Delete(secretName, &meta.DeleteOptions{})
-	require.NoError(t, err)
-}

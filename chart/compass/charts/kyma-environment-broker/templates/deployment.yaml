@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: {{ include "kyma-env-broker.fullname" . }}
   labels:
-  {{ include "kyma-env-broker.labels" . | indent 4 }}
+{{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
   replicas: {{ .Values.deployment.replicaCount }}
   selector:
@@ -28,96 +28,96 @@ spec:
       serviceAccount: {{ include "kyma-env-broker.fullname" . }}
       serviceAccountName: {{ include "kyma-env-broker.fullname" . }}
     {{- with .Values.deployment.securityContext }}
-    securityContext:
-      {{ toYaml . | indent 8 }}
+      securityContext:
+        {{ toYaml . | indent 8 }}
     {{- end }}
     {{- with .Values.imagePullSecrets }}
-    imagePullSecrets:
-      {{- toYaml . | nindent 8 }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
     {{- end }}
-    containers:
-      - name: {{ .Chart.Name }}
-        image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-broker:{{ .Values.global.images.kyma_environment_broker.version }}"
-        imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
-        env:
-          - name: APP_PROVISIONING_URL
-            value: "{{ .Values.provisioner.URL }}"
-          - name: APP_PROVISIONING_SECRET_NAME
-            value: "{{ .Values.provisioner.gardener.secretName }}"
-          - name: APP_PROVISIONING_GARDENER_PROJECT_NAME
-            value: "{{ .Values.provisioner.gardener.projectName }}"
-          - name: APP_PROVISIONING_GCP_SECRET_NAME
-            value: "{{ .Values.provisioner.gcp.secretName }}"
-          - name: APP_PROVISIONING_AWS_SECRET_NAME
-            value: "{{ .Values.provisioner.aws.secretName }}"
-          - name: APP_PROVISIONING_AZURE_SECRET_NAME
-            value: "{{ .Values.provisioner.azure.secretName }}"
-          - name: APP_PORT
-            value: "{{ .Values.broker.port }}"
-          - name: APP_AUTH_USERNAME
-            value: "{{ .Values.broker.username }}"
-          - name: APP_AUTH_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "kyma-env-broker.fullname" . }}
-                key: broker-password
-          - name: APP_PROCESS_RUNTIME_ID
-            value: "{{ .Values.provisioner.processRuntimeID }}"
-          - name: APP_DIRECTOR_NAMESPACE
-            value: "{{ .Release.Namespace }}"
-          - name: APP_DIRECTOR_DEFAULT_TENANT
-            value: "{{ .Values.global.defaultTenant }}"
-          - name: APP_DIRECTOR_URL
-            value: "http://compass-director.compass-system.svc.cluster.local:3000/graphql"
-          - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
-            value: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
-          - name: APP_DIRECTOR_SKIP_CERT_VERIFICATION
-            value: "{{ .Values.global.isLocalEnv }}"
-          - name: APP_DATABASE_USER
-            valueFrom:
-              secretKeyRef:
-                name: compass-postgresql
-                key: postgresql-username
-          - name: APP_DATABASE_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: compass-postgresql
-                key: postgresql-password
-          - name: APP_DATABASE_HOST
-            valueFrom:
-              secretKeyRef:
-                name: compass-postgresql
-                key: postgresql-serviceName
-          - name: APP_DATABASE_PORT
-            valueFrom:
-              secretKeyRef:
-                name: compass-postgresql
-                key: postgresql-servicePort
-          - name: APP_DATABASE_NAME
-            valueFrom:
-              secretKeyRef:
-                name: compass-postgresql
-                key: postgresql-brokerDatabaseName
-          - name: APP_DATABASE_SSL
-            valueFrom:
-              secretKeyRef:
-                name: compass-postgresql
-                key: postgresql-sslMode
-        ports:
-          - name: http
-            containerPort: {{ .Values.broker.port }}
-            protocol: TCP
-        resources:
-          {{- toYaml .Values.resources | nindent 12 }}
-    {{- with .Values.nodeSelector }}
-    nodeSelector:
-      {{- toYaml . | nindent 8 }}
-    {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-broker:{{ .Values.global.images.kyma_environment_broker.version }}"
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          env:
+            - name: APP_PROVISIONING_URL
+              value: "{{ .Values.provisioner.URL }}"
+            - name: APP_PROVISIONING_SECRET_NAME
+              value: "{{ .Values.provisioner.gardener.secretName }}"
+            - name: APP_PROVISIONING_GARDENER_PROJECT_NAME
+              value: "{{ .Values.provisioner.gardener.projectName }}"
+            - name: APP_PROVISIONING_GCP_SECRET_NAME
+              value: "{{ .Values.provisioner.gcp.secretName }}"
+            - name: APP_PROVISIONING_AWS_SECRET_NAME
+              value: "{{ .Values.provisioner.aws.secretName }}"
+            - name: APP_PROVISIONING_AZURE_SECRET_NAME
+              value: "{{ .Values.provisioner.azure.secretName }}"
+            - name: APP_PORT
+              value: "{{ .Values.broker.port }}"
+            - name: APP_AUTH_USERNAME
+              value: "{{ .Values.broker.username }}"
+            - name: APP_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "kyma-env-broker.fullname" . }}
+                  key: broker-password
+            - name: APP_PROCESS_RUNTIME_ID
+              value: "{{ .Values.provisioner.processRuntimeID }}"
+            - name: APP_DIRECTOR_NAMESPACE
+              value: "{{ .Release.Namespace }}"
+            - name: APP_DIRECTOR_DEFAULT_TENANT
+              value: "{{ .Values.global.defaultTenant }}"
+            - name: APP_DIRECTOR_URL
+              value: "http://compass-director.compass-system.svc.cluster.local:3000/graphql"
+            - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
+              value: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
+            - name: APP_DIRECTOR_SKIP_CERT_VERIFICATION
+              value: "{{ .Values.global.isLocalEnv }}"
+            - name: APP_DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-username
+            - name: APP_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-password
+            - name: APP_DATABASE_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: APP_DATABASE_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: APP_DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-brokerDatabaseName
+            - name: APP_DATABASE_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-sslMode
+          ports:
+            - name: http
+              containerPort: {{ .Values.broker.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     {{- with .Values.affinity }}
-    affinity:
-      {{- toYaml . | nindent 8 }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
     {{- end }}
     {{- with .Values.tolerations }}
-    tolerations:
-      {{- toYaml . | nindent 8 }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
     {{- end }}

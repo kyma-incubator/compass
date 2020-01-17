@@ -3,7 +3,9 @@ package oauth
 import (
 	"encoding/json"
 	"fmt"
+	"golang.org/x/net/context"
 	"io/ioutil"
+	v1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,10 +14,9 @@ import (
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	v1 "github.com/kubernetes/client-go/kubernetes/typed/core/v1"
 	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 //go:generate mockery -name=Client
@@ -25,16 +26,18 @@ type Client interface {
 }
 
 type oauthClient struct {
-	httpClient    *http.Client
-	secretsClient v1.SecretInterface
-	secretName    string
+	httpClient      *http.Client
+	k8sClient       client.Client
+	secretName      string
+	secretNamespace string
 }
 
-func NewOauthClient(client *http.Client, secrets v1.SecretInterface, secretName string) Client {
+func NewOauthClient(httpClient *http.Client, k8sClient client.Client, secretName, secretNamespace string) Client {
 	return &oauthClient{
-		httpClient:    client,
-		secretsClient: secrets,
-		secretName:    secretName,
+		httpClient:      httpClient,
+		k8sClient:       k8sClient,
+		secretName:      secretName,
+		secretNamespace: secretNamespace,
 	}
 }
 
@@ -49,7 +52,11 @@ func (c *oauthClient) GetAuthorizationToken() (Token, error) {
 
 func (c *oauthClient) WaitForCredentials() error {
 	err := wait.Poll(time.Second, time.Minute*3, func() (bool, error) {
-		_, err := c.secretsClient.Get(c.secretName, metav1.GetOptions{})
+		secret := &v1.Secret{}
+		err := c.k8sClient.Get(context.Background(), client.ObjectKey{
+			Namespace: c.secretNamespace,
+			Name:      c.secretName,
+		}, secret)
 		switch {
 		case apierrors.IsNotFound(err):
 			log.Warnf("secret %s not found", c.secretName)
@@ -64,7 +71,11 @@ func (c *oauthClient) WaitForCredentials() error {
 }
 
 func (c *oauthClient) getCredentials() (credentials, error) {
-	secret, err := c.secretsClient.Get(c.secretName, metav1.GetOptions{})
+	secret := &v1.Secret{}
+	err := c.k8sClient.Get(context.Background(), client.ObjectKey{
+		Namespace: c.secretNamespace,
+		Name:      c.secretName,
+	}, secret)
 	if err != nil {
 		return credentials{}, err
 	}
