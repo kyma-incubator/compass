@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/gorilla/mux"
+	svcautomock "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/service/automock"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli/automock"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -26,7 +27,7 @@ const url = "http://doesnt.really/matter"
 
 func TestHandler_Delete(t *testing.T) {
 	id := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	httpReq := fixRequest(id, strings.NewReader(""))
+	httpReq := fixServiceDetailsRequest(id, strings.NewReader(""))
 	expectedGQLReq := prepareUnregisterApplicationRequest(id)
 	notFoundErr := fmt.Errorf("graphql: while getting Application with ID %s: Object was not found", id)
 	internalErr := errors.New("Post http://127.0.0.1:3000/graphql: dial tcp 127.0.0.1:3000: connect: connection refused")
@@ -57,7 +58,8 @@ func TestHandler_Delete(t *testing.T) {
 				entry := hook.LastEntry()
 				require.NotNil(t, entry)
 				assert.Equal(t, log.ErrorLevel, entry.Level)
-				assert.Equal(t, fmt.Sprintf("while deleting service with ID %s: %s", id, internalErr.Error()), entry.Message)
+				assert.Equal(t, id, entry.Data["ID"])
+				assert.Equal(t, fmt.Sprintf("while deleting service: %s", internalErr.Error()), entry.Message)
 			},
 			GraphQLClientErr:           internalErr,
 			ExpectedResponseBody:       fmt.Sprintf("{\"code\":1,\"error\":\"%s\"}\n", internalErr.Error()),
@@ -69,11 +71,12 @@ func TestHandler_Delete(t *testing.T) {
 			logger, hook := test.NewNullLogger()
 
 			cli, cliProvider := fixClientAndProviderMocks(httpReq, expectedGQLReq, tc.GraphQLClientErr)
-			defer mock.AssertExpectationsForObjects(t, cli, cliProvider)
+			converter := &svcautomock.Converter{}
+			defer mock.AssertExpectationsForObjects(t, cli, cliProvider, converter)
 
 			w := httptest.NewRecorder()
 
-			handler := NewHandler(cliProvider, logger)
+			handler := NewHandler(cliProvider, converter, logger)
 
 			handler.Delete(w, httpReq)
 
@@ -93,9 +96,8 @@ func TestHandler_Delete(t *testing.T) {
 	}
 }
 
-func fixRequest(id string, body io.Reader) *http.Request {
-	req := httptest.NewRequest(http.MethodDelete,
-		url, body)
+func fixServiceDetailsRequest(id string, body io.Reader) *http.Request {
+	req := httptest.NewRequest(http.MethodPost, url, body) // method and url doesn't matter, as we rely on gorilla/mux for routing
 	req = mux.SetURLVars(req, map[string]string{serviceIDVarKey: id})
 	return req
 }

@@ -19,7 +19,8 @@ func RegisterHandler(router *mux.Router, cfg Config) {
 	logger.SetReportCaller(true)
 
 	gqlCliProvider := gqlcli.NewProvider(cfg.DirectorURL)
-	serviceHandler := service.NewHandler(gqlCliProvider, logger)
+	converter := service.NewConverter()
+	serviceHandler := service.NewHandler(gqlCliProvider, converter, logger)
 
 	router.HandleFunc("/services", serviceHandler.List).Methods(http.MethodGet)
 	router.HandleFunc("/services", serviceHandler.Create).Methods(http.MethodPost)

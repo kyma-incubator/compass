@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
@@ -13,16 +16,25 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
+type Converter interface {
+	DetailsToGraphQL(in model.ServiceDetails) graphql.Application
+	GraphQLToDetailsModel(in graphql.Application) model.ServiceDetails
+	GraphQLToModel(in graphql.Application) model.Service
+}
+
 const serviceIDVarKey = "serviceId"
 
 type Handler struct {
 	cliProvider gqlcli.Provider
 	logger      *log.Logger
+	converter   Converter
 }
 
-func NewHandler(cliProvider gqlcli.Provider, logger *log.Logger) *Handler {
+func NewHandler(cliProvider gqlcli.Provider, converter Converter, logger *log.Logger) *Handler {
 	return &Handler{
 		cliProvider: cliProvider,
+		converter:   converter,
 		logger:      logger,
 	}
 }
@@ -63,7 +75,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 
-		h.logger.Error(errors.Wrapf(err, "while deleting service with ID %s", id))
+		h.logger.WithField("ID", id).Error(errors.Wrap(err, "while deleting service"))
 		reqerror.WriteError(writer, err, apperrors.CodeInternal)
 		return
 	}
