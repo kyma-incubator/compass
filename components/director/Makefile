@@ -1,6 +1,5 @@
 APP_NAME = compass-director
 APP_PATH = components/director
-ENTRYPOINT = cmd/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20190913-65b55d1
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export GO111MODULE = on
@@ -25,3 +24,9 @@ ensure-local:
 
 dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}
+
+build-local:
+	env go build -o director ./cmd/director/main.go
+	rm director
+	env go build -o tenantfetcher ./cmd/tenantfetcher/main.go
+	rm tenantfetcher

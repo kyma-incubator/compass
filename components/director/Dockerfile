@@ -8,11 +8,13 @@ WORKDIR ${BASE_APP_DIR}
 #
 
 COPY . .
+
+#
 # Build app
 #
 
-RUN go build -v -o director ./cmd/director/main.go && go build -v -o tenantloader ./cmd/tenantloader/main.go
-RUN mkdir /app && mv ./director /app/director  && mv ./tenantloader /app/tenantloader && mv ./licenses /app/licenses
+RUN go build -v -o director ./cmd/director/main.go && go build -v -o tenantfetcher ./cmd/tenantfetcher/main.go && go build -v -o tenantloader ./cmd/tenantloader/main.go
+RUN mkdir /app && mv ./director /app/director  && mv ./tenantfetcher /app/tenantfetcher && mv ./tenantloader /app/tenantloader && mv ./licenses /app/licenses
 
 FROM alpine:3.10
 LABEL source = git@github.com:kyma-incubator/compass.git

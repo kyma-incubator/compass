@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -214,7 +214,7 @@ func TestService_Delete(t *testing.T) {
 		ExpectedOutput      error
 	}{
 		{
-			Name: "Succes",
+			Name: "Success",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
 				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).Return(tenantModel, nil).Once()

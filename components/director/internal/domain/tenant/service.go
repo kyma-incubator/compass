@@ -3,6 +3,8 @@ package tenant
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -142,7 +144,6 @@ func (s *service) createIfNotExists(ctx context.Context, tenants []model.Busines
 }
 
 func (s *service) Delete(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
-
 	for _, tenantInput := range tenantInputs {
 		tenant, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenantInput.ExternalTenant)
 		if err != nil {

@@ -9,4 +9,4 @@ status tenant_status default 'Active'
 );
 
 alter table business_tenant_mappings
-add unique (external_tenant, provider_name);
+add constraint business_tenant_mappings_external_tenant_provider_name_key unique (external_tenant, provider_name);

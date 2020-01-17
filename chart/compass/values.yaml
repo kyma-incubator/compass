@@ -23,7 +23,7 @@ global:
       version: "PR-765"
     director:
       dir:
-      version: "PR-673"
+      version: "PR-706"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -32,7 +32,7 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-712"
+      version: "PR-706"
     provisioner:
       dir:
       version: "PR-693"
@@ -192,3 +192,21 @@ global:
             retry:
               number_of_retries: 3
               delay_in_milliseconds: 2000
+
+  tenantFetcher:
+    enabled: false
+    providerName: "compass"
+    schedule: "*/5 * * * *"
+    oauth:
+      client: ""
+      secret: ""
+      tokenURL: ""
+    endpoints:
+      tenantCreated: "127.0.0.1/events?type=created"
+      tenantDeleted: "127.0.0.1/events?type=deleted"
+      tenantUpdated: "127.0.0.1/events?type=updated"
+    fieldMapping:
+      idField: "id"
+      nameField: "name"
+      discriminatorField: ""
+      discriminatorValue: ""
