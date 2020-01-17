@@ -32,4 +32,4 @@ To run the test locally, set these environment variables:
 | GATEWAY_CLIENT_CERTS_SUBDOMAIN | Default gateway for handling requests with a certificate | compass-gateway-mtls |
 | GATEWAY_OAUTH20_SUBDOMAIN | Default gateway for handling requests with an OAuth access token | compass-gateway-auth-oauth|
 
-Then run `go test ./... -count=1 -v` inside the `./tests/director/gateway-integration-tests` directory.
+Then run `go test ./... -count=1 -v` inside the `./tests/director/gateway-integration` directory.

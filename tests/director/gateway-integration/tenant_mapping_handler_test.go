@@ -1,4 +1,4 @@
-package gateway_integration_tests
+package gateway_integration
 
 import (
 	"context"

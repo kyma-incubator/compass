@@ -25,7 +25,7 @@ spec:
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.director.dir }}compass-director-tests:{{ .Values.global.images.tests.director.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
-          args: ["-c", "./wait-for-director.sh && /api-tests.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          args: ["-c", "./wait-for-director.sh && /api.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
             - name: DIRECTOR_URL
               value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}"
