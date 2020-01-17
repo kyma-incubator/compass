@@ -6,7 +6,7 @@ to Compass Director and Compass Connnector GraphQL API.
 
 ## Development
 
-> **NOTE:** Connectivity Adapter requires Director running. Read, how to run it in the [`README.md`](../director/README.md) document.
+> **NOTE:** Connectivity Adapter requires the Director component. Read [this](../director/README.md) document to learn how to run it.
 
 To launch Connectivity Adapter on local machine, run the following command:
 
@@ -16,10 +16,10 @@ go run cmd//main.go
 
 ## Configuration
 
-The Connectivity Adapter binary allows to override some configuration parameters. You can specify following environment variables.
+The Connectivity Adapter binary allows you to override some configuration parameters. You can specify the following environment variables:
 
-| ENV              | Default        | Description                                       |
+| Environment variable              | Default value      | Description                                       |
 | ---------------- | -------------- | ------------------------------------------------- |
-| APP_ADDRESS      | 127.0.0.1:8080 | The address and port for the service to listen on |
-| APP_DIRECTOR_URL | 127.0.0.1:3000 | The host of running Director                      |
+| **APP_ADDRESS**      | `127.0.0.1:8080` | Address and port for the service to listen on |
+| **APP_DIRECTOR_URL** | `127.0.0.1:3000` | Host of the running Director component                      |
  
