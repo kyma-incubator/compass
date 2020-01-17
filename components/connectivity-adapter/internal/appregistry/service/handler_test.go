@@ -23,8 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const url = "http://doesnt.really/matter"
-
 func TestHandler_Delete(t *testing.T) {
 	id := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	httpReq := fixServiceDetailsRequest(id, strings.NewReader(""))
@@ -97,7 +95,9 @@ func TestHandler_Delete(t *testing.T) {
 }
 
 func fixServiceDetailsRequest(id string, body io.Reader) *http.Request {
-	req := httptest.NewRequest(http.MethodPost, url, body) // method and url doesn't matter, as we rely on gorilla/mux for routing
+	// Method and URL doesn't matter, as we rely on gorilla/mux for routing.
+	// In scope of Handler, we don't check them.
+	req := httptest.NewRequest("Anything", "http://doesnt.really/matter", body)
 	req = mux.SetURLVars(req, map[string]string{serviceIDVarKey: id})
 	return req
 }
