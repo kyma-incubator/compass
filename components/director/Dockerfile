@@ -11,9 +11,8 @@ COPY . .
 # Build app
 #
 
-RUN go build -v -o main ./cmd/main.go
-RUN go build -v -o tenantLoader ./cmd/tenantLoader.go
-RUN mkdir /app && mv ./main /app/main # && mv ./licenses /app/licenses
+RUN go build -v -o director ./cmd/director/main.go && go build -v -o tenantloader ./cmd/tenantloader/main.go
+RUN mkdir /app && mv ./director /app/director  && mv ./tenantloader /app/tenantloader # && mv ./licenses /app/licenses
 
 FROM alpine:3.10
 LABEL source = git@github.com:kyma-incubator/compass.git
@@ -22,6 +21,7 @@ WORKDIR /app
 #
 # Copy binary
 #
+RUN apk --no-cache add curl
 
 COPY --from=builder /app /app
 COPY ./examples/ /app/examples/
@@ -30,4 +30,4 @@ COPY ./examples/ /app/examples/
 # Run app
 #
 
-CMD ["/app/main"]
+CMD ["/app/director"]
