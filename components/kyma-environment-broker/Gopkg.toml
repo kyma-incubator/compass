@@ -85,6 +85,10 @@
   name = "github.com/vrischmann/envconfig"
   version = "1.2.0"
 
+[[constraint]]
+  name = "github.com/kubernetes/client-go"
+  version = "kubernetes-1.17.1"
+
 [prune]
   go-tests = true
   unused-packages = true
