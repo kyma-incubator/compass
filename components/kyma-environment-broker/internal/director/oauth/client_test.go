@@ -54,7 +54,9 @@ func TestOauthClient_GetAuthorizationToken(t *testing.T) {
 			}
 		})
 
-		cli := fake.NewFakeClientWithScheme(runtime.NewScheme(), fixCredentialsSecret(credentials))
+		sch := runtime.NewScheme()
+		require.NoError(t, v1.AddToScheme(sch))
+		cli := fake.NewFakeClientWithScheme(sch, fixCredentialsSecret(credentials))
 		oauthClient := NewOauthClient(client, cli, secretName, namespace)
 
 		//when
