@@ -82,7 +82,7 @@ global:
   kyma_environment_broker:
     secrets:
       integrationSystemCredentials:
-        name: compass-broker-credentials
+        name: compass-kyma-environment-broker-credentials
 
   provisioner:
     graphql:
@@ -90,6 +90,9 @@ global:
     secrets:
       integrationSystemCredentials:
         name: compass-provisioner-credentials
+
+  oauth2:
+    host: oauth2.kyma.local
 
   gateway:
     port: 3000

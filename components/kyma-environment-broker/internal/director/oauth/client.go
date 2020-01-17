@@ -52,6 +52,7 @@ func (c *oauthClient) WaitForCredentials() error {
 		_, err := c.secretsClient.Get(c.secretName, metav1.GetOptions{})
 		switch {
 		case apierrors.IsNotFound(err):
+			log.Warnf("secret %s not found", c.secretName)
 			return false, nil
 		case err != nil:
 			return false, errors.Wrapf(err, "while waiting for secret %s", c.secretName)

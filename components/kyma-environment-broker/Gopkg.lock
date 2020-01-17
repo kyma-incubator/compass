@@ -294,12 +294,12 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:d7496e35507027728e24459aef7a5b8db8cebff46b9e765cf0e9434eca921630"
+  digest = "1:c5761cd0e95505cb454722a5a09130a9293b593629e4574bf47df54180b4bfb0"
   name = "github.com/kubernetes/client-go"
   packages = ["kubernetes/typed/core/v1"]
   pruneopts = "UT"
-  revision = "8cba805ad12d699a43f2fe96dbfbcf3042133e89"
-  version = "kubernetes-1.15.6"
+  revision = "69012f50f4b0243bccdb82c24402a10224a91f51"
+  version = "kubernetes-1.17.1"
 
 [[projects]]
   digest = "1:9fbfadf72bec89c4e83dd0b553820a16bf0be0f62431ac68e22937f6158be5f7"

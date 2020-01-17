@@ -74,7 +74,7 @@ func main() {
 
 	secrets, err := newSecretsInterface(cfg.Director.Namespace)
 	fatalOnError(err)
-	oauthClient := oauth.NewOauthClient(newHTTPClient(false), secrets, cfg.Director.OauthCredentialsSecretName)
+	oauthClient := oauth.NewOauthClient(newHTTPClient(cfg.Director.SkipCertVerification), secrets, cfg.Director.OauthCredentialsSecretName)
 	fatalOnError(oauthClient.WaitForCredentials())
 	tkn, err := oauthClient.GetAuthorizationToken()
 	fatalOnError(err)
