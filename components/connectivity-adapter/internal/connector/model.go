@@ -23,9 +23,9 @@ type MgmtInfoReponse struct {
 }
 
 type RuntimeURLs struct {
-	EventsInfoURL string `json:"eventsInfoUrl"`
-	EventsURL     string `json:"eventsUrl"`
-	MetadataURL   string `json:"metadataUrl"`
+	//EventsInfoURL string `json:"eventsInfoUrl"` // TODO: Where is it used?
+	EventsURL   string `json:"eventsUrl"`
+	MetadataURL string `json:"metadataUrl"`
 }
 
 type MgmtURLs struct {

@@ -6,7 +6,6 @@ import (
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
 	"time"
@@ -26,17 +25,11 @@ type Client interface {
 	Configuration(headers map[string]string) (schema.Configuration, error)
 }
 
-func New(certificate *tls.Certificate, graphqlEndpoint string, enableLogging, insecureConfigFetch bool) (Client, error) {
-	var certificates []tls.Certificate
-	if certificate != nil {
-		certificates = []tls.Certificate{*certificate}
-	}
-
+func NewClient(graphqlEndpoint string, enableLogging, insecureConfigFetch bool) (Client, error) {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: insecureConfigFetch,
-				Certificates:       certificates,
 			},
 		},
 	}
@@ -55,6 +48,7 @@ func New(certificate *tls.Certificate, graphqlEndpoint string, enableLogging, in
 }
 
 func NewConnectorClient(graphqlEndpoint string) Client {
+
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -72,7 +66,7 @@ func NewConnectorClient(graphqlEndpoint string) Client {
 
 func (c client) Configuration(headers map[string]string) (schema.Configuration, error) {
 	query := `query{
- 		configuration
+ 		result: configuration()
         {
  			 token { token }
 			 certificateSigningRequestInfo { subject keyAlgorithm }
@@ -91,17 +85,11 @@ func (c client) Configuration(headers map[string]string) (schema.Configuration, 
 		return schema.Configuration{}, errors.Wrap(err, "Failed to get configuration")
 	}
 
-	log.Printf("SUUUCCCESSS: %v", response)
-
-	return response.Result.Configuration, nil
-}
-
-type Data struct {
-	Configuration schema.Configuration `json:"configuration"`
+	return response.Result, nil
 }
 
 type ConfigurationResponse struct {
-	Result Data `json:"data"`
+	Result schema.Configuration `json:"result"`
 }
 
 func applyHeaders(req *graphql.Request, headers map[string]string) {
@@ -119,7 +107,7 @@ func (c *client) execute(req *graphql.Request, res interface{}) error {
 	if err != nil {
 		for _, l := range c.logs {
 			if l != "" {
-				logrus.Info(l)
+				log.Println(l)
 			}
 		}
 	}
