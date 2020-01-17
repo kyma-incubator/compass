@@ -24,7 +24,7 @@ spec:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
             - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.oauth2.host }}"
+            - "{{ .Values.global.oauth2.host }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ template "fullname" . }}
       containers:

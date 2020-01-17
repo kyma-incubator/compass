@@ -111,15 +111,20 @@ spec:
                 set -o errexit
               }
 
-              function register_provisioner() {
+              function register_integration_system() {
                 set +o pipefail
-                echo "Compass Provisioner registration as integration system - in progress."
+
+                echo "Creating $NAME integration system - in progress."
+
+                NAME=$1
+                DESCRIPTION=$2
+                SECRET_NAME=$3
 
                 RESPONSE_BODY=$(curl -k "${DIRECTOR_URL}" \
                   -H 'Content-Type: application/json' \
                   -H "authorization: Bearer ${INTERNAL_TOKEN}" \
                   --data-binary '{
-                    "query":"mutation registerIntegrationSystem {\n  result: registerIntegrationSystem(\n    in: { name: \"compass-provisioner\", description: \"Compass Provisioner\" }\n  ) {\n    id\n  }\n}\n"
+                    "query":"mutation registerIntegrationSystem {\n  result: registerIntegrationSystem(\n    in: { name: \"'"$NAME"'\", description: \"'"$DESCRIPTION"'\" }\n  ) {\n    id\n  }\n}\n"
                   }')
                 echo $RESPONSE_BODY
 
@@ -142,67 +147,23 @@ spec:
                 CLIENT_SECRET="${CLIENT_SECRET:1:${#CLIENT_SECRET}-2}"
                 TOKENS_ENDPOINT="${TOKENS_ENDPOINT:1:${#TOKENS_ENDPOINT}-2}"
 
-                kubectl create secret generic ${PROVISIONER_SECRET_NAME} --from-literal=client_id=$CLIENT_ID --from-literal=client_secret=$CLIENT_SECRET --from-literal=tokens_endpoint=$TOKENS_ENDPOINT -n {{ .Release.Namespace }}
+                kubectl create secret generic ${SECRET_NAME} --from-literal=client_id=$CLIENT_ID --from-literal=client_secret=$CLIENT_SECRET --from-literal=tokens_endpoint=$TOKENS_ENDPOINT -n {{ .Release.Namespace }}
 
-                echo "Compass Provisioner registration as integration system and requesting credentials - finished."
+                echo "$NAME integration system registration and requesting credentials - finished."
                 set -o pipefail
               }
 
-              function register_broker() {
-                set +o pipefail
-                echo "Kyma environment broker registration as integration system - in progress."
-
-                RESPONSE_BODY=$(curl -k "${DIRECTOR_URL}" \
-                  -H 'Content-Type: application/json' \
-                  -H "authorization: Bearer ${INTERNAL_TOKEN}" \
-                  --data-binary '{
-                    "query":"mutation registerIntegrationSystem {\n  result: registerIntegrationSystem(\n    in: { name: \"compass-kyma-broker\", description: \"Compass Kyma Environment Broker\" }\n  ) {\n    id\n  }\n}\n"
-                  }')
-                echo $RESPONSE_BODY
-
-                INTEGRATION_SYSTEM_ID=$(echo $RESPONSE_BODY | jq -e '.data .result .id')
-                INTEGRATION_SYSTEM_ID="${INTEGRATION_SYSTEM_ID:1:${#INTEGRATION_SYSTEM_ID}-2}"
-
-                CREDENTIAL_RESPONSE_BODY=$(curl -k "${DIRECTOR_URL}" \
-                  -H 'Content-Type: application/json' \
-                  -H 'Accept: application/json' \
-                  -H 'Connection: keep-alive' \
-                  -H "authorization: Bearer ${INTERNAL_TOKEN}" \
-                  --data-binary '{"query":"mutation requestCredentials {\n\trequestClientCredentialsForIntegrationSystem (id : \"'"$INTEGRATION_SYSTEM_ID"'\") {\n    id\n    auth {\n      credential {\n        ... on BasicCredentialData {\n            username\n            password\n        }\n        ...  on OAuthCredentialData {\n            clientId\n            clientSecret\n            url\n        }\n      }\n    }\n  }\n}\n"
-                 }')
-
-                CLIENT_ID=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .clientId')
-                CLIENT_SECRET=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .clientSecret')
-                TOKENS_ENDPOINT=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .url')
-
-                CLIENT_ID="${CLIENT_ID:1:${#CLIENT_ID}-2}"
-                CLIENT_SECRET="${CLIENT_SECRET:1:${#CLIENT_SECRET}-2}"
-                TOKENS_ENDPOINT="${TOKENS_ENDPOINT:1:${#TOKENS_ENDPOINT}-2}"
-
-                kubectl create secret generic ${BROKER_SECRET_NAME} --from-literal=client_id=$CLIENT_ID --from-literal=client_secret=$CLIENT_SECRET --from-literal=tokens_endpoint=$TOKENS_ENDPOINT -n {{ .Release.Namespace }}
-
-                echo "Kyma environment broker registration as integration system and requesting credentials - finished."
-                set -o pipefail
-              }
-
-              function ensure_broker_secret() {
+              function ensure_secret() {
                 set +o errexit
-                kubectl get secret ${BROKER_SECRET_NAME} -n {{ .Release.Namespace }} > /dev/null 2>&1
-                if [[ $? -ne 0 ]]; then
-                  register_broker
-                else
-                  echo "Secret ${BROKER_SECRET_NAME} already exists."
-                fi
-                set -o errexit
-              }
+                NAME=$1
+                DESCRIPTION=$2
+                SECRET_NAME=$3
 
-              function ensure_provisioner_secret() {
-                set +o errexit
-                kubectl get secret ${PROVISIONER_SECRET_NAME} -n {{ .Release.Namespace }} > /dev/null 2>&1
+                kubectl get secret ${SECRET_NAME} -n {{ .Release.Namespace }} > /dev/null 2>&1
                 if [[ $? -ne 0 ]]; then
-                  register_provisioner
+                  register_integration_system "$NAME" "$DESCRIPTION" "$SECRET_NAME"
                 else
-                  echo "Secret ${PROVISIONER_SECRET_NAME} already exists."
+                  echo "Secret ${SECRET_NAME} already exists."
                 fi
                 set -o errexit
               }
@@ -221,9 +182,9 @@ spec:
               director_readiness
 
               echo "Checking if provisioner secret with credentials exists..."
-              ensure_provisioner_secret
+              ensure_secret "compass-provisioner" "Compass Provisioner" "$PROVISIONER_SECRET_NAME"
 
               echo "Checking if broker secret with credentials exists..."
-              ensure_broker_secret
+              ensure_secret "compass-kyma-environment-broker" "Compass Kyma Environment Broker" "$BROKER_SECRET_NAME"
 
               kill_proxy_and_exit

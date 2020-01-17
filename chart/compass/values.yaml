@@ -49,6 +49,8 @@ global:
       version: "PR-552"
 
   isLocalEnv: false
+  oauth2:
+    host: oauth2
 
   director:
     port: 3000
@@ -90,9 +92,6 @@ global:
     secrets:
       integrationSystemCredentials:
         name: compass-provisioner-credentials
-
-  oauth2:
-    host: oauth2.kyma.local
 
   gateway:
     port: 3000
