@@ -20,11 +20,13 @@ type Resolver struct {
 func (r *Resolver) Mutation() gqlschema.MutationResolver {
 	return &Resolver{
 		provisioning: r.provisioning,
+		validator:    r.validator,
 	}
 }
 func (r *Resolver) Query() gqlschema.QueryResolver {
 	return &Resolver{
 		provisioning: r.provisioning,
+		validator:    r.validator,
 	}
 }
 
@@ -150,7 +152,7 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 }
 
 func getTenant(ctx context.Context) (string, error) {
-	tenant, ok := ctx.Value(middlewares.TenantHeader).(string)
+	tenant, ok := ctx.Value(middlewares.Tenant).(string)
 
 	if !ok || tenant == "" {
 		return "", errors.New("cannot provision runtime since tenant header is empty")

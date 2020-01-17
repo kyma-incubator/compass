@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes"
 	"time"
 
 	"github.com/pkg/errors"
@@ -36,23 +37,25 @@ type Service interface {
 }
 
 type service struct {
-	persistenceService  persistence.Service
-	hydroform           hydroform.Service
-	installationService installation.Service
-	inputConverter      InputConverter
-	graphQLConverter    GraphQLConverter
-	directorService     director.DirectorClient
+	persistenceService    persistence.Service
+	hydroform             hydroform.Service
+	installationService   installation.Service
+	inputConverter        InputConverter
+	graphQLConverter      GraphQLConverter
+	directorService       director.DirectorClient
+	runtimeConfigProvider runtimes.ConfigProvider
 }
 
 func NewProvisioningService(persistenceService persistence.Service, inputConverter InputConverter,
-	graphQLConverter GraphQLConverter, hydroform hydroform.Service, installationService installation.Service, directorService director.DirectorClient) Service {
+	graphQLConverter GraphQLConverter, hydroform hydroform.Service, installationService installation.Service, directorService director.DirectorClient, runtimeConfigProvider runtimes.ConfigProvider) Service {
 	return &service{
-		persistenceService:  persistenceService,
-		hydroform:           hydroform,
-		installationService: installationService,
-		inputConverter:      inputConverter,
-		graphQLConverter:    graphQLConverter,
-		directorService:     directorService,
+		persistenceService:    persistenceService,
+		hydroform:             hydroform,
+		installationService:   installationService,
+		inputConverter:        inputConverter,
+		graphQLConverter:      graphQLConverter,
+		directorService:       directorService,
+		runtimeConfigProvider: runtimeConfigProvider,
 	}
 }
 
@@ -175,7 +178,17 @@ func (r *service) startProvisioning(operationID string, cluster model.Cluster, f
 		return
 	}
 
-	log.Infof("Kyma installed successfully on %s Runtime. Operation %s finished. Setting status to success.", cluster.ID, operationID)
+	log.Infof("Kyma installed successfully on %s Runtime. Applying configuration to Runtime", cluster.ID)
+
+	err = r.applyConfigToRuntime(cluster, info.KubeConfig)
+
+	if err != nil {
+		log.Errorf("Error applying configuration to runtime %s: %s", cluster.ID, err.Error())
+		r.setOperationAsFailed(operationID, err.Error())
+		return
+	}
+
+	log.Infof("Operation %s finished. Setting status to success.", operationID)
 
 	updateOperationStatus(func() error {
 		return r.persistenceService.SetOperationAsSucceeded(operationID)
@@ -209,6 +222,24 @@ func (r *service) setOperationAsFailed(operationID, message string) {
 	updateOperationStatus(func() error {
 		return r.persistenceService.SetOperationAsFailed(operationID, message)
 	})
+}
+
+func (r *service) applyConfigToRuntime(cluster model.Cluster, kubeconfig string) error {
+	token, err := r.directorService.GetConnectionToken(cluster.ID, cluster.Tenant)
+	if err != nil {
+		return err
+	}
+
+	config := runtimes.RuntimeConfig{
+		ConnectorURL: token.ConnectorURL,
+		OneTimeToken: token.Token,
+		RuntimeID:    cluster.ID,
+		Tenant:       cluster.Tenant,
+	}
+
+	_, err = r.runtimeConfigProvider.CreateConfigMapForRuntime(config, kubeconfig)
+
+	return err
 }
 
 func updateOperationStatus(updateFunction func() error) {

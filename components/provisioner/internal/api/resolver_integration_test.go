@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes/mocks"
 	"testing"
 	"time"
 
@@ -188,7 +190,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	uuidGenerator := uuid.NewUUIDGenerator()
 
-	ctx := context.WithValue(context.Background(), middlewares.TenantHeader, tenant)
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 
 	cleanupNetwork, err := testutils.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
@@ -223,6 +225,10 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock := &directormock.DirectorClient{}
 			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(cfg.runtimeID, nil)
 			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
+			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeToken{}, nil)
+
+			configProviderMock := &mocks.ConfigProvider{}
+			configProviderMock.On("CreateConfigMapForRuntime", mock.Anything, mock.Anything).Return(nil, nil)
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
@@ -231,7 +237,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository)
 			graphQLConverter := provisioning.NewGraphQLConverter()
-			provisioningService := provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformServiceMock, installationServiceMock, directorServiceMock)
+			provisioningService := provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformServiceMock, installationServiceMock, directorServiceMock, configProviderMock)
 			validator := NewValidator(persistenceService)
 			provisioner := NewResolver(provisioningService, validator)
 

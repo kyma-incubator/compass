@@ -2,6 +2,8 @@ package main
 
 import (
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes/clientbuilder"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -48,7 +50,9 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 
 	directorClient := director.NewDirectorClient(gqlClient, oauthClient)
 
-	return provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformService, installationService, directorClient)
+	configProvider := runtimes.NewRuntimeConfigProvider(config.CredentialsNamespace, clientbuilder.NewConfigMapClientBuilder())
+
+	return provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformService, installationService, directorClient, configProvider)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
@@ -78,7 +82,10 @@ func newResolver(config config, persistenceService persistence.Service, releaseR
 		return nil, errors.Wrap(err, "Failed to create secrets interface")
 	}
 
-	return api.NewResolver(newProvisioningService(config, persistenceService, secretInterface, releaseRepo), api.NewValidator(persistenceService)), nil
+	return api.NewResolver(
+		newProvisioningService(config, persistenceService, secretInterface, releaseRepo),
+		api.NewValidator(persistenceService),
+	), nil
 }
 
 func initRepositories(config config, connectionString string) (persistence.Service, release.Repository, error) {

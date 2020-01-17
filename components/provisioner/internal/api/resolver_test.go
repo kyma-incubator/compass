@@ -14,7 +14,7 @@ import (
 )
 
 func TestResolver_ProvisionRuntime(t *testing.T) {
-	ctx := context.WithValue(context.Background(), middlewares.TenantHeader, tenant)
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -215,7 +215,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 }
 
 func TestResolver_DeprovisionRuntime(t *testing.T) {
-	ctx := context.WithValue(context.Background(), middlewares.TenantHeader, tenant)
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
 
 	t.Run("Should start deprovisioning and return operation ID", func(t *testing.T) {
@@ -295,7 +295,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 }
 
 func TestResolver_RuntimeStatus(t *testing.T) {
-	ctx := context.WithValue(context.Background(), middlewares.TenantHeader, tenant)
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
 
 	t.Run("Should return operation status", func(t *testing.T) {
