@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/runtime"
 	"net/http"
 	"testing"
 	"time"
+
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -96,4 +97,3 @@ func fixCredentialsSecret(credentials credentials) *v1.Secret {
 		},
 	}
 }
-

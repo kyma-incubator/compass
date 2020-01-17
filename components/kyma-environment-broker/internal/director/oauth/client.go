@@ -3,13 +3,14 @@ package oauth
 import (
 	"encoding/json"
 	"fmt"
-	"golang.org/x/net/context"
 	"io/ioutil"
-	v1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"golang.org/x/net/context"
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

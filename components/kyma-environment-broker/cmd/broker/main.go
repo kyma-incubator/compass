@@ -2,13 +2,13 @@ package main
 
 import (
 	"crypto/tls"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
@@ -72,9 +72,6 @@ func main() {
 	oauthClient := oauth.NewOauthClient(newHTTPClient(cfg.Director.SkipCertVerification), cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
 	fatalOnError(oauthClient.WaitForCredentials())
 
-	tkn, err := oauthClient.GetAuthorizationToken()
-	fatalOnError(err)
-	fmt.Println("DUPA:", tkn.AccessToken)
 	director.NewDirectorClient(oauthClient)
 
 	db, err := storage.New(cfg.Database.ConnectionURL())

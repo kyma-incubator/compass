@@ -761,13 +761,12 @@
   version = "v0.17.0"
 
 [[projects]]
-  digest = "1:36d3689387bd797cb3ee12c248a6727f5dc0576acdf73761c7e412bcdcb8d3cf"
+  digest = "1:d15037d80d60d48c1b94aa84baebe1bdf3a1990df0eb0978b372c976cababa11"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
     "dynamic",
     "kubernetes/scheme",
-    "kubernetes/typed/core/v1",
     "pkg/apis/clientauthentication",
     "pkg/apis/clientauthentication/v1alpha1",
     "pkg/apis/clientauthentication/v1beta1",
@@ -783,7 +782,6 @@
     "tools/clientcmd/api/latest",
     "tools/clientcmd/api/v1",
     "tools/metrics",
-    "tools/reference",
     "transport",
     "util/cert",
     "util/connrotation",
@@ -872,8 +870,8 @@
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/util/wait",
-    "k8s.io/client-go/kubernetes/typed/core/v1",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
     "sigs.k8s.io/controller-runtime/pkg/client/fake",
