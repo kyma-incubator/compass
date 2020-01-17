@@ -72,7 +72,7 @@ func main() {
 		provisionerClient = provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 	}
 
-	secrets, err := newSecretsInterface(cfg.Director.CredentialsNamespace)
+	secrets, err := newSecretsInterface(cfg.Director.Namespace)
 	fatalOnError(err)
 	oauthClient := oauth.NewOauthClient(newHTTPClient(false), secrets, cfg.Director.OauthCredentialsSecretName)
 	fatalOnError(oauthClient.WaitForCredentials())

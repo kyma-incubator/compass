@@ -55,8 +55,15 @@ spec:
               value: "{{ .Values.broker.port }}"
             - name: APP_AUTH_USERNAME
               value: "{{ .Values.broker.username }}"
+            - name: APP_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "kyma-env-broker.fullname" . }}
+                  key: broker-password
             - name: APP_PROCESS_RUNTIME_ID
               value: "{{ .Values.provisioner.processRuntimeID }}"
+            - name: APP_DIRECTOR_NAMESPACE
+              value: "{{ .Release.Namespace }}"
             - name: APP_DIRECTOR_DEFAULT_TENANT
               value: "{{ .Values.global.defaultTenant }}"
             - name: APP_DIRECTOR_URL
@@ -65,11 +72,6 @@ spec:
               value: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
             - name: APP_DIRECTOR_SKIP_CERT_VERIFICATION
               value: "{{ .Values.global.isLocalEnv }}"
-            - name: APP_DIRECTOR_AUTH_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "kyma-env-broker.fullname" . }}
-                  key: broker-password
             - name: APP_DATABASE_USER
               valueFrom:
                 secretKeyRef:
