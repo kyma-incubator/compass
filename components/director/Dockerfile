@@ -12,7 +12,8 @@ COPY . .
 #
 
 RUN go build -v -o main ./cmd/main.go
-RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
+RUN go build -v -o tenantLoader ./cmd/tenantLoader.go
+RUN mkdir /app && mv ./main /app/main # && mv ./licenses /app/licenses
 
 FROM alpine:3.10
 LABEL source = git@github.com:kyma-incubator/compass.git

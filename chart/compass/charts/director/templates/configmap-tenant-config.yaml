@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compass-tenant-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+data:
+  tenantProvider: {{ .Values.global.tenantProvider }}
+  tenant-key-mapping.json: |-
+{{ .Values.global.tenantKeyMapping | toJson | indent 4 }}
+  tenants.json: |-
+{{ .Values.global.tenants | toJson | indent 4 }}
+{{/*    {{- tpl ((.Files.Glob "tenants.json").AsConfig) . | nindent 2 }}*/}}
