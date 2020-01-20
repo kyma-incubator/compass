@@ -123,6 +123,13 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		return "", errors.Wrapf(err, "while ensuring Label Definition with key %s exists", model.ScenariosKey)
 	}
 
+	if _, ok := in.Labels[model.ScenariosKey]; !ok {
+		if in.Labels == nil {
+			in.Labels = map[string]interface{}{}
+		}
+		in.Labels[model.ScenariosKey] = model.ScenariosDefaultValue
+	}
+
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
 	if err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Runtime")
