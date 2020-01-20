@@ -32,6 +32,11 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	createGQLRuntimeInputGCP := func(zone *string) gqlschema.ProvisionRuntimeInput {
 		return gqlschema.ProvisionRuntimeInput{
+			RuntimeInput: &gqlschema.RuntimeInput{
+				Name:        "runtimeName",
+				Description: nil,
+				Labels:      &gqlschema.Labels{},
+			},
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GcpConfig: &gqlschema.GCPConfigInput{
 					Name:              "Something",
@@ -53,7 +58,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	createExpectedRuntimeInputGCP := func(zone string) model.Cluster {
 		return model.Cluster{
-			ID: "runtimeID",
+			ID:          "runtimeID",
+			RuntimeName: "runtimeName",
 			ClusterConfig: model.GCPConfig{
 				ID:                "id",
 				Name:              "Something",
@@ -74,7 +80,12 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	gcpGardenerProvider := &gqlschema.GCPProviderConfigInput{Zone: "zone"}
 
-	gardenerGCPQGLInput := gqlschema.ProvisionRuntimeInput{
+	gardenerGCPGQLInput := gqlschema.ProvisionRuntimeInput{
+		RuntimeInput: &gqlschema.RuntimeInput{
+			Name:        "runtimeName",
+			Description: nil,
+			Labels:      &gqlschema.Labels{},
+		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				ProjectName:       "Project",
@@ -107,7 +118,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedGardenerGCPRuntimeConfig := model.Cluster{
-		ID: "runtimeID",
+		ID:          "runtimeID",
+		RuntimeName: "runtimeName",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
 			Name:                   "veryLongIDThat",
@@ -136,7 +148,12 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	azureGardenerProvider := &gqlschema.AzureProviderConfigInput{VnetCidr: "cidr"}
 
-	gardenerAzureQGLInput := gqlschema.ProvisionRuntimeInput{
+	gardenerAzureGQLInput := gqlschema.ProvisionRuntimeInput{
+		RuntimeInput: &gqlschema.RuntimeInput{
+			Name:        "runtimeName",
+			Description: nil,
+			Labels:      &gqlschema.Labels{},
+		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				ProjectName:       "Project",
@@ -169,7 +186,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedGardenerAzureRuntimeConfig := model.Cluster{
-		ID: "runtimeID",
+		ID:          "runtimeID",
+		RuntimeName: "runtimeName",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
 			Name:                   "veryLongIDThat",
@@ -203,7 +221,12 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		PublicCidr:   "cidr",
 	}
 
-	gardenerAWSQGLInput := gqlschema.ProvisionRuntimeInput{
+	gardenerAWSGQLInput := gqlschema.ProvisionRuntimeInput{
+		RuntimeInput: &gqlschema.RuntimeInput{
+			Name:        "runtimeName",
+			Description: nil,
+			Labels:      &gqlschema.Labels{},
+		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				ProjectName:       "Project",
@@ -236,7 +259,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedGardenerAWSRuntimeConfig := model.Cluster{
-		ID: "runtimeID",
+		ID:          "runtimeID",
+		RuntimeName: "runtimeName",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
 			Name:                   "veryLongIDThat",
@@ -281,17 +305,17 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			description: "Should create proper runtime config struct with GCP input (empty zone)",
 		},
 		{
-			input:       gardenerGCPQGLInput,
+			input:       gardenerGCPGQLInput,
 			expected:    expectedGardenerGCPRuntimeConfig,
 			description: "Should create proper runtime config struct with Gardener input for GCP provider",
 		},
 		{
-			input:       gardenerAzureQGLInput,
+			input:       gardenerAzureGQLInput,
 			expected:    expectedGardenerAzureRuntimeConfig,
 			description: "Should create proper runtime config struct with Gardener input for Azure provider",
 		},
 		{
-			input:       gardenerAWSQGLInput,
+			input:       gardenerAWSGQLInput,
 			expected:    expectedGardenerAWSRuntimeConfig,
 			description: "Should create proper runtime config struct with Gardener input for AWS provider",
 		},
