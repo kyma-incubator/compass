@@ -135,6 +135,7 @@ type ComplexityRoot struct {
 		CredentialsSecretName func(childComplexity int) int
 		Kubeconfig            func(childComplexity int) int
 		KymaConfig            func(childComplexity int) int
+		RuntimeName           func(childComplexity int) int
 	}
 
 	RuntimeConnectionStatus struct {
@@ -597,6 +598,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RuntimeConfig.KymaConfig(childComplexity), true
 
+	case "RuntimeConfig.runtimeName":
+		if e.complexity.RuntimeConfig.RuntimeName == nil {
+			break
+		}
+
+		return e.complexity.RuntimeConfig.RuntimeName(childComplexity), true
+
 	case "RuntimeConnectionStatus.errors":
 		if e.complexity.RuntimeConnectionStatus.Errors == nil {
 			break
@@ -712,6 +720,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
+    runtimeName: String
     clusterConfig: ClusterConfig
     credentialsSecretName: String
     kymaConfig: KymaConfig
@@ -2465,6 +2474,30 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RuntimeConfig_runtimeName(ctx context.Context, field graphql.CollectedField, obj *RuntimeConfig) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "RuntimeConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeName, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeConfig_clusterConfig(ctx context.Context, field graphql.CollectedField, obj *RuntimeConfig) graphql.Marshaler {
@@ -4509,6 +4542,8 @@ func (ec *executionContext) _RuntimeConfig(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("RuntimeConfig")
+		case "runtimeName":
+			out.Values[i] = ec._RuntimeConfig_runtimeName(ctx, field, obj)
 		case "clusterConfig":
 			out.Values[i] = ec._RuntimeConfig_clusterConfig(ctx, field, obj)
 		case "credentialsSecretName":

@@ -188,6 +188,7 @@ type ProvisionRuntimeInput struct {
 }
 
 type RuntimeConfig struct {
+	RuntimeName           *string       `json:"runtimeName"`
 	ClusterConfig         ClusterConfig `json:"clusterConfig"`
 	CredentialsSecretName *string       `json:"credentialsSecretName"`
 	KymaConfig            *KymaConfig   `json:"kymaConfig"`
