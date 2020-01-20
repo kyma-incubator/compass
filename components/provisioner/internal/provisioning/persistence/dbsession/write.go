@@ -18,6 +18,7 @@ type writeSession struct {
 func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	_, err := ws.insertInto("cluster").
 		Pair("id", cluster.ID).
+		Pair("runtime_name", cluster.RuntimeName).
 		Pair("terraform_state", cluster.TerraformState).
 		Pair("credentials_secret_name", cluster.CredentialsSecretName).
 		Pair("creation_timestamp", cluster.CreationTimestamp).
