@@ -15,9 +15,8 @@ type TenantMappingInput struct { //TODO REMOVE
 }
 
 type MappingOverrides struct {
-	Name  string `json:"name"`
-	Id    string `json:"id"`
-	Model string `json:"model"`
+	Name string `json:"name"`
+	ID   string `json:"id"`
 }
 
 type tenantMap map[string]string
@@ -36,7 +35,7 @@ func MapTenants(srcPath, provider string, mappingOverrides MappingOverrides) ([]
 	var tenants []TenantMappingInput
 	for _, tenantObj := range tenantMapSlice {
 		newTenant := map[string]string{
-			"ExternalTenantID": tenantObj[mappingOverrides.Id],
+			"ExternalTenantID": tenantObj[mappingOverrides.ID],
 			"Name":             tenantObj[mappingOverrides.Name],
 			"Provider":         provider,
 		}
@@ -48,18 +47,4 @@ func MapTenants(srcPath, provider string, mappingOverrides MappingOverrides) ([]
 	}
 
 	return tenants, nil
-}
-
-func ParseMappingOverrides(srcPath string) (*MappingOverrides, error) {
-	bytes, err := ioutil.ReadFile(srcPath)
-	if err != nil {
-		return nil, errors.Wrap(err, "while reading external tenants file")
-	}
-
-	mappingOverrides := MappingOverrides{}
-	err = json.Unmarshal(bytes, &mappingOverrides)
-	if err != nil {
-		return nil, err
-	}
-	return &mappingOverrides, nil
 }

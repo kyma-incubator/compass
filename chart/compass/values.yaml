@@ -23,7 +23,7 @@ global:
       version: "PR-757"
     director:
       dir:
-      version: "PR-747"
+      version: "PR-673"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -65,7 +65,7 @@ global:
   tenantProvider: "compass"
   tenantKeyMapping:
     name: "name"
-    tenantID: "id"
+    ID: "id"
 
   connector:
     graphql:

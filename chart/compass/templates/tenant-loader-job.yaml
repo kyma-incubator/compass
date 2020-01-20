@@ -52,6 +52,10 @@ spec:
                             secretKeyRef:
                                 name: compass-postgresql
                                 key: postgresql-sslMode
+                      - name: TENANT_ID_KEY_MAPPING
+                        value: {{ .Values.global.tenantKeyMapping.ID }}
+                      - name: TENANT_NAME_KEY_MAPPING
+                        value: {{ .Values.global.tenantKeyMapping.name }}
                       - name: TENANT_PROVIDER
                         value: {{ .Values.global.tenantProvider }}
                   volumeMounts:

@@ -1,0 +1,14 @@
+[
+  {
+    "custom-id":"id-default",
+    "custom-name":"default"
+  },
+  {
+    "custom-id":"id-foo",
+    "custom-name":"foo"
+  },
+  {
+    "custom-id":"id-bar",
+    "custom-name":"bar"
+  }
+]
