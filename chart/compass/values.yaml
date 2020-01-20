@@ -16,10 +16,10 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-634"
+      version: "PR-665"
     director:
       dir:
-      version: "PR-656"
+      version: "PR-604"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -39,11 +39,11 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-610"
+      version: "PR-635"
     tests:
-      e2e:
+      director:
         dir:
-        version: "PR-656"
+        version: "PR-664"
       connector:
         dir:
         version: "02e8358c"
@@ -52,6 +52,8 @@ global:
       version: "PR-552"
 
   isLocalEnv: false
+  oauth2:
+    host: oauth2
 
   director:
     port: 3000
@@ -82,9 +84,17 @@ global:
     caKey: ""
     caCertificate: ""
 
+  kyma_environment_broker:
+    secrets:
+      integrationSystemCredentials:
+        name: compass-kyma-environment-broker-credentials
+
   provisioner:
     graphql:
       port: 3000
+    secrets:
+      integrationSystemCredentials:
+        name: compass-provisioner-credentials
 
   gateway:
     port: 3000

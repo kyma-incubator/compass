@@ -19,9 +19,9 @@ fi
 
 matchNames=$(cat <<-END
     matchNames:
-      - name: compass-director
+      - name: compass-director-api
         namespace: compass-system
-      - name: compass-e2e
+      - name: compass-director-gateway-integration
         namespace: kyma-system
       - name: compass-connector-tests
         namespace: compass-system
