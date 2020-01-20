@@ -65,7 +65,7 @@ spec:
                     - "/bin/sh"
                   args:
                     - "-c"
-                    - "./tenantloader; exit_code=$?; echo '# KILLING PILOT-AGENT #'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+                    - "./tenantloader; exit_code=$?; sleep 15; echo '# KILLING PILOT-AGENT #'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
             volumes:
               - name: tenant-config
                 configMap:
