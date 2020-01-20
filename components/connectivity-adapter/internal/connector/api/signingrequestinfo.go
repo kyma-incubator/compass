@@ -2,10 +2,11 @@ package api
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/compass"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+
 	"log"
 	"net/http"
 )
@@ -29,12 +30,12 @@ const (
 type csrInfoHandler struct {
 	getInfoURL string
 	baseURL    string
-	client     compass.Client
+	gqlClient  graphql.Client
 }
 
-func NewSigningRequestInfoHandler(client compass.Client, baseURL string) csrInfoHandler {
+func NewSigningRequestInfoHandler(client graphql.Client, baseURL string) csrInfoHandler {
 	return csrInfoHandler{
-		client:     client,
+		gqlClient:  client,
 		getInfoURL: "",
 		baseURL:    baseURL,
 	}
@@ -50,9 +51,7 @@ func (ih *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	configuration, err := ih.client.Configuration(map[string]string{
-		oathkeeper.ClientIdFromTokenHeader: clientIdFromToken,
-	})
+	configuration, err := ih.gqlClient.Configuration(clientIdFromToken)
 
 	if err != nil {
 		log.Println("Error getting configuration " + err.Error())
@@ -64,11 +63,11 @@ func (ih *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 	respondWithBody(w, http.StatusOK, csrInfoResponse)
 }
 
-func (ih *csrInfoHandler) makeCSRInfoResponse(configuration schema.Configuration, clientIdFromToken string) connector.CSRInfoResponse {
-	return connector.CSRInfoResponse{
+func (ih *csrInfoHandler) makeCSRInfoResponse(configuration schema.Configuration, clientIdFromToken string) model.CSRInfoResponse {
+	return model.CSRInfoResponse{
 		CsrURL:          ih.makeCSRURLs(configuration.Token.Token, clientIdFromToken),
 		API:             ih.makeApiURLs(clientIdFromToken),
-		CertificateInfo: connector.ToCertInfo(configuration),
+		CertificateInfo: graphql.ToCertInfo(configuration),
 	}
 }
 
@@ -79,11 +78,11 @@ func (ih *csrInfoHandler) makeCSRURLs(newToken string, clientIdFromToken string)
 	return csrURL + tokenParam
 }
 
-func (ih *csrInfoHandler) makeApiURLs(clientIdFromToken string) connector.Api {
-	return connector.Api{
+func (ih *csrInfoHandler) makeApiURLs(clientIdFromToken string) model.Api {
+	return model.Api{
 		CertificatesURL: ih.baseURL + CertsEndpoint,
 		InfoURL:         ih.baseURL + ManagementInfoEndpoint,
-		RuntimeURLs: &connector.RuntimeURLs{
+		RuntimeURLs: &model.RuntimeURLs{
 			MetadataURL: ih.baseURL + fmt.Sprintf(ApplicationRegistryEndpointFormat, clientIdFromToken),
 			EventsURL:   ih.baseURL + fmt.Sprintf(EventsEndpointFormat, clientIdFromToken),
 		},

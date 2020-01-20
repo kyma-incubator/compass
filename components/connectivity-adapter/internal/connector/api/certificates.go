@@ -2,8 +2,7 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/compass"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/pkg/errors"
 	"io/ioutil"
@@ -16,10 +15,10 @@ type certRequest struct {
 }
 
 type certificatesHandler struct {
-	client compass.Client
+	client graphql.Client
 }
 
-func NewCertificatesHandler(client compass.Client) certificatesHandler {
+func NewCertificatesHandler(client graphql.Client) certificatesHandler {
 	return certificatesHandler{
 		client: client,
 	}
@@ -40,9 +39,7 @@ func (ih *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	certificationResult, err := ih.client.SignCSR(certRequest.CSR, map[string]string{
-		oathkeeper.ClientIdFromTokenHeader: clientIdFromToken,
-	})
+	certificationResult, err := ih.client.SignCSR(certRequest.CSR, clientIdFromToken)
 
 	if err != nil {
 		log.Println("Error getting cert from Connector: " + err.Error())
@@ -50,7 +47,7 @@ func (ih *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	certResponse := connector.ToCertResponse(certificationResult)
+	certResponse := graphql.ToCertResponse(certificationResult)
 	respondWithBody(w, http.StatusOK, certResponse)
 }
 
@@ -68,4 +65,14 @@ func readCertRequest(r *http.Request) (*certRequest, error) {
 	}
 
 	return &tokenRequest, nil
+}
+
+func respondWithBody(w http.ResponseWriter, statusCode int, responseBody interface{}) {
+	respond(w, statusCode)
+	json.NewEncoder(w).Encode(responseBody)
+}
+
+func respond(w http.ResponseWriter, statusCode int) {
+	w.Header().Set(HeaderContentType, ContentTypeApplicationJson)
+	w.WriteHeader(statusCode)
 }

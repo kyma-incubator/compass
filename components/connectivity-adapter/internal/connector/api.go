@@ -1,11 +1,12 @@
-package api
+package connector
 
 import (
-	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/compass"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
 	"github.com/pkg/errors"
 	"net/http"
+	"time"
 )
 
 type Config struct {
@@ -13,27 +14,21 @@ type Config struct {
 	AdapterBaseURL      string `envconfig:"default=https://adapter-gateway.kyma.local"`
 }
 
+const (
+	timeout = 30 * time.Second
+)
+
 func RegisterHandler(router *mux.Router, config Config) error {
-	client, err := compass.NewClient(config.CompassConnectorURL, true, true)
+	client, err := graphql.NewClient(config.CompassConnectorURL, true, timeout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to initialize compass client")
 	}
 
-	signingRequestInfoHandler := NewSigningRequestInfoHandler(client, config.AdapterBaseURL)
+	signingRequestInfoHandler := api.NewSigningRequestInfoHandler(client, config.AdapterBaseURL)
 	router.HandleFunc("/signingRequests/info", http.HandlerFunc(signingRequestInfoHandler.GetSigningRequestInfo)).Methods(http.MethodGet)
 
-	certificatesHandler := NewCertificatesHandler(client)
+	certificatesHandler := api.NewCertificatesHandler(client)
 	router.HandleFunc("/certificates", certificatesHandler.SignCSR)
 
 	return nil
-}
-
-func respond(w http.ResponseWriter, statusCode int) {
-	w.Header().Set(HeaderContentType, ContentTypeApplicationJson)
-	w.WriteHeader(statusCode)
-}
-
-func respondWithBody(w http.ResponseWriter, statusCode int, responseBody interface{}) {
-	respond(w, statusCode)
-	json.NewEncoder(w).Encode(responseBody)
 }

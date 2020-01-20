@@ -1,4 +1,4 @@
-package connector
+package model
 
 type CertRequest struct {
 	CSR string `json:"csr"`
