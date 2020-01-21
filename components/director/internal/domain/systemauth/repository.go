@@ -140,6 +140,9 @@ func (r *repository) DeleteByIDForObject(ctx context.Context, tenant string, id 
 	default:
 		return fmt.Errorf("unsupported object type (%s)", objType)
 	}
+	if objType == model.IntegrationSystemReference {
+		return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
+	}
 
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
 }
