@@ -12,7 +12,7 @@ COMPASS_HELM_RELEASE_NAMESPACE="compass-system"
 INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/installer-cr-kyma-diet.yaml
 OVERRIDES_COMPASS_GATEWAY="${ROOT_PATH}"/installation/resources/installer-overrides-compass-gateway.yaml
 
-kyma provision minikube
+kyma provision minikube --vm-driver virtualbox
 kyma install -o $INSTALLER_CR_PATH  -o $OVERRIDES_COMPASS_GATEWAY --source "${KYMA_RELEASE}"
 
 #Get Tiller tls client certificates
