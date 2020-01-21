@@ -16,7 +16,7 @@ import (
 	"testing"
 )
 
-func TestHandler_Delete(t *testing.T) {
+func TestHandler_SigningRequestInfo(t *testing.T) {
 
 	t.Run("Should get Signing Request Info", func(t *testing.T) {
 		// given
