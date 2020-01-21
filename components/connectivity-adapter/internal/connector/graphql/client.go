@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
-	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"net/http"
@@ -38,16 +37,16 @@ func NewClient(graphqlEndpoint string, insecureConfigFetch bool, timeout time.Du
 
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
 type Client interface {
-	Configuration(clientID string) (schema.Configuration, error)
-	SignCSR(csr string, clientID string) (schema.CertificationResult, error)
+	Configuration(headers map[string]string) (schema.Configuration, error)
+	SignCSR(csr string, headers map[string]string) (schema.CertificationResult, error)
 }
 
-func (c client) Configuration(clientID string) (schema.Configuration, error) {
+func (c client) Configuration(headers map[string]string) (schema.Configuration, error) {
 	query := c.queryProvider.configuration()
 
 	var response ConfigurationResponse
 
-	err := c.execute(clientID, query, &response)
+	err := c.execute(headers, query, &response)
 	if err != nil {
 		return schema.Configuration{}, errors.Wrap(err, "Failed to get configuration")
 	}
@@ -55,12 +54,12 @@ func (c client) Configuration(clientID string) (schema.Configuration, error) {
 	return response.Result, nil
 }
 
-func (c client) SignCSR(csr string, clientID string) (schema.CertificationResult, error) {
+func (c client) SignCSR(csr string, headers map[string]string) (schema.CertificationResult, error) {
 	query := c.queryProvider.signCSR(csr)
 
 	var response CertificateResponse
 
-	err := c.execute(clientID, query, &response)
+	err := c.execute(headers, query, &response)
 	if err != nil {
 		return schema.CertificationResult{}, errors.Wrap(err, "Failed to sign csr")
 	}
@@ -68,10 +67,12 @@ func (c client) SignCSR(csr string, clientID string) (schema.CertificationResult
 	return response.Result, nil
 }
 
-func (c *client) execute(clientID string, query string, res interface{}) error {
+func (c *client) execute(headers map[string]string, query string, res interface{}) error {
 
 	req := graphql.NewRequest(query)
-	req.Header.Set(oathkeeper.ClientIdFromTokenHeader, clientID)
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()

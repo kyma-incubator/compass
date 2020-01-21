@@ -58,10 +58,10 @@ type CertInfo struct {
 	KeyAlgorithm string `json:"key-algorithm"`
 }
 
-func NewCSRInfoResponse(certInfo CertInfo, clientIdFromToken, token, connectivityAdapterBaseURL, eventServiceBaseURL string) CSRInfoResponse {
+func NewCSRInfoResponse(certInfo CertInfo, application, token, connectivityAdapterBaseURL, eventServiceBaseURL string) CSRInfoResponse {
 	return CSRInfoResponse{
 		CsrURL:          makeCSRURLs(token, connectivityAdapterBaseURL),
-		API:             makeApiURLs(clientIdFromToken, connectivityAdapterBaseURL, eventServiceBaseURL),
+		API:             makeApiURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
 		CertificateInfo: certInfo,
 	}
 }

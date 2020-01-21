@@ -7,6 +7,7 @@ import (
 	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql/automock"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -18,10 +19,13 @@ import (
 
 func TestHandler_SigningRequestInfo(t *testing.T) {
 
-	clientId := "myapp"
 	baseURLs := middlewares.BaseURLs{
 		ConnectivityAdapterBaseURL: "www.connectivity-adapter.com",
 		EventServiceBaseURL:        "www.event-service.com",
+	}
+
+	headersFromToken := map[string]string{
+		oathkeeper.ClientIdFromTokenHeader: "myapp",
 	}
 
 	t.Run("Should get Signing Request Info", func(t *testing.T) {
@@ -46,10 +50,10 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 			},
 		}
 
-		connectorClientMock.On("Configuration", "myapp").Return(configurationResponse, nil)
+		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
 		handler := NewSigningRequestInfoHandler(connectorClientMock)
 
-		req := newRequestWithContext(&clientId, &baseURLs)
+		req := newRequestWithContext(headersFromToken, &baseURLs)
 
 		r := httptest.NewRecorder()
 
@@ -85,16 +89,16 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, r.Code)
 		assert.Equal(t, expectedSignUrl, infoResponse.CsrURL)
-		assert.EqualValues(t, expectedAPI, infoResponse.API)
+		assert.EqualValues(t, expectedAPI.RuntimeURLs, infoResponse.API.RuntimeURLs)
 		assert.EqualValues(t, expectedCertInfo, infoResponse.CertificateInfo)
 	})
 
 	t.Run("Should return error when failed to call Compass Connector", func(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
-		connectorClientMock.On("Configuration", "myapp").Return(schema.Configuration{}, errors.New("failed to execute graphql query"))
+		connectorClientMock.On("Configuration", headersFromToken).Return(schema.Configuration{}, errors.New("failed to execute graphql query"))
 
-		req := newRequestWithContext(&clientId, &baseURLs)
+		req := newRequestWithContext(headersFromToken, &baseURLs)
 
 		r := httptest.NewRecorder()
 
@@ -119,7 +123,7 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 	})
 }
 
-func newRequestWithContext(clientId *string, baseURLs *middlewares.BaseURLs) *http.Request {
+func newRequestWithContext(headers map[string]string, baseURLs *middlewares.BaseURLs) *http.Request {
 	req := httptest.NewRequest(http.MethodPost, "http://www.someurl.com/get", strings.NewReader(""))
 
 	newContext := req.Context()
@@ -128,8 +132,8 @@ func newRequestWithContext(clientId *string, baseURLs *middlewares.BaseURLs) *ht
 		newContext = middlewares.PutIntoContext(newContext, middlewares.BaseURLsKey, *baseURLs)
 	}
 
-	if clientId != nil {
-		newContext = middlewares.PutIntoContext(newContext, middlewares.ClientIdKey, *clientId)
+	if headers != nil {
+		newContext = middlewares.PutIntoContext(newContext, middlewares.AuthorizationHeadersKey, middlewares.AuthorizationHeaders(headers))
 	}
 
 	return req.WithContext(newContext)

@@ -7,8 +7,9 @@ import (
 )
 
 type ContextKey string
+type AuthorizationHeaders map[string]string
 
-const ClientIdKey ContextKey = "ClientIdWithContext"
+const AuthorizationHeadersKey ContextKey = "ClientIdWithContext"
 const BaseURLsKey ContextKey = "BaseURLs"
 
 type BaseURLs struct {
@@ -16,15 +17,15 @@ type BaseURLs struct {
 	EventServiceBaseURL        string
 }
 
-func GetStringFromContext(ctx context.Context, key ContextKey) (string, error) {
+func GetAuthHeadersFromContext(ctx context.Context, key ContextKey) (AuthorizationHeaders, error) {
 	value := ctx.Value(key)
 
-	str, ok := value.(string)
+	headers, ok := value.(AuthorizationHeaders)
 	if !ok {
-		return "", errors.New(fmt.Sprintf("Cannot read %s key from context", string(key)))
+		return map[string]string{}, errors.New(fmt.Sprintf("Cannot read %s key from context", string(key)))
 	}
 
-	return str, nil
+	return headers, nil
 }
 
 func GetBaseURLsFromContext(ctx context.Context, key ContextKey) (BaseURLs, error) {

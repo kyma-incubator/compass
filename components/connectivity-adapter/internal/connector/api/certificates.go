@@ -39,7 +39,7 @@ func (ih *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	certificationResult, err := ih.client.SignCSR(certRequest.CSR, clientIdFromToken)
+	certificationResult, err := ih.client.SignCSR(certRequest.CSR, map[string]string{})
 
 	if err != nil {
 		log.Println("Error getting cert from Connector: " + err.Error())
