@@ -1,8 +1,9 @@
 package externaltenant_test
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/director/internal/externaltenant"
 )
@@ -69,9 +70,8 @@ func TestMapTenants(t *testing.T) {
 				t.Errorf("MapTenants() error = %v, wantErr %v", err, testCase.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, testCase.want) {
-				t.Errorf("MapTenants() got = %v, want %v", got, testCase.want)
-			}
+
+			assert.Equal(t, testCase.want, got)
 		})
 	}
 }

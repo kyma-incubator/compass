@@ -22,14 +22,12 @@ func main() {
 		panic(err)
 	}
 
-	externalTenantsSrc := cfg.TenantsSrc
-
 	mappingOverrides := externaltenant.MappingOverrides{
 		Name: cfg.TenantNameKeyMapping,
 		ID:   cfg.TenantIDKeyMapping,
 	}
 
-	tenants, err := externaltenant.MapTenants(externalTenantsSrc, cfg.TenantProvider, mappingOverrides)
+	tenants, err := externaltenant.MapTenants(cfg.TenantsSrc, cfg.TenantProvider, mappingOverrides)
 	if err != nil {
 		panic(err)
 	}
