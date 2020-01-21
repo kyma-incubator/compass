@@ -37,7 +37,9 @@ const (
 }}`
 
 	expectedOneTimeTokenQuery = `mutation {
-	result: requestOneTimeTokenForRuntime(id: test-runtime-ID-12345)}`
+	result: requestOneTimeTokenForRuntime(id: "test-runtime-ID-12345") {
+		token connectorURL
+}}`
 )
 
 var (
