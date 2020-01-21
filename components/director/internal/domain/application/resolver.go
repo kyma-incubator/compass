@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -37,7 +38,7 @@ type ApplicationConverter interface {
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
 	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
-	ConvertToModel(obj *graphql.Application) (model.Application, error)
+	ToModel(obj *graphql.Application, tenantID string) *model.Application
 }
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
@@ -741,7 +742,15 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 	if obj == nil {
 		return nil, errors.New("Application cannot be empty")
 	}
-	app, err := r.appConverter.ConvertToModel(obj)
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.New("Error while loading tenant from context")
+	}
+
+	app := r.appConverter.ToModel(obj, tenantID)
+	if app == nil {
+		return nil, errors.New("Application cannot be empty")
+	}
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while opening the transaction")
@@ -750,7 +759,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventingCfg, err := r.eventingSvc.GetForApplication(ctx, app)
+	eventingCfg, err := r.eventingSvc.GetForApplication(ctx, *app)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching eventing cofiguration for application")
 	}

@@ -57,6 +57,22 @@ func (_m *ApplicationConverter) ToGraphQL(in *model.Application) *graphql.Applic
 	return r0
 }
 
+// ToModel provides a mock function with given fields: obj, tenantID
+func (_m *ApplicationConverter) ToModel(obj *graphql.Application, tenantID string) *model.Application {
+	ret := _m.Called(obj, tenantID)
+
+	var r0 *model.Application
+	if rf, ok := ret.Get(0).(func(*graphql.Application, string) *model.Application); ok {
+		r0 = rf(obj, tenantID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Application)
+		}
+	}
+
+	return r0
+}
+
 // UpdateInputFromGraphQL provides a mock function with given fields: in
 func (_m *ApplicationConverter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput {
 	ret := _m.Called(in)

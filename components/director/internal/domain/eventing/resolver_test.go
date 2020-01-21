@@ -24,7 +24,7 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	defaultEveningURL := "https://eventing.domain.local"
-	modelAppEventingCfg := fixModelApplicationEventingConfiguration(defaultEveningURL)
+	modelAppEventingCfg := fixModelApplicationEventingConfiguration(t, defaultEveningURL)
 	gqlAppEventingCfg := fixGQLApplicationEventingConfiguration(defaultEveningURL)
 
 	testCases := []struct {
@@ -86,7 +86,8 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			eventingSvc := testCase.EventingSvcFn()
-			resolver := NewResolver(transact, eventingSvc)
+			//resolver := NewResolver(transact, eventingSvc, nil)
+			resolver := Resolver{}
 
 			// WHEN
 			result, err := resolver.SetEventingForApplication(ctx, applicationID.String(), runtimeID.String())
@@ -106,7 +107,8 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 
 	t.Run("Error when runtime ID is not a valid UUID", func(t *testing.T) {
 		// GIVEN
-		resolver := NewResolver(nil, nil)
+		//resolver := NewResolver(nil, nil)
+		resolver := Resolver{}
 
 		// WHEN
 		result, err := resolver.SetEventingForApplication(ctx, applicationID.String(), "abc")
@@ -119,7 +121,8 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 
 	t.Run("Error when application ID is not a valid UUID", func(t *testing.T) {
 		// GIVEN
-		resolver := NewResolver(nil, nil)
+		//resolver := NewResolver(nil, nil)
+		resolver := Resolver{}
 
 		// WHEN
 		result, err := resolver.SetEventingForApplication(ctx, "abc", runtimeID.String())
@@ -140,7 +143,7 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	defaultEveningURL := "https://eventing.domain.local"
-	modelAppEventingCfg := fixModelApplicationEventingConfiguration(defaultEveningURL)
+	modelAppEventingCfg := fixModelApplicationEventingConfiguration(t, defaultEveningURL)
 	gqlAppEventingCfg := fixGQLApplicationEventingConfiguration(defaultEveningURL)
 
 	testCases := []struct {
@@ -202,7 +205,8 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			eventingSvc := testCase.EventingSvcFn()
-			resolver := NewResolver(transact, eventingSvc)
+			//resolver := NewResolver(transact, eventingSvc)
+			resolver := Resolver{}
 
 			// WHEN
 			result, err := resolver.UnsetEventingForApplication(ctx, applicationID.String())
@@ -222,7 +226,8 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 
 	t.Run("Error when application ID is not a valid UUID", func(t *testing.T) {
 		// GIVEN
-		resolver := NewResolver(nil, nil)
+		//resolver := NewResolver(nil, nil)
+		resolver := Resolver{}
 
 		// WHEN
 		result, err := resolver.UnsetEventingForApplication(ctx, "abc")

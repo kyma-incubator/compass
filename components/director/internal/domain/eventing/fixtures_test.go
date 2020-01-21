@@ -2,6 +2,9 @@ package eventing
 
 import (
 	"context"
+	"github.com/stretchr/testify/require"
+	"net/url"
+	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
@@ -36,16 +39,18 @@ func fixRuntimeEventingURLLabel() *model.Label {
 	}
 }
 
-func fixRuntimeEventngCfgWithURL(url string) *model.RuntimeEventingConfiguration {
+func fixRuntimeEventngCfgWithURL(t *testing.T, rawURL string) *model.RuntimeEventingConfiguration {
+	validURL := fixValidURL(t, rawURL)
+
 	return &model.RuntimeEventingConfiguration{
 		EventingConfiguration: model.EventingConfiguration{
-			DefaultURL: url,
+			DefaultURL: validURL,
 		},
 	}
 }
 
-func fixRuntimeEventngCfgWithEmptyURL() *model.RuntimeEventingConfiguration {
-	return fixRuntimeEventngCfgWithURL(EmptyEventingURL)
+func fixRuntimeEventngCfgWithEmptyURL(t *testing.T) *model.RuntimeEventingConfiguration {
+	return fixRuntimeEventngCfgWithURL(t, EmptyEventingURL)
 }
 
 func fixRuntimes() []*model.Runtime {
@@ -130,10 +135,11 @@ func fixMatcherDefaultEventingForAppLabel() func(l *model.Label) bool {
 	}
 }
 
-func fixModelApplicationEventingConfiguration(url string) *model.ApplicationEventingConfiguration {
+func fixModelApplicationEventingConfiguration(t *testing.T, rawURL string) *model.ApplicationEventingConfiguration {
+	validURL := fixValidURL(t, rawURL)
 	return &model.ApplicationEventingConfiguration{
 		EventingConfiguration: model.EventingConfiguration{
-			DefaultURL: url,
+			DefaultURL: validURL,
 		},
 	}
 }
@@ -142,4 +148,11 @@ func fixGQLApplicationEventingConfiguration(url string) *graphql.ApplicationEven
 	return &graphql.ApplicationEventingConfiguration{
 		DefaultURL: url,
 	}
+}
+
+func fixValidURL(t *testing.T, rawURL string) url.URL {
+	eventingURL, err := url.Parse(rawURL)
+	require.NoError(t, err)
+	require.NotNil(t, eventingURL)
+	return *eventingURL
 }

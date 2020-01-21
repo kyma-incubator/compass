@@ -1,6 +1,7 @@
 package application_test
 
 import (
+	"github.com/google/uuid"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -301,7 +302,42 @@ func TestConverter_CreateInputGQLJSONConversion(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), expectedErr)
 	})
+}
 
+func TestConverter_ConvertToModel(t *testing.T) {
+	conv := application.NewConverter(nil, nil, nil, nil)
+
+	t.Run("Successful full model", func(t *testing.T) {
+		tenantID := uuid.New().String()
+		appGraphql := fixGQLApplication(uuid.New().String(), "app", "desc")
+
+		//WHEN
+		appModel := conv.ToModel(appGraphql, tenantID)
+		outputGraphql := conv.ToGraphQL(appModel)
+
+		//THEN
+		assert.Equal(t, appGraphql, outputGraphql)
+	})
+
+	t.Run("Success empty model", func(t *testing.T) {
+		//GIVEN
+		appGraphql := &graphql.Application{}
+
+		//WHEN
+		appModel := conv.ToModel(appGraphql, uuid.New().String())
+		outputGraphql := conv.ToGraphQL(appModel)
+
+		//THEN
+		appGraphql.Status = &graphql.ApplicationStatus{Condition: graphql.ApplicationStatusConditionInitial}
+		assert.Equal(t, appGraphql, outputGraphql)
+	})
+
+	t.Run("Nil model", func(t *testing.T) {
+		//WHEN
+		output := conv.ToModel(nil, uuid.New().String())
+		//THEN
+		require.Nil(t, output)
+	})
 }
 
 func assertApplicationDefinition(t *testing.T, appModel *model.Application, entity *application.Entity) {
