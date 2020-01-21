@@ -45,4 +45,4 @@ require (
 	k8s.io/kube-openapi v0.0.0-20191107075043-30be4d16710a // indirect
 )
 
-replace github.com/kyma-incubator/compass => github.com/rafalpotempa/compass v0.0.0-20200120154926-760ce7b225a5
+replace github.com/kyma-incubator/compass => github.com/rafalpotempa/compass v0.0.0-20200120162540-cfe93762400c
