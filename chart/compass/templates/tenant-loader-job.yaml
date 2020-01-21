@@ -19,7 +19,7 @@ spec:
             restartPolicy: Never
             containers:
                 - name: loader
-                  image: kfurgol/compass-director:0.1
+                  image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.director.dir }}compass-director:{{ .Values.global.images.director.version }}
                   imagePullPolicy: IfNotPresent
                   env:
                       - name: DB_USER
