@@ -9,8 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/pkg/errors"
 )
 
@@ -44,14 +42,18 @@ func NewSingleGetterGlobal(tableName string, selectedColumns []string) SingleGet
 }
 
 func (g *universalSingleGetter) Get(ctx context.Context, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
-	return g.unsafeGet(ctx, str.Ptr(tenant), conditions, orderByParams, dest)
+	if tenant == "" {
+		return errors.New("tenant cannot be empty")
+	}
+	conditions = append(Conditions{NewEqualCondition("tenant_id", tenant)}, conditions...)
+	return g.unsafeGet(ctx, conditions, orderByParams, dest)
 }
 
 func (g *universalSingleGetter) GetGlobal(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
-	return g.unsafeGet(ctx, nil, conditions, orderByParams, dest)
+	return g.unsafeGet(ctx, conditions, orderByParams, dest)
 }
 
-func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant *string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	if dest == nil {
 		return errors.New("item cannot be nil")
 	}
@@ -64,16 +66,10 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant *string, c
 	startIdx := 1
 
 	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", g.selectedColumns, g.tableName))
-	if tenant != nil || len(conditions) > 0 {
+	if len(conditions) > 0 {
 		stmtBuilder.WriteString(" WHERE")
 	}
-	if tenant != nil {
-		stmtBuilder.WriteString(fmt.Sprintf(" %s = $1", *g.tenantColumn))
-		if len(conditions) > 0 {
-			stmtBuilder.WriteString(" AND")
-		}
-		startIdx = 2
-	}
+
 	err = writeEnumeratedConditions(&stmtBuilder, startIdx, conditions)
 	if err != nil {
 		return errors.Wrap(err, "while writing enumerated conditions")
@@ -82,7 +78,7 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant *string, c
 	if err != nil {
 		return errors.Wrap(err, "while writing order by part")
 	}
-	allArgs := getAllArgs(tenant, conditions)
+	allArgs := getAllArgs(conditions)
 	err = persist.Get(dest, stmtBuilder.String(), allArgs...)
 	switch {
 	case err == sql.ErrNoRows:

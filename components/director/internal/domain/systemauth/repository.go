@@ -29,7 +29,9 @@ type repository struct {
 	singleGetter       repo.SingleGetter
 	singleGetterGlobal repo.SingleGetterGlobal
 	lister             repo.Lister
+	listerGlobal       repo.ListerGlobal
 	deleter            repo.Deleter
+	deleterGlobal      repo.DeleterGlobal
 
 	conv Converter
 }
@@ -40,7 +42,9 @@ func NewRepository(conv Converter) *repository {
 		singleGetter:       repo.NewSingleGetter(tableName, tenantColumn, tableColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(tableName, tableColumns),
 		lister:             repo.NewLister(tableName, tenantColumn, tableColumns),
+		listerGlobal:       repo.NewListerGlobal(tableName, tableColumns),
 		deleter:            repo.NewDeleter(tableName, tenantColumn),
+		deleterGlobal:      repo.NewDeleterGlobal(tableName),
 		conv:               conv,
 	}
 }
@@ -54,7 +58,7 @@ func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
 	return r.creator.Create(ctx, entity)
 }
 
-func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error) {
+func (r *repository) GetByID(ctx context.Context, tenant string, id string) (*model.SystemAuth, error) {
 	var entity Entity
 	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
@@ -89,7 +93,13 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 	}
 
 	var entities Collection
-	if err := r.lister.List(ctx, tenant, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID))); err != nil {
+
+	if objTypeFieldName == "integration_system_id" {
+		err = r.listerGlobal.ListGlobal(ctx, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID)))
+	} else {
+		err = r.lister.List(ctx, tenant, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID)))
+	}
+	if err != nil {
 		return nil, err
 	}
 
@@ -112,7 +122,9 @@ func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, obje
 	if err != nil {
 		return err
 	}
-
+	if objTypeFieldName == "integration_system_id" {
+		return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
+	}
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
 }
 

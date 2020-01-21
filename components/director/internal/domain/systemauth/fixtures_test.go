@@ -37,13 +37,13 @@ func fixModelSystemAuth(id string, objectType model.SystemAuthReferenceObjectTyp
 	switch objectType {
 	case model.ApplicationReference:
 		systemAuth.AppID = &objectID
-		systemAuth.TenantID = testTenant
+		systemAuth.TenantID = &testTenant
 	case model.RuntimeReference:
 		systemAuth.RuntimeID = &objectID
-		systemAuth.TenantID = testTenant
+		systemAuth.TenantID = &testTenant
 	case model.IntegrationSystemReference:
 		systemAuth.IntegrationSystemID = &objectID
-		systemAuth.TenantID = model.IntegrationSystemTenant
+		systemAuth.TenantID = nil
 	}
 
 	return &systemAuth
@@ -131,13 +131,13 @@ func fixEntity(id string, objectType model.SystemAuthReferenceObjectType, object
 	switch objectType {
 	case model.ApplicationReference:
 		out.AppID = repo.NewNullableString(&objectID)
-		out.TenantID = testTenant
+		out.TenantID = repo.NewNullableString(&testTenant)
 	case model.RuntimeReference:
 		out.RuntimeID = repo.NewNullableString(&objectID)
-		out.TenantID = testTenant
+		out.TenantID = repo.NewNullableString(&testTenant)
 	case model.IntegrationSystemReference:
 		out.IntegrationSystemID = repo.NewNullableString(&objectID)
-		out.TenantID = model.IntegrationSystemTenant
+		out.TenantID = repo.NewNullableString(nil)
 	}
 
 	if withAuth {
@@ -149,7 +149,7 @@ func fixEntity(id string, objectType model.SystemAuthReferenceObjectType, object
 
 type sqlRow struct {
 	id       string
-	tenant   string
+	tenant   *string
 	appID    *string
 	rtmID    *string
 	intSysID *string

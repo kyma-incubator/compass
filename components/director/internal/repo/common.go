@@ -107,11 +107,9 @@ func NewInCondition(field, val string) Condition {
 	}
 }
 
-func getAllArgs(tenant *string, conditions Conditions) []interface{} {
+func getAllArgs(conditions Conditions) []interface{} {
 	allArgs := []interface{}{}
-	if tenant != nil {
-		allArgs = append(allArgs, tenant)
-	}
+
 	for _, cond := range conditions {
 		if argVal, ok := cond.GetQueryArg(); ok {
 			allArgs = append(allArgs, argVal)

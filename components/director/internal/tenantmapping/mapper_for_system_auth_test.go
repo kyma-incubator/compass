@@ -26,7 +26,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		expectedScopes := []string{"application:read"}
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: expectedTenantID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{}
@@ -92,7 +92,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		expectedScopes := "application:read"
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: expectedTenantID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{
@@ -239,7 +239,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		tenant2ID := uuid.New()
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: tenant1ID.String(),
+			TenantID: str.Ptr(tenant1ID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{
@@ -268,7 +268,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		tenant1ID := uuid.New()
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: tenant1ID.String(),
+			TenantID: str.Ptr(tenant1ID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{}
@@ -291,7 +291,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		expectedTenantID := uuid.New()
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: expectedTenantID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{}

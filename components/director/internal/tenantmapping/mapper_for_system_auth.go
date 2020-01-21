@@ -95,12 +95,14 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(sysAuth 
 		hasTenant = false
 	}
 
-	if hasTenant && tenant != sysAuth.TenantID {
+	if hasTenant && tenant != *sysAuth.TenantID {
 		return "", "", errors.New("tenant missmatch")
 	}
-
-	tenant = sysAuth.TenantID
-
+	if sysAuth.TenantID != nil {
+		tenant = *sysAuth.TenantID
+	} else {
+		tenant = ""
+	}
 	if authFlow.IsOAuth2Flow() {
 		scopes, err = reqData.GetScopes()
 		if err != nil {
