@@ -74,7 +74,7 @@ func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.Clu
 
 func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
 	id := c.uuidGenerator.New()
-	name := util.Truncate(c.uuidGenerator.New(), 14)
+	name := util.ClusterName(c.uuidGenerator.New())
 
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 

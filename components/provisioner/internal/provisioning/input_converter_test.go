@@ -122,7 +122,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeName: "runtimeName",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "veryLongIDThat",
+			Name:                   "ferylongidthat",
 			ProjectName:            "Project",
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
@@ -190,7 +190,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeName: "runtimeName",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "veryLongIDThat",
+			Name:                   "ferylongidthat",
 			ProjectName:            "Project",
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
@@ -263,7 +263,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeName: "runtimeName",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "veryLongIDThat",
+			Name:                   "ferylongidthat",
 			ProjectName:            "Project",
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
@@ -326,7 +326,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			//given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			uuidGeneratorMock.On("New").Return("id").Times(5)
-			uuidGeneratorMock.On("New").Return("veryLongIDThatHasMoreThanFourteenCharacters")
+			uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hypens")
 
 			inputConverter := NewInputConverter(uuidGeneratorMock, readSession)
 
