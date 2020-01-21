@@ -3,7 +3,6 @@ package eventing
 import (
 	"context"
 	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -62,13 +61,18 @@ func (s *service) CleanupAfterUnregisteringApplication(ctx context.Context, appI
 		return nil, errors.Wrapf(err, "while deleting labels [key=%s]", labelKey)
 	}
 
-	return model.NewApplicationEventingConfiguration(EmptyEventingURL), nil
+	return model.NewEmptyApplicationEventingConfig(), nil
 }
 
-func (s *service) SetForApplication(ctx context.Context, runtimeID uuid.UUID, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
+func (s *service) SetForApplication(ctx context.Context, runtimeID uuid.UUID, app model.Application) (*model.ApplicationEventingConfiguration, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	appID, err := uuid.Parse(app.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while parsing application ID: %s", app.ID)
 	}
 
 	_, _, err = s.unsetForApplication(ctx, tenantID, appID)
@@ -94,13 +98,18 @@ func (s *service) SetForApplication(ctx context.Context, runtimeID uuid.UUID, ap
 		return nil, errors.Wrap(err, "while fetching eventing configuration for runtime")
 	}
 
-	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL), nil
+	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, app.Name)
 }
 
-func (s *service) UnsetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
+func (s *service) UnsetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	appID, err := uuid.Parse(app.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while parsing applicaiton ID: %s", app.ID)
 	}
 
 	runtime, found, err := s.unsetForApplication(ctx, tenantID, appID)
@@ -109,7 +118,7 @@ func (s *service) UnsetForApplication(ctx context.Context, appID uuid.UUID) (*mo
 	}
 
 	if !found {
-		return model.NewApplicationEventingConfiguration(EmptyEventingURL), nil
+		return model.NewEmptyApplicationEventingConfig(), nil
 	}
 
 	runtimeID, err := uuid.Parse(runtime.ID)
@@ -122,13 +131,18 @@ func (s *service) UnsetForApplication(ctx context.Context, appID uuid.UUID) (*mo
 		return nil, errors.Wrap(err, "while fetching eventing configuration for runtime")
 	}
 
-	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL), nil
+	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, app.Name)
 }
 
-func (s *service) GetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
+func (s *service) GetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	appID, err := uuid.Parse(app.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while parsing applicaiton ID: %s", app.ID)
 	}
 
 	var defaultVerified, foundDefault, foundOldest bool
@@ -157,7 +171,7 @@ func (s *service) GetForApplication(ctx context.Context, appID uuid.UUID) (*mode
 	}
 
 	if runtime == nil {
-		return model.NewApplicationEventingConfiguration(EmptyEventingURL), nil
+		return model.NewEmptyApplicationEventingConfig(), nil
 	}
 
 	runtimeID, err := uuid.Parse(runtime.ID)
@@ -170,7 +184,7 @@ func (s *service) GetForApplication(ctx context.Context, appID uuid.UUID) (*mode
 		return nil, errors.Wrap(err, "while fetching eventing configuration for runtime")
 	}
 
-	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL), nil
+	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, app.Name)
 }
 
 func (s *service) GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*model.RuntimeEventingConfiguration, error) {
@@ -186,7 +200,7 @@ func (s *service) GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*mode
 			return nil, errors.Wrap(err, fmt.Sprintf("while getting the label [key=%s] for runtime [ID=%s]", RuntimeEventingURLLabel, runtimeID))
 		}
 
-		return model.NewRuntimeEventingConfiguration(EmptyEventingURL), nil
+		return model.NewRuntimeEventingConfiguration(EmptyEventingURL)
 	}
 
 	if label != nil {
@@ -196,7 +210,7 @@ func (s *service) GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*mode
 		}
 	}
 
-	return model.NewRuntimeEventingConfiguration(eventingURL), nil
+	return model.NewRuntimeEventingConfiguration(eventingURL)
 }
 
 func (s *service) unsetForApplication(ctx context.Context, tenantID string, appID uuid.UUID) (*model.Runtime, bool, error) {

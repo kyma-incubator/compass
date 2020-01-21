@@ -12,24 +12,29 @@ import (
 
 //go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
 type EventingService interface {
-	SetForApplication(ctx context.Context, runtimeID uuid.UUID, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
-	UnsetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
+	SetForApplication(ctx context.Context, runtimeID uuid.UUID, app model.Application) (*model.ApplicationEventingConfiguration, error)
+	UnsetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error)
 }
 
+type ApplicationService interface {
+	Get(ctx context.Context, id string) (*model.Application, error)
+}
 type Resolver struct {
 	transact    persistence.Transactioner
 	eventingSvc EventingService
+	appSvc      ApplicationService
 }
 
-func NewResolver(transact persistence.Transactioner, eventingSvc EventingService) *Resolver {
+func NewResolver(transact persistence.Transactioner, eventingSvc EventingService, appSvc ApplicationService) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		eventingSvc: eventingSvc,
+		appSvc:      appSvc,
 	}
 }
 
-func (r *Resolver) SetEventingForApplication(ctx context.Context, app string, runtime string) (*graphql.ApplicationEventingConfiguration, error) {
-	appID, err := uuid.Parse(app)
+func (r *Resolver) SetEventingForApplication(ctx context.Context, appID string, runtime string) (*graphql.ApplicationEventingConfiguration, error) {
+	appUUID, err := uuid.Parse(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing application ID as UUID")
 	}
@@ -47,7 +52,12 @@ func (r *Resolver) SetEventingForApplication(ctx context.Context, app string, ru
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventingCfg, err := r.eventingSvc.SetForApplication(ctx, runtimeID, appID)
+	app, err := r.appSvc.Get(ctx, appUUID.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting application")
+	}
+
+	eventingCfg, err := r.eventingSvc.SetForApplication(ctx, runtimeID, *app)
 	if err != nil {
 		return nil, errors.Wrap(err, "while setting eventing cofiguration for application")
 	}
@@ -59,8 +69,8 @@ func (r *Resolver) SetEventingForApplication(ctx context.Context, app string, ru
 	return ApplicationEventingConfigurationToGraphQL(eventingCfg), nil
 }
 
-func (r *Resolver) UnsetEventingForApplication(ctx context.Context, app string) (*graphql.ApplicationEventingConfiguration, error) {
-	appID, err := uuid.Parse(app)
+func (r *Resolver) UnsetEventingForApplication(ctx context.Context, appID string) (*graphql.ApplicationEventingConfiguration, error) {
+	appUUID, err := uuid.Parse(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing application ID as UUID")
 	}
@@ -73,7 +83,12 @@ func (r *Resolver) UnsetEventingForApplication(ctx context.Context, app string) 
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventingCfg, err := r.eventingSvc.UnsetForApplication(ctx, appID)
+	app, err := r.appSvc.Get(ctx, appUUID.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting application")
+	}
+
+	eventingCfg, err := r.eventingSvc.UnsetForApplication(ctx, *app)
 	if err != nil {
 		return nil, errors.Wrap(err, "while unsetting eventing cofiguration for application")
 	}

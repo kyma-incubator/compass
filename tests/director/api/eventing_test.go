@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -103,6 +104,22 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 
 	testApp = getApplication(t, ctx, application.ID)
 	require.Equal(t, runtime2EventingURL, testApp.EventingConfiguration.DefaultURL)
+}
+
+func TestEmptyEventConfigurationForApp(t *testing.T) {
+	//GIVEN
+	ctx := context.Background()
+	application := registerApplication(t, ctx, "app-test-eventing")
+	defer unregisterApplication(t, application.ID)
+
+	runtime1 := registerRuntime(t, ctx, "runtime-1-eventing")
+	defer unregisterRuntimeWithinTenant(t, runtime1.ID, defaultTenant)
+
+	//WHEN
+	app := getApplication(t, ctx, application.ID)
+
+	//THEN
+	assert.Equal(t, "", app.EventingConfiguration.DefaultURL, )
 }
 
 func TestDeleteDefaultEventingForApplication(t *testing.T) {

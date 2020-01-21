@@ -140,6 +140,19 @@ func (c *converter) CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (
 	return string(appInput), nil
 }
 
+func (c *converter) ConvertToModel(obj *graphql.Application) (model.Application, error) {
+	return model.Application{
+		ID:                  obj.ID,
+		ProviderName:        obj.ProviderName,
+		Tenant:              "",
+		Name:                obj.Name,
+		Description:         nil,
+		Status:              nil,
+		HealthCheckURL:      nil,
+		IntegrationSystemID: nil,
+	}, nil
+}
+
 func (c *converter) statusToGraphQL(in *model.ApplicationStatus) *graphql.ApplicationStatus {
 	if in == nil {
 		return &graphql.ApplicationStatus{

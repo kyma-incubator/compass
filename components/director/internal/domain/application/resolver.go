@@ -37,6 +37,7 @@ type ApplicationConverter interface {
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
 	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
+	ConvertToModel(obj *graphql.Application) (model.Application, error)
 }
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
@@ -78,7 +79,7 @@ type EventAPIConverter interface {
 //go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
 type EventingService interface {
 	CleanupAfterUnregisteringApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
-	GetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
+	GetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error)
 }
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
@@ -740,12 +741,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 	if obj == nil {
 		return nil, errors.New("Application cannot be empty")
 	}
-
-	appID, err := uuid.Parse(obj.ID)
-	if err != nil {
-		return nil, errors.Wrap(err, "while parsing application ID as UUID")
-	}
-
+	app, err := r.appConverter.ConvertToModel(obj)
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while opening the transaction")
@@ -754,7 +750,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventingCfg, err := r.eventingSvc.GetForApplication(ctx, appID)
+	eventingCfg, err := r.eventingSvc.GetForApplication(ctx, app)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching eventing cofiguration for application")
 	}
