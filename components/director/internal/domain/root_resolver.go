@@ -70,7 +70,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
-	tokenConverter := onetimetoken.NewConverter()
+	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	intSysConverter := integrationsystem.NewConverter()
 	appTemplateConverter := apptemplate.NewConverter(appConverter)
@@ -159,8 +159,12 @@ func (r *RootResolver) IntegrationSystem() graphql.IntegrationSystemResolver {
 	return &integrationSystemResolver{r}
 }
 
-func (r *RootResolver) OneTimeToken() graphql.OneTimeTokenResolver {
-	return &oneTimeTokenResolver{r}
+func (r *RootResolver) OneTimeTokenForApplication() graphql.OneTimeTokenForApplicationResolver {
+	return &oneTimeTokenForApplicationResolver{r}
+}
+
+func (r *RootResolver) OneTimeTokenForRuntime() graphql.OneTimeTokenForRuntimeResolver {
+	return &oneTimeTokenForRuntimeResolver{r}
 }
 
 type queryResolver struct {
@@ -308,10 +312,10 @@ func (r *mutationResolver) SetRuntimeLabel(ctx context.Context, runtimeID string
 func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*graphql.Label, error) {
 	return r.runtime.DeleteRuntimeLabel(ctx, runtimeID, key)
 }
-func (r *mutationResolver) RequestOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+func (r *mutationResolver) RequestOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeTokenForApplication, error) {
 	return r.token.RequestOneTimeTokenForApplication(ctx, id)
 }
-func (r *mutationResolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+func (r *mutationResolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeTokenForRuntime, error) {
 	return r.token.RequestOneTimeTokenForRuntime(ctx, id)
 }
 func (r *mutationResolver) RequestClientCredentialsForRuntime(ctx context.Context, id string) (*graphql.SystemAuth, error) {
@@ -438,12 +442,22 @@ func (r *integrationSystemResolver) Auths(ctx context.Context, obj *graphql.Inte
 	return r.intSys.Auths(ctx, obj)
 }
 
-type oneTimeTokenResolver struct{ *RootResolver }
+type oneTimeTokenForApplicationResolver struct{ *RootResolver }
 
-func (r *oneTimeTokenResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
-	return r.token.RawEncoded(ctx, obj)
+func (r *oneTimeTokenForApplicationResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeTokenForApplication) (*string, error) {
+	return r.token.RawEncoded(ctx, &obj.TokenWithURL)
 }
 
-func (r *oneTimeTokenResolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
-	return r.token.Raw(ctx, obj)
+func (r *oneTimeTokenForApplicationResolver) Raw(ctx context.Context, obj *graphql.OneTimeTokenForApplication) (*string, error) {
+	return r.token.Raw(ctx, &obj.TokenWithURL)
+}
+
+type oneTimeTokenForRuntimeResolver struct{ *RootResolver }
+
+func (r *oneTimeTokenForRuntimeResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeTokenForRuntime) (*string, error) {
+	return r.token.RawEncoded(ctx, &obj.TokenWithURL)
+}
+
+func (r *oneTimeTokenForRuntimeResolver) Raw(ctx context.Context, obj *graphql.OneTimeTokenForRuntime) (*string, error) {
+	return r.token.Raw(ctx, &obj.TokenWithURL)
 }

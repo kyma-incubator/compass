@@ -22,6 +22,11 @@ const (
 	fixedDummyURL = "https://dummy.dashboard.com"
 )
 
+// OptionalComponentNamesProvider provides optional components names
+type OptionalComponentNamesProvider interface {
+	GetOptionalComponentNames() []string
+}
+
 // ProvisioningConfig holds all configurations connected with Provisioner API
 type ProvisioningConfig struct {
 	URL                 string
@@ -39,7 +44,8 @@ type KymaEnvBroker struct {
 	Config            ProvisioningConfig
 	ProvisionerClient provisioner.Client
 
-	InstancesStorage storage.Instances
+	InstancesStorage   storage.Instances
+	optionalComponents OptionalComponentNamesProvider
 }
 
 var enabledPlanIDs = map[string]struct{}{
@@ -54,10 +60,11 @@ func NewBroker(pCli provisioner.Client, cfg ProvisioningConfig, instStorage stor
 	}
 
 	return &KymaEnvBroker{
-		ProvisionerClient: pCli,
-		Dumper:            dumper,
-		Config:            cfg,
-		InstancesStorage:  instStorage,
+		ProvisionerClient:  pCli,
+		Dumper:             dumper,
+		Config:             cfg,
+		InstancesStorage:   instStorage,
+		optionalComponents: optionalComponentProvider{},
 	}, nil
 }
 
@@ -73,6 +80,7 @@ func (b *KymaEnvBroker) Services(ctx context.Context) ([]domain.Service, error) 
 		}
 		p := plan.planDefinition
 		err := json.Unmarshal(plan.provisioningRawSchema, &p.Schemas.Instance.Create.Parameters)
+		b.addComponentsToSchema(&p.Schemas.Instance.Create.Parameters)
 		if err != nil {
 			b.Dumper.Dump("Could not decode provisioning schema:", err.Error())
 			return nil, err
@@ -341,4 +349,23 @@ func (b *KymaEnvBroker) LastBindingOperation(ctx context.Context, instanceID, bi
 
 	op := domain.LastOperation{}
 	return op, nil
+}
+
+func (b *KymaEnvBroker) addComponentsToSchema(schema *map[string]interface{}) {
+	props := (*schema)["properties"].(map[string]interface{})
+	props["components"] = map[string]interface{}{
+		"type": "array",
+		"items": map[string]interface{}{
+			"type": "string",
+			"enum": b.optionalComponents.GetOptionalComponentNames(),
+		},
+	}
+}
+
+// todo: will be replaced by the real implementation
+type optionalComponentProvider struct {
+}
+
+func (optionalComponentProvider) GetOptionalComponentNames() []string {
+	return []string{"monitoring", "kiali", "loki", "jaeger"}
 }

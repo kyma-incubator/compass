@@ -18,7 +18,8 @@ type TokenService interface {
 
 //go:generate mockery -name=TokenConverter -output=automock -outpkg=automock -case=underscore
 type TokenConverter interface {
-	ToGraphQL(model model.OneTimeToken) graphql.OneTimeToken
+	ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTimeTokenForRuntime
+	ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error)
 }
 
 type Resolver struct {
@@ -31,7 +32,7 @@ func NewTokenResolver(transact persistence.Transactioner, svc TokenService, conv
 	return &Resolver{transact: transact, svc: svc, conv: conv}
 }
 
-func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeTokenForRuntime, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -48,11 +49,11 @@ func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string)
 		return nil, errors.Wrap(err, "while commiting transaction")
 	}
 
-	gqlToken := r.conv.ToGraphQL(token)
+	gqlToken := r.conv.ToGraphQLForRuntime(token)
 	return &gqlToken, nil
 }
 
-func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeTokenForApplication, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -69,11 +70,14 @@ func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id str
 	if err != nil {
 		return nil, errors.Wrap(err, "while commiting transaction")
 	}
-	gqlToken := r.conv.ToGraphQL(token)
+	gqlToken, err := r.conv.ToGraphQLForApplication(token)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting one-time token to graphql")
+	}
 	return &gqlToken, nil
 }
 
-func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
+func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.TokenWithURL) (*string, error) {
 	if obj == nil {
 		return nil, errors.New("Token was nil")
 	}
@@ -88,7 +92,7 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (*
 	return &rawBaseEncoded, nil
 }
 
-func (r *Resolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
+func (r *Resolver) Raw(ctx context.Context, obj *graphql.TokenWithURL) (*string, error) {
 	if obj == nil {
 		return nil, errors.New("Token was nil")
 	}
