@@ -651,9 +651,9 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND integration_system_id IS NOT NULL`
+		query := `DELETE FROM public.system_auths WHERE id = $1 AND integration_system_id IS NOT NULL`
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, sysAuthID).
+			WithArgs(sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		repo := systemauth.NewRepository(nil)
