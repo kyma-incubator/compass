@@ -155,7 +155,7 @@ func getTenant(ctx context.Context) (string, error) {
 	tenant, ok := ctx.Value(middlewares.Tenant).(string)
 
 	if !ok || tenant == "" {
-		return "", errors.New("cannot provision runtime since tenant header is empty")
+		return "", errors.New("tenant header is empty")
 	}
 	return tenant, nil
 }
