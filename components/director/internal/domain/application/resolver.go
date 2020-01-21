@@ -751,6 +751,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 	if app == nil {
 		return nil, errors.New("Application cannot be empty")
 	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while opening the transaction")
