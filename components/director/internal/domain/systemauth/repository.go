@@ -94,7 +94,7 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 
 	var entities Collection
 
-	if objTypeFieldName == "integration_system_id" {
+	if objectType == model.IntegrationSystemReference {
 		err = r.listerGlobal.ListGlobal(ctx, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID)))
 	} else {
 		err = r.lister.List(ctx, tenant, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID)))
@@ -122,7 +122,7 @@ func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, obje
 	if err != nil {
 		return err
 	}
-	if objTypeFieldName == "integration_system_id" {
+	if objectType == model.IntegrationSystemReference {
 		return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
 	}
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
