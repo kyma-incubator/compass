@@ -22,6 +22,9 @@ github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f h1:y2hSFdXe
 github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
 github.com/avast/retry-go v2.4.3+incompatible h1:c/FTk2POrEQyZfaHBMkMrXdu3/6IESJUHwu8r3k1JEU=
 github.com/avast/retry-go v2.4.3+incompatible/go.mod h1:XtSnn+n/sHqQIpZ10K1qAevBhOOCWBLXXy3hyiqqBrY=
+github.com/crabtree/compass v0.0.0-20190705124603-c3283348115b h1:Z4Zm+sDobs3M3qZq7TsFzohL2WWOZcEGIwuwe4VXvBw=
+github.com/crabtree/compass/components/director v0.0.0-20200116140940-914bd779b1a4 h1:6lFMUdYAX7wLrPeHF/NugOY2NgBPYKOPTUb7bpkFV4c=
+github.com/crabtree/compass/components/director v0.0.0-20200116140940-914bd779b1a4/go.mod h1:bENHuI5/ZTfg7wLSSfL7CIHKBUwRnDwzGTYKkY0H8R8=
 github.com/davecgh/go-spew v0.0.0-20151105211317-5215b55f46b2/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
@@ -97,8 +100,16 @@ github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORN
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
+github.com/kyma-incubator/compass v0.0.0-20200117140930-e01fda922a7a h1:7bLIeA1tp9vyDfn7va7CT6t/39U90GzA8y4F9Tp4Oc0=
+github.com/kyma-incubator/compass v0.0.0-20200121115713-a799a03c2718 h1:KdrCNsYLmXlTiIzMgJU3ferrxmA++Ku+RcY0nwSNozI=
+github.com/kyma-incubator/compass v0.0.0-20200121122803-b08d714a610c h1:D2mdGL0lAggQHubkfxLjM0qK+mAgXwyQl/jXLhMlwHc=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200116140731-1e3295c419ae h1:1MOlzKGfr1uuib0CxWFSKQsGzKj+2ymH1Bz1x1DV0Zs=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200116140731-1e3295c419ae/go.mod h1:bENHuI5/ZTfg7wLSSfL7CIHKBUwRnDwzGTYKkY0H8R8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200117140930-e01fda922a7a h1:V0djN2MBL3vOrhEe+gcasIFyRGdLyz1AR7KIwAPztlQ=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200121115713-a799a03c2718 h1:ajK2aoMTtnk2+YHxHmka6drlSbVSQPO/BnlCi9DZ4+Y=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200121115713-a799a03c2718/go.mod h1:bENHuI5/ZTfg7wLSSfL7CIHKBUwRnDwzGTYKkY0H8R8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200121122803-b08d714a610c h1:PUySC40cbxQ9C5nz10bHPYKW/9vT76z4wC0EBNjbZiA=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200121122803-b08d714a610c/go.mod h1:bENHuI5/ZTfg7wLSSfL7CIHKBUwRnDwzGTYKkY0H8R8=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/lestrrat-go/jwx v0.9.0/go.mod h1:iEoxlYfZjvoGpuWwxUz+eR5e6KTJGsaRcy/YNA/UnBk=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
@@ -148,6 +159,7 @@ github.com/spf13/pflag v0.0.0-20170130214245-9ff6c6923cff/go.mod h1:DYY7MBk1bdzu
 github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
 github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
+github.com/stretchr/objx v0.1.1 h1:2vfRuCMp5sSVIDSqO8oNnWJq7mPa6KVP3iPIwFBuy8A=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v0.0.0-20151208002404-e3a8ff8ce365/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.2.1/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=

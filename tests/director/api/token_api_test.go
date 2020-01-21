@@ -43,6 +43,7 @@ func TestTokenGeneration(t *testing.T) {
 			token := requestOneTimeTokenForApplication(t, ctx, app.ID)
 			assert.NotEmpty(t, token.Token)
 			assert.NotEmpty(t, token.ConnectorURL)
+			assert.NotEmpty(t, token.LegacyConnectorURL)
 		}
 
 		//THEN

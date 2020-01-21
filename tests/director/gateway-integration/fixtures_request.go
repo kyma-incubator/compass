@@ -139,7 +139,7 @@ func fixGenerateOneTimeTokenForApplication(appID string) *gcli.Request {
 			result: requestOneTimeTokenForApplication(id: "%s") {
 					%s
 				}
-			}`, appID, tc.gqlFieldsProvider.ForOneTimeToken()))
+			}`, appID, tc.gqlFieldsProvider.ForOneTimeTokenForApplication()))
 }
 
 func fixDeleteApplicationTemplateRequest(appTemplateID string) *gcli.Request {
