@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"sync"
 
+	"time"
+
 	"github.com/google/uuid"
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"time"
 )
 
 type runtime struct {

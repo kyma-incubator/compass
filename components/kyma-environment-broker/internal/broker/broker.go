@@ -200,7 +200,10 @@ func (b *KymaEnvBroker) Deprovision(ctx context.Context, instanceID string, deta
 
 	instance, err := b.InstancesStorage.GetByID(instanceID)
 	if err != nil {
-		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponseBuilder(fmt.Errorf("instance not found"), http.StatusBadRequest, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
+		//return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponseBuilder(fmt.Errorf("instance not found"), http.StatusBadRequest, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
+		return domain.DeprovisionServiceSpec{
+			IsAsync:       false,
+		}, nil
 	}
 
 	opID, err := b.ProvisionerClient.DeprovisionRuntime(instance.GlobalAccountID, instance.RuntimeID)
