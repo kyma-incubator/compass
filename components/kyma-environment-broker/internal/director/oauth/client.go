@@ -13,7 +13,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/pkg/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -58,12 +57,10 @@ func (c *oauthClient) WaitForCredentials() error {
 			Namespace: c.secretNamespace,
 			Name:      c.secretName,
 		}, secret)
-		switch {
-		case apierrors.IsNotFound(err):
+		// it fails on connection-refused error on first call and it restarts our application.
+		if err != nil {
 			log.Warnf("secret %s not found", c.secretName)
 			return false, nil
-		case err != nil:
-			return false, errors.Wrapf(err, "while waiting for secret %s", c.secretName)
 		}
 		return true, nil
 	})

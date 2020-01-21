@@ -31,7 +31,7 @@ func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
 
 func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
 	_, err := ws.update(postsql.InstancesTableName).
-		Where(dbr.Eq(postsql.InstancesTableName+".instance_id", instance.InstanceID)).
+		Where(dbr.Eq("instance_id", instance.InstanceID)).
 		Set("instance_id", instance.InstanceID).
 		Set("runtime_id", instance.RuntimeID).
 		Set("global_account_id", instance.GlobalAccountID).
@@ -41,6 +41,9 @@ func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
 		Set("provisioning_parameters", instance.ProvisioningParameters).
 		Exec()
 	if err != nil {
+		if err == dbr.ErrNotFound {
+			return dberr.NotFound("Cannot find Instance for instanceID:'%s", instance.InstanceID)
+		}
 		return dberr.Internal("Failed to update record to Instance table: %s", err)
 	}
 
