@@ -21,7 +21,7 @@ func (c clientFromTokenMiddleware) GetClientIdFromToken(handler http.Handler) ht
 			return
 		}
 
-		r = r.WithContext(context.WithValue(r.Context(), ClientIdFromTokenKey, clientIdFromToken))
+		r = r.WithContext(context.WithValue(r.Context(), ClientIdKey, clientIdFromToken))
 
 		handler.ServeHTTP(w, r)
 	})

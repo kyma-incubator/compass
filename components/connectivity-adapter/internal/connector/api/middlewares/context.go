@@ -8,7 +8,7 @@ import (
 
 type ContextKey string
 
-const ClientIdFromTokenKey ContextKey = "ClientIdWithContext"
+const ClientIdKey ContextKey = "ClientIdWithContext"
 const BaseURLsKey ContextKey = "BaseURLs"
 
 type BaseURLs struct {

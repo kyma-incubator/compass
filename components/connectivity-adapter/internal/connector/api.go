@@ -24,7 +24,7 @@ func RegisterHandler(router *mux.Router, config Config) error {
 		return errors.Wrap(err, "Failed to initialize compass client")
 	}
 
-	signingRequestInfoHandler := api.NewSigningRequestInfoHandler(client, config.AdapterBaseURL)
+	signingRequestInfoHandler := api.NewSigningRequestInfoHandler(client)
 	router.HandleFunc("/signingRequests/info", http.HandlerFunc(signingRequestInfoHandler.GetSigningRequestInfo)).Methods(http.MethodGet)
 
 	certificatesHandler := api.NewCertificatesHandler(client)

@@ -17,7 +17,7 @@ func TestHandler_ClientFromTokenMiddleware(t *testing.T) {
 		clientIdFromToken := "myapp"
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			value, err := GetStringFromContext(r.Context(), ClientIdFromTokenKey)
+			value, err := GetStringFromContext(r.Context(), ClientIdKey)
 			require.NoError(t, err)
 
 			assert.Equal(t, value, clientIdFromToken)

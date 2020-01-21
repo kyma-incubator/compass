@@ -1,10 +1,11 @@
 package api
 
 import (
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
-	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
-
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"log"
 	"net/http"
 )
@@ -19,26 +20,30 @@ const (
 
 type csrInfoHandler struct {
 	getInfoURL string
-	baseURL    string
 	gqlClient  graphql.Client
 }
 
-func NewSigningRequestInfoHandler(client graphql.Client, baseURL string) csrInfoHandler {
+func NewSigningRequestInfoHandler(client graphql.Client) csrInfoHandler {
 	return csrInfoHandler{
 		gqlClient:  client,
 		getInfoURL: "",
-		baseURL:    baseURL,
 	}
 }
 
 func (ih *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Request) {
 	log.Println("Starting GetSigningRequestInfo")
 
-	clientIdFromToken := r.Header.Get(oathkeeper.ClientIdFromTokenHeader)
-	if clientIdFromToken == "" {
+	clientIdFromToken, err := middlewares.GetStringFromContext(r.Context(), middlewares.ClientIdKey)
+	if err != nil {
 		log.Println("Client Id not provided.")
-		w.WriteHeader(http.StatusInternalServerError)
+		reqerror.WriteErrorMessage(w, "Client Id not provided.", apperrors.CodeInternal)
+
 		return
+	}
+
+	baseURLs, err := middlewares.GetBaseURLsFromContext(r.Context(), middlewares.BaseURLsKey)
+	if err != nil {
+		reqerror.WriteErrorMessage(w, "Base URLS not provided.", apperrors.CodeInternal)
 	}
 
 	configuration, err := ih.gqlClient.Configuration(clientIdFromToken)
@@ -46,11 +51,13 @@ func (ih *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 	if err != nil {
 		log.Println("Error getting configuration " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
+		reqerror.WriteError(w, err, apperrors.CodeInternal)
+
 		return
 	}
 
 	certInfo := graphql.ToCertInfo(configuration)
 
-	csrInfoResponse := model.NewCSRInfoResponse(certInfo, clientIdFromToken, configuration.Token.Token, ih.baseURL)
+	csrInfoResponse := model.NewCSRInfoResponse(certInfo, clientIdFromToken, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL)
 	respondWithBody(w, http.StatusOK, csrInfoResponse)
 }

@@ -58,28 +58,28 @@ type CertInfo struct {
 	KeyAlgorithm string `json:"key-algorithm"`
 }
 
-func NewCSRInfoResponse(certInfo CertInfo, clientIdFromToken, token, baseURL string) CSRInfoResponse {
+func NewCSRInfoResponse(certInfo CertInfo, clientIdFromToken, token, connectivityAdapterBaseURL, eventServiceBaseURL string) CSRInfoResponse {
 	return CSRInfoResponse{
-		CsrURL:          makeCSRURLs(token, baseURL),
-		API:             makeApiURLs(clientIdFromToken, baseURL),
+		CsrURL:          makeCSRURLs(token, connectivityAdapterBaseURL),
+		API:             makeApiURLs(clientIdFromToken, connectivityAdapterBaseURL, eventServiceBaseURL),
 		CertificateInfo: certInfo,
 	}
 }
 
-func makeCSRURLs(newToken, baseURL string) string {
-	csrURL := baseURL + CertsEndpoint
+func makeCSRURLs(newToken, connectivityAdapterBaseURL string) string {
+	csrURL := connectivityAdapterBaseURL + CertsEndpoint
 	tokenParam := fmt.Sprintf(TokenFormat, newToken)
 
 	return csrURL + tokenParam
 }
 
-func makeApiURLs(clientIdFromToken, baseURL string) Api {
+func makeApiURLs(clientIdFromToken, connectivityAdapterBaseURL string, eventServiceBaseURL string) Api {
 	return Api{
-		CertificatesURL: baseURL + CertsEndpoint,
-		InfoURL:         baseURL + ManagementInfoEndpoint,
+		CertificatesURL: connectivityAdapterBaseURL + CertsEndpoint,
+		InfoURL:         connectivityAdapterBaseURL + ManagementInfoEndpoint,
 		RuntimeURLs: &RuntimeURLs{
-			MetadataURL: baseURL + fmt.Sprintf(ApplicationRegistryEndpointFormat, clientIdFromToken),
-			EventsURL:   baseURL + fmt.Sprintf(EventsEndpointFormat, clientIdFromToken),
+			MetadataURL: connectivityAdapterBaseURL + fmt.Sprintf(ApplicationRegistryEndpointFormat, clientIdFromToken),
+			EventsURL:   eventServiceBaseURL + fmt.Sprintf(EventsEndpointFormat, clientIdFromToken),
 		},
 	}
 }

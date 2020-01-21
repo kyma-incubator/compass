@@ -3,10 +3,10 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
 	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql/automock"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
-	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -17,6 +17,12 @@ import (
 )
 
 func TestHandler_SigningRequestInfo(t *testing.T) {
+
+	clientId := "myapp"
+	baseURLs := middlewares.BaseURLs{
+		ConnectivityAdapterBaseURL: "www.connectivity-adapter.com",
+		EventServiceBaseURL:        "www.event-service.com",
+	}
 
 	t.Run("Should get Signing Request Info", func(t *testing.T) {
 		// given
@@ -41,21 +47,20 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		}
 
 		connectorClientMock.On("Configuration", "myapp").Return(configurationResponse, nil)
-		handler := NewSigningRequestInfoHandler(connectorClientMock, "www.baseurl.com")
+		handler := NewSigningRequestInfoHandler(connectorClientMock)
 
-		req := httptest.NewRequest(http.MethodPost, "http://www.someurl.com/get", strings.NewReader(""))
-		req.Header.Set(oathkeeper.ClientIdFromTokenHeader, "myapp")
+		req := newRequestWithContext(&clientId, &baseURLs)
 
 		r := httptest.NewRecorder()
 
-		expectedSignUrl := "www.baseurl.com/v1/applications/certificates?token=new_token"
+		expectedSignUrl := "www.connectivity-adapter.com/v1/applications/certificates?token=new_token"
 		expectedAPI := model.Api{
 			RuntimeURLs: &model.RuntimeURLs{
-				EventsURL:   "www.baseurl.com/myapp/v1/events",
-				MetadataURL: "www.baseurl.com/myapp/v1/metadata",
+				EventsURL:   "www.event-service.com/myapp/v1/events",
+				MetadataURL: "www.connectivity-adapter.com/myapp/v1/metadata",
 			},
-			InfoURL:         "www.baseurl.com/v1/applications/management/info",
-			CertificatesURL: "www.baseurl.com/v1/applications/certificates",
+			InfoURL:         "www.connectivity-adapter.com/v1/applications/management/info",
+			CertificatesURL: "www.connectivity-adapter.com/v1/applications/certificates",
 		}
 
 		expectedCertInfo := model.CertInfo{
@@ -89,12 +94,11 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		connectorClientMock := &mocks.Client{}
 		connectorClientMock.On("Configuration", "myapp").Return(schema.Configuration{}, errors.New("failed to execute graphql query"))
 
-		req := httptest.NewRequest(http.MethodPost, "http://www.someurl.com/get", strings.NewReader(""))
-		req.Header.Set(oathkeeper.ClientIdFromTokenHeader, "myapp")
+		req := newRequestWithContext(&clientId, &baseURLs)
 
 		r := httptest.NewRecorder()
 
-		handler := NewSigningRequestInfoHandler(connectorClientMock, "www.baseurl.com")
+		handler := NewSigningRequestInfoHandler(connectorClientMock)
 
 		// when
 		handler.GetSigningRequestInfo(r, req)
@@ -113,6 +117,22 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 
 		// then
 	})
+}
+
+func newRequestWithContext(clientId *string, baseURLs *middlewares.BaseURLs) *http.Request {
+	req := httptest.NewRequest(http.MethodPost, "http://www.someurl.com/get", strings.NewReader(""))
+
+	newContext := req.Context()
+
+	if baseURLs != nil {
+		newContext = middlewares.PutIntoContext(newContext, middlewares.BaseURLsKey, *baseURLs)
+	}
+
+	if clientId != nil {
+		newContext = middlewares.PutIntoContext(newContext, middlewares.ClientIdKey, *clientId)
+	}
+
+	return req.WithContext(newContext)
 }
 
 func closeResponseBody(t *testing.T, resp *http.Response) {

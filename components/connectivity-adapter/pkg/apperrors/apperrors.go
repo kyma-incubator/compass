@@ -8,6 +8,7 @@ const (
 	CodeAlreadyExists
 	CodeWrongInput
 	CodeUpstreamServerCallFailed
+	CodeForbidden
 )
 
 func IsNotFoundError(err error) bool {
