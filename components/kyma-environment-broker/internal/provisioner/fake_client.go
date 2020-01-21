@@ -6,10 +6,13 @@ import (
 
 	"github.com/google/uuid"
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"time"
 )
 
 type runtime struct {
-	runtimeInput schema.ProvisionRuntimeInput
+	id                 string
+	runtimeInput       schema.ProvisionRuntimeInput
+	provisionStartedAt time.Time
 }
 
 type fakeClient struct {
@@ -50,7 +53,9 @@ func (c *fakeClient) ProvisionRuntime(accountID, id string, config schema.Provis
 	rid := uuid.New().String()
 	opId := uuid.New().String()
 	c.runtimes = append(c.runtimes, runtime{
-		runtimeInput: config,
+		runtimeInput:       config,
+		provisionStartedAt: time.Now(),
+		id:                 rid,
 	})
 	c.operations = map[string]schema.OperationStatus{
 		opId: {
@@ -87,6 +92,15 @@ func (c *fakeClient) RuntimeOperationStatus(accountID, operationID string) (sche
 	defer c.mu.Unlock()
 
 	o, found := c.operations[operationID]
+	for _, r := range c.runtimes {
+		if r.id != *o.RuntimeID {
+			continue
+		}
+
+		if time.Since(r.provisionStartedAt) > time.Minute {
+			o.State = schema.OperationStateSucceeded
+		}
+	}
 	if !found {
 		return schema.OperationStatus{}, fmt.Errorf("operation not found")
 	}

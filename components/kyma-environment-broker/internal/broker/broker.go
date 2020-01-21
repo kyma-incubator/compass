@@ -137,6 +137,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	if err != nil {
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not read parameters, instanceID %s", instanceID))
 	}
+	b.Dumper.Dump("Provision parameters:", parameters)
 
 	// create input parameters according to selected provider
 	inputBuilder, found := NewInputBuilderForPlan(details.PlanID)
@@ -233,7 +234,7 @@ func (b *KymaEnvBroker) GetInstance(ctx context.Context, instanceID string) (dom
 	spec := domain.GetInstanceDetailsSpec{
 		ServiceID:    inst.ServiceID,
 		PlanID:       inst.ServicePlanID,
-		DashboardURL: "",
+		DashboardURL: inst.DashboardURL,
 		Parameters:   decodedParams,
 	}
 	return spec, nil

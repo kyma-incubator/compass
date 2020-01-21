@@ -39,6 +39,9 @@ type Config struct {
 
 	// feature flag indicates whether use Provisioner API which returns RuntimeID
 	ProcessRuntimeID bool `envconfig:"default=false"`
+
+	// ProvisionerMocked indicates whether use fake provisioner client
+	ProvisionerMocked bool `envconfig:"default=false"`
 }
 
 func main() {
@@ -64,18 +67,28 @@ func main() {
 		provisionerClient = provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 	}
 
-	k8sCfg, err := config.GetConfig()
-	fatalOnError(err)
-	cli, err := client.New(k8sCfg, client.Options{})
-	fatalOnError(err)
+	if cfg.ProvisionerMocked {
+		provisionerClient = provisioner.NewFakeClient()
+	}
 
-	oauthClient := oauth.NewOauthClient(newHTTPClient(cfg.Director.SkipCertVerification), cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
-	fatalOnError(oauthClient.WaitForCredentials())
+	var db storage.BrokerStorage
+	if !cfg.ProvisionerMocked {
+		db, err = storage.New(cfg.Database.ConnectionURL())
+		fatalOnError(err)
 
-	director.NewDirectorClient(oauthClient)
+		k8sCfg, err := config.GetConfig()
+		fatalOnError(err)
 
-	db, err := storage.New(cfg.Database.ConnectionURL())
-	fatalOnError(err)
+		cli, err := client.New(k8sCfg, client.Options{})
+		fatalOnError(err)
+
+		oauthClient := oauth.NewOauthClient(newHTTPClient(cfg.Director.SkipCertVerification), cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
+		fatalOnError(oauthClient.WaitForCredentials())
+		director.NewDirectorClient(oauthClient)
+
+	} else {
+		db = storage.NewMemoryStorage()
+	}
 
 	kymaEnvBroker, err := broker.NewBroker(provisionerClient, cfg.Provisioning, db.Instances())
 	fatalOnError(err)
