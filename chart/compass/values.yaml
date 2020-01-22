@@ -19,11 +19,7 @@ global:
       version: "PR-665"
     director:
       dir:
-<<<<<<< HEAD
-      version: "PR-662"
-=======
       version: "PR-680"
->>>>>>> wip
     gateway:
       dir: pr/
       version: "PR-357"
