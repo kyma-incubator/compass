@@ -8,11 +8,10 @@ import (
 )
 
 type jobConfig struct {
-	//Database             persistence.DatabaseConfig
 	TenantsSrc           string `envconfig:"default=/data/tenants.json"`
 	TenantIDKeyMapping   string `envconfig:"default=id"`
 	TenantNameKeyMapping string `envconfig:"default=name"`
-	TenantProvider       string `envconfig:"default=compass"`
+	TenantProvider       string `envconfig:"default=dummy"`
 }
 
 func main() {
@@ -33,5 +32,4 @@ func main() {
 	}
 
 	log.Println("tenants:", tenants)
-
 }

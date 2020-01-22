@@ -16,7 +16,7 @@ spec:
                 app: {{ .Chart.Name }}
                 release: {{ .Release.Name }}
         spec:
-            restartPolicy: Never
+            restartPolicy: OnFailure
             containers:
                 - name: loader
                   image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.director.dir }}compass-director:{{ .Values.global.images.director.version }}
@@ -53,18 +53,15 @@ spec:
                                 name: compass-postgresql
                                 key: postgresql-sslMode
                       - name: TENANT_ID_KEY_MAPPING
-                        value: {{ .Values.global.tenantKeyMapping.ID }}
+                        value: {{ .Values.global.tenantConfig.tenantKeyMapping.ID }}
                       - name: TENANT_NAME_KEY_MAPPING
-                        value: {{ .Values.global.tenantKeyMapping.name }}
+                        value: {{ .Values.global.tenantConfig.tenantKeyMapping.name }}
                       - name: TENANT_PROVIDER
-                        value: {{ .Values.global.tenantProvider }}
+                        value: {{ .Values.global.tenantConfig.tenantProvider }}
                   volumeMounts:
                     - name: tenant-config
                       mountPath: /data/tenants.json
                       subPath: tenants.json
-                    - name: tenant-config
-                      mountPath: /data/tenant-key-mapping.json
-                      subPath: tenant-key-mapping.json
                   command:
                     - "/bin/sh"
                   args:
@@ -73,4 +70,4 @@ spec:
             volumes:
               - name: tenant-config
                 configMap:
-                  name: compass-tenant-config
+                  name: {{ template "fullname" . }}-director-tenant-config

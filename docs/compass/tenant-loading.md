@@ -18,20 +18,25 @@ In Compass the user can define his own tenants. There is a special `compass-tena
   }
 ]
 ```
-The JSON file has to be added to `compass-tenant-config` ConfigMap defined in `chart/compass/charts/director/templates/configmap-tenant-config.yaml` where you have to put your file into the data object.
+The JSON file has to be added to `chart/compass/charts/director` directory.
 
 Example ConfigMap:
 ```helmyaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: compass-tenant-config
+  name: {{ template "fullname" . }}-tenant-config
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
 data:
-    {{- tpl ((.Files.Glob "tenants.json").AsConfig) . | nindent 2 }}
+  tenants.json: |-
+   {{- if .Files.Get "tenants.json" }}
+    {{ .Files.Get "tenants.json" | nindent 2 }}
+   {{- else}}
+    {{ .Values.global.tenants | toJson | indent 4 }}
+  {{end}}
 ```
 
 **The file has to be named `tenants.json`.**

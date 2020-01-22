@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type TenantMappingInput struct { //TODO REMOVE
+type TenantMappingInput struct {
 	Name             string `json:"name"`
 	ExternalTenantID string `json:"id"`
 	Provider         string
@@ -29,7 +29,7 @@ func MapTenants(srcPath, provider string, mappingOverrides MappingOverrides) ([]
 
 	var tenantMapSlice []tenantMap
 	if err := json.Unmarshal(bytes, &tenantMapSlice); err != nil {
-		return nil, errors.Wrap(err, "while unmarshaling external tenants")
+		return nil, errors.Wrapf(err, "while unmarshaling external tenants from file %s", srcPath)
 	}
 
 	var tenants []TenantMappingInput
