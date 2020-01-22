@@ -3,8 +3,9 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -127,7 +128,7 @@ func TestEmptyEventConfigurationForApp(t *testing.T) {
 	app := getApplication(t, ctx, application.ID)
 
 	//THEN
-	assert.Equal(t, "", app.EventingConfiguration.DefaultURL, )
+	assert.Equal(t, "", app.EventingConfiguration.DefaultURL)
 }
 
 func TestDeleteDefaultEventingForApplication(t *testing.T) {

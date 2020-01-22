@@ -173,7 +173,3 @@ func fixAppEventURL(t *testing.T, appName string) url.URL {
 	eventURL := fmt.Sprintf(eventURLSchema, appName)
 	return fixValidURL(t, eventURL)
 }
-
-func fixEmptyURL(t *testing.T) url.URL {
-	return fixValidURL(t, "")
-}

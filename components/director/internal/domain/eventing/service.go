@@ -165,7 +165,7 @@ func (s *service) GetForApplication(ctx context.Context, app model.Application) 
 
 		if foundOldest {
 			if err := s.setRuntimeForAppEventing(ctx, *runtime, appID); err != nil {
-				return nil, errors.Wrap(err, "while setting the runtime as default for eveting for application")
+				return nil, errors.Wrap(err, "while setting the runtime as default for eventing for application")
 			}
 		}
 	}

@@ -30,7 +30,7 @@ func Test_CleanupAfterUnregisteringApplication(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, fixEmptyURL(t), eventingCfg.DefaultURL)
+		require.Equal(t, "", eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, labelRepo)
 	})
 
@@ -93,7 +93,7 @@ func Test_SetForApplication(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, eventURLSchema, eventingCfg.DefaultURL)
+		require.Equal(t, fmt.Sprintf(eventURLSchema, app.Name), eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -122,7 +122,7 @@ func Test_SetForApplication(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, eventURLSchema, eventingCfg.DefaultURL)
+		require.Equal(t, fmt.Sprintf(eventURLSchema, app.Name), eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -375,7 +375,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, EmptyEventingURL, eventingCfg.DefaultURL)
+		require.Equal(t, EmptyEventingURL, eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo)
 	})
 
@@ -399,7 +399,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, eventURLSchema, eventingCfg.DefaultURL)
+		require.Equal(t, fmt.Sprintf(eventURLSchema, app.Name), eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -576,7 +576,7 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, appEventURL, eventingCfg.DefaultURL)
+		require.Equal(t, "", eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -597,7 +597,7 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, appEventURL, eventingCfg.DefaultURL)
+		require.Equal(t, "", eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -625,7 +625,7 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, appEventURL, eventingCfg.DefaultURL)
+		require.Equal(t, "", eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -643,7 +643,7 @@ func Test_GetForApplication(t *testing.T) {
 
 	t.Run("Error when labeling oldest runtime for application eventing returns error", func(t *testing.T) {
 		// GIVEN
-		expectedError := fmt.Sprintf(`while setting the runtime as default for eveting for application: while labeling the runtime [ID=%s] as default for eventing for application [ID=%s]: some error`, runtimeID, applicationID)
+		expectedError := fmt.Sprintf(`while setting the runtime as default for eventing for application: while labeling the runtime [ID=%s] as default for eventing for application [ID=%s]: some error`, runtimeID, applicationID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
