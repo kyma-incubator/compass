@@ -2,11 +2,12 @@ package application
 
 import (
 	"encoding/json"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
-	"time"
 )
 
 type converter struct {

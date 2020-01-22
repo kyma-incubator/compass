@@ -1,6 +1,7 @@
 package eventing
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -16,9 +17,9 @@ func Test_RuntimeEventingConfigurationToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:  "Valid input model",
-			Input: fixRuntimeEventngCfgWithURL(t, eventURLSchema),
+			Input: fixRuntimeEventngCfgWithURL(t, runtimeEventURL),
 			Expected: &graphql.RuntimeEventingConfiguration{
-				DefaultURL: eventURLSchema,
+				DefaultURL: runtimeEventURL,
 			},
 		}, {
 			Name:     "Nil input model",
@@ -37,7 +38,7 @@ func Test_RuntimeEventingConfigurationToGraphQL(t *testing.T) {
 }
 
 func Test_ApplicationEventingConfigurationToGraphQL(t *testing.T) {
-	validURL := fixValidURL(t, eventURLSchema)
+	validURL := fixValidURL(t, fmt.Sprintf(eventURLSchema, "test-app"))
 
 	testCases := []struct {
 		Name     string
@@ -52,7 +53,7 @@ func Test_ApplicationEventingConfigurationToGraphQL(t *testing.T) {
 				},
 			},
 			Expected: &graphql.ApplicationEventingConfiguration{
-				DefaultURL: eventURLSchema,
+				DefaultURL: validURL.String(),
 			},
 		}, {
 			Name:     "Nil input model",

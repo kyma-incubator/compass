@@ -2,11 +2,12 @@ package model_test
 
 import (
 	"errors"
+	"net/url"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/url"
-	"testing"
 )
 
 func TestNewRuntimeEventingConfiguration(t *testing.T) {

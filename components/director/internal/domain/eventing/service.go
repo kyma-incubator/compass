@@ -3,6 +3,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"

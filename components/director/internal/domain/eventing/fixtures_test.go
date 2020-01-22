@@ -3,9 +3,10 @@ package eventing
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"net/url"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
@@ -21,8 +22,8 @@ var runtimeID = uuid.New()
 var applicationID = uuid.New()
 
 const (
-	eventURLSchema   = "https://eventing.domain.local/%s/v1/events"
-	dummyEventingURL = "https://eventing.domain.local"
+	eventURLSchema  = "https://eventing.domain.local/%s/v1/events"
+	runtimeEventURL = "https://eventing.domain.local"
 )
 
 func fixCtxWithTenant() context.Context {
@@ -39,7 +40,7 @@ func fixRuntimeEventingURLLabel() *model.Label {
 		ObjectID:   runtimeID.String(),
 		ObjectType: model.RuntimeLabelableObject,
 		Tenant:     tenantID.String(),
-		Value:      dummyEventingURL,
+		Value:      runtimeEventURL,
 	}
 }
 

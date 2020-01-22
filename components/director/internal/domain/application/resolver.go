@@ -2,8 +2,9 @@ package application
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"

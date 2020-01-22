@@ -918,7 +918,7 @@ func Test_GetForRuntime(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(), RuntimeEventingURLLabel).
 			Return(fixRuntimeEventingURLLabel(), nil)
-		expectedEventingCfg := fixRuntimeEventngCfgWithURL(t, dummyEventingURL)
+		expectedEventingCfg := fixRuntimeEventngCfgWithURL(t, runtimeEventURL)
 		eventingSvc := NewService(nil, labelRepo)
 
 		// WHEN
