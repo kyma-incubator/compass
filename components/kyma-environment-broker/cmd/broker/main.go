@@ -39,6 +39,12 @@ type Config struct {
 
 	// feature flag indicates whether use Provisioner API which returns RuntimeID
 	ProcessRuntimeID bool `envconfig:"default=false"`
+
+	ServiceManager struct {
+		URL      string
+		Password string
+		Username string
+	}
 }
 
 func main() {
@@ -59,7 +65,7 @@ func main() {
 
 	var provisionerClient provisioner.Client
 	if cfg.ProcessRuntimeID {
-		provisionerClient = provisioner.NewProvisionerClientV2(cfg.Provisioning.URL, true)
+		provisionerClient = provisioner.NewProvisionerClientV2(cfg.Provisioning.URL, cfg.ServiceManager.URL, cfg.ServiceManager.Username, cfg.ServiceManager.Password, true)
 	} else {
 		provisionerClient = provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 	}

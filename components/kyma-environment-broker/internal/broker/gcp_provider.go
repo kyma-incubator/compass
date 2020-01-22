@@ -25,7 +25,6 @@ func (p *gcpInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 			AutoScalerMax:     4,
 			MaxSurge:          4,
 			MaxUnavailable:    1,
-			Seed:              "gcp-eu1",
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
 					Zone: "europe-west4-b",

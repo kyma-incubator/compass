@@ -14,11 +14,15 @@ type clientV2 struct {
 	graphqlizer   graphqlizer
 }
 
-func NewProvisionerClientV2(endpoint string, queryLogging bool) Client {
+func NewProvisionerClientV2(endpoint string, smURL string, smUsername string, smPassword string, queryLogging bool) Client {
 	return &clientV2{
 		graphQLClient: graphql.NewGraphQLClient(endpoint, true, queryLogging),
 		queryProvider: queryProvider{},
-		graphqlizer:   graphqlizer{},
+		graphqlizer: graphqlizer{
+			smURL:      smURL,
+			smUsername: smUsername,
+			smPassword: smPassword,
+		},
 	}
 }
 
