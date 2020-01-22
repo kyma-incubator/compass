@@ -43,6 +43,8 @@ const (
 	clusterEssentialsComponent    = "cluster-essentials"
 	coreComponent                 = "core"
 	applicationConnectorComponent = "application-connector"
+	runtimeAgentComponent         = "compass-runtime-agent"
+	compassSystemNamespace        = "compass-system"
 	tenant                        = "tenant"
 )
 
@@ -383,6 +385,14 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
 				},
 			},
+			{
+				Component: runtimeAgentComponent,
+				Namespace: compassSystemNamespace,
+				Configuration: []*gqlschema.ConfigEntryInput{
+					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
+				},
+			},
 		},
 		Configuration: []*gqlschema.ConfigEntryInput{
 			fixGQLConfigEntryInput("global.config.key", "globalValue", util.BoolPtr(false)),
@@ -421,6 +431,14 @@ func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 			{
 				Component: applicationConnectorComponent,
 				Namespace: kymaIntegrationNamespace,
+				Configuration: []*gqlschema.ConfigEntry{
+					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
+				},
+			},
+			{
+				Component: runtimeAgentComponent,
+				Namespace: compassSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
