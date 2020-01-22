@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 )
@@ -23,6 +24,9 @@ const (
 )
 
 func RegisterHandler(router *mux.Router, config Config) error {
+	logger := logrus.New().WithField("component", "connector").Logger
+	logger.SetReportCaller(true)
+
 	client, err := graphql.NewClient(config.CompassConnectorURL, config.InsecureConnectorCalls, timeout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to initialize compass client")
@@ -37,7 +41,7 @@ func RegisterHandler(router *mux.Router, config Config) error {
 
 	{
 		baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterBaseURL, eventBaseURLProvider)
-		signingRequestInfo := api.NewSigningRequestInfoHandler(client)
+		signingRequestInfo := api.NewSigningRequestInfoHandler(client, logger)
 		signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetSigningRequestInfo)
 
 		router.Handle("/signingRequests/info", baseURLsMiddleware.GetBaseUrls(signingRequestInfoHandler)).Methods(http.MethodGet)
@@ -45,14 +49,14 @@ func RegisterHandler(router *mux.Router, config Config) error {
 
 	{
 		baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterBaseURLMTLS, eventBaseURLProvider)
-		managementInfo := api.NewManagementInfoHandler(client)
+		managementInfo := api.NewManagementInfoHandler(client, logger)
 		managementInfoHandler := http.HandlerFunc(managementInfo.GetManagementInfo)
 
 		router.Handle("/management/info", baseURLsMiddleware.GetBaseUrls(managementInfoHandler))
 	}
 
-	certificatesHandler := api.NewCertificatesHandler(client).SignCSR
-	router.HandleFunc("/certificates", certificatesHandler)
+	certificates := api.NewCertificatesHandler(client, logger)
+	router.HandleFunc("/certificates", certificates.SignCSR)
 
 	return nil
 }

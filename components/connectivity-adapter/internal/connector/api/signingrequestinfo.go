@@ -6,7 +6,8 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
-	"log"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -19,20 +20,18 @@ const (
 )
 
 type csrInfoHandler struct {
-	getInfoURL string
-	gqlClient  graphql.Client
+	gqlClient graphql.Client
+	logger    *log.Logger
 }
 
-func NewSigningRequestInfoHandler(client graphql.Client) csrInfoHandler {
+func NewSigningRequestInfoHandler(client graphql.Client, logger *log.Logger) csrInfoHandler {
 	return csrInfoHandler{
-		gqlClient:  client,
-		getInfoURL: "",
+		gqlClient: client,
+		logger:    logger,
 	}
 }
 
-func (c *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Request) {
-	log.Println("Starting GetSigningRequestInfo")
-
+func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Request) {
 	// TODO: make sure only calls with token are accepted
 
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
@@ -43,16 +42,22 @@ func (c *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	contextLogger := contextLogger(ci.logger, authorizationHeaders.GetClientID())
+
 	baseURLs, err := middlewares.GetBaseURLsFromContext(r.Context(), middlewares.BaseURLsKey)
 	if err != nil {
-		reqerror.WriteErrorMessage(w, "Base URLS not provided.", apperrors.CodeInternal)
+		contextLogger.Errorf("Failed to read Base URL context: %s.", err)
+		reqerror.WriteErrorMessage(w, "Base URLs not provided.", apperrors.CodeInternal)
 
 		return
 	}
 
-	configuration, err := c.gqlClient.Configuration(authorizationHeaders)
+	contextLogger.Info("Getting Certificate Signing Request Info")
+
+	configuration, err := ci.gqlClient.Configuration(authorizationHeaders)
 	if err != nil {
-		log.Println("Error getting configuration " + err.Error())
+		err = errors.Wrap(err, "Failed to get configuration")
+		contextLogger.Error(err.Error())
 		reqerror.WriteError(w, err, apperrors.CodeInternal)
 
 		return
@@ -62,11 +67,11 @@ func (c *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Re
 	application := authorizationHeaders.GetClientID()
 
 	//TODO: handle case when configuration.Token is nil
-	csrInfoResponse := c.makeCSRInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)
+	csrInfoResponse := ci.makeCSRInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)
 	respondWithBody(w, http.StatusOK, csrInfoResponse)
 }
 
-func (c *csrInfoHandler) makeCSRInfoResponse(application, newToken, connectivityAdapterBaseURL, eventServiceBaseURL string, certInfo model.CertInfo) model.CSRInfoResponse {
+func (ci *csrInfoHandler) makeCSRInfoResponse(application, newToken, connectivityAdapterBaseURL, eventServiceBaseURL string, certInfo model.CertInfo) model.CSRInfoResponse {
 	return model.CSRInfoResponse{
 		CsrURL:          model.MakeCSRURL(newToken, connectivityAdapterBaseURL),
 		API:             model.MakeApiURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),

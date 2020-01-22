@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -51,7 +52,7 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		}
 
 		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
-		handler := NewSigningRequestInfoHandler(connectorClientMock)
+		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New())
 
 		req := newRequestWithContext(headersFromToken, &baseURLs)
 
@@ -102,7 +103,7 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 
 		r := httptest.NewRecorder()
 
-		handler := NewSigningRequestInfoHandler(connectorClientMock)
+		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New())
 
 		// when
 		handler.GetSigningRequestInfo(r, req)

@@ -111,19 +111,3 @@ func MakeManagementURLs(application, connectivityAdapterBaseURL string, eventSer
 		RevokeCertURL: fmt.Sprintf(RevocationCertURLFormat, connectivityAdapterBaseURL),
 	}
 }
-
-//func NewManagementInfoResponse(application, connectivityAdapterBaseURL string, eventServiceBaseURL string) MgmtInfoReponse{
-//	return MgmtInfoReponse {
-//		ClientIdentity: ClientIdentity{
-//
-//		},
-//		URLs : MgmtURLs{
-//			RuntimeURLs: makeRuntimeURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
-//			RenewCertURL: fmt.Sprintf(RenewCertURLFormat, connectivityAdapterBaseURL),
-//			RevokeCertURL: fmt.Sprintf(RevocationCertURLFormat, connectivityAdapterBaseURL),
-//		},
-//		CertificateInfo: CertInfo{
-//
-//		},
-//	}
-//}
