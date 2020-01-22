@@ -23,5 +23,3 @@ require (
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 	k8s.io/apimachinery v0.17.0 // indirect
 )
-
-replace github.com/kyma-incubator/compass/components/director => github.com/crabtree/compass/components/director v0.0.0-20200121070913-f3240c4624e9
