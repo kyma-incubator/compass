@@ -12,7 +12,11 @@ import (
 )
 
 // Graphqlizer is responsible for converting Go objects to input arguments in graphql format
-type graphqlizer struct{}
+type graphqlizer struct {
+	smURL      string
+	smUsername string
+	smPassword string
+}
 
 func (g *graphqlizer) ProvisionRuntimeInputToGraphQL(in gqlschema.ProvisionRuntimeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
@@ -70,7 +74,7 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		region: "{{.Region}}"
 		provider: "{{ .Provider }}"
 		diskType: "{{.DiskType}}"
-		seed: "{{ .Seed }}"
+		seed: "az-eu3"
 		targetSecret: "{{ .TargetSecret }}"
 		workerCidr: "{{ .WorkerCidr }}"
         autoScalerMin: {{ .AutoScalerMin }}
@@ -133,24 +137,13 @@ func (g *graphqlizer) UpgradeClusterConfigToGraphQL(in gqlschema.UpgradeClusterI
 }
 
 func (g *graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string, error) {
-	return g.genericToGraphQL(in, `{
+	return g.genericToGraphQL(in, fmt.Sprintf(`{
 		{{- if .Version }}
-		version: "{{.Version}}"
+		version: "master-ece6e5d9"
         components: [
           {
             component: "cluster-essentials"
             namespace: "kyma-system"
-            configuration: [
-              {
-                key: "component.key.dupa"
-                value: "component.value.dupa"
-              }
-              {
-                key: "component.key.dupa1"
-                value: "component.value.dupa1"
-                secret: true
-              }
-            ]
           }
           {
             component: "testing"
@@ -205,20 +198,16 @@ func (g *graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
             namespace: "kyma-system"
           }
           {
+            component: "rafter"
+            namespace: "kyma-system"
+          }
+          {
             component: "helm-broker"
             namespace: "kyma-system"
           }
           {
             component: "nats-streaming"
             namespace: "natss"
-          }
-          {
-            component: "assetstore"
-            namespace: "kyma-system"
-          }
-          {
-            component: "cms"
-            namespace: "kyma-system"
           }
           {
             component: "core"
@@ -233,6 +222,10 @@ func (g *graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
             namespace: "kyma-system"
           }
           {
+            component: "event-sources"
+            namespace: "kyma-system"
+          }
+          {
             component: "application-connector-ingress"
             namespace: "kyma-system"
           }    
@@ -243,10 +236,61 @@ func (g *graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
           {
             component: "application-connector"
             namespace: "kyma-integration"
+          }    
+          {
+            component: "backup-init"
+		    namespace: "kyma-system"
+		  }
+          {
+            component: "backup"
+		    namespace: "kyma-system"
+		  }
+          {
+            component: "logging"
+		    namespace: "kyma-system"
+		  }
+          {
+            component: "jaeger"
+		    namespace: "kyma-system"
+		  }
+          {
+            component: "monitoring"
+		    namespace: "kyma-system"
+		  }
+          {
+            component: "kiali"
+		    namespace: "kyma-system"
+		  }
+          {
+            component: "service-manager-proxy"
+            namespace: "kyma-system"
+            configuration: [
+              {
+                key: "config.sm.url"
+                value: "%s"
+              }
+              {
+                key: "sm.password"
+                value: "%s"
+                secret: true
+              }
+              {
+                key: "sm.user"
+                value: "%s"
+              }
+            ]
+          }    
+          {
+            component: "uaa-activator"
+            namespace: "kyma-system"
+          }    
+          {
+            component: "compass-runtime-agent"
+            namespace: "compass-system"
           }         
         ]
 		{{- end }}
-	}`)
+	}`, g.smURL, g.smPassword, g.smUsername))
 }
 
 func (g *graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, error) {
