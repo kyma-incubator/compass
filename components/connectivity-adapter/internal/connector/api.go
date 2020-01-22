@@ -11,10 +11,11 @@ import (
 )
 
 type Config struct {
-	CompassConnectorURL string `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
-	AdapterBaseURL      string `envconfig:"default=https://adapter-gateway.kyma.local"`
-	AdapterBaseURLMTLS  string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
-	EventBaseURL        string `envconfig:"default=https://gateway.kyma.local"`
+	CompassConnectorURL    string `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
+	AdapterBaseURL         string `envconfig:"default=https://adapter-gateway.kyma.local"`
+	AdapterBaseURLMTLS     string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
+	EventBaseURL           string `envconfig:"default=https://gateway.kyma.local"` // TODO: remove once Event Base URL is read from Director
+	InsecureConnectorCalls bool   `envconfig:"default=true"`
 }
 
 const (
@@ -22,22 +23,23 @@ const (
 )
 
 func RegisterHandler(router *mux.Router, config Config) error {
-	client, err := graphql.NewClient(config.CompassConnectorURL, true, timeout)
+	client, err := graphql.NewClient(config.CompassConnectorURL, config.InsecureConnectorCalls, timeout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to initialize compass client")
 	}
 
-	authorizationMiddleware := middlewares.NewClientFromTokenMiddleware().GetAuthorizationHeaders
-	router.Use(mux.MiddlewareFunc(authorizationMiddleware))
+	authorizationMiddleware := middlewares.NewAuthorizationMiddleware()
+	router.Use(mux.MiddlewareFunc(authorizationMiddleware.GetAuthorizationHeaders))
 
 	eventBaseURLProvider := eventBaseURLProvider{
-		adapterBaseUrl: config.EventBaseURL,
+		eventBaseUrl: config.EventBaseURL,
 	}
 
 	{
 		baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterBaseURL, eventBaseURLProvider)
 		signingRequestInfo := api.NewSigningRequestInfoHandler(client)
 		signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetSigningRequestInfo)
+
 		router.Handle("/signingRequests/info", baseURLsMiddleware.GetBaseUrls(signingRequestInfoHandler)).Methods(http.MethodGet)
 	}
 
@@ -45,20 +47,21 @@ func RegisterHandler(router *mux.Router, config Config) error {
 		baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterBaseURLMTLS, eventBaseURLProvider)
 		managementInfo := api.NewManagementInfoHandler(client)
 		managementInfoHandler := http.HandlerFunc(managementInfo.GetManagementInfo)
+
 		router.Handle("/management/info", baseURLsMiddleware.GetBaseUrls(managementInfoHandler))
 	}
 
-	certificatesHandler := api.NewCertificatesHandler(client)
-	router.HandleFunc("/certificates", certificatesHandler.SignCSR)
+	certificatesHandler := api.NewCertificatesHandler(client).SignCSR
+	router.HandleFunc("/certificates", certificatesHandler)
 
 	return nil
 }
 
 type eventBaseURLProvider struct {
-	adapterBaseUrl string
+	eventBaseUrl string
 }
 
 func (e eventBaseURLProvider) EventServiceBaseURL() (string, error) {
 	// TODO: call Director for getting events base url
-	return e.adapterBaseUrl, nil
+	return e.eventBaseUrl, nil
 }

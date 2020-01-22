@@ -21,10 +21,10 @@ func NewBaseURLsMiddleware(connectivityAdapterBaseURL string, runtimeBaseURLProv
 	}
 }
 
-func (b baseURLsMiddleware) GetBaseUrls(handler http.Handler) http.Handler {
+func (bm baseURLsMiddleware) GetBaseUrls(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		eventServiceBaseURL, err := b.runtimeBaseURLProvider.EventServiceBaseURL()
+		eventServiceBaseURL, err := bm.runtimeBaseURLProvider.EventServiceBaseURL()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 
@@ -32,7 +32,7 @@ func (b baseURLsMiddleware) GetBaseUrls(handler http.Handler) http.Handler {
 		}
 
 		baseURLs := BaseURLs{
-			ConnectivityAdapterBaseURL: b.connectivityAdapterBaseURL,
+			ConnectivityAdapterBaseURL: bm.connectivityAdapterBaseURL,
 			EventServiceBaseURL:        eventServiceBaseURL,
 		}
 

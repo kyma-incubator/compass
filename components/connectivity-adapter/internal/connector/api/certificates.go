@@ -26,11 +26,12 @@ func NewCertificatesHandler(client graphql.Client) certificatesHandler {
 	}
 }
 
-func (ih *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
+func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 	certRequest, err := readCertRequest(r)
 	if err != nil {
 		log.Println("Error reading cert request: " + err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		reqerror.WriteError(w, err, apperrors.CodeInternal)
+
 		return
 	}
 
@@ -42,11 +43,12 @@ func (ih *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	certificationResult, err := ih.client.SignCSR(certRequest.CSR, authorizationHeaders)
+	certificationResult, err := ch.client.SignCSR(certRequest.CSR, authorizationHeaders)
 
 	if err != nil {
 		log.Println("Error getting cert from Connector: " + err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		reqerror.WriteError(w, err, apperrors.CodeInternal)
+
 		return
 	}
 

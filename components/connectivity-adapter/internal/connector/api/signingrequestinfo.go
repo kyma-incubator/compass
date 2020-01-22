@@ -33,6 +33,8 @@ func NewSigningRequestInfoHandler(client graphql.Client) csrInfoHandler {
 func (c *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Request) {
 	log.Println("Starting GetSigningRequestInfo")
 
+	// TODO: make sure only calls with token are accepted
+
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
 		log.Println("Client Id not provided.")
@@ -41,7 +43,6 @@ func (c *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// TODO: make sure only calls with token are accepted
 	baseURLs, err := middlewares.GetBaseURLsFromContext(r.Context(), middlewares.BaseURLsKey)
 	if err != nil {
 		reqerror.WriteErrorMessage(w, "Base URLS not provided.", apperrors.CodeInternal)
@@ -52,7 +53,6 @@ func (c *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Re
 	configuration, err := c.gqlClient.Configuration(authorizationHeaders)
 	if err != nil {
 		log.Println("Error getting configuration " + err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
 		reqerror.WriteError(w, err, apperrors.CodeInternal)
 
 		return
@@ -61,7 +61,7 @@ func (c *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Re
 	certInfo := graphql.ToCertInfo(configuration)
 	application := authorizationHeaders.GetClientID()
 
-	// TODO: handle case when configuration.Token is nil
+	//TODO: handle case when configuration.Token is nil
 	csrInfoResponse := c.makeCSRInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)
 	respondWithBody(w, http.StatusOK, csrInfoResponse)
 }

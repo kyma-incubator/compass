@@ -36,7 +36,7 @@ func TestMiddleware_ExtractHeaders(t *testing.T) {
 		oathkeeper.ClientCertificateHashHeader:   "certificate hash",
 	}
 
-	testcases := []struct {
+	testCases := []struct {
 		description string
 		headers     map[string]string
 		handler     http.Handler
@@ -70,15 +70,14 @@ func TestMiddleware_ExtractHeaders(t *testing.T) {
 		},
 	}
 
-	for _, testcase := range testcases {
-		t.Run(testcase.description, func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
 			// given
-
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				headersMap, err := GetAuthHeadersFromContext(r.Context(), AuthorizationHeadersKey)
 				require.NoError(t, err)
 
-				for key, value := range testcase.headers {
+				for key, value := range tc.headers {
 					assert.Equal(t, value, headersMap[key])
 				}
 			})
@@ -86,18 +85,18 @@ func TestMiddleware_ExtractHeaders(t *testing.T) {
 			r := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "http://www.someurl.com/get", strings.NewReader(""))
 
-			for key, value := range testcase.headers {
+			for key, value := range tc.headers {
 				req.Header.Set(key, value)
 			}
 
-			middleware := NewClientFromTokenMiddleware()
+			middleware := NewAuthorizationMiddleware()
 			handlerWithMiddleware := middleware.GetAuthorizationHeaders(handler)
 
 			// when
 			handlerWithMiddleware.ServeHTTP(r, req)
 
 			// then
-			assert.Equal(t, testcase.status, r.Code)
+			assert.Equal(t, tc.status, r.Code)
 		})
 	}
 }

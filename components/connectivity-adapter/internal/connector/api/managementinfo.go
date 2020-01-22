@@ -20,8 +20,10 @@ func NewManagementInfoHandler(client graphql.Client) managementInfoHandler {
 	}
 }
 
-func (m *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *http.Request) {
+func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *http.Request) {
 	log.Println("Starting GetSigningRequestInfo")
+
+	// TODO: make sure only calls with certificate are accepted
 
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
@@ -31,16 +33,16 @@ func (m *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *http
 		return
 	}
 
-	// TODO: make sure only calls with certificate are accepted
 	baseURLs, err := middlewares.GetBaseURLsFromContext(r.Context(), middlewares.BaseURLsKey)
 	if err != nil {
 		reqerror.WriteErrorMessage(w, "Base URLS not provided.", apperrors.CodeInternal)
+
+		return
 	}
 
-	configuration, err := m.gqlClient.Configuration(authorizationHeaders)
+	configuration, err := mh.gqlClient.Configuration(authorizationHeaders)
 	if err != nil {
 		log.Println("Error getting configuration " + err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
 		reqerror.WriteError(w, err, apperrors.CodeInternal)
 
 		return
@@ -49,7 +51,8 @@ func (m *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *http
 	certInfo := graphql.ToCertInfo(configuration)
 	application := authorizationHeaders.GetClientID()
 
-	csrInfoResponse := m.makeManagementInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)
+	//TODO: handle case when configuration.Token is nil
+	csrInfoResponse := mh.makeManagementInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)
 	respondWithBody(w, http.StatusOK, csrInfoResponse)
 }
 

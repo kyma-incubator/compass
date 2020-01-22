@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func NewClientFromTokenMiddleware() authorizationHeadersMiddleware {
+func NewAuthorizationMiddleware() authorizationHeadersMiddleware {
 	return authorizationHeadersMiddleware{}
 }
 

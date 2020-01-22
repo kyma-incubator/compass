@@ -112,9 +112,8 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		connectorClientMock.AssertExpectations(t)
 	})
 
-	// TODO: Check if it is needed (will be covered in middleware test)
-	// TODO check what is the response from GraphQL client if the header is missing
-	t.Run("Should return error when Client-Id-From-Token not passed", func(t *testing.T) {
+	// TODO: test case when context is not set (authorization and base URLS)
+	t.Run("Should return error when Authorization context not passed", func(t *testing.T) {
 		// given
 
 		// when
