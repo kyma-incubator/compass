@@ -94,11 +94,8 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 
 	var entities Collection
 
-	if objectType == model.IntegrationSystemReference {
-		err = r.listerGlobal.ListGlobal(ctx, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID)))
-	} else {
-		err = r.lister.List(ctx, tenant, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID)))
-	}
+	err = r.lister.List(ctx, tenant, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID)))
+
 	if err != nil {
 		return nil, err
 	}
@@ -166,9 +163,6 @@ func (r *repository) DeleteByIDForObject(ctx context.Context, tenant, id string,
 		objTypeCond = repo.NewNotNullCondition("integration_system_id")
 	default:
 		return fmt.Errorf("unsupported object type (%s)", objType)
-	}
-	if objType == model.IntegrationSystemReference {
-		return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
 	}
 
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})

@@ -437,7 +437,7 @@ func TestRepository_ListForObject(t *testing.T) {
 		pgRepository := systemauth.NewRepository(&convMock)
 
 		//WHEN
-		result, err := pgRepository.ListForObject(ctx, "", model.IntegrationSystemReference, objID)
+		result, err := pgRepository.ListForObjectGlobal(ctx, model.IntegrationSystemReference, objID)
 
 		//THEN
 		require.NoError(t, err)
@@ -471,7 +471,7 @@ func TestRepository_ListForObject(t *testing.T) {
 		pgRepository := systemauth.NewRepository(nil)
 
 		//WHEN
-		result, err := pgRepository.ListForObject(ctx, "", model.IntegrationSystemReference, objID)
+		result, err := pgRepository.ListForObjectGlobal(ctx, model.IntegrationSystemReference, objID)
 
 		//THEN
 		require.Error(t, err)
@@ -518,7 +518,7 @@ func TestRepository_ListForObject(t *testing.T) {
 		pgRepository := systemauth.NewRepository(&convMock)
 
 		//WHEN
-		result, err := pgRepository.ListForObject(ctx, "", model.IntegrationSystemReference, objID)
+		result, err := pgRepository.ListForObjectGlobal(ctx, model.IntegrationSystemReference, objID)
 
 		//THEN
 		require.Error(t, err)
@@ -658,7 +658,7 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, model.IntegrationSystemReference)
+		err := repo.DeleteByIDForObjectGlobal(ctx, sysAuthID, model.IntegrationSystemReference)
 		// THEN
 		require.NoError(t, err)
 	})
