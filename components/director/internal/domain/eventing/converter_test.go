@@ -16,9 +16,9 @@ func Test_RuntimeEventingConfigurationToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:  "Valid input model",
-			Input: fixRuntimeEventngCfgWithURL(t, dummyEventingURL),
+			Input: fixRuntimeEventngCfgWithURL(t, eventURLSchema),
 			Expected: &graphql.RuntimeEventingConfiguration{
-				DefaultURL: dummyEventingURL,
+				DefaultURL: eventURLSchema,
 			},
 		}, {
 			Name:     "Nil input model",
@@ -37,7 +37,7 @@ func Test_RuntimeEventingConfigurationToGraphQL(t *testing.T) {
 }
 
 func Test_ApplicationEventingConfigurationToGraphQL(t *testing.T) {
-	validURL := fixValidURL(t, dummyEventingURL)
+	validURL := fixValidURL(t, eventURLSchema)
 
 	testCases := []struct {
 		Name     string
@@ -52,7 +52,7 @@ func Test_ApplicationEventingConfigurationToGraphQL(t *testing.T) {
 				},
 			},
 			Expected: &graphql.ApplicationEventingConfiguration{
-				DefaultURL: dummyEventingURL,
+				DefaultURL: eventURLSchema,
 			},
 		}, {
 			Name:     "Nil input model",

@@ -2,6 +2,7 @@ package eventing
 
 import (
 	"context"
+	"fmt"
 	"github.com/stretchr/testify/require"
 	"net/url"
 	"testing"
@@ -19,7 +20,10 @@ var tenantID = uuid.New()
 var runtimeID = uuid.New()
 var applicationID = uuid.New()
 
-const dummyEventingURL = "https://eventing.domain.local"
+const (
+	eventURLSchema   = "https://eventing.domain.local/%s/v1/events"
+	dummyEventingURL = "https://eventing.domain.local"
+)
 
 func fixCtxWithTenant() context.Context {
 	ctx := context.TODO()
@@ -159,8 +163,17 @@ func fixValidURL(t *testing.T, rawURL string) url.URL {
 
 func fixApplicationModel(name string) model.Application {
 	return model.Application{
-		ID:                  applicationID.String(),
-		Tenant:              tenantID.String(),
-		Name:                name,
+		ID:     applicationID.String(),
+		Tenant: tenantID.String(),
+		Name:   name,
 	}
+}
+
+func fixAppEventURL(t *testing.T, appName string) url.URL {
+	eventURL := fmt.Sprintf(eventURLSchema, appName)
+	return fixValidURL(t, eventURL)
+}
+
+func fixEmptyURL(t *testing.T) url.URL {
+	return fixValidURL(t, "")
 }
