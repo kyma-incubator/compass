@@ -42,3 +42,12 @@ func (b *gqlRequestBuilder) UnregisterApplicationRequest(id string) *gcli.Reques
 		}	
 	}`, id))
 }
+
+func (b *gqlRequestBuilder) GetApplicationRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+					%s
+			}
+		}`, id, b.gqlFieldsProvider.ForApplication()))
+}
