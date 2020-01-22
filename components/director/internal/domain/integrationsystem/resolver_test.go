@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -857,7 +855,7 @@ func fixOAuths() []model.SystemAuth {
 	return []model.SystemAuth{
 		{
 			ID:       "foo",
-			TenantID: str.Ptr("foo"),
+			TenantID: nil,
 			Value: &model.Auth{
 				Credential: model.CredentialData{
 					Basic: nil,
@@ -871,12 +869,12 @@ func fixOAuths() []model.SystemAuth {
 		},
 		{
 			ID:       "bar",
-			TenantID: str.Ptr("bar"),
+			TenantID: nil,
 			Value:    nil,
 		},
 		{
 			ID:       "test",
-			TenantID: str.Ptr("test"),
+			TenantID: nil,
 			Value: &model.Auth{
 				Credential: model.CredentialData{
 					Basic: &model.BasicCredentialData{

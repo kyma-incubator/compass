@@ -45,7 +45,7 @@ func (g *universalSingleGetter) Get(ctx context.Context, tenant string, conditio
 	if tenant == "" {
 		return errors.New("tenant cannot be empty")
 	}
-	conditions = append(Conditions{NewEqualCondition("tenant_id", tenant)}, conditions...)
+	conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeGet(ctx, conditions, orderByParams, dest)
 }
 

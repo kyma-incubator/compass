@@ -261,7 +261,7 @@ func TestService_ListForObject(t *testing.T) {
 			Name: "Success listing Auths for Integration System",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("ListForObject", contextThatHasTenant(testTenant), "", model.IntegrationSystemReference, objID).Return(expectedIntSysAuths, nil)
+				sysAuthRepo.On("ListForObjectGlobal", contextThatHasTenant(testTenant), model.IntegrationSystemReference, objID).Return(expectedIntSysAuths, nil)
 				return sysAuthRepo
 			},
 			InputObjectType: model.IntegrationSystemReference,
@@ -442,7 +442,7 @@ func TestService_DeleteByIDForObject(t *testing.T) {
 			Name: "Success deleting auth for Integration System",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("DeleteByIDForObject", contextThatHasTenant(testTenant), "", sysAuthID, model.IntegrationSystemReference).Return(nil)
+				sysAuthRepo.On("DeleteByIDForObjectGlobal", contextThatHasTenant(testTenant), sysAuthID, model.IntegrationSystemReference).Return(nil)
 				return sysAuthRepo
 			},
 			InputObjectType: model.IntegrationSystemReference,

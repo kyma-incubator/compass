@@ -58,7 +58,7 @@ func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
 	return r.creator.Create(ctx, entity)
 }
 
-func (r *repository) GetByID(ctx context.Context, tenant string, id string) (*model.SystemAuth, error) {
+func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error) {
 	var entity Entity
 	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
@@ -117,6 +117,33 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 	return items, nil
 }
 
+func (r *repository) ListForObjectGlobal(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
+	objTypeFieldName, err := referenceObjectField(objectType)
+	if err != nil {
+		return nil, err
+	}
+
+	var entities Collection
+
+	err = r.listerGlobal.ListGlobal(ctx, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID)))
+	if err != nil {
+		return nil, err
+	}
+
+	var items []model.SystemAuth
+
+	for _, ent := range entities {
+		m, err := r.conv.FromEntity(ent)
+		if err != nil {
+			return nil, errors.Wrap(err, "while creating system auth model from entity")
+		}
+
+		items = append(items, m)
+	}
+
+	return items, nil
+}
+
 func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) error {
 	objTypeFieldName, err := referenceObjectField(objectType)
 	if err != nil {
@@ -128,7 +155,7 @@ func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, obje
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
 }
 
-func (r *repository) DeleteByIDForObject(ctx context.Context, tenant string, id string, objType model.SystemAuthReferenceObjectType) error {
+func (r *repository) DeleteByIDForObject(ctx context.Context, tenant, id string, objType model.SystemAuthReferenceObjectType) error {
 	var objTypeCond repo.Condition
 	switch objType {
 	case model.ApplicationReference:
@@ -145,6 +172,21 @@ func (r *repository) DeleteByIDForObject(ctx context.Context, tenant string, id 
 	}
 
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
+}
+
+func (r *repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, objType model.SystemAuthReferenceObjectType) error {
+	var objTypeCond repo.Condition
+	switch objType {
+	case model.ApplicationReference:
+		objTypeCond = repo.NewNotNullCondition("app_id")
+	case model.RuntimeReference:
+		objTypeCond = repo.NewNotNullCondition("runtime_id")
+	case model.IntegrationSystemReference:
+		objTypeCond = repo.NewNotNullCondition("integration_system_id")
+	default:
+		return fmt.Errorf("unsupported object type (%s)", objType)
+	}
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
 }
 
 func referenceObjectField(objectType model.SystemAuthReferenceObjectType) (string, error) {

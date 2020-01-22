@@ -12,10 +12,12 @@ import (
 //go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
 type Repository interface {
 	Create(ctx context.Context, item model.SystemAuth) error
-	GetByID(ctx context.Context, tenant string, id string) (*model.SystemAuth, error)
+	GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.SystemAuth, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
-	DeleteByIDForObject(ctx context.Context, tenant string, id string, objType model.SystemAuthReferenceObjectType) error
+	ListForObjectGlobal(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
+	DeleteByIDForObject(ctx context.Context, tenant, id string, objType model.SystemAuthReferenceObjectType) error
+	DeleteByIDForObjectGlobal(ctx context.Context, id string, objType model.SystemAuthReferenceObjectType) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -114,7 +116,7 @@ func (s *service) ListForObject(ctx context.Context, objectType model.SystemAuth
 	var systemAuths []model.SystemAuth
 
 	if objectType == model.IntegrationSystemReference {
-		systemAuths, err = s.repo.ListForObject(ctx, "", objectType, objectID)
+		systemAuths, err = s.repo.ListForObjectGlobal(ctx, objectType, objectID)
 	} else {
 		systemAuths, err = s.repo.ListForObject(ctx, tnt, objectType, objectID)
 	}
@@ -132,8 +134,7 @@ func (s *service) DeleteByIDForObject(ctx context.Context, objectType model.Syst
 	}
 
 	if objectType == model.IntegrationSystemReference {
-		err = s.repo.DeleteByIDForObject(ctx, "", authID, objectType)
-
+		err = s.repo.DeleteByIDForObjectGlobal(ctx, authID, objectType)
 	} else {
 		err = s.repo.DeleteByIDForObject(ctx, tnt, authID, objectType)
 	}

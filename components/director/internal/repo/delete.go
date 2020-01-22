@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/lib/pq"
@@ -43,8 +41,7 @@ func (g *universalDeleter) DeleteOne(ctx context.Context, tenant string, conditi
 	if tenant == "" {
 		return errors.New("tenant cannot be empty")
 	}
-	conditions = append(Conditions{NewEqualCondition("tenant_id", tenant)}, conditions...)
-	logrus.Info(conditions)
+	conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeDelete(ctx, conditions, true)
 }
 
@@ -52,7 +49,7 @@ func (g *universalDeleter) DeleteMany(ctx context.Context, tenant string, condit
 	if tenant == "" {
 		return errors.New("tenant cannot be empty")
 	}
-	conditions = append(Conditions{NewEqualCondition("tenant_id", tenant)}, conditions...)
+	conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeDelete(ctx, conditions, false)
 }
 

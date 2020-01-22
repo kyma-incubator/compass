@@ -42,6 +42,20 @@ func (_m *Repository) DeleteByIDForObject(ctx context.Context, tenant string, id
 	return r0
 }
 
+// DeleteByIDForObjectGlobal provides a mock function with given fields: ctx, id, objType
+func (_m *Repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, objType model.SystemAuthReferenceObjectType) error {
+	ret := _m.Called(ctx, id, objType)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType) error); ok {
+		r0 = rf(ctx, id, objType)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetByID provides a mock function with given fields: ctx, tenant, id
 func (_m *Repository) GetByID(ctx context.Context, tenant string, id string) (*model.SystemAuth, error) {
 	ret := _m.Called(ctx, tenant, id)
@@ -104,6 +118,29 @@ func (_m *Repository) ListForObject(ctx context.Context, tenant string, objectTy
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.SystemAuthReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListForObjectGlobal provides a mock function with given fields: ctx, objectType, objectID
+func (_m *Repository) ListForObjectGlobal(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
+	ret := _m.Called(ctx, objectType, objectID)
+
+	var r0 []model.SystemAuth
+	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string) []model.SystemAuth); ok {
+		r0 = rf(ctx, objectType, objectID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.SystemAuth)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.SystemAuthReferenceObjectType, string) error); ok {
+		r1 = rf(ctx, objectType, objectID)
 	} else {
 		r1 = ret.Error(1)
 	}

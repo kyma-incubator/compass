@@ -35,7 +35,7 @@ func (g *universalExistQuerier) Exists(ctx context.Context, tenant string, condi
 	if tenant == "" {
 		return false, errors.New("tenant cannot be empty")
 	}
-	conditions = append(Conditions{NewEqualCondition("tenant_id", tenant)}, conditions...)
+	conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeExists(ctx, conditions)
 }
 
