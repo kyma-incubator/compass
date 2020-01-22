@@ -10,6 +10,14 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
+type gqlCreateApplicationResponse struct {
+	Result graphql.Application `json:"result"`
+}
+
+type gqlGetApplicationResponse struct {
+	Result *graphql.ApplicationExt `json:"result"`
+}
+
 type gqlRequestBuilder struct {
 	graphqlizer       gql.Graphqlizer
 	gqlFieldsProvider gql.GqlFieldsProvider

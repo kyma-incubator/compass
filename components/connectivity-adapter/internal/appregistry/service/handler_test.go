@@ -63,9 +63,9 @@ func TestHandler_Create(t *testing.T) {
 			GraphQLClientFn: func() *automock.GraphQLClient {
 				cli := &automock.GraphQLClient{}
 				cli.On("Run", context.Background(), expectedGQLReq, &successGraphQLResponse).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(2).(*gqlSuccessfulCreateResponse)
+					arg, ok := args.Get(2).(*gqlCreateApplicationResponse)
 					if !ok {
-						t.Logf("Invalid type %T, expected *gqlSuccessfulCreateResponse", args.Get(2))
+						t.Logf("Invalid type %T, expected *gqlCreateApplicationResponse", args.Get(2))
 						t.FailNow()
 					}
 					arg.Result.ID = id

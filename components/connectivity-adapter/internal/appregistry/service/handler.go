@@ -34,6 +34,7 @@ type Validator interface {
 type GraphQLRequestBuilder interface {
 	RegisterApplicationRequest(input graphql.ApplicationRegisterInput) (*gcli.Request, error)
 	UnregisterApplicationRequest(id string) *gcli.Request
+	GetApplicationRequest(id string) *gcli.Request
 }
 
 const serviceIDVarKey = "serviceId"
@@ -91,7 +92,7 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	var resp gqlSuccessfulCreateResponse
+	var resp gqlCreateApplicationResponse
 	gqlCli := h.cliProvider.GQLClient(request)
 	err = gqlCli.Run(context.Background(), gqlRequest, &resp)
 	if err != nil {
@@ -115,17 +116,48 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
-type gqlSuccessfulCreateResponse struct {
-	Result graphql.Application `json:"result"`
-}
 type SuccessfulCreateResponse struct {
 	ID string `json:"id"`
 }
 
 func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
-	h.logger.Println("Get")
-	// TODO: Implement it
-	writer.WriteHeader(http.StatusNotImplemented)
+	defer h.closeBody(request)
+	gqlCli := h.cliProvider.GQLClient(request)
+
+	id := h.getServiceID(request)
+	gqlRequest := h.gqlRequestBuilder.GetApplicationRequest(id)
+
+	var resp gqlGetApplicationResponse
+	err := gqlCli.Run(context.Background(), gqlRequest, &resp)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while creating service")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	if resp.Result == nil {
+		h.writeErrorNotFound(writer, id)
+		return
+	}
+
+	serviceModel, err := h.converter.GraphQLToDetailsModel(*resp.Result)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while converting model")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	err = json.NewEncoder(writer).Encode(&serviceModel)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while encoding response")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
@@ -145,16 +177,13 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 	defer h.closeBody(request)
 	gqlCli := h.cliProvider.GQLClient(request)
 
-	vars := mux.Vars(request)
-
-	id := vars[serviceIDVarKey]
+	id := h.getServiceID(request)
 	gqlRequest := h.gqlRequestBuilder.UnregisterApplicationRequest(id)
 
 	err := gqlCli.Run(context.Background(), gqlRequest, nil)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			message := fmt.Sprintf("entity with ID %s not found", id)
-			reqerror.WriteErrorMessage(writer, message, apperrors.CodeNotFound)
+			h.writeErrorNotFound(writer, id)
 			return
 		}
 
@@ -171,4 +200,15 @@ func (h *Handler) closeBody(rq *http.Request) {
 	if err != nil {
 		h.logger.Error(errors.Wrap(err, "while closing body"))
 	}
+}
+
+func (h *Handler) writeErrorNotFound(writer http.ResponseWriter, id string) {
+	message := fmt.Sprintf("entity with ID %s not found", id)
+	reqerror.WriteErrorMessage(writer, message, apperrors.CodeNotFound)
+}
+
+func (h *Handler) getServiceID(request *http.Request) string {
+	vars := mux.Vars(request)
+	id := vars[serviceIDVarKey]
+	return id
 }
