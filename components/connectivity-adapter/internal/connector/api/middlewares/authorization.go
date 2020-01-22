@@ -7,14 +7,14 @@ import (
 	"net/http"
 )
 
-func NewClientFromTokenMiddleware() clientFromTokenMiddleware {
-	return clientFromTokenMiddleware{}
+func NewClientFromTokenMiddleware() authorizationHeadersMiddleware {
+	return authorizationHeadersMiddleware{}
 }
 
-type clientFromTokenMiddleware struct {
+type authorizationHeadersMiddleware struct {
 }
 
-func (c clientFromTokenMiddleware) GetAuthoriationHeaders(handler http.Handler) http.Handler {
+func (c authorizationHeadersMiddleware) GetAuthorizationHeaders(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		headers, err := extractHeaders(r)
 		if err != nil {

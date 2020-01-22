@@ -10,27 +10,17 @@ import (
 	"net/http"
 )
 
-const (
-	HeaderContentType = "Content-Type"
-)
-
-const (
-	ContentTypeApplicationJson = "application/json;charset=UTF-8"
-)
-
-type csrInfoHandler struct {
-	getInfoURL string
-	gqlClient  graphql.Client
+type managementInfoHandler struct {
+	gqlClient graphql.Client
 }
 
-func NewSigningRequestInfoHandler(client graphql.Client) csrInfoHandler {
-	return csrInfoHandler{
-		gqlClient:  client,
-		getInfoURL: "",
+func NewManagementInfoHandler(client graphql.Client) managementInfoHandler {
+	return managementInfoHandler{
+		gqlClient: client,
 	}
 }
 
-func (c *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Request) {
+func (m *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *http.Request) {
 	log.Println("Starting GetSigningRequestInfo")
 
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
@@ -41,13 +31,13 @@ func (c *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// TODO: make sure only calls with token are accepted
+	// TODO: make sure only calls with certificate are accepted
 	baseURLs, err := middlewares.GetBaseURLsFromContext(r.Context(), middlewares.BaseURLsKey)
 	if err != nil {
 		reqerror.WriteErrorMessage(w, "Base URLS not provided.", apperrors.CodeInternal)
 	}
 
-	configuration, err := c.gqlClient.Configuration(authorizationHeaders)
+	configuration, err := m.gqlClient.Configuration(authorizationHeaders)
 	if err != nil {
 		log.Println("Error getting configuration " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -59,15 +49,14 @@ func (c *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Re
 	certInfo := graphql.ToCertInfo(configuration)
 	application := authorizationHeaders.GetClientID()
 
-	// TODO: handle case when configuration.Token is nil
-	csrInfoResponse := c.makeCSRInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)
+	csrInfoResponse := m.makeManagementInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)
 	respondWithBody(w, http.StatusOK, csrInfoResponse)
 }
 
-func (c *csrInfoHandler) makeCSRInfoResponse(application, newToken, connectivityAdapterBaseURL, eventServiceBaseURL string, certInfo model.CertInfo) model.CSRInfoResponse {
-	return model.CSRInfoResponse{
-		CsrURL:          model.MakeCSRURL(newToken, connectivityAdapterBaseURL),
-		API:             model.MakeApiURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
+func (m *managementInfoHandler) makeManagementInfoResponse(application, newToken, connectivityAdapterBaseURL, eventServiceBaseURL string, certInfo model.CertInfo) model.MgmtInfoReponse {
+	return model.MgmtInfoReponse{
+		ClientIdentity:  model.MakeClientIdentity(application, "", ""), // TODO: how to get tenant? Is it vital?
+		URLs:            model.MakeManagementURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
 		CertificateInfo: certInfo,
 	}
 }

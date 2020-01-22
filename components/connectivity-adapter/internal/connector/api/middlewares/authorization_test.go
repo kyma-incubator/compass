@@ -91,7 +91,7 @@ func TestMiddleware_ExtractHeaders(t *testing.T) {
 			}
 
 			middleware := NewClientFromTokenMiddleware()
-			handlerWithMiddleware := middleware.GetAuthoriationHeaders(handler)
+			handlerWithMiddleware := middleware.GetAuthorizationHeaders(handler)
 
 			// when
 			handlerWithMiddleware.ServeHTTP(r, req)

@@ -10,6 +10,8 @@ const (
 	ManagementInfoEndpoint            = "/v1/applications/management/info"
 	ApplicationRegistryEndpointFormat = "/%s/v1/metadata"
 	EventsEndpointFormat              = "/%s/v1/events"
+	RenewCertURLFormat                = "%s/certificates/renewals"
+	RevocationCertURLFormat           = "%s/certificates/revocations"
 )
 
 type CertRequest struct {
@@ -58,28 +60,70 @@ type CertInfo struct {
 	KeyAlgorithm string `json:"key-algorithm"`
 }
 
-func NewCSRInfoResponse(certInfo CertInfo, application, token, connectivityAdapterBaseURL, eventServiceBaseURL string) CSRInfoResponse {
-	return CSRInfoResponse{
-		CsrURL:          makeCSRURLs(token, connectivityAdapterBaseURL),
-		API:             makeApiURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
-		CertificateInfo: certInfo,
-	}
+type ClientIdentity struct {
+	Application string `json:"application"`
+	Group       string `json:"group,omitempty"`
+	Tenant      string `json:"tenant,omitempty"`
 }
 
-func makeCSRURLs(newToken, connectivityAdapterBaseURL string) string {
+//func NewCSRInfoResponse(certInfo CertInfo, application, token, connectivityAdapterBaseURL, eventServiceBaseURL string) CSRInfoResponse {
+//	return CSRInfoResponse{
+//		CsrURL:          makeCSRURLs(token, connectivityAdapterBaseURL),
+//		API:             makeApiURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
+//		CertificateInfo: certInfo,
+//	}
+//}
+
+func MakeCSRURL(newToken, connectivityAdapterBaseURL string) string {
 	csrURL := connectivityAdapterBaseURL + CertsEndpoint
 	tokenParam := fmt.Sprintf(TokenFormat, newToken)
 
 	return csrURL + tokenParam
 }
 
-func makeApiURLs(clientIdFromToken, connectivityAdapterBaseURL string, eventServiceBaseURL string) Api {
+func MakeApiURLs(application, connectivityAdapterBaseURL string, eventServiceBaseURL string) Api {
 	return Api{
 		CertificatesURL: connectivityAdapterBaseURL + CertsEndpoint,
 		InfoURL:         connectivityAdapterBaseURL + ManagementInfoEndpoint,
-		RuntimeURLs: &RuntimeURLs{
-			MetadataURL: connectivityAdapterBaseURL + fmt.Sprintf(ApplicationRegistryEndpointFormat, clientIdFromToken),
-			EventsURL:   eventServiceBaseURL + fmt.Sprintf(EventsEndpointFormat, clientIdFromToken),
-		},
+		RuntimeURLs:     makeRuntimeURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
 	}
 }
+
+func makeRuntimeURLs(application, connectivityAdapterBaseURL string, eventServiceBaseURL string) *RuntimeURLs {
+	return &RuntimeURLs{
+		MetadataURL: connectivityAdapterBaseURL + fmt.Sprintf(ApplicationRegistryEndpointFormat, application),
+		EventsURL:   eventServiceBaseURL + fmt.Sprintf(EventsEndpointFormat, application),
+	}
+}
+
+func MakeClientIdentity(application, tenant, group string) ClientIdentity {
+	return ClientIdentity{
+		Application: application,
+		Tenant:      tenant,
+		Group:       group,
+	}
+}
+
+func MakeManagementURLs(application, connectivityAdapterBaseURL string, eventServiceBaseURL string) MgmtURLs {
+	return MgmtURLs{
+		RuntimeURLs:   makeRuntimeURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
+		RenewCertURL:  fmt.Sprintf(RenewCertURLFormat, connectivityAdapterBaseURL),
+		RevokeCertURL: fmt.Sprintf(RevocationCertURLFormat, connectivityAdapterBaseURL),
+	}
+}
+
+//func NewManagementInfoResponse(application, connectivityAdapterBaseURL string, eventServiceBaseURL string) MgmtInfoReponse{
+//	return MgmtInfoReponse {
+//		ClientIdentity: ClientIdentity{
+//
+//		},
+//		URLs : MgmtURLs{
+//			RuntimeURLs: makeRuntimeURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
+//			RenewCertURL: fmt.Sprintf(RenewCertURLFormat, connectivityAdapterBaseURL),
+//			RevokeCertURL: fmt.Sprintf(RevocationCertURLFormat, connectivityAdapterBaseURL),
+//		},
+//		CertificateInfo: CertInfo{
+//
+//		},
+//	}
+//}
