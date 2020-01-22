@@ -61,7 +61,7 @@ func (s *service) CleanupAfterUnregisteringApplication(ctx context.Context, appI
 		return nil, errors.Wrapf(err, "while deleting labels [key=%s]", labelKey)
 	}
 
-	return model.NewEmptyApplicationEventingConfig(), nil
+	return model.NewEmptyApplicationEventingConfig()
 }
 
 func (s *service) SetForApplication(ctx context.Context, runtimeID uuid.UUID, app model.Application) (*model.ApplicationEventingConfiguration, error) {
@@ -118,7 +118,7 @@ func (s *service) UnsetForApplication(ctx context.Context, app model.Application
 	}
 
 	if !found {
-		return model.NewEmptyApplicationEventingConfig(), nil
+		return model.NewEmptyApplicationEventingConfig()
 	}
 
 	runtimeID, err := uuid.Parse(runtime.ID)
@@ -171,7 +171,7 @@ func (s *service) GetForApplication(ctx context.Context, app model.Application) 
 	}
 
 	if runtime == nil {
-		return model.NewEmptyApplicationEventingConfig(), nil
+		return model.NewEmptyApplicationEventingConfig()
 	}
 
 	runtimeID, err := uuid.Parse(runtime.ID)

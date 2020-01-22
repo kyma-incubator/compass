@@ -83,3 +83,11 @@ func TestNewApplicationEventingConfiguration(t *testing.T) {
 		assert.Equal(t, "", config.DefaultURL.String())
 	})
 }
+
+func TestNewEmptyApplicationEventingConfig(t *testing.T) {
+	//WHEN
+	config, err := model.NewEmptyApplicationEventingConfig()
+	//THEN
+	require.NoError(t, err)
+	assert.Equal(t, "", config.DefaultURL.String())
+}

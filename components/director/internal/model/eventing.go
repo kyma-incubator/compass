@@ -54,8 +54,17 @@ func NewApplicationEventingConfiguration(runtimeEventURL url.URL, appName string
 	}, nil
 }
 
-func NewEmptyApplicationEventingConfig() *ApplicationEventingConfiguration {
-	return &ApplicationEventingConfiguration{EventingConfiguration{DefaultURL: url.URL{}}}
+func NewEmptyApplicationEventingConfig() (*ApplicationEventingConfiguration, error) {
+	emptyURL, err := validateURL("")
+	if err != nil {
+		return nil, err
+	}
+
+	return &ApplicationEventingConfiguration{
+		EventingConfiguration: EventingConfiguration{
+			DefaultURL: emptyURL,
+		},
+	}, nil
 }
 
 func validateURL(rawURL string) (url.URL, error) {

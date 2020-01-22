@@ -23,6 +23,8 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 	testErr := errors.New("this is a test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
+	app := fixApplicationModel("test-app")
+
 	defaultEveningURL := "https://eventing.domain.local"
 	modelAppEventingCfg := fixModelApplicationEventingConfiguration(t, defaultEveningURL)
 	gqlAppEventingCfg := fixGQLApplicationEventingConfiguration(defaultEveningURL)
@@ -31,6 +33,7 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		EventingSvcFn   func() *automock.EventingService
+		AppSvcFn        func() *automock.ApplicationService
 		ExpectedOutput  *graphql.ApplicationEventingConfiguration
 		ExpectedError   error
 	}{
@@ -39,10 +42,14 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("SetForApplication", txtest.CtxWithDBMatcher(), runtimeID, applicationID).
+				eventingSvc.On("SetForApplication", txtest.CtxWithDBMatcher(), runtimeID, app).
 					Return(modelAppEventingCfg, nil).Once()
-
 				return eventingSvc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID.String()).Return(&app, nil)
+				return appSvc
 			},
 			ExpectedOutput: gqlAppEventingCfg,
 			ExpectedError:  nil,
@@ -51,10 +58,29 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("SetForApplication", txtest.CtxWithDBMatcher(), runtimeID, applicationID).
+				eventingSvc.On("SetForApplication", txtest.CtxWithDBMatcher(), runtimeID, app).
 					Return(nil, testErr).Once()
 
 				return eventingSvc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID.String()).Return(&app, nil)
+				return appSvc
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		}, {
+			Name:            "Error when setting the getting application",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			EventingSvcFn: func() *automock.EventingService {
+				eventingSvc := &automock.EventingService{}
+				return eventingSvc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID.String()).Return(nil, testErr)
+				return appSvc
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
@@ -65,6 +91,10 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 				eventingSvc := &automock.EventingService{}
 				return eventingSvc
 			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				return appSvc
+			},
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
 		}, {
@@ -72,10 +102,15 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("SetForApplication", txtest.CtxWithDBMatcher(), runtimeID, applicationID).
+				eventingSvc.On("SetForApplication", txtest.CtxWithDBMatcher(), runtimeID, app).
 					Return(modelAppEventingCfg, nil).Once()
 
 				return eventingSvc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID.String()).Return(&app, nil)
+				return appSvc
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
@@ -86,8 +121,8 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			eventingSvc := testCase.EventingSvcFn()
-			//resolver := NewResolver(transact, eventingSvc, nil)
-			resolver := Resolver{}
+			appSvc := testCase.AppSvcFn()
+			resolver := NewResolver(transact, eventingSvc, appSvc)
 
 			// WHEN
 			result, err := resolver.SetEventingForApplication(ctx, applicationID.String(), runtimeID.String())
@@ -101,14 +136,13 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 			}
 			require.Equal(t, testCase.ExpectedOutput, result)
 
-			mock.AssertExpectationsForObjects(t, eventingSvc, transact, persist)
+			mock.AssertExpectationsForObjects(t, eventingSvc, appSvc, transact, persist)
 		})
 	}
 
 	t.Run("Error when runtime ID is not a valid UUID", func(t *testing.T) {
 		// GIVEN
-		//resolver := NewResolver(nil, nil)
-		resolver := Resolver{}
+		resolver := NewResolver(nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.SetEventingForApplication(ctx, applicationID.String(), "abc")
@@ -121,8 +155,7 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 
 	t.Run("Error when application ID is not a valid UUID", func(t *testing.T) {
 		// GIVEN
-		//resolver := NewResolver(nil, nil)
-		resolver := Resolver{}
+		resolver := NewResolver(nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.SetEventingForApplication(ctx, "abc", runtimeID.String())
@@ -139,10 +172,12 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID.String())
 
+	app := fixApplicationModel("test-app")
+
 	testErr := errors.New("this is a test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	defaultEveningURL := "https://eventing.domain.local"
+	defaultEveningURL := "https://eventing.domain.local/test-app/events/v1"
 	modelAppEventingCfg := fixModelApplicationEventingConfiguration(t, defaultEveningURL)
 	gqlAppEventingCfg := fixGQLApplicationEventingConfiguration(defaultEveningURL)
 
@@ -150,6 +185,7 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		EventingSvcFn   func() *automock.EventingService
+		AppSvcFn        func() *automock.ApplicationService
 		ExpectedOutput  *graphql.ApplicationEventingConfiguration
 		ExpectedError   error
 	}{
@@ -158,10 +194,15 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("UnsetForApplication", txtest.CtxWithDBMatcher(), applicationID).
+				eventingSvc.On("UnsetForApplication", txtest.CtxWithDBMatcher(), app).
 					Return(modelAppEventingCfg, nil).Once()
 
 				return eventingSvc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID.String()).Return(&app, nil)
+				return appSvc
 			},
 			ExpectedOutput: gqlAppEventingCfg,
 			ExpectedError:  nil,
@@ -170,10 +211,29 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("UnsetForApplication", txtest.CtxWithDBMatcher(), applicationID).
+				eventingSvc.On("UnsetForApplication", txtest.CtxWithDBMatcher(), app).
 					Return(nil, testErr).Once()
 
 				return eventingSvc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID.String()).Return(&app, nil)
+				return appSvc
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		}, {
+			Name:            "Error when getting application",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			EventingSvcFn: func() *automock.EventingService {
+				eventingSvc := &automock.EventingService{}
+				return eventingSvc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID.String()).Return(nil, testErr)
+				return appSvc
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
@@ -184,6 +244,10 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 				eventingSvc := &automock.EventingService{}
 				return eventingSvc
 			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				return appSvc
+			},
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
 		}, {
@@ -191,10 +255,14 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("UnsetForApplication", txtest.CtxWithDBMatcher(), applicationID).
+				eventingSvc.On("UnsetForApplication", txtest.CtxWithDBMatcher(), app).
 					Return(modelAppEventingCfg, nil).Once()
-
 				return eventingSvc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID.String()).Return(&app, nil).Once()
+				return appSvc
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
@@ -205,8 +273,8 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			eventingSvc := testCase.EventingSvcFn()
-			//resolver := NewResolver(transact, eventingSvc)
-			resolver := Resolver{}
+			appSvc := testCase.AppSvcFn()
+			resolver := NewResolver(transact, eventingSvc, appSvc)
 
 			// WHEN
 			result, err := resolver.UnsetEventingForApplication(ctx, applicationID.String())
@@ -220,14 +288,13 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 			}
 			require.Equal(t, testCase.ExpectedOutput, result)
 
-			mock.AssertExpectationsForObjects(t, eventingSvc, transact, persist)
+			mock.AssertExpectationsForObjects(t, eventingSvc, appSvc, transact, persist)
 		})
 	}
 
 	t.Run("Error when application ID is not a valid UUID", func(t *testing.T) {
 		// GIVEN
-		//resolver := NewResolver(nil, nil)
-		resolver := Resolver{}
+		resolver := NewResolver(nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.UnsetEventingForApplication(ctx, "abc")

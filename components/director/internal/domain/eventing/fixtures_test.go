@@ -156,3 +156,11 @@ func fixValidURL(t *testing.T, rawURL string) url.URL {
 	require.NotNil(t, eventingURL)
 	return *eventingURL
 }
+
+func fixApplicationModel(name string) model.Application {
+	return model.Application{
+		ID:                  applicationID.String(),
+		Tenant:              tenantID.String(),
+		Name:                name,
+	}
+}
