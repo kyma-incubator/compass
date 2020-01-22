@@ -45,6 +45,8 @@ func (c *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Re
 	baseURLs, err := middlewares.GetBaseURLsFromContext(r.Context(), middlewares.BaseURLsKey)
 	if err != nil {
 		reqerror.WriteErrorMessage(w, "Base URLS not provided.", apperrors.CodeInternal)
+
+		return
 	}
 
 	configuration, err := c.gqlClient.Configuration(authorizationHeaders)

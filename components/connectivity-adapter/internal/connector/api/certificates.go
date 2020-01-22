@@ -2,8 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
-	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"log"
@@ -32,14 +34,15 @@ func (ih *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clientIdFromToken := r.Header.Get(oathkeeper.ClientIdFromTokenHeader)
-	if clientIdFromToken == "" {
+	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
+	if err != nil {
 		log.Println("Client Id not provided.")
-		w.WriteHeader(http.StatusInternalServerError)
+		reqerror.WriteErrorMessage(w, "Client Id not provided.", apperrors.CodeForbidden)
+
 		return
 	}
 
-	certificationResult, err := ih.client.SignCSR(certRequest.CSR, map[string]string{})
+	certificationResult, err := ih.client.SignCSR(certRequest.CSR, authorizationHeaders)
 
 	if err != nil {
 		log.Println("Error getting cert from Connector: " + err.Error())

@@ -13,6 +13,8 @@ import (
 type Config struct {
 	CompassConnectorURL string `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
 	AdapterBaseURL      string `envconfig:"default=https://adapter-gateway.kyma.local"`
+	AdapterBaseURLMTLS  string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
+	EventBaseURL        string `envconfig:"default=https://gateway.kyma.local"`
 }
 
 const (
@@ -28,14 +30,35 @@ func RegisterHandler(router *mux.Router, config Config) error {
 	authorizationMiddleware := middlewares.NewClientFromTokenMiddleware().GetAuthorizationHeaders
 	router.Use(mux.MiddlewareFunc(authorizationMiddleware))
 
-	signingRequestInfoHandler := api.NewSigningRequestInfoHandler(client)
-	router.HandleFunc("/signingRequests/info", signingRequestInfoHandler.GetSigningRequestInfo).Methods(http.MethodGet)
+	eventBaseURLProvider := eventBaseURLProvider{
+		adapterBaseUrl: config.EventBaseURL,
+	}
+
+	{
+		baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterBaseURL, eventBaseURLProvider)
+		signingRequestInfo := api.NewSigningRequestInfoHandler(client)
+		signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetSigningRequestInfo)
+		router.Handle("/signingRequests/info", baseURLsMiddleware.GetBaseUrls(signingRequestInfoHandler)).Methods(http.MethodGet)
+	}
+
+	{
+		baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterBaseURLMTLS, eventBaseURLProvider)
+		managementInfo := api.NewManagementInfoHandler(client)
+		managementInfoHandler := http.HandlerFunc(managementInfo.GetManagementInfo)
+		router.Handle("/management/info", baseURLsMiddleware.GetBaseUrls(managementInfoHandler))
+	}
 
 	certificatesHandler := api.NewCertificatesHandler(client)
 	router.HandleFunc("/certificates", certificatesHandler.SignCSR)
 
-	managementInfoHandle := api.NewManagementInfoHandler(client)
-	router.HandleFunc("/management/info", managementInfoHandle.GetManagementInfo)
-
 	return nil
+}
+
+type eventBaseURLProvider struct {
+	adapterBaseUrl string
+}
+
+func (e eventBaseURLProvider) EventServiceBaseURL() (string, error) {
+	// TODO: call Director for getting events base url
+	return e.adapterBaseUrl, nil
 }
