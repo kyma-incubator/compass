@@ -58,7 +58,7 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 	}
 
 	certResponse := graphql.ToCertResponse(certificationResult)
-	respondWithBody(w, http.StatusOK, certResponse)
+	respondWithBody(w, http.StatusCreated, certResponse)
 }
 
 func readCertRequest(r *http.Request) (*certRequest, error) {
@@ -68,13 +68,13 @@ func readCertRequest(r *http.Request) (*certRequest, error) {
 	}
 	defer r.Body.Close()
 
-	var tokenRequest certRequest
-	err = json.Unmarshal(b, &tokenRequest)
+	var certRequest certRequest
+	err = json.Unmarshal(b, &certRequest)
 	if err != nil {
 		return nil, errors.Wrap(err, "error while unmarshalling request body: %s")
 	}
 
-	return &tokenRequest, nil
+	return &certRequest, nil
 }
 
 func respondWithBody(w http.ResponseWriter, statusCode int, responseBody interface{}) {

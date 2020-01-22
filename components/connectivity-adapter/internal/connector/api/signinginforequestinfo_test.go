@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -54,7 +55,7 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
 		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New())
 
-		req := newRequestWithContext(headersFromToken, &baseURLs)
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken, &baseURLs)
 
 		r := httptest.NewRecorder()
 
@@ -99,7 +100,7 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		connectorClientMock := &mocks.Client{}
 		connectorClientMock.On("Configuration", headersFromToken).Return(schema.Configuration{}, errors.New("failed to execute graphql query"))
 
-		req := newRequestWithContext(headersFromToken, &baseURLs)
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken, &baseURLs)
 
 		r := httptest.NewRecorder()
 
@@ -123,8 +124,8 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 	})
 }
 
-func newRequestWithContext(headers map[string]string, baseURLs *middlewares.BaseURLs) *http.Request {
-	req := httptest.NewRequest(http.MethodPost, "http://www.someurl.com/get", strings.NewReader(""))
+func newRequestWithContext(body io.Reader, headers map[string]string, baseURLs *middlewares.BaseURLs) *http.Request {
+	req := httptest.NewRequest(http.MethodPost, "http://www.someurl.com/get", body)
 
 	newContext := req.Context()
 
