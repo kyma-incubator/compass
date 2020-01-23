@@ -209,13 +209,16 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		sysAuth := &model.SystemAuth{
-			ID:    authID.String(),
-			AppID: str.Ptr(refObjID.String()),
+			ID:       authID.String(),
+			AppID:    str.Ptr(refObjID.String()),
+			TenantID: str.Ptr("123"),
 		}
+
 		reqData := tenantmapping.ReqData{
 			Body: tenantmapping.ReqBody{
 				Extra: map[string]interface{}{
 					tenantmapping.TenantKey: []byte{1, 2, 3},
+					tenantmapping.ScopesKey: "application:read",
 				},
 			},
 		}
@@ -246,6 +249,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 			Body: tenantmapping.ReqBody{
 				Extra: map[string]interface{}{
 					tenantmapping.TenantKey: tenant2ID.String(),
+					tenantmapping.ScopesKey: "application:read",
 				},
 			},
 		}
@@ -258,6 +262,35 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
 		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: tenant missmatch")
+
+		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
+	})
+
+	t.Run("returns error when system auth tenant id is nil", func(t *testing.T) {
+		authID := uuid.New()
+		refObjID := uuid.New()
+		tenant2ID := uuid.New()
+		sysAuth := &model.SystemAuth{
+			ID:    authID.String(),
+			AppID: str.Ptr(refObjID.String()),
+		}
+		reqData := tenantmapping.ReqData{
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.TenantKey: tenant2ID.String(),
+					tenantmapping.ScopesKey: "application:read",
+				},
+			},
+		}
+
+		systemAuthSvcMock := getSystemAuthSvcMock()
+		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
+
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
+
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: system auth tenant id cannot be nil")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
