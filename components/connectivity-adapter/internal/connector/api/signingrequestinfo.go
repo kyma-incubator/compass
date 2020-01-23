@@ -37,7 +37,6 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
-		log.Println("Client Id not provided.")
 		reqerror.WriteErrorMessage(w, "Client Id not provided.", apperrors.CodeForbidden)
 
 		return

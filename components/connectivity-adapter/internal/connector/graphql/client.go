@@ -17,14 +17,6 @@ type client struct {
 }
 
 func NewClient(graphqlEndpoint string, insecureConfigFetch bool, timeout time.Duration) (Client, error) {
-	//httpClient := &http.Client{
-	//	Transport: &http.Transport{
-	//		TLSClientConfig: &tls.Config{
-	//			InsecureSkipVerify: insecureConfigFetch,
-	//		},
-	//	},
-	//}
-
 	gqlClient := graphql.NewClient(graphqlEndpoint, graphql.WithHTTPClient(&http.Client{}))
 
 	client := &client{

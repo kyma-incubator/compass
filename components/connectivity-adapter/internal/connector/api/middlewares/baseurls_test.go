@@ -28,6 +28,7 @@ func TestHandler_BaseUrls(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, value.ConnectivityAdapterBaseURL, connectivityAdapterBaseUrl)
+			assert.Equal(t, value.ConnectivityAdapterMTLSBaseURL, connectivityAdapterMTLSBaseUrl)
 			assert.Equal(t, value.EventServiceBaseURL, eventServiceBaseURL)
 		})
 

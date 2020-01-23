@@ -14,7 +14,7 @@ const (
 	CodeAlreadyExists            = 3
 	CodeWrongInput               = 4
 	CodeUpstreamServerCallFailed = 5
-	CodeForbidden				 = 6
+	CodeForbidden                = 6
 )
 
 type AppError interface {
