@@ -958,7 +958,6 @@ func TestQueryApplications(t *testing.T) {
 	assert.Equal(t, 3, actualAppPage.TotalCount)
 }
 
-
 func TestQueryApplicationsPageable(t *testing.T) {
 	// GIVEN
 	appAmount := 7
@@ -1004,7 +1003,6 @@ func TestQueryApplicationsPageable(t *testing.T) {
 	delete(apps, appsPage.Data[0].ID)
 	assert.Len(t, apps, 0)
 }
-
 
 func TestQuerySpecificApplication(t *testing.T) {
 	// GIVEN

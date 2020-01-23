@@ -599,6 +599,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 		assert.Equal(t, cursor, string(runtimePage.PageInfo.StartCursor))
 		assert.True(t, runtimePage.PageInfo.HasNextPage)
 		assert.Len(t, runtimePage.Data, after)
+		assert.Equal(t, runtimesAmount, runtimePage.TotalCount)
 		for _, runtime := range runtimePage.Data {
 			assert.Equal(t, runtime, runtimes[runtime.ID])
 			delete(runtimes, runtime.ID)
