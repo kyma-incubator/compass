@@ -4,7 +4,9 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	realeaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -419,6 +421,43 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		assert.Contains(t, err.Error(), "provider config not specified")
 	})
 
+}
+
+func TestConverter_CreateGardenerClusterName(t *testing.T) {
+
+	providerInputs := []struct {
+		provider     string
+		expectedName string
+		description  string
+	}{
+		{
+			provider:     "gcp",
+			expectedName: "gcp-id",
+			description:  "",
+		},
+		{
+			provider:     "aws",
+			expectedName: "aws-id",
+			description:  "",
+		},
+		{
+			provider:     "azure",
+			expectedName: "azu-id",
+			description:  "",
+		},
+	}
+
+	for _, testCase := range providerInputs {
+		t.Run(testCase.description, func(t *testing.T) {
+			uuidGeneratorMock := &mocks.UUIDGenerator{}
+			uuidGeneratorMock.On("New").Return("id")
+
+			inputConverter := NewInputConverterTester(uuidGeneratorMock, nil)
+			generatedName := inputConverter.createGardenerClusterName(testCase.provider)
+
+			assert.Equal(t, testCase.expectedName, generatedName)
+		})
+	}
 }
 
 func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
