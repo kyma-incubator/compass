@@ -321,14 +321,14 @@ func TestRepository_ListForObject(t *testing.T) {
 			WillReturnRows(fixSQLRows([]sqlRow{
 				{
 					id:       modelSysAuths[0].ID,
-					tenant:   testTenant,
+					tenant:   &testTenant,
 					appID:    modelSysAuths[0].AppID,
 					rtmID:    modelSysAuths[0].RuntimeID,
 					intSysID: modelSysAuths[0].IntegrationSystemID,
 				},
 				{
 					id:       modelSysAuths[1].ID,
-					tenant:   testTenant,
+					tenant:   &testTenant,
 					appID:    modelSysAuths[1].AppID,
 					rtmID:    modelSysAuths[1].RuntimeID,
 					intSysID: modelSysAuths[1].IntegrationSystemID,
@@ -369,14 +369,14 @@ func TestRepository_ListForObject(t *testing.T) {
 			WillReturnRows(fixSQLRows([]sqlRow{
 				{
 					id:       modelSysAuths[0].ID,
-					tenant:   testTenant,
+					tenant:   &testTenant,
 					appID:    modelSysAuths[0].AppID,
 					rtmID:    modelSysAuths[0].RuntimeID,
 					intSysID: modelSysAuths[0].IntegrationSystemID,
 				},
 				{
 					id:       modelSysAuths[1].ID,
-					tenant:   testTenant,
+					tenant:   &testTenant,
 					appID:    modelSysAuths[1].AppID,
 					rtmID:    modelSysAuths[1].RuntimeID,
 					intSysID: modelSysAuths[1].IntegrationSystemID,
@@ -411,20 +411,20 @@ func TestRepository_ListForObject(t *testing.T) {
 			fixEntity("bar", model.IntegrationSystemReference, objID, true),
 		}
 
-		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id=$1 AND integration_system_id = 'bar'`
+		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE integration_system_id = 'bar'`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(model.IntegrationSystemTenant).
+			WithArgs().
 			WillReturnRows(fixSQLRows([]sqlRow{
 				{
 					id:       modelSysAuths[0].ID,
-					tenant:   model.IntegrationSystemTenant,
+					tenant:   nil,
 					appID:    modelSysAuths[0].AppID,
 					rtmID:    modelSysAuths[0].RuntimeID,
 					intSysID: modelSysAuths[0].IntegrationSystemID,
 				},
 				{
 					id:       modelSysAuths[1].ID,
-					tenant:   model.IntegrationSystemTenant,
+					tenant:   nil,
 					appID:    modelSysAuths[1].AppID,
 					rtmID:    modelSysAuths[1].RuntimeID,
 					intSysID: modelSysAuths[1].IntegrationSystemID,
@@ -437,7 +437,7 @@ func TestRepository_ListForObject(t *testing.T) {
 		pgRepository := systemauth.NewRepository(&convMock)
 
 		//WHEN
-		result, err := pgRepository.ListForObject(ctx, model.IntegrationSystemTenant, model.IntegrationSystemReference, objID)
+		result, err := pgRepository.ListForObjectGlobal(ctx, model.IntegrationSystemReference, objID)
 
 		//THEN
 		require.NoError(t, err)
@@ -463,15 +463,15 @@ func TestRepository_ListForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id=$1 AND integration_system_id = 'bar'`
+		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE integration_system_id = 'bar'`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(model.IntegrationSystemTenant).
+			WithArgs().
 			WillReturnError(testErr)
 
 		pgRepository := systemauth.NewRepository(nil)
 
 		//WHEN
-		result, err := pgRepository.ListForObject(ctx, model.IntegrationSystemTenant, model.IntegrationSystemReference, objID)
+		result, err := pgRepository.ListForObjectGlobal(ctx, model.IntegrationSystemReference, objID)
 
 		//THEN
 		require.Error(t, err)
@@ -493,20 +493,20 @@ func TestRepository_ListForObject(t *testing.T) {
 			fixEntity("bar", model.IntegrationSystemReference, objID, true),
 		}
 
-		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id=$1 AND integration_system_id = 'bar'`
+		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE integration_system_id = 'bar'`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(model.IntegrationSystemTenant).
+			WithArgs().
 			WillReturnRows(fixSQLRows([]sqlRow{
 				{
 					id:       modelSysAuths[0].ID,
-					tenant:   model.IntegrationSystemTenant,
+					tenant:   nil,
 					appID:    modelSysAuths[0].AppID,
 					rtmID:    modelSysAuths[0].RuntimeID,
 					intSysID: modelSysAuths[0].IntegrationSystemID,
 				},
 				{
 					id:       modelSysAuths[1].ID,
-					tenant:   model.IntegrationSystemTenant,
+					tenant:   nil,
 					appID:    modelSysAuths[1].AppID,
 					rtmID:    modelSysAuths[1].RuntimeID,
 					intSysID: modelSysAuths[1].IntegrationSystemID,
@@ -518,7 +518,7 @@ func TestRepository_ListForObject(t *testing.T) {
 		pgRepository := systemauth.NewRepository(&convMock)
 
 		//WHEN
-		result, err := pgRepository.ListForObject(ctx, model.IntegrationSystemTenant, model.IntegrationSystemReference, objID)
+		result, err := pgRepository.ListForObjectGlobal(ctx, model.IntegrationSystemReference, objID)
 
 		//THEN
 		require.Error(t, err)
@@ -569,14 +569,14 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND integration_system_id = $2`
+		query := `DELETE FROM public.system_auths WHERE integration_system_id = $1`
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
-			WithArgs(model.IntegrationSystemTenant, sysAuthID).
+			WithArgs(sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.DeleteAllForObject(ctx, model.IntegrationSystemTenant, model.IntegrationSystemReference, sysAuthID)
+		err := repo.DeleteAllForObject(ctx, "", model.IntegrationSystemReference, sysAuthID)
 		// THEN
 		require.NoError(t, err)
 	})
@@ -651,14 +651,14 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND integration_system_id IS NOT NULL`
+		query := `DELETE FROM public.system_auths WHERE id = $1 AND integration_system_id IS NOT NULL`
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, sysAuthID).
+			WithArgs(sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, model.IntegrationSystemReference)
+		err := repo.DeleteByIDForObjectGlobal(ctx, sysAuthID, model.IntegrationSystemReference)
 		// THEN
 		require.NoError(t, err)
 	})

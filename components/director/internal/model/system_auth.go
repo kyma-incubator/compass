@@ -4,7 +4,7 @@ import "github.com/pkg/errors"
 
 type SystemAuth struct {
 	ID                  string
-	TenantID            string
+	TenantID            *string
 	AppID               *string
 	RuntimeID           *string
 	IntegrationSystemID *string
@@ -42,8 +42,6 @@ func (sa SystemAuth) GetReferenceObjectID() (string, error) {
 
 	return "", errors.New("unknown reference object ID")
 }
-
-const IntegrationSystemTenant = "00000000-00000000-00000000-00000000"
 
 type SystemAuthReferenceObjectType string
 

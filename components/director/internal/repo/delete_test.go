@@ -19,7 +19,7 @@ type methodToTestWithoutTenant = func(ctx context.Context, conditions repo.Condi
 func TestDelete(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	sut := repo.NewDeleter("users", "tenant_col")
+	sut := repo.NewDeleter("users", "tenant_id")
 
 	tc := map[string]methodToTest{
 		"DeleteMany": sut.DeleteMany,
@@ -40,7 +40,7 @@ func TestDelete(t *testing.T) {
 
 		t.Run(fmt.Sprintf("[%s] success when no conditions", tn), func(t *testing.T) {
 			// GIVEN
-			expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE tenant_col = $1")
+			expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE tenant_id = $1")
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
@@ -53,7 +53,7 @@ func TestDelete(t *testing.T) {
 
 		t.Run(fmt.Sprintf("[%s] success when more conditions", tn), func(t *testing.T) {
 			// GIVEN
-			expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE tenant_col = $1 AND first_name = $2 AND last_name = $3")
+			expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE tenant_id = $1 AND first_name = $2 AND last_name = $3")
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
@@ -156,7 +156,7 @@ func TestDeleteGlobal(t *testing.T) {
 func TestDeleteReactsOnNumberOfRemovedObjects(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	sut := repo.NewDeleter("users", "tenant_col")
+	sut := repo.NewDeleter("users", "tenant_id")
 
 	cases := map[string]struct {
 		methodToTest      methodToTest
@@ -252,7 +252,7 @@ func TestDeleteGlobalReactsOnNumberOfRemovedObjects(t *testing.T) {
 }
 
 func defaultExpectedDeleteQuery() string {
-	return regexp.QuoteMeta("DELETE FROM users WHERE tenant_col = $1 AND id_col = $2")
+	return regexp.QuoteMeta("DELETE FROM users WHERE tenant_id = $1 AND id_col = $2")
 }
 
 func uuidA() string {

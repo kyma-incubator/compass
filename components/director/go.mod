@@ -40,6 +40,7 @@ require (
 	github.com/stretchr/objx v0.1.1
 	github.com/stretchr/testify v1.4.0
 	github.com/vektah/gqlparser v1.2.0
+	github.com/vektra/mockery v0.0.0-20181123154057-e78b021dcbb5 // indirect
 	github.com/vrischmann/envconfig v1.2.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415

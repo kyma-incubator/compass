@@ -18,14 +18,14 @@ import (
 func TestGetSingle(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	sut := repo.NewSingleGetter("users", "tenant_col", []string{"id_col", "tenant_col", "first_name", "last_name", "age"})
+	sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col", "tenant_id", "first_name", "last_name", "age"})
 
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
-		rows := sqlmock.NewRows([]string{"id_col", "tenant_col", "first_name", "last_name", "age"}).AddRow(givenID, givenTenant, "givenFirstName", "givenLastName", 18)
+		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"}).AddRow(givenID, givenTenant, "givenFirstName", "givenLastName", 18)
 		mock.ExpectQuery(defaultExpectedGetSingleQuery()).WithArgs(givenTenant, givenID).WillReturnRows(rows)
 		dest := User{}
 		// WHEN
@@ -41,11 +41,11 @@ func TestGetSingle(t *testing.T) {
 
 	t.Run("success when no conditions", func(t *testing.T) {
 		// GIVEN
-		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_col, first_name, last_name, age FROM users WHERE tenant_col = $1")
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
-		rows := sqlmock.NewRows([]string{"id_col", "tenant_col", "first_name", "last_name", "age"}).AddRow(givenID, givenTenant, "givenFirstName", "givenLastName", 18)
+		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"}).AddRow(givenID, givenTenant, "givenFirstName", "givenLastName", 18)
 		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant).WillReturnRows(rows)
 		dest := User{}
 		// WHEN
@@ -62,8 +62,8 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success when more conditions", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_col = $1 AND first_name = $2 AND last_name = $3")
-		sut := repo.NewSingleGetter("users", "tenant_col", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 AND first_name = $2 AND last_name = $3")
+		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -79,8 +79,8 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success when IN condition", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_col = $1 AND first_name IN ('a', 'b')")
-		sut := repo.NewSingleGetter("users", "tenant_col", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 AND first_name IN ('a', 'b')")
+		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -96,8 +96,8 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success with order by params", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_col = $1 ORDER BY first_name ASC")
-		sut := repo.NewSingleGetter("users", "tenant_col", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 ORDER BY first_name ASC")
+		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -113,8 +113,8 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success with multiple order by params", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_col = $1 ORDER BY first_name ASC, last_name DESC")
-		sut := repo.NewSingleGetter("users", "tenant_col", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 ORDER BY first_name ASC, last_name DESC")
+		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -130,8 +130,8 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success with conditions and order by params", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_col = $1 AND first_name = $2 AND last_name = $3 ORDER BY first_name ASC")
-		sut := repo.NewSingleGetter("users", "tenant_col", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 AND first_name = $2 AND last_name = $3 ORDER BY first_name ASC")
+		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -166,7 +166,7 @@ func TestGetSingle(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
-		noRows := sqlmock.NewRows([]string{"id_col", "tenant_col", "first_name", "last_name", "age"})
+		noRows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"})
 		mock.ExpectQuery(defaultExpectedGetSingleQuery()).WillReturnRows(noRows)
 		dest := User{}
 		// WHEN
@@ -340,6 +340,6 @@ func TestGetSingleGlobal(t *testing.T) {
 }
 
 func defaultExpectedGetSingleQuery() string {
-	givenQuery := "SELECT id_col, tenant_col, first_name, last_name, age FROM users WHERE tenant_col = $1 AND id_col = $2"
+	givenQuery := "SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND id_col = $2"
 	return regexp.QuoteMeta(givenQuery)
 }
