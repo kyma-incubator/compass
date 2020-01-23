@@ -216,8 +216,8 @@ func (r *queryResolver) IntegrationSystem(ctx context.Context, id string) (*grap
 	return r.intSys.IntegrationSystem(ctx, id)
 }
 
-func (r *queryResolver) BusinessTenants(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.BusinessTenantPage, error) {
-	return r.tenant.BusinessTenants(ctx, first, after)
+func (r *queryResolver) BusinessTenants(ctx context.Context) ([]*graphql.BusinessTenant, error) {
+	return r.tenant.BusinessTenants(ctx)
 }
 
 type mutationResolver struct {

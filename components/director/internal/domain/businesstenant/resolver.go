@@ -11,7 +11,7 @@ import (
 type Resolver struct {
 }
 
-func (r *Resolver) BusinessTenants(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.BusinessTenantPage, error) {
+func (r *Resolver) BusinessTenants(ctx context.Context) ([]*graphql.BusinessTenant, error) {
 
 	return fixTenantPage(), nil
 
@@ -21,8 +21,8 @@ func NewResolver() *Resolver {
 	return &Resolver{}
 }
 
-func fixTenantPage() *graphql.BusinessTenantPage {
-	tenants := []*graphql.BusinessTenant{
+func fixTenantPage() []*graphql.BusinessTenant {
+	return []*graphql.BusinessTenant{
 		{
 			Tenant: "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae",
 			Name:   str.Ptr("default"),
@@ -39,13 +39,5 @@ func fixTenantPage() *graphql.BusinessTenantPage {
 			Tenant: "1143ea4c-76da-472b-9e01-930f90639cdc",
 			Name:   str.Ptr("generated"),
 		}}
-	return &graphql.BusinessTenantPage{
-		Data: tenants,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: "start",
-			EndCursor:   "end",
-			HasNextPage: false,
-		},
-		TotalCount: len(tenants),
-	}
+
 }

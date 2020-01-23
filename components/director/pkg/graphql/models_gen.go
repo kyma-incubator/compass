@@ -153,14 +153,6 @@ type BusinessTenant struct {
 	Name   *string `json:"name"`
 }
 
-type BusinessTenantPage struct {
-	Data       []*BusinessTenant `json:"data"`
-	PageInfo   *PageInfo         `json:"pageInfo"`
-	TotalCount int               `json:"totalCount"`
-}
-
-func (BusinessTenantPage) IsPageable() {}
-
 type CSRFTokenCredentialRequestAuth struct {
 	TokenEndpointURL      string         `json:"tokenEndpointURL"`
 	Credential            CredentialData `json:"credential"`
