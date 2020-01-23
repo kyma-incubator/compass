@@ -63,11 +63,8 @@ global:
     port: 3000
 
   tenantConfig:
+    externalTenants: false
     tenantProvider: "compass"
-    tenantKeyMapping:
-      name: "name"
-      ID: "globalAccountGUID"
-    tenantJSON: |-
 
   connector:
     graphql:

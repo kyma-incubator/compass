@@ -1,3 +1,4 @@
+{{- if eq .Values.global.tenantConfig.externalTenants false }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -8,8 +9,5 @@ metadata:
     release: {{ .Release.Name }}
 data:
   tenants.json: |-
-   {{- if .Values.global.tenantConfig.tenantJSON }}
-{{ .Values.global.tenantConfig.tenantJSON | indent 4 }}
-    {{- else}}
 {{ .Values.global.tenants | toJson | indent 4 }}
-  {{end}}
+{{end}}

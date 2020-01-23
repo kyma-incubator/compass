@@ -3,75 +3,58 @@ package externaltenant_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/kyma-incubator/compass/components/director/internal/externaltenant"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMapTenants(t *testing.T) {
-	const (
-		testProvider        = "testProvider"
-		mappingOverrideName = "custom-name"
-		mappingOverrideID   = "custom-id"
-	)
-	type args struct {
-		srcPath          string
-		provider         string
-		mappingOverrides externaltenant.MappingOverrides
-	}
-	testCases := []struct {
-		name    string
-		args    args
-		want    []externaltenant.TenantMappingInput
-		wantErr bool
-	}{
-		{
-			name: "should pass",
-			args: args{
-				srcPath:  "./testdata/valid_tenants.json",
-				provider: testProvider,
-				mappingOverrides: externaltenant.MappingOverrides{
-					Name: mappingOverrideName,
-					ID:   mappingOverrideID,
-				},
-			},
-			want: []externaltenant.TenantMappingInput{
-				{Name: "default", ExternalTenantID: "id-default", Provider: testProvider},
-				{Name: "foo", ExternalTenantID: "id-foo", Provider: testProvider},
-				{Name: "bar", ExternalTenantID: "id-bar", Provider: testProvider},
-			},
-			wantErr: false,
-		},
-		{
-			name: "should fail during reading file",
-			args: args{
-				srcPath:          "invalid",
-				provider:         "",
-				mappingOverrides: externaltenant.MappingOverrides{},
-			},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name: "should fail during unmarshalling json",
-			args: args{
-				srcPath:          "./testdata/invalid.json",
-				provider:         "",
-				mappingOverrides: externaltenant.MappingOverrides{},
-			},
-			want:    nil,
-			wantErr: true,
-		},
-	}
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			got, err := externaltenant.MapTenants(testCase.args.srcPath, testCase.args.provider, testCase.args.mappingOverrides)
-			if (err != nil) != testCase.wantErr {
-				t.Errorf("MapTenants() error = %v, wantErr %v", err, testCase.wantErr)
-				return
-			}
+	//given
+	validSrcPath := "./testdata/valid_tenants.json"
+	pathToInvalidJSON := "./testdata/invalid.json"
+	invalidPath := "foo"
 
-			assert.Equal(t, testCase.want, got)
-		})
+	provider := "testProvider"
+	expectedTenants := []externaltenant.TenantMappingInput{
+		{
+			Name:             "default",
+			ExternalTenantID: "id-default",
+			Provider:         provider,
+		},
+		{
+			Name:             "foo",
+			ExternalTenantID: "id-foo",
+			Provider:         provider,
+		},
+		{
+			Name:             "bar",
+			ExternalTenantID: "id-bar",
+			Provider:         provider,
+		},
 	}
+
+	t.Run("should return tenants", func(t *testing.T) {
+		//when
+		actualTenants, err := externaltenant.MapTenants(validSrcPath, provider)
+
+		//then
+		require.NoError(t, err)
+		assert.Equal(t, expectedTenants, actualTenants)
+	})
+
+	t.Run("should fail while reading tenants file", func(t *testing.T) {
+		//when
+		_, err := externaltenant.MapTenants(invalidPath, provider)
+
+		//then
+		require.Error(t, err)
+	})
+
+	t.Run("should fail while unmarshalling tenants", func(t *testing.T) {
+		//when
+		_, err := externaltenant.MapTenants(pathToInvalidJSON, provider)
+
+		//then
+		require.Error(t, err)
+	})
 }

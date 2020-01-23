@@ -8,10 +8,8 @@ import (
 )
 
 type jobConfig struct {
-	TenantsSrc           string `envconfig:"default=/data/tenants.json"`
-	TenantIDKeyMapping   string `envconfig:"default=id"`
-	TenantNameKeyMapping string `envconfig:"default=name"`
-	TenantProvider       string `envconfig:"default=dummy"`
+	TenantsSrc     string `envconfig:"default=/data/tenants.json"`
+	TenantProvider string `envconfig:"default=dummy"`
 }
 
 func main() {
@@ -21,12 +19,7 @@ func main() {
 		panic(err)
 	}
 
-	mappingOverrides := externaltenant.MappingOverrides{
-		Name: cfg.TenantNameKeyMapping,
-		ID:   cfg.TenantIDKeyMapping,
-	}
-
-	tenants, err := externaltenant.MapTenants(cfg.TenantsSrc, cfg.TenantProvider, mappingOverrides)
+	tenants, err := externaltenant.MapTenants(cfg.TenantsSrc, cfg.TenantProvider)
 	if err != nil {
 		panic(err)
 	}

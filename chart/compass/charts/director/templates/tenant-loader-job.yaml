@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-    name: compass-tenant-loader
+    name: {{ template "fullname" . }}-tenant-loader
     labels:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
@@ -52,14 +52,10 @@ spec:
                             secretKeyRef:
                                 name: compass-postgresql
                                 key: postgresql-sslMode
-                      - name: TENANT_ID_KEY_MAPPING
-                        value: {{ .Values.global.tenantConfig.tenantKeyMapping.ID }}
-                      - name: TENANT_NAME_KEY_MAPPING
-                        value: {{ .Values.global.tenantConfig.tenantKeyMapping.name }}
                       - name: TENANT_PROVIDER
                         value: {{ .Values.global.tenantConfig.tenantProvider }}
                   volumeMounts:
-                    - name: tenant-config
+                    - name: {{ template "fullname" . }}-tenant-config
                       mountPath: /data/tenants.json
                       subPath: tenants.json
                   command:
@@ -70,4 +66,4 @@ spec:
             volumes:
               - name: tenant-config
                 configMap:
-                  name: {{ template "fullname" . }}-director-tenant-config
+                  name: {{ template "fullname" . }}-tenant-config
