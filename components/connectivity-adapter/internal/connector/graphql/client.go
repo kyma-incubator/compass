@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"crypto/tls"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -17,15 +16,15 @@ type client struct {
 }
 
 func NewClient(graphqlEndpoint string, insecureConfigFetch bool, timeout time.Duration) (Client, error) {
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: insecureConfigFetch,
-			},
-		},
-	}
+	//httpClient := &http.Client{
+	//	Transport: &http.Transport{
+	//		TLSClientConfig: &tls.Config{
+	//			InsecureSkipVerify: insecureConfigFetch,
+	//		},
+	//	},
+	//}
 
-	gqlClient := graphql.NewClient(graphqlEndpoint, graphql.WithHTTPClient(httpClient))
+	gqlClient := graphql.NewClient(graphqlEndpoint, graphql.WithHTTPClient(&http.Client{}))
 
 	client := &client{
 		gqlClient: gqlClient,

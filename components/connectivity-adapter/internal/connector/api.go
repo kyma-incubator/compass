@@ -12,11 +12,10 @@ import (
 )
 
 type Config struct {
-	CompassConnectorURL    string `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
-	AdapterBaseURL         string `envconfig:"default=https://adapter-gateway.kyma.local"`
-	AdapterBaseURLMTLS     string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
-	EventBaseURL           string `envconfig:"default=https://gateway.kyma.local"` // TODO: remove once Event Base URL is read from Director
-	InsecureConnectorCalls bool   `envconfig:"default=true"`
+	CompassConnectorURL string `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
+	AdapterBaseURL      string `envconfig:"default=https://adapter-gateway.kyma.local"`
+	AdapterBaseURLMTLS  string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
+	//InsecureConnectorCalls bool   `envconfig:"default=true"`
 }
 
 const (
@@ -27,7 +26,7 @@ func RegisterHandler(router *mux.Router, config Config) error {
 	logger := logrus.New().WithField("component", "connector").Logger
 	logger.SetReportCaller(true)
 
-	client, err := graphql.NewClient(config.CompassConnectorURL, config.InsecureConnectorCalls, timeout)
+	client, err := graphql.NewClient(config.CompassConnectorURL, false, timeout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to initialize compass client")
 	}
@@ -36,7 +35,7 @@ func RegisterHandler(router *mux.Router, config Config) error {
 	router.Use(mux.MiddlewareFunc(authorizationMiddleware.GetAuthorizationHeaders))
 
 	eventBaseURLProvider := eventBaseURLProvider{
-		eventBaseUrl: config.EventBaseURL,
+		eventBaseUrl: config.AdapterBaseURLMTLS,
 	}
 
 	{
@@ -61,6 +60,7 @@ func RegisterHandler(router *mux.Router, config Config) error {
 	return nil
 }
 
+// Mock implementation of EventServiceBaseURLProvider
 type eventBaseURLProvider struct {
 	eventBaseUrl string
 }
