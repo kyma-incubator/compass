@@ -20,7 +20,7 @@ const (
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
 func InitializeDatabase(connectionURL string) (*dbr.Connection, error) {
-	connection, err := waitForDatabaseAccess(connectionURL, connectionRetries)
+	connection, err := WaitForDatabaseAccess(connectionURL, connectionRetries)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 	return tableName == InstancesTableName, nil
 }
 
-func waitForDatabaseAccess(connString string, retryCount int) (*dbr.Connection, error) {
+func WaitForDatabaseAccess(connString string, retryCount int) (*dbr.Connection, error) {
 	var connection *dbr.Connection
 	var err error
 	for ; retryCount > 0; retryCount-- {

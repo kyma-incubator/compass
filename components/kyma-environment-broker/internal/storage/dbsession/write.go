@@ -1,11 +1,12 @@
 package dbsession
 
 import (
+	"time"
+
 	dbr "github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
-	"time"
 )
 
 type writeSession struct {
