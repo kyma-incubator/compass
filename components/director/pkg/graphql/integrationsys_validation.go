@@ -7,7 +7,7 @@ import (
 
 func (i IntegrationSystemInput) Validate() error {
 	return validation.ValidateStruct(&i,
-		validation.Field(&i.Name, validation.Required, inputvalidation.Name),
+		validation.Field(&i.Name, validation.Required, inputvalidation.DNSName),
 		validation.Field(&i.Description, validation.RuneLength(0, shortStringLengthLimit)),
 	)
 }
