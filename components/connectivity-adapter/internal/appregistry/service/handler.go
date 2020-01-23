@@ -169,6 +169,6 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 func (h *Handler) closeBody(rq *http.Request) {
 	err := rq.Body.Close()
 	if err != nil {
-
+		h.logger.Error(errors.Wrap(err, "while closing body"))
 	}
 }
