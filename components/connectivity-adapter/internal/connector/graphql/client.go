@@ -2,11 +2,12 @@ package graphql
 
 import (
 	"context"
+	"net/http"
+	"time"
+
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	"net/http"
-	"time"
 )
 
 type client struct {

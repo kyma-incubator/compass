@@ -3,8 +3,9 @@ package middlewares
 import (
 	"context"
 	"errors"
-	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 )
 
 func NewAuthorizationMiddleware() authorizationHeadersMiddleware {

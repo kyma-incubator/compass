@@ -2,13 +2,14 @@ package middlewares
 
 import (
 	"errors"
-	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares/automock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares/automock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHandler_BaseUrls(t *testing.T) {

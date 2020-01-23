@@ -1,14 +1,15 @@
 package connector
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"time"
 )
 
 type Config struct {
