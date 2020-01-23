@@ -11,7 +11,7 @@ import (
 type Resolver struct {
 }
 
-func (r *Resolver) BusinessTenants(ctx context.Context) ([]*graphql.BusinessTenant, error) {
+func (r *Resolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
 
 	return fixTenantPage(), nil
 
@@ -21,8 +21,8 @@ func NewResolver() *Resolver {
 	return &Resolver{}
 }
 
-func fixTenantPage() []*graphql.BusinessTenant {
-	return []*graphql.BusinessTenant{
+func fixTenantPage() []*graphql.Tenant {
+	return []*graphql.Tenant{
 		{
 			Tenant: "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae",
 			Name:   str.Ptr("default"),

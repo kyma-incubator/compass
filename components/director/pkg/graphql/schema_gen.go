@@ -148,11 +148,6 @@ type ComplexityRoot struct {
 		Username func(childComplexity int) int
 	}
 
-	BusinessTenant struct {
-		Name   func(childComplexity int) int
-		Tenant func(childComplexity int) int
-	}
-
 	CSRFTokenCredentialRequestAuth struct {
 		AdditionalHeaders     func(childComplexity int) int
 		AdditionalQueryParams func(childComplexity int) int
@@ -341,7 +336,6 @@ type ComplexityRoot struct {
 		ApplicationTemplates   func(childComplexity int, first *int, after *PageCursor) int
 		Applications           func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		ApplicationsForRuntime func(childComplexity int, runtimeID string, first *int, after *PageCursor) int
-		BusinessTenants        func(childComplexity int) int
 		HealthChecks           func(childComplexity int, types []HealthCheckType, origin *string, first *int, after *PageCursor) int
 		IntegrationSystem      func(childComplexity int, id string) int
 		IntegrationSystems     func(childComplexity int, first *int, after *PageCursor) int
@@ -349,6 +343,7 @@ type ComplexityRoot struct {
 		LabelDefinitions       func(childComplexity int) int
 		Runtime                func(childComplexity int, id string) int
 		Runtimes               func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
+		Tenants                func(childComplexity int) int
 		Viewer                 func(childComplexity int) int
 	}
 
@@ -385,6 +380,11 @@ type ComplexityRoot struct {
 	SystemAuth struct {
 		Auth func(childComplexity int) int
 		ID   func(childComplexity int) int
+	}
+
+	Tenant struct {
+		Name   func(childComplexity int) int
+		Tenant func(childComplexity int) int
 	}
 
 	Version struct {
@@ -506,7 +506,7 @@ type QueryResolver interface {
 	IntegrationSystems(ctx context.Context, first *int, after *PageCursor) (*IntegrationSystemPage, error)
 	IntegrationSystem(ctx context.Context, id string) (*IntegrationSystem, error)
 	Viewer(ctx context.Context) (*Viewer, error)
-	BusinessTenants(ctx context.Context) ([]*BusinessTenant, error)
+	Tenants(ctx context.Context) ([]*Tenant, error)
 }
 type RuntimeResolver interface {
 	Labels(ctx context.Context, obj *Runtime, key *string) (*Labels, error)
@@ -963,20 +963,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BasicCredentialData.Username(childComplexity), true
-
-	case "BusinessTenant.name":
-		if e.complexity.BusinessTenant.Name == nil {
-			break
-		}
-
-		return e.complexity.BusinessTenant.Name(childComplexity), true
-
-	case "BusinessTenant.tenant":
-		if e.complexity.BusinessTenant.Tenant == nil {
-			break
-		}
-
-		return e.complexity.BusinessTenant.Tenant(childComplexity), true
 
 	case "CSRFTokenCredentialRequestAuth.additionalHeaders":
 		if e.complexity.CSRFTokenCredentialRequestAuth.AdditionalHeaders == nil {
@@ -2096,13 +2082,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.ApplicationsForRuntime(childComplexity, args["runtimeID"].(string), args["first"].(*int), args["after"].(*PageCursor)), true
 
-	case "Query.businessTenants":
-		if e.complexity.Query.BusinessTenants == nil {
-			break
-		}
-
-		return e.complexity.Query.BusinessTenants(childComplexity), true
-
 	case "Query.healthChecks":
 		if e.complexity.Query.HealthChecks == nil {
 			break
@@ -2181,6 +2160,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Runtimes(childComplexity, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*PageCursor)), true
+
+	case "Query.tenants":
+		if e.complexity.Query.Tenants == nil {
+			break
+		}
+
+		return e.complexity.Query.Tenants(childComplexity), true
 
 	case "Query.viewer":
 		if e.complexity.Query.Viewer == nil {
@@ -2312,6 +2298,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SystemAuth.ID(childComplexity), true
+
+	case "Tenant.name":
+		if e.complexity.Tenant.Name == nil {
+			break
+		}
+
+		return e.complexity.Tenant.Name(childComplexity), true
+
+	case "Tenant.tenant":
+		if e.complexity.Tenant.Tenant == nil {
+			break
+		}
+
+		return e.complexity.Tenant.Tenant(childComplexity), true
 
 	case "Version.deprecated":
 		if e.complexity.Version.Deprecated == nil {
@@ -2473,8 +2473,6 @@ scalar Labels
 scalar PageCursor
 
 scalar QueryParams
-
-scalar Tenant
 
 scalar Timestamp
 
@@ -2854,11 +2852,6 @@ type BasicCredentialData {
 	password: String!
 }
 
-type BusinessTenant {
-	tenant: String!
-	name: String
-}
-
 type CSRFTokenCredentialRequestAuth {
 	tokenEndpointURL: String!
 	credential: CredentialData!
@@ -3043,6 +3036,11 @@ type SystemAuth {
 	auth: Auth
 }
 
+type Tenant {
+	tenant: String!
+	name: String
+}
+
 type Version {
 	"""
 	for example 4.6
@@ -3140,7 +3138,7 @@ type Query {
 	"""
 	integrationSystem(id: ID!): IntegrationSystem @hasScopes(path: "graphql.query.integrationSystem")
 	viewer: Viewer! @hasScopes(path: "graphql.query.viewer")
-	businessTenants: [BusinessTenant!]! @hasScopes(path: "graphql.query.businessTenants")
+	tenants: [Tenant!]! @hasScopes(path: "graphql.query.tenants")
 }
 
 type Mutation {
@@ -6898,77 +6896,6 @@ func (ec *executionContext) _BasicCredentialData_password(ctx context.Context, f
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BusinessTenant_tenant(ctx context.Context, field graphql.CollectedField, obj *BusinessTenant) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BusinessTenant",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tenant, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BusinessTenant_name(ctx context.Context, field graphql.CollectedField, obj *BusinessTenant) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BusinessTenant",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CSRFTokenCredentialRequestAuth_tokenEndpointURL(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) (ret graphql.Marshaler) {
@@ -13318,7 +13245,7 @@ func (ec *executionContext) _Query_viewer(ctx context.Context, field graphql.Col
 	return ec.marshalNViewer2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐViewer(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_businessTenants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_tenants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13338,10 +13265,10 @@ func (ec *executionContext) _Query_businessTenants(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().BusinessTenants(rctx)
+			return ec.resolvers.Query().Tenants(rctx)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.query.businessTenants")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.tenants")
 			if err != nil {
 				return nil, err
 			}
@@ -13352,10 +13279,10 @@ func (ec *executionContext) _Query_businessTenants(ctx context.Context, field gr
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.([]*BusinessTenant); ok {
+		if data, ok := tmp.([]*Tenant); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.BusinessTenant`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.Tenant`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13367,10 +13294,10 @@ func (ec *executionContext) _Query_businessTenants(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*BusinessTenant)
+	res := resTmp.([]*Tenant)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBusinessTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBusinessTenant(ctx, field.Selections, res)
+	return ec.marshalNTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -14067,6 +13994,77 @@ func (ec *executionContext) _SystemAuth_auth(ctx context.Context, field graphql.
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Tenant_tenant(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Tenant",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tenant, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Tenant_name(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Tenant",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Version_value(ctx context.Context, field graphql.CollectedField, obj *Version) (ret graphql.Marshaler) {
@@ -17120,35 +17118,6 @@ func (ec *executionContext) _BasicCredentialData(ctx context.Context, sel ast.Se
 	return out
 }
 
-var businessTenantImplementors = []string{"BusinessTenant"}
-
-func (ec *executionContext) _BusinessTenant(ctx context.Context, sel ast.SelectionSet, obj *BusinessTenant) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, businessTenantImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("BusinessTenant")
-		case "tenant":
-			out.Values[i] = ec._BusinessTenant_tenant(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "name":
-			out.Values[i] = ec._BusinessTenant_name(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var cSRFTokenCredentialRequestAuthImplementors = []string{"CSRFTokenCredentialRequestAuth"}
 
 func (ec *executionContext) _CSRFTokenCredentialRequestAuth(ctx context.Context, sel ast.SelectionSet, obj *CSRFTokenCredentialRequestAuth) graphql.Marshaler {
@@ -18383,7 +18352,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "businessTenants":
+		case "tenants":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -18391,7 +18360,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_businessTenants(ctx, field)
+				res = ec._Query_tenants(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -18630,6 +18599,35 @@ func (ec *executionContext) _SystemAuth(ctx context.Context, sel ast.SelectionSe
 			}
 		case "auth":
 			out.Values[i] = ec._SystemAuth_auth(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var tenantImplementors = []string{"Tenant"}
+
+func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, obj *Tenant) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, tenantImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Tenant")
+		case "tenant":
+			out.Values[i] = ec._Tenant_tenant(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Tenant_name(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -19343,57 +19341,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNBusinessTenant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBusinessTenant(ctx context.Context, sel ast.SelectionSet, v BusinessTenant) graphql.Marshaler {
-	return ec._BusinessTenant(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNBusinessTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBusinessTenant(ctx context.Context, sel ast.SelectionSet, v []*BusinessTenant) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBusinessTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBusinessTenant(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNBusinessTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBusinessTenant(ctx context.Context, sel ast.SelectionSet, v *BusinessTenant) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._BusinessTenant(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialData(ctx context.Context, sel ast.SelectionSet, v CredentialData) graphql.Marshaler {
@@ -20130,6 +20077,57 @@ func (ec *executionContext) unmarshalNTemplateValueInput2ᚖgithubᚗcomᚋkyma�
 	}
 	res, err := ec.unmarshalNTemplateValueInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalNTenant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v Tenant) graphql.Marshaler {
+	return ec._Tenant(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v []*Tenant) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v *Tenant) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Tenant(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (Timestamp, error) {

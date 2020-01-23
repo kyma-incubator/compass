@@ -148,11 +148,6 @@ type BasicCredentialDataInput struct {
 	Password string `json:"password"`
 }
 
-type BusinessTenant struct {
-	Tenant string  `json:"tenant"`
-	Name   *string `json:"name"`
-}
-
 type CSRFTokenCredentialRequestAuth struct {
 	TokenEndpointURL      string         `json:"tokenEndpointURL"`
 	Credential            CredentialData `json:"credential"`
@@ -376,6 +371,11 @@ type SystemAuth struct {
 type TemplateValueInput struct {
 	Placeholder string `json:"placeholder"`
 	Value       string `json:"value"`
+}
+
+type Tenant struct {
+	Tenant string  `json:"tenant"`
+	Name   *string `json:"name"`
 }
 
 type Version struct {
