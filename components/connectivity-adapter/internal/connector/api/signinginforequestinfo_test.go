@@ -61,20 +61,21 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 
 		r := httptest.NewRecorder()
 
-		expectedSignUrl := "www.connectivity-adapter.com/v1/applications/certificates?token=new_token"
-		expectedAPI := model.Api{
-			RuntimeURLs: &model.RuntimeURLs{
-				EventsURL:   "www.event-service.com/myapp/v1/events",
-				MetadataURL: "www.connectivity-adapter-mtls.com/myapp/v1/metadata",
+		expectedInfoResponse := model.CSRInfoResponse{
+			CsrURL: "www.connectivity-adapter.com/v1/applications/certificates?token=new_token",
+			API: model.Api{
+				RuntimeURLs: &model.RuntimeURLs{
+					EventsURL:   "www.event-service.com/myapp/v1/events",
+					MetadataURL: "www.connectivity-adapter-mtls.com/myapp/v1/metadata",
+				},
+				InfoURL:         "www.connectivity-adapter-mtls.com/v1/applications/management/info",
+				CertificatesURL: "www.connectivity-adapter.com/v1/applications/certificates",
 			},
-			InfoURL:         "www.connectivity-adapter-mtls.com/v1/applications/management/info",
-			CertificatesURL: "www.connectivity-adapter.com/v1/applications/certificates",
-		}
-
-		expectedCertInfo := model.CertInfo{
-			Subject:      "O=Org,OU=OrgUnit,L=Gliwice,ST=Province,C=PL,CN=CommonName",
-			Extensions:   "",
-			KeyAlgorithm: "rsa2048",
+			CertificateInfo: model.CertInfo{
+				Subject:      "O=Org,OU=OrgUnit,L=Gliwice,ST=Province,C=PL,CN=CommonName",
+				Extensions:   "",
+				KeyAlgorithm: "rsa2048",
+			},
 		}
 
 		// when
@@ -92,11 +93,7 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, http.StatusOK, r.Code)
-		assert.Equal(t, expectedSignUrl, infoResponse.CsrURL)
-		assert.Equal(t, expectedAPI.CertificatesURL, infoResponse.API.CertificatesURL)
-		assert.Equal(t, expectedAPI.InfoURL, infoResponse.API.InfoURL)
-		assert.EqualValues(t, expectedAPI.RuntimeURLs, infoResponse.API.RuntimeURLs)
-		assert.EqualValues(t, expectedCertInfo, infoResponse.CertificateInfo)
+		assert.EqualValues(t, expectedInfoResponse, infoResponse)
 	})
 
 	t.Run("Should return error when failed to call Compass Connector", func(t *testing.T) {

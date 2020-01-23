@@ -60,23 +60,23 @@ func TestHandlerManagementInfo(t *testing.T) {
 
 		r := httptest.NewRecorder()
 
-		expectedURLs := model.MgmtURLs{
-			RuntimeURLs: &model.RuntimeURLs{
-				EventsURL:   "www.event-service.com/myapp/v1/events",
-				MetadataURL: "www.connectivity-adapter-mtls.com/myapp/v1/metadata",
+		expectedManagementInfoResponse := model.MgmtInfoReponse{
+			ClientIdentity: model.ClientIdentity{
+				Application: "myapp",
 			},
-			RenewCertURL:  "www.connectivity-adapter-mtls.com/applications/certificates/renewals",
-			RevokeCertURL: "www.connectivity-adapter-mtls.com/applications/certificates/revocations",
-		}
-
-		expectedClientIdentify := model.ClientIdentity{
-			Application: "myapp",
-		}
-
-		expectedCertInfo := model.CertInfo{
-			Subject:      "O=Org,OU=OrgUnit,L=Gliwice,ST=Province,C=PL,CN=CommonName",
-			Extensions:   "",
-			KeyAlgorithm: "rsa2048",
+			URLs: model.MgmtURLs{
+				RuntimeURLs: &model.RuntimeURLs{
+					EventsURL:   "www.event-service.com/myapp/v1/events",
+					MetadataURL: "www.connectivity-adapter-mtls.com/myapp/v1/metadata",
+				},
+				RenewCertURL:  "www.connectivity-adapter-mtls.com/applications/certificates/renewals",
+				RevokeCertURL: "www.connectivity-adapter-mtls.com/applications/certificates/revocations",
+			},
+			CertificateInfo: model.CertInfo{
+				Subject:      "O=Org,OU=OrgUnit,L=Gliwice,ST=Province,C=PL,CN=CommonName",
+				Extensions:   "",
+				KeyAlgorithm: "rsa2048",
+			},
 		}
 
 		// when
@@ -94,9 +94,7 @@ func TestHandlerManagementInfo(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, http.StatusOK, r.Code)
-		assert.Equal(t, expectedURLs, managementInfoResponse.URLs)
-		assert.EqualValues(t, expectedClientIdentify, managementInfoResponse.ClientIdentity)
-		assert.EqualValues(t, expectedCertInfo, managementInfoResponse.CertificateInfo)
+		assert.Equal(t, expectedManagementInfoResponse, managementInfoResponse)
 	})
 
 	t.Run("Should return error when failed to call Compass Connector", func(t *testing.T) {
