@@ -10,8 +10,8 @@ const (
 	ManagementInfoEndpoint            = "/v1/applications/management/info"
 	ApplicationRegistryEndpointFormat = "/%s/v1/metadata"
 	EventsEndpointFormat              = "/%s/v1/events"
-	RenewCertURLFormat                = "%s/certificates/renewals"
-	RevocationCertURLFormat           = "%s/certificates/revocations"
+	RenewCertURLFormat                = "%s/applications/certificates/renewals"
+	RevocationCertURLFormat           = "%s/applications/certificates/revocations"
 )
 
 type CertRequest struct {
@@ -31,15 +31,15 @@ type CSRInfoResponse struct {
 }
 
 type MgmtInfoReponse struct {
-	ClientIdentity  interface{} `json:"clientIdentity"`
-	URLs            MgmtURLs    `json:"urls"`
-	CertificateInfo CertInfo    `json:"certificate"`
+	ClientIdentity  ClientIdentity `json:"clientIdentity"`
+	URLs            MgmtURLs       `json:"urls"`
+	CertificateInfo CertInfo       `json:"certificate"`
 }
 
 type RuntimeURLs struct {
-	//EventsInfoURL string `json:"eventsInfoUrl"` // TODO: Where is it used?
-	EventsURL   string `json:"eventsUrl"`
-	MetadataURL string `json:"metadataUrl"`
+	EventsInfoURL string `json:"eventsInfoUrl"` // TODO: Where is it used?
+	EventsURL     string `json:"eventsUrl"`
+	MetadataURL   string `json:"metadataUrl"`
 }
 
 type MgmtURLs struct {
@@ -65,14 +65,6 @@ type ClientIdentity struct {
 	Group       string `json:"group,omitempty"`
 	Tenant      string `json:"tenant,omitempty"`
 }
-
-//func NewCSRInfoResponse(certInfo CertInfo, application, token, connectivityAdapterBaseURL, eventServiceBaseURL string) CSRInfoResponse {
-//	return CSRInfoResponse{
-//		CsrURL:          makeCSRURLs(token, connectivityAdapterBaseURL),
-//		API:             makeApiURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
-//		CertificateInfo: certInfo,
-//	}
-//}
 
 func MakeCSRURL(newToken, connectivityAdapterBaseURL string) string {
 	csrURL := connectivityAdapterBaseURL + CertsEndpoint

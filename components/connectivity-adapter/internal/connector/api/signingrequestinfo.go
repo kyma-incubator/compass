@@ -43,6 +43,7 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	application := authorizationHeaders.GetClientID()
 	contextLogger := contextLogger(ci.logger, authorizationHeaders.GetClientID())
 
 	baseURLs, err := middlewares.GetBaseURLsFromContext(r.Context(), middlewares.BaseURLsKey)
@@ -65,7 +66,6 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 	}
 
 	certInfo := graphql.ToCertInfo(configuration)
-	application := authorizationHeaders.GetClientID()
 
 	//TODO: handle case when configuration.Token is nil
 	csrInfoResponse := ci.makeCSRInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)

@@ -26,9 +26,9 @@ spec:
               containerPort: {{ .Values.global.connectivity_adapter.port }}
               protocol: TCP
           env:
-            - name: APP_COMPASS_CONNECTOR_URL  AdapterBaseURL AdapterBaseURLMTLS InsecureConnectorCalls
+            - name: APP_COMPASS_CONNECTOR_URL
               value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - name: APP_ADAPTER_BASE_URL  InsecureConnectorCalls
+            - name: APP_ADAPTER_BASE_URL
               value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_ADAPTER_BASE_URL_MTLS
               value: http://compass-connector.compass-system.svc.cluster.local:3000/graphql

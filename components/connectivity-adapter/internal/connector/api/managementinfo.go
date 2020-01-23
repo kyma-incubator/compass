@@ -35,7 +35,8 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 		return
 	}
 
-	contextLogger := contextLogger(mh.logger, authorizationHeaders.GetClientID())
+	application := authorizationHeaders.GetClientID()
+	contextLogger := contextLogger(mh.logger, application)
 
 	baseURLs, err := middlewares.GetBaseURLsFromContext(r.Context(), middlewares.BaseURLsKey)
 	if err != nil {
@@ -57,11 +58,10 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 	}
 
 	certInfo := graphql.ToCertInfo(configuration)
-	application := authorizationHeaders.GetClientID()
 
 	//TODO: handle case when configuration.Token is nil
-	csrInfoResponse := mh.makeManagementInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)
-	respondWithBody(w, http.StatusOK, csrInfoResponse, contextLogger)
+	managementInfoResponse := mh.makeManagementInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)
+	respondWithBody(w, http.StatusOK, managementInfoResponse, contextLogger)
 }
 
 func (m *managementInfoHandler) makeManagementInfoResponse(application, newToken, connectivityAdapterBaseURL, eventServiceBaseURL string, certInfo model.CertInfo) model.MgmtInfoReponse {
