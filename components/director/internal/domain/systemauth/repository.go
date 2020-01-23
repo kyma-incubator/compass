@@ -100,18 +100,7 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 		return nil, err
 	}
 
-	var items []model.SystemAuth
-
-	for _, ent := range entities {
-		m, err := r.conv.FromEntity(ent)
-		if err != nil {
-			return nil, errors.Wrap(err, "while creating system auth model from entity")
-		}
-
-		items = append(items, m)
-	}
-
-	return items, nil
+	return r.multipleFromEntities(entities)
 }
 
 func (r *repository) ListForObjectGlobal(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
@@ -126,6 +115,11 @@ func (r *repository) ListForObjectGlobal(ctx context.Context, objectType model.S
 	if err != nil {
 		return nil, err
 	}
+
+	return r.multipleFromEntities(entities)
+}
+
+func (r *repository) multipleFromEntities(entities Collection) ([]model.SystemAuth, error) {
 
 	var items []model.SystemAuth
 
@@ -154,32 +148,25 @@ func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, obje
 
 func (r *repository) DeleteByIDForObject(ctx context.Context, tenant, id string, objType model.SystemAuthReferenceObjectType) error {
 	var objTypeCond repo.Condition
-	switch objType {
-	case model.ApplicationReference:
-		objTypeCond = repo.NewNotNullCondition("app_id")
-	case model.RuntimeReference:
-		objTypeCond = repo.NewNotNullCondition("runtime_id")
-	case model.IntegrationSystemReference:
-		objTypeCond = repo.NewNotNullCondition("integration_system_id")
-	default:
-		return fmt.Errorf("unsupported object type (%s)", objType)
+
+	column, err := referenceObjectField(objType)
+	if err != nil {
+		return err
 	}
+	objTypeCond = repo.NewNotNullCondition(column)
 
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
 }
 
 func (r *repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, objType model.SystemAuthReferenceObjectType) error {
 	var objTypeCond repo.Condition
-	switch objType {
-	case model.ApplicationReference:
-		objTypeCond = repo.NewNotNullCondition("app_id")
-	case model.RuntimeReference:
-		objTypeCond = repo.NewNotNullCondition("runtime_id")
-	case model.IntegrationSystemReference:
-		objTypeCond = repo.NewNotNullCondition("integration_system_id")
-	default:
-		return fmt.Errorf("unsupported object type (%s)", objType)
+
+	column, err := referenceObjectField(objType)
+	if err != nil {
+		return err
 	}
+	objTypeCond = repo.NewNotNullCondition(column)
+
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
 }
 
