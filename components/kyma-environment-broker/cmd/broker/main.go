@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
 	"code.cloudfoundry.org/lager"
@@ -39,6 +40,12 @@ type Config struct {
 		Password string
 		Username string
 	}
+
+	KymaVersion                          string
+	ManagedRuntimeComponentsYAMLFilePath string
+
+	// feature flag indicates whether use Provisioner API which returns RuntimeID
+	ProcessRuntimeID bool `envconfig:"default=false"`
 }
 
 func main() {
@@ -82,8 +89,26 @@ func main() {
 	db, err := storage.New(cfg.Database.ConnectionURL())
 	fatalOnError(err)
 
+	optionalComponentsDisablers := runtime.ComponentsDisablers{
+		"Loki":       runtime.NewLokiDisabler(),
+		"Kiali":      runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
+		"Jaeger":     runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
+		"Monitoring": runtime.NewGenericComponentDisabler("monitoring", "kyma-system"),
+	}
+
+	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
+
+	runtimeProvider := runtime.NewComponentsListProvider(cfg.KymaVersion, cfg.ManagedRuntimeComponentsYAMLFilePath)
+	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
+	fatalOnError(err)
+
+	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion)
+
+	dumper, err := broker.NewDumper()
+	fatalOnError(err)
+
 	// create kyma environment broker
-	kymaEnvBroker, err := broker.NewBroker(provisionerClient, cfg.Provisioning, directorClient, db.Instances())
+	kymaEnvBroker, err := broker.New(provisionerClient, cfg.Provisioning, directorClient, db.Instances(), optComponentsSvc, inputFactory, dumper)
 	fatalOnError(err)
 
 	// create and run broker OSB API

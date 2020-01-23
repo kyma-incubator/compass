@@ -3,52 +3,82 @@ package broker
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker/automock"
+
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestGCP(t *testing.T) {
+// Currently only azure is supported
+
+func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	// given
-	b := newProvisioningParamsBuilder(&gcpInputProvider{})
+	var (
+		inputComponentList  = fixKymaComponentList()
+		mappedComponentList = mapToGQLComponentConfigurationInput(inputComponentList)
+		toDisableComponents = []string{"kiali"}
+		smOverrides         = internal.ServiceManagerEntryDTO{URL: "http://sm-pico-bello-url.com"}
+	)
+
+	optComponentsSvc := &automock.OptionalComponentService{}
+	defer optComponentsSvc.AssertExpectations(t)
+	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return(toDisableComponents)
+	optComponentsSvc.On("ExecuteDisablers", mappedComponentList, toDisableComponents[0]).Return(mappedComponentList, nil)
+
+	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, "1.10.0")
 
 	// when
-	b.ApplyParameters(&internal.ProvisioningParametersDTO{
-		Name: "gcp-cluster",
-	})
-	input := b.ClusterConfigInput()
+	builder, found := factory.ForPlan(azurePlanID)
 
 	// then
-	assert.Equal(t, "gcp", input.ClusterConfig.GardenerConfig.Provider)
-	assert.Equal(t, "gcp-cluster", input.ClusterConfig.GardenerConfig.Name)
-}
-
-func TestAzure(t *testing.T) {
-	// given
-	b := newProvisioningParamsBuilder(&azureInputProvider{})
+	require.True(t, found)
 
 	// when
-	b.ApplyParameters(&internal.ProvisioningParametersDTO{
-		Name: "azure-cluster",
-	})
-	input := b.ClusterConfigInput()
+	input, err := builder.
+		SetProvisioningParameters(internal.ProvisioningParametersDTO{
+			Name: "azure-cluster",
+		}).
+		SetERSContext(internal.ERSContext{
+			ServiceManager: smOverrides,
+		}).
+		SetProvisioningConfig(ProvisioningConfig{
+			AzureSecretName: "azure-secret",
+		}).
+		Build()
 
 	// then
+	require.NoError(t, err)
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
 	assert.Equal(t, "azure-cluster", input.ClusterConfig.GardenerConfig.Name)
+	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
+	assert.EqualValues(t, input.KymaConfig.Components, mappedComponentList)
+
+	assertServiceManagerOverrides(t, input.KymaConfig.Components, smOverrides)
 }
 
-func TestAWS(t *testing.T) {
-	// given
-	b := newProvisioningParamsBuilder(&awsInputProvider{})
+func assertServiceManagerOverrides(t *testing.T, components internal.ComponentConfigurationInputList, overrides internal.ServiceManagerEntryDTO) {
+	smComponent, found := find(components, serviceManagerComponentName)
+	require.True(t, found)
+	assert.Equal(t, overrides.URL, smComponent.Configuration[0].Value)
+}
 
-	// when
-	b.ApplyParameters(&internal.ProvisioningParametersDTO{
-		Name: "aws-cluster",
-	})
-	input := b.ClusterConfigInput()
-
-	// then
-	assert.Equal(t, "aws", input.ClusterConfig.GardenerConfig.Provider)
-	assert.Equal(t, "aws-cluster", input.ClusterConfig.GardenerConfig.Name)
+func find(in internal.ComponentConfigurationInputList, name string) (*gqlschema.ComponentConfigurationInput, bool) {
+	for _, c := range in {
+		if c.Component == name {
+			return c, true
+		}
+	}
+	return nil, false
+}
+func fixKymaComponentList() []v1alpha1.KymaComponent {
+	return []v1alpha1.KymaComponent{
+		{Name: "dex", Namespace: "kyma-system"},
+		{Name: "ory", Namespace: "kyma-system"},
+		{Name: "keb", Namespace: "kyma-system"},
+		{Name: serviceManagerComponentName, Namespace: "kyma-system"},
+	}
 }
