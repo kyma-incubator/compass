@@ -18,8 +18,12 @@ go run cmd//main.go
 
 The Connectivity Adapter binary allows you to override some configuration parameters. You can specify the following environment variables:
 
-| Environment variable              | Default value      | Description                                       |
-| ---------------- | -------------- | ------------------------------------------------- |
-| **APP_ADDRESS**      | `127.0.0.1:8080` | Address and port for the service to listen on |
-| **APP_DIRECTOR_URL** | `127.0.0.1:3000` | Host of the running Director component                      |
- 
+| Environment variable                    | Default value                                                            | Description                                                                 |
+| ----------------------------------------| -------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| **APP_ADDRESS**                         | `127.0.0.1:8080`                                                         | Address and port the service listens on                                     |
+| **APP_DIRECTOR_URL**                    | `127.0.0.1:3000`                                                         | Director's URL                                                              |
+| **APP_CONNECTOR_COMPASS_CONNECTOR_URL** | `http://compass-connector.compass-system.svc.cluster.local:3000/graphql` | Internal Connector's URL                                                    |
+| **APP_CONNECTOR_ADAPTER_BASE_URL**      | `https://adapter-gateway.kyma.local`                                     | Internal Connectivity Adapter's URL                                         |
+| **APP_CONNECTOR_ADAPTER_MTLS_BASE_URL** | `https://adapter-gateway-mtls.kyma.local`                                | External Connectivity Adapter's URL                                         |
+  
+              

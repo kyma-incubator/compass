@@ -30,7 +30,7 @@ spec:
               value: http://compass-connector.compass-system.svc.cluster.local:3000/graphql
             - name: APP_CONNECTOR_ADAPTER_BASE_URL
               value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - name: APP_CONNECTOR_ADAPTER_BASE_URLMTLS
+            - name: APP_CONNECTOR_ADAPTER_MTLS_BASE_URL
               value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
 
           {{- with .Values.deployment.securityContext }}
