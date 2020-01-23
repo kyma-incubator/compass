@@ -23,6 +23,8 @@ func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
 		Pair("service_plan_id", instance.ServicePlanID).
 		Pair("dashboard_url", instance.DashboardURL).
 		Pair("provisioning_parameters", instance.ProvisioningParameters).
+		// in postgres database it will be equal to "0001-01-01 00:00:00+00"
+		Pair("delated_at", time.Time{}).
 		Exec()
 	if err != nil {
 		return dberr.Internal("Failed to insert record to Instance table: %s", err)

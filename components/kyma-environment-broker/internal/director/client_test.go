@@ -84,7 +84,6 @@ func TestClient_GetConsoleURL(t *testing.T) {
 			if !ok {
 				return
 			}
-			//arg.Runtime.Status.Condition = graphql.RuntimeStatusConditionReady
 			arg.Runtime = graphql.Runtime{
 				Status: &graphql.RuntimeStatus{
 					Condition: graphql.RuntimeStatusConditionReady,
@@ -126,7 +125,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		assert.Equal(t, "", URL)
 	})
 
-	t.Run("response from director in not in ready state", func(t *testing.T) {
+	t.Run("response from director is in failed state", func(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
 
@@ -142,7 +141,41 @@ func TestClient_GetConsoleURL(t *testing.T) {
 			if !ok {
 				return
 			}
-			//arg.Runtime.Status.Condition = graphql.RuntimeStatusConditionReady
+			arg.Runtime = graphql.Runtime{
+				Status: &graphql.RuntimeStatus{
+					Condition: graphql.RuntimeStatusConditionFailed,
+				},
+			}
+			arg.Labels = map[string]interface{}{
+				consoleURLLabelKey: "",
+			}
+		}).Return(nil)
+
+		// When
+		URL, tokenErr := client.GetConsoleURL(accountID, runtimeID)
+
+		// Then
+		assert.Error(t, tokenErr)
+		assert.False(t, IsTemporaryError(tokenErr))
+		assert.Equal(t, "", URL)
+	})
+
+	t.Run("response from director is not in ready state", func(t *testing.T) {
+		// Given
+		qc := &mocks.GraphQLClient{}
+
+		client := NewDirectorClient(oc, qc)
+		client.token = token
+
+		// #create request
+		request := createGraphQLRequest(client, accountID, runtimeID)
+
+		// #mock on Run method for grapQL client
+		qc.On("Run", context.Background(), request, mock.AnythingOfType("*graphql.RuntimeExt")).Run(func(args mock.Arguments) {
+			arg, ok := args.Get(2).(*graphql.RuntimeExt)
+			if !ok {
+				return
+			}
 			arg.Runtime = graphql.Runtime{
 				Status: &graphql.RuntimeStatus{
 					Condition: graphql.RuntimeStatusConditionInitial,
@@ -178,7 +211,6 @@ func TestClient_GetConsoleURL(t *testing.T) {
 			if !ok {
 				return
 			}
-			//arg.Runtime.Status.Condition = graphql.RuntimeStatusConditionReady
 			arg.Runtime = graphql.Runtime{
 				Status: &graphql.RuntimeStatus{
 					Condition: graphql.RuntimeStatusConditionReady,
@@ -214,7 +246,6 @@ func TestClient_GetConsoleURL(t *testing.T) {
 			if !ok {
 				return
 			}
-			//arg.Runtime.Status.Condition = graphql.RuntimeStatusConditionReady
 			arg.Runtime = graphql.Runtime{
 				Status: &graphql.RuntimeStatus{
 					Condition: graphql.RuntimeStatusConditionReady,

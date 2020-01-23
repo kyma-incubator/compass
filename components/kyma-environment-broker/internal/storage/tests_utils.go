@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"fmt"
-
 	"os"
 	"os/exec"
 	"testing"
@@ -205,6 +204,6 @@ func fixTables() map[string]string {
 			provisioning_parameters text NOT NULL,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-			delated_at TIMESTAMPTZ NULL
+			delated_at TIMESTAMPTZ NOT NULL
 		)`, postsql.InstancesTableName)}
 }

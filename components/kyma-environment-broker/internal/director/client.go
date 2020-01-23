@@ -77,18 +77,21 @@ func (dc *Client) setToken() error {
 
 func (dc Client) getURLFromRuntime(response graphql.RuntimeExt) (string, error) {
 	if response.Status == nil {
-		return "", TemporaryError{"Response status from director is nil"}
+		return "", TemporaryError{"response status from director is nil"}
+	}
+	if response.Status.Condition == graphql.RuntimeStatusConditionFailed {
+		return "", fmt.Errorf("response status condition from director is %s", graphql.RuntimeStatusConditionFailed)
 	}
 	if response.Status.Condition != graphql.RuntimeStatusConditionReady {
-		return "", TemporaryError{fmt.Sprintf("Response status condition is not %q", graphql.RuntimeStatusConditionReady)}
+		return "", TemporaryError{fmt.Sprintf("response status condition is not %q", graphql.RuntimeStatusConditionReady)}
 	}
 	if len(response.Labels) != 1 {
-		return "", errors.New("Response has more than one label")
+		return "", errors.New("response has more than one label")
 	}
 
 	value, ok := response.Labels[consoleURLLabelKey]
 	if !ok {
-		return "", errors.New(fmt.Sprintf("Response label key is not equal to %q", consoleURLLabelKey))
+		return "", fmt.Errorf("response label key is not equal to %q", consoleURLLabelKey)
 	}
 
 	var URL string
@@ -96,7 +99,7 @@ func (dc Client) getURLFromRuntime(response graphql.RuntimeExt) (string, error) 
 	case string:
 		URL = value.(string)
 	default:
-		return "", errors.New("Response label value is not string")
+		return "", errors.New("response label value is not string")
 	}
 
 	return URL, nil

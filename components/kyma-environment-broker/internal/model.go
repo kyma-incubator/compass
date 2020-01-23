@@ -14,4 +14,5 @@ type Instance struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	DelatedAt time.Time
 }

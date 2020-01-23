@@ -94,6 +94,9 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstance.ServicePlanID, inst.ServicePlanID)
 			assert.Equal(t, fixInstance.DashboardURL, inst.DashboardURL)
 			assert.Equal(t, fixInstance.ProvisioningParameters, inst.ProvisioningParameters)
+			assert.NotEmpty(t, inst.CreatedAt)
+			assert.NotEmpty(t, inst.UpdatedAt)
+			assert.Equal(t, "0001-01-01 00:00:00 +0000 UTC", inst.DelatedAt.String())
 		})
 	})
 }
