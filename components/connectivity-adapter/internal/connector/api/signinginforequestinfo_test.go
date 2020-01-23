@@ -3,6 +3,13 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
 	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql/automock"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
@@ -11,12 +18,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"testing"
 )
 
 func TestHandler_SigningRequestInfo(t *testing.T) {
