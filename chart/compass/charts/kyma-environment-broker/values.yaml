@@ -31,12 +31,6 @@ resources: {}
   #   cpu: 100m
   #   memory: 128Mi
 
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
-
 provisioner:
   URL: "http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"
   # todo: remove the flag after new provisioner is merged
@@ -53,6 +47,16 @@ provisioner:
     secretName: "my-azure-secret"
   aws:
     secretName: "aws-secret-name"
+
+additionalRuntimeComponents:
+  - name: "service-manager-proxy"
+    namespace: "kyma-system"
+  - name: "uaa-activator"
+    namespace: "kyma-system"
+  - name: "compass-runtime-agent"
+    namespace: "compass-system"
+
+kymaVersion: "1.9.0"
 
 # It is used to provide own creds for Service Manager instead of using the one provided by external system
 # who execute provision call on Kyma Environment Broker
