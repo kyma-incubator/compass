@@ -31,7 +31,7 @@ spec:
             - name: APP_CONNECTOR_ADAPTER_BASE_URL
               value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_CONNECTOR_ADAPTER_MTLS_BASE_URL
-              value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
+              value: "https://{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}"
 
           {{- with .Values.deployment.securityContext }}
           securityContext:
