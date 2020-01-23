@@ -71,7 +71,7 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
 		}, {
-			Name:            "Error when setting the getting application",
+			Name:            "Error when getting the application",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
