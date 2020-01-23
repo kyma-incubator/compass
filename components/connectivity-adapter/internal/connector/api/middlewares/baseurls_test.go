@@ -17,6 +17,7 @@ func TestHandler_BaseUrls(t *testing.T) {
 	t.Run("Should extract base paths", func(t *testing.T) {
 		// given
 		connectivityAdapterBaseUrl := "www.connectivity-adapter.com"
+		connectivityAdapterMTLSBaseUrl := "www.connectivity-adapter-mtls.com"
 		eventServiceBaseURL := "www.event-service.com"
 
 		runtimeBaseURLProvider := &mocks.RuntimeBaseURLProvider{}
@@ -33,7 +34,7 @@ func TestHandler_BaseUrls(t *testing.T) {
 		r := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://www.someurl.com/get", strings.NewReader(""))
 
-		middleware := NewBaseURLsMiddleware(connectivityAdapterBaseUrl, runtimeBaseURLProvider)
+		middleware := NewBaseURLsMiddleware(connectivityAdapterBaseUrl, connectivityAdapterMTLSBaseUrl, runtimeBaseURLProvider)
 		handlerWithMiddleware := middleware.GetBaseUrls(handler)
 
 		// when
@@ -46,6 +47,7 @@ func TestHandler_BaseUrls(t *testing.T) {
 	t.Run("Should return Internal Error when failed to get Events Base URL", func(t *testing.T) {
 		// given
 		connectivityAdapterBaseUrl := "www.connectivity-adapter.com"
+		connectivityAdapterMTLSBaseUrl := "www.connectivity-adapter-mtls.com"
 
 		runtimeBaseURLProvider := &mocks.RuntimeBaseURLProvider{}
 		runtimeBaseURLProvider.On("EventServiceBaseURL").Return("", errors.New("failed to get Events Base URL"))
@@ -57,7 +59,7 @@ func TestHandler_BaseUrls(t *testing.T) {
 		r := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://www.someurl.com/get", strings.NewReader(""))
 
-		middleware := NewBaseURLsMiddleware(connectivityAdapterBaseUrl, runtimeBaseURLProvider)
+		middleware := NewBaseURLsMiddleware(connectivityAdapterBaseUrl, connectivityAdapterMTLSBaseUrl, runtimeBaseURLProvider)
 		handlerWithMiddleware := middleware.GetBaseUrls(handler)
 
 		// when

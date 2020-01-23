@@ -60,14 +60,26 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 	certInfo := graphql.ToCertInfo(configuration)
 
 	//TODO: handle case when configuration.Token is nil
-	managementInfoResponse := mh.makeManagementInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)
+	managementInfoResponse := mh.makeManagementInfoResponse(
+		application,
+		configuration.Token.Token,
+		baseURLs.ConnectivityAdapterMTLSBaseURL,
+		baseURLs.EventServiceBaseURL,
+		certInfo)
+
 	respondWithBody(w, http.StatusOK, managementInfoResponse, contextLogger)
 }
 
-func (m *managementInfoHandler) makeManagementInfoResponse(application, newToken, connectivityAdapterBaseURL, eventServiceBaseURL string, certInfo model.CertInfo) model.MgmtInfoReponse {
+func (m *managementInfoHandler) makeManagementInfoResponse(
+	application,
+	newToken,
+	connectivityAdapterMTLSBaseURL,
+	eventServiceBaseURL string,
+	certInfo model.CertInfo) model.MgmtInfoReponse {
+
 	return model.MgmtInfoReponse{
 		ClientIdentity:  model.MakeClientIdentity(application, "", ""), // TODO: how to get tenant? Is it vital?
-		URLs:            model.MakeManagementURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
+		URLs:            model.MakeManagementURLs(application, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
 		CertificateInfo: certInfo,
 	}
 }

@@ -23,8 +23,9 @@ import (
 func TestHandler_SigningRequestInfo(t *testing.T) {
 
 	baseURLs := middlewares.BaseURLs{
-		ConnectivityAdapterBaseURL: "www.connectivity-adapter.com",
-		EventServiceBaseURL:        "www.event-service.com",
+		ConnectivityAdapterBaseURL:     "www.connectivity-adapter.com",
+		ConnectivityAdapterMTLSBaseURL: "www.connectivity-adapter-mtls.com",
+		EventServiceBaseURL:            "www.event-service.com",
 	}
 
 	headersFromToken := map[string]string{
@@ -64,9 +65,9 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		expectedAPI := model.Api{
 			RuntimeURLs: &model.RuntimeURLs{
 				EventsURL:   "www.event-service.com/myapp/v1/events",
-				MetadataURL: "www.connectivity-adapter.com/myapp/v1/metadata",
+				MetadataURL: "www.connectivity-adapter-mtls.com/myapp/v1/metadata",
 			},
-			InfoURL:         "www.connectivity-adapter.com/v1/applications/management/info",
+			InfoURL:         "www.connectivity-adapter-mtls.com/v1/applications/management/info",
 			CertificatesURL: "www.connectivity-adapter.com/v1/applications/certificates",
 		}
 
@@ -92,6 +93,8 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, r.Code)
 		assert.Equal(t, expectedSignUrl, infoResponse.CsrURL)
+		assert.Equal(t, expectedAPI.CertificatesURL, infoResponse.API.CertificatesURL)
+		assert.Equal(t, expectedAPI.InfoURL, infoResponse.API.InfoURL)
 		assert.EqualValues(t, expectedAPI.RuntimeURLs, infoResponse.API.RuntimeURLs)
 		assert.EqualValues(t, expectedCertInfo, infoResponse.CertificateInfo)
 	})

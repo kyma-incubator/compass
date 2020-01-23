@@ -10,14 +10,16 @@ type RuntimeBaseURLProvider interface {
 }
 
 type baseURLsMiddleware struct {
-	connectivityAdapterBaseURL string
-	runtimeBaseURLProvider     RuntimeBaseURLProvider
+	connectivityAdapterBaseURL     string
+	connectivityAdapterMTLSBaseURL string
+	runtimeBaseURLProvider         RuntimeBaseURLProvider
 }
 
-func NewBaseURLsMiddleware(connectivityAdapterBaseURL string, runtimeBaseURLProvider RuntimeBaseURLProvider) baseURLsMiddleware {
+func NewBaseURLsMiddleware(connectivityAdapterBaseURL string, connectivityAdapterMTLSBaseURL string, runtimeBaseURLProvider RuntimeBaseURLProvider) baseURLsMiddleware {
 	return baseURLsMiddleware{
-		connectivityAdapterBaseURL: connectivityAdapterBaseURL,
-		runtimeBaseURLProvider:     runtimeBaseURLProvider,
+		connectivityAdapterBaseURL:     connectivityAdapterBaseURL,
+		runtimeBaseURLProvider:         runtimeBaseURLProvider,
+		connectivityAdapterMTLSBaseURL: connectivityAdapterMTLSBaseURL,
 	}
 }
 
@@ -32,8 +34,9 @@ func (bm baseURLsMiddleware) GetBaseUrls(handler http.Handler) http.Handler {
 		}
 
 		baseURLs := BaseURLs{
-			ConnectivityAdapterBaseURL: bm.connectivityAdapterBaseURL,
-			EventServiceBaseURL:        eventServiceBaseURL,
+			ConnectivityAdapterBaseURL:     bm.connectivityAdapterBaseURL,
+			ConnectivityAdapterMTLSBaseURL: bm.connectivityAdapterMTLSBaseURL,
+			EventServiceBaseURL:            eventServiceBaseURL,
 		}
 
 		context := PutIntoContext(r.Context(), BaseURLsKey, baseURLs)

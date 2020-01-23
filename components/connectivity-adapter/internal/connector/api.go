@@ -16,7 +16,6 @@ type Config struct {
 	CompassConnectorURL string `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
 	AdapterBaseURL      string `envconfig:"default=https://adapter-gateway.kyma.local"`
 	AdapterBaseURLMTLS  string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
-	//InsecureConnectorCalls bool   `envconfig:"default=true"`
 }
 
 const (
@@ -40,7 +39,7 @@ func RegisterHandler(router *mux.Router, config Config) error {
 	}
 
 	{
-		baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterBaseURL, eventBaseURLProvider)
+		baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterBaseURL, config.AdapterBaseURLMTLS, eventBaseURLProvider)
 		signingRequestInfo := api.NewSigningRequestInfoHandler(client, logger)
 		signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetSigningRequestInfo)
 
@@ -48,7 +47,7 @@ func RegisterHandler(router *mux.Router, config Config) error {
 	}
 
 	{
-		baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterBaseURLMTLS, eventBaseURLProvider)
+		baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterBaseURLMTLS, config.AdapterBaseURLMTLS, eventBaseURLProvider)
 		managementInfo := api.NewManagementInfoHandler(client, logger)
 		managementInfoHandler := http.HandlerFunc(managementInfo.GetManagementInfo)
 

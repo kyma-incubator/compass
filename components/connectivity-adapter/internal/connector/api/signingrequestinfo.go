@@ -68,14 +68,28 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 	certInfo := graphql.ToCertInfo(configuration)
 
 	//TODO: handle case when configuration.Token is nil
-	csrInfoResponse := ci.makeCSRInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)
+	csrInfoResponse := ci.makeCSRInfoResponse(
+		application,
+		configuration.Token.Token,
+		baseURLs.ConnectivityAdapterBaseURL,
+		baseURLs.ConnectivityAdapterMTLSBaseURL,
+		baseURLs.EventServiceBaseURL,
+		certInfo)
+
 	respondWithBody(w, http.StatusOK, csrInfoResponse, contextLogger)
 }
 
-func (ci *csrInfoHandler) makeCSRInfoResponse(application, newToken, connectivityAdapterBaseURL, eventServiceBaseURL string, certInfo model.CertInfo) model.CSRInfoResponse {
+func (ci *csrInfoHandler) makeCSRInfoResponse(
+	application,
+	newToken,
+	connectivityAdapterBaseURL,
+	connectivityAdapterMTLSBaseURL,
+	eventServiceBaseURL string,
+	certInfo model.CertInfo) model.CSRInfoResponse {
+
 	return model.CSRInfoResponse{
 		CsrURL:          model.MakeCSRURL(newToken, connectivityAdapterBaseURL),
-		API:             model.MakeApiURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
+		API:             model.MakeApiURLs(application, connectivityAdapterBaseURL, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
 		CertificateInfo: certInfo,
 	}
 }

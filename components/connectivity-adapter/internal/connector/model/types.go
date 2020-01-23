@@ -73,11 +73,11 @@ func MakeCSRURL(newToken, connectivityAdapterBaseURL string) string {
 	return csrURL + tokenParam
 }
 
-func MakeApiURLs(application, connectivityAdapterBaseURL string, eventServiceBaseURL string) Api {
+func MakeApiURLs(application, connectivityAdapterBaseURL string, connectivityAdapterMTLSBaseURL string, eventServiceBaseURL string) Api {
 	return Api{
 		CertificatesURL: connectivityAdapterBaseURL + CertsEndpoint,
-		InfoURL:         connectivityAdapterBaseURL + ManagementInfoEndpoint,
-		RuntimeURLs:     makeRuntimeURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
+		InfoURL:         connectivityAdapterMTLSBaseURL + ManagementInfoEndpoint,
+		RuntimeURLs:     makeRuntimeURLs(application, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
 	}
 }
 
@@ -96,10 +96,10 @@ func MakeClientIdentity(application, tenant, group string) ClientIdentity {
 	}
 }
 
-func MakeManagementURLs(application, connectivityAdapterBaseURL string, eventServiceBaseURL string) MgmtURLs {
+func MakeManagementURLs(application, connectivityAdapterMTLSBaseURL string, eventServiceBaseURL string) MgmtURLs {
 	return MgmtURLs{
-		RuntimeURLs:   makeRuntimeURLs(application, connectivityAdapterBaseURL, eventServiceBaseURL),
-		RenewCertURL:  fmt.Sprintf(RenewCertURLFormat, connectivityAdapterBaseURL),
-		RevokeCertURL: fmt.Sprintf(RevocationCertURLFormat, connectivityAdapterBaseURL),
+		RuntimeURLs:   makeRuntimeURLs(application, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
+		RenewCertURL:  fmt.Sprintf(RenewCertURLFormat, connectivityAdapterMTLSBaseURL),
+		RevokeCertURL: fmt.Sprintf(RevocationCertURLFormat, connectivityAdapterMTLSBaseURL),
 	}
 }

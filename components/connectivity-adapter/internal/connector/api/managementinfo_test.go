@@ -22,8 +22,9 @@ import (
 func TestHandlerManagementInfo(t *testing.T) {
 
 	baseURLs := middlewares.BaseURLs{
-		ConnectivityAdapterBaseURL: "www.connectivity-adapter.com",
-		EventServiceBaseURL:        "www.event-service.com",
+		ConnectivityAdapterBaseURL:     "www.connectivity-adapter.com",
+		ConnectivityAdapterMTLSBaseURL: "www.connectivity-adapter-mtls.com",
+		EventServiceBaseURL:            "www.event-service.com",
 	}
 
 	headersFromToken := map[string]string{
@@ -62,10 +63,10 @@ func TestHandlerManagementInfo(t *testing.T) {
 		expectedURLs := model.MgmtURLs{
 			RuntimeURLs: &model.RuntimeURLs{
 				EventsURL:   "www.event-service.com/myapp/v1/events",
-				MetadataURL: "www.connectivity-adapter.com/myapp/v1/metadata",
+				MetadataURL: "www.connectivity-adapter-mtls.com/myapp/v1/metadata",
 			},
-			RenewCertURL:  "www.connectivity-adapter.com/applications/certificates/renewals",
-			RevokeCertURL: "www.connectivity-adapter.com/applications/certificates/revocations",
+			RenewCertURL:  "www.connectivity-adapter-mtls.com/applications/certificates/renewals",
+			RevokeCertURL: "www.connectivity-adapter-mtls.com/applications/certificates/revocations",
 		}
 
 		expectedClientIdentify := model.ClientIdentity{
