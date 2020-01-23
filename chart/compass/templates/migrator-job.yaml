@@ -73,4 +73,10 @@ spec:
                     - "/bin/bash"
                   args:
                     - "-c"
-                    - "./run.sh; exit_code=$?; echo '# KILLING PILOT-AGENT #'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+                    - "sleep 20; ./run.sh; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+            {{if eq .Values.global.database.embedded.enabled false}}
+            volumes:
+              - name: cloudsql-instance-credentials
+                secret:
+                  secretName: cloudsql-instance-credentials
+            {{end}}
