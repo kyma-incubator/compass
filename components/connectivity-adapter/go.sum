@@ -102,6 +102,7 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20200120072209-5656
 github.com/kyma-incubator/compass/components/director v0.0.0-20200120072209-565610bd185a/go.mod h1:bENHuI5/ZTfg7wLSSfL7CIHKBUwRnDwzGTYKkY0H8R8=
 github.com/kyma-incubator/compass/tests/director v0.0.0-20200120072209-565610bd185a h1:lvOh/tsOmLa+MZy38hNeRIf2O5AOslEsHIsvbm2tLU8=
 github.com/kyma-incubator/compass/tests/director v0.0.0-20200120072209-565610bd185a/go.mod h1:i15sxF+nbckFFUU1DTHWH5dhL2UgDJO4kJVe1SK5sXw=
+github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979 h1:wnrU/8skRjKqboJrlK1Mw9oQRuGs2sWMTrlIctNa3SQ=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/lestrrat-go/jwx v0.9.0/go.mod h1:iEoxlYfZjvoGpuWwxUz+eR5e6KTJGsaRcy/YNA/UnBk=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=

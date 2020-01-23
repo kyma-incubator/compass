@@ -105,6 +105,7 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	successResponse := SuccessfulCreateResponse{
 		ID: resp.Result.ID,
 	}
+
 	err = json.NewEncoder(writer).Encode(&successResponse)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while encoding response")
@@ -112,8 +113,6 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
-
-	writer.WriteHeader(http.StatusOK)
 }
 
 type SuccessfulCreateResponse struct {
@@ -130,7 +129,7 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 	var resp gqlGetApplicationResponse
 	err := gqlCli.Run(context.Background(), gqlRequest, &resp)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "while creating service")
+		wrappedErr := errors.Wrap(err, "while getting service")
 		h.logger.Error(wrappedErr)
 		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
@@ -156,8 +155,6 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
-
-	writer.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
