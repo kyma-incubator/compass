@@ -19,7 +19,7 @@ global:
       version: "PR-658"
     director:
       dir:
-      version: "PR-604"
+      version: "PR-680"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -39,11 +39,11 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-635"
+      version: "PR-705"
     tests:
       director:
         dir:
-        version: "PR-664"
+        version: "PR-680"
       connector:
         dir:
         version: "02e8358c"
@@ -119,7 +119,7 @@ global:
       host: adapter-gateway
     mtls:
       host: adapter-gateway-mtls
-
+  
   rewriteFilters:
     workloadLabel: oathkeeper
     tokenDataHeader: "Connector-Token"

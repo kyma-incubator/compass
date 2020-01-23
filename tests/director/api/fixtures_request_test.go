@@ -175,7 +175,7 @@ func fixRequestOneTimeTokenForRuntime(id string) *gcli.Request {
 				result: requestOneTimeTokenForRuntime(id: "%s") {
 						%s
 					}
-				}`, id, tc.gqlFieldsProvider.ForOneTimeToken()))
+				}`, id, tc.gqlFieldsProvider.ForOneTimeTokenForRuntime()))
 }
 
 func fixRequestOneTimeTokenForApp(id string) *gcli.Request {
@@ -184,7 +184,7 @@ func fixRequestOneTimeTokenForApp(id string) *gcli.Request {
 				result: requestOneTimeTokenForApplication(id: "%s") {
 						%s
 					}
-				}`, id, tc.gqlFieldsProvider.ForOneTimeToken()))
+				}`, id, tc.gqlFieldsProvider.ForOneTimeTokenForApplication()))
 }
 
 func fixUpdateIntegrationSystemRequest(id, integrationSystemInGQL string) *gcli.Request {

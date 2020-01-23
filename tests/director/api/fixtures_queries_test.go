@@ -252,17 +252,17 @@ func addEventDefinition(t *testing.T, ctx context.Context, appID string, apiInpu
 
 //OneTimeToken
 
-func requestOneTimeTokenForApplication(t *testing.T, ctx context.Context, id string) graphql.OneTimeTokenExt {
+func requestOneTimeTokenForApplication(t *testing.T, ctx context.Context, id string) graphql.OneTimeTokenForApplicationExt {
 	tokenRequest := fixRequestOneTimeTokenForApp(id)
-	token := graphql.OneTimeTokenExt{}
+	token := graphql.OneTimeTokenForApplicationExt{}
 	err := tc.RunOperation(ctx, tokenRequest, &token)
 	require.NoError(t, err)
 	return token
 }
 
-func requestOneTimeTokenForRuntime(t *testing.T, ctx context.Context, id string) graphql.OneTimeTokenExt {
+func requestOneTimeTokenForRuntime(t *testing.T, ctx context.Context, id string) graphql.OneTimeTokenForRuntimeExt {
 	tokenRequest := fixRequestOneTimeTokenForRuntime(id)
-	token := graphql.OneTimeTokenExt{}
+	token := graphql.OneTimeTokenForRuntimeExt{}
 	err := tc.RunOperation(ctx, tokenRequest, &token)
 	require.NoError(t, err)
 	return token

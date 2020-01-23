@@ -6,6 +6,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -21,13 +23,13 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	appID := "08d805a5-87f0-4194-adc7-277ec10de2ef"
 	ctx := context.TODO()
 	tokenModel := model.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
-	expectedToken := graphql.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
+	expectedToken := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL"}}
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, model.ApplicationReference).Return(tokenModel, nil)
 		conv := &automock.TokenConverter{}
-		conv.On("ToGraphQL", tokenModel).Return(expectedToken)
+		conv.On("ToGraphQLForApplication", tokenModel).Return(expectedToken, nil)
 		persist, transact := txGen.ThatSucceeds()
 		r := onetimetoken.NewTokenResolver(transact, svc, conv)
 
@@ -38,10 +40,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, oneTimeToken)
 		assert.Equal(t, expectedToken, *oneTimeToken)
-		persist.AssertExpectations(t)
-		transact.AssertExpectations(t)
-		svc.AssertExpectations(t)
-		conv.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, persist, transact, svc, conv)
 	})
 
 	t.Run("Error - transaction commit failed", func(t *testing.T) {
@@ -57,10 +56,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		persist.AssertExpectations(t)
-		transact.AssertExpectations(t)
-		svc.AssertExpectations(t)
-		conv.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, persist, transact, svc, conv)
 	})
 
 	t.Run("Error - service return error", func(t *testing.T) {
@@ -76,10 +72,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		persist.AssertExpectations(t)
-		transact.AssertExpectations(t)
-		svc.AssertExpectations(t)
-		conv.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, persist, transact, svc, conv)
 	})
 
 	t.Run("Error - begin transaction failed", func(t *testing.T) {
@@ -94,10 +87,24 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		persist.AssertExpectations(t)
-		transact.AssertExpectations(t)
-		svc.AssertExpectations(t)
-		conv.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, persist, transact, svc, conv)
+	})
+
+	t.Run("Error - converter returns error", func(t *testing.T) {
+		//GIVEN
+		svc := &automock.TokenService{}
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, model.ApplicationReference).Return(tokenModel, nil)
+		conv := &automock.TokenConverter{}
+		conv.On("ToGraphQLForApplication", tokenModel).Return(graphql.OneTimeTokenForApplication{}, errors.New("some-error"))
+		persist, transact := txGen.ThatSucceeds()
+		r := onetimetoken.NewTokenResolver(transact, svc, conv)
+
+		//WHEN
+		_, err := r.RequestOneTimeTokenForApplication(ctx, appID)
+
+		//THEN
+		require.EqualError(t, err, "while converting one-time token to graphql: some-error")
+		mock.AssertExpectationsForObjects(t, persist, transact, svc, conv)
 	})
 }
 
@@ -107,14 +114,14 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 	runtimeID := "08d805a5-87f0-4194-adc7-277ec10de2ef"
 	ctx := context.TODO()
 	tokenModel := model.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
-	expectedToken := graphql.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
+	expectedToken := graphql.OneTimeTokenForRuntime{graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL"}}
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, model.RuntimeReference).Return(tokenModel, nil)
 		persist, transact := txGen.ThatSucceeds()
 		conv := &automock.TokenConverter{}
-		conv.On("ToGraphQL", tokenModel).Return(expectedToken)
+		conv.On("ToGraphQLForRuntime", tokenModel).Return(expectedToken)
 		r := onetimetoken.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
@@ -189,7 +196,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 
 func TestResolver_RawEncoded(t *testing.T) {
 	ctx := context.TODO()
-	tokenGraphql := graphql.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
+	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL"}, LegacyConnectorURL: "legacyConnectorURL"}
 	expectedRawToken := "{\"token\":\"Token\"," +
 		"\"connectorURL\":\"connectorURL\"}"
 	expectedBaseToken := base64.StdEncoding.EncodeToString([]byte(expectedRawToken))
@@ -198,7 +205,7 @@ func TestResolver_RawEncoded(t *testing.T) {
 		r := onetimetoken.NewTokenResolver(nil, nil, nil)
 
 		//WHEN
-		baseEncodedToken, err := r.RawEncoded(ctx, &tokenGraphql)
+		baseEncodedToken, err := r.RawEncoded(ctx, &tokenGraphql.TokenWithURL)
 
 		//THEN
 		require.NoError(t, err)
@@ -219,7 +226,7 @@ func TestResolver_RawEncoded(t *testing.T) {
 
 func TestResolver_Raw(t *testing.T) {
 	ctx := context.TODO()
-	tokenGraphql := graphql.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
+	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL"}, LegacyConnectorURL: "legacyConnectorURL"}
 	expectedRawToken := "{\"token\":\"Token\"," +
 		"\"connectorURL\":\"connectorURL\"}"
 
@@ -228,7 +235,7 @@ func TestResolver_Raw(t *testing.T) {
 		r := onetimetoken.NewTokenResolver(nil, nil, nil)
 
 		//WHEN
-		baseEncodedToken, err := r.Raw(ctx, &tokenGraphql)
+		baseEncodedToken, err := r.Raw(ctx, &tokenGraphql.TokenWithURL)
 
 		//THEN
 		require.NoError(t, err)

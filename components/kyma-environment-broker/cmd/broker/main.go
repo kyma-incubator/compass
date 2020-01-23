@@ -37,8 +37,11 @@ type Config struct {
 	Director     director.Config
 	Database     storage.Config
 
-	// feature flag indicates whether use Provisioner API which returns RuntimeID
-	ProcessRuntimeID bool `envconfig:"default=false"`
+	ServiceManager struct {
+		URL      string
+		Password string
+		Username string
+	}
 }
 
 func main() {
@@ -57,12 +60,7 @@ func main() {
 		Password: cfg.Auth.Password,
 	}
 
-	var provisionerClient provisioner.Client
-	if cfg.ProcessRuntimeID {
-		provisionerClient = provisioner.NewProvisionerClientV2(cfg.Provisioning.URL, true)
-	} else {
-		provisionerClient = provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
-	}
+	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, cfg.ServiceManager.URL, cfg.ServiceManager.Username, cfg.ServiceManager.Password, true)
 
 	k8sCfg, err := config.GetConfig()
 	fatalOnError(err)

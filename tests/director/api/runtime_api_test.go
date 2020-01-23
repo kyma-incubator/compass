@@ -75,7 +75,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 			}`, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
 	err = tc.RunOperation(ctx, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
-	assert.Len(t, actualRuntime.Labels, 2)
+	assert.Len(t, actualRuntime.Labels, 3)
 
 	// add agent auth
 	// GIVEN

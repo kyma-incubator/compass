@@ -50,6 +50,7 @@ type KymaEnvBroker struct {
 
 var enabledPlanIDs = map[string]struct{}{
 	azurePlanID: {},
+	gcpPlanID:   {},
 	// add plan IDs which must be enabled
 }
 
@@ -151,6 +152,8 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	switch details.PlanID {
 	case azurePlanID:
 		input.ClusterConfig.GardenerConfig.TargetSecret = b.Config.AzureSecretName
+	case gcpPlanID:
+		input.ClusterConfig.GardenerConfig.TargetSecret = b.Config.GCPSecretName
 	default:
 		return domain.ProvisionedServiceSpec{}, errors.Wrapf(err, "unknown Plan ID %s", details.PlanID)
 	}

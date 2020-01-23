@@ -11,15 +11,36 @@ type TokenConverter struct {
 	mock.Mock
 }
 
-// ToGraphQL provides a mock function with given fields: _a0
-func (_m *TokenConverter) ToGraphQL(_a0 model.OneTimeToken) graphql.OneTimeToken {
+// ToGraphQLForApplication provides a mock function with given fields: _a0
+func (_m *TokenConverter) ToGraphQLForApplication(_a0 model.OneTimeToken) (graphql.OneTimeTokenForApplication, error) {
 	ret := _m.Called(_a0)
 
-	var r0 graphql.OneTimeToken
-	if rf, ok := ret.Get(0).(func(model.OneTimeToken) graphql.OneTimeToken); ok {
+	var r0 graphql.OneTimeTokenForApplication
+	if rf, ok := ret.Get(0).(func(model.OneTimeToken) graphql.OneTimeTokenForApplication); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(graphql.OneTimeToken)
+		r0 = ret.Get(0).(graphql.OneTimeTokenForApplication)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(model.OneTimeToken) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ToGraphQLForRuntime provides a mock function with given fields: _a0
+func (_m *TokenConverter) ToGraphQLForRuntime(_a0 model.OneTimeToken) graphql.OneTimeTokenForRuntime {
+	ret := _m.Called(_a0)
+
+	var r0 graphql.OneTimeTokenForRuntime
+	if rf, ok := ret.Get(0).(func(model.OneTimeToken) graphql.OneTimeTokenForRuntime); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(graphql.OneTimeTokenForRuntime)
 	}
 
 	return r0
