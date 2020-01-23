@@ -55,7 +55,7 @@ spec:
                       - name: TENANT_PROVIDER
                         value: {{ .Values.global.tenantConfig.tenantProvider }}
                   volumeMounts:
-                    - name: {{ template "fullname" . }}-tenant-config
+                    - name: tenant-config
                       mountPath: /data/tenants.json
                       subPath: tenants.json
                   command:
