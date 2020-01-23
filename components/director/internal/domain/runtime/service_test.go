@@ -25,6 +25,9 @@ func TestService_Create(t *testing.T) {
 	modelInput := model.RuntimeInput{
 		Name:        "foo.bar-not",
 		Description: &desc,
+		Labels: map[string]interface{}{
+			model.ScenariosKey: "DEFAULT",
+		},
 	}
 
 	runtimeModel := mock.MatchedBy(func(rtm *model.Runtime) bool {

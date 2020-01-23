@@ -206,11 +206,32 @@ func assertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []
 func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.RuntimeExt) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
-	if in.Labels != nil {
-		assert.Equal(t, *in.Labels, actualRuntime.Labels)
-	} else {
-		assert.Empty(t, actualRuntime.Labels)
+	assertRuntimeLabels(t, in.Labels, actualRuntime.Labels)
+}
+
+func assertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels) {
+	const scenariosKey = "scenarios"
+
+	if inLabels == nil {
+		assertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
+		assert.Equal(t, 1, len(actualLabels))
+		return
 	}
+
+	_, inHasScenarios := (*inLabels)[scenariosKey]
+	if !inHasScenarios {
+		assertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
+	}
+
+	for labelKey, labelValues := range *inLabels {
+		assertLabel(t, actualLabels, labelKey, labelValues)
+	}
+}
+
+func assertLabel(t *testing.T, actualLabels graphql.Labels, key string, values interface{}) {
+	labelValues, ok := actualLabels[key]
+	assert.True(t, ok)
+	assert.Equal(t, values, labelValues)
 }
 
 func assertIntegrationSystem(t *testing.T, in graphql.IntegrationSystemInput, actualIntegrationSystem graphql.IntegrationSystemExt) {
