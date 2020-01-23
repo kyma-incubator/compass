@@ -60,7 +60,7 @@ func main() {
 		Password: cfg.Auth.Password,
 	}
 
-	provisionerClient := provisioner.NewProvisionerClientV2(cfg.Provisioning.URL, cfg.ServiceManager.URL, cfg.ServiceManager.Username, cfg.ServiceManager.Password, true)
+	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, cfg.ServiceManager.URL, cfg.ServiceManager.Username, cfg.ServiceManager.Password, true)
 
 	k8sCfg, err := config.GetConfig()
 	fatalOnError(err)
