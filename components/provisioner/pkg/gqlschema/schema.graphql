@@ -1,7 +1,7 @@
 
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
-    runtimeName: String
+    name: String
     clusterConfig: ClusterConfig
     credentialsSecretName: String
     kymaConfig: KymaConfig

@@ -1,6 +1,9 @@
 package provisioning
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
@@ -10,6 +13,8 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
+
+const letters = "abcdefghijklmnopqrstuvwxyz"
 
 type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.Cluster, error)
@@ -74,7 +79,7 @@ func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.Clu
 
 func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
 	id := c.uuidGenerator.New()
-	name := util.ClusterName(c.uuidGenerator.New())
+	name := c.createGardenerClusterName(input.Provider)
 
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 
@@ -103,6 +108,14 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		ClusterID:              runtimeID,
 		GardenerProviderConfig: providerSpecificConfig,
 	}, nil
+}
+
+func (c converter) createGardenerClusterName(provider string) string {
+	uuid := c.uuidGenerator.New()
+	name := strings.ReplaceAll(uuid, "-", "")
+	name = fmt.Sprintf("%.3s-%.7s", provider, name)
+	name = strings.ToLower(name)
+	return name
 }
 
 func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {

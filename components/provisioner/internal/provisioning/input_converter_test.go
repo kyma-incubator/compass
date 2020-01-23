@@ -25,6 +25,17 @@ const (
 	applicationConnectorComponent = "application-connector"
 )
 
+type InputConverterTester interface {
+	createGardenerClusterName(provider string) string
+}
+
+func NewInputConverterTester(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository) InputConverterTester {
+	return &converter{
+		uuidGenerator: uuidGenerator,
+		releaseRepo:   releaseRepo,
+	}
+}
+
 func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	readSession := &realeaseMocks.Repository{}
@@ -122,7 +133,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeName: "runtimeName",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "ferylongidthat",
+			Name:                   "gcp-verylon",
 			ProjectName:            "Project",
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
@@ -190,7 +201,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeName: "runtimeName",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "ferylongidthat",
+			Name:                   "azu-verylon",
 			ProjectName:            "Project",
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
@@ -263,7 +274,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeName: "runtimeName",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "ferylongidthat",
+			Name:                   "aws-verylon",
 			ProjectName:            "Project",
 			MachineType:            "n1-standard-1",
 			Region:                 "region",

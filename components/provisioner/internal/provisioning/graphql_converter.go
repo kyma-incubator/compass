@@ -53,7 +53,7 @@ func (c graphQLConverter) runtimeAgentConnectionStatusToGraphQLStatus(status mod
 
 func (c graphQLConverter) clusterToToGraphQLRuntimeConfiguration(config model.Cluster) *gqlschema.RuntimeConfig {
 	return &gqlschema.RuntimeConfig{
-		RuntimeName:           &config.RuntimeName,
+		Name:                  &config.RuntimeName,
 		ClusterConfig:         c.clusterConfigToGraphQLConfig(config.ClusterConfig),
 		KymaConfig:            c.kymaConfigToGraphQLConfig(config.KymaConfig),
 		Kubeconfig:            config.Kubeconfig,
