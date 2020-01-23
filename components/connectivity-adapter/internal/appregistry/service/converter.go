@@ -13,6 +13,8 @@ func NewConverter() *converter {
 }
 
 func (c *converter) DetailsToGraphQLInput(in model.ServiceDetails) (graphql.ApplicationRegisterInput, error) {
+	// This is just a temporary fixture for testing purposes
+	// TODO: Replace with production-grade implementation
 	return graphql.ApplicationRegisterInput{
 		Name:           "wordpress",
 		ProviderName:   ptr.String("provider name"),

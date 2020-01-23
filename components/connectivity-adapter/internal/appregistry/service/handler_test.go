@@ -45,7 +45,6 @@ func TestHandler_Create(t *testing.T) {
 		}	
 	}`, name))
 	successGraphQLResponse := gqlSuccessfulCreateResponse{}
-	//notFoundErr := fmt.Errorf("graphql: while getting Application with ID %s: Object was not found", id)
 
 	testCases := []struct {
 		Name                       string
