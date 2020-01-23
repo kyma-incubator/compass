@@ -400,6 +400,17 @@ type BasicCredentialData {
 	password: String!
 }
 
+type BusinessTenant {
+	tenant: String!
+	name: String
+}
+
+type BusinessTenantPage implements Pageable {
+	data: [BusinessTenant!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type CSRFTokenCredentialRequestAuth {
 	tokenEndpointURL: String!
 	credential: CredentialData!
@@ -681,6 +692,7 @@ type Query {
 	"""
 	integrationSystem(id: ID!): IntegrationSystem @hasScopes(path: "graphql.query.integrationSystem")
 	viewer: Viewer! @hasScopes(path: "graphql.query.viewer")
+	businessTenants(first: Int = 100, after: PageCursor): BusinessTenantPage! @hasScopes(path: "graphql.query.businessTenants")
 }
 
 type Mutation {

@@ -148,6 +148,19 @@ type BasicCredentialDataInput struct {
 	Password string `json:"password"`
 }
 
+type BusinessTenant struct {
+	Tenant string  `json:"tenant"`
+	Name   *string `json:"name"`
+}
+
+type BusinessTenantPage struct {
+	Data       []*BusinessTenant `json:"data"`
+	PageInfo   *PageInfo         `json:"pageInfo"`
+	TotalCount int               `json:"totalCount"`
+}
+
+func (BusinessTenantPage) IsPageable() {}
+
 type CSRFTokenCredentialRequestAuth struct {
 	TokenEndpointURL      string         `json:"tokenEndpointURL"`
 	Credential            CredentialData `json:"credential"`
