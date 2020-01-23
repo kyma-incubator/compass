@@ -69,7 +69,7 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 
 	//TODO: handle case when configuration.Token is nil
 	csrInfoResponse := ci.makeCSRInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)
-	respondWithBody(w, http.StatusOK, csrInfoResponse)
+	respondWithBody(w, http.StatusOK, csrInfoResponse, contextLogger)
 }
 
 func (ci *csrInfoHandler) makeCSRInfoResponse(application, newToken, connectivityAdapterBaseURL, eventServiceBaseURL string, certInfo model.CertInfo) model.CSRInfoResponse {

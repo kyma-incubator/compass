@@ -61,7 +61,7 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 
 	//TODO: handle case when configuration.Token is nil
 	csrInfoResponse := mh.makeManagementInfoResponse(application, configuration.Token.Token, baseURLs.ConnectivityAdapterBaseURL, baseURLs.EventServiceBaseURL, certInfo)
-	respondWithBody(w, http.StatusOK, csrInfoResponse)
+	respondWithBody(w, http.StatusOK, csrInfoResponse, contextLogger)
 }
 
 func (m *managementInfoHandler) makeManagementInfoResponse(application, newToken, connectivityAdapterBaseURL, eventServiceBaseURL string, certInfo model.CertInfo) model.MgmtInfoReponse {

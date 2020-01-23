@@ -38,7 +38,7 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 	}
 
 	contextLogger := contextLogger(ch.logger, authorizationHeaders.GetClientID())
-	certRequest, err := readCertRequest(r)
+	certRequest, err := readCertRequest(r, contextLogger)
 	if err != nil {
 		err = errors.Wrap(err, "Failed to read certificate request")
 		contextLogger.Error(err.Error())
@@ -59,15 +59,20 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 	}
 
 	certResponse := graphql.ToCertResponse(certificationResult)
-	respondWithBody(w, http.StatusCreated, certResponse)
+	respondWithBody(w, http.StatusCreated, certResponse, contextLogger)
 }
 
-func readCertRequest(r *http.Request) (*certRequest, error) {
+func readCertRequest(r *http.Request, logger *log.Entry) (*certRequest, error) {
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "error while reading request body: %s")
 	}
-	defer r.Body.Close()
+	defer func() {
+		err := r.Body.Close()
+		if err != nil {
+			log.Errorf("Failed to close response body: %s", err)
+		}
+	}()
 
 	var certRequest certRequest
 	err = json.Unmarshal(b, &certRequest)
@@ -78,9 +83,12 @@ func readCertRequest(r *http.Request) (*certRequest, error) {
 	return &certRequest, nil
 }
 
-func respondWithBody(w http.ResponseWriter, statusCode int, responseBody interface{}) {
+func respondWithBody(w http.ResponseWriter, statusCode int, responseBody interface{}, logger *log.Entry) {
 	respond(w, statusCode)
-	json.NewEncoder(w).Encode(responseBody)
+	err := json.NewEncoder(w).Encode(responseBody)
+	if err != nil {
+		logger.Errorf("Failed to encode response body: %s", err)
+	}
 }
 
 func respond(w http.ResponseWriter, statusCode int) {
