@@ -9,6 +9,6 @@ The diagram and steps describe the Kyma Environment Broker (KEB) workflow and th
 3. Provisioner registers a new cluster in the Director component.
 4. Provisioner creates a new cluster and installs Kyma Runtime.
 5. When the operation is successful, KEB keeps sending a request for a Dashboard URL to Director:
-a. KEB sends a request to Hydra to refresh the OAuth token.
-b. KEB passes the OAuth token through Gateway to Director.
-c. Director returns the Dashboard URL, which is the URL to the newly created cluster, through Gateway to KEB.
+    a. KEB sends a request to Hydra to refresh the OAuth token.
+    b. KEB passes the OAuth token through Gateway to Director.
+    c. Director returns the Dashboard URL, which is the URL to the newly created cluster, through Gateway to KEB.
