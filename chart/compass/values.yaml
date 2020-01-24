@@ -84,6 +84,9 @@ global:
     caKey: ""
     caCertificate: ""
 
+  provisioning:
+    enabled: false
+
   kyma_environment_broker:
     secrets:
       integrationSystemCredentials:
