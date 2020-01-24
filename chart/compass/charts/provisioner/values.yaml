@@ -23,8 +23,11 @@ installation:
   errorsCountFailureThreshold: 5
 
 tests:
-  enabled: false
+  enabled: true
   gcp:
+    credentials: ""
+    projectName: ""
+  gardener:
     credentials: ""
     projectName: ""
   queryLogging: false
