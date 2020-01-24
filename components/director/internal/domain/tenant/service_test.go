@@ -82,7 +82,7 @@ func TestService_GetInternalTenant(t *testing.T) {
 			Name: "Success",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("GetByExternalTenant", ctx, testExternal, testProvider).Return(tenantMappingModel, nil).Once()
+				tenantMappingRepo.On("GetByExternalTenant", ctx, testExternal).Return(tenantMappingModel, nil).Once()
 				return tenantMappingRepo
 			},
 			ExpectedOutput: testID,
@@ -91,7 +91,7 @@ func TestService_GetInternalTenant(t *testing.T) {
 			Name: "Error when getting the internal tenant",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("GetByExternalTenant", ctx, testExternal, testProvider).Return(nil, testError).Once()
+				tenantMappingRepo.On("GetByExternalTenant", ctx, testExternal).Return(nil, testError).Once()
 				return tenantMappingRepo
 			},
 			ExpectedError:  testError,
@@ -105,7 +105,7 @@ func TestService_GetInternalTenant(t *testing.T) {
 			svc := tenant.NewService(tenantMappingRepoFn, nil)
 
 			// WHEN
-			result, err := svc.GetInternalTenant(ctx, testExternal, testProvider)
+			result, err := svc.GetInternalTenant(ctx, testExternal)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -217,7 +217,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Succes",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant, tenantInput.Provider).Return(tenantModel, nil).Once()
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).Return(tenantModel, nil).Once()
 				tenantMappingRepo.On("Update", ctx, &tenantModelInactive).Return(nil).Once()
 				return tenantMappingRepo
 			},
@@ -227,7 +227,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Error while getting the tenant mapping",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant, tenantInput.Provider).Return(nil, testErr).Once()
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).Return(nil, testErr).Once()
 				return tenantMappingRepo
 			},
 			ExpectedOutput: testErr,
@@ -236,7 +236,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Error while marking as inactive",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant, tenantInput.Provider).Return(tenantModel, nil).Once()
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).Return(tenantModel, nil).Once()
 				tenantMappingRepo.On("Update", ctx, &tenantModelInactive).Return(testErr).Once()
 				return tenantMappingRepo
 			},
@@ -291,8 +291,8 @@ func TestService_AbsolutelyNotUpsert(t *testing.T) {
 			Name: "Succes",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant, tenantInputs[0].Provider).Return(false, nil)
-				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[1].ExternalTenant, tenantInputs[1].Provider).Return(true, nil)
+				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(false, nil)
+				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[1].ExternalTenant).Return(true, nil)
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
 				return tenantMappingRepo
 			},
@@ -302,7 +302,7 @@ func TestService_AbsolutelyNotUpsert(t *testing.T) {
 			Name: "Error when checking the existence of tenant",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant, tenantInputs[0].Provider).Return(false, testErr)
+				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(false, testErr)
 				return tenantMappingRepo
 			},
 			ExpectedOutput: testErr,
@@ -311,7 +311,7 @@ func TestService_AbsolutelyNotUpsert(t *testing.T) {
 			Name: "Error when creating the tenant",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant, tenantInputs[0].Provider).Return(false, nil)
+				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(false, nil)
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(testErr).Once()
 				return tenantMappingRepo
 			},
@@ -377,8 +377,8 @@ func TestService_Sync(t *testing.T) {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
 				tenantMappingRepo.On("List", ctx, 100, "").Return(&tenantsFromDb, nil).Once()
 				tenantMappingRepo.On("Update", ctx, &tenantToDelete).Return(nil).Once()
-				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant, tenantInputs[0].Provider).Return(false, nil).Once()
-				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[1].ExternalTenant, tenantInputs[1].Provider).Return(true, nil).Once()
+				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(false, nil).Once()
+				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[1].ExternalTenant).Return(true, nil).Once()
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
 				return tenantMappingRepo
 			},
@@ -409,7 +409,7 @@ func TestService_Sync(t *testing.T) {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
 				tenantMappingRepo.On("List", ctx, 100, "").Return(&tenantsFromDb, nil).Once()
 				tenantMappingRepo.On("Update", ctx, &tenantToDelete).Return(nil).Once()
-				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant, tenantInputs[0].Provider).Return(false, testErr).Once()
+				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(false, testErr).Once()
 				return tenantMappingRepo
 			},
 			ExpectedOutput: testErr,
@@ -420,7 +420,7 @@ func TestService_Sync(t *testing.T) {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
 				tenantMappingRepo.On("List", ctx, 100, "").Return(&tenantsFromDb, nil).Once()
 				tenantMappingRepo.On("Update", ctx, &tenantToDelete).Return(nil).Once()
-				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant, tenantInputs[0].Provider).Return(false, nil).Once()
+				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(false, nil).Once()
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(testErr).Once()
 				return tenantMappingRepo
 			},

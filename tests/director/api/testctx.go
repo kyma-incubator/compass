@@ -18,7 +18,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const defaultTenant = "2a1502ba-aded-11e9-a2a3-2a2ae2dbcce4"
+const defaultTenant = "af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e"
 
 var tc *testContext
 

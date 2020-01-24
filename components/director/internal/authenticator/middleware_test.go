@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 )
 
-const tnt = "2a1502ba-aded-11e9-a2a3-2a2ae2dbcce4"
+const defaultTenant = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
 const PublicJWKSURL = "file://testdata/jwks-public.json"
 const PrivateJWKSURL = "file://testdata/jwks-private.json"
 const PrivateJWKS2URL = "file://testdata/jwks-private2.json"
@@ -64,11 +64,11 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Success - token with signing method", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, false)
-		handler := testHandler(t, tnt, scopes)
+		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
 
-		token := createTokenWithSigningMethod(t, tnt, scopes, privateJWKS.Keys[0])
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS.Keys[0])
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -82,11 +82,11 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Success - token with no signing method when it's allowed", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, true)
-		handler := testHandler(t, tnt, scopes)
+		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
 
-		token := createNotSingedToken(t, tnt, scopes)
+		token := createNotSingedToken(t, defaultTenant, scopes)
 		require.NoError(t, err)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
@@ -121,12 +121,12 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Error - token with no signing method when it's not allowed", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, false)
-		handler := testHandler(t, tnt, scopes)
+		handler := testHandler(t, defaultTenant, scopes)
 
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
 
-		token := createNotSingedToken(t, tnt, scopes)
+		token := createNotSingedToken(t, defaultTenant, scopes)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -140,7 +140,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Error - can't parse token", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, false)
-		handler := testHandler(t, tnt, scopes)
+		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
 
@@ -157,7 +157,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Error - Token signed with different key", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, false)
-		handler := testHandler(t, tnt, scopes)
+		handler := testHandler(t, defaultTenant, scopes)
 
 		privateJWKS2, err := authenticator.FetchJWK(PrivateJWKS2URL)
 		require.NoError(t, err)
@@ -165,7 +165,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
 
-		token := createTokenWithSigningMethod(t, tnt, scopes, privateJWKS2.Keys[0])
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS2.Keys[0])
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when

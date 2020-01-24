@@ -141,15 +141,15 @@ func TestPgRepository_GetByExternalTenant(t *testing.T) {
 		rowsToReturn := fixSQLRows([]sqlRow{
 			{id: testID, name: testName, externalTenant: testExternal, provider: "Compass", status: tenant.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND provider_name = $2 AND status != $3 `)).
-			WithArgs(testExternal, testProvider, tenant.Inactive).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
+			WithArgs(testExternal, tenant.Inactive).
 			WillReturnRows(rowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		result, err := tenantMappingRepo.GetByExternalTenant(ctx, testExternal, testProvider)
+		result, err := tenantMappingRepo.GetByExternalTenant(ctx, testExternal)
 
 		// THEN
 		require.NoError(t, err)
@@ -163,15 +163,15 @@ func TestPgRepository_GetByExternalTenant(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND provider_name = $2 AND status != $3 `)).
-			WithArgs(testExternal, testProvider, tenant.Inactive).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $ `)).
+			WithArgs(testExternal, tenant.Inactive).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		result, err := tenantMappingRepo.GetByExternalTenant(ctx, testExternal, testProvider)
+		result, err := tenantMappingRepo.GetByExternalTenant(ctx, testExternal)
 
 		// THEN
 		require.Error(t, err)
@@ -227,15 +227,15 @@ func TestPgRepository_ExistsByExternalTenant(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT 1 FROM public.business_tenant_mappings WHERE external_tenant = $1 AND provider_name = $2`)).
-			WithArgs(testExternal, testProvider).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT 1 FROM public.business_tenant_mappings WHERE external_tenant = $1`)).
+			WithArgs(testExternal).
 			WillReturnRows(testdb.RowWhenObjectExist())
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(nil)
 
 		// WHEN
-		result, err := tenantMappingRepo.ExistsByExternalTenant(ctx, testExternal, testProvider)
+		result, err := tenantMappingRepo.ExistsByExternalTenant(ctx, testExternal)
 
 		// THEN
 		require.NoError(t, err)
@@ -247,15 +247,15 @@ func TestPgRepository_ExistsByExternalTenant(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT 1 FROM public.business_tenant_mappings WHERE external_tenant = $1 AND provider_name = $2`)).
-			WithArgs(testExternal, testProvider).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT 1 FROM public.business_tenant_mappings WHERE external_tenant = $1`)).
+			WithArgs(testExternal).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(nil)
 
 		// WHEN
-		result, err := tenantMappingRepo.ExistsByExternalTenant(ctx, testExternal, testProvider)
+		result, err := tenantMappingRepo.ExistsByExternalTenant(ctx, testExternal)
 
 		// THEN
 		require.Error(t, err)

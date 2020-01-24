@@ -12,10 +12,10 @@ import (
 type TenantMappingRepository interface {
 	Create(ctx context.Context, item model.BusinessTenantMapping) error
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	GetByExternalTenant(ctx context.Context, externalTenant, provider string) (*model.BusinessTenantMapping, error)
+	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error)
-	ExistsByExternalTenant(ctx context.Context, externalTenant, provider string) (bool, error)
+	ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error)
 	Update(ctx context.Context, model *model.BusinessTenantMapping) error
 }
 
@@ -46,8 +46,8 @@ func (s *service) GetExternalTenant(ctx context.Context, id string) (string, err
 	return mapping.ExternalTenant, nil
 }
 
-func (s *service) GetInternalTenant(ctx context.Context, externalTenant, provider string) (string, error) {
-	mapping, err := s.tenantMappingRepo.GetByExternalTenant(ctx, externalTenant, provider)
+func (s *service) GetInternalTenant(ctx context.Context, externalTenant string) (string, error) {
+	mapping, err := s.tenantMappingRepo.GetByExternalTenant(ctx, externalTenant)
 	if err != nil {
 		return "", errors.Wrap(err, "while getting the internal tenant")
 	}
@@ -125,7 +125,7 @@ func (s *service) Create(ctx context.Context, tenantInputs []model.BusinessTenan
 
 func (s *service) createIfNotExists(ctx context.Context, tenants []model.BusinessTenantMapping) error {
 	for _, tenant := range tenants {
-		exists, err := s.tenantMappingRepo.ExistsByExternalTenant(ctx, tenant.ExternalTenant, tenant.Provider)
+		exists, err := s.tenantMappingRepo.ExistsByExternalTenant(ctx, tenant.ExternalTenant)
 		if err != nil {
 			return errors.Wrap(err, "while checking the existence of tenant")
 		}
@@ -143,7 +143,7 @@ func (s *service) createIfNotExists(ctx context.Context, tenants []model.Busines
 func (s *service) Delete(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
 
 	for _, tenantInput := range tenantInputs {
-		tenant, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenantInput.ExternalTenant, tenantInput.Provider)
+		tenant, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenantInput.ExternalTenant)
 		if err != nil {
 			return errors.Wrap(err, "while getting the tenant mapping")
 		}
