@@ -6,26 +6,22 @@ import (
 	"unicode"
 )
 
-const (
-	letters = "abcdefghijklmnopqrstuvwxyz"
-)
-
-// RemoveNotAllowedCharacters returns provider containing only alphanumeric characters or hyphens
-func RemoveNotAllowedCharacters(provider string) string {
-	for _, char := range strings.ToLower(provider) {
+// RemoveNotAllowedCharacters returns string containing only alphanumeric characters or hyphens
+func RemoveNotAllowedCharacters(str string) string {
+	for _, char := range strings.ToLower(str) {
 		if !unicode.IsLetter(char) {
-			provider = strings.ReplaceAll(provider, string(char), "")
+			str = strings.ReplaceAll(str, string(char), "")
 		}
 	}
-	return provider
+	return str
 }
 
-// StartWithLetter returns given name but starting with letter
-func StartWithLetter(name string) string {
-	if len(name) == 0 {
+// StartWithLetter returns given string but starting with letter
+func StartWithLetter(str string) string {
+	if len(str) == 0 {
 		return "c"
-	} else if !unicode.IsLetter(rune(name[0])) {
-		return fmt.Sprintf("c-%.9s", name)
+	} else if !unicode.IsLetter(rune(str[0])) {
+		return fmt.Sprintf("c-%.9s", str)
 	}
-	return name
+	return str
 }
