@@ -215,11 +215,10 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 	}
 
 	gqlApps := r.appConverter.MultipleToGraphQL(appPage.Data)
-	totalCount := len(gqlApps)
 
 	return &graphql.ApplicationPage{
 		Data:       gqlApps,
-		TotalCount: totalCount,
+		TotalCount: appPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(appPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(appPage.PageInfo.EndCursor),

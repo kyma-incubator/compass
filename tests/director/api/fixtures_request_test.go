@@ -362,6 +362,16 @@ func fixApplicationsRequest(labelFilterInGQL string, first int, after string) *g
 			labelFilterInGQL, first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
 }
 
+func fixApplicationsRequestPageable(first int, after string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: applications(, first: %d, after: "%s") {
+						%s
+					}
+				}`,
+			first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
+}
+
 func fixApplicationTemplates(first int, after string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
