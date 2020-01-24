@@ -163,7 +163,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	}
 
 	b.Dumper.Dump("Created provisioning input:", input)
-	resp, err := b.ProvisionerClient.ProvisionRuntime(ersContext.GlobalAccountID, instanceID, *input)
+	resp, err := b.ProvisionerClient.ProvisionRuntime(ersContext.GlobalAccountID, *input)
 	if err != nil {
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not provision runtime, instanceID %s", instanceID))
 	}

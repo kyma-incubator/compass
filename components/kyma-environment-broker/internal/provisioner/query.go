@@ -4,13 +4,7 @@ import "fmt"
 
 type queryProvider struct{}
 
-func (qp queryProvider) provisionRuntime(runtimeID string, config string) string {
-	return fmt.Sprintf(`mutation {
-	result: provisionRuntime(id: "%s", config: %s)
-}`, runtimeID, config)
-}
-
-func (qp queryProvider) provisionRuntimeV2(config string) string {
+func (qp queryProvider) provisionRuntime(config string) string {
 	return fmt.Sprintf(`mutation {
 	result: provisionRuntime(config: %s) {
 		%s
