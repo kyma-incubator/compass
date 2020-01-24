@@ -21,5 +21,5 @@ The Connectivity Adapter binary allows you to override some configuration parame
 | Environment variable              | Default value      | Description                                       |
 | ---------------- | -------------- | ------------------------------------------------- |
 | **APP_ADDRESS**      | `127.0.0.1:8080` | Address and port for the service to listen on |
-| **APP_DIRECTOR_URL** | `127.0.0.1:3000` | Host of the running Director component                      |
+| **APP_APP_REGISTRY_DIRECTOR_ENDPOINT** | `127.0.0.1:3000/graphql` | GraphQL endpoint of the running Director component                      |
  

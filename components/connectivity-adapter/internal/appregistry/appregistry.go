@@ -13,14 +13,14 @@ import (
 )
 
 type Config struct {
-	DirectorURL string `envconfig:"default=http://127.0.0.1:3000/graphql"`
+	DirectorEndpoint string `envconfig:"default=http://127.0.0.1:3000/graphql"`
 }
 
 func RegisterHandler(router *mux.Router, cfg Config) {
 	logger := logrus.New().WithField("component", "app-registry").Logger
 	logger.SetReportCaller(true)
 
-	gqlCliProvider := gqlcli.NewProvider(cfg.DirectorURL)
+	gqlCliProvider := gqlcli.NewProvider(cfg.DirectorEndpoint)
 	converter := service.NewConverter()
 	validator := validation.NewServiceDetailsValidator()
 	gqlRequestBuilder := service.NewGqlRequestBuilder()
