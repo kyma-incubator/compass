@@ -101,8 +101,8 @@ func newGardenerSecretsInterface(config config) (v1.SecretInterface, error) {
 		return nil, errors.Errorf("failed to create k8s core client for Gardener, %s", err.Error())
 	}
 
-	//TODO: is the Gardener credentials namespace the same as the Compass credentials namespace?
-	return coreClientset.CoreV1().Secrets(config.CredentialsNamespace), nil
+	//TODO: what is the Gardener credentials namespace?
+	return coreClientset.CoreV1().Secrets("default"), nil
 }
 
 func newResolver(config config, persistenceService persistence.Service, releaseRepo release.Repository) (*api.Resolver, error) {
