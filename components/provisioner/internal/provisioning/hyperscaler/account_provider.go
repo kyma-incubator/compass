@@ -19,7 +19,7 @@ type AccountProvider interface {
 type accountProvider struct {
 	compassPool  AccountPool
 	gardenerPool AccountPool
-	tenantName string
+	tenantName   string
 }
 
 func NewAccountProvider(
@@ -30,7 +30,7 @@ func NewAccountProvider(
 	return &accountProvider{
 		compassPool:  compassPool,
 		gardenerPool: gardenerPool,
-		tenantName: tenantName,
+		tenantName:   tenantName,
 	}
 }
 

@@ -35,7 +35,6 @@ func HyperscalerTypeFromProviderString(provider string) (HyperscalerType, error)
 	return "", errors.Errorf("Unknown Hyperscaler provider type: %s", provider)
 }
 
-
 // Credentials holds credentials needed to connect to a particular Hyperscaler account
 type Credentials struct {
 

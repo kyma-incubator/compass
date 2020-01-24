@@ -112,8 +112,7 @@ func TestHyperscalerTypeFromProvisionInput(t *testing.T) {
 
 	input := &gqlschema.ProvisionRuntimeInput{
 		ClusterConfig: &gqlschema.ClusterConfigInput{
-			GcpConfig:      &gqlschema.GCPConfigInput {
-			},
+			GcpConfig: &gqlschema.GCPConfigInput{},
 		},
 	}
 
@@ -127,14 +126,13 @@ func TestHyperscalerTypeFromProvisionInputError(t *testing.T) {
 	_, err := HyperscalerTypeFromProvisionInput(nil)
 	assert.Equal(t, err.Error(), "Can't determine hyperscaler type because ProvisionRuntimeInput not specified (was nil)")
 
-	input := &gqlschema.ProvisionRuntimeInput {}
+	input := &gqlschema.ProvisionRuntimeInput{}
 
 	_, err = HyperscalerTypeFromProvisionInput(input)
 	assert.Equal(t, err.Error(), "Can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig not specified (was nil)")
 
 	input = &gqlschema.ProvisionRuntimeInput{
-		ClusterConfig: &gqlschema.ClusterConfigInput{
-		},
+		ClusterConfig: &gqlschema.ClusterConfigInput{},
 	}
 
 	_, err = HyperscalerTypeFromProvisionInput(input)

@@ -15,8 +15,8 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
@@ -36,7 +36,7 @@ const (
 )
 
 func newProvisioningService(config config, persistenceService persistence.Service, compassSecrets v1.SecretInterface,
-		gardenerSecrets v1.SecretInterface, releaseRepo release.ReadRepository) provisioning.Service {
+	gardenerSecrets v1.SecretInterface, releaseRepo release.ReadRepository) provisioning.Service {
 
 	hydroformClient := client.NewHydroformClient()
 	hydroformService := hydroform.NewHydroformService(hydroformClient, compassSecrets)

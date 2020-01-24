@@ -71,10 +71,10 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput:  runtimeInput,
 		ClusterConfig: clusterConfig,
-		Credentials:   &gqlschema.CredentialsInput{
+		Credentials: &gqlschema.CredentialsInput{
 			SecretName: "secretName",
 		},
-		KymaConfig:    kymaConfigInput,
+		KymaConfig: kymaConfigInput,
 	}
 
 	t.Run("Should start runtime provisioning and return operation ID", func(t *testing.T) {
