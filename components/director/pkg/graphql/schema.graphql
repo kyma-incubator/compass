@@ -20,8 +20,6 @@ scalar PageCursor
 
 scalar QueryParams
 
-scalar Tenant
-
 scalar Timestamp
 
 enum APISpecType {
@@ -584,6 +582,11 @@ type SystemAuth {
 	auth: Auth
 }
 
+type Tenant {
+	tenant: String!
+	name: String
+}
+
 type Version {
 	"""
 	for example 4.6
@@ -681,6 +684,7 @@ type Query {
 	"""
 	integrationSystem(id: ID!): IntegrationSystem @hasScopes(path: "graphql.query.integrationSystem")
 	viewer: Viewer! @hasScopes(path: "graphql.query.viewer")
+	tenants: [Tenant!]! @hasScopes(path: "graphql.query.tenants")
 }
 
 type Mutation {
