@@ -2,6 +2,7 @@ package hyperscaler
 
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/pkg/errors"
 )
 
 // AccountProvider provides access to the Kubernetes instance used to provision a new cluster by
@@ -18,45 +19,62 @@ type AccountProvider interface {
 type accountProvider struct {
 	compassPool  AccountPool
 	gardenerPool AccountPool
+	tenantName string
 }
 
 func NewAccountProvider(
 	compassPool AccountPool,
-	gardenerPool AccountPool) AccountProvider {
+	gardenerPool AccountPool,
+	tenantName string) AccountProvider {
 
 	return &accountProvider{
 		compassPool:  compassPool,
 		gardenerPool: gardenerPool,
+		tenantName: tenantName,
 	}
 }
 
-func (h *accountProvider) CompassCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
+func HyperscalerTypeFromProvisionInput(input *gqlschema.ProvisionRuntimeInput) (HyperscalerType, error) {
 
-	return h.compassPool.Credentials(hyperscalerType, tenantName)
+	if input == nil {
+		return HyperscalerType(""), errors.New("Can't determine hyperscaler type because ProvisionRuntimeInput not specified (was nil)")
+	}
+	if input.ClusterConfig == nil {
+		return HyperscalerType(""), errors.New("Can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig not specified (was nil)")
+	}
+
+	if input.ClusterConfig.GcpConfig != nil {
+		return GCP, nil
+	}
+
+	return HyperscalerType(""), errors.New("Can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig hyperscaler config not specified")
+}
+
+func (p *accountProvider) CompassCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
+
+	return p.compassPool.Credentials(hyperscalerType, tenantName)
 
 }
 
-func (h *accountProvider) GardnerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
+func (p *accountProvider) GardnerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
 
-	return h.gardenerPool.Credentials(hyperscalerType, tenantName)
+	return p.gardenerPool.Credentials(hyperscalerType, tenantName)
 
 }
 
-func (h *accountProvider) CompassSecretName(input *gqlschema.ProvisionRuntimeInput) (string, error) {
+func (p *accountProvider) CompassSecretName(input *gqlschema.ProvisionRuntimeInput) (string, error) {
 
 	if input.Credentials != nil && len(input.Credentials.SecretName) > 0 {
 		return input.Credentials.SecretName, nil
 	}
 
 	// If no credentials given to connect to target cluster, try to get credentials from compassHyperscalerAccountPool
-
-	// TODO: how to get accountProvider type in Compass use case?
-	hyperscalerType, err := HyperscalerTypeFromProviderString("TBD")
+	hyperscalerType, err := HyperscalerTypeFromProvisionInput(input)
 	if err != nil {
 		return "", err
 	}
-	// TODO: get tenant name from ...?
-	credential, err := h.CompassCredentials(hyperscalerType, "tenant-name")
+
+	credential, err := p.CompassCredentials(hyperscalerType, p.tenantName)
 
 	if err != nil {
 		return "", err
@@ -65,7 +83,7 @@ func (h *accountProvider) CompassSecretName(input *gqlschema.ProvisionRuntimeInp
 
 }
 
-func (h *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInput) (string, error) {
+func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInput) (string, error) {
 
 	// If Gardener config already has a TargetSecret, just return that
 	if len(input.TargetSecret) > 0 {
@@ -77,8 +95,8 @@ func (h *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInpu
 	if err != nil {
 		return "", err
 	}
-	// TODO: get tenant name from ...?
-	credential, err := h.GardnerCredentials(hyperscalerType, "tenant-name")
+
+	credential, err := p.GardnerCredentials(hyperscalerType, p.tenantName)
 
 	if err != nil {
 		return "", err

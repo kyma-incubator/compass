@@ -6,11 +6,13 @@ import (
 	"testing"
 )
 
+var defaultTenant = "default-tenant"
+
 func TestGardenerSecretNamePreAssigned(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := NewAccountProvider(nil, pool)
+	accountProvider := NewAccountProvider(nil, pool, defaultTenant)
 
 	configInput := &gqlschema.GardenerConfigInput{
 		TargetSecret: "pre-assigned-secret",
@@ -26,7 +28,7 @@ func TestCompassSecretNamePreAssigned(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := NewAccountProvider(pool, nil)
+	accountProvider := NewAccountProvider(pool, nil, defaultTenant)
 
 	input := &gqlschema.ProvisionRuntimeInput{
 		Credentials: &gqlschema.CredentialsInput{
@@ -44,7 +46,7 @@ func TestGardenerSecretNamePool(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := NewAccountProvider(nil, pool)
+	accountProvider := NewAccountProvider(nil, pool, defaultTenant)
 
 	configInput := &gqlschema.GardenerConfigInput{
 		Provider:     "AWS",
@@ -61,7 +63,7 @@ func TestGardenerSecretNameError(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := NewAccountProvider(nil, pool)
+	accountProvider := NewAccountProvider(nil, pool, defaultTenant)
 
 	configInput := &gqlschema.GardenerConfigInput{
 		Provider:     "bogus",
@@ -77,7 +79,7 @@ func TestCompassSecretNameError(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := NewAccountProvider(pool, nil)
+	accountProvider := NewAccountProvider(pool, nil, defaultTenant)
 
 	input := &gqlschema.ProvisionRuntimeInput{
 		Credentials: &gqlschema.CredentialsInput{
@@ -87,14 +89,14 @@ func TestCompassSecretNameError(t *testing.T) {
 
 	_, err := accountProvider.CompassSecretName(input)
 
-	assert.Equal(t, "Unknown Hyperscaler provider type: TBD", err.Error())
+	assert.Contains(t, err.Error(), "Can't determine hyperscaler type")
 }
 
 func TestGardenerSecretNameNotFound(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := NewAccountProvider(nil, pool)
+	accountProvider := NewAccountProvider(nil, pool, defaultTenant)
 
 	configInput := &gqlschema.GardenerConfigInput{
 		Provider:     "azure",
@@ -104,4 +106,37 @@ func TestGardenerSecretNameNotFound(t *testing.T) {
 	_, err := accountProvider.GardenerSecretName(configInput)
 
 	assert.Equal(t, "AccountPool failed to find unassigned secret for hyperscalerType: azure", err.Error())
+}
+
+func TestHyperscalerTypeFromProvisionInput(t *testing.T) {
+
+	input := &gqlschema.ProvisionRuntimeInput{
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GcpConfig:      &gqlschema.GCPConfigInput {
+			},
+		},
+	}
+
+	hyperscalerType, err := HyperscalerTypeFromProvisionInput(input)
+	assert.Equal(t, hyperscalerType, GCP)
+	assert.Nil(t, err)
+}
+
+func TestHyperscalerTypeFromProvisionInputError(t *testing.T) {
+
+	_, err := HyperscalerTypeFromProvisionInput(nil)
+	assert.Equal(t, err.Error(), "Can't determine hyperscaler type because ProvisionRuntimeInput not specified (was nil)")
+
+	input := &gqlschema.ProvisionRuntimeInput {}
+
+	_, err = HyperscalerTypeFromProvisionInput(input)
+	assert.Equal(t, err.Error(), "Can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig not specified (was nil)")
+
+	input = &gqlschema.ProvisionRuntimeInput{
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+		},
+	}
+
+	_, err = HyperscalerTypeFromProvisionInput(input)
+	assert.Equal(t, err.Error(), "Can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig hyperscaler config not specified")
 }

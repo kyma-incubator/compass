@@ -26,6 +26,11 @@ type config struct {
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 	CredentialsNamespace  string `envconfig:"default=compass-system"`
 
+	//TODO: what's the default GardenerKubeconfigPath value?
+	GardenerKubeconfigPath string `envconfig:"default=gardenerKubeconfigPath"`
+
+	DefaultTenant string `envconfig:"default=3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
+
 	Database struct {
 		User     string `envconfig:"default=postgres"`
 		Password string `envconfig:"default=password"`

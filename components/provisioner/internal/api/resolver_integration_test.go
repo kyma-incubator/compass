@@ -198,7 +198,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 	}
 
 	providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
-	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
+	accountProvider := hyperscaler.NewAccountProvider(nil, nil, "default-tenant")
 
 	clusterConfigurations := getTestClusterConfigurations()
 
