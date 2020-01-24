@@ -3,8 +3,7 @@ package domain
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/businesstenant"
-
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/viewer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
@@ -57,7 +56,7 @@ type RootResolver struct {
 	oAuth20     *oauth20.Resolver
 	intSys      *integrationsystem.Resolver
 	viewer      *viewer.Resolver
-	tenant      *businesstenant.Resolver
+	tenant      *tenant.Resolver
 }
 
 func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config) *RootResolver {
@@ -130,7 +129,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
 		intSys:      integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:      viewer.NewViewerResolver(),
-		tenant:      businesstenant.NewResolver(),
+		tenant:      tenant.NewResolver(),
 	}
 }
 
