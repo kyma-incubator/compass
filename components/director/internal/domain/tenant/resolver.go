@@ -1,4 +1,4 @@
-package businesstenant
+package tenant
 
 import (
 	"context"

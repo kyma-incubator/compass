@@ -8,8 +8,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"

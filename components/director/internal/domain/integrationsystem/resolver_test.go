@@ -10,9 +10,9 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationsystem"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationsystem/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/stretchr/testify/assert"

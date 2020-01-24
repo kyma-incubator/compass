@@ -50,6 +50,7 @@ const (
 	EqualOp     ConditionOp = "="
 	IsNotNullOp ConditionOp = "IS NOT NULL"
 	InOp        ConditionOp = "IN"
+	NotEqualOP  ConditionOp = "!="
 )
 
 type Conditions []Condition
@@ -104,6 +105,14 @@ func NewInCondition(field, val string) Condition {
 		Field: field,
 		Val:   val,
 		Op:    InOp,
+	}
+}
+
+func NewNotEqualCondition(field, val string) Condition {
+	return Condition{
+		Field: field,
+		Val:   val,
+		Op:    NotEqualOP,
 	}
 }
 
