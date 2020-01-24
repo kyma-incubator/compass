@@ -10,13 +10,31 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
-type gqlRequestBuilder struct {
-	graphqlizer       gql.Graphqlizer
-	gqlFieldsProvider gql.GqlFieldsProvider
+//go:generate mockery -name=GraphQLizer -output=automock -outpkg=automock -case=underscore
+type GraphQLizer interface {
+	ApplicationRegisterInputToGQL(in graphql.ApplicationRegisterInput) (string, error)
 }
 
-func NewGqlRequestBuilder() *gqlRequestBuilder {
-	return &gqlRequestBuilder{graphqlizer: gql.Graphqlizer{}, gqlFieldsProvider: gql.GqlFieldsProvider{}}
+//go:generate mockery -name=GqlFieldsProvider -output=automock -outpkg=automock -case=underscore
+type GqlFieldsProvider interface {
+	ForApplication(ctx ...gql.FieldCtx) string
+}
+
+type gqlCreateApplicationResponse struct {
+	Result graphql.Application `json:"result"`
+}
+
+type gqlGetApplicationResponse struct {
+	Result *graphql.ApplicationExt `json:"result"`
+}
+
+type gqlRequestBuilder struct {
+	graphqlizer       GraphQLizer
+	gqlFieldsProvider GqlFieldsProvider
+}
+
+func NewGqlRequestBuilder(graphqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider) *gqlRequestBuilder {
+	return &gqlRequestBuilder{graphqlizer: graphqlizer, gqlFieldsProvider: gqlFieldsProvider}
 }
 
 func (b *gqlRequestBuilder) RegisterApplicationRequest(input graphql.ApplicationRegisterInput) (*gcli.Request, error) {
@@ -41,4 +59,13 @@ func (b *gqlRequestBuilder) UnregisterApplicationRequest(id string) *gcli.Reques
 			id
 		}	
 	}`, id))
+}
+
+func (b *gqlRequestBuilder) GetApplicationRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+					%s
+			}
+		}`, id, b.gqlFieldsProvider.ForApplication()))
 }
