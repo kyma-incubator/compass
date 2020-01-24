@@ -76,7 +76,7 @@ func (c client) Token(application string) (string, error) {
 }
 
 func (c *client) executeExternal(headers map[string]string, query string, res interface{}) error {
-	return c.execute(c.gqlExternalAPIClient, map[string]string{}, query, res)
+	return c.execute(c.gqlExternalAPIClient, headers, query, res)
 }
 
 func (c *client) executeInternal(query string, res interface{}) error {
