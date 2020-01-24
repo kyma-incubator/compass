@@ -228,7 +228,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, accountProvider)
 			graphQLConverter := provisioning.NewGraphQLConverter()
-			provisioningService := provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformServiceMock, installationServiceMock)
+			provisioningService := provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformServiceMock, installationServiceMock, directorServiceMock)
 			provisioner := NewResolver(provisioningService)
 
 			err := insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)

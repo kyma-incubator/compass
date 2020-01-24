@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
@@ -11,6 +10,7 @@ import (
 	realeaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	hyperscalerMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"

@@ -49,7 +49,6 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 		gardenerAccountPool = hyperscaler.NewAccountPool(gardenerSecrets)
 	}
 
-	//TODO: integrate tenantName lookup
 	tenantName := config.DefaultTenant
 	accountProvider := hyperscaler.NewAccountProvider(compassAccountPool, gardenerAccountPool, tenantName)
 
