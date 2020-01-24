@@ -5,23 +5,26 @@ import (
 	"net/http"
 	"time"
 
-	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	externalSchema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
 
 type client struct {
-	queryProvider queryProvider
-	gqlClient     *graphql.Client
-	timeout       time.Duration
+	queryProvider        queryProvider
+	gqlExternalAPIClient *graphql.Client
+	gqlInternalAPIClient *graphql.Client
+	timeout              time.Duration
 }
 
-func NewClient(graphqlEndpoint string, insecureConfigFetch bool, timeout time.Duration) (Client, error) {
-	gqlClient := graphql.NewClient(graphqlEndpoint, graphql.WithHTTPClient(&http.Client{}))
+func NewClient(compassConnectorAPIURL string, compassConnectorInternalAPIURL string, timeout time.Duration) (Client, error) {
+	gqlExternalAPIClient := graphql.NewClient(compassConnectorAPIURL, graphql.WithHTTPClient(&http.Client{}))
+	gqlInternalAPIClient := graphql.NewClient(compassConnectorInternalAPIURL, graphql.WithHTTPClient(&http.Client{}))
 
 	client := &client{
-		gqlClient: gqlClient,
-		timeout:   timeout,
+		gqlExternalAPIClient: gqlExternalAPIClient,
+		gqlInternalAPIClient: gqlInternalAPIClient,
+		timeout:              timeout,
 	}
 
 	return client, nil
@@ -29,37 +32,58 @@ func NewClient(graphqlEndpoint string, insecureConfigFetch bool, timeout time.Du
 
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
 type Client interface {
-	Configuration(headers map[string]string) (schema.Configuration, error)
-	SignCSR(csr string, headers map[string]string) (schema.CertificationResult, error)
+	Configuration(headers map[string]string) (externalSchema.Configuration, error)
+	SignCSR(csr string, headers map[string]string) (externalSchema.CertificationResult, error)
+	Token(application string) (string, error)
 }
 
-func (c client) Configuration(headers map[string]string) (schema.Configuration, error) {
+func (c client) Configuration(headers map[string]string) (externalSchema.Configuration, error) {
 	query := c.queryProvider.configuration()
 
 	var response ConfigurationResponse
 
-	err := c.execute(headers, query, &response)
+	err := c.executeExternal(headers, query, &response)
 	if err != nil {
-		return schema.Configuration{}, errors.Wrap(err, "Failed to get configuration")
+		return externalSchema.Configuration{}, errors.Wrap(err, "Failed to get configuration")
 	}
 
 	return response.Result, nil
 }
 
-func (c client) SignCSR(csr string, headers map[string]string) (schema.CertificationResult, error) {
+func (c client) SignCSR(csr string, headers map[string]string) (externalSchema.CertificationResult, error) {
 	query := c.queryProvider.signCSR(csr)
 
 	var response CertificateResponse
 
-	err := c.execute(headers, query, &response)
+	err := c.executeExternal(headers, query, &response)
 	if err != nil {
-		return schema.CertificationResult{}, errors.Wrap(err, "Failed to sign csr")
+		return externalSchema.CertificationResult{}, errors.Wrap(err, "Failed to sign csr")
 	}
 
 	return response.Result, nil
 }
 
-func (c *client) execute(headers map[string]string, query string, res interface{}) error {
+func (c client) Token(application string) (string, error) {
+	query := c.queryProvider.token(application)
+
+	var response TokenResponse
+	err := c.executeInternal(query, &response)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to get token")
+	}
+
+	return response.Result.Token, nil
+}
+
+func (c *client) executeExternal(headers map[string]string, query string, res interface{}) error {
+	return c.execute(c.gqlExternalAPIClient, map[string]string{}, query, res)
+}
+
+func (c *client) executeInternal(query string, res interface{}) error {
+	return c.execute(c.gqlInternalAPIClient, map[string]string{}, query, res)
+}
+
+func (c *client) execute(client *graphql.Client, headers map[string]string, query string, res interface{}) error {
 
 	req := graphql.NewRequest(query)
 	for k, v := range headers {
@@ -69,15 +93,19 @@ func (c *client) execute(headers map[string]string, query string, res interface{
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
-	err := c.gqlClient.Run(ctx, req, res)
+	err := client.Run(ctx, req, res)
 
 	return err
 }
 
 type ConfigurationResponse struct {
-	Result schema.Configuration `json:"result"`
+	Result externalSchema.Configuration `json:"result"`
 }
 
 type CertificateResponse struct {
-	Result schema.CertificationResult `json:"result"`
+	Result externalSchema.CertificationResult `json:"result"`
+}
+
+type TokenResponse struct {
+	Result externalSchema.Token `json:"result"`
 }

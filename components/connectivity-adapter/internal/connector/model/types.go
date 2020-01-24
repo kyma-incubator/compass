@@ -8,10 +8,12 @@ const (
 	TokenFormat                       = "?token=%s"
 	CertsEndpoint                     = "/v1/applications/certificates"
 	ManagementInfoEndpoint            = "/v1/applications/management/info"
+	SigningRequestInfoEndpoint        = "%s/v1/applications/signingRequests/info"
 	ApplicationRegistryEndpointFormat = "/%s/v1/metadata"
 	EventsEndpointFormat              = "/%s/v1/events"
 	RenewCertURLFormat                = "%s/applications/certificates/renewals"
 	RevocationCertURLFormat           = "%s/applications/certificates/revocations"
+	TokenURLFormat                    = "%s?token=%s"
 )
 
 type CertRequest struct {
@@ -66,6 +68,11 @@ type ClientIdentity struct {
 	Tenant      string `json:"tenant,omitempty"`
 }
 
+type TokenResponse struct {
+	URL   string `json:"url"`
+	Token string `json:"token"`
+}
+
 func MakeCSRURL(newToken, connectivityAdapterBaseURL string) string {
 	csrURL := connectivityAdapterBaseURL + CertsEndpoint
 	tokenParam := fmt.Sprintf(TokenFormat, newToken)
@@ -101,5 +108,14 @@ func MakeManagementURLs(application, connectivityAdapterMTLSBaseURL string, even
 		RuntimeURLs:   makeRuntimeURLs(application, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
 		RenewCertURL:  fmt.Sprintf(RenewCertURLFormat, connectivityAdapterMTLSBaseURL),
 		RevokeCertURL: fmt.Sprintf(RevocationCertURLFormat, connectivityAdapterMTLSBaseURL),
+	}
+}
+
+func MakeTokenResponse(application string, connectivityAdapterBaseURL string, token string) TokenResponse {
+	csrInfoUrl := fmt.Sprintf(SigningRequestInfoEndpoint, connectivityAdapterBaseURL)
+
+	return TokenResponse{
+		Token: token,
+		URL:   fmt.Sprintf(TokenURLFormat, csrInfoUrl, token),
 	}
 }

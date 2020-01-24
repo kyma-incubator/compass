@@ -13,20 +13,21 @@ import (
 )
 
 type Config struct {
-	CompassConnectorURL string `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
-	AdapterBaseURL      string `envconfig:"default=https://adapter-gateway.kyma.local"`
-	AdapterMtlsBaseURL  string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
+	CompassConnectorURL         string `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
+	CompassConnectorInternalURL string `envconfig:"default=http://compass-connector-internal.compass-system.svc.cluster.local:3001/graphql"`
+	AdapterBaseURL              string `envconfig:"default=https://adapter-gateway.kyma.local"`
+	AdapterMtlsBaseURL          string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
 }
 
 const (
 	timeout = 30 * time.Second
 )
 
-func RegisterHandler(router *mux.Router, config Config) error {
+func RegisterExternalHandler(router *mux.Router, config Config) error {
 	logger := logrus.New().WithField("component", "connector").Logger
 	logger.SetReportCaller(true)
 
-	client, err := graphql.NewClient(config.CompassConnectorURL, false, timeout)
+	client, err := graphql.NewClient(config.CompassConnectorURL, config.CompassConnectorInternalURL, timeout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to initialize compass client")
 	}
@@ -51,11 +52,26 @@ func RegisterHandler(router *mux.Router, config Config) error {
 		managementInfo := api.NewManagementInfoHandler(client, logger)
 		managementInfoHandler := http.HandlerFunc(managementInfo.GetManagementInfo)
 
-		router.Handle("/management/info", baseURLsMiddleware.GetBaseUrls(managementInfoHandler))
+		router.Handle("/management/info", baseURLsMiddleware.GetBaseUrls(managementInfoHandler)).Methods(http.MethodGet)
 	}
 
 	certificates := api.NewCertificatesHandler(client, logger)
 	router.HandleFunc("/certificates", certificates.SignCSR)
+
+	return nil
+}
+
+func RegisterInternalHandler(router *mux.Router, config Config) error {
+	logger := logrus.New().WithField("component", "connector internal").Logger
+	logger.SetReportCaller(true)
+
+	client, err := graphql.NewClient(config.CompassConnectorURL, config.CompassConnectorInternalURL, timeout)
+	if err != nil {
+		return errors.Wrap(err, "Failed to initialize compass client")
+	}
+
+	tokenHandler := api.NewTokenHandler(client, config.AdapterBaseURL, logger)
+	router.HandleFunc("/tokens", tokenHandler.GetToken).Methods(http.MethodPost)
 
 	return nil
 }
