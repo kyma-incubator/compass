@@ -2,7 +2,6 @@ package provisioner
 
 import (
 	"bytes"
-	"net/http"
 	"text/template"
 
 	"github.com/Masterminds/sprig"

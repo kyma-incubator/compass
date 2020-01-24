@@ -21,7 +21,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	restclient "k8s.io/client-go/rest"
@@ -42,19 +42,12 @@ const (
 	AWS   = "AWS"
 )
 
-	Azure = "Azure"
-	GCP = "GCP"
-	AWS = "AWS"
-)
-
 type TestSuite struct {
 	TestId            string
 	ProvisionerClient provisioner.Client
 
 	GCPCredentialsSecretName      string
 	GardenerCredentialsSecretName string
-
-	providers []string
 
 	providers []string
 
