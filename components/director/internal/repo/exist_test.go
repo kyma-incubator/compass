@@ -14,7 +14,7 @@ import (
 func TestExist(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	sut := repo.NewExistQuerier("users", "tenant_col")
+	sut := repo.NewExistQuerier("users", "tenant_id")
 
 	t.Run("success when exist", func(t *testing.T) {
 		// GIVEN
@@ -44,7 +44,7 @@ func TestExist(t *testing.T) {
 
 	t.Run("success when no conditions", func(t *testing.T) {
 		// GIVEN
-		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE tenant_col = $1")
+		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE tenant_id = $1")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -58,7 +58,7 @@ func TestExist(t *testing.T) {
 
 	t.Run("success when more conditions", func(t *testing.T) {
 		// GIVEN
-		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE tenant_col = $1 AND first_name = $2 AND last_name = $3")
+		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE tenant_id = $1 AND first_name = $2 AND last_name = $3")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -170,6 +170,6 @@ func TestExistGlobal(t *testing.T) {
 }
 
 func defaultExpectedExistQuery() string {
-	givenQuery := "SELECT 1 FROM users WHERE tenant_col = $1 AND id_col = $2"
+	givenQuery := "SELECT 1 FROM users WHERE tenant_id = $1 AND id_col = $2"
 	return regexp.QuoteMeta(givenQuery)
 }
