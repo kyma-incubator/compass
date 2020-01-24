@@ -1,6 +1,7 @@
 
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
+    name: String
     clusterConfig: ClusterConfig
     credentialsSecretName: String
     kymaConfig: KymaConfig
@@ -146,7 +147,6 @@ input ClusterConfigInput {
 }
 
 input GardenerConfigInput {
-    name: String!                                   # Name of the cluster to create
     projectName: String!                            # Gardener project in which the cluster is created
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     nodeCount: Int!                                 # Number of nodes to create
@@ -214,7 +214,6 @@ input ComponentConfigurationInput {
     namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
 }
-
 
 input UpgradeRuntimeInput {
     clusterConfig: UpgradeClusterInput  # Configuration of the cluster to upgrade
