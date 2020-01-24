@@ -433,17 +433,47 @@ func TestConverter_CreateGardenerClusterName(t *testing.T) {
 		{
 			provider:     "gcp",
 			expectedName: "gcp-id",
-			description:  "",
+			description:  "regular GCP provider name",
 		},
 		{
 			provider:     "aws",
 			expectedName: "aws-id",
-			description:  "",
+			description:  "regular AWS provider name",
 		},
 		{
 			provider:     "azure",
 			expectedName: "azu-id",
-			description:  "",
+			description:  "regular Azure provider name",
+		},
+		{
+			provider:     "GCP",
+			expectedName: "gcp-id",
+			description:  "capitalized GCP provider name",
+		},
+		{
+			provider:     "AWS",
+			expectedName: "aws-id",
+			description:  "capitalized AWS provider name",
+		},
+		{
+			provider:     "AZURE",
+			expectedName: "azu-id",
+			description:  "capitalized Azure provider name",
+		},
+		{
+			provider:     "-",
+			expectedName: "c--id",
+			description:  "wrong provider name that contains only hyphen: \"-\"",
+		},
+		{
+			provider:     "!#$@^%&*gcp",
+			expectedName: "gcp-id",
+			description:  "wrong provider name with non-alphanumeric characters",
+		},
+		{
+			provider:     "912740131aws---",
+			expectedName: "aws-id",
+			description:  "wrong provider name with numbers",
 		},
 	}
 

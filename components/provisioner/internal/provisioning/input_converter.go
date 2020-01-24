@@ -14,8 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
-const letters = "abcdefghijklmnopqrstuvwxyz"
-
 type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.Cluster, error)
 }
@@ -112,8 +110,11 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 
 func (c converter) createGardenerClusterName(provider string) string {
 	uuid := c.uuidGenerator.New()
+	provider = util.RemoveNotAllowedCharacters(provider)
+
 	name := strings.ReplaceAll(uuid, "-", "")
 	name = fmt.Sprintf("%.3s-%.7s", provider, name)
+	name = util.StartWithLetter(name)
 	name = strings.ToLower(name)
 	return name
 }
