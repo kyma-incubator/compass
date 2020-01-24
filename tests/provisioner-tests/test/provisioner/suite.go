@@ -82,7 +82,7 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 		GCPCredentialsSecretName:      fmt.Sprintf("tests-cred-gcp-%s", testId),
 		GardenerCredentialsSecretName: fmt.Sprintf("gcp-tests-cred-gardener-%s", testId),
 
-		providers: []string{Azure},
+		providers: []string{GCP}, // temporary - we don't support GCP, but there is some external issue related to Azure provisioning
 
 		config:        config,
 		secretsClient: k8sClient.CoreV1().Secrets(config.CredentialsNamespace),
