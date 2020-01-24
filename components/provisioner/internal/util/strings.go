@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -23,7 +24,7 @@ func RemoveNotAllowedCharacters(provider string) string {
 func StartWithLetter(name string) string {
 	if len(name) == 0 {
 		return "c"
-	} else if !strings.Contains(letters, strings.ToLower(string(name[0]))) {
+	} else if !unicode.IsLetter(rune(name[0])) {
 		return fmt.Sprintf("c-%.9s", name)
 	}
 	return name
