@@ -100,8 +100,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{TargetURL: "http://target.url",
 						Spec: &graphql.APISpecInput{
-							Type:   graphql.APISpecTypeOdata,
-							Format: graphql.SpecFormatJSON,
+							Type: graphql.APISpecTypeOdata,
 						}},
 				},
 			},
@@ -117,15 +116,14 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
 						Spec: &graphql.APISpecInput{
-							Type:   graphql.APISpecTypeOpenAPI,
-							Format: graphql.SpecFormatJSON,
+							Type: graphql.APISpecTypeOpenAPI,
 						},
 					},
 				},
 			},
 		},
 
-		"API with directly spec provided": {
+		"API with directly spec provided in YAML": {
 			given: model.ServiceDetails{
 				Api: &model.API{
 					Spec: json.RawMessage(`openapi: "3.0.0"`),
@@ -137,7 +135,45 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 						Spec: &graphql.APISpecInput{
 							Data:   ptrClob(graphql.CLOB(`openapi: "3.0.0"`)),
 							Type:   graphql.APISpecTypeOpenAPI,
+							Format: graphql.SpecFormatYaml,
+						},
+					},
+				},
+			},
+		},
+
+		"API with directly spec provided in JSON": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					Spec: json.RawMessage(`{"spec":"v0.0.1"}`),
+				},
+			},
+			expected: graphql.ApplicationRegisterInput{
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						Spec: &graphql.APISpecInput{
+							Data:   ptrClob(graphql.CLOB(`{"spec":"v0.0.1"}`)),
+							Type:   graphql.APISpecTypeOpenAPI,
 							Format: graphql.SpecFormatJSON,
+						},
+					},
+				},
+			},
+		},
+
+		"API with directly spec provided in XML": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					Spec: json.RawMessage(`<spec></spec>"`),
+				},
+			},
+			expected: graphql.ApplicationRegisterInput{
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						Spec: &graphql.APISpecInput{
+							Data:   ptrClob(graphql.CLOB(`<spec></spec>"`)),
+							Type:   graphql.APISpecTypeOpenAPI,
+							Format: graphql.SpecFormatXML,
 						},
 					},
 				},
@@ -475,10 +511,9 @@ func TestConversionApplicationExtToServiceDetails(t *testing.T) {
 		"simple attributes": {
 			given: graphql.ApplicationExt{
 				Application: graphql.Application{
-					ID:          "id",
-					Name:        "name",
-					Description: ptrStringOrNilForEmpty("description"),
-					//TODO IntegrationSystemID
+					ID:           "id",
+					Name:         "name",
+					Description:  ptrStringOrNilForEmpty("description"),
 					ProviderName: ptrStringOrNilForEmpty("providerName"),
 				},
 			},

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -10,7 +11,7 @@ import (
 
 const (
 	// fields that exist in Application Registry but don't exist in Director GraphQL API, are stored in labels with special prefix
-	prefixUnmappedFields          = "compatibility_unmapped_fields_"
+	prefixUnmappedFields          = "compatibility_unmapped_fields/"
 	unmappedFieldIdentifier       = prefixUnmappedFields + "identifier"
 	unmappedFieldShortDescription = prefixUnmappedFields + "shortDescription"
 )
@@ -47,12 +48,11 @@ func (c *converter) DetailsToGraphQLInput(deprecated model.ServiceDetails) (grap
 			if outApi.Spec == nil {
 				outApi.Spec = &graphql.APISpecInput{}
 			}
+
 			if strings.ToLower(deprecated.Api.ApiType) == "odata" {
 				outApi.Spec.Type = graphql.APISpecTypeOdata
-				outApi.Spec.Format = graphql.SpecFormatJSON // this field is required, so we arbitrary chose JSON
 			} else {
 				outApi.Spec.Type = graphql.APISpecTypeOpenAPI // quite brave assumption that it will be OpenAPI
-				outApi.Spec.Format = graphql.SpecFormatJSON
 			}
 		}
 
@@ -119,13 +119,20 @@ func (c *converter) DetailsToGraphQLInput(deprecated model.ServiceDetails) (grap
 			if outApi.Spec == nil {
 				outApi.Spec = &graphql.APISpecInput{}
 			}
-			c := graphql.CLOB(string(deprecated.Api.Spec))
-			outApi.Spec.Data = &c
+			asClob := graphql.CLOB(string(deprecated.Api.Spec))
+			outApi.Spec.Data = &asClob
 			if outApi.Spec.Type == "" {
 				outApi.Spec.Type = graphql.APISpecTypeOpenAPI
 			}
 			if outApi.Spec.Format == "" {
-				outApi.Spec.Format = graphql.SpecFormatJSON
+				if c.isXML([]byte(deprecated.Api.Spec)) {
+					outApi.Spec.Format = graphql.SpecFormatXML
+				} else if c.isJSON([]byte(deprecated.Api.Spec)) {
+					outApi.Spec.Format = graphql.SpecFormatJSON
+				} else {
+					outApi.Spec.Format = graphql.SpecFormatYaml
+				}
+
 			}
 		}
 
@@ -437,4 +444,17 @@ func ptrStringOrNilForEmpty(s string) *string {
 
 func ptrClob(in graphql.CLOB) *graphql.CLOB {
 	return &in
+}
+
+func (c *converter) isXML(content []byte) bool {
+	openingIndex := strings.Index(string(content), "<")
+	closingIndex := strings.Index(string(content), ">")
+
+	return openingIndex != -1 && openingIndex < closingIndex
+}
+
+func (c *converter) isJSON(content []byte) bool {
+	out := map[string]interface{}{}
+	err := json.Unmarshal(content, &out)
+	return err == nil
 }
