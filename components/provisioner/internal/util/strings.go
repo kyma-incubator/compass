@@ -21,7 +21,9 @@ func RemoveNotAllowedCharacters(provider string) string {
 
 // StartWithLetter returns given name but starting with letter
 func StartWithLetter(name string) string {
-	if !strings.Contains(letters, strings.ToLower(string(name[0]))) {
+	if len(name) == 0 {
+		return "c"
+	} else if !strings.Contains(letters, strings.ToLower(string(name[0]))) {
 		return fmt.Sprintf("c-%.9s", name)
 	}
 	return name
