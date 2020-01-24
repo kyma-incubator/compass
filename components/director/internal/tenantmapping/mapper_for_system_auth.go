@@ -84,22 +84,7 @@ func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(reqData Req
 
 func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(sysAuth *model.SystemAuth, refObjType model.SystemAuthReferenceObjectType, reqData ReqData, authFlow AuthFlow) (string, string, error) {
 	var tenant, scopes string
-	hasTenant := true
-
-	tenant, err := reqData.GetTenantID()
-	if err != nil {
-		if !apperrors.IsKeyDoesNotExist(err) {
-			return "", "", errors.Wrap(err, "while fetching tenant")
-		}
-
-		hasTenant = false
-	}
-
-	if hasTenant && tenant != sysAuth.TenantID {
-		return "", "", errors.New("tenant missmatch")
-	}
-
-	tenant = sysAuth.TenantID
+	var err error
 
 	if authFlow.IsOAuth2Flow() {
 		scopes, err = reqData.GetScopes()
@@ -115,6 +100,23 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(sysAuth 
 		}
 
 		scopes = strings.Join(declaredScopes, " ")
+	}
+
+	if sysAuth.TenantID == nil {
+		return "", "", errors.New("system auth tenant id cannot be nil")
+	}
+
+	tenant, err = reqData.GetTenantID()
+	if err != nil {
+		if !apperrors.IsKeyDoesNotExist(err) {
+			return "", "", errors.Wrap(err, "while fetching tenant")
+		}
+
+		return *sysAuth.TenantID, scopes, nil
+	}
+
+	if tenant != *sysAuth.TenantID {
+		return "", "", errors.New("tenant missmatch")
 	}
 
 	return tenant, scopes, nil

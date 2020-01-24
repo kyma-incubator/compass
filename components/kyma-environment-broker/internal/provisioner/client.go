@@ -1,22 +1,22 @@
 package provisioner
 
 import (
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
-
-	"fmt"
-
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
 
+// accountIDKey is a header key name for request send by graphQL client
+const accountIDKey = "tenant"
+
 type Client interface {
-	ProvisionRuntime(runtimeID string, config schema.ProvisionRuntimeInput) (string, error)
-	UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(runtimeID string) (string, error)
-	ReconnectRuntimeAgent(runtimeID string) (string, error)
-	GCPRuntimeStatus(runtimeID string) (GCPRuntimeStatus, error)
-	RuntimeOperationStatus(operationID string) (schema.OperationStatus, error)
+	ProvisionRuntime(accountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error)
+	UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (string, error)
+	DeprovisionRuntime(accountID, runtimeID string) (string, error)
+	ReconnectRuntimeAgent(accountID, runtimeID string) (string, error)
+	GCPRuntimeStatus(accountID, runtimeID string) (GCPRuntimeStatus, error)
+	RuntimeOperationStatus(accountID, operationID string) (schema.OperationStatus, error)
 }
 
 type client struct {
@@ -25,34 +25,38 @@ type client struct {
 	graphqlizer   graphqlizer
 }
 
-func NewProvisionerClient(endpoint string, queryLogging bool) Client {
+func NewProvisionerClient(endpoint string, smURL string, smUsername string, smPassword string, queryLogging bool) Client {
 	return &client{
 		graphQLClient: graphql.NewGraphQLClient(endpoint, true, queryLogging),
 		queryProvider: queryProvider{},
-		graphqlizer:   graphqlizer{},
+		graphqlizer: graphqlizer{
+			smURL:      smURL,
+			smUsername: smUsername,
+			smPassword: smPassword,
+		},
 	}
 }
 
-func (c client) ProvisionRuntime(runtimeID string, config schema.ProvisionRuntimeInput) (string, error) {
+func (c *client) ProvisionRuntime(accountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
 	provisionRuntimeIptGQL, err := c.graphqlizer.ProvisionRuntimeInputToGraphQL(config)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to convert Provision Runtime Input to query")
+		return schema.OperationStatus{}, errors.Wrap(err, "Failed to convert Provision Runtime Input to query")
 	}
 
-	query := c.queryProvider.provisionRuntime(runtimeID, provisionRuntimeIptGQL)
+	query := c.queryProvider.provisionRuntime(provisionRuntimeIptGQL)
 	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
 
-	fmt.Println(query)
-
-	var operationId string
-	err = c.graphQLClient.ExecuteRequest(req, &operationId, "")
+	var response schema.OperationStatus
+	err = c.graphQLClient.ExecuteRequest(req, &response, schema.OperationStatus{})
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to provision Runtime")
+		return schema.OperationStatus{}, errors.Wrap(err, "Failed to provision Runtime")
 	}
-	return operationId, nil
+
+	return response, nil
 }
 
-func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error) {
+func (c *client) UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (string, error) {
 	upgradeRuntimeIptGQL, err := c.graphqlizer.UpgradeRuntimeInputToGraphQL(config)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to convert Upgrade Runtime Input to query")
@@ -60,6 +64,7 @@ func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInp
 
 	query := c.queryProvider.upgradeRuntime(runtimeID, upgradeRuntimeIptGQL)
 	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
 
 	var operationId string
 	err = c.graphQLClient.ExecuteRequest(req, &operationId, "")
@@ -69,9 +74,10 @@ func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInp
 	return operationId, nil
 }
 
-func (c client) DeprovisionRuntime(runtimeID string) (string, error) {
+func (c *client) DeprovisionRuntime(accountID, runtimeID string) (string, error) {
 	query := c.queryProvider.deprovisionRuntime(runtimeID)
 	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
 
 	var operationId string
 	err := c.graphQLClient.ExecuteRequest(req, &operationId, "")
@@ -81,9 +87,10 @@ func (c client) DeprovisionRuntime(runtimeID string) (string, error) {
 	return operationId, nil
 }
 
-func (c client) ReconnectRuntimeAgent(runtimeID string) (string, error) {
+func (c *client) ReconnectRuntimeAgent(accountID, runtimeID string) (string, error) {
 	query := c.queryProvider.reconnectRuntimeAgent(runtimeID)
 	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
 
 	var operationId string
 	err := c.graphQLClient.ExecuteRequest(req, &operationId, "")
@@ -104,9 +111,10 @@ type GCPRuntimeStatus struct {
 	} `json:"runtimeConfiguration"`
 }
 
-func (c client) GCPRuntimeStatus(runtimeID string) (GCPRuntimeStatus, error) {
+func (c *client) GCPRuntimeStatus(accountID, runtimeID string) (GCPRuntimeStatus, error) {
 	query := c.queryProvider.runtimeStatus(runtimeID)
 	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
 
 	var response GCPRuntimeStatus
 	err := c.graphQLClient.ExecuteRequest(req, &response, &GCPRuntimeStatus{})
@@ -116,9 +124,10 @@ func (c client) GCPRuntimeStatus(runtimeID string) (GCPRuntimeStatus, error) {
 	return response, nil
 }
 
-func (c client) RuntimeOperationStatus(operationID string) (schema.OperationStatus, error) {
+func (c *client) RuntimeOperationStatus(accountID, operationID string) (schema.OperationStatus, error) {
 	query := c.queryProvider.runtimeOperationStatus(operationID)
 	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
 
 	var response schema.OperationStatus
 	err := c.graphQLClient.ExecuteRequest(req, &response, &schema.OperationStatus{})

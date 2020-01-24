@@ -12,6 +12,10 @@ type CredentialData interface {
 	IsCredentialData()
 }
 
+type OneTimeToken interface {
+	IsOneTimeToken()
+}
+
 // Every query that implements pagination returns object that implements Pageable interface.
 // To specify page details, query specify two parameters: `first` and `after`.
 // `first` specify page size, `after` is a cursor for the next page. When requesting first page, set `after` to empty value.
@@ -69,7 +73,7 @@ func (ApplicationPage) IsPageable() {}
 
 type ApplicationRegisterInput struct {
 	Name                string                  `json:"name"`
-	ProviderDisplayName string                  `json:"providerDisplayName"`
+	ProviderName        *string                 `json:"providerName"`
 	Description         *string                 `json:"description"`
 	Labels              *Labels                 `json:"labels"`
 	Webhooks            []*WebhookInput         `json:"webhooks"`
@@ -112,7 +116,7 @@ func (ApplicationTemplatePage) IsPageable() {}
 
 type ApplicationUpdateInput struct {
 	Name                string  `json:"name"`
-	ProviderDisplayName string  `json:"providerDisplayName"`
+	ProviderName        *string `json:"providerName"`
 	Description         *string `json:"description"`
 	HealthCheckURL      *string `json:"healthCheckURL"`
 	IntegrationSystemID *string `json:"integrationSystemID"`
@@ -369,6 +373,11 @@ type TemplateValueInput struct {
 	Value       string `json:"value"`
 }
 
+type Tenant struct {
+	Tenant string  `json:"tenant"`
+	Name   *string `json:"name"`
+}
+
 type Version struct {
 	// for example 4.6
 	Value      string `json:"value"`
@@ -384,6 +393,11 @@ type VersionInput struct {
 	Deprecated      *bool   `json:"deprecated"`
 	DeprecatedSince *string `json:"deprecatedSince"`
 	ForRemoval      *bool   `json:"forRemoval"`
+}
+
+type Viewer struct {
+	ID   string     `json:"id"`
+	Type ViewerType `json:"type"`
 }
 
 type Webhook struct {
@@ -891,5 +905,50 @@ func (e *SpecFormat) UnmarshalGQL(v interface{}) error {
 }
 
 func (e SpecFormat) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ViewerType string
+
+const (
+	ViewerTypeRuntime           ViewerType = "RUNTIME"
+	ViewerTypeApplication       ViewerType = "APPLICATION"
+	ViewerTypeIntegrationSystem ViewerType = "INTEGRATION_SYSTEM"
+	ViewerTypeUser              ViewerType = "USER"
+)
+
+var AllViewerType = []ViewerType{
+	ViewerTypeRuntime,
+	ViewerTypeApplication,
+	ViewerTypeIntegrationSystem,
+	ViewerTypeUser,
+}
+
+func (e ViewerType) IsValid() bool {
+	switch e {
+	case ViewerTypeRuntime, ViewerTypeApplication, ViewerTypeIntegrationSystem, ViewerTypeUser:
+		return true
+	}
+	return false
+}
+
+func (e ViewerType) String() string {
+	return string(e)
+}
+
+func (e *ViewerType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ViewerType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ViewerType", str)
+	}
+	return nil
+}
+
+func (e ViewerType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

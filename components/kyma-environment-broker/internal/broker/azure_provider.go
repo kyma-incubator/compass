@@ -1,6 +1,9 @@
 package broker
 
-import "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+import (
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+)
 
 type azureInputProvider struct {
 }
@@ -22,7 +25,6 @@ func (p *azureInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 			AutoScalerMax:     4,
 			MaxSurge:          4,
 			MaxUnavailable:    1,
-			Seed:              "az-eu1",
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
@@ -32,5 +34,5 @@ func (p *azureInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *azureInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params *ProvisioningParameters) {
+func (p *azureInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params *internal.ProvisioningParametersDTO) {
 }

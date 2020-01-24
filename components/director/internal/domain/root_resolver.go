@@ -3,6 +3,9 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/viewer"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -52,6 +55,8 @@ type RootResolver struct {
 	systemAuth  *systemauth.Resolver
 	oAuth20     *oauth20.Resolver
 	intSys      *integrationsystem.Resolver
+	viewer      *viewer.Resolver
+	tenant      *tenant.Resolver
 }
 
 func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config) *RootResolver {
@@ -67,7 +72,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
-	tokenConverter := onetimetoken.NewConverter()
+	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	intSysConverter := integrationsystem.NewConverter()
 	appTemplateConverter := apptemplate.NewConverter(appConverter)
@@ -123,6 +128,8 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		systemAuth:  systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
 		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
 		intSys:      integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
+		viewer:      viewer.NewViewerResolver(),
+		tenant:      tenant.NewResolver(),
 	}
 }
 
@@ -155,17 +162,26 @@ func (r *RootResolver) IntegrationSystem() graphql.IntegrationSystemResolver {
 	return &integrationSystemResolver{r}
 }
 
-func (r *RootResolver) OneTimeToken() graphql.OneTimeTokenResolver {
-	return &oneTimeTokenResolver{r}
+func (r *RootResolver) OneTimeTokenForApplication() graphql.OneTimeTokenForApplicationResolver {
+	return &oneTimeTokenForApplicationResolver{r}
+}
+
+func (r *RootResolver) OneTimeTokenForRuntime() graphql.OneTimeTokenForRuntimeResolver {
+	return &oneTimeTokenForRuntimeResolver{r}
 }
 
 type queryResolver struct {
 	*RootResolver
 }
 
+func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
+	return r.viewer.Viewer(ctx)
+}
+
 func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	return r.app.Applications(ctx, filter, first, after)
 }
+
 func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
 	return r.app.Application(ctx, id)
 }
@@ -198,6 +214,10 @@ func (r *queryResolver) IntegrationSystems(ctx context.Context, first *int, afte
 }
 func (r *queryResolver) IntegrationSystem(ctx context.Context, id string) (*graphql.IntegrationSystem, error) {
 	return r.intSys.IntegrationSystem(ctx, id)
+}
+
+func (r *queryResolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
+	return r.tenant.Tenants(ctx)
 }
 
 type mutationResolver struct {
@@ -300,10 +320,10 @@ func (r *mutationResolver) SetRuntimeLabel(ctx context.Context, runtimeID string
 func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*graphql.Label, error) {
 	return r.runtime.DeleteRuntimeLabel(ctx, runtimeID, key)
 }
-func (r *mutationResolver) RequestOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+func (r *mutationResolver) RequestOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeTokenForApplication, error) {
 	return r.token.RequestOneTimeTokenForApplication(ctx, id)
 }
-func (r *mutationResolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+func (r *mutationResolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeTokenForRuntime, error) {
 	return r.token.RequestOneTimeTokenForRuntime(ctx, id)
 }
 func (r *mutationResolver) RequestClientCredentialsForRuntime(ctx context.Context, id string) (*graphql.SystemAuth, error) {
@@ -430,12 +450,22 @@ func (r *integrationSystemResolver) Auths(ctx context.Context, obj *graphql.Inte
 	return r.intSys.Auths(ctx, obj)
 }
 
-type oneTimeTokenResolver struct{ *RootResolver }
+type oneTimeTokenForApplicationResolver struct{ *RootResolver }
 
-func (r *oneTimeTokenResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
-	return r.token.RawEncoded(ctx, obj)
+func (r *oneTimeTokenForApplicationResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeTokenForApplication) (*string, error) {
+	return r.token.RawEncoded(ctx, &obj.TokenWithURL)
 }
 
-func (r *oneTimeTokenResolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
-	return r.token.Raw(ctx, obj)
+func (r *oneTimeTokenForApplicationResolver) Raw(ctx context.Context, obj *graphql.OneTimeTokenForApplication) (*string, error) {
+	return r.token.Raw(ctx, &obj.TokenWithURL)
+}
+
+type oneTimeTokenForRuntimeResolver struct{ *RootResolver }
+
+func (r *oneTimeTokenForRuntimeResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeTokenForRuntime) (*string, error) {
+	return r.token.RawEncoded(ctx, &obj.TokenWithURL)
+}
+
+func (r *oneTimeTokenForRuntimeResolver) Raw(ctx context.Context, obj *graphql.OneTimeTokenForRuntime) (*string, error) {
+	return r.token.Raw(ctx, &obj.TokenWithURL)
 }

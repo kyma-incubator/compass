@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -378,7 +380,7 @@ func TestResolver_CommonRequestClientCredentialsError(t *testing.T) {
 func fixModelSystemAuth(clientID string, rtmID, appID, isID *string) *model.SystemAuth {
 	return &model.SystemAuth{
 		ID:                  clientID,
-		TenantID:            "",
+		TenantID:            str.Ptr(""),
 		RuntimeID:           rtmID,
 		IntegrationSystemID: isID,
 		AppID:               appID,

@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -14,8 +16,9 @@ import (
 )
 
 var (
-	testURL  = "https://foo.bar"
-	intSysID = "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
+	testURL      = "https://foo.bar"
+	intSysID     = "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
+	providerName = "provider name"
 )
 
 func fixApplicationPage(applications []*model.Application) *model.ApplicationPage {
@@ -65,7 +68,7 @@ func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, ur
 		Name:                name,
 		Description:         &description,
 		HealthCheckURL:      &url,
-		ProviderDisplayName: "provider name",
+		ProviderName:        &providerName,
 	}
 }
 
@@ -95,7 +98,7 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		Tenant:              tenant,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
-		ProviderDisplayName: "provider name",
+		ProviderName:        &providerName,
 	}
 }
 
@@ -113,7 +116,7 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		Description:         &description,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
-		ProviderDisplayName: "provider name",
+		ProviderName:        str.Ptr("provider name"),
 	}
 }
 
@@ -130,7 +133,7 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		StatusTimestamp:     ts,
 		HealthCheckURL:      repo.NewValidNullableString(testURL),
 		IntegrationSystemID: repo.NewNullableString(&intSysID),
-		ProviderDisplayName: "provider name",
+		ProviderName:        repo.NewNullableString(&providerName),
 	}
 }
 
@@ -145,7 +148,7 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 		},
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
-		ProviderDisplayName: "provider name",
+		ProviderName:        &providerName,
 		Webhooks: []*model.WebhookInput{
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
@@ -171,7 +174,7 @@ func fixModelApplicationUpdateInput(name, description, url string) model.Applica
 		Description:         &description,
 		HealthCheckURL:      &url,
 		IntegrationSystemID: &intSysID,
-		ProviderDisplayName: "provider name",
+		ProviderName:        &providerName,
 	}
 }
 
@@ -187,7 +190,7 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 		Labels:              &labels,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
-		ProviderDisplayName: "provider name",
+		ProviderName:        &providerName,
 		Webhooks: []*graphql.WebhookInput{
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
@@ -213,7 +216,7 @@ func fixGQLApplicationUpdateInput(name, description, url string) graphql.Applica
 		Description:         &description,
 		HealthCheckURL:      &url,
 		IntegrationSystemID: &intSysID,
-		ProviderDisplayName: "provider name",
+		ProviderName:        &providerName,
 	}
 }
 

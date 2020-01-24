@@ -6,7 +6,7 @@ mutation {
       description: "app-template-desc"
       applicationInput: {
         name: "app"
-        providerDisplayName: "compass"
+        providerName: "compass-tests"
         description: "test {{new-placeholder}}"
         labels: { a: ["b", "c"], d: ["e", "f"] }
         webhooks: [{ type: CONFIGURATION_CHANGED, url: "http://url.com" }]

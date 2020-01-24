@@ -4,10 +4,12 @@ import "fmt"
 
 type queryProvider struct{}
 
-func (qp queryProvider) provisionRuntime(runtimeID string, config string) string {
+func (qp queryProvider) provisionRuntime(config string) string {
 	return fmt.Sprintf(`mutation {
-	result: provisionRuntime(id: "%s", config: %s)
-}`, runtimeID, config)
+	result: provisionRuntime(config: %s) {
+		%s
+}
+}`, config, operationStatusData())
 }
 
 func (qp queryProvider) upgradeRuntime(runtimeID string, config string) string {
@@ -52,7 +54,7 @@ func runtimeStatusData() string {
 				clusterConfig { 
 					%s
 				} 
-				kymaConfig { version modules } 
+				kymaConfig { version } 
 			}`, clusterConfig())
 }
 

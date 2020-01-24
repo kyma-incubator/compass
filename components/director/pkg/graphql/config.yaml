@@ -99,8 +99,16 @@ models:
       auths:
         resolver: true
 
-  OneTimeToken:
-    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.OneTimeToken"
+  OneTimeTokenForApplication:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.OneTimeTokenForApplication"
+    fields:
+      raw:
+        resolver: true
+      rawEncoded:
+        resolver: true
+
+  OneTimeTokenForRuntime:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.OneTimeTokenForRuntime"
     fields:
       raw:
         resolver: true

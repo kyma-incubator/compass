@@ -44,6 +44,10 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 
 	connectorToken := r.Header.Get(ConnectorTokenHeader)
 	if connectorToken == "" {
+		connectorToken = r.URL.Query().Get(ConnectorTokenQueryParam)
+	}
+
+	if connectorToken == "" {
 		tvh.log.Info("Token not provided")
 		respondWithAuthSession(w, authSession)
 		return

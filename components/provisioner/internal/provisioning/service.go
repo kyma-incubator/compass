@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
-
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
@@ -15,9 +13,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/hydroform/types"
 )
@@ -29,10 +27,9 @@ const (
 
 //go:generate mockery -name=Service
 type Service interface {
-	ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error)
+	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, string, <-chan struct{}, error)
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(id string) (string, <-chan struct{}, error)
-	CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeDataResult, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error)
@@ -42,66 +39,56 @@ type service struct {
 	persistenceService  persistence.Service
 	hydroform           hydroform.Service
 	installationService installation.Service
-	inputConverter      converters.InputConverter
-	graphQLConverter    converters.GraphQLConverter
+	inputConverter      InputConverter
+	graphQLConverter    GraphQLConverter
+	directorService     director.DirectorClient
 }
 
-func NewProvisioningService(persistenceService persistence.Service, inputConverter converters.InputConverter,
-	graphQLConverter converters.GraphQLConverter, hydroform hydroform.Service, installationService installation.Service) Service {
+func NewProvisioningService(persistenceService persistence.Service, inputConverter InputConverter,
+	graphQLConverter GraphQLConverter, hydroform hydroform.Service, installationService installation.Service, directorService director.DirectorClient) Service {
 	return &service{
 		persistenceService:  persistenceService,
 		hydroform:           hydroform,
 		installationService: installationService,
 		inputConverter:      inputConverter,
 		graphQLConverter:    graphQLConverter,
+		directorService:     directorService,
 	}
 }
 
-func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error) {
-	err := r.checkProvisioningRuntimeConditions(id)
+func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, string, <-chan struct{}, error) {
+	runtimeInput := config.RuntimeInput
+
+	runtimeID, err := r.directorService.CreateRuntime(runtimeInput)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 
-	cluster, err := r.inputConverter.ProvisioningInputToCluster(id, config)
+	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config)
 	if err != nil {
-		return "", nil, err
+		r.unregisterFailedRuntime(runtimeID)
+		return "", "", nil, err
 	}
 
-	operation, err := r.persistenceService.SetProvisioningStarted(id, cluster)
+	operation, err := r.persistenceService.SetProvisioningStarted(runtimeID, cluster)
 	if err != nil {
-		return "", nil, err
+		r.unregisterFailedRuntime(runtimeID)
+		return "", "", nil, err
 	}
 
 	finished := make(chan struct{})
 
 	go r.startProvisioning(operation.ID, cluster, finished)
 
-	return operation.ID, finished, err
+	return operation.ID, runtimeID, finished, nil
 }
 
-func (r *service) checkProvisioningRuntimeConditions(id string) error {
-	lastOperation, err := r.persistenceService.GetLastOperation(id)
-
-	if err == nil && !lastProvisioningFailed(lastOperation) {
-		return errors.New(fmt.Sprintf("cannot provision runtime. Runtime %s already provisioned", id))
+func (r *service) unregisterFailedRuntime(id string) {
+	log.Infof("Unregistering failed Runtime %s...", id)
+	err := r.directorService.DeleteRuntime(id)
+	if err != nil {
+		log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())
 	}
-
-	if err != nil && err.Code() != dberrors.CodeNotFound {
-		return err
-	}
-
-	if lastProvisioningFailed(lastOperation) {
-		if _, dbErr := r.CleanupRuntimeData(id); dbErr != nil {
-			return dbErr
-		}
-	}
-
-	return nil
-}
-
-func lastProvisioningFailed(operation model.Operation) bool {
-	return operation.Type == model.Provision && operation.State == model.Failed
 }
 
 func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error) {
@@ -157,25 +144,6 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
-func (r *service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeDataResult, error) {
-	err := r.persistenceService.CleanupClusterData(id)
-
-	if err != nil {
-		if err.Code() == dberrors.CodeNotFound {
-			message := fmt.Sprintf("Runtime with ID %s not found in the database", id)
-			return &gqlschema.CleanUpRuntimeDataResult{ID: id, Message: &message}, nil
-		}
-
-		if err.Code() == dberrors.CodeInternal {
-			message := fmt.Sprintf("Could not clean data for Runtime with ID %s: %s", id, err)
-			return nil, errors.New(message)
-		}
-	}
-
-	message := fmt.Sprintf("Successfully cleaned up data for Runtime with ID %s", id)
-	return &gqlschema.CleanUpRuntimeDataResult{ID: id, Message: &message}, nil
-}
-
 func (r *service) startProvisioning(operationID string, cluster model.Cluster, finished chan<- struct{}) {
 	defer close(finished)
 
@@ -200,7 +168,7 @@ func (r *service) startProvisioning(operationID string, cluster model.Cluster, f
 	}
 
 	log.Infof("Runtime %s provisioned successfully. Starting Kyma installation...", cluster.ID)
-	err = r.installationService.InstallKyma(cluster.ID, info.KubeConfig, cluster.KymaConfig.Release)
+	err = r.installationService.InstallKyma(cluster.ID, info.KubeConfig, cluster.KymaConfig.Release, cluster.KymaConfig.GlobalConfiguration, cluster.KymaConfig.Components)
 	if err != nil {
 		log.Errorf("Error installing Kyma on runtime %s: %s", cluster.ID, err.Error())
 		r.setOperationAsFailed(operationID, err.Error())
@@ -220,6 +188,13 @@ func (r *service) startDeprovisioning(operationID string, cluster model.Cluster,
 	err := r.hydroform.DeprovisionCluster(cluster)
 	if err != nil {
 		log.Errorf("Deprovisioning runtime %s failed: %s", cluster.ID, err.Error())
+		r.setOperationAsFailed(operationID, err.Error())
+		return
+	}
+
+	err = r.directorService.DeleteRuntime(cluster.ID)
+	if err != nil {
+		log.Errorf("Deprovisioning finished. Failed to unregister Runtime %s: %s", cluster.ID, err.Error())
 		r.setOperationAsFailed(operationID, err.Error())
 		return
 	}

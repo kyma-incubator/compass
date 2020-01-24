@@ -16,7 +16,7 @@ import (
 )
 
 func TestUpdateSingle(t *testing.T) {
-	sut := repo.NewUpdater("users", []string{"first_name", "last_name", "age"}, "tenant_col", []string{"id_col"})
+	sut := repo.NewUpdater("users", []string{"first_name", "last_name", "age"}, "tenant_id", []string{"id_col"})
 	givenUser := User{
 		ID:        "given_id",
 		Tenant:    "given_tenant",
@@ -31,7 +31,7 @@ func TestUpdateSingle(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
 
-		mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE tenant_col = ? AND id_col = ?")).
+		mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE tenant_id = ? AND id_col = ?")).
 			WithArgs("given_first_name", "given_last_name", 55, "given_tenant", "given_id").WillReturnResult(sqlmock.NewResult(0, 1))
 		// WHEN
 		err := sut.UpdateSingle(ctx, givenUser)
@@ -41,12 +41,12 @@ func TestUpdateSingle(t *testing.T) {
 
 	t.Run("success when no id column", func(t *testing.T) {
 		// GIVEN
-		sut := repo.NewUpdater("users", []string{"first_name", "last_name", "age"}, "tenant_col", []string{})
+		sut := repo.NewUpdater("users", []string{"first_name", "last_name", "age"}, "tenant_id", []string{})
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
 
-		mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE tenant_col = ?")).
+		mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE tenant_id = ?")).
 			WithArgs("given_first_name", "given_last_name", 55, "given_tenant").WillReturnResult(sqlmock.NewResult(0, 1))
 		// WHEN
 		err := sut.UpdateSingle(ctx, givenUser)
@@ -86,7 +86,7 @@ func TestUpdateSingle(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
 
-		mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE tenant_col = ? AND id_col = ?")).
+		mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE tenant_id = ? AND id_col = ?")).
 			WithArgs("given_first_name", "given_last_name", 55, "given_tenant", "given_id").WillReturnResult(sqlmock.NewResult(0, 157))
 		// WHEN
 		err := sut.UpdateSingle(ctx, givenUser)
@@ -100,7 +100,7 @@ func TestUpdateSingle(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
 
-		mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE tenant_col = ? AND id_col = ?")).
+		mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE tenant_id = ? AND id_col = ?")).
 			WithArgs("given_first_name", "given_last_name", 55, "given_tenant", "given_id").WillReturnResult(sqlmock.NewResult(0, 0))
 		// WHEN
 		err := sut.UpdateSingle(ctx, givenUser)

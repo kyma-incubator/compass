@@ -13,8 +13,8 @@ import (
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -616,7 +616,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				return appConv
 			},
 			ExpectedOutput: nil,
-			ExpectedError:  errors.New("while validating application input from application template [name=bar]: name: cannot be blank; providerDisplayName: cannot be blank."),
+			ExpectedError:  errors.New("while validating application input from application template [name=bar]: name: cannot be blank."),
 		},
 		{
 			Name: "Returns error when creating Application fails",

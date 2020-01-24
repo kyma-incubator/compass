@@ -1,6 +1,9 @@
 package broker
 
-import "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+import (
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+)
 
 type gcpInputProvider struct {
 }
@@ -22,7 +25,6 @@ func (p *gcpInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 			AutoScalerMax:     4,
 			MaxSurge:          4,
 			MaxUnavailable:    1,
-			Seed:              "gcp-eu1",
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
 					Zone: "europe-west4-b",
@@ -32,6 +34,6 @@ func (p *gcpInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *gcpInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params *ProvisioningParameters) {
+func (p *gcpInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params *internal.ProvisioningParametersDTO) {
 	updateString(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zone, params.Zone)
 }

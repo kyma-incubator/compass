@@ -2,6 +2,7 @@ package authenticator
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -11,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/dgrijalva/jwt-go"
@@ -46,7 +47,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			bearerToken, err := a.getBearerToken(r)
 			if err != nil {
 				log.Error(errors.Wrap(err, "while getting token from header"))
-				http.Error(w, err.Error(), http.StatusBadRequest)
+				a.writeError(w, err.Error(), http.StatusBadRequest)
 				return
 			}
 
@@ -58,11 +59,11 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 
 				vErr, ok := err.(*jwt.ValidationError)
 				if !ok || !isInvalidTenantError(vErr.Inner) {
-					http.Error(w, wrappedErr.Error(), http.StatusUnauthorized)
+					a.writeError(w, wrappedErr.Error(), http.StatusUnauthorized)
 					return
 				}
 
-				http.Error(w, fmt.Sprintf("forbidden: %s", err.Error()), http.StatusForbidden)
+				a.writeError(w, fmt.Sprintf("forbidden: %s", err.Error()), http.StatusForbidden)
 				return
 			}
 
@@ -114,5 +115,24 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 		}
 
 		return nil, unsupportedErr
+	}
+}
+
+type errorResponse struct {
+	Errors []gqlError `json:"errors"`
+}
+
+type gqlError struct {
+	Message string `json:"message"`
+}
+
+func (a *Authenticator) writeError(w http.ResponseWriter, message string, statusCode int) {
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json")
+
+	resp := errorResponse{Errors: []gqlError{{Message: message}}}
+	err := json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		log.Error(err, "while encoding data")
 	}
 }

@@ -17,6 +17,7 @@ import (
 func TestSetProvisioning(t *testing.T) {
 
 	runtimeID := "runtimeId"
+	runtimeName := "runtimeName"
 
 	gcpConfig := model.GCPConfig{
 		Name:              "name",
@@ -30,7 +31,7 @@ func TestSetProvisioning(t *testing.T) {
 	}
 
 	gardenerConfig := model.GardenerConfig{
-		Name:              "name",
+		Name:              "uuid",
 		ProjectName:       "projectName",
 		KubernetesVersion: "1.15",
 		NodeCount:         3,
@@ -58,20 +59,22 @@ func TestSetProvisioning(t *testing.T) {
 			TillerYAML:    "tiller: yaml",
 			InstallerYAML: "installer: yaml",
 		},
-		Modules: []model.KymaConfigModule{
-			{ID: "id1", Module: model.KymaModule("core")},
-			{ID: "id2", Module: model.KymaModule("monitoring")},
+		Components: []model.KymaComponentConfig{
+			{ID: "id1", Component: model.KymaComponent("core")},
+			{ID: "id2", Component: model.KymaComponent("monitoring")},
 		},
 	}
 
 	runtimeGCPConfig := model.Cluster{
 		ID:            runtimeID,
+		RuntimeName:   runtimeName,
 		KymaConfig:    kymaConfig,
 		ClusterConfig: gcpConfig,
 	}
 
 	runtimeGardenerConfig := model.Cluster{
 		ID:            runtimeID,
+		RuntimeName:   runtimeName,
 		KymaConfig:    kymaConfig,
 		ClusterConfig: gardenerConfig,
 	}
@@ -102,6 +105,7 @@ func TestSetProvisioning(t *testing.T) {
 
 	cluster := model.Cluster{
 		ID:                runtimeID,
+		RuntimeName:       runtimeName,
 		TerraformState:    []byte("state"),
 		CreationTimestamp: timestamp,
 	}
@@ -169,7 +173,7 @@ func TestSetProvisioning(t *testing.T) {
 		uuidGenerator.AssertExpectations(t)
 	})
 
-	t.Run("Should rollback transaction when failed to insert record to KymaConfig or KymaConfigModule table", func(t *testing.T) {
+	t.Run("Should rollback transaction when failed to insert record to KymaConfig or KymaComponentConfig table", func(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
@@ -391,6 +395,7 @@ func TestSetUpgrade(t *testing.T) {
 func TestGetRuntimeStatus(t *testing.T) {
 
 	runtimeID := "runtimeID"
+	runtimeName := "runtimeName"
 	operation := model.Operation{
 		Type:           model.Provision,
 		StartTimestamp: time.Now(),
@@ -411,14 +416,15 @@ func TestGetRuntimeStatus(t *testing.T) {
 			TillerYAML:    "tiller: yaml",
 			InstallerYAML: "installer: yaml",
 		},
-		Modules: []model.KymaConfigModule{
-			{ID: "id1", Module: model.KymaModule("core")},
-			{ID: "id2", Module: model.KymaModule("monitoring")},
+		Components: []model.KymaComponentConfig{
+			{ID: "id1", Component: model.KymaComponent("core")},
+			{ID: "id2", Component: model.KymaComponent("monitoring")},
 		},
 	}
 
 	cluster := model.Cluster{
 		ID:             runtimeID,
+		RuntimeName:    runtimeName,
 		Kubeconfig:     nil,
 		TerraformState: []byte("state"),
 	}
@@ -440,6 +446,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 			LastOperationStatus: operation,
 			RuntimeConfiguration: model.Cluster{
 				ID:             runtimeID,
+				RuntimeName:    runtimeName,
 				ClusterConfig:  gcpConfig,
 				KymaConfig:     kymaConfig,
 				TerraformState: []byte("state"),
@@ -512,6 +519,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 
 func TestGetClusterData(t *testing.T) {
 	runtimeID := "runtimeID"
+	runtimeName := "runtimeName"
 
 	gcpConfig := model.GCPConfig{
 		Name:        "name",
@@ -525,14 +533,15 @@ func TestGetClusterData(t *testing.T) {
 			TillerYAML:    "tiller: yaml",
 			InstallerYAML: "installer: yaml",
 		},
-		Modules: []model.KymaConfigModule{
-			{ID: "id1", Module: model.KymaModule("core")},
-			{ID: "id2", Module: model.KymaModule("monitoring")},
+		Components: []model.KymaComponentConfig{
+			{ID: "id1", Component: model.KymaComponent("core")},
+			{ID: "id2", Component: model.KymaComponent("monitoring")},
 		},
 	}
 
 	cluster := model.Cluster{
 		ID:             runtimeID,
+		RuntimeName:    runtimeName,
 		Kubeconfig:     nil,
 		TerraformState: []byte("state"),
 	}
@@ -551,6 +560,7 @@ func TestGetClusterData(t *testing.T) {
 
 		expected := model.Cluster{
 			ID:             runtimeID,
+			RuntimeName:    runtimeName,
 			Kubeconfig:     nil,
 			TerraformState: []byte("state"),
 			KymaConfig:     kymaConfig,
@@ -599,6 +609,6 @@ func getOperationMatcher(expected model.Operation) func(model.Operation) bool {
 func getClusterMatcher(expected model.Cluster) func(model.Cluster) bool {
 	return func(cluster model.Cluster) bool {
 		return cluster.ID == expected.ID &&
-			string(cluster.TerraformState) == string(expected.TerraformState) && cluster.Kubeconfig == expected.Kubeconfig
+			string(cluster.TerraformState) == string(expected.TerraformState) && cluster.Kubeconfig == expected.Kubeconfig && cluster.RuntimeName == expected.RuntimeName
 	}
 }

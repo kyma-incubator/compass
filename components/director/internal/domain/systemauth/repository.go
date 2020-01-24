@@ -29,7 +29,9 @@ type repository struct {
 	singleGetter       repo.SingleGetter
 	singleGetterGlobal repo.SingleGetterGlobal
 	lister             repo.Lister
+	listerGlobal       repo.ListerGlobal
 	deleter            repo.Deleter
+	deleterGlobal      repo.DeleterGlobal
 
 	conv Converter
 }
@@ -40,7 +42,9 @@ func NewRepository(conv Converter) *repository {
 		singleGetter:       repo.NewSingleGetter(tableName, tenantColumn, tableColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(tableName, tableColumns),
 		lister:             repo.NewLister(tableName, tenantColumn, tableColumns),
+		listerGlobal:       repo.NewListerGlobal(tableName, tableColumns),
 		deleter:            repo.NewDeleter(tableName, tenantColumn),
+		deleterGlobal:      repo.NewDeleterGlobal(tableName),
 		conv:               conv,
 	}
 }
@@ -89,9 +93,33 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 	}
 
 	var entities Collection
-	if err := r.lister.List(ctx, tenant, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID))); err != nil {
+
+	err = r.lister.List(ctx, tenant, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID)))
+
+	if err != nil {
 		return nil, err
 	}
+
+	return r.multipleFromEntities(entities)
+}
+
+func (r *repository) ListForObjectGlobal(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
+	objTypeFieldName, err := referenceObjectField(objectType)
+	if err != nil {
+		return nil, err
+	}
+
+	var entities Collection
+
+	err = r.listerGlobal.ListGlobal(ctx, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID)))
+	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
+func (r *repository) multipleFromEntities(entities Collection) ([]model.SystemAuth, error) {
 
 	var items []model.SystemAuth
 
@@ -112,24 +140,34 @@ func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, obje
 	if err != nil {
 		return err
 	}
-
+	if objectType == model.IntegrationSystemReference {
+		return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
+	}
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
 }
 
-func (r *repository) DeleteByIDForObject(ctx context.Context, tenant string, id string, objType model.SystemAuthReferenceObjectType) error {
+func (r *repository) DeleteByIDForObject(ctx context.Context, tenant, id string, objType model.SystemAuthReferenceObjectType) error {
 	var objTypeCond repo.Condition
-	switch objType {
-	case model.ApplicationReference:
-		objTypeCond = repo.NewNotNullCondition("app_id")
-	case model.RuntimeReference:
-		objTypeCond = repo.NewNotNullCondition("runtime_id")
-	case model.IntegrationSystemReference:
-		objTypeCond = repo.NewNotNullCondition("integration_system_id")
-	default:
-		return fmt.Errorf("unsupported object type (%s)", objType)
+
+	column, err := referenceObjectField(objType)
+	if err != nil {
+		return err
 	}
+	objTypeCond = repo.NewNotNullCondition(column)
 
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
+}
+
+func (r *repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, objType model.SystemAuthReferenceObjectType) error {
+	var objTypeCond repo.Condition
+
+	column, err := referenceObjectField(objType)
+	if err != nil {
+		return err
+	}
+	objTypeCond = repo.NewNotNullCondition(column)
+
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
 }
 
 func referenceObjectField(objectType model.SystemAuthReferenceObjectType) (string, error) {

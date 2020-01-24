@@ -26,7 +26,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		expectedScopes := []string{"application:read"}
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: expectedTenantID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{}
@@ -92,7 +92,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		expectedScopes := "application:read"
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: expectedTenantID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{
@@ -209,13 +209,16 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		sysAuth := &model.SystemAuth{
-			ID:    authID.String(),
-			AppID: str.Ptr(refObjID.String()),
+			ID:       authID.String(),
+			AppID:    str.Ptr(refObjID.String()),
+			TenantID: str.Ptr("123"),
 		}
+
 		reqData := tenantmapping.ReqData{
 			Body: tenantmapping.ReqBody{
 				Extra: map[string]interface{}{
 					tenantmapping.TenantKey: []byte{1, 2, 3},
+					tenantmapping.ScopesKey: "application:read",
 				},
 			},
 		}
@@ -239,13 +242,14 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		tenant2ID := uuid.New()
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: tenant1ID.String(),
+			TenantID: str.Ptr(tenant1ID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{
 			Body: tenantmapping.ReqBody{
 				Extra: map[string]interface{}{
 					tenantmapping.TenantKey: tenant2ID.String(),
+					tenantmapping.ScopesKey: "application:read",
 				},
 			},
 		}
@@ -262,13 +266,42 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
 
+	t.Run("returns error when system auth tenant id is nil", func(t *testing.T) {
+		authID := uuid.New()
+		refObjID := uuid.New()
+		tenant2ID := uuid.New()
+		sysAuth := &model.SystemAuth{
+			ID:    authID.String(),
+			AppID: str.Ptr(refObjID.String()),
+		}
+		reqData := tenantmapping.ReqData{
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.TenantKey: tenant2ID.String(),
+					tenantmapping.ScopesKey: "application:read",
+				},
+			},
+		}
+
+		systemAuthSvcMock := getSystemAuthSvcMock()
+		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
+
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
+
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: system auth tenant id cannot be nil")
+
+		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
+	})
+
 	t.Run("returns error when underlying ReqData has no scopes specified in the Application or Runtime SystemAuth case for OAuth2 flow", func(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		tenant1ID := uuid.New()
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: tenant1ID.String(),
+			TenantID: str.Ptr(tenant1ID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{}
@@ -291,7 +324,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		expectedTenantID := uuid.New()
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: expectedTenantID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{}

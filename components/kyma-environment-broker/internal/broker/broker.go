@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/pivotal-cf/brokerapi/domain"
-	"github.com/pivotal-cf/brokerapi/domain/apiresponses"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/pkg/errors"
-	"github.com/sanity-io/litter"
 )
 
 const (
@@ -20,10 +22,9 @@ const (
 	fixedDummyURL = "https://dummy.dashboard.com"
 )
 
-type ERSContext struct {
-	TenantID        string `json:"tenant_id"`
-	SubaccountID    string `json:"subaccount_id"`
-	GlobalaccountID string `json:"globalaccount_id"`
+// OptionalComponentNamesProvider provides optional components names
+type OptionalComponentNamesProvider interface {
+	GetOptionalComponentNames() []string
 }
 
 // ProvisioningConfig holds all configurations connected with Provisioner API
@@ -38,23 +39,34 @@ type ProvisioningConfig struct {
 
 // KymaEnvBroker implements the Kyma Environment Broker
 type KymaEnvBroker struct {
-	Dumper            *Dumper
+	Dumper *Dumper
+
+	Config            ProvisioningConfig
 	ProvisionerClient provisioner.Client
 
-	Config ProvisioningConfig
+	InstancesStorage   storage.Instances
+	optionalComponents OptionalComponentNamesProvider
 }
 
-type ProvisioningParameters struct {
-	Name           string  `json:"name"`
-	NodeCount      *int    `json:"nodeCount"`
-	VolumeSizeGb   *int    `json:"volumeSizeGb"`
-	MachineType    *string `json:"machineType"`
-	Region         *string `json:"region"`
-	Zone           *string `json:"zone"`
-	AutoScalerMin  *int    `json:"autoScalerMin"`
-	AutoScalerMax  *int    `json:"autoScalerMax"`
-	MaxSurge       *int    `json:"maxSurge"`
-	MaxUnavailable *int    `json:"maxUnavailable"`
+var enabledPlanIDs = map[string]struct{}{
+	azurePlanID: {},
+	gcpPlanID:   {},
+	// add plan IDs which must be enabled
+}
+
+func NewBroker(pCli provisioner.Client, cfg ProvisioningConfig, instStorage storage.Instances) (*KymaEnvBroker, error) {
+	dumper, err := NewDumper()
+	if err != nil {
+		return nil, err
+	}
+
+	return &KymaEnvBroker{
+		ProvisionerClient:  pCli,
+		Dumper:             dumper,
+		Config:             cfg,
+		InstancesStorage:   instStorage,
+		optionalComponents: optionalComponentProvider{},
+	}, nil
 }
 
 // Services gets the catalog of services offered by the service broker
@@ -63,8 +75,13 @@ func (b *KymaEnvBroker) Services(ctx context.Context) ([]domain.Service, error) 
 	availableServicePlans := []domain.ServicePlan{}
 
 	for _, plan := range plans {
+		// filter out not enabled plans
+		if _, exists := enabledPlanIDs[plan.planDefinition.ID]; !exists {
+			continue
+		}
 		p := plan.planDefinition
 		err := json.Unmarshal(plan.provisioningRawSchema, &p.Schemas.Instance.Create.Parameters)
+		b.addComponentsToSchema(&p.Schemas.Instance.Create.Parameters)
 		if err != nil {
 			b.Dumper.Dump("Could not decode provisioning schema:", err.Error())
 			return nil, err
@@ -101,10 +118,13 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	b.Dumper.Dump("Provision asyncAllowed:", asyncAllowed)
 
 	// unmarshall ERS context
-	var ersContext ERSContext
+	var ersContext internal.ERSContext
 	err := json.Unmarshal(details.RawContext, &ersContext)
 	if err != nil {
 		return domain.ProvisionedServiceSpec{}, errors.Wrap(err, "while decoding context")
+	}
+	if ersContext.GlobalAccountID == "" {
+		return domain.ProvisionedServiceSpec{}, errors.New("GlobalAccountID parameter cannot be empty")
 	}
 	b.Dumper.Dump("ERS context:", ersContext)
 
@@ -113,7 +133,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	}
 
 	// unmarshall provisioning parameters
-	var parameters ProvisioningParameters
+	var parameters internal.ProvisioningParametersDTO
 	err = json.Unmarshal(details.RawParameters, &parameters)
 	if err != nil {
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not read parameters, instanceID %s", instanceID))
@@ -130,14 +150,10 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 
 	// add values, which will be deprecated and replaced by other secret data provided by the caller
 	switch details.PlanID {
-	case gcpPlanID:
-		input.ClusterConfig.GardenerConfig.TargetSecret = b.Config.GCPSecretName
-	case defaultPlanID:
-		input.ClusterConfig.GardenerConfig.TargetSecret = b.Config.GCPSecretName
 	case azurePlanID:
 		input.ClusterConfig.GardenerConfig.TargetSecret = b.Config.AzureSecretName
-	case awsPlanID:
-		input.ClusterConfig.GardenerConfig.TargetSecret = b.Config.AWSSecretName
+	case gcpPlanID:
+		input.ClusterConfig.GardenerConfig.TargetSecret = b.Config.GCPSecretName
 	default:
 		return domain.ProvisionedServiceSpec{}, errors.Wrapf(err, "unknown Plan ID %s", details.PlanID)
 	}
@@ -147,15 +163,30 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	}
 
 	b.Dumper.Dump("Created provisioning input:", input)
-	opID, err := b.ProvisionerClient.ProvisionRuntime(instanceID, *input)
+	resp, err := b.ProvisionerClient.ProvisionRuntime(ersContext.GlobalAccountID, *input)
 	if err != nil {
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not provision runtime, instanceID %s", instanceID))
+	}
+	if resp.RuntimeID == nil {
+		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusInternalServerError, fmt.Sprintf("could not provision runtime, runtime ID not provided (instanceID %s)", instanceID))
+	}
+	err = b.InstancesStorage.Insert(internal.Instance{
+		InstanceID:             instanceID,
+		GlobalAccountID:        ersContext.GlobalAccountID,
+		RuntimeID:              *resp.RuntimeID,
+		ServiceID:              details.ServiceID,
+		ServicePlanID:          details.PlanID,
+		DashboardURL:           "",
+		ProvisioningParameters: string(details.RawParameters),
+	})
+	if err != nil {
+		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusInternalServerError, fmt.Sprintf("could not save instance, instanceID %s", instanceID))
 	}
 
 	spec := domain.ProvisionedServiceSpec{
 		IsAsync:       true,
-		OperationData: opID,
-		DashboardURL:  fixedDummyURL,
+		OperationData: *resp.ID,
+		DashboardURL:  "",
 	}
 	b.Dumper.Dump("Returned provisioned service spec:", spec)
 
@@ -169,7 +200,12 @@ func (b *KymaEnvBroker) Deprovision(ctx context.Context, instanceID string, deta
 	b.Dumper.Dump("Deprovision details:", details)
 	b.Dumper.Dump("Deprovision asyncAllowed:", asyncAllowed)
 
-	opID, err := b.ProvisionerClient.DeprovisionRuntime(instanceID)
+	instance, err := b.InstancesStorage.GetByID(instanceID)
+	if err != nil {
+		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponseBuilder(fmt.Errorf("instance not found"), http.StatusBadRequest, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
+	}
+
+	opID, err := b.ProvisionerClient.DeprovisionRuntime(instance.GlobalAccountID, instance.RuntimeID)
 	if err != nil {
 		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
 	}
@@ -185,18 +221,23 @@ func (b *KymaEnvBroker) Deprovision(ctx context.Context, instanceID string, deta
 func (b *KymaEnvBroker) GetInstance(ctx context.Context, instanceID string) (domain.GetInstanceDetailsSpec, error) {
 	b.Dumper.Dump("GetInstance instanceID:", instanceID)
 
-	runtimeStatus, err := b.ProvisionerClient.GCPRuntimeStatus(instanceID)
+	inst, err := b.InstancesStorage.GetByID(instanceID)
 	if err != nil {
-		return domain.GetInstanceDetailsSpec{}, errors.Wrapf(err, "while calling for runtime status")
+		return domain.GetInstanceDetailsSpec{}, errors.Wrapf(err, "while getting instance from storage")
 	}
 
-	b.Dumper.Dump("GCP Runtime Status cluster config:", runtimeStatus.RuntimeConfiguration.ClusterConfig)
-	b.Dumper.Dump("GCP Runtime Status Kyma config:", runtimeStatus.RuntimeConfiguration.KymaConfig)
+	decodedParams := make(map[string]interface{})
+	err = json.Unmarshal([]byte(inst.ProvisioningParameters), &decodedParams)
+	if err != nil {
+		b.Dumper.Dump("unable to decode instance parameters for instanceID: ", instanceID)
+		b.Dumper.Dump("  parameters: ", inst.ProvisioningParameters)
+	}
 
 	spec := domain.GetInstanceDetailsSpec{
-		ServiceID:    kymaServiceID,
-		PlanID:       defaultPlanID,
-		DashboardURL: fixedDummyURL,
+		ServiceID:    inst.ServiceID,
+		PlanID:       inst.ServicePlanID,
+		DashboardURL: "",
+		Parameters:   decodedParams,
 	}
 	return spec, nil
 }
@@ -217,7 +258,12 @@ func (b *KymaEnvBroker) LastOperation(ctx context.Context, instanceID string, de
 	b.Dumper.Dump("LastOperation instanceID:", instanceID)
 	b.Dumper.Dump("LastOperation details:", details)
 
-	status, err := b.ProvisionerClient.RuntimeOperationStatus(details.OperationData)
+	instance, err := b.InstancesStorage.GetByID(instanceID)
+	if err != nil {
+		return domain.LastOperation{}, errors.Wrapf(err, "while getting instance from storage")
+	}
+
+	status, err := b.ProvisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, details.OperationData)
 	if err != nil {
 		b.Dumper.Dump("Got error: ", err)
 		return domain.LastOperation{}, errors.Wrapf(err, "while getting last operation")
@@ -228,6 +274,19 @@ func (b *KymaEnvBroker) LastOperation(ctx context.Context, instanceID string, de
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
 		lastOpStatus = domain.Succeeded
+
+		// todo: this is a temporary solution until the dashboard url is saved in the director
+		b.Dumper.Dump("Saving dummy dashboard url for instance ID: ", instanceID)
+		inst, err := b.InstancesStorage.GetByID(instanceID)
+		if err != nil {
+			b.Dumper.Dump("Got error: ", err)
+		}
+		inst.DashboardURL = fixedDummyURL
+		err = b.InstancesStorage.Update(*inst)
+		if err != nil {
+			b.Dumper.Dump("Got error: ", err)
+		}
+
 	case gqlschema.OperationStateInProgress:
 		lastOpStatus = domain.InProgress
 	case gqlschema.OperationStatePending:
@@ -249,7 +308,7 @@ func (b *KymaEnvBroker) LastOperation(ctx context.Context, instanceID string, de
 // Bind creates a new service binding
 //   PUT /v2/service_instances/{instance_id}/service_bindings/{binding_id}
 func (b *KymaEnvBroker) Bind(ctx context.Context, instanceID, bindingID string, details domain.BindDetails, asyncAllowed bool) (domain.Binding, error) {
-	litter.Dump("Bind instanceID:", instanceID)
+	b.Dumper.Dump("Bind instanceID:", instanceID)
 	b.Dumper.Dump("Bind details:", details)
 	b.Dumper.Dump("Bind asyncAllowed:", asyncAllowed)
 
@@ -293,4 +352,23 @@ func (b *KymaEnvBroker) LastBindingOperation(ctx context.Context, instanceID, bi
 
 	op := domain.LastOperation{}
 	return op, nil
+}
+
+func (b *KymaEnvBroker) addComponentsToSchema(schema *map[string]interface{}) {
+	props := (*schema)["properties"].(map[string]interface{})
+	props["components"] = map[string]interface{}{
+		"type": "array",
+		"items": map[string]interface{}{
+			"type": "string",
+			"enum": b.optionalComponents.GetOptionalComponentNames(),
+		},
+	}
+}
+
+// todo: will be replaced by the real implementation
+type optionalComponentProvider struct {
+}
+
+func (optionalComponentProvider) GetOptionalComponentNames() []string {
+	return []string{"monitoring", "kiali", "loki", "jaeger"}
 }

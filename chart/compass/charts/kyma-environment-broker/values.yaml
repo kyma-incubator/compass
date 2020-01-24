@@ -39,15 +39,25 @@ affinity: {}
 
 provisioner:
   URL: "http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"
+  # todo: remove the flag after new provisioner is merged
+  processRuntimeID: true
   gardener:
     # name of the secret with kubeconfig to the gardener cluster
-    secretName: "gardener"
+    secretName: "gopher-canary-gardener"
     # name of the gardener project
     projectName: "gopher"
   gcp:
     # name of the secret in the gardener which holds the GCP Service Account key
-    secretName: "gcp-secret-name"
+    secretName: "gardener-canary-gopher"
   azure:
-    secretName: "azure-secret-name"
+    secretName: "my-azure-secret"
   aws:
     secretName: "aws-secret-name"
+
+# It is used to provide own creds for Service Manager instead of using the one provided by external system
+# who execute provision call on Kyma Environment Broker
+serviceManger:
+  secretName: "service-manager-creds"
+  url: "TBD"
+  username: "TBD"
+  password: "TBD"

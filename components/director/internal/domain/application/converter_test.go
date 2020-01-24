@@ -316,9 +316,9 @@ func assertApplicationDefinition(t *testing.T, appModel *model.Application, enti
 		assert.Equal(t, string(model.ApplicationStatusConditionUnknown), string(entity.StatusCondition))
 	}
 
-	testdb.AssertSqlNullString(t, entity.Description, appModel.Description)
-	testdb.AssertSqlNullString(t, entity.HealthCheckURL, appModel.HealthCheckURL)
-	assert.Equal(t, entity.ProviderDisplayName, appModel.ProviderDisplayName)
+	testdb.AssertSqlNullStringEqualTo(t, entity.Description, appModel.Description)
+	testdb.AssertSqlNullStringEqualTo(t, entity.HealthCheckURL, appModel.HealthCheckURL)
+	testdb.AssertSqlNullStringEqualTo(t, entity.ProviderName, appModel.ProviderName)
 }
 
 func givenID() string {
