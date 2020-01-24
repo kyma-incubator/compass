@@ -71,11 +71,11 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput:  runtimeInput,
 		ClusterConfig: clusterConfig,
-		Credentials:   &gqlschema.CredentialsInput{},
+		Credentials:   &gqlschema.CredentialsInput{
+			SecretName: "secretName",
+		},
 		KymaConfig:    kymaConfigInput,
 	}
-
-	credentials := &gqlschema.CredentialsInput{SecretName: "secretName"}
 
 	t.Run("Should start runtime provisioning and return operation ID", func(t *testing.T) {
 		//given
@@ -99,8 +99,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock)
 
 		//when
-		//TODO, credentials?
-		//operationID, finished, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: credentials, KymaConfig: kymaConfig})
 		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput)
 		require.NoError(t, err)
 
@@ -123,8 +121,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		service := NewProvisioningService(nil, nil, nil, nil, nil, directorServiceMock)
 
-		//TODO: credentials?
-		//operationID, finished, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: credentials, KymaConfig: kymaConfig})
 		//when
 		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput)
 
@@ -156,8 +152,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock)
 
-		//TODO: credentials?
-		//operationID, finished, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: credentials, KymaConfig: kymaConfig})
 		//when
 		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput)
 		require.NoError(t, err)
