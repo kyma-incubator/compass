@@ -13,7 +13,7 @@ const (
 // RemoveNotAllowedCharacters returns provider containing only alphanumeric characters or hyphens
 func RemoveNotAllowedCharacters(provider string) string {
 	for _, char := range strings.ToLower(provider) {
-		if !strings.ContainsRune(letters, char) {
+		if !unicode.IsLetter(char) {
 			provider = strings.ReplaceAll(provider, string(char), "")
 		}
 	}
