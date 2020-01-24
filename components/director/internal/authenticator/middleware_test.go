@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 )
 
-const defaultTenant = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
+const defaultTenant = "af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e"
 const PublicJWKSURL = "file://testdata/jwks-public.json"
 const PrivateJWKSURL = "file://testdata/jwks-private.json"
 const PrivateJWKS2URL = "file://testdata/jwks-private2.json"
