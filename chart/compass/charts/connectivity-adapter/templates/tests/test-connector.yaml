@@ -20,16 +20,16 @@ spec:
             - "{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}"
             - "gateway.{{ .Values.global.ingress.domainName }}"
       {{ end }}
-      serviceAccountName: {{ .Chart.Name }}-tests
+      serviceAccountName: {{ template "fullname" . }}-tests
       containers:
       - name: "tests"
         image: "eu.gcr.io/kyma-project/connector-service-tests:27eff119"
         imagePullPolicy: IfNotPresent
         env:
           - name: INTERNAL_API_URL
-            value: http://compass-connectivity-adapter-internal.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connectivity_adapter.internal_api.port }}"
+            value: http://compass-connectivity-adapter-internal.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connectivity_adapter.internal_api.port }}
           - name: EXTERNAL_API_URL
-            value: http://compass-connectivity-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connectivity_adapter.external_api.port }}"
+            value: http://compass-connectivity-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connectivity_adapter.external_api.port }}
           - name: GATEWAY_URL
             value: https://gateway.{{ .Values.global.ingress.domainName }}
           - name: SKIP_SSL_VERIFY
