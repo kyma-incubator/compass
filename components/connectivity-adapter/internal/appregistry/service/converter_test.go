@@ -16,9 +16,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 		given    model.ServiceDetails
 		expected graphql.ApplicationRegisterInput
 	}
-	// GIVEN
 	sut := NewConverter()
-	// WHEN
 
 	for name, tc := range map[string]testCase{
 		"minimal number of fields set": {
@@ -36,7 +34,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				Labels: &map[string]string{"some-label": "some-value"},
 			},
 			expected: graphql.ApplicationRegisterInput{
-				Labels: getLabelsOrNil(map[string]interface{}{"some-label": "some-value"}),
+				Labels: getLabelsOrNilIfEmpty(map[string]interface{}{"some-label": "some-value"}),
 			},
 		},
 		"labels and our custom labels": {
@@ -45,7 +43,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				Identifier: "identifier",
 			},
 			expected: graphql.ApplicationRegisterInput{
-				Labels: getLabelsOrNil(map[string]interface{}{
+				Labels: getLabelsOrNilIfEmpty(map[string]interface{}{
 					"some-label":            "some-value",
 					unmappedFieldIdentifier: "identifier"}),
 			},
@@ -55,7 +53,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				Identifier: "identifier",
 			},
 			expected: graphql.ApplicationRegisterInput{
-				Labels: getLabelsOrNil(map[string]interface{}{unmappedFieldIdentifier: "identifier"}),
+				Labels: getLabelsOrNilIfEmpty(map[string]interface{}{unmappedFieldIdentifier: "identifier"}),
 			},
 		},
 		"all basic attributes provided": {
@@ -70,7 +68,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				Name:         "name",
 				Description:  ptrStringOrNilForEmpty("description"),
 				ProviderName: ptrStringOrNilForEmpty("provider"),
-				Labels: getLabelsOrNil(map[string]interface{}{
+				Labels: getLabelsOrNilIfEmpty(map[string]interface{}{
 					unmappedFieldIdentifier:       "identifier",
 					unmappedFieldShortDescription: "shortDescription",
 				}),
@@ -331,7 +329,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 		},
-		"API specification with basic to fetch request": {
+		"API specification with basic auth converted to fetch request": {
 			given: model.ServiceDetails{
 				Api: &model.API{
 					SpecificationUrl: "http://specification.url",
@@ -363,7 +361,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 		},
-		"API specification with oauth to fetch request": {
+		"API specification with oauth converted to fetch request": {
 			given: model.ServiceDetails{
 				Api: &model.API{
 					SpecificationUrl: "http://specification.url",
@@ -398,7 +396,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 		},
-		"API specification with request parameters": {
+		"API specification with request parameters converted to fetch request": {
 			given: model.ServiceDetails{
 				Api: &model.API{
 					SpecificationUrl: "http://specification.url",
@@ -455,6 +453,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			// WHEN
 			actual, err := sut.DetailsToGraphQLInput(tc.given)
 
 			// THEN
@@ -465,13 +464,12 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 }
 
 func TestConversionApplicationExtToServiceDetails(t *testing.T) {
-	// GIVEN
+
 	type testCase struct {
 		given    graphql.ApplicationExt
 		expected model.ServiceDetails
 	}
 	sut := NewConverter()
-	// WHEN
 
 	for name, tc := range map[string]testCase{
 		"simple attributes": {
@@ -490,7 +488,7 @@ func TestConversionApplicationExtToServiceDetails(t *testing.T) {
 				Provider:    "providerName",
 			},
 		},
-		"custom mapping labels": {
+		"custom labels": {
 			given: graphql.ApplicationExt{
 				Labels: graphql.Labels{
 					unmappedFieldIdentifier:       "identifier",
@@ -771,12 +769,14 @@ func TestConversionApplicationExtToServiceDetails(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			// WHEN
 			actual, err := sut.GraphQLToDetailsModel(tc.given)
+			// THEN
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
-	// THEN
+
 }
 
 func TestConvertGraphQLToModel(t *testing.T) {
@@ -809,7 +809,9 @@ func TestConvertGraphQLToModel(t *testing.T) {
 		}
 		sut := NewConverter()
 
+		// WHEN
 		actualOut, err := sut.GraphQLToModel(givenIn)
+		// THEN
 
 		require.NoError(t, err)
 		assert.Equal(t, expectedOut, actualOut)
@@ -831,9 +833,9 @@ func TestConvertGraphQLToModel(t *testing.T) {
 			Name: "name",
 		}
 		sut := NewConverter()
-
+		// WHEN
 		actualOut, err := sut.GraphQLToModel(givenIn)
-
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, expectedOut, actualOut)
 	})
