@@ -13,7 +13,6 @@ require (
 	github.com/hashicorp/terraform v0.12.16
 	github.com/json-iterator/go v1.1.8 // indirect
 	github.com/kubernetes/client-go v11.0.0+incompatible
-	github.com/kyma-incubator/compass v0.0.0-20191213152550-bd76175256e3 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200124100441-afb7816716c1
 	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
 	github.com/kyma-incubator/hydroform/install v0.0.0-20191217171037-affe7099c3b9
