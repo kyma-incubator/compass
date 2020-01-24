@@ -22,14 +22,13 @@ This table lists the environment variables, their descriptions, and default valu
 | **APP_PROVISIONING_AZURE_SECRET_NAME** | Defines the name of the Secret which holds credentials to Azure. | None |
 | **APP_AUTH_USERNAME** | Specifies the Kyma Environment Service Broker authentication username. | None |
 | **APP_AUTH_PASSWORD** | Specifies the Kyma Environment Service Broker authentication password. | None |
-| **APP_DIRECTOR_NAMESPACE** | Specifies the Namespace of the Director | None |
-| **APP_DIRECTOR_DEFAULT_TENANT** |  | None |
-| **APP_DIRECTOR_URL** | Specifies Director's URL. | None |
-| **APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME** |  | None |
-| **APP_DIRECTOR_SKIP_CERT_VERIFICATION** |  | None |
+| **APP_DIRECTOR_NAMESPACE** | Specifies the Namespace in which Director is deployed. | `compass-system` |
+| **APP_DIRECTOR_URL** | Specifies Director's URL. | `http://compass-director.compass-system.svc.cluster.local:3000/graphql |
+| **APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME** | Specifies the name of the Secret created by the Integration System. | `compass-kyma-environment-broker-credentials` |
+| **APP_DIRECTOR_SKIP_CERT_VERIFICATION** | Specifies whether TLS checks the presented certificates. | `false` |
 | **APP_DATABASE_USER** | Database username | `postgres` |
 | **APP_DATABASE_PASSWORD** | Database user password | `password` |
 | **APP_DATABASE_HOST** | Database host | `localhost` |
 | **APP_DATABASE_PORT** | Database port | `5432` |
-| **APP_DATABASE_NAME** | Database name | `provisioner` |
+| **APP_DATABASE_NAME** | Database name | `broker` |
 | **APP_DATABASE_SSL** | SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html)  | `disable`|
