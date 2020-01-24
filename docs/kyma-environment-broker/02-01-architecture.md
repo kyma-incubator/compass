@@ -11,5 +11,7 @@ The diagram and steps describe the Kyma Environment Broker (KEB) workflow and th
 5. When the operation is successful, KEB keeps sending a request for a Dashboard URL to Director:
 
     a. KEB sends a request to Hydra to refresh the OAuth token.
+
     b. KEB passes the OAuth token through Gateway to Director.
+
     c. Director returns the Dashboard URL to KEB through Gateway. The Dashboard URL is the URL to the newly created cluster.
