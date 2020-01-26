@@ -67,8 +67,7 @@ func main() {
 		Password: cfg.Auth.Password,
 	}
 
-	// create provisioner client
-	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, cfg.ServiceManager.URL, cfg.ServiceManager.Username, cfg.ServiceManager.Password, true)
+	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 
 	// create kubernetes client
 	k8sCfg, err := config.GetConfig()
