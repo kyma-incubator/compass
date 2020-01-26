@@ -45,12 +45,14 @@ type (
 type InputBuilderFactory struct {
 	kymaVersion        string
 	optComponentsSvc   OptionalComponentService
+	serviceManager     internal.ServiceManagerOverride
 	fullComponentsList internal.ComponentConfigurationInputList
 }
 
-func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullComponentsList []v1alpha1.KymaComponent, kymaVersion string) InputBuilderForPlan {
+func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullComponentsList []v1alpha1.KymaComponent, kymaVersion string, smOverride internal.ServiceManagerOverride) InputBuilderForPlan {
 	return &InputBuilderFactory{
 		kymaVersion:        kymaVersion,
+		serviceManager:     smOverride,
 		optComponentsSvc:   optComponentsSvc,
 		fullComponentsList: mapToGQLComponentConfigurationInput(fullComponentsList),
 	}
@@ -69,19 +71,21 @@ func (f *InputBuilderFactory) ForPlan(planID string) (ConcreteInputBuilder, bool
 	}
 
 	return &InputBuilder{
-		hyperscalerInputProvider:  provider,
-		kymaVersion:               f.kymaVersion,
-		fullRuntimeComponentList:  f.fullComponentsList,
-		optionalComponentsService: f.optComponentsSvc,
 		planID:                    planID,
+		kymaVersion:               f.kymaVersion,
+		serviceManager:            f.serviceManager,
+		hyperscalerInputProvider:  provider,
+		optionalComponentsService: f.optComponentsSvc,
+		fullRuntimeComponentList:  f.fullComponentsList,
 	}, true
 }
 
 type InputBuilder struct {
 	planID                    string
 	kymaVersion               string
-	optionalComponentsService OptionalComponentService
+	serviceManager            internal.ServiceManagerOverride
 	hyperscalerInputProvider  hyperscalerInputProvider
+	optionalComponentsService OptionalComponentService
 	fullRuntimeComponentList  internal.ComponentConfigurationInputList
 
 	ersCtx                 internal.ERSContext
@@ -134,20 +138,39 @@ func (b *InputBuilder) disableNotSelectedComponents(in *gqlschema.ProvisionRunti
 }
 
 func (b *InputBuilder) applyServiceManagerOverrides(in *gqlschema.ProvisionRuntimeInput) error {
-	smOverrides := []*gqlschema.ConfigEntryInput{
-		{
-			Key:   "config.sm.url",
-			Value: b.ersCtx.ServiceManager.URL,
-		},
-		{
-			Key:   "sm.user",
-			Value: b.ersCtx.ServiceManager.Credentials.BasicAuth.Username,
-		},
-		{
-			Key:    "sm.password",
-			Value:  b.ersCtx.ServiceManager.Credentials.BasicAuth.Password,
-			Secret: ptr.Bool(true),
-		},
+	var smOverrides []*gqlschema.ConfigEntryInput
+	if b.serviceManager.CredentialsOverride {
+		smOverrides = []*gqlschema.ConfigEntryInput{
+			{
+				Key:   "config.sm.url",
+				Value: b.serviceManager.URL,
+			},
+			{
+				Key:   "sm.user",
+				Value: b.serviceManager.Username,
+			},
+			{
+				Key:    "sm.password",
+				Value:  b.serviceManager.Password,
+				Secret: ptr.Bool(true),
+			},
+		}
+	} else {
+		smOverrides = []*gqlschema.ConfigEntryInput{
+			{
+				Key:   "config.sm.url",
+				Value: b.ersCtx.ServiceManager.URL,
+			},
+			{
+				Key:   "sm.user",
+				Value: b.ersCtx.ServiceManager.Credentials.BasicAuth.Username,
+			},
+			{
+				Key:    "sm.password",
+				Value:  b.ersCtx.ServiceManager.Credentials.BasicAuth.Password,
+				Secret: ptr.Bool(true),
+			},
+		}
 	}
 
 	for i := range in.KymaConfig.Components {

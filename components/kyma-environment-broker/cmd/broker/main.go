@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
@@ -35,11 +36,7 @@ type Config struct {
 	Director     director.Config
 	Database     storage.Config
 
-	ServiceManager struct {
-		URL      string
-		Password string
-		Username string
-	}
+	ServiceManager internal.ServiceManagerOverride
 
 	KymaVersion                          string
 	ManagedRuntimeComponentsYAMLFilePath string
@@ -101,7 +98,7 @@ func main() {
 	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
 	fatalOnError(err)
 
-	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion)
+	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager)
 
 	dumper, err := broker.NewDumper()
 	fatalOnError(err)
