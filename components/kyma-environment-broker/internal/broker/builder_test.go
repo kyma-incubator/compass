@@ -29,7 +29,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return(toDisableComponents)
 	optComponentsSvc.On("ExecuteDisablers", mappedComponentList, toDisableComponents[0]).Return(mappedComponentList, nil)
 
-	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, "1.10.0")
+	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, "1.10.0", internal.ServiceManagerOverride{})
 
 	// when
 	builder, found := factory.ForPlan(azurePlanID)

@@ -1,11 +1,12 @@
 package provisioner
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
@@ -74,7 +75,6 @@ func TestKymaConfigToGraphQLOnlyKymaVersion(t *testing.T) {
 	// given
 	fixInput := gqlschema.KymaConfigInput{
 		Version: "966",
-
 	}
 	expRender := `{
 		version: "966"         

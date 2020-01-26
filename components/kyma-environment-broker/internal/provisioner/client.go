@@ -29,7 +29,7 @@ func NewProvisionerClient(endpoint string, queryLogging bool) Client {
 	return &client{
 		graphQLClient: graphql.NewGraphQLClient(endpoint, true, queryLogging),
 		queryProvider: queryProvider{},
-		graphqlizer: graphqlizer{},
+		graphqlizer:   graphqlizer{},
 	}
 }
 

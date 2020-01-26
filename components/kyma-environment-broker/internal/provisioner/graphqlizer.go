@@ -12,7 +12,7 @@ import (
 )
 
 // Graphqlizer is responsible for converting Go objects to input arguments in graphql format
-type graphqlizer struct {}
+type graphqlizer struct{}
 
 func (g *graphqlizer) ProvisionRuntimeInputToGraphQL(in gqlschema.ProvisionRuntimeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
@@ -133,7 +133,7 @@ func (g *graphqlizer) UpgradeClusterConfigToGraphQL(in gqlschema.UpgradeClusterI
 }
 
 func (g *graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string, error) {
-	return g.genericToGraphQL(in,`{
+	return g.genericToGraphQL(in, `{
 		version: "{{ .Version }}"
       	{{- with .Components }}
         components: [
