@@ -15,7 +15,7 @@ This table lists the environment variables, their descriptions, and default valu
 |-----|---------|:--------:|
 | **APP_PORT** | Specifies the port on which the HTTP server listens. | `8080` |
 | **APP_PROVISIONING_URL** | Specifies a URL to the Provisioner's API. | None |
-| **APP_PROVISIONING_SECRET_NAME** | Specifies the name of the Secret which holds credentials to the Provisioner API. | None |
+| **APP_PROVISIONING_SECRET_NAME** | Specifies the name of the Secret which holds credentials to the Provisioner's API. | None |
 | **APP_PROVISIONING_GARDENER_PROJECT_NAME** | Defines the Gardener project name. | `true` |
 | **APP_PROVISIONING_GCP_SECRET_NAME** | Defines the name of the Secret which holds credentials to GCP. | None |
 | **APP_PROVISIONING_AWS_SECRET_NAME** | Defines the name of the Secret which holds credentials to AWS. | None |
