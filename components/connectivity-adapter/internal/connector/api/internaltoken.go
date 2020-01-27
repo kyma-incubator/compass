@@ -1,12 +1,13 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 )
 
 const ApplicationHeader = "Application"

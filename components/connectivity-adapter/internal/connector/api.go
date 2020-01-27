@@ -57,6 +57,10 @@ func RegisterExternalHandler(router *mux.Router, config Config) error {
 
 	certificates := api.NewCertificatesHandler(client, logger)
 	router.HandleFunc("/certificates", certificates.SignCSR)
+	router.HandleFunc("/certificates/renewals", certificates.SignCSR)
+
+	revocationsHandler := api.NewRevocationsHandler(client, logger)
+	router.HandleFunc("/certificates/revocations", revocationsHandler.RevokeCertificate)
 
 	return nil
 }

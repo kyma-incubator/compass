@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
+
 	externalSchema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -32,44 +34,55 @@ func NewClient(compassConnectorAPIURL string, compassConnectorInternalAPIURL str
 
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
 type Client interface {
-	Configuration(headers map[string]string) (externalSchema.Configuration, error)
-	SignCSR(csr string, headers map[string]string) (externalSchema.CertificationResult, error)
-	Token(application string) (string, error)
+	Configuration(headers map[string]string) (externalSchema.Configuration, apperrors.AppError)
+	SignCSR(csr string, headers map[string]string) (externalSchema.CertificationResult, apperrors.AppError)
+	Revoke(headers map[string]string) apperrors.AppError
+	Token(application string) (string, apperrors.AppError)
 }
 
-func (c client) Configuration(headers map[string]string) (externalSchema.Configuration, error) {
+func (c client) Configuration(headers map[string]string) (externalSchema.Configuration, apperrors.AppError) {
 	query := c.queryProvider.configuration()
 
 	var response ConfigurationResponse
 
 	err := c.executeExternal(headers, query, &response)
 	if err != nil {
-		return externalSchema.Configuration{}, errors.Wrap(err, "Failed to get configuration")
+		return externalSchema.Configuration{}, toAppError(errors.Wrap(err, "Failed to get configuration"))
 	}
 
 	return response.Result, nil
 }
 
-func (c client) SignCSR(csr string, headers map[string]string) (externalSchema.CertificationResult, error) {
+func (c client) SignCSR(csr string, headers map[string]string) (externalSchema.CertificationResult, apperrors.AppError) {
 	query := c.queryProvider.signCSR(csr)
 
 	var response CertificateResponse
 
 	err := c.executeExternal(headers, query, &response)
 	if err != nil {
-		return externalSchema.CertificationResult{}, errors.Wrap(err, "Failed to sign csr")
+		return externalSchema.CertificationResult{}, toAppError(errors.Wrap(err, "Failed to sign csr"))
 	}
 
 	return response.Result, nil
 }
 
-func (c client) Token(application string) (string, error) {
+func (c client) Revoke(headers map[string]string) apperrors.AppError {
+	query := c.queryProvider.revoke()
+
+	var response RevokeResponse
+
+	err := c.executeExternal(headers, query, response)
+
+	return toAppError(err)
+}
+
+func (c client) Token(application string) (string, apperrors.AppError) {
 	query := c.queryProvider.token(application)
 
 	var response TokenResponse
 	err := c.executeInternal(query, &response)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to get token")
+		return "", toAppError(errors.Wrap(err, "Failed to get token"))
 	}
 
 	return response.Result.Token, nil
@@ -104,6 +117,10 @@ type ConfigurationResponse struct {
 
 type CertificateResponse struct {
 	Result externalSchema.CertificationResult `json:"result"`
+}
+
+type RevokeResponse struct {
+	Result bool `json:"result"`
 }
 
 type TokenResponse struct {

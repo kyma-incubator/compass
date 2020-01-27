@@ -34,3 +34,13 @@ func (qp queryProvider) token(application string) string {
   	}
 	}`, application)
 }
+
+func (qp queryProvider) revoke() string {
+	return `mutation {
+    result: revokeCertificate()
+  	{
+    	revoked
+  	}
+	}`
+	//
+}
