@@ -6,7 +6,7 @@ This document contains validation rules for all input types.
 
 ## Validation rules explanation
 
-- `name` - Up to 36 characters long. Cannot start with digit. The characters allowed in names are: digits (`0`-`9`), lower case letters (`a`-`z`),`-`, and `.`. Based on Kubernetes resource name format.
+- `name` - Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (`0`-`9`), lower case letters (`a`-`z`),`-`, and `.`. Based on Kubernetes resource name format.
 - `ASCII` - The characters allowed are ASCII printable.
 - `required` - Cannot be nil or empty.
 - `url` - Valid URL.
