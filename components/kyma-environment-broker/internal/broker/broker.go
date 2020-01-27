@@ -153,7 +153,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not read parameters, instanceID %s", instanceID))
 	}
 
-	// create inputToReturn parameters according to selected plan
+	// create input parameters according to selected plan
 	inputBuilder, found := b.builderFactory.ForPlan(details.PlanID)
 	if !found {
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("The plan ID not known, instanceID %s, planID: %s", instanceID, details.PlanID))

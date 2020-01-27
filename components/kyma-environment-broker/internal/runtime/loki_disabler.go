@@ -5,6 +5,9 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
+// LoggingComponentName defines the component name for logging functionality
+const LoggingComponentName = "logging"
+
 // LokiDisabler provides functionality for disabling the Loki component
 type LokiDisabler struct{}
 
@@ -28,7 +31,7 @@ func (LokiDisabler) Disable(components internal.ComponentConfigurationInputList)
 	}
 
 	for _, c := range components {
-		if c.Component == "logging" {
+		if c.Component == LoggingComponentName {
 			c.Configuration = append(c.Configuration, disableLokiOverrides...)
 		}
 	}

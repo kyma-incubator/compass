@@ -40,9 +40,6 @@ type Config struct {
 
 	KymaVersion                          string
 	ManagedRuntimeComponentsYAMLFilePath string
-
-	// feature flag indicates whether use Provisioner API which returns RuntimeID
-	ProcessRuntimeID bool `envconfig:"default=false"`
 }
 
 func main() {
