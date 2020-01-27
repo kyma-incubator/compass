@@ -2,13 +2,13 @@
 
 ## Overview
 
-It is an application that is being runned in `tenant-loader-job`. It's main task is to synchronize given tenants with Compass.
+It is an application that is supposed to synchronize given tenants from given file with Compass.
 
 ## How to run
 The user has to provide two environment variables:
 
-- TENANTS_SRC - which is a path to JSON file which holds tenant data
-- TENANT_PROVIDER - which specifies the provider of tenants
+- `TENANTS_SRC` - which is a path to JSON file which holds tenant data
+- `TENANT_PROVIDER` - which specifies the provider of tenants
 
 ## Application flow
 
@@ -16,7 +16,7 @@ The user has to provide two environment variables:
 2. Try to parse JSON file to tenant structure
 3. Synchronise tenants with Compass (not implemented yet)
 
-## Example JSON file with tenants
+## Supported format of JSON file with tenants
 ```json
 [
   {

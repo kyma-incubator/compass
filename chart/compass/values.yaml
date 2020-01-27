@@ -63,8 +63,9 @@ global:
     port: 3000
 
   tenantConfig:
-    externalTenants: false
-    tenantProvider: "compass"
+    useDefaultTenants: true
+    useExternalTenants: false
+    externalTenantsProvider: ""
 
   connector:
     graphql:

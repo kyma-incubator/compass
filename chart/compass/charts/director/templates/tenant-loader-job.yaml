@@ -1,3 +1,4 @@
+{{- if eq .Values.global.tenantConfig.useExternalTenants true }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -53,7 +54,7 @@ spec:
                                 name: compass-postgresql
                                 key: postgresql-sslMode
                       - name: TENANT_PROVIDER
-                        value: {{ .Values.global.tenantConfig.tenantProvider }}
+                        value: {{ .Values.global.tenantConfig.externalTenantsProvider }}
                   volumeMounts:
                     - name: tenant-config
                       mountPath: /data/tenants.json
@@ -67,3 +68,4 @@ spec:
               - name: tenant-config
                 configMap:
                   name: {{ template "fullname" . }}-tenant-config
+{{ end }}
