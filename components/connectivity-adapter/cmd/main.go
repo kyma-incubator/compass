@@ -28,7 +28,7 @@ func main() {
 
 	router := mux.NewRouter()
 
-	v1Router := router.PathPrefix("/v1").Subrouter()
+	v1Router := router.PathPrefix("/{app-name}/v1").Subrouter()
 	v1Router.HandleFunc("/health", health.HandleFunc).Methods(http.MethodGet)
 
 	appRegistryRouter := v1Router.PathPrefix("/metadata").Subrouter()

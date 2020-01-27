@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
@@ -159,8 +160,14 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 
 func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	h.logger.Println("List")
+	ctx := request.Context()
+	app, err := appdetails.LoadFromContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%v", app)
 	// TODO: Implement it
-	writer.WriteHeader(http.StatusNotImplemented)
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
