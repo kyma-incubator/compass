@@ -13,15 +13,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const runtimeEventURL = "https://%s"
-const appEventURL = "https://%s/%s/v1/events"
+const runtimeEventURLFormat = "https://%s"
+const appEventURLFormat = "https://%s/%s/v1/events"
 
 func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventingAssigned(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	runtimeEventingURLLabelKey := "runtime/event_service_url"
 	runtime1Eventing := "eventing.runtime1.local"
-	runtime1EventingURL := fmt.Sprintf(runtimeEventURL, runtime1Eventing)
+	runtime1EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime1Eventing)
 	runtime2EventingURL := "https://eventing.runtime2.local"
 	defaultScenarios := []string{"DEFAULT"}
 
@@ -45,7 +45,7 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	testApp := getApplication(t, ctx, application.ID)
 
 	// THEN
-	require.Equal(t, fmt.Sprintf(appEventURL, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
+	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 }
 
 func TestGetEventingConfigurationForRuntime(t *testing.T) {
@@ -71,9 +71,9 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	ctx := context.Background()
 	runtimeEventingURLLabelKey := "runtime/event_service_url"
 	runtime1Eventing := "eventing.runtime1.local"
-	runtime1EventingURL := fmt.Sprintf(runtimeEventURL, runtime1Eventing)
+	runtime1EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime1Eventing)
 	runtime2Eventing := "eventing.runtime2.local"
-	runtime2EventingURL := fmt.Sprintf(runtimeEventURL, runtime2Eventing)
+	runtime2EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime2Eventing)
 	defaultScenarios := []string{"DEFAULT"}
 
 	appName := "app-test-eventing"
@@ -94,7 +94,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 
 	// WHEN
 	testApp := getApplication(t, ctx, application.ID)
-	require.Equal(t, fmt.Sprintf(appEventURL, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
+	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 
 	actualEventingCfg := graphql.ApplicationEventingConfiguration{}
 	request := gcli.NewRequest(
@@ -109,10 +109,10 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	// THEN
 	saveExampleInCustomDir(t, request.Query(), eventingCategory, "set default eventing for application")
 	require.NoError(t, err)
-	require.Equal(t, fmt.Sprintf(appEventURL, runtime2Eventing, appName), actualEventingCfg.DefaultURL)
+	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, appName), actualEventingCfg.DefaultURL)
 
 	testApp = getApplication(t, ctx, application.ID)
-	require.Equal(t, fmt.Sprintf(appEventURL, runtime2Eventing, appName), testApp.EventingConfiguration.DefaultURL)
+	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 }
 
 func TestEmptyEventConfigurationForApp(t *testing.T) {
@@ -136,9 +136,9 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	ctx := context.Background()
 	runtimeEventingURLLabelKey := "runtime/event_service_url"
 	runtime1Eventing := "eventing.runtime1.local"
-	runtime1EventingURL := fmt.Sprintf(runtimeEventURL, runtime1Eventing)
+	runtime1EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime1Eventing)
 	runtime2Eventing := "eventing.runtime2.local"
-	runtime2EventingURL := fmt.Sprintf(runtimeEventURL, runtime2Eventing)
+	runtime2EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime2Eventing)
 	defaultScenarios := []string{"DEFAULT"}
 
 	appName := "app-test-eventing"
@@ -158,12 +158,12 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	setRuntimeLabel(t, ctx, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
 
 	testApp := getApplication(t, ctx, application.ID)
-	require.Equal(t, fmt.Sprintf(appEventURL, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
+	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 
 	setDefaultEventingForApplication(t, ctx, application.ID, runtime2.ID)
 
 	testApp = getApplication(t, ctx, application.ID)
-	require.Equal(t, fmt.Sprintf(appEventURL, runtime2Eventing, appName), testApp.EventingConfiguration.DefaultURL)
+	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 
 	// WHEN
 	actualEventingCfg := graphql.ApplicationEventingConfiguration{}
@@ -179,8 +179,8 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	// THEN
 	saveExampleInCustomDir(t, request.Query(), eventingCategory, "delete default eventing for application")
 	require.NoError(t, err)
-	require.Equal(t, fmt.Sprintf(appEventURL, runtime2Eventing, appName), actualEventingCfg.DefaultURL)
+	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, appName), actualEventingCfg.DefaultURL)
 
 	testApp = getApplication(t, ctx, application.ID)
-	require.Equal(t, fmt.Sprintf(appEventURL, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
+	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 }

@@ -57,8 +57,8 @@ func (_m *ApplicationConverter) ToGraphQL(in *model.Application) *graphql.Applic
 	return r0
 }
 
-// ToModel provides a mock function with given fields: obj, tenantID
-func (_m *ApplicationConverter) ToModel(obj *graphql.Application, tenantID string) *model.Application {
+// GraphQLToModel provides a mock function with given fields: obj, tenantID
+func (_m *ApplicationConverter) GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application {
 	ret := _m.Called(obj, tenantID)
 
 	var r0 *model.Application

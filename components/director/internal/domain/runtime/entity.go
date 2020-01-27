@@ -41,7 +41,7 @@ func EntityFromRuntimeModel(model *model.Runtime) (*Runtime, error) {
 	}, nil
 }
 
-// ToModel converts Runtime entity to Runtime model
+// GraphQLToModel converts Runtime entity to Runtime model
 func (e Runtime) ToModel() (*model.Runtime, error) {
 	var description *string
 	if e.Description.Valid {

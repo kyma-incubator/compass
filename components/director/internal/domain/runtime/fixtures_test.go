@@ -236,10 +236,10 @@ func fixGQLSystemAuth(id string, auth *graphql.Auth) *graphql.SystemAuth {
 }
 
 func fixModelRuntimeEventingConfiguration(t *testing.T, rawURL string) *model.RuntimeEventingConfiguration {
-	validURl := fixValidURL(t, rawURL)
+	validURL := fixValidURL(t, rawURL)
 	return &model.RuntimeEventingConfiguration{
 		EventingConfiguration: model.EventingConfiguration{
-			DefaultURL: validURl,
+			DefaultURL: validURL,
 		},
 	}
 }

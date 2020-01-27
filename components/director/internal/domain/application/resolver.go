@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -39,7 +39,7 @@ type ApplicationConverter interface {
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
 	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
-	ToModel(obj *graphql.Application, tenantID string) *model.Application
+	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
 }
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
@@ -745,12 +745,12 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 	}
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return nil, errors.New("Error while loading tenant from context")
+		return nil, errors.New("error while loading tenant from context")
 	}
 
-	app := r.appConverter.ToModel(obj, tenantID)
+	app := r.appConverter.GraphQLToModel(obj, tenantID)
 	if app == nil {
-		return nil, errors.New("Application cannot be empty")
+		return nil, errors.New("application cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()

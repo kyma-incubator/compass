@@ -141,7 +141,7 @@ func (c *converter) CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (
 	return string(appInput), nil
 }
 
-func (c *converter) ToModel(obj *graphql.Application, tenantID string) *model.Application {
+func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application {
 	if obj == nil {
 		return nil
 	}

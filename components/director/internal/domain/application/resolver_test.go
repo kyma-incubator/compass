@@ -2028,7 +2028,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	converterMock := func() *automock.ApplicationConverter {
 		converter := &automock.ApplicationConverter{}
-		converter.On("ToModel", gqlApp, tnt).Return(app).Once()
+		converter.On("GraphQLToModel", gqlApp, tnt).Return(app).Once()
 		return converter
 	}
 

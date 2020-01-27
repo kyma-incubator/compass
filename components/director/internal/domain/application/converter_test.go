@@ -313,7 +313,7 @@ func TestConverter_ConvertToModel(t *testing.T) {
 		appGraphql := fixGQLApplication(uuid.New().String(), "app", "desc")
 
 		//WHEN
-		appModel := conv.ToModel(appGraphql, tenantID)
+		appModel := conv.GraphQLToModel(appGraphql, tenantID)
 		outputGraphql := conv.ToGraphQL(appModel)
 
 		//THEN
@@ -325,7 +325,7 @@ func TestConverter_ConvertToModel(t *testing.T) {
 		appGraphql := &graphql.Application{}
 
 		//WHEN
-		appModel := conv.ToModel(appGraphql, uuid.New().String())
+		appModel := conv.GraphQLToModel(appGraphql, uuid.New().String())
 		outputGraphql := conv.ToGraphQL(appModel)
 
 		//THEN
@@ -335,7 +335,7 @@ func TestConverter_ConvertToModel(t *testing.T) {
 
 	t.Run("Nil model", func(t *testing.T) {
 		//WHEN
-		output := conv.ToModel(nil, uuid.New().String())
+		output := conv.GraphQLToModel(nil, uuid.New().String())
 		//THEN
 		require.Nil(t, output)
 	})
