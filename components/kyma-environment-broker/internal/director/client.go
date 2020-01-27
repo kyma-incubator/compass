@@ -126,11 +126,11 @@ func (dc Client) printRequest(r *machineGraph.Request) {
 // TODO: remove after debug mode
 func (dc Client) printResponse(resp graphql.RuntimeExt) {
 	log.Info("## Response director")
-	log.Infof("Status: %s", resp.Status)
+	log.Infof("Status: %v", resp.Status)
 	log.Infof("Labels: %v", resp.Labels)
-	log.Infof("Name: %s", resp.Name)
-	log.Infof("Description: %s", resp.Description)
-	log.Infof("Runtime ID: %s", resp.Runtime.ID)
-	log.Infof("Runtime Name: %s", resp.Runtime.Name)
+	log.Infof("Name: %v", resp.Name)
+	log.Infof("Description: %v", resp.Description)
+	log.Infof("Runtime ID: %v", resp.Runtime.ID)
+	log.Infof("Runtime Name: %v", resp.Runtime.Name)
 	log.Info("## END Response director")
 }
