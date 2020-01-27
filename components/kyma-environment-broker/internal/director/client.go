@@ -10,6 +10,7 @@ import (
 
 	machineGraph "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // accountIDKey is a header key name for request send by graphQL client
@@ -52,6 +53,7 @@ func (dc *Client) GetConsoleURL(accountID, runtimeID string) (string, error) {
 	req := machineGraph.NewRequest(query)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", dc.token.AccessToken))
 	req.Header.Add(accountIDKey, accountID)
+	dc.printRequest(req)
 
 	var response graphql.RuntimeExt
 	err = dc.graphQLClient.Run(context.Background(), req, &response)
@@ -59,6 +61,7 @@ func (dc *Client) GetConsoleURL(accountID, runtimeID string) (string, error) {
 		return "", TemporaryError{fmt.Sprintf("Failed to provision Runtime: %s", err)}
 	}
 
+	dc.printResponse(response)
 	return dc.getURLFromRuntime(response)
 }
 
@@ -106,4 +109,28 @@ func (dc Client) getURLFromRuntime(response graphql.RuntimeExt) (string, error) 
 	}
 
 	return URL, nil
+}
+
+// TODO: remove after debug mode
+func (dc Client) printRequest(r *machineGraph.Request) {
+	log.Info("## Request director")
+	for name, value := range r.Header {
+		log.Infof("Header: %s", name)
+		for _, v := range value {
+			log.Info(v)
+		}
+	}
+	log.Info("## END Request director")
+}
+
+// TODO: remove after debug mode
+func (dc Client) printResponse(resp graphql.RuntimeExt) {
+	log.Info("## Response director")
+	log.Infof("Status: %s", resp.Status)
+	log.Infof("Labels: %v", resp.Labels)
+	log.Infof("Name: %s", resp.Name)
+	log.Infof("Description: %s", resp.Description)
+	log.Infof("Runtime ID: %s", resp.Runtime.ID)
+	log.Infof("Runtime Name: %s", resp.Runtime.Name)
+	log.Info("## END Response director")
 }
