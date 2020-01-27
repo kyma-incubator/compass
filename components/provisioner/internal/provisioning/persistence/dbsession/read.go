@@ -2,6 +2,7 @@ package dbsession
 
 import (
 	"encoding/json"
+	"fmt"
 
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -16,22 +17,123 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	var cluster model.Cluster
 
 	err := r.session.
-		Select("id", "runtime_name", "kubeconfig", "terraform_state", "credentials_secret_name", "creation_timestamp").
+		Select(
+			"id", "kubeconfig", "terraform_state",
+			"credentials_secret_name", "creation_timestamp", "deleted").
 		From("cluster").
 		Where(dbr.Eq("cluster.id", runtimeID)).
 		LoadOne(&cluster)
 
 	if err != nil {
 		if err != dbr.ErrNotFound {
-			return model.Cluster{}, dberrors.NotFound("Cannot find Cluster for runtimeID:'%s", runtimeID)
+			return model.Cluster{}, dberrors.NotFound("Cannot find Cluster for runtimeID: %s", runtimeID)
 		}
-
 		return model.Cluster{}, dberrors.Internal("Failed to get Cluster: %s", err)
 	}
+
+	providerConfig, err := r.getProviderConfig(runtimeID)
+	if err != nil {
+		return model.Cluster{}, dberrors.NotFound("Cannot find Provider config for runtimeID: %s", runtimeID)
+	}
+	cluster.ClusterConfig = providerConfig
+
+	kymaConfig, err := r.getKymaConfig(runtimeID)
+	if err != nil {
+		return model.Cluster{}, dberrors.NotFound("Cannot find Kyma config for runtimeID: %s", runtimeID)
+	}
+	cluster.KymaConfig = kymaConfig
+
 	return cluster, nil
 }
 
-func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
+func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberrors.Error) {
+	var clusterWithProvider = struct {
+		model.Cluster
+		gardenerConfigRead
+	}{}
+
+	err := r.session.
+		Select(
+			"cluster.id", "cluster.kubeconfig",
+			"cluster.credentials_secret_name", "cluster.creation_timestamp", "cluster.deleted",
+			"name", "project_name", "kubernetes_version",
+			"node_count", "volume_size_gb", "disk_type", "machine_type", "provider", "seed",
+			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
+			"max_surge", "max_unavailable", "provider_specific_config").
+		From("gardener_config").
+		Join("cluster", "gardener_config.cluster_id=cluster.id").
+		Where(dbr.Eq("name", name)).
+		LoadOne(&clusterWithProvider)
+
+	if err != nil {
+		if err != dbr.ErrNotFound {
+			return model.Cluster{}, dberrors.NotFound("Cannot find Gardener Cluster with name:'%s", name)
+		}
+
+		return model.Cluster{}, dberrors.Internal("Failed to get Gardener Cluster: %s", err)
+	}
+	cluster := clusterWithProvider.Cluster
+
+	err = clusterWithProvider.gardenerConfigRead.DecodeProviderConfig()
+	if err != nil {
+		return model.Cluster{}, dberrors.Internal("Failed to decode Gardener provider config fetched from database: %s", err.Error())
+	}
+	cluster.ClusterConfig = clusterWithProvider.gardenerConfigRead.GardenerConfig
+
+	kymaConfig, err := r.getKymaConfig(clusterWithProvider.Cluster.ID)
+	if err != nil {
+		return model.Cluster{}, dberrors.NotFound("Cannot find Kyma config for runtimeID: %s", clusterWithProvider.Cluster.ID)
+	}
+	cluster.KymaConfig = kymaConfig
+
+	return cluster, nil
+}
+
+func (r readSession) ListGardenerClusters() ([]model.Cluster, dberrors.Error) {
+	var clustersWithProvider []struct {
+		model.Cluster
+		gardenerConfigRead
+	}
+
+	_, err := r.session.
+		Select(
+			"cluster.id", "cluster.kubeconfig",
+			"cluster.credentials_secret_name", "cluster.creation_timestamp", "cluster.deleted",
+			"name", "project_name", "kubernetes_version",
+			"node_count", "volume_size_gb", "disk_type", "machine_type", "provider", "seed",
+			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
+			"max_surge", "max_unavailable", "provider_specific_config").
+		From("gardener_config").
+		Join("cluster", "gardener_config.cluster_id=cluster.id").
+		Load(&clustersWithProvider)
+
+	if err != nil {
+		if err != dbr.ErrNotFound {
+			return nil, dberrors.NotFound("Cannot list Gardener Cluster with name: %s", err.Error())
+		}
+
+		return nil, dberrors.Internal("Failed to get Gardener Cluster: %s", err)
+	}
+
+	var clusters = make([]model.Cluster, 0, len(clustersWithProvider))
+
+	for _, c := range clustersWithProvider {
+		cluster := c.Cluster
+
+		err := c.gardenerConfigRead.DecodeProviderConfig()
+		if err != nil {
+			return nil, dberrors.Internal("Failed to decode Gardener provider config fetched from database: %s", err.Error())
+		}
+
+		cluster.ClusterConfig = c.gardenerConfigRead.GardenerConfig
+
+		clusters = append(clusters, cluster)
+	}
+
+	return clusters, nil
+}
+
+func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
 	var kymaConfig []struct {
 		ID                  string
 		KymaConfigID        string
@@ -110,7 +212,17 @@ type gardenerConfigRead struct {
 	ProviderSpecificConfig string `db:"provider_specific_config"`
 }
 
-func (r readSession) GetProviderConfig(runtimeID string) (model.ProviderConfiguration, dberrors.Error) {
+func (gcr *gardenerConfigRead) DecodeProviderConfig() error {
+	gardenerConfigProviderConfig, err := model.NewGardenerProviderConfigFromJSON(gcr.ProviderSpecificConfig)
+	if err != nil {
+		return fmt.Errorf("error decoding Gardener provider config: %s", err.Error())
+	}
+
+	gcr.GardenerProviderConfig = gardenerConfigProviderConfig
+	return nil
+}
+
+func (r readSession) getProviderConfig(runtimeID string) (model.ProviderConfiguration, dberrors.Error) {
 	gardenerConfig := gardenerConfigRead{}
 
 	err := r.session.
@@ -124,12 +236,11 @@ func (r readSession) GetProviderConfig(runtimeID string) (model.ProviderConfigur
 		LoadOne(&gardenerConfig)
 
 	if err == nil {
-		gardenerConfigProviderConfig, err := model.NewGardenerProviderConfigFromJSON(gardenerConfig.ProviderSpecificConfig)
+		err := gardenerConfig.DecodeProviderConfig()
 		if err != nil {
-			return model.GardenerConfig{}, dberrors.Internal("Failed to decode Gardener provider config fetched from database")
+			return nil, dberrors.Internal("Failed to decode Gardener provider config fetched from database: %s", err.Error())
 		}
 
-		gardenerConfig.GardenerConfig.GardenerProviderConfig = gardenerConfigProviderConfig
 		return gardenerConfig.GardenerConfig, nil
 	}
 

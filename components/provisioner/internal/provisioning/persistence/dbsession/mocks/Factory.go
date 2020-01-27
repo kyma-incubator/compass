@@ -30,6 +30,22 @@ func (_m *Factory) NewReadSession() dbsession.ReadSession {
 	return r0
 }
 
+// NewReadWriteSession provides a mock function with given fields:
+func (_m *Factory) NewReadWriteSession() dbsession.ReadWriteSession {
+	ret := _m.Called()
+
+	var r0 dbsession.ReadWriteSession
+	if rf, ok := ret.Get(0).(func() dbsession.ReadWriteSession); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dbsession.ReadWriteSession)
+		}
+	}
+
+	return r0
+}
+
 // NewSessionWithinTransaction provides a mock function with given fields:
 func (_m *Factory) NewSessionWithinTransaction() (dbsession.WriteSessionWithinTransaction, dberrors.Error) {
 	ret := _m.Called()

@@ -48,21 +48,14 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 		return nil, err
 	}
 
-	operationID, runtimeID, _, err := r.provisioning.ProvisionRuntime(config)
+	operationStatus, err := r.provisioning.ProvisionRuntime(config)
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
 		return nil, err
 	}
-	log.Infof("Provisioning started for Runtime %s. Operation id %s", config.RuntimeInput.Name, operationID)
+	log.Infof("Provisioning started for Runtime %s. Operation id %s", config.RuntimeInput.Name, *operationStatus.ID)
 
-	messageProvisioningStarted := "Provisioning started"
-
-	return &gqlschema.OperationStatus{
-		ID:        &operationID,
-		Operation: gqlschema.OperationTypeProvision,
-		Message:   &messageProvisioningStarted,
-		RuntimeID: &runtimeID,
-	}, nil
+	return operationStatus, nil
 }
 
 func validateInput(config gqlschema.ProvisionRuntimeInput) error {
@@ -74,17 +67,13 @@ func validateInput(config gqlschema.ProvisionRuntimeInput) error {
 		return errors.New("cannot provision Runtime since runtime input is missing")
 	}
 
-	if config.Credentials == nil {
-		return errors.New("cannot provision Runtime since credentials are missing")
-	}
-
 	return nil
 }
 
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
 	log.Infof("Requested deprovisioning of Runtime %s.", id)
 
-	operationID, _, err := r.provisioning.DeprovisionRuntime(id)
+	operationID, err := r.provisioning.DeprovisionRuntime(id)
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s: %s", id, err)
 		return "", err

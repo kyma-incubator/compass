@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -11,19 +13,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	operationID = "ec781980-0533-4098-aab7-96b535569732"
+	runtimeID   = "1100bb59-9c40-4ebb-b846-7477c4dc5bbb"
+)
+
 func TestResolver_ProvisionRuntime(t *testing.T) {
 	ctx := context.Background()
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			ProjectName:            "Project",
 			KubernetesVersion:      "1.15.4",
 			NodeCount:              3,
 			VolumeSizeGb:           30,
 			MachineType:            "n1-standard-4",
 			Region:                 "europe",
 			Provider:               "gcp",
-			Seed:                   "2",
+			Seed:                   util.StringPtr(""),
 			TargetSecret:           "test-secret",
 			DiskType:               "ssd",
 			WorkerCidr:             "10.10.10.10/255",
@@ -57,8 +63,13 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			},
 		}
 
-		expOperationID := "ec781980-0533-4098-aab7-96b535569732"
-		expRuntimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbb"
+		operation := &gqlschema.OperationStatus{
+			ID:        util.StringPtr(operationID),
+			Operation: operationID,
+			State:     gqlschema.OperationStateInProgress,
+			Message:   util.StringPtr("Message"),
+			RuntimeID: util.StringPtr(runtimeID),
+		}
 
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
@@ -67,7 +78,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			KymaConfig:    kymaConfig,
 		}
 
-		provisioningService.On("ProvisionRuntime", config).Return(expOperationID, expRuntimeID, nil, nil)
+		provisioningService.On("ProvisionRuntime", config).Return(operation, nil)
 
 		//when
 		status, err := provisioner.ProvisionRuntime(ctx, config)
@@ -77,8 +88,10 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		require.NotNil(t, status)
 		require.NotNil(t, status.ID)
 		require.NotNil(t, status.RuntimeID)
-		assert.Equal(t, expOperationID, *status.ID)
-		assert.Equal(t, expRuntimeID, *status.RuntimeID)
+		assert.Equal(t, operationID, *status.ID)
+		assert.Equal(t, runtimeID, *status.RuntimeID)
+		assert.Equal(t, gqlschema.OperationStateInProgress, status.State)
+		assert.Equal(t, util.StringPtr("Message"), status.Message)
 	})
 
 	t.Run("Should return error when requested provisioning on GCP", func(t *testing.T) {
@@ -155,7 +168,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
-		provisioningService.On("ProvisionRuntime", config).Return("", "", nil, errors.New("Provisioning failed"))
+		provisioningService.On("ProvisionRuntime", config).Return(nil, errors.New("Provisioning failed"))
 
 		//when
 		status, err := provisioner.ProvisionRuntime(ctx, config)
@@ -168,7 +181,6 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 func TestResolver_DeprovisionRuntime(t *testing.T) {
 	ctx := context.Background()
-	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
 
 	t.Run("Should start deprovisioning and return operation ID", func(t *testing.T) {
 		//given
@@ -177,7 +189,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
-		provisioningService.On("DeprovisionRuntime", runtimeID).Return(expectedID, nil, nil)
+		provisioningService.On("DeprovisionRuntime", runtimeID).Return(expectedID, nil)
 
 		//when
 		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID)
@@ -192,7 +204,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		provisioner := NewResolver(provisioningService)
 
-		provisioningService.On("DeprovisionRuntime", runtimeID).Return("", nil, errors.New("Deprovisioning fails because reasons"))
+		provisioningService.On("DeprovisionRuntime", runtimeID).Return("", errors.New("Deprovisioning fails because reasons"))
 
 		//when
 		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID)

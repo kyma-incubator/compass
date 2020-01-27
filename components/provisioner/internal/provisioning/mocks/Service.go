@@ -13,7 +13,7 @@ type Service struct {
 }
 
 // DeprovisionRuntime provides a mock function with given fields: id
-func (_m *Service) DeprovisionRuntime(id string) (string, <-chan struct{}, error) {
+func (_m *Service) DeprovisionRuntime(id string) (string, error) {
 	ret := _m.Called(id)
 
 	var r0 string
@@ -23,60 +23,37 @@ func (_m *Service) DeprovisionRuntime(id string) (string, <-chan struct{}, error
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 <-chan struct{}
-	if rf, ok := ret.Get(1).(func(string) <-chan struct{}); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(id)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(<-chan struct{})
-		}
+		r1 = ret.Error(1)
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(string) error); ok {
-		r2 = rf(id)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
 
 // ProvisionRuntime provides a mock function with given fields: config
-func (_m *Service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, string, <-chan struct{}, error) {
+func (_m *Service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (*gqlschema.OperationStatus, error) {
 	ret := _m.Called(config)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(gqlschema.ProvisionRuntimeInput) string); ok {
+	var r0 *gqlschema.OperationStatus
+	if rf, ok := ret.Get(0).(func(gqlschema.ProvisionRuntimeInput) *gqlschema.OperationStatus); ok {
 		r0 = rf(config)
 	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 string
-	if rf, ok := ret.Get(1).(func(gqlschema.ProvisionRuntimeInput) string); ok {
-		r1 = rf(config)
-	} else {
-		r1 = ret.Get(1).(string)
-	}
-
-	var r2 <-chan struct{}
-	if rf, ok := ret.Get(2).(func(gqlschema.ProvisionRuntimeInput) <-chan struct{}); ok {
-		r2 = rf(config)
-	} else {
-		if ret.Get(2) != nil {
-			r2 = ret.Get(2).(<-chan struct{})
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*gqlschema.OperationStatus)
 		}
 	}
 
-	var r3 error
-	if rf, ok := ret.Get(3).(func(gqlschema.ProvisionRuntimeInput) error); ok {
-		r3 = rf(config)
+	var r1 error
+	if rf, ok := ret.Get(1).(func(gqlschema.ProvisionRuntimeInput) error); ok {
+		r1 = rf(config)
 	} else {
-		r3 = ret.Error(3)
+		r1 = ret.Error(1)
 	}
 
-	return r0, r1, r2, r3
+	return r0, r1
 }
 
 // ReconnectRuntimeAgent provides a mock function with given fields: id

@@ -78,7 +78,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			},
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusConnected,
 			RuntimeConfiguration: model.Cluster{
-				RuntimeName: "RuntimeName",
 				ClusterConfig: model.GCPConfig{
 					ID:                "id",
 					Name:              "Something",
@@ -124,9 +123,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					BootDiskSizeGb:    &bootDiskSize,
 					KubernetesVersion: &kubeversion,
 				},
-				KymaConfig:            fixKymaGraphQLConfig(),
-				Kubeconfig:            &kubeconfig,
-				CredentialsSecretName: &secretName,
+				KymaConfig: fixKymaGraphQLConfig(),
+				Kubeconfig: &kubeconfig,
 			},
 		}
 
@@ -173,7 +171,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			},
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
 			RuntimeConfiguration: model.Cluster{
-				RuntimeName: runtimeName,
 				ClusterConfig: model.GardenerConfig{
 					Name:                   clusterName,
 					ProjectName:            project,
@@ -218,7 +215,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Name: &runtimeName,
 				ClusterConfig: gqlschema.GardenerConfig{
 					Name:              &clusterName,
-					ProjectName:       &project,
 					NodeCount:         &nodes,
 					DiskType:          &disk,
 					MachineType:       &machine,
@@ -237,9 +233,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						Zone: &zone,
 					},
 				},
-				KymaConfig:            fixKymaGraphQLConfig(),
-				Kubeconfig:            &kubeconfig,
-				CredentialsSecretName: &secretName,
+				KymaConfig: fixKymaGraphQLConfig(),
+				Kubeconfig: &kubeconfig,
 			},
 		}
 

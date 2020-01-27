@@ -22,12 +22,13 @@ const (
 )
 
 type Cluster struct {
-	ID                    string
-	RuntimeName           string
-	Kubeconfig            *string
-	TerraformState        []byte
+	ID             string
+	Kubeconfig     *string
+	TerraformState []byte
+	// CredentialsSecretName is ignored for now, as only Gardener implementation is supported
 	CredentialsSecretName string
 	CreationTimestamp     time.Time
+	Deleted               bool
 
 	ClusterConfig ProviderConfiguration `db:"-"`
 	KymaConfig    KymaConfig            `db:"-"`

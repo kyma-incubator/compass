@@ -25,18 +25,9 @@ const (
 	clusterEssentialsComponent    = "cluster-essentials"
 	coreComponent                 = "core"
 	applicationConnectorComponent = "application-connector"
+
+	gardenerProject = "gardener-project"
 )
-
-type InputConverterTester interface {
-	createGardenerClusterName(provider string) string
-}
-
-func NewInputConverterTester(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository) InputConverterTester {
-	return &converter{
-		uuidGenerator: uuidGenerator,
-		releaseRepo:   releaseRepo,
-	}
-}
 
 func Test_ProvisioningInputToCluster(t *testing.T) {
 
@@ -71,8 +62,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	createExpectedRuntimeInputGCP := func(zone string) model.Cluster {
 		return model.Cluster{
-			ID:          "runtimeID",
-			RuntimeName: "runtimeName",
+			ID: "runtimeID",
 			ClusterConfig: model.GCPConfig{
 				ID:                "id",
 				Name:              "Something",
@@ -101,14 +91,13 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				ProjectName:       "Project",
 				KubernetesVersion: "version",
 				NodeCount:         3,
 				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
 				Provider:          "GCP",
-				Seed:              "gcp-eu1",
+				Seed:              util.StringPtr("gcp-eu1"),
 				TargetSecret:      "secret",
 				DiskType:          "ssd",
 				WorkerCidr:        "cidr",
@@ -131,12 +120,11 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedGardenerGCPRuntimeConfig := model.Cluster{
-		ID:          "runtimeID",
-		RuntimeName: "runtimeName",
+		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
 			Name:                   "gcp-verylon",
-			ProjectName:            "Project",
+			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
 			KubernetesVersion:      "version",
@@ -169,14 +157,12 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				ProjectName:       "Project",
 				KubernetesVersion: "version",
 				NodeCount:         3,
 				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
 				Provider:          "Azure",
-				Seed:              "az-eu1",
 				TargetSecret:      "secret",
 				DiskType:          "ssd",
 				WorkerCidr:        "cidr",
@@ -199,12 +185,11 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedGardenerAzureRuntimeConfig := model.Cluster{
-		ID:          "runtimeID",
-		RuntimeName: "runtimeName",
+		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
 			Name:                   "azu-verylon",
-			ProjectName:            "Project",
+			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
 			KubernetesVersion:      "version",
@@ -212,7 +197,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			VolumeSizeGB:           1024,
 			DiskType:               "ssd",
 			Provider:               "Azure",
-			Seed:                   "az-eu1",
+			Seed:                   "",
 			TargetSecret:           "secret",
 			WorkerCidr:             "cidr",
 			AutoScalerMin:          1,
@@ -242,14 +227,13 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				ProjectName:       "Project",
 				KubernetesVersion: "version",
 				NodeCount:         3,
 				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
 				Provider:          "AWS",
-				Seed:              "aws-eu1",
+				Seed:              util.StringPtr("aws-eu1"),
 				TargetSecret:      "secret",
 				DiskType:          "ssd",
 				WorkerCidr:        "cidr",
@@ -272,12 +256,11 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedGardenerAWSRuntimeConfig := model.Cluster{
-		ID:          "runtimeID",
-		RuntimeName: "runtimeName",
+		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
 			Name:                   "aws-verylon",
-			ProjectName:            "Project",
+			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
 			KubernetesVersion:      "version",
@@ -341,7 +324,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			uuidGeneratorMock.On("New").Return("id").Times(5)
 			uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hypens")
 
-			inputConverter := NewInputConverter(uuidGeneratorMock, readSession)
+			inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject)
 
 			//when
 			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input)
@@ -374,7 +357,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			},
 		}
 
-		inputConverter := NewInputConverter(uuidGeneratorMock, readSession)
+		inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
@@ -390,7 +373,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			ClusterConfig: &gqlschema.ClusterConfigInput{},
 		}
 
-		inputConverter := NewInputConverter(nil, nil)
+		inputConverter := NewInputConverter(nil, nil, gardenerProject)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
@@ -411,7 +394,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			},
 		}
 
-		inputConverter := NewInputConverter(uuidGeneratorMock, nil)
+		inputConverter := NewInputConverter(uuidGeneratorMock, nil, gardenerProject)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
@@ -421,6 +404,13 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		assert.Contains(t, err.Error(), "provider config not specified")
 	})
 
+}
+
+func newInputConverterTester(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository) *converter {
+	return &converter{
+		uuidGenerator: uuidGenerator,
+		releaseRepo:   releaseRepo,
+	}
 }
 
 func TestConverter_CreateGardenerClusterName(t *testing.T) {
@@ -482,7 +472,7 @@ func TestConverter_CreateGardenerClusterName(t *testing.T) {
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			uuidGeneratorMock.On("New").Return("id")
 
-			inputConverter := NewInputConverterTester(uuidGeneratorMock, nil)
+			inputConverter := newInputConverterTester(uuidGeneratorMock, nil)
 			generatedName := inputConverter.createGardenerClusterName(testCase.provider)
 
 			assert.Equal(t, testCase.expectedName, generatedName)

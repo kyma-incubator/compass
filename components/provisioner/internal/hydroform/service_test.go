@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"testing"
 
+	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
+
 	"github.com/hashicorp/terraform/states"
 
 	"github.com/hashicorp/terraform/states/statefile"
@@ -31,6 +33,10 @@ type mockProviderConfiguration struct {
 
 func (c mockProviderConfiguration) ToHydroformConfiguration(credentialsFileName string) (*types.Cluster, *types.Provider, error) {
 	return c.cluster, c.provider, c.err
+}
+
+func (c mockProviderConfiguration) ToShootTemplate(namespace string) *gardener_types.Shoot {
+	return nil
 }
 
 const (

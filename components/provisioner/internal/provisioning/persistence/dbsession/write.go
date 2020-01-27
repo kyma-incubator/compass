@@ -18,7 +18,6 @@ type writeSession struct {
 func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	_, err := ws.insertInto("cluster").
 		Pair("id", cluster.ID).
-		Pair("runtime_name", cluster.RuntimeName).
 		Pair("terraform_state", cluster.TerraformState).
 		Pair("credentials_secret_name", cluster.CredentialsSecretName).
 		Pair("creation_timestamp", cluster.CreationTimestamp).
@@ -177,6 +176,19 @@ func (ws writeSession) UpdateCluster(runtimeID string, kubeconfig string, terraf
 		Where(dbr.Eq("id", runtimeID)).
 		Set("kubeconfig", kubeconfig).
 		Set("terraform_state", terraformState).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update cluster %s state: %s", runtimeID, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update cluster %s data: %s", runtimeID, err))
+}
+
+func (ws writeSession) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
+	res, err := ws.update("cluster").
+		Where(dbr.Eq("id", runtimeID)).
+		Set("deleted", true).
 		Exec()
 
 	if err != nil {

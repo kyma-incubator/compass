@@ -111,6 +111,22 @@ func (_m *WriteSession) InsertOperation(operation model.Operation) dberrors.Erro
 	return r0
 }
 
+// MarkClusterAsDeleted provides a mock function with given fields: runtimeID
+func (_m *WriteSession) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
+	ret := _m.Called(runtimeID)
+
+	var r0 dberrors.Error
+	if rf, ok := ret.Get(0).(func(string) dberrors.Error); ok {
+		r0 = rf(runtimeID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dberrors.Error)
+		}
+	}
+
+	return r0
+}
+
 // UpdateCluster provides a mock function with given fields: runtimeID, kubeconfig, terraformState
 func (_m *WriteSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
 	ret := _m.Called(runtimeID, kubeconfig, terraformState)

@@ -10,6 +10,7 @@ import (
 type Factory interface {
 	NewReadSession() ReadSession
 	NewWriteSession() WriteSession
+	NewReadWriteSession() ReadWriteSession
 	NewSessionWithinTransaction() (WriteSessionWithinTransaction, dberrors.Error)
 }
 
@@ -18,8 +19,8 @@ type ReadSession interface {
 	GetCluster(runtimeID string) (model.Cluster, dberrors.Error)
 	GetOperation(operationID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
-	GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error)
-	GetProviderConfig(runtimeID string) (model.ProviderConfiguration, dberrors.Error)
+	ListGardenerClusters() ([]model.Cluster, dberrors.Error)
+	GetGardenerClusterByName(name string) (model.Cluster, dberrors.Error)
 }
 
 //go:generate mockery -name=WriteSession
@@ -32,6 +33,13 @@ type WriteSession interface {
 	UpdateOperationState(operationID string, message string, state model.OperationState) dberrors.Error
 	UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error
 	DeleteCluster(runtimeID string) dberrors.Error
+	MarkClusterAsDeleted(runtimeID string) dberrors.Error
+}
+
+//go:generate mockery -name=ReadWriteSession
+type ReadWriteSession interface {
+	ReadSession
+	WriteSession
 }
 
 type Transaction interface {
@@ -65,6 +73,19 @@ func (sf *factory) NewWriteSession() WriteSession {
 	return writeSession{
 		session: sf.connection.NewSession(nil),
 	}
+}
+
+func (sf *factory) NewReadWriteSession() ReadWriteSession {
+	session := sf.connection.NewSession(nil)
+	return readWriteSession{
+		readSession:  readSession{session: session},
+		writeSession: writeSession{session: session},
+	}
+}
+
+type readWriteSession struct {
+	readSession
+	writeSession
 }
 
 func (sf *factory) NewSessionWithinTransaction() (WriteSessionWithinTransaction, dberrors.Error) {
