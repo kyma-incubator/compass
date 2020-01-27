@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 )
 
@@ -20,6 +21,7 @@ func (c authorizationHeadersMiddleware) GetAuthorizationHeaders(handler http.Han
 		headers, err := extractHeaders(r)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
+			reqerror.WriteError(w, err, http.StatusForbidden)
 
 			return
 		}

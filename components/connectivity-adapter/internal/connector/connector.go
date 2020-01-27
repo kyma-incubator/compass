@@ -38,10 +38,13 @@ func RegisterExternalHandler(router *mux.Router, config Config) error {
 	signingRequestInfoHandler := newSigningRequestInfoHandler(config, client, logger)
 	managementInfoHandler := newManagementInfoHandler(config, client, logger)
 	certificatesHandler := newCertificateHandler(client, logger)
+	revocationsHandler := newRevocationsHandler(client, logger)
 
 	router.Handle("/signingRequests/info", signingRequestInfoHandler).Methods(http.MethodGet)
 	router.Handle("/management/info", managementInfoHandler).Methods(http.MethodGet)
 	router.Handle("/certificates", certificatesHandler).Methods(http.MethodPost)
+	router.Handle("/certificates/renewals", certificatesHandler).Methods(http.MethodPost)
+	router.Handle("/certificates/revocations", revocationsHandler).Methods(http.MethodPost)
 
 	return nil
 }
@@ -73,6 +76,12 @@ func newCertificateHandler(client graphql.Client, logger *logrus.Logger) http.Ha
 	handler := api.NewCertificatesHandler(client, logger)
 
 	return http.HandlerFunc(handler.SignCSR)
+}
+
+func newRevocationsHandler(client graphql.Client, logger *logrus.Logger) http.Handler {
+	handler := api.NewRevocationsHandler(client, logger)
+
+	return http.HandlerFunc(handler.RevokeCertificate)
 }
 
 func RegisterInternalHandler(router *mux.Router, config Config) error {

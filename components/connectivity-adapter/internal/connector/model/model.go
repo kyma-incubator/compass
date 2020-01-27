@@ -10,8 +10,8 @@ const (
 	ManagementInfoEndpoint            = "/v1/applications/management/info"
 	ApplicationRegistryEndpointFormat = "/%s/v1/metadata"
 	EventsEndpointFormat              = "/%s/v1/events"
-	RenewCertURLFormat                = "%s/applications/certificates/renewals"
-	RevocationCertURLFormat           = "%s/applications/certificates/revocations"
+	RenewCertURLFormat                = "%s/v1/applications/certificates/renewals"
+	RevocationCertURLFormat           = "%s/v1/applications/certificates/revocations"
 	SigningRequestInfoEndpoint        = "%s/v1/applications/signingRequests/info"
 	TokenURLFormat                    = "%s?token=%s"
 )

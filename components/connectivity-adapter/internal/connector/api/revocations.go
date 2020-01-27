@@ -44,4 +44,5 @@ func (rh *revocationsHandler) RevokeCertificate(w http.ResponseWriter, r *http.R
 		reqerror.WriteError(w, err, apperrors.CodeInternal)
 	}
 
+	respond(w, http.StatusCreated)
 }

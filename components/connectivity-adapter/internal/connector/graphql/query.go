@@ -37,10 +37,7 @@ func (qp queryProvider) token(application string) string {
 
 func (qp queryProvider) revoke() string {
 	return `mutation {
-    result: revokeCertificate()
-  	{
-    	revoked
-  	}
+    result: revokeCertificate 
 	}`
 	//
 }
