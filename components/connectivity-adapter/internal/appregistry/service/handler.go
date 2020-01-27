@@ -163,8 +163,12 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 	app, err := appdetails.LoadFromContext(ctx)
 	if err != nil {
-		panic(err)
+		wrappedErr := errors.Wrap(err, "while getting service from context")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
 	}
+
 	fmt.Printf("%v", app)
 	// TODO: Implement it
 	writer.WriteHeader(http.StatusOK)
