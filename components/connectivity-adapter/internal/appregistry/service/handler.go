@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,21 +9,67 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	gcli "github.com/machinebox/graphql"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
+type GraphQLServiceDetailsInput struct {
+	ID    string
+	API   *graphql.APIDefinitionInput
+	Event *graphql.EventDefinitionInput
+}
+
+type GraphQLServiceDetails struct {
+	ID    string
+	API   *graphql.APIDefinitionExt
+	Event *graphql.EventDefinition
+}
+
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
-	DetailsToGraphQLInput(in model.ServiceDetails) (graphql.ApplicationRegisterInput, error)
-	GraphQLToDetailsModel(in graphql.ApplicationExt) (model.ServiceDetails, error)
-	GraphQLToModel(in graphql.ApplicationExt) (model.Service, error)
+	DetailsToGraphQLInput(id string, deprecated model.ServiceDetails) (GraphQLServiceDetailsInput, error)
+	GraphQLToServiceDetails(converted GraphQLServiceDetails) (model.ServiceDetails, error)
+}
+
+////go:generate mockery -name=AppOperator -output=automock -outpkg=automock -case=underscore
+//type AppOperator interface {
+//	SaveServiceInLabels(appID string, details ConvertedServiceDetails) (graphql.Labels, error) // add or replace service
+//	GetServiceFromLabels(serviceID string, labels graphql.Labels) (ConvertedServiceDetails, error)
+//	ListServicesFromLabels(labels graphql.Labels) ([]ConvertedServiceDetails, error)
+//}
+//
+////go:generate mockery -name=GraphQLRequester -output=automock -outpkg=automock -case=underscore
+//type GraphQLRequester interface {
+//	//SetApplicationLegacyServicesLabel(id string, legacyServices []ConvertedServiceDetails) error
+//
+//	CreateAPIDefinition(appID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error)
+//	CreateEventDefinition(appID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error)
+//
+//	DeleteAPIDefinition(apiID string) (string, error)
+//	DeleteEventDefinition(eventID string) (string, error)
+//}
+
+//go:generate mockery -name=ServiceManagerProvider -output=automock -outpkg=automock -case=underscore
+type ServiceManagerProvider interface {
+	ForRequest(r *http.Request) (ServiceManager, error)
+}
+
+//go:generate mockery -name=ServiceManager -output=automock -outpkg=automock -case=underscore
+type ServiceManager interface {
+	Create(serviceDetails GraphQLServiceDetailsInput) error
+	GetFromApplicationDetails(serviceID string) (GraphQLServiceDetails, error)
+	ListFromApplicationDetails() ([]GraphQLServiceDetails, error)
+	Update(serviceDetails GraphQLServiceDetailsInput) error
+	Delete(serviceID string) error
+}
+
+//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+type UIDService interface {
+	Generate() string
 }
 
 //go:generate mockery -name=Validator -output=automock -outpkg=automock -case=underscore
@@ -32,30 +77,23 @@ type Validator interface {
 	Validate(details model.ServiceDetails) apperrors.AppError
 }
 
-//go:generate mockery -name=GraphQLRequestBuilder -output=automock -outpkg=automock -case=underscore
-type GraphQLRequestBuilder interface {
-	RegisterApplicationRequest(input graphql.ApplicationRegisterInput) (*gcli.Request, error)
-	UnregisterApplicationRequest(id string) *gcli.Request
-	GetApplicationRequest(id string) *gcli.Request
-}
-
 const serviceIDVarKey = "serviceId"
 
 type Handler struct {
-	cliProvider       gqlcli.Provider
-	logger            *log.Logger
-	validator         Validator
-	converter         Converter
-	gqlRequestBuilder GraphQLRequestBuilder
+	uidService     UIDService
+	logger         *log.Logger
+	validator      Validator
+	converter      Converter
+	serviceManager ServiceManagerProvider
 }
 
-func NewHandler(cliProvider gqlcli.Provider, converter Converter, validator Validator, gqlRequestBuilder GraphQLRequestBuilder, logger *log.Logger) *Handler {
+func NewHandler(converter Converter, validator Validator, serviceManager ServiceManagerProvider, uidService UIDService, logger *log.Logger) *Handler {
 	return &Handler{
-		cliProvider:       cliProvider,
-		converter:         converter,
-		validator:         validator,
-		gqlRequestBuilder: gqlRequestBuilder,
-		logger:            logger,
+		converter:      converter,
+		validator:      validator,
+		serviceManager: serviceManager,
+		uidService:     uidService,
+		logger:         logger,
 	}
 }
 
@@ -78,7 +116,8 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	input, err := h.converter.DetailsToGraphQLInput(details)
+	serviceID := h.uidService.Generate() // Service ID
+	converted, err := h.converter.DetailsToGraphQLInput(serviceID, details)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while converting service input")
 		h.logger.Error(wrappedErr)
@@ -86,26 +125,24 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	gqlRequest, err := h.gqlRequestBuilder.RegisterApplicationRequest(input)
+	serviceManager, err := h.serviceManager.ForRequest(request)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "while building Application Register input")
+		wrappedErr := errors.Wrap(err, "while requesting Service Manager")
 		h.logger.Error(wrappedErr)
 		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
-	var resp gqlCreateApplicationResponse
-	gqlCli := h.cliProvider.GQLClient(request)
-	err = gqlCli.Run(context.Background(), gqlRequest, &resp)
+	err = serviceManager.Create(converted)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "while creating service")
+		wrappedErr := errors.Wrap(err, "while creating Service")
 		h.logger.Error(wrappedErr)
 		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
 	successResponse := SuccessfulCreateResponse{
-		ID: resp.Result.ID,
+		ID: serviceID,
 	}
 
 	err = json.NewEncoder(writer).Encode(&successResponse)
@@ -122,41 +159,42 @@ type SuccessfulCreateResponse struct {
 }
 
 func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
-	defer h.closeBody(request)
-	gqlCli := h.cliProvider.GQLClient(request)
-
-	id := h.getServiceID(request)
-	gqlRequest := h.gqlRequestBuilder.GetApplicationRequest(id)
-
-	var resp gqlGetApplicationResponse
-	err := gqlCli.Run(context.Background(), gqlRequest, &resp)
-	if err != nil {
-		wrappedErr := errors.Wrap(err, "while getting service")
-		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
-		return
-	}
-
-	if resp.Result == nil {
-		h.writeErrorNotFound(writer, id)
-		return
-	}
-
-	serviceModel, err := h.converter.GraphQLToDetailsModel(*resp.Result)
-	if err != nil {
-		wrappedErr := errors.Wrap(err, "while converting model")
-		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
-		return
-	}
-
-	err = json.NewEncoder(writer).Encode(&serviceModel)
-	if err != nil {
-		wrappedErr := errors.Wrap(err, "while encoding response")
-		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
-		return
-	}
+	//defer h.closeBody(request)
+	//gqlCli := h.cliProvider.GQLClient(request)
+	//
+	//id := h.getServiceID(request)
+	//gqlRequest := h.gqlRequester.GetApplicationRequest(id)
+	//
+	//var resp gqlGetApplicationResponse
+	//err := gqlCli.Run(context.Background(), gqlRequest, &resp)
+	//if err != nil {
+	//	wrappedErr := errors.Wrap(err, "while getting service")
+	//	h.logger.Error(wrappedErr)
+	//	reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+	//	return
+	//}
+	//
+	//if resp.Result == nil {
+	//	h.writeErrorNotFound(writer, id)
+	//	return
+	//}
+	//
+	//serviceModel, err := h.converter.GraphQLToDetailsModel(*resp.Result)
+	//if err != nil {
+	//	wrappedErr := errors.Wrap(err, "while converting model")
+	//	h.logger.Error(wrappedErr)
+	//	reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+	//	return
+	//}
+	//
+	//err = json.NewEncoder(writer).Encode(&serviceModel)
+	//if err != nil {
+	//	wrappedErr := errors.Wrap(err, "while encoding response")
+	//	h.logger.Error(wrappedErr)
+	//	reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+	//	return
+	//}
+	writer.WriteHeader(http.StatusNotImplemented)
 }
 
 func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
@@ -184,25 +222,27 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
-	defer h.closeBody(request)
-	gqlCli := h.cliProvider.GQLClient(request)
+	//defer h.closeBody(request)
+	//gqlCli := h.cliProvider.GQLClient(request)
+	//
+	//id := h.getServiceID(request)
+	//gqlRequest := h.gqlRequester.UnregisterApplicationRequest(id)
+	//
+	//err := gqlCli.Run(context.Background(), gqlRequest, nil)
+	//if err != nil {
+	//	if apperrors.IsNotFoundError(err) {
+	//		h.writeErrorNotFound(writer, id)
+	//		return
+	//	}
+	//
+	//	h.logger.WithField("ID", id).Error(errors.Wrap(err, "while deleting service"))
+	//	reqerror.WriteError(writer, err, apperrors.CodeInternal)
+	//	return
+	//}
+	//
+	//writer.WriteHeader(http.StatusNoContent)
 
-	id := h.getServiceID(request)
-	gqlRequest := h.gqlRequestBuilder.UnregisterApplicationRequest(id)
-
-	err := gqlCli.Run(context.Background(), gqlRequest, nil)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			h.writeErrorNotFound(writer, id)
-			return
-		}
-
-		h.logger.WithField("ID", id).Error(errors.Wrap(err, "while deleting service"))
-		reqerror.WriteError(writer, err, apperrors.CodeInternal)
-		return
-	}
-
-	writer.WriteHeader(http.StatusNoContent)
+	writer.WriteHeader(http.StatusNotImplemented)
 }
 
 func (h *Handler) closeBody(rq *http.Request) {

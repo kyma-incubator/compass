@@ -1,25 +1,33 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
-	"github.com/pkg/errors"
-
 	gcli "github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=GraphQLizer -output=automock -outpkg=automock -case=underscore
 type GraphQLizer interface {
 	ApplicationRegisterInputToGQL(in graphql.ApplicationRegisterInput) (string, error)
+	APIDefinitionInputToGQL(in graphql.APIDefinitionInput) (string, error)
+	EventDefinitionInputToGQL(in graphql.EventDefinitionInput) (string, error)
 }
 
-const nameKey = "name"
+const appNameFilterKey = "name"
 
 //go:generate mockery -name=GqlFieldsProvider -output=automock -outpkg=automock -case=underscore
 type GqlFieldsProvider interface {
 	ForApplication(ctx ...gql.FieldCtx) string
+	ForAPIDefinition(ctx ...gql.FieldCtx) string
+	ForEventDefinition() string
+	ForLabel() string
 	Page(item string) string
 }
 
@@ -31,52 +39,94 @@ type gqlGetApplicationResponse struct {
 	Result *graphql.ApplicationExt `json:"result"`
 }
 
-type gqlRequestBuilder struct {
+type gqlRequester struct {
+	cli               gqlcli.GraphQLClient
 	graphqlizer       GraphQLizer
 	gqlFieldsProvider GqlFieldsProvider
 }
 
-func NewGqlRequestBuilder(graphqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider) *gqlRequestBuilder {
-	return &gqlRequestBuilder{graphqlizer: graphqlizer, gqlFieldsProvider: gqlFieldsProvider}
+func NewGqlRequester(cli gqlcli.GraphQLClient, graphqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider) *gqlRequester {
+	return &gqlRequester{cli: cli, graphqlizer: graphqlizer, gqlFieldsProvider: gqlFieldsProvider}
 }
 
-func (b *gqlRequestBuilder) RegisterApplicationRequest(input graphql.ApplicationRegisterInput) (*gcli.Request, error) {
-	appInputGQL, err := b.graphqlizer.ApplicationRegisterInputToGQL(input)
+func (r *gqlRequester) SetApplicationLabel(appID string, label graphql.LabelInput) error {
+	jsonValue, err := json.Marshal(label.Value)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while constructing input")
+		return errors.Wrap(err, "while marshalling JSON value")
+	}
+	value := strconv.Quote(string(jsonValue))
+
+	gqlRequest := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: setApplicationLabel(applicationID: "%s", key: "%s", value: %s) {
+					%s
+				}
+			}`,
+			appID, label.Key, value, r.gqlFieldsProvider.ForLabel()))
+
+	err = r.cli.Run(context.Background(), gqlRequest, nil)
+	if err != nil {
+		return errors.Wrap(err, "while doing GraphQL request")
 	}
 
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: registerApplication(in: %s) {
-				id
-			}	
-		}`,
-			appInputGQL)), nil
+	return nil
 }
 
-func (b *gqlRequestBuilder) UnregisterApplicationRequest(id string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-		result: unregisterApplication(id: "%s") {
-			id
-		}	
-	}`, id))
-}
+func (r *gqlRequester) CreateAPIDefinition(appID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error) {
+	inStr, err := r.graphqlizer.APIDefinitionInputToGQL(apiDefinitionInput)
+	if err != nil {
+		return "", errors.Wrap(err, "while preparing GraphQL input")
+	}
 
-func (b *gqlRequestBuilder) GetApplicationRequest(id string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`query {
-			result: application(id: "%s") {
+	gqlRequest := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addAPIDefinition(applicationID: "%s", in: %s) {
 					%s
-			}
-		}`, id, b.gqlFieldsProvider.ForApplication()))
+				}
+			}`, appID, inStr, r.gqlFieldsProvider.ForAPIDefinition()))
+
+	var resp struct {
+		Result graphql.APIDefinition `json:"result"`
+	}
+
+	err = r.cli.Run(context.Background(), gqlRequest, &resp)
+	if err != nil {
+		return "", errors.Wrap(err, "while doing GraphQL request")
+	}
+
+	return resp.Result.ID, nil
 }
 
-func (b *gqlRequestBuilder) GetApplicationsByName(appName string) *gcli.Request {
+func (r *gqlRequester) CreateEventDefinition(appID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error) {
+	inStr, err := r.graphqlizer.EventDefinitionInputToGQL(eventDefinitionInput)
+	if err != nil {
+		return "", errors.Wrap(err, "while preparing GraphQL input")
+	}
+
+	gqlRequest := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: addEventDefinition(applicationID: "%s", in: %s) {
+						%s	
+					}
+				}`, appID, inStr, r.gqlFieldsProvider.ForEventDefinition()))
+
+	var resp struct {
+		Result graphql.EventDefinition `json:"result"`
+	}
+
+	err = r.cli.Run(context.Background(), gqlRequest, &resp)
+	if err != nil {
+		return "", errors.Wrap(err, "while doing GraphQL request")
+	}
+
+	return resp.Result.ID, nil
+}
+
+// TODO: Refactor - use GraphQL client inside
+func (r *gqlRequester) GetApplicationsByName(appName string) *gcli.Request {
 	return gcli.NewRequest(fmt.Sprintf(`query {
 			result: applications(filter: {key:"%s", query: "\"%s\""}) {
 					%s
 			}
-	}`, nameKey, appName, b.gqlFieldsProvider.Page(b.gqlFieldsProvider.ForApplication())))
+	}`, appNameFilterKey, appName, r.gqlFieldsProvider.Page(r.gqlFieldsProvider.ForApplication())))
 }
