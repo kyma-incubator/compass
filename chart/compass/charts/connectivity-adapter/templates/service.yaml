@@ -9,9 +9,27 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.global.connectivity_adapter.port }}
+    - port: {{ .Values.global.connectivity_adapter.external_api.port }}
       protocol: TCP
-      name: http
+      name: http-ext
+  selector:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "fullname" . }}-internal
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.global.connectivity_adapter.internal_api.port }}
+      protocol: TCP
+      name: http-int
   selector:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}

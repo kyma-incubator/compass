@@ -121,7 +121,10 @@ global:
           - "Certificate-Data"
 
   connectivity_adapter:
-    port: 8080
+    internal_api:
+      port: 8090
+    external_api:
+      port: 8080
     tls:
       host: adapter-gateway
     mtls:

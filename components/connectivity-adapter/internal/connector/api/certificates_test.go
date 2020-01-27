@@ -3,11 +3,12 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
 	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql/automock"
@@ -66,7 +67,7 @@ func TestHandler_Certificates(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
 		connectorClientMock.On("SignCSR", "Q1NSCg==", headersFromToken).
-			Return(schema.CertificationResult{}, errors.New("some error"))
+			Return(schema.CertificationResult{}, apperrors.Internal("error"))
 
 		handler := NewCertificatesHandler(connectorClientMock, logrus.New())
 		req := newRequestWithContext(bytes.NewReader(signatureRequestRaw), headersFromToken, &baseURLs)

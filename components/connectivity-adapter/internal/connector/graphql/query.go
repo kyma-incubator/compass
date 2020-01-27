@@ -25,3 +25,22 @@ func (qp queryProvider) signCSR(csr string) string {
 	}
     }`, csr)
 }
+
+func (qp queryProvider) token(application string) string {
+	return fmt.Sprintf(`mutation {
+    result: generateApplicationToken(appID: "%s")
+  	{
+    	token
+  	}
+	}`, application)
+}
+
+func (qp queryProvider) revoke() string {
+	return `mutation {
+    result: revokeCertificate()
+  	{
+    	revoked
+  	}
+	}`
+	//
+}

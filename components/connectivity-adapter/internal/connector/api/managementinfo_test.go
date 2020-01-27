@@ -2,12 +2,13 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
 	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql/automock"
@@ -100,7 +101,7 @@ func TestHandlerManagementInfo(t *testing.T) {
 	t.Run("Should return error when failed to call Compass Connector", func(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
-		connectorClientMock.On("Configuration", headersFromToken).Return(schema.Configuration{}, errors.New("failed to execute graphql query"))
+		connectorClientMock.On("Configuration", headersFromToken).Return(schema.Configuration{}, apperrors.Internal("error"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken, &baseURLs)
 
