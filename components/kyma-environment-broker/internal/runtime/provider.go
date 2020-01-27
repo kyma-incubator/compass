@@ -95,17 +95,17 @@ func (r ComponentsListProvider) getOpenSourceKymaComponents() (comp []v1alpha1.K
 func (r ComponentsListProvider) getManagedRuntimeComponents() ([]v1alpha1.KymaComponent, error) {
 	yamlFile, err := ioutil.ReadFile(r.managedRuntimeComponentsYAMLPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "while reading YAML file with managed components mangedList")
+		return nil, errors.Wrap(err, "while reading YAML file with managed components managedList")
 	}
 
-	var mangedList struct {
+	var managedList struct {
 		Components []v1alpha1.KymaComponent `json:"components"`
 	}
-	err = yaml.Unmarshal(yamlFile, &mangedList)
+	err = yaml.Unmarshal(yamlFile, &managedList)
 	if err != nil {
-		return nil, errors.Wrap(err, "while unmarshaling YAML file with managed components mangedList")
+		return nil, errors.Wrap(err, "while unmarshaling YAML file with managed components managedList")
 	}
-	return mangedList.Components, nil
+	return managedList.Components, nil
 }
 
 // Installation represents the installer CR.

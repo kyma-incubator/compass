@@ -55,7 +55,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
 	assert.Equal(t, "azure-cluster", input.ClusterConfig.GardenerConfig.Name)
 	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
-	assert.EqualValues(t, input.KymaConfig.Components, mappedComponentList)
+	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 
 	assertServiceManagerOverrides(t, input.KymaConfig.Components, smOverrides)
 }
