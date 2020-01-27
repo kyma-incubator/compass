@@ -46,14 +46,9 @@ func NewApplicationEventingConfiguration(runtimeEventURL url.URL, appName string
 }
 
 func NewEmptyApplicationEventingConfig() (*ApplicationEventingConfiguration, error) {
-	emptyURL, err := url.Parse("")
-	if err != nil {
-		return nil, err
-	}
-
 	return &ApplicationEventingConfiguration{
 		EventingConfiguration: EventingConfiguration{
-			DefaultURL: *emptyURL,
+			DefaultURL: url.URL{},
 		},
 	}, nil
 }
