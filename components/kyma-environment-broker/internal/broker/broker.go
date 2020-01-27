@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -270,6 +271,13 @@ func (b *KymaEnvBroker) LastOperation(ctx context.Context, instanceID string, de
 	instance, err := b.InstancesStorage.GetByID(instanceID)
 	if err != nil {
 		return domain.LastOperation{}, errors.Wrapf(err, "while getting instance from storage")
+	}
+	_, err = url.ParseRequestURI(instance.DashboardURL)
+	if err == nil {
+		return domain.LastOperation{
+			State:       domain.Succeeded,
+			Description: "Dashboard URL already exists in the instance",
+		}, nil
 	}
 
 	status, err := b.ProvisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, details.OperationData)

@@ -3,6 +3,7 @@ package director
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
@@ -85,9 +86,6 @@ func (dc Client) getURLFromRuntime(response graphql.RuntimeExt) (string, error) 
 	if response.Status.Condition != graphql.RuntimeStatusConditionReady {
 		return "", TemporaryError{fmt.Sprintf("response status condition is not %q", graphql.RuntimeStatusConditionReady)}
 	}
-	if len(response.Labels) != 1 {
-		return "", errors.New("response has more than one label")
-	}
 
 	value, ok := response.Labels[consoleURLLabelKey]
 	if !ok {
@@ -100,6 +98,11 @@ func (dc Client) getURLFromRuntime(response graphql.RuntimeExt) (string, error) 
 		URL = value.(string)
 	default:
 		return "", errors.New("response label value is not string")
+	}
+
+	_, err := url.ParseRequestURI(URL)
+	if err != nil {
+		return "", errors.Wrap(err, "while parsing raw URL")
 	}
 
 	return URL, nil

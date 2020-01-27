@@ -265,6 +265,41 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		assert.Equal(t, "", URL)
 	})
 
+	t.Run("response from director has wrong URL value", func(t *testing.T) {
+		// Given
+		qc := &mocks.GraphQLClient{}
+
+		client := NewDirectorClient(oc, qc)
+		client.token = token
+
+		// #create request
+		request := createGraphQLRequest(client, accountID, runtimeID)
+
+		// #mock on Run method for grapQL client
+		qc.On("Run", context.Background(), request, mock.AnythingOfType("*graphql.RuntimeExt")).Run(func(args mock.Arguments) {
+			arg, ok := args.Get(2).(*graphql.RuntimeExt)
+			if !ok {
+				return
+			}
+			arg.Runtime = graphql.Runtime{
+				Status: &graphql.RuntimeStatus{
+					Condition: graphql.RuntimeStatusConditionReady,
+				},
+			}
+			arg.Labels = map[string]interface{}{
+				consoleURLLabelKey: "wrong-URL",
+			}
+		}).Return(nil)
+
+		// When
+		URL, tokenErr := client.GetConsoleURL(accountID, runtimeID)
+
+		// Then
+		assert.Error(t, tokenErr)
+		assert.False(t, IsTemporaryError(tokenErr))
+		assert.Equal(t, "", URL)
+	})
+
 	t.Run("client graphQL returns error", func(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
