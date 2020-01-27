@@ -22,25 +22,17 @@ func NewConverter() *converter {
 	return &converter{}
 }
 
-func (c *converter) DetailsToGraphQLInput(deprecated model.ServiceDetails) (graphql.ApplicationRegisterInput, error) {
+type ConvertedServiceDetails struct {
+	API   *graphql.APIDefinitionInput
+	Event *graphql.EventDefinitionInput
+}
 
-	outLabels := graphql.Labels{}
-
-	out := graphql.ApplicationRegisterInput{
-		Name:         deprecated.Name,
-		Description:  ptrStringOrNilForEmpty(deprecated.Description),
-		ProviderName: ptrStringOrNilForEmpty(deprecated.Provider),
-	}
-
-	if deprecated.ShortDescription != "" {
-		outLabels[unmappedFieldShortDescription] = deprecated.ShortDescription
-	}
-	if deprecated.Identifier != "" {
-		outLabels[unmappedFieldIdentifier] = deprecated.Identifier
-	}
+func (c *converter) DetailsToConvertedServiceDetails(deprecated model.ServiceDetails) (ConvertedServiceDetails, error) {
+	var outApi *graphql.APIDefinitionInput
+	var outEvent *graphql.EventDefinitionInput
 	if deprecated.Api != nil {
 
-		outApi := &graphql.APIDefinitionInput{
+		outApi = &graphql.APIDefinitionInput{
 			TargetURL: deprecated.Api.TargetUrl,
 		}
 
@@ -181,32 +173,19 @@ func (c *converter) DetailsToGraphQLInput(deprecated model.ServiceDetails) (grap
 				outApi.Spec.FetchRequest.Auth.AdditionalQueryParams = &q
 			}
 		}
-		out.APIDefinitions = []*graphql.APIDefinitionInput{outApi}
-
 	}
 
 	if deprecated.Events != nil && deprecated.Events.Spec != nil {
-		out.EventDefinitions = []*graphql.EventDefinitionInput{
-			{
+		outEvent =
+			&graphql.EventDefinitionInput{
 				Spec: &graphql.EventSpecInput{
 					Data: ptrClob(graphql.CLOB(deprecated.Events.Spec)),
 				},
-			},
-		}
+			}
+
 	}
 
-	if deprecated.Documentation != nil {
-		// TODO later
-	}
-
-	if deprecated.Labels != nil && *deprecated.Labels != nil {
-		for k, v := range *deprecated.Labels {
-			outLabels[k] = v
-		}
-	}
-
-	out.Labels = getLabelsOrNilIfEmpty(outLabels)
-	return out, nil
+	return ConvertedServiceDetails{API: outApi, Event: outEvent}, nil
 }
 
 func (c *converter) GraphQLToDetailsModel(in graphql.ApplicationExt) (model.ServiceDetails, error) {
@@ -237,11 +216,11 @@ func (c *converter) GraphQLToDetailsModel(in graphql.ApplicationExt) (model.Serv
 	outDeprecated.ShortDescription = c.getUnmappedFromLabel(in.Labels, "shortDescription")
 
 	if in.EventDefinitions.TotalCount != len(in.EventDefinitions.Data) {
-		return model.ServiceDetails{}, fmt.Errorf("expected all event definitions [%d], got [%d]", in.EventDefinitions.TotalCount, len(in.EventDefinitions.Data))
+		return model.ServiceDetails{}, fmt.Errorf("expected all Event definitions [%d], got [%d]", in.EventDefinitions.TotalCount, len(in.EventDefinitions.Data))
 	}
 
 	if len(in.EventDefinitions.Data) > 1 {
-		return model.ServiceDetails{}, fmt.Errorf("only one event definition is supported, but got [%d]", in.EventDefinitions.TotalCount)
+		return model.ServiceDetails{}, fmt.Errorf("only one Event definition is supported, but got [%d]", in.EventDefinitions.TotalCount)
 	}
 
 	// Event Definition
@@ -257,11 +236,11 @@ func (c *converter) GraphQLToDetailsModel(in graphql.ApplicationExt) (model.Serv
 	}
 
 	if in.APIDefinitions.TotalCount != len(in.APIDefinitions.Data) {
-		return model.ServiceDetails{}, fmt.Errorf("expected all api definitinons [%d], got [%d]", in.APIDefinitions.TotalCount, len(in.APIDefinitions.Data))
+		return model.ServiceDetails{}, fmt.Errorf("expected all API definitinons [%d], got [%d]", in.APIDefinitions.TotalCount, len(in.APIDefinitions.Data))
 	}
 
 	if len(in.APIDefinitions.Data) > 1 {
-		return model.ServiceDetails{}, fmt.Errorf("only one api definition is supported, but got [%d]", len(in.APIDefinitions.Data))
+		return model.ServiceDetails{}, fmt.Errorf("only one API definition is supported, but got [%d]", len(in.APIDefinitions.Data))
 	}
 
 	// API Definitions
