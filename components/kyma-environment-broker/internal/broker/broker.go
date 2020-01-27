@@ -288,19 +288,24 @@ func (b *KymaEnvBroker) LastOperation(ctx context.Context, instanceID string, de
 	b.Dumper.Dump("Got status:", status)
 
 	var lastOpStatus domain.LastOperationState
+	var msg string
+	if status.Message != nil {
+		msg = *status.Message
+	}
+
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
-		lastOpStatus = b.handleDashboardURL(instance)
+		operationStatus, directorMsg := b.handleDashboardURL(instance)
+		if directorMsg != "" {
+			msg = directorMsg
+		}
+		lastOpStatus = operationStatus
 	case gqlschema.OperationStateInProgress:
 		lastOpStatus = domain.InProgress
 	case gqlschema.OperationStatePending:
 		lastOpStatus = domain.InProgress
 	case gqlschema.OperationStateFailed:
 		lastOpStatus = domain.Failed
-	}
-	msg := ""
-	if status.Message != nil {
-		msg = *status.Message
 	}
 
 	return domain.LastOperation{
@@ -309,40 +314,42 @@ func (b *KymaEnvBroker) LastOperation(ctx context.Context, instanceID string, de
 	}, nil
 }
 
-func (b *KymaEnvBroker) handleDashboardURL(instance *internal.Instance) domain.LastOperationState {
+func (b *KymaEnvBroker) handleDashboardURL(instance *internal.Instance) (domain.LastOperationState, string) {
 	b.Dumper.Dump("Get dashboard url for instance ID: ", instance.InstanceID)
 
 	dashboardURL, err := b.DirectorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
 	if director.IsTemporaryError(err) {
 		b.Dumper.Dump("DirectorClient cannot get Console URL (temporary): ", err.Error())
-		return b.checkInstanceOutdated(instance)
+		state, msg := b.checkInstanceOutdated(instance)
+		return state, fmt.Sprintf("cannot get URL from director: %s", msg)
 	}
 	if err != nil {
 		b.Dumper.Dump("DirectorClient cannot get Console URL: ", err.Error())
-		return domain.Failed
+		return domain.Failed, fmt.Sprintf("cannot get URL from director: %s", err.Error())
 	}
 
 	instance.DashboardURL = dashboardURL
 	err = b.InstancesStorage.Update(*instance)
 	if err != nil {
 		b.Dumper.Dump(fmt.Sprintf("Instance storage cannot update instance: %s", err))
-		return b.checkInstanceOutdated(instance)
+		state, msg := b.checkInstanceOutdated(instance)
+		return state, fmt.Sprintf("cannot update instance in storage: %s", msg)
 	}
 
-	return domain.Succeeded
+	return domain.Succeeded, ""
 }
 
-func (b *KymaEnvBroker) checkInstanceOutdated(instance *internal.Instance) domain.LastOperationState {
+func (b *KymaEnvBroker) checkInstanceOutdated(instance *internal.Instance) (domain.LastOperationState, string) {
 	addTime := instance.CreatedAt.Add(delayInstanceTime)
 	subTime := time.Now().Sub(addTime)
 
 	if subTime > 0 {
 		// after delayInstanceTime Instance last operation is marked as failed
 		b.Dumper.Dump(fmt.Sprintf("Cannot get Dashboard URL for instance %s", instance.InstanceID))
-		return domain.Failed
+		return domain.Failed, "instance is out of date"
 	}
 
-	return domain.InProgress
+	return domain.InProgress, "action can be processed again"
 }
 
 // Bind creates a new service binding

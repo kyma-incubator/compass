@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
@@ -13,8 +14,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// accountIDKey is a header key name for request send by graphQL client
-const accountIDKey = "tenant"
+const (
+	// accountIDKey is a header key name for request send by graphQL client
+	accountIDKey = "tenant"
+
+	// amount of request attempt to director service
+	reqAttempt = 3
+)
 
 //go:generate mockery -name=GraphQLClient -output=automock
 type GraphQLClient interface {
@@ -33,6 +39,12 @@ type Client struct {
 	token         oauth.Token
 }
 
+type successResponse struct {
+	Result graphql.RuntimeExt `json:"result"`
+}
+
+var lock sync.Mutex
+
 // NewDirectorClient returns new director client struct pointer
 func NewDirectorClient(oauthClient OauthClient, gqlClient GraphQLClient) *Client {
 	return &Client{
@@ -45,27 +57,67 @@ func NewDirectorClient(oauthClient OauthClient, gqlClient GraphQLClient) *Client
 
 // GetConsoleURL fetches, validates and returns console URL from director component based on runtime ID
 func (dc *Client) GetConsoleURL(accountID, runtimeID string) (string, error) {
-	err := dc.setToken()
-	if err != nil {
-		return "", errors.Wrap(err, "while fetching token to director")
-	}
+	log.Info("DirectorClient: Create request to director service")
 	query := dc.queryProvider.Runtime(runtimeID)
 	req := machineGraph.NewRequest(query)
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", dc.token.AccessToken))
 	req.Header.Add(accountIDKey, accountID)
-	dc.printRequest(req)
 
-	var response graphql.RuntimeExt
-	err = dc.graphQLClient.Run(context.Background(), req, &response)
+	log.Info("DirectorClient: Send request to director")
+	response, err := dc.callDirector(req)
 	if err != nil {
-		return "", TemporaryError{fmt.Sprintf("Failed to provision Runtime: %s", err)}
+		// do not wrap error, because type of error (TemporaryError) is important
+		return "", err
 	}
 
-	dc.printResponse(response)
-	return dc.getURLFromRuntime(response)
+	log.Info("DirectorClient: Extract the URL from the response")
+	return dc.getURLFromRuntime(&response.Result)
+}
+
+func (dc *Client) callDirector(req *machineGraph.Request) (*successResponse, error) {
+	var response *successResponse
+	var lastError error
+	var success bool
+	authorizationKey := "Authorization"
+
+	for i := 0; i < reqAttempt; i++ {
+		err := dc.setToken()
+		if err != nil {
+			lastError = err
+			log.Errorf("cannot set token to director client (attempt %d): %s", i, err)
+			continue
+		}
+		req.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", dc.token.AccessToken))
+		response, err = dc.call(req)
+		if err != nil {
+			lastError = err
+			dc.token.AccessToken = ""
+			req.Header.Del(authorizationKey)
+			log.Errorf("call to director failed (attempt %d): %s", i, err)
+			continue
+		}
+		success = true
+		break
+	}
+
+	if !success {
+		return &successResponse{}, lastError
+	}
+
+	return response, nil
+}
+
+func (dc *Client) call(req *machineGraph.Request) (*successResponse, error) {
+	var response successResponse
+	err := dc.graphQLClient.Run(context.Background(), req, &response)
+	if err != nil {
+		return nil, TemporaryError{fmt.Sprintf("while requesting to director client: %s", err)}
+	}
+	return &response, nil
 }
 
 func (dc *Client) setToken() error {
+	lock.Lock()
+	defer lock.Unlock()
 	if !dc.token.EmptyOrExpired() {
 		return nil
 	}
@@ -79,16 +131,17 @@ func (dc *Client) setToken() error {
 	return nil
 }
 
-func (dc Client) getURLFromRuntime(response graphql.RuntimeExt) (string, error) {
+func (dc Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error) {
 	if response.Status == nil {
 		return "", TemporaryError{"response status from director is nil"}
 	}
 	if response.Status.Condition == graphql.RuntimeStatusConditionFailed {
 		return "", fmt.Errorf("response status condition from director is %s", graphql.RuntimeStatusConditionFailed)
 	}
-	if response.Status.Condition != graphql.RuntimeStatusConditionReady {
-		return "", TemporaryError{fmt.Sprintf("response status condition is not %q", graphql.RuntimeStatusConditionReady)}
-	}
+	// TODO: uncomment when status will be set on director side
+	//if response.Status.Condition != graphql.RuntimeStatusConditionReady {
+	//	return "", TemporaryError{fmt.Sprintf("response status condition is not %q", graphql.RuntimeStatusConditionReady)}
+	//}
 
 	value, ok := response.Labels[consoleURLLabelKey]
 	if !ok {
@@ -109,28 +162,4 @@ func (dc Client) getURLFromRuntime(response graphql.RuntimeExt) (string, error) 
 	}
 
 	return URL, nil
-}
-
-// TODO: remove after debug mode
-func (dc Client) printRequest(r *machineGraph.Request) {
-	log.Info("## Request director")
-	for name, value := range r.Header {
-		log.Infof("Header: %s", name)
-		for _, v := range value {
-			log.Info(v)
-		}
-	}
-	log.Info("## END Request director")
-}
-
-// TODO: remove after debug mode
-func (dc Client) printResponse(resp graphql.RuntimeExt) {
-	log.Info("## Response director")
-	log.Infof("Status: %v", resp.Status)
-	log.Infof("Labels: %v", resp.Labels)
-	log.Infof("Name: %v", resp.Name)
-	log.Infof("Description: %v", resp.Description)
-	log.Infof("Runtime ID: %v", resp.Runtime.ID)
-	log.Infof("Runtime Name: %v", resp.Runtime.Name)
-	log.Info("## END Response director")
 }
