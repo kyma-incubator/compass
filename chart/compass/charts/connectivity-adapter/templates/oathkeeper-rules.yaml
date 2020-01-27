@@ -6,7 +6,7 @@ metadata:
 spec:
   description: Configuration of oathkeeper for secure endpoint of connectivity adapter for one time tokens
   upstream:
-    url: "http://compass-connectivity-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connectivity_adapter.port }}"
+    url: "http://compass-connectivity-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connectivity_adapter.external_api.port }}"
   match:
     methods: ["GET", "POST", "PUT", "DELETE"]
     url: <http|https>://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}/v1<(/.*)?>
@@ -25,7 +25,7 @@ metadata:
 spec:
   description: Configuration of oathkeeper for secure endpoint of connectivity adapter for mtls
   upstream:
-    url: "http://compass-connectivity-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connectivity_adapter.port }}"
+    url: "http://compass-connectivity-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connectivity_adapter.external_api.port }}"
   match:
     methods: ["GET", "POST", "PUT", "DELETE"]
     url: <http|https>://{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}/v1<(/.*)?>

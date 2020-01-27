@@ -2,6 +2,7 @@
 
 package automock
 
+import apperrors "github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 import externalschema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 
 import mock "github.com/stretchr/testify/mock"
@@ -12,7 +13,7 @@ type Client struct {
 }
 
 // Configuration provides a mock function with given fields: headers
-func (_m *Client) Configuration(headers map[string]string) (externalschema.Configuration, error) {
+func (_m *Client) Configuration(headers map[string]string) (externalschema.Configuration, apperrors.AppError) {
 	ret := _m.Called(headers)
 
 	var r0 externalschema.Configuration
@@ -22,18 +23,36 @@ func (_m *Client) Configuration(headers map[string]string) (externalschema.Confi
 		r0 = ret.Get(0).(externalschema.Configuration)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(map[string]string) error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(map[string]string) apperrors.AppError); ok {
 		r1 = rf(headers)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(apperrors.AppError)
+		}
 	}
 
 	return r0, r1
 }
 
+// Revoke provides a mock function with given fields: headers
+func (_m *Client) Revoke(headers map[string]string) apperrors.AppError {
+	ret := _m.Called(headers)
+
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(map[string]string) apperrors.AppError); ok {
+		r0 = rf(headers)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(apperrors.AppError)
+		}
+	}
+
+	return r0
+}
+
 // SignCSR provides a mock function with given fields: csr, headers
-func (_m *Client) SignCSR(csr string, headers map[string]string) (externalschema.CertificationResult, error) {
+func (_m *Client) SignCSR(csr string, headers map[string]string) (externalschema.CertificationResult, apperrors.AppError) {
 	ret := _m.Called(csr, headers)
 
 	var r0 externalschema.CertificationResult
@@ -43,11 +62,36 @@ func (_m *Client) SignCSR(csr string, headers map[string]string) (externalschema
 		r0 = ret.Get(0).(externalschema.CertificationResult)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, map[string]string) error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string, map[string]string) apperrors.AppError); ok {
 		r1 = rf(csr, headers)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(apperrors.AppError)
+		}
+	}
+
+	return r0, r1
+}
+
+// Token provides a mock function with given fields: application
+func (_m *Client) Token(application string) (string, apperrors.AppError) {
+	ret := _m.Called(application)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(application)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
+		r1 = rf(application)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(apperrors.AppError)
+		}
 	}
 
 	return r0, r1

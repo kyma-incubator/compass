@@ -22,8 +22,11 @@ spec:
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connectivity_adapter.dir }}connectivity-adapter:{{ .Values.global.images.connectivity_adapter.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
-            - name: http
-              containerPort: {{ .Values.global.connectivity_adapter.port }}
+            - name: http-int
+              containerPort: {{ .Values.global.connectivity_adapter.internal_api.port }}
+              protocol: TCP
+            - name: http-ext
+              containerPort: {{ .Values.global.connectivity_adapter.external_api.port }}
               protocol: TCP
           env:
             - name: APP_ADDRESS
