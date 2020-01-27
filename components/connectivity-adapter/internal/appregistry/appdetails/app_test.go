@@ -3,14 +3,15 @@ package appdetails_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
-var value graphql.ApplicationExt = graphql.ApplicationExt{Application: graphql.Application{Name:"foo"}}
+var value graphql.ApplicationExt = graphql.ApplicationExt{Application: graphql.Application{Name: "foo"}}
 
 func TestLoadFromContext(t *testing.T) {
 	testCases := []struct {
@@ -22,7 +23,7 @@ func TestLoadFromContext(t *testing.T) {
 	}{
 		{
 			Name:               "Success",
-			Context:            context.WithValue(context.TODO(), appdetails.AppDetailsContextKey, value),
+			Context:            context.WithValue(context.TODO(), appdetails.AppDetailsContextKey{}, value),
 			ExpectedResult:     &value,
 			ExpectedErrMessage: "",
 		},
@@ -60,5 +61,5 @@ func TestSaveToLoadFromContext(t *testing.T) {
 	result := appdetails.SaveToContext(ctx, value)
 
 	// then
-	assert.Equal(t, value, result.Value(appdetails.AppDetailsContextKey))
+	assert.Equal(t, value, result.Value(appdetails.AppDetailsContextKey{}))
 }
