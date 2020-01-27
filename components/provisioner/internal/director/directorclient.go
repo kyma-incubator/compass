@@ -49,13 +49,6 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput, tenant s
 		return "", errors.New("Cannot register runtime in Director: missing Runtime config")
 	}
 
-	if cc.token.EmptyOrExpired() {
-		log.Infof("Refreshing token to access Director Service")
-		if err := cc.getToken(); err != nil {
-			return "", err
-		}
-	}
-
 	runtimeInput, err := cc.graphqlizer.RuntimeInputToGraphQL(*config)
 	if err != nil {
 		log.Infof("Failed to create graphQLized Runtime input")
@@ -64,12 +57,8 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput, tenant s
 
 	runtimeQuery := cc.queryProvider.createRuntimeMutation(runtimeInput)
 
-	req := gcli.NewRequest(runtimeQuery)
-	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", cc.token.AccessToken))
-	req.Header.Set(TenantHeader, tenant)
-
 	var response CreateRuntimeResponse
-	err = cc.gqlClient.Do(req, &response)
+	err = cc.executeDirectorGraphQLCall(runtimeQuery, tenant, &response)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to register runtime in Director. Request failed")
 	}
@@ -85,20 +74,10 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput, tenant s
 }
 
 func (cc *directorClient) DeleteRuntime(id, tenant string) error {
-	if cc.token.EmptyOrExpired() {
-		log.Infof("Refreshing token to access Director Service")
-		if err := cc.getToken(); err != nil {
-			return err
-		}
-	}
-
 	runtimeQuery := cc.queryProvider.deleteRuntimeMutation(id)
-	req := gcli.NewRequest(runtimeQuery)
-	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", cc.token.AccessToken))
-	req.Header.Set(TenantHeader, tenant)
 
 	var response DeleteRuntimeResponse
-	err := cc.gqlClient.Do(req, &response)
+	err := cc.executeDirectorGraphQLCall(runtimeQuery, tenant, &response)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to unregister runtime %s in Director", id))
 	}
@@ -117,20 +96,10 @@ func (cc *directorClient) DeleteRuntime(id, tenant string) error {
 }
 
 func (cc *directorClient) GetConnectionToken(id, tenant string) (graphql.OneTimeToken, error) {
-	if cc.token.EmptyOrExpired() {
-		log.Infof("Refreshing token to access Director Service")
-		if err := cc.getToken(); err != nil {
-			return graphql.OneTimeToken{}, err
-		}
-	}
-
 	runtimeQuery := cc.queryProvider.requestOneTimeTokeneMutation(id)
-	req := gcli.NewRequest(runtimeQuery)
-	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", cc.token.AccessToken))
-	req.Header.Set(TenantHeader, tenant)
 
 	var response OneTimeTokenResponse
-	err := cc.gqlClient.Do(req, &response)
+	err := cc.executeDirectorGraphQLCall(runtimeQuery, tenant, &response)
 	if err != nil {
 		return graphql.OneTimeToken{}, errors.Wrap(err, fmt.Sprintf("Failed to get OneTimeToken for Runtime %s in Director", id))
 	}
@@ -155,5 +124,25 @@ func (cc *directorClient) getToken() error {
 	}
 
 	cc.token = token
+	return nil
+}
+
+func (cc *directorClient) executeDirectorGraphQLCall(directorQuery string, tenant string, response interface{}) error {
+	if cc.token.EmptyOrExpired() {
+		log.Infof("Refreshing token to access Director Service")
+		if err := cc.getToken(); err != nil {
+			return err
+		}
+	}
+
+	req := gcli.NewRequest(directorQuery)
+	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", cc.token.AccessToken))
+	req.Header.Set(TenantHeader, tenant)
+
+	err := cc.gqlClient.Do(req, response)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Failed to execute GraphQL query with Director"))
+	}
+
 	return nil
 }
