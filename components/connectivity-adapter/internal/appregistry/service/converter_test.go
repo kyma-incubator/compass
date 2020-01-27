@@ -14,7 +14,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 
 	type testCase struct {
 		given    model.ServiceDetails
-		expected ConvertedServiceDetails
+		expected model.ConvertedServiceDetails
 	}
 	sut := NewConverter()
 
@@ -25,7 +25,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					TargetUrl: "http://target.url",
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					// TODO what about name?
 					TargetURL: "http://target.url",
@@ -39,7 +39,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					ApiType:   "ODATA",
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					TargetURL: "http://target.url",
 					Spec: &graphql.APISpecInput{
@@ -55,7 +55,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					ApiType: "anything else",
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						Type: graphql.APISpecTypeOpenAPI,
@@ -70,7 +70,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					Spec: json.RawMessage(`openapi: "3.0.0"`),
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						Data:   ptrClob(graphql.CLOB(`openapi: "3.0.0"`)),
@@ -87,7 +87,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					Spec: json.RawMessage(`{"spec":"v0.0.1"}`),
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						Data:   ptrClob(graphql.CLOB(`{"spec":"v0.0.1"}`)),
@@ -104,7 +104,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					Spec: json.RawMessage(`<spec></spec>"`),
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						Data:   ptrClob(graphql.CLOB(`<spec></spec>"`)),
@@ -128,7 +128,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
 						AdditionalQueryParams: &graphql.QueryParams{
@@ -158,7 +158,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
 						AdditionalQueryParams: &graphql.QueryParams{
@@ -191,7 +191,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
 						AdditionalQueryParams: &graphql.QueryParams{
@@ -217,7 +217,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
 						Credential: &graphql.CredentialDataInput{
@@ -254,7 +254,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
 						Credential: &graphql.CredentialDataInput{
@@ -278,7 +278,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					SpecificationUrl: "http://specification.url",
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						FetchRequest: &graphql.FetchRequestInput{
@@ -300,7 +300,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						FetchRequest: &graphql.FetchRequestInput{
@@ -332,7 +332,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						FetchRequest: &graphql.FetchRequestInput{
@@ -367,7 +367,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						FetchRequest: &graphql.FetchRequestInput{
@@ -393,7 +393,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					Spec: json.RawMessage(`asyncapi: "1.2.0"`),
 				},
 			},
-			expected: ConvertedServiceDetails{
+			expected: model.ConvertedServiceDetails{
 				Event: &graphql.EventDefinitionInput{
 					//TODO what about name
 					Spec: &graphql.EventSpecInput{

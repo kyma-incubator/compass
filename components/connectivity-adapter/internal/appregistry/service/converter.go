@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -22,13 +24,14 @@ func NewConverter() *converter {
 	return &converter{}
 }
 
-type ConvertedServiceDetails struct {
-	API   *graphql.APIDefinitionInput
-	Event *graphql.EventDefinitionInput
+func (c *converter) DetailsToGraphQLInput(deprecated model.ServiceDetails) (graphql.ApplicationRegisterInput, error) {
+	return graphql.ApplicationRegisterInput{}, errors.New("deprecated")
 }
 
-func (c *converter) DetailsToConvertedServiceDetails(deprecated model.ServiceDetails) (ConvertedServiceDetails, error) {
-	out := ConvertedServiceDetails{}
+func (c *converter) DetailsToConvertedServiceDetails(id string, deprecated model.ServiceDetails) (model.ConvertedServiceDetails, error) {
+	out := model.ConvertedServiceDetails{
+		ID:id,
+	}
 	if deprecated.Api != nil {
 
 		out.API = &graphql.APIDefinitionInput{
