@@ -68,7 +68,6 @@ type ClientIdentity struct {
 	Tenant      string `json:"tenant,omitempty"`
 }
 
-
 type TokenResponse struct {
 	URL   string `json:"url"`
 	Token string `json:"token"`
