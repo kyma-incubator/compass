@@ -59,8 +59,9 @@ additionalRuntimeComponents:
 kymaVersion: "1.9.0"
 
 # It is used to provide own creds for Service Manager instead of using the one provided by external system
-# who execute provision call on Kyma Environment Broker
+# who execute provision call on Kyma Environment Broker. You can turn that of by setting *credentialsOverride* to `false`
 serviceManger:
+  credentialsOverride: "true"
   secretName: "service-manager-creds"
   url: "TBD"
   username: "TBD"

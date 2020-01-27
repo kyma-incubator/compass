@@ -103,6 +103,8 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
+            - name: APP_SERVICE_MANAGER_CREDENTIALS_OVERRIDE
+              value: {{ .Values.serviceManger.credentialsOverride }}
             - name: APP_SERVICE_MANAGER_URL
               valueFrom:
                 secretKeyRef:
