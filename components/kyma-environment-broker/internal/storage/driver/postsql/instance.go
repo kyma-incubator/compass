@@ -19,6 +19,7 @@ func NewInstance(sess dbsession.Factory) *Instance {
 	}
 }
 
+// TODO: Wrap retries in single method WithRetries
 func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	sess := s.NewReadSession()
 	instance := &internal.Instance{}
