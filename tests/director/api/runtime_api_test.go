@@ -7,8 +7,6 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 
-	"github.com/google/uuid"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
@@ -75,7 +73,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 			}`, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
 	err = tc.RunOperation(ctx, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
-	assert.Len(t, actualRuntime.Labels, 2)
+	assert.Len(t, actualRuntime.Labels, 3)
 
 	// add agent auth
 	// GIVEN
@@ -457,8 +455,8 @@ func TestQuerySpecificRuntime(t *testing.T) {
 func TestApplicationsForRuntime(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-	tenantID := uuid.New().String()
-	otherTenant := uuid.New().String()
+	tenantID := "1eba80dd-8ff6-54ee-be4d-77944d17b10b"
+	otherTenant := "9ca034f1-11ab-5b25-b76f-dc77106f571d"
 	tenantApplications := []*graphql.Application{}
 	defaultValue := "DEFAULT"
 	scenarios := []string{defaultValue, "black-friday-campaign", "christmas-campaign", "summer-campaign"}
@@ -599,6 +597,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 		assert.Equal(t, cursor, string(runtimePage.PageInfo.StartCursor))
 		assert.True(t, runtimePage.PageInfo.HasNextPage)
 		assert.Len(t, runtimePage.Data, after)
+		assert.Equal(t, runtimesAmount, runtimePage.TotalCount)
 		for _, runtime := range runtimePage.Data {
 			assert.Equal(t, runtime, runtimes[runtime.ID])
 			delete(runtimes, runtime.ID)

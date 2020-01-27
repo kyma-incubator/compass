@@ -1,6 +1,9 @@
 package provisioning
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
@@ -53,6 +56,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 
 	return model.Cluster{
 		ID:                    runtimeID,
+		RuntimeName:           input.RuntimeInput.Name,
 		CredentialsSecretName: credSecretName,
 		KymaConfig:            kymaConfig,
 		ClusterConfig:         providerConfig,
@@ -74,6 +78,7 @@ func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.Clu
 
 func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
 	id := c.uuidGenerator.New()
+	name := c.createGardenerClusterName(input.Provider)
 
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 
@@ -83,7 +88,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 
 	return model.GardenerConfig{
 		ID:                     id,
-		Name:                   input.Name,
+		Name:                   name,
 		ProjectName:            input.ProjectName,
 		KubernetesVersion:      input.KubernetesVersion,
 		NodeCount:              input.NodeCount,
@@ -102,6 +107,17 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		ClusterID:              runtimeID,
 		GardenerProviderConfig: providerSpecificConfig,
 	}, nil
+}
+
+func (c converter) createGardenerClusterName(provider string) string {
+	uuid := c.uuidGenerator.New()
+	provider = util.RemoveNotAllowedCharacters(provider)
+
+	name := strings.ReplaceAll(uuid, "-", "")
+	name = fmt.Sprintf("%.3s-%.7s", provider, name)
+	name = util.StartWithLetter(name)
+	name = strings.ToLower(name)
+	return name
 }
 
 func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {

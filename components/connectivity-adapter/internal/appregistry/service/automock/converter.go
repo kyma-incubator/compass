@@ -11,44 +11,65 @@ type Converter struct {
 	mock.Mock
 }
 
-// DetailsToGraphQL provides a mock function with given fields: in
-func (_m *Converter) DetailsToGraphQL(in model.ServiceDetails) graphql.Application {
+// DetailsToGraphQLInput provides a mock function with given fields: in
+func (_m *Converter) DetailsToGraphQLInput(in model.ServiceDetails) (graphql.ApplicationRegisterInput, error) {
 	ret := _m.Called(in)
 
-	var r0 graphql.Application
-	if rf, ok := ret.Get(0).(func(model.ServiceDetails) graphql.Application); ok {
+	var r0 graphql.ApplicationRegisterInput
+	if rf, ok := ret.Get(0).(func(model.ServiceDetails) graphql.ApplicationRegisterInput); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(graphql.Application)
+		r0 = ret.Get(0).(graphql.ApplicationRegisterInput)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(model.ServiceDetails) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GraphQLToDetailsModel provides a mock function with given fields: in
-func (_m *Converter) GraphQLToDetailsModel(in graphql.Application) model.ServiceDetails {
+func (_m *Converter) GraphQLToDetailsModel(in graphql.ApplicationExt) (model.ServiceDetails, error) {
 	ret := _m.Called(in)
 
 	var r0 model.ServiceDetails
-	if rf, ok := ret.Get(0).(func(graphql.Application) model.ServiceDetails); ok {
+	if rf, ok := ret.Get(0).(func(graphql.ApplicationExt) model.ServiceDetails); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(model.ServiceDetails)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(graphql.ApplicationExt) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GraphQLToModel provides a mock function with given fields: in
-func (_m *Converter) GraphQLToModel(in graphql.Application) model.Service {
+func (_m *Converter) GraphQLToModel(in graphql.ApplicationExt) (model.Service, error) {
 	ret := _m.Called(in)
 
 	var r0 model.Service
-	if rf, ok := ret.Get(0).(func(graphql.Application) model.Service); ok {
+	if rf, ok := ret.Get(0).(func(graphql.ApplicationExt) model.Service); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(model.Service)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(graphql.ApplicationExt) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

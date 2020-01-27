@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector"
+	connector "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/health"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
@@ -22,6 +22,7 @@ type config struct {
 
 func main() {
 	cfg := config{}
+
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "while loading app config")
 
@@ -34,7 +35,10 @@ func main() {
 	appregistry.RegisterHandler(appRegistryRouter, cfg.AppRegistry)
 
 	connectorRouter := v1Router.PathPrefix("/applications").Subrouter()
-	connector.RegisterHandler(connectorRouter, cfg.Connector)
+	err = connector.RegisterHandler(connectorRouter, cfg.Connector)
+	if err != nil {
+		exitOnError(err, "Failed to init Connector handler")
+	}
 
 	log.Printf("Listening on %s", cfg.Address)
 	err = http.ListenAndServe(cfg.Address, router)

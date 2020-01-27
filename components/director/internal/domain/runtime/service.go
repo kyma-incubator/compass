@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/pkg/errors"
 )
 
@@ -121,6 +121,13 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, rtmTenant)
 	if err != nil {
 		return "", errors.Wrapf(err, "while ensuring Label Definition with key %s exists", model.ScenariosKey)
+	}
+
+	if _, ok := in.Labels[model.ScenariosKey]; !ok {
+		if in.Labels == nil {
+			in.Labels = map[string]interface{}{}
+		}
+		in.Labels[model.ScenariosKey] = model.ScenariosDefaultValue
 	}
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)

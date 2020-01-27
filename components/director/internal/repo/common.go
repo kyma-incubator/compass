@@ -50,6 +50,7 @@ const (
 	EqualOp     ConditionOp = "="
 	IsNotNullOp ConditionOp = "IS NOT NULL"
 	InOp        ConditionOp = "IN"
+	NotEqualOP  ConditionOp = "!="
 )
 
 type Conditions []Condition
@@ -107,11 +108,17 @@ func NewInCondition(field, val string) Condition {
 	}
 }
 
-func getAllArgs(tenant *string, conditions Conditions) []interface{} {
-	allArgs := []interface{}{}
-	if tenant != nil {
-		allArgs = append(allArgs, tenant)
+func NewNotEqualCondition(field, val string) Condition {
+	return Condition{
+		Field: field,
+		Val:   val,
+		Op:    NotEqualOP,
 	}
+}
+
+func getAllArgs(conditions Conditions) []interface{} {
+	allArgs := []interface{}{}
+
 	for _, cond := range conditions {
 		if argVal, ok := cond.GetQueryArg(); ok {
 			allArgs = append(allArgs, argVal)

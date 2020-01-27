@@ -56,7 +56,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 	graphQLConverter := NewGraphQLConverter()
 
 	t.Run("Should create proper runtime status struct for GCP config", func(t *testing.T) {
-		name := "Something"
+		clusterName := "Something"
+		runtimeName := "RuntimeName"
 		project := "Project"
 		numberOfNodes := 3
 		bootDiskSize := 256
@@ -77,6 +78,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			},
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusConnected,
 			RuntimeConfiguration: model.Cluster{
+				RuntimeName: "RuntimeName",
 				ClusterConfig: model.GCPConfig{
 					ID:                "id",
 					Name:              "Something",
@@ -111,8 +113,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Status: gqlschema.RuntimeAgentConnectionStatusConnected,
 			},
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
+				Name: &runtimeName,
 				ClusterConfig: gqlschema.GCPConfig{
-					Name:              &name,
+					Name:              &clusterName,
 					ProjectName:       &project,
 					MachineType:       &machine,
 					Region:            &region,
@@ -136,7 +139,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 	t.Run("Should create proper runtime status struct for gardener config", func(t *testing.T) {
 		//given
-		name := "Something"
+		clusterName := "Something"
+		runtimeName := "runtimeName"
 		project := "Project"
 		nodes := 3
 		disk := "standard"
@@ -169,8 +173,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			},
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
 			RuntimeConfiguration: model.Cluster{
+				RuntimeName: runtimeName,
 				ClusterConfig: model.GardenerConfig{
-					Name:                   name,
+					Name:                   clusterName,
 					ProjectName:            project,
 					NodeCount:              nodes,
 					DiskType:               disk,
@@ -210,8 +215,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
 			},
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
+				Name: &runtimeName,
 				ClusterConfig: gqlschema.GardenerConfig{
-					Name:              &name,
+					Name:              &clusterName,
 					ProjectName:       &project,
 					NodeCount:         &nodes,
 					DiskType:          &disk,

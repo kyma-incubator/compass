@@ -373,6 +373,11 @@ type TemplateValueInput struct {
 	Value       string `json:"value"`
 }
 
+type Tenant struct {
+	Tenant string  `json:"tenant"`
+	Name   *string `json:"name"`
+}
+
 type Version struct {
 	// for example 4.6
 	Value      string `json:"value"`

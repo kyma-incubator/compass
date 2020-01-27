@@ -20,7 +20,6 @@ func (p *awsInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:       "m4.2xlarge",
 			Region:            "eu-west-1",
 			Provider:          "aws",
-			Seed:              "aws-eu1",
 			WorkerCidr:        "10.250.0.0/19",
 			AutoScalerMin:     2,
 			AutoScalerMax:     4,

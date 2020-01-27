@@ -96,6 +96,7 @@ docker run --name ${DIRECTOR_CONTAINER} -d --rm --network=${NETWORK} \
     -e APP_ONE_TIME_TOKEN_URL=http://connector.not.configured.url/graphql \
     -e APP_CONNECTOR_URL=http://connector.not.configured.url/graphql \
     -e APP_JWKS_ENDPOINT="file:///app/default-jwks.json" \
+    -e APP_LEGACY_CONNECTOR_URL="https://adapter-gateway.kyma.local/v1/applications/signingRequests/info" \
     ${DIRECTOR_IMG_NAME}
 
 cd "${SCRIPT_DIR}"

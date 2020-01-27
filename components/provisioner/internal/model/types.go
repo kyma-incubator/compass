@@ -23,6 +23,7 @@ const (
 
 type Cluster struct {
 	ID                    string
+	RuntimeName           string
 	Kubeconfig            *string
 	TerraformState        []byte
 	CredentialsSecretName string

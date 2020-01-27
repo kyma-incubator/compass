@@ -17,15 +17,15 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       {{ if .Values.global.isLocalEnv }}
+      # HostAliases are used by Pod to resolve kyma.local domain
       hostAliases:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
-            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
+            # Used for calls to Director
             - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
+            # Used for calls for oauth token
             - "{{ .Values.global.oauth2.host }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
-      serviceAccount: {{ include "kyma-env-broker.fullname" . }}
       serviceAccountName: {{ include "kyma-env-broker.fullname" . }}
     {{- with .Values.deployment.securityContext }}
       securityContext:
@@ -103,6 +103,42 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
+            - name: APP_SERVICE_MANAGER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.serviceManger.secretName }}
+                  key: url
+            - name: APP_SERVICE_MANAGER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.serviceManger.secretName }}
+                  key: password
+            - name: APP_SERVICE_MANAGER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.serviceManger.secretName }}
+                  key: username
+          {{- if eq .Values.global.database.embedded.enabled false}}
+          - name: cloudsql-proxy
+            image: gcr.io/cloudsql-docker/gce-proxy:1.11
+            command: ["/cloud_sql_proxy",
+                      "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                      "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
+            volumeMounts:
+              - name: cloudsql-instance-credentials
+                mountPath: /secrets/cloudsql-instance-credentials
+                readOnly: true
+            {{- with .Values.deployment.securityContext }}
+            securityContext:
+          {{ toYaml . | indent 12 }}
+          {{- end }}
+          {{- end}}
+          {{- if eq .Values.global.database.embedded.enabled false}}
+          volumes:
+            - name: cloudsql-instance-credentials
+              secret:
+                secretName: cloudsql-instance-credentials
+          {{- end}}
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

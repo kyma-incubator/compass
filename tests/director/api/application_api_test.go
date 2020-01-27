@@ -956,7 +956,52 @@ func TestQueryApplications(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, actualAppPage.Data, 3)
 	assert.Equal(t, 3, actualAppPage.TotalCount)
+}
 
+func TestQueryApplicationsPageable(t *testing.T) {
+	// GIVEN
+	appAmount := 7
+	after := 3
+	cursor := ""
+	ctx := context.Background()
+
+	apps := make(map[string]*graphql.ApplicationExt)
+	for i := 0; i < appAmount; i++ {
+		app := registerApplication(t, ctx, fmt.Sprintf("app-%d", i))
+		defer unregisterApplication(t, app.ID)
+		apps[app.ID] = &app
+	}
+	appsPage := graphql.ApplicationPageExt{}
+
+	// WHEN
+	queriesForFullPage := appAmount / after
+	for i := 0; i < queriesForFullPage; i++ {
+		appReq := fixApplicationsRequestPageable(after, cursor)
+		err := tc.RunOperation(ctx, appReq, &appsPage)
+		require.NoError(t, err)
+
+		//THEN
+		assert.Equal(t, cursor, string(appsPage.PageInfo.StartCursor))
+		assert.True(t, appsPage.PageInfo.HasNextPage)
+		assert.Len(t, appsPage.Data, after)
+		assert.Equal(t, appAmount, appsPage.TotalCount)
+		for _, app := range appsPage.Data {
+			assert.Equal(t, app, apps[app.ID])
+			delete(apps, app.ID)
+		}
+		cursor = string(appsPage.PageInfo.EndCursor)
+	}
+
+	appReq := fixApplicationsRequestPageable(after, cursor)
+	err := tc.RunOperation(ctx, appReq, &appsPage)
+	require.NoError(t, err)
+
+	assert.False(t, appsPage.PageInfo.HasNextPage)
+	assert.Empty(t, appsPage.PageInfo.EndCursor)
+	assert.Equal(t, appAmount, appsPage.TotalCount)
+	require.Len(t, appsPage.Data, 1)
+	delete(apps, appsPage.Data[0].ID)
+	assert.Len(t, apps, 0)
 }
 
 func TestQuerySpecificApplication(t *testing.T) {

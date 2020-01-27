@@ -38,6 +38,10 @@ func WriteErrorMessage(writer http.ResponseWriter, errMessage string, appErrorCo
 	}
 }
 
+/**
+Copied from https://github.com/kyma-project/kyma/tree/master/components/application-registry
+*/
+
 func errorCodeToHTTPStatus(code int) int {
 	switch code {
 	case apperrors.CodeInternal:

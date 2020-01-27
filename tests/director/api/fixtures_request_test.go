@@ -175,7 +175,7 @@ func fixRequestOneTimeTokenForRuntime(id string) *gcli.Request {
 				result: requestOneTimeTokenForRuntime(id: "%s") {
 						%s
 					}
-				}`, id, tc.gqlFieldsProvider.ForOneTimeToken()))
+				}`, id, tc.gqlFieldsProvider.ForOneTimeTokenForRuntime()))
 }
 
 func fixRequestOneTimeTokenForApp(id string) *gcli.Request {
@@ -184,7 +184,7 @@ func fixRequestOneTimeTokenForApp(id string) *gcli.Request {
 				result: requestOneTimeTokenForApplication(id: "%s") {
 						%s
 					}
-				}`, id, tc.gqlFieldsProvider.ForOneTimeToken()))
+				}`, id, tc.gqlFieldsProvider.ForOneTimeTokenForApplication()))
 }
 
 func fixUpdateIntegrationSystemRequest(id, integrationSystemInGQL string) *gcli.Request {
@@ -360,6 +360,16 @@ func fixApplicationsRequest(labelFilterInGQL string, first int, after string) *g
 					}
 				}`,
 			labelFilterInGQL, first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
+}
+
+func fixApplicationsRequestPageable(first int, after string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: applications(, first: %d, after: "%s") {
+						%s
+					}
+				}`,
+			first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
 }
 
 func fixApplicationTemplates(first int, after string) *gcli.Request {

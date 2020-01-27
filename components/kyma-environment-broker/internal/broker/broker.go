@@ -50,6 +50,7 @@ type KymaEnvBroker struct {
 
 var enabledPlanIDs = map[string]struct{}{
 	azurePlanID: {},
+	gcpPlanID:   {},
 	// add plan IDs which must be enabled
 }
 
@@ -151,6 +152,8 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	switch details.PlanID {
 	case azurePlanID:
 		input.ClusterConfig.GardenerConfig.TargetSecret = b.Config.AzureSecretName
+	case gcpPlanID:
+		input.ClusterConfig.GardenerConfig.TargetSecret = b.Config.GCPSecretName
 	default:
 		return domain.ProvisionedServiceSpec{}, errors.Wrapf(err, "unknown Plan ID %s", details.PlanID)
 	}
@@ -160,7 +163,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	}
 
 	b.Dumper.Dump("Created provisioning input:", input)
-	resp, err := b.ProvisionerClient.ProvisionRuntime(ersContext.GlobalAccountID, instanceID, *input)
+	resp, err := b.ProvisionerClient.ProvisionRuntime(ersContext.GlobalAccountID, *input)
 	if err != nil {
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not provision runtime, instanceID %s", instanceID))
 	}

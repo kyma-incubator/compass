@@ -8,6 +8,8 @@ import (
 func NewInputBuilderForPlan(planID string) (*provisioningParamsBuilder, bool) {
 	var builder *provisioningParamsBuilder
 	switch planID {
+	case gcpPlanID:
+		builder = newProvisioningParamsBuilder(&gcpInputProvider{})
 	case azurePlanID:
 		builder = newProvisioningParamsBuilder(&azureInputProvider{})
 	// insert cases for other providers like AWS or GCP
