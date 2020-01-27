@@ -42,7 +42,7 @@ func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
 		Exec()
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return dberr.NotFound("Cannot find Instance for instanceID:'%s", instance.InstanceID)
+			return dberr.NotFound("Cannot find Instance for instanceID:'%s'", instance.InstanceID)
 		}
 		return dberr.Internal("Failed to update record to Instance table: %s", err)
 	}
