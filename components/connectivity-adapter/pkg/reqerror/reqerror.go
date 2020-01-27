@@ -29,7 +29,7 @@ func WriteErrorMessage(writer http.ResponseWriter, errMessage string, appErrorCo
 
 	response := ErrorResponse{
 		Error: errMessage,
-		Code:  appErrorCode,
+		Code:  errorCodeToHTTPStatus(appErrorCode),
 	}
 
 	err := json.NewEncoder(writer).Encode(response)

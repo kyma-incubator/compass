@@ -31,7 +31,7 @@ spec:
           - name: EXTERNAL_API_URL
             value: http://compass-connectivity-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connectivity_adapter.external_api.port }}
           - name: GATEWAY_URL
-            value: https://gateway.{{ .Values.global.ingress.domainName }}
+            value: https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}
           - name: SKIP_SSL_VERIFY
             value: "{{ .Values.global.isLocalEnv }}"
           - name: CENTRAL

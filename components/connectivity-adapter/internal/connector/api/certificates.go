@@ -42,24 +42,25 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "Failed to read certificate request")
 		contextLogger.Error(err.Error())
-		reqerror.WriteError(w, err, apperrors.CodeInternal)
+		reqerror.WriteError(w, err, apperrors.CodeWrongInput)
 
 		return
 	}
 
 	contextLogger.Info("Generating certificate")
 
-	certificationResult, err := ch.client.SignCSR(certRequest.CSR, authorizationHeaders)
-	if err != nil {
-		err = errors.Wrap(err, "Failed to generate certificate")
-		contextLogger.Error(err.Error())
-		reqerror.WriteError(w, err, apperrors.CodeInternal)
+	{
+		certificationResult, err := ch.client.SignCSR(certRequest.CSR, authorizationHeaders)
+		if err != nil {
+			contextLogger.Error(err.Error())
+			reqerror.WriteError(w, err, err.Code())
 
-		return
+			return
+		}
+
+		certResponse := graphql.ToCertResponse(certificationResult)
+		respondWithBody(w, http.StatusCreated, certResponse, contextLogger)
 	}
-
-	certResponse := graphql.ToCertResponse(certificationResult)
-	respondWithBody(w, http.StatusCreated, certResponse, contextLogger)
 }
 
 func readCertRequest(r *http.Request, logger *log.Entry) (*certRequest, error) {

@@ -17,6 +17,8 @@ type Config struct {
 	ConnectorInternalEndpoint string `envconfig:"default=http://compass-connector-internal.compass-system.svc.cluster.local:3001/graphql"`
 	AdapterBaseURL            string `envconfig:"default=https://adapter-gateway.kyma.local"`
 	AdapterMtlsBaseURL        string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
+	// TODO: remove one getting Events Base URL from Director is implemented
+	EventBaseURL string `envconfig:"default=https://gateway.kyma.local"`
 }
 
 const (
@@ -50,10 +52,7 @@ func RegisterExternalHandler(router *mux.Router, config Config) error {
 }
 
 func newSigningRequestInfoHandler(config Config, client graphql.Client, logger *logrus.Logger) http.Handler {
-	eventBaseURLProvider := eventBaseURLProvider{
-		eventBaseUrl: config.AdapterMtlsBaseURL,
-	}
-
+	eventBaseURLProvider := newEventBaseURLProvider(config)
 	baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterBaseURL, config.AdapterMtlsBaseURL, eventBaseURLProvider)
 	signingRequestInfo := api.NewSigningRequestInfoHandler(client, logger)
 	signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetSigningRequestInfo)
@@ -62,9 +61,7 @@ func newSigningRequestInfoHandler(config Config, client graphql.Client, logger *
 }
 
 func newManagementInfoHandler(config Config, client graphql.Client, logger *logrus.Logger) http.Handler {
-	eventBaseURLProvider := eventBaseURLProvider{
-		eventBaseUrl: config.AdapterMtlsBaseURL,
-	}
+	eventBaseURLProvider := newEventBaseURLProvider(config)
 	baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterMtlsBaseURL, config.AdapterMtlsBaseURL, eventBaseURLProvider)
 	managementInfo := api.NewManagementInfoHandler(client, logger)
 	managementInfoHandler := http.HandlerFunc(managementInfo.GetManagementInfo)

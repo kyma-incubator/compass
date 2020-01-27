@@ -39,6 +39,9 @@ spec:
               value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_CONNECTOR_ADAPTER_MTLS_BASE_URL
               value: "https://{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}"
+            # TODO: remove one getting Events Base URL from Director is implemented
+            - name: APP_CONNECTOR_EVENT_BASE_URL
+              value: "https://gateway.{{ .Values.global.ingress.domainName }}"
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}
