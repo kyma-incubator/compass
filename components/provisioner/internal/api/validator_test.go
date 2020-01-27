@@ -16,7 +16,6 @@ func TestValidator_ValidateInput(t *testing.T) {
 
 		clusterConfig := &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:                   "Something",
 				ProjectName:            "Project",
 				KubernetesVersion:      "1.15.4",
 				NodeCount:              3,
@@ -92,7 +91,6 @@ func TestValidator_ValidateInput(t *testing.T) {
 
 		clusterConfig := &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:                   "Something",
 				ProjectName:            "Project",
 				KubernetesVersion:      "1.15.4",
 				NodeCount:              3,

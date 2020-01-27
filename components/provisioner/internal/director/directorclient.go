@@ -21,7 +21,7 @@ const (
 type DirectorClient interface {
 	CreateRuntime(config *gqlschema.RuntimeInput, tenant string) (string, error)
 	DeleteRuntime(id, tenant string) error
-	GetConnectionToken(id, tenant string) (graphql.OneTimeToken, error)
+	GetConnectionToken(id, tenant string) (graphql.OneTimeTokenForRuntimeExt, error)
 }
 
 type directorClient struct {
@@ -95,17 +95,17 @@ func (cc *directorClient) DeleteRuntime(id, tenant string) error {
 	return nil
 }
 
-func (cc *directorClient) GetConnectionToken(id, tenant string) (graphql.OneTimeToken, error) {
+func (cc *directorClient) GetConnectionToken(id, tenant string) (graphql.OneTimeTokenForRuntimeExt, error) {
 	runtimeQuery := cc.queryProvider.requestOneTimeTokeneMutation(id)
 
 	var response OneTimeTokenResponse
 	err := cc.executeDirectorGraphQLCall(runtimeQuery, tenant, &response)
 	if err != nil {
-		return graphql.OneTimeToken{}, errors.Wrap(err, fmt.Sprintf("Failed to get OneTimeToken for Runtime %s in Director", id))
+		return graphql.OneTimeTokenForRuntimeExt{}, errors.Wrap(err, fmt.Sprintf("Failed to get OneTimeToken for Runtime %s in Director", id))
 	}
 
 	if response.Result == nil {
-		return graphql.OneTimeToken{}, errors.Errorf("Failed to get OneTimeToken for Runtime %s in Director: received nil response.", id)
+		return graphql.OneTimeTokenForRuntimeExt{}, errors.Errorf("Failed to get OneTimeToken for Runtime %s in Director: received nil response.", id)
 	}
 
 	log.Infof("Received OneTimeToken for Runtime %s in Director for tenant %s", id, tenant)

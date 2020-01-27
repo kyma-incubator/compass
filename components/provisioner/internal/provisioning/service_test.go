@@ -84,7 +84,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		installationSvc := &installationMocks.Service{}
 		configProvider := &runtimeConfigMocks.ConfigProvider{}
 
-		token := graphql.OneTimeToken{}
+		token := graphql.OneTimeTokenForRuntimeExt{}
 		expRuntimeID := "184ccdf2-59e4-44b7-b553-6cb296af5ea0"
 		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
 		operation := model.Operation{ID: expOperationID}
@@ -186,7 +186,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		directorServiceMock := &directormock.DirectorClient{}
 		directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(expRuntimeID, nil)
-		directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeToken{}, errors.New("Token error"))
+		directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, errors.New("Token error"))
 
 		persistenceServiceMock.On("SetProvisioningStarted", expRuntimeID, mock.Anything).Return(operation, nil)
 		persistenceServiceMock.On("UpdateClusterData", expRuntimeID, kubeconfigFile, []byte("")).Return(nil)
@@ -225,7 +225,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		directorServiceMock := &directormock.DirectorClient{}
 		directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(expRuntimeID, nil)
-		directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeToken{}, nil)
+		directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
 		persistenceServiceMock.On("SetProvisioningStarted", expRuntimeID, mock.Anything).Return(operation, nil)
 		persistenceServiceMock.On("UpdateClusterData", expRuntimeID, kubeconfigFile, []byte("")).Return(nil)

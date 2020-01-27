@@ -17,7 +17,7 @@ type UpdateRuntimeResponse struct {
 }
 
 type OneTimeTokenResponse struct {
-	Result *graphql.OneTimeToken `json:"result"`
+	Result *graphql.OneTimeTokenForRuntimeExt `json:"result"`
 }
 
 type RuntimeInput struct {

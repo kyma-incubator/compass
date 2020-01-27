@@ -392,9 +392,13 @@ func TestDirectorClient_GetConnectionToken(t *testing.T) {
 
 	t.Run("Should return OneTimeToken when Oauth Token is valid", func(t *testing.T) {
 		//given
-		expectedResponse := &graphql.OneTimeToken{
-			Token:        oneTimeToken,
-			ConnectorURL: connectorURL,
+		expectedResponse := &graphql.OneTimeTokenForRuntimeExt{
+			OneTimeTokenForRuntime: graphql.OneTimeTokenForRuntime{
+				TokenWithURL: graphql.TokenWithURL{
+					Token:        oneTimeToken,
+					ConnectorURL: connectorURL,
+				},
+			},
 		}
 
 		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {

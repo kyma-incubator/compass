@@ -47,14 +47,14 @@ func (_m *DirectorClient) DeleteRuntime(id string, tenant string) error {
 }
 
 // GetConnectionToken provides a mock function with given fields: id, tenant
-func (_m *DirectorClient) GetConnectionToken(id string, tenant string) (graphql.OneTimeToken, error) {
+func (_m *DirectorClient) GetConnectionToken(id string, tenant string) (graphql.OneTimeTokenForRuntimeExt, error) {
 	ret := _m.Called(id, tenant)
 
-	var r0 graphql.OneTimeToken
-	if rf, ok := ret.Get(0).(func(string, string) graphql.OneTimeToken); ok {
+	var r0 graphql.OneTimeTokenForRuntimeExt
+	if rf, ok := ret.Get(0).(func(string, string) graphql.OneTimeTokenForRuntimeExt); ok {
 		r0 = rf(id, tenant)
 	} else {
-		r0 = ret.Get(0).(graphql.OneTimeToken)
+		r0 = ret.Get(0).(graphql.OneTimeTokenForRuntimeExt)
 	}
 
 	var r1 error

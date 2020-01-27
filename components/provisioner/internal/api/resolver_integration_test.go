@@ -224,7 +224,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock := &directormock.DirectorClient{}
 			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(cfg.runtimeID, nil)
 			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
-			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeToken{}, nil)
+			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
 			configProviderMock := &mocks.ConfigProvider{}
 			configProviderMock.On("CreateConfigMapForRuntime", mock.Anything, mock.Anything).Return(nil, nil)
