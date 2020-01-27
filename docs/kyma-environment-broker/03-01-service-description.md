@@ -20,7 +20,7 @@ These are the provisioning parameters for this plan:
 | **nodeCount** | int | Specifies the number of Nodes in a cluster. | No | `3` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **machineType** | string | Specifies the provider-specific Virtual Machine type. | No | `Standard_D2_v3` |
-| **region** | string | Defines the cluster region. The possible values are `westeurope`, `eastus`, `eastus2`, `centralus`, `northeurope`, `southeastasia`, `japaneast`, `westus2`, and `uksouth`. | No | `westeurope` |
+| **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zone** | string | Defines the cluster zone. | No | None |
 | **autoScalerMin** | int | Specifies the minimum number of Virtual Machines to create. | No | `2` |
 | **autoScalerMax** | int | Specifies the maximum number of Virtual Machines to create. | No | `4` |
