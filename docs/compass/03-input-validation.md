@@ -7,6 +7,7 @@ This document contains validation rules for all input types.
 ## Validation rules explanation
 
 - `name` - Up to 36 characters long. Cannot start with digit. The characters allowed in names are: digits (`0`-`9`), lower case letters (`a`-`z`),`-`, and `.`. Based on Kubernetes resource name format.
+- `ASCII` - The characters allowed in names are ASCII printable.
 - `required` - Cannot be nil or empty.
 - `url` - Valid URL.
 - `max` - Maximal allowed length.
@@ -20,7 +21,7 @@ This document contains validation rules for all input types.
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
-name: String! | true | `name` |  
+name: String! | true | `ASCII`, `max=100` | varchar(256) in db  
 description: String | false |`max=128` |  
 targetURL: String! | true | `url`, `max=256` |  varchar(256) in db
 group: String | false | `max=36` |  varchar(256) in db
@@ -44,7 +45,7 @@ fetchRequest: FetchRequestInput | false | |  
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
-name: String! | true | `name` | varchar(256) in db  
+name: String! | true | `ASCII`, `max=100` | varchar(256) in db  
 description: String | false | `max=128` |  
 spec: EventSpecInput! | false | | 
 group: String | false | `max=36` | varchar(256) in db  
