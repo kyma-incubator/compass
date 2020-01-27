@@ -24,7 +24,7 @@ func TestRegisterIntegrationSystem(t *testing.T) {
 	// WHEN
 	t.Log("Register integration system")
 
-	err = tc.RunOperation(ctx, registerIntegrationSystemRequest, &output)
+	err = tc.RunOperationWithoutTenant(ctx, registerIntegrationSystemRequest, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 	defer unregisterIntegrationSystem(t, ctx, output.ID)
@@ -38,7 +38,7 @@ func TestRegisterIntegrationSystem(t *testing.T) {
 	getIntegrationSystemRequest := fixIntegrationSystemRequest(output.ID)
 	intSysOutput := graphql.IntegrationSystemExt{}
 
-	err = tc.RunOperation(ctx, getIntegrationSystemRequest, &intSysOutput)
+	err = tc.RunOperationWithoutTenant(ctx, getIntegrationSystemRequest, &intSysOutput)
 
 	require.NotEmpty(t, intSysOutput)
 	assertIntegrationSystem(t, intSysInput, intSysOutput)
@@ -61,7 +61,7 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 
 	// WHEN
 	t.Log("Update integration system")
-	err = tc.RunOperation(ctx, updateIntegrationSystemRequest, &updateOutput)
+	err = tc.RunOperationWithoutTenant(ctx, updateIntegrationSystemRequest, &updateOutput)
 	require.NoError(t, err)
 	require.NotEmpty(t, updateOutput.ID)
 	defer unregisterIntegrationSystem(t, ctx, updateOutput.ID)
@@ -85,7 +85,7 @@ func TestUnregisterIntegrationSystem(t *testing.T) {
 
 	// WHEN
 	t.Log("Unregister integration system")
-	err := tc.RunOperation(ctx, unregisterIntegrationSystemRequest, &deleteOutput)
+	err := tc.RunOperationWithoutTenant(ctx, unregisterIntegrationSystemRequest, &deleteOutput)
 	require.NoError(t, err)
 
 	//THEN
@@ -109,7 +109,7 @@ func TestQueryIntegrationSystem(t *testing.T) {
 
 	// WHEN
 	t.Log("Get integration system")
-	err := tc.RunOperation(ctx, getIntegrationSystemRequest, &output)
+	err := tc.RunOperationWithoutTenant(ctx, getIntegrationSystemRequest, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 	defer unregisterIntegrationSystem(t, ctx, output.ID)
@@ -140,7 +140,7 @@ func TestQueryIntegrationSystems(t *testing.T) {
 
 	// WHEN
 	t.Log("List integration systems")
-	err := tc.RunOperation(ctx, getIntegrationSystemsRequest, &output)
+	err := tc.RunOperationWithoutTenant(ctx, getIntegrationSystemsRequest, &output)
 	require.NoError(t, err)
 
 	//THEN

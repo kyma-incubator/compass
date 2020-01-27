@@ -47,7 +47,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-730"
+        version: "PR-739"
       connector:
         dir:
         version: "02e8358c"
