@@ -13,9 +13,9 @@ import (
 )
 
 type Config struct {
-	CompassConnectorURL string `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
-	AdapterBaseURL      string `envconfig:"default=https://adapter-gateway.kyma.local"`
-	AdapterMtlsBaseURL  string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
+	ConnectorEndpoint  string `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
+	AdapterBaseURL     string `envconfig:"default=https://adapter-gateway.kyma.local"`
+	AdapterMtlsBaseURL string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
 }
 
 const (
@@ -26,7 +26,7 @@ func RegisterHandler(router *mux.Router, config Config) error {
 	logger := logrus.New().WithField("component", "connector").Logger
 	logger.SetReportCaller(true)
 
-	client, err := graphql.NewClient(config.CompassConnectorURL, false, timeout)
+	client, err := graphql.NewClient(config.ConnectorEndpoint, false, timeout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to initialize compass client")
 	}
@@ -36,7 +36,7 @@ func RegisterHandler(router *mux.Router, config Config) error {
 
 	signingRequestInfoHandler := newSigningRequestInfoHandler(config, client, logger)
 	managementInfoHandler := newManagementInfoHandler(config, client, logger)
-	certificatesHandler := http.HandlerFunc(api.NewCertificatesHandler(client, logger).SignCSR)
+	certificatesHandler := newCertificateHandler(client, logger)
 
 	router.Handle("/signingRequests/info", signingRequestInfoHandler).Methods(http.MethodGet)
 	router.Handle("/management/info", managementInfoHandler).Methods(http.MethodGet)
@@ -66,4 +66,10 @@ func newManagementInfoHandler(config Config, client graphql.Client, logger *logr
 	managementInfoHandler := http.HandlerFunc(managementInfo.GetManagementInfo)
 
 	return baseURLsMiddleware.GetBaseUrls(managementInfoHandler)
+}
+
+func newCertificateHandler(client graphql.Client, logger *logrus.Logger) http.Handler {
+	handler := api.NewCertificatesHandler(client, logger)
+
+	return http.HandlerFunc(handler.SignCSR)
 }
