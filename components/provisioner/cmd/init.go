@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	"github.com/pkg/errors"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/sirupsen/logrus"
@@ -33,6 +34,7 @@ import (
 
 const (
 	databaseConnectionRetries = 20
+	defaultSyncPeriod         = 3 * time.Minute
 )
 
 func newProvisioningService(
@@ -61,14 +63,8 @@ func newDirectorClient(config config) (director.DirectorClient, error) {
 	return director.NewDirectorClient(gqlClient, oauthClient), nil
 }
 
-func newShootController(
-	cfg config,
-	gardenerNamespace string,
-	gardenerClusterCfg *restclient.Config,
-	gardenerClientSet *gardener_apis.CoreV1beta1Client,
-	dbsFactory dbsession.Factory,
-	installationSvc installation.Service,
-	direcotrClietnt director.DirectorClient,
+func newShootController(cfg config, gardenerNamespace string, gardenerClusterCfg *restclient.Config, gardenerClientSet *gardener_apis.CoreV1beta1Client,
+	dbsFactory dbsession.Factory, installationSvc installation.Service, direcotrClietnt director.DirectorClient,
 	runtimeConfigurator runtime.Configurator) (*gardener.ShootController, error) {
 	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
 	if err != nil {
@@ -79,7 +75,14 @@ func newShootController(
 
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
-	return gardener.NewShootController(gardenerNamespace, gardenerClusterCfg, shootClient, secretsInterface, installationSvc, dbsFactory, cfg.Installation.Timeout, direcotrClietnt, runtimeConfigurator)
+	syncPeriod := defaultSyncPeriod
+
+	mgr, err := ctrl.NewManager(gardenerClusterCfg, ctrl.Options{SyncPeriod: &syncPeriod, Namespace: gardenerNamespace})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create shoot controller manager: %w", err)
+	}
+
+	return gardener.NewShootController(gardenerNamespace, mgr, shootClient, secretsInterface, installationSvc, dbsFactory, cfg.Installation.Timeout, direcotrClietnt, runtimeConfigurator)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {

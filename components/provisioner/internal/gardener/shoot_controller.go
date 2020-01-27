@@ -2,11 +2,12 @@ package gardener
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 
@@ -25,24 +26,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func NewShootController(
-	namespace string,
-	k8sConfig *restclient.Config,
-	shootClient gardener_apis.ShootInterface,
-	secretsClient v1core.SecretInterface,
-	installationService installation.Service,
-	dbsFactory dbsession.Factory,
-	installationTimeout time.Duration,
-	directorClient director.DirectorClient,
+func NewShootController(namespace string, mgr manager.Manager, shootClient gardener_apis.ShootInterface, secretsClient v1core.SecretInterface,
+	installationService installation.Service, dbsFactory dbsession.Factory, installationTimeout time.Duration, directorClient director.DirectorClient,
 	runtimeConfigurator runtime.Configurator) (*ShootController, error) {
-	defaultSyncPeriod := 3 * time.Minute
 
-	mgr, err := ctrl.NewManager(k8sConfig, ctrl.Options{SyncPeriod: &defaultSyncPeriod, Namespace: namespace})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create shoot controller manager: %w", err)
-	}
-
-	err = gardener_types.AddToScheme(mgr.GetScheme())
+	err := gardener_types.AddToScheme(mgr.GetScheme())
 	if err != nil {
 		return nil, fmt.Errorf("failed to add Gardener types to scheme: %s", err.Error())
 	}
