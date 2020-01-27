@@ -118,7 +118,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		appTemplate: apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
 		eventAPI:    eventdef.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
-		eventing:    eventing.NewResolver(transact, eventingSvc),
+		eventing:    eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
 		runtime:     runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),

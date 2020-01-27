@@ -1254,7 +1254,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	defaultEveningURL := "https://eventing.domain.local"
-	modelRuntimeEventingCfg := fixModelRuntimeEventingConfiguration(defaultEveningURL)
+	modelRuntimeEventingCfg := fixModelRuntimeEventingConfiguration(t, defaultEveningURL)
 	gqlRuntimeEventingCfg := fixGQLRuntimeEventingConfiguration(defaultEveningURL)
 
 	testCases := []struct {

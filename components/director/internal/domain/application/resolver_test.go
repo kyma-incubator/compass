@@ -2024,18 +2024,26 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	applicationID := uuid.New()
 	gqlApp := fixGQLApplication(applicationID.String(), "bar", "baz")
+	app := fixModelApplication(applicationID.String(), tnt, "bar", "baz")
+
+	converterMock := func() *automock.ApplicationConverter {
+		converter := &automock.ApplicationConverter{}
+		converter.On("GraphQLToModel", gqlApp, tnt).Return(app).Once()
+		return converter
+	}
 
 	testErr := errors.New("this is a test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	defaultEveningURL := "https://eventing.domain.local"
-	modelAppEventingCfg := fixModelApplicationEventingConfiguration(defaultEveningURL)
+	modelAppEventingCfg := fixModelApplicationEventingConfiguration(t, defaultEveningURL)
 	gqlAppEventingCfg := fixGQLApplicationEventingConfiguration(defaultEveningURL)
 
 	testCases := []struct {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		EventingSvcFn   func() *automock.EventingService
+		ConverterFn     func() *automock.ApplicationConverter
 		ExpectedOutput  *graphql.ApplicationEventingConfiguration
 		ExpectedError   error
 	}{
@@ -2044,10 +2052,11 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("GetForApplication", txtest.CtxWithDBMatcher(), applicationID).Return(modelAppEventingCfg, nil).Once()
+				eventingSvc.On("GetForApplication", txtest.CtxWithDBMatcher(), *app).Return(modelAppEventingCfg, nil).Once()
 
 				return eventingSvc
 			},
+			ConverterFn:    converterMock,
 			ExpectedOutput: gqlAppEventingCfg,
 			ExpectedError:  nil,
 		}, {
@@ -2055,10 +2064,10 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("GetForApplication", txtest.CtxWithDBMatcher(), applicationID).Return(nil, testErr).Once()
-
+				eventingSvc.On("GetForApplication", txtest.CtxWithDBMatcher(), *app).Return(nil, testErr).Once()
 				return eventingSvc
 			},
+			ConverterFn:    converterMock,
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
 		}, {
@@ -2068,6 +2077,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 				eventingSvc := &automock.EventingService{}
 				return eventingSvc
 			},
+			ConverterFn:    converterMock,
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
 		}, {
@@ -2075,10 +2085,10 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("GetForApplication", txtest.CtxWithDBMatcher(), applicationID).Return(modelAppEventingCfg, nil).Once()
-
+				eventingSvc.On("GetForApplication", txtest.CtxWithDBMatcher(), *app).Return(modelAppEventingCfg, nil).Once()
 				return eventingSvc
 			},
+			ConverterFn:    converterMock,
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
 		},
@@ -2088,8 +2098,9 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			eventingSvc := testCase.EventingSvcFn()
+			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, eventingSvc)
+			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, converter, nil, nil, nil, nil, nil, eventingSvc)
 
 			// WHEN
 			result, err := resolver.EventingConfiguration(ctx, gqlApp)
@@ -2103,21 +2114,20 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			mock.AssertExpectationsForObjects(t, eventingSvc, transact, persist)
+			mock.AssertExpectationsForObjects(t, eventingSvc, transact, persist, converter)
 		})
 	}
 
-	t.Run("Error when parent object ID is not a valid UUID", func(t *testing.T) {
-		// GIVEN
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		//GIVEN
 		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
-		// WHEN
-		result, err := resolver.EventingConfiguration(ctx, &graphql.Application{ID: "abc"})
+		//WHEN
+		_, err := resolver.EventingConfiguration(context.TODO(), &graphql.Application{})
 
-		// THEN
+		//THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "while parsing application ID as UUID")
-		assert.Nil(t, result)
+		require.Contains(t, err.Error(), "while loading tenant from context")
 	})
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {

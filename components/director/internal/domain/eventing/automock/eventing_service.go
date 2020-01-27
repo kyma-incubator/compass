@@ -13,13 +13,13 @@ type EventingService struct {
 	mock.Mock
 }
 
-// SetForApplication provides a mock function with given fields: ctx, runtimeID, appID
-func (_m *EventingService) SetForApplication(ctx context.Context, runtimeID uuid.UUID, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
-	ret := _m.Called(ctx, runtimeID, appID)
+// SetForApplication provides a mock function with given fields: ctx, runtimeID, app
+func (_m *EventingService) SetForApplication(ctx context.Context, runtimeID uuid.UUID, app model.Application) (*model.ApplicationEventingConfiguration, error) {
+	ret := _m.Called(ctx, runtimeID, app)
 
 	var r0 *model.ApplicationEventingConfiguration
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) *model.ApplicationEventingConfiguration); ok {
-		r0 = rf(ctx, runtimeID, appID)
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, model.Application) *model.ApplicationEventingConfiguration); ok {
+		r0 = rf(ctx, runtimeID, app)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.ApplicationEventingConfiguration)
@@ -27,8 +27,8 @@ func (_m *EventingService) SetForApplication(ctx context.Context, runtimeID uuid
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID) error); ok {
-		r1 = rf(ctx, runtimeID, appID)
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, model.Application) error); ok {
+		r1 = rf(ctx, runtimeID, app)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -36,13 +36,13 @@ func (_m *EventingService) SetForApplication(ctx context.Context, runtimeID uuid
 	return r0, r1
 }
 
-// UnsetForApplication provides a mock function with given fields: ctx, appID
-func (_m *EventingService) UnsetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
-	ret := _m.Called(ctx, appID)
+// UnsetForApplication provides a mock function with given fields: ctx, app
+func (_m *EventingService) UnsetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error) {
+	ret := _m.Called(ctx, app)
 
 	var r0 *model.ApplicationEventingConfiguration
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.ApplicationEventingConfiguration); ok {
-		r0 = rf(ctx, appID)
+	if rf, ok := ret.Get(0).(func(context.Context, model.Application) *model.ApplicationEventingConfiguration); ok {
+		r0 = rf(ctx, app)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.ApplicationEventingConfiguration)
@@ -50,8 +50,8 @@ func (_m *EventingService) UnsetForApplication(ctx context.Context, appID uuid.U
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = rf(ctx, appID)
+	if rf, ok := ret.Get(1).(func(context.Context, model.Application) error); ok {
+		r1 = rf(ctx, app)
 	} else {
 		r1 = ret.Error(1)
 	}
