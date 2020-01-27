@@ -57,7 +57,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 	t.Run("Should create proper runtime status struct for GCP config", func(t *testing.T) {
 		clusterName := "Something"
-		runtimeName := "RuntimeName"
 		project := "Project"
 		numberOfNodes := 3
 		bootDiskSize := 256
@@ -112,7 +111,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Status: gqlschema.RuntimeAgentConnectionStatusConnected,
 			},
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
-				Name: &runtimeName,
 				ClusterConfig: gqlschema.GCPConfig{
 					Name:              &clusterName,
 					ProjectName:       &project,
@@ -138,7 +136,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 	t.Run("Should create proper runtime status struct for gardener config", func(t *testing.T) {
 		//given
 		clusterName := "Something"
-		runtimeName := "runtimeName"
 		project := "Project"
 		nodes := 3
 		disk := "standard"
@@ -212,7 +209,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
 			},
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
-				Name: &runtimeName,
 				ClusterConfig: gqlschema.GardenerConfig{
 					Name:              &clusterName,
 					NodeCount:         &nodes,
