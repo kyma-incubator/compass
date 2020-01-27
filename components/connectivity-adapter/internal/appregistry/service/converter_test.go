@@ -19,6 +19,12 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 	sut := NewConverter()
 
 	for name, tc := range map[string]testCase{
+		"input ID propagated to output": {
+			given: model.ServiceDetails{},
+			expected: model.ConvertedServiceDetails{
+				ID: "id",
+			},
+		},
 		"API with only URL provided": {
 			given: model.ServiceDetails{
 				Api: &model.API{
@@ -26,6 +32,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					// TODO what about name?
 					TargetURL: "http://target.url",
@@ -40,6 +47,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					TargetURL: "http://target.url",
 					Spec: &graphql.APISpecInput{
@@ -56,6 +64,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						Type: graphql.APISpecTypeOpenAPI,
@@ -71,6 +80,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						Data:   ptrClob(graphql.CLOB(`openapi: "3.0.0"`)),
@@ -88,6 +98,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						Data:   ptrClob(graphql.CLOB(`{"spec":"v0.0.1"}`)),
@@ -105,6 +116,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						Data:   ptrClob(graphql.CLOB(`<spec></spec>"`)),
@@ -129,6 +141,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
 						AdditionalQueryParams: &graphql.QueryParams{
@@ -159,6 +172,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
 						AdditionalQueryParams: &graphql.QueryParams{
@@ -192,6 +206,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
 						AdditionalQueryParams: &graphql.QueryParams{
@@ -218,6 +233,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
 						Credential: &graphql.CredentialDataInput{
@@ -255,6 +271,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
 						Credential: &graphql.CredentialDataInput{
@@ -268,9 +285,9 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 		},
-		"API protected with certificate": {
-			// TODO this is not mapped
-		},
+		//"API protected with certificate": {
+		// TODO this is not mapped
+		//},
 		//
 		"API specification mapped to fetch request": {
 			given: model.ServiceDetails{
@@ -279,6 +296,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						FetchRequest: &graphql.FetchRequestInput{
@@ -301,6 +319,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						FetchRequest: &graphql.FetchRequestInput{
@@ -333,6 +352,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						FetchRequest: &graphql.FetchRequestInput{
@@ -368,6 +388,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
 						FetchRequest: &graphql.FetchRequestInput{
@@ -394,6 +415,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 			expected: model.ConvertedServiceDetails{
+				ID: "id",
 				Event: &graphql.EventDefinitionInput{
 					//TODO what about name
 					Spec: &graphql.EventSpecInput{
@@ -405,7 +427,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			// WHEN
-			actual, err := sut.DetailsToConvertedServiceDetails(tc.given)
+			actual, err := sut.DetailsToConvertedServiceDetails("id", tc.given)
 
 			// THEN
 			require.NoError(t, err)

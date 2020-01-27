@@ -30,7 +30,7 @@ func (c *converter) DetailsToGraphQLInput(deprecated model.ServiceDetails) (grap
 
 func (c *converter) DetailsToConvertedServiceDetails(id string, deprecated model.ServiceDetails) (model.ConvertedServiceDetails, error) {
 	out := model.ConvertedServiceDetails{
-		ID:id,
+		ID: id,
 	}
 	if deprecated.Api != nil {
 
