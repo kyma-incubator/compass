@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/google/uuid"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -769,7 +767,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 
 func TestListLabelDefinitions(t *testing.T) {
 	//GIVEN
-	tenantID := uuid.New().String()
+	tenantID := "9ca034f1-11ab-5b25-b76f-dc77106f571d"
 	ctx := context.TODO()
 	firstSchema := map[string]interface{}{
 		"test": "test",
@@ -796,7 +794,7 @@ func TestListLabelDefinitions(t *testing.T) {
 func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	tenantID := uuid.New().String()
+	tenantID := "2bf03de1-23b1-4063-9d3e-67096800accc"
 	name := "deleting-last-scenario-for-app-fail"
 	scenarios := []string{"DEFAULT", "Christmas", "New Year"}
 

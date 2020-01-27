@@ -44,7 +44,7 @@ func TestHandler_Create(t *testing.T) {
 			id
 		}	
 	}`, name))
-	successGraphQLResponse := gqlSuccessfulCreateResponse{}
+	successGraphQLResponse := gqlCreateApplicationResponse{}
 
 	testCases := []struct {
 		Name                       string
@@ -63,18 +63,18 @@ func TestHandler_Create(t *testing.T) {
 			GraphQLClientFn: func() *automock.GraphQLClient {
 				cli := &automock.GraphQLClient{}
 				cli.On("Run", context.Background(), expectedGQLReq, &successGraphQLResponse).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(2).(*gqlSuccessfulCreateResponse)
+					arg, ok := args.Get(2).(*gqlCreateApplicationResponse)
 					if !ok {
-						t.Logf("Invalid type %T, expected *gqlSuccessfulCreateResponse", args.Get(2))
+						t.Logf("Invalid type %T, expected *gqlCreateApplicationResponse", args.Get(2))
 						t.FailNow()
 					}
 					arg.Result.ID = id
 				}).Return(nil).Once()
 				return cli
 			},
-			ConverterFn:                SuccessfulConverterFn(svcDetailsModel, gqlAppInput),
+			ConverterFn:                SuccessfulDetailsToGQLInputConverterFn(svcDetailsModel, gqlAppInput),
 			ValidatorFn:                SuccessfulValidatorFn(svcDetailsModel),
-			GraphQLRequestBuilderFn:    SuccessfulGraphQLRequestBuilderFn(gqlAppInput, expectedGQLReq),
+			GraphQLRequestBuilderFn:    SuccessfulRegisterAppGraphQLRequestBuilderFn(gqlAppInput, expectedGQLReq),
 			ExpectedResponseStatusCode: http.StatusOK,
 			ExpectedResponseBody:       fmt.Sprintf("{\"id\":\"%s\"}\n", id),
 		},
@@ -122,7 +122,7 @@ func TestHandler_Create(t *testing.T) {
 			Name:            "Error - Request Builder",
 			InputBody:       validBody,
 			GraphQLClientFn: EmptyGraphQLClientFn(),
-			ConverterFn:     SuccessfulConverterFn(svcDetailsModel, gqlAppInput),
+			ConverterFn:     SuccessfulDetailsToGQLInputConverterFn(svcDetailsModel, gqlAppInput),
 			ValidatorFn:     SuccessfulValidatorFn(svcDetailsModel),
 			GraphQLRequestBuilderFn: func() *svcautomock.GraphQLRequestBuilder {
 				gqlRequestBuilder := &svcautomock.GraphQLRequestBuilder{}
@@ -142,9 +142,9 @@ func TestHandler_Create(t *testing.T) {
 				return cli
 			},
 			LoggerAssertionsFn:         SingleErrorLoggerAssertions("while creating service: Test err"),
-			ConverterFn:                SuccessfulConverterFn(svcDetailsModel, gqlAppInput),
+			ConverterFn:                SuccessfulDetailsToGQLInputConverterFn(svcDetailsModel, gqlAppInput),
 			ValidatorFn:                SuccessfulValidatorFn(svcDetailsModel),
-			GraphQLRequestBuilderFn:    SuccessfulGraphQLRequestBuilderFn(gqlAppInput, expectedGQLReq),
+			GraphQLRequestBuilderFn:    SuccessfulRegisterAppGraphQLRequestBuilderFn(gqlAppInput, expectedGQLReq),
 			ExpectedResponseStatusCode: http.StatusInternalServerError,
 			ExpectedResponseBody:       fmt.Sprintf("{\"code\":1,\"error\":\"while creating service: %s\"}\n", testErr.Error()),
 		},
@@ -170,6 +170,133 @@ func TestHandler_Create(t *testing.T) {
 			// when
 
 			handler.Create(w, httpReq)
+
+			resp, bodyStr, closeBody := readBody(t, w)
+			defer closeBody(t)
+
+			// then
+			assert.Equal(t, tc.ExpectedResponseStatusCode, resp.StatusCode)
+			assert.Equal(t, tc.ExpectedResponseBody, bodyStr)
+
+			if tc.LoggerAssertionsFn != nil {
+				tc.LoggerAssertionsFn(t, hook)
+			}
+		})
+	}
+}
+
+func TestHandler_Get(t *testing.T) {
+	// given
+
+	id := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	name := "foo"
+	svcDetailsModel := model.ServiceDetails{Identifier: id, Name: name}
+	gqlApp := graphql.ApplicationExt{Application: graphql.Application{ID: id, Name: name}}
+	expectedGQLReq := gcli.NewRequest(fmt.Sprintf(`query {
+		result: application(id: "%s") {
+			id
+		}	
+	}`, id))
+	successGraphQLResponse := gqlGetApplicationResponse{}
+
+	testCases := []struct {
+		Name                       string
+		GraphQLClientFn            func() *automock.GraphQLClient
+		ConverterFn                func() *svcautomock.Converter
+		LoggerAssertionsFn         func(t *testing.T, hook *test.Hook)
+		ExpectedResponseStatusCode int
+		ExpectedResponseBody       string
+	}{
+		{
+			Name: "Success",
+			GraphQLClientFn: func() *automock.GraphQLClient {
+				cli := &automock.GraphQLClient{}
+				cli.On("Run", context.Background(), expectedGQLReq, &successGraphQLResponse).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*gqlGetApplicationResponse)
+					if !ok {
+						t.Logf("Invalid type %T, expected *gqlGetApplicationResponse", args.Get(2))
+						t.FailNow()
+					}
+					arg.Result = &gqlApp
+				}).Return(nil).Once()
+				return cli
+			},
+			ConverterFn: func() *svcautomock.Converter {
+				converter := &svcautomock.Converter{}
+				converter.On("GraphQLToDetailsModel", gqlApp).Return(svcDetailsModel, nil).Once()
+				return converter
+			},
+			ExpectedResponseStatusCode: http.StatusOK,
+			ExpectedResponseBody:       fmt.Sprintf("{\"provider\":\"\",\"name\":\"%s\",\"description\":\"\",\"identifier\":\"%s\"}\n", name, id),
+		},
+		{
+			Name: "Error - Not Found",
+			GraphQLClientFn: func() *automock.GraphQLClient {
+				cli := &automock.GraphQLClient{}
+				cli.On("Run", context.Background(), expectedGQLReq, &successGraphQLResponse).Return(nil).Once()
+				return cli
+			},
+			ConverterFn:                EmptyConverterFn(),
+			ExpectedResponseStatusCode: http.StatusNotFound,
+			ExpectedResponseBody:       fmt.Sprintf("{\"code\":2,\"error\":\"entity with ID %s not found\"}\n", id),
+		},
+		{
+			Name: "Error - Converter",
+			GraphQLClientFn: func() *automock.GraphQLClient {
+				cli := &automock.GraphQLClient{}
+				cli.On("Run", context.Background(), expectedGQLReq, &successGraphQLResponse).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*gqlGetApplicationResponse)
+					if !ok {
+						t.Logf("Invalid type %T, expected *gqlGetApplicationResponse", args.Get(2))
+						t.FailNow()
+					}
+					arg.Result = &gqlApp
+				}).Return(nil).Once()
+				return cli
+			},
+			ConverterFn: func() *svcautomock.Converter {
+				converter := &svcautomock.Converter{}
+				converter.On("GraphQLToDetailsModel", gqlApp).Return(model.ServiceDetails{}, testErr).Once()
+				return converter
+			},
+			LoggerAssertionsFn:         SingleErrorLoggerAssertions("while converting model: Test err"),
+			ExpectedResponseStatusCode: http.StatusInternalServerError,
+			ExpectedResponseBody:       "{\"code\":1,\"error\":\"while converting model: Test err\"}\n",
+		},
+		{
+			Name: "Error - GraphQL Request",
+			GraphQLClientFn: func() *automock.GraphQLClient {
+				cli := &automock.GraphQLClient{}
+				cli.On("Run", context.Background(), expectedGQLReq, &successGraphQLResponse).Return(testErr).Once()
+				return cli
+			},
+			ConverterFn:                EmptyConverterFn(),
+			LoggerAssertionsFn:         SingleErrorLoggerAssertions("while getting service: Test err"),
+			ExpectedResponseStatusCode: http.StatusInternalServerError,
+			ExpectedResponseBody:       "{\"code\":1,\"error\":\"while getting service: Test err\"}\n",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			logger, hook := test.NewNullLogger()
+
+			httpReq := fixServiceDetailsRequest(id, strings.NewReader(""))
+
+			cli := tc.GraphQLClientFn()
+			cliProvider := fixProviderMock(httpReq, cli)
+			gqlRequestBuilder := &svcautomock.GraphQLRequestBuilder{}
+			gqlRequestBuilder.On("GetApplicationRequest", id).Return(expectedGQLReq, nil).Once()
+			converter := tc.ConverterFn()
+
+			defer mock.AssertExpectationsForObjects(t, cli, cliProvider, gqlRequestBuilder, converter)
+
+			w := httptest.NewRecorder()
+
+			handler := NewHandler(cliProvider, converter, nil, gqlRequestBuilder, logger)
+
+			// when
+
+			handler.Get(w, httpReq)
 
 			resp, bodyStr, closeBody := readBody(t, w)
 			defer closeBody(t)

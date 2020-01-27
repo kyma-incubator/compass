@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/viewer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
@@ -55,6 +56,7 @@ type RootResolver struct {
 	oAuth20     *oauth20.Resolver
 	intSys      *integrationsystem.Resolver
 	viewer      *viewer.Resolver
+	tenant      *tenant.Resolver
 }
 
 func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config) *RootResolver {
@@ -127,6 +129,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
 		intSys:      integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:      viewer.NewViewerResolver(),
+		tenant:      tenant.NewResolver(),
 	}
 }
 
@@ -178,6 +181,7 @@ func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	return r.app.Applications(ctx, filter, first, after)
 }
+
 func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
 	return r.app.Application(ctx, id)
 }
@@ -210,6 +214,10 @@ func (r *queryResolver) IntegrationSystems(ctx context.Context, first *int, afte
 }
 func (r *queryResolver) IntegrationSystem(ctx context.Context, id string) (*graphql.IntegrationSystem, error) {
 	return r.intSys.IntegrationSystem(ctx, id)
+}
+
+func (r *queryResolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
+	return r.tenant.Tenants(ctx)
 }
 
 type mutationResolver struct {

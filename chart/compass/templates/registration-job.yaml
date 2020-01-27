@@ -1,3 +1,4 @@
+{{ if .Values.global.provisioning.enabled }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -188,3 +189,4 @@ spec:
 
               echo "Checking if broker secret with credentials exists..."
               ensure_secret "compass-kyma-environment-broker" "Compass Kyma Environment Broker" "$BROKER_SECRET_NAME"
+{{ end }}

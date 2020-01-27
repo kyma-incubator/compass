@@ -18,7 +18,7 @@ import (
 )
 
 func TestCreate(t *testing.T) {
-	sut := repo.NewCreator("users", []string{"id_col", "tenant_col", "first_name", "last_name", "age"})
+	sut := repo.NewCreator("users", []string{"id_col", "tenant_id", "first_name", "last_name", "age"})
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)
@@ -32,7 +32,7 @@ func TestCreate(t *testing.T) {
 			Age:       55,
 		}
 
-		mock.ExpectExec(regexp.QuoteMeta("INSERT INTO users ( id_col, tenant_col, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )")).
+		mock.ExpectExec(regexp.QuoteMeta("INSERT INTO users ( id_col, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )")).
 			WithArgs("given_id", "given_tenant", "given_first_name", "given_last_name", 55).WillReturnResult(sqlmock.NewResult(1, 1))
 		// WHEN
 		err := sut.Create(ctx, givenUser)
@@ -47,7 +47,7 @@ func TestCreate(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		givenUser := User{}
 
-		mock.ExpectExec(regexp.QuoteMeta("INSERT INTO users ( id_col, tenant_col, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )")).
+		mock.ExpectExec(regexp.QuoteMeta("INSERT INTO users ( id_col, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )")).
 			WillReturnError(someError())
 		// WHEN
 		err := sut.Create(ctx, givenUser)
@@ -62,7 +62,7 @@ func TestCreate(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		givenUser := User{}
 
-		mock.ExpectExec(regexp.QuoteMeta("INSERT INTO users ( id_col, tenant_col, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )")).
+		mock.ExpectExec(regexp.QuoteMeta("INSERT INTO users ( id_col, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )")).
 			WillReturnError(&pq.Error{Code: persistence.UniqueViolation})
 		// WHEN
 		err := sut.Create(ctx, givenUser)
@@ -86,7 +86,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestCreateWhenWrongConfiguration(t *testing.T) {
-	sut := repo.NewCreator("users", []string{"id_col", "tenant_col", "column_does_not_exist"})
+	sut := repo.NewCreator("users", []string{"id_col", "tenant_id", "column_does_not_exist"})
 	// GIVEN
 	db, mock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), db)

@@ -20,7 +20,7 @@ query { runtimeStatus(id: "309051b6-0bac-44c8-8bae-3fc59c12bb5c") {
     message operation state runtimeID id
   } 
   runtimeConfiguration {
-    kubeconfig kymaConfig {
+    name kubeconfig kymaConfig {
       version modules 
     } clusterConfig {
       __typename ... on GCPConfig { bootDiskSizeGB name numberOfNodes kubernetesVersion projectName machineType zone region }
@@ -51,6 +51,7 @@ An example response for a successful request looks like this:
         "id": "e9c9ed2d-2a3c-4802-a9b9-16d599dafd25"
       },
       "runtimeConfiguration": {
+        "name": "d30aafe1-85c4-4f09-9dc0-5a66361dfffc",
         "kubeconfig": "{KUBECONFIG}",
         "kymaConfig": {
           "version": "1.5",

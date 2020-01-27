@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -3,32 +3,87 @@ package service
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/service/automock"
+	"github.com/stretchr/testify/require"
+
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGqlRequestBuilder_RegisterApplicationRequest(t *testing.T) {
+	// given
+	input := fixGQLApplicationRegisterInput("test", "Lorem ipsum")
+
+	t.Run("Success", func(t *testing.T) {
+		graphqlizer := &automock.GraphQLizer{}
+		graphqlizer.On("ApplicationRegisterInputToGQL", input).Return("{foo}", nil)
+		defer graphqlizer.AssertExpectations(t)
+
+		builder := NewGqlRequestBuilder(graphqlizer, nil)
+		expectedRq := gcli.NewRequest(`mutation {
+			result: registerApplication(in: {foo}) {
+				id
+			}	
+		}`)
+
+		// when
+		rq, err := builder.RegisterApplicationRequest(input)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, expectedRq, rq)
+	})
+
+	t.Run("Error", func(t *testing.T) {
+		graphqlizer := &automock.GraphQLizer{}
+		graphqlizer.On("ApplicationRegisterInputToGQL", input).Return("", testErr)
+		defer graphqlizer.AssertExpectations(t)
+
+		builder := NewGqlRequestBuilder(graphqlizer, nil)
+
+		// when
+		_, err := builder.RegisterApplicationRequest(input)
+
+		// then
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+	})
+}
+
 func TestGqlRequestBuilder_UnregisterApplicationRequest(t *testing.T) {
+	// given
 	id := "test"
-	builder := NewGqlRequestBuilder()
+	builder := NewGqlRequestBuilder(nil, nil)
 	expectedRq := gcli.NewRequest(`mutation {
 		result: unregisterApplication(id: "test") {
 			id
 		}	
 	}`)
 
+	// when
 	rq := builder.UnregisterApplicationRequest(id)
 
+	// then
 	assert.Equal(t, expectedRq, rq)
 }
 
-func TestGqlRequestBuilder_RegisterApplicationRequest(t *testing.T) {
-	builder := NewGqlRequestBuilder()
-	expectedRq := gcli.NewRequest("mutation {\n\t\t\tresult: registerApplication(in: {\n\t\tname: \"test\",\n\t\tdescription: \"Lorem ipsum\",\n\t\tlabels: {\n\t\t\ttest: [\"val\",\"val2\" ],\n\t},\n\t\twebhooks: [ {\n\t\ttype: ,\n\t\turl: \"webhook1.foo.bar\",\n\n\t}, {\n\t\ttype: ,\n\t\turl: \"webhook2.foo.bar\",\n\n\t} ],\n\t\tapiDefinitions: [ {\n\t\tname: \"api1\",\n\t\ttargetURL: \"foo.bar\",\n\t}, {\n\t\tname: \"api2\",\n\t\ttargetURL: \"foo.bar2\",\n\t}],\n\t}) {\n\t\t\t\tid\n\t\t\t}\t\n\t\t}")
+func TestGqlRequestBuilder_GetApplicationRequest(t *testing.T) {
+	// given
+	gqlFieldsProvider := &automock.GqlFieldsProvider{}
+	gqlFieldsProvider.On("ForApplication").Return("{foo}")
+	defer gqlFieldsProvider.AssertExpectations(t)
 
-	input := fixGQLApplicationRegisterInput("test", "Lorem ipsum")
+	id := "test"
+	builder := NewGqlRequestBuilder(nil, gqlFieldsProvider)
+	expectedRq := gcli.NewRequest(`query {
+			result: application(id: "test") {
+					{foo}
+			}
+		}`)
 
-	rq, err := builder.RegisterApplicationRequest(input)
+	// when
+	rq := builder.GetApplicationRequest(id)
 
-	assert.NoError(t, err)
+	// then
 	assert.Equal(t, expectedRq, rq)
 }

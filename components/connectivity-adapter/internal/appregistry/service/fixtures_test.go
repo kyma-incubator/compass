@@ -41,7 +41,7 @@ func SuccessfulValidatorFn(input model.ServiceDetails) func() *svcautomock.Valid
 	}
 }
 
-func SuccessfulConverterFn(input model.ServiceDetails, output graphql.ApplicationRegisterInput) func() *svcautomock.Converter {
+func SuccessfulDetailsToGQLInputConverterFn(input model.ServiceDetails, output graphql.ApplicationRegisterInput) func() *svcautomock.Converter {
 	return func() *svcautomock.Converter {
 		converter := &svcautomock.Converter{}
 		converter.On("DetailsToGraphQLInput", input).Return(output, nil).Once()
@@ -73,7 +73,7 @@ func EmptyGraphQLRequestBuilderFn() func() *svcautomock.GraphQLRequestBuilder {
 	}
 }
 
-func SuccessfulGraphQLRequestBuilderFn(input graphql.ApplicationRegisterInput, output *gcli.Request) func() *svcautomock.GraphQLRequestBuilder {
+func SuccessfulRegisterAppGraphQLRequestBuilderFn(input graphql.ApplicationRegisterInput, output *gcli.Request) func() *svcautomock.GraphQLRequestBuilder {
 	return func() *svcautomock.GraphQLRequestBuilder {
 		gqlRequestBuilder := &svcautomock.GraphQLRequestBuilder{}
 		gqlRequestBuilder.On("RegisterApplicationRequest", input).Return(output, nil).Once()

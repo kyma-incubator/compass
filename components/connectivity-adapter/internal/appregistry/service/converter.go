@@ -28,7 +28,17 @@ func (c *converter) DetailsToGraphQLInput(in model.ServiceDetails) (graphql.Appl
 }
 
 func (c *converter) GraphQLToDetailsModel(in graphql.ApplicationExt) (model.ServiceDetails, error) {
-	panic("not implemented")
+	// This is just a temporary fixture for testing purposes
+	// TODO: Replace with production-grade implementation
+
+	return model.ServiceDetails{
+		Name:     "foo",
+		Provider: "test",
+		Labels: &map[string]string{
+			"foo": "bar",
+		},
+	}, nil
+
 }
 
 func (c *converter) GraphQLToModel(in graphql.ApplicationExt) (model.Service, error) {

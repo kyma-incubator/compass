@@ -26,6 +26,10 @@ spec:
               containerPort: {{ .Values.global.connectivity_adapter.port }}
               protocol: TCP
           env:
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{ .Values.global.connectivity_adapter.port }}"
+            - name: APP_APP_REGISTRY_DIRECTOR_ENDPOINT
+              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/graphql"
             - name: APP_CONNECTOR_COMPASS_CONNECTOR_URL
               value: http://compass-connector.compass-system.svc.cluster.local:3000/graphql
             - name: APP_CONNECTOR_ADAPTER_BASE_URL

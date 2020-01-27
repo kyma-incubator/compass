@@ -72,7 +72,6 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 
 	clusterConfigForGardenerWithGCP := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			Name:              "Something",
 			ProjectName:       "Project",
 			KubernetesVersion: "version",
 			NodeCount:         3,
@@ -98,7 +97,6 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 
 	clusterConfigForGardenerWithAzure := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			Name:              "Something",
 			ProjectName:       "Project",
 			KubernetesVersion: "version",
 			NodeCount:         3,
@@ -124,7 +122,6 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 
 	clusterConfigForGardenerWithAWS := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			Name:              "Something",
 			ProjectName:       "Project",
 			KubernetesVersion: "version",
 			NodeCount:         3,
