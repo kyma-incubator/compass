@@ -58,7 +58,7 @@ func TestEachKey(t *testing.T) {
 		{
 			Name: "Works with custom validators",
 			Rules: []*validation.FieldRules{
-				validation.Field(&structToValidate.Map, inputvalidation.EachKey(inputvalidation.Name)),
+				validation.Field(&structToValidate.Map, inputvalidation.EachKey(inputvalidation.DNSName)),
 			},
 			ExpectedError: errors.New(dns1123Error),
 		},
