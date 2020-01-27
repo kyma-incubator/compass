@@ -11,7 +11,7 @@ spec:
   ports:
     - port: {{ .Values.global.connectivity_adapter.external_api.port }}
       protocol: TCP
-      name: http
+      name: http-ext
   selector:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
@@ -29,7 +29,7 @@ spec:
   ports:
     - port: {{ .Values.global.connectivity_adapter.internal_api.port }}
       protocol: TCP
-      name: http
+      name: http-int
   selector:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
