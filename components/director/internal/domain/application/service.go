@@ -19,6 +19,7 @@ import (
 
 const (
 	intSysKey = "integration-system-id"
+	nameKey   = "name"
 )
 
 //go:generate mockery -name=ApplicationRepository -output=automock -outpkg=automock -case=underscore
@@ -265,6 +266,8 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	if in.IntegrationSystemID != nil {
 		in.Labels[intSysKey] = *in.IntegrationSystemID
 	}
+	//This is workaround for connectivity adapter https://github.com/kyma-incubator/compass/tree/master/docs/investigations/rest-adapters
+	in.Labels[nameKey] = in.Name
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
@@ -304,10 +307,16 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	if in.IntegrationSystemID != nil {
 		intSysLabel = createLabel(intSysKey, *in.IntegrationSystemID, id)
 	}
-
 	err = s.SetLabel(ctx, intSysLabel)
 	if err != nil {
 		return errors.Wrap(err, "while setting the integration system label")
+	}
+
+	//This is workaround for connectivity adapter https://github.com/kyma-incubator/compass/tree/master/docs/investigations/rest-adapters
+	labelName := createLabel(nameKey, in.Name, app.ID)
+	err = s.SetLabel(ctx, labelName)
+	if err != nil {
+		return errors.Wrap(err, "while setting applicaiton name label")
 	}
 	return nil
 }
