@@ -10,18 +10,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
+func TestConversionDeprecatedServiceDetailsToGraphQLInput(t *testing.T) {
 
 	type testCase struct {
 		given    model.ServiceDetails
-		expected model.ConvertedServiceDetails
+		expected model.GraphQLServiceDetailsInput
 	}
 	sut := NewConverter()
 
 	for name, tc := range map[string]testCase{
 		"input ID propagated to output": {
 			given: model.ServiceDetails{},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 			},
 		},
@@ -31,10 +31,10 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					TargetUrl: "http://target.url",
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
-					// TODO what about name?
+					// TODO out name?
 					TargetURL: "http://target.url",
 				},
 			},
@@ -46,7 +46,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					ApiType:   "ODATA",
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					TargetURL: "http://target.url",
@@ -63,7 +63,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					ApiType: "anything else",
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
@@ -79,7 +79,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					Spec: json.RawMessage(`openapi: "3.0.0"`),
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
@@ -97,7 +97,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					Spec: json.RawMessage(`{"spec":"v0.0.1"}`),
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
@@ -115,7 +115,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					Spec: json.RawMessage(`<spec></spec>"`),
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
@@ -140,7 +140,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
@@ -171,7 +171,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
@@ -205,7 +205,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
@@ -232,7 +232,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
@@ -270,7 +270,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					DefaultAuth: &graphql.AuthInput{
@@ -285,17 +285,13 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 				},
 			},
 		},
-		//"API protected with certificate": {
-		// TODO this is not mapped
-		//},
-		//
 		"API specification mapped to fetch request": {
 			given: model.ServiceDetails{
 				Api: &model.API{
 					SpecificationUrl: "http://specification.url",
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
@@ -318,7 +314,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
@@ -351,7 +347,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
@@ -387,7 +383,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					},
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
@@ -414,7 +410,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 					Spec: json.RawMessage(`asyncapi: "1.2.0"`),
 				},
 			},
-			expected: model.ConvertedServiceDetails{
+			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
 				Event: &graphql.EventDefinitionInput{
 					//TODO what about name
@@ -427,7 +423,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			// WHEN
-			actual, err := sut.DetailsToConvertedServiceDetails("id", tc.given)
+			actual, err := sut.DetailsToGraphQLInputNew("id", tc.given)
 
 			// THEN
 			require.NoError(t, err)
@@ -436,7 +432,7 @@ func TestConversionServiceDetailsToApplicationRegisterInput(t *testing.T) {
 	}
 }
 
-func TestConversionApplicationExtToServiceDetails(t *testing.T) {
+func TestConversionApplicationExtToServiceDetails2(t *testing.T) {
 
 	type testCase struct {
 		given    graphql.ApplicationExt
@@ -749,6 +745,239 @@ func TestConversionApplicationExtToServiceDetails(t *testing.T) {
 		})
 	}
 
+}
+
+func Test2(t *testing.T) {
+
+	type testCase struct {
+		given    model.GraphQLServiceDetails
+		expected model.ServiceDetails
+	}
+	sut := NewConverter()
+
+	for name, tc := range map[string]testCase{
+
+		"simple API": {
+			given: model.GraphQLServiceDetails{
+				API: &graphql.APIDefinitionExt{
+					APIDefinition: graphql.APIDefinition{
+						TargetURL: "http://target.url",
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					TargetUrl: "http://target.url",
+				},
+			},
+		},
+		"simple API with additional headers and query params": {
+			given: model.GraphQLServiceDetails{
+				API: &graphql.APIDefinitionExt{
+					APIDefinition: graphql.APIDefinition{
+						TargetURL: "http://target.url",
+						DefaultAuth: &graphql.Auth{
+							AdditionalQueryParams: &graphql.QueryParams{
+								"q1": []string{"a", "b"},
+								"q2": []string{"c", "d"},
+							},
+							AdditionalHeaders: &graphql.HttpHeaders{
+								"h1": []string{"e", "f"},
+								"h2": []string{"g", "h"},
+							},
+						},
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					TargetUrl: "http://target.url",
+					Headers: &map[string][]string{
+						"h1": {"e", "f"},
+						"h2": {"g", "h"}},
+					QueryParameters: &map[string][]string{
+						"q1": {"a", "b"},
+						"q2": {"c", "d"},
+					},
+					RequestParameters: &model.RequestParameters{
+						Headers: &map[string][]string{
+							"h1": {"e", "f"},
+							"h2": {"g", "h"}},
+						QueryParameters: &map[string][]string{
+							"q1": {"a", "b"},
+							"q2": {"c", "d"},
+						},
+					},
+				},
+			},
+		},
+		"simple API with Basic Auth": {
+			given: model.GraphQLServiceDetails{
+				API: &graphql.APIDefinitionExt{
+					APIDefinition: graphql.APIDefinition{
+						TargetURL: "http://target.url",
+						DefaultAuth: &graphql.Auth{
+							Credential: graphql.BasicCredentialData{
+								Username: "username",
+								Password: "password",
+							},
+						},
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					TargetUrl: "http://target.url",
+					Credentials: &model.CredentialsWithCSRF{
+						BasicWithCSRF: &model.BasicAuthWithCSRF{
+							BasicAuth: model.BasicAuth{
+								Username: "username",
+								Password: "password",
+							},
+						},
+					},
+				},
+			},
+		},
+		"simple API with Oauth": {
+			given: model.GraphQLServiceDetails{
+				API: &graphql.APIDefinitionExt{
+
+					APIDefinition: graphql.APIDefinition{
+						TargetURL: "http://target.url",
+						DefaultAuth: &graphql.Auth{
+							Credential: graphql.OAuthCredentialData{
+								URL:          "http://oauth.url",
+								ClientID:     "client_id",
+								ClientSecret: "client_secret",
+							},
+						},
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					TargetUrl: "http://target.url",
+					Credentials: &model.CredentialsWithCSRF{
+						OauthWithCSRF: &model.OauthWithCSRF{
+							Oauth: model.Oauth{
+								URL:          "http://oauth.url",
+								ClientID:     "client_id",
+								ClientSecret: "client_secret",
+							},
+						},
+					},
+				},
+			},
+		},
+		"simple API with FetchRequest (query params and headers)": {
+			given: model.GraphQLServiceDetails{
+				API: &graphql.APIDefinitionExt{
+					Spec: &graphql.APISpecExt{
+						FetchRequest: &graphql.FetchRequest{
+							URL: "http://apispec.url",
+							Auth: &graphql.Auth{
+								AdditionalQueryParams: &graphql.QueryParams{
+									"q1": {"a", "b"},
+									"q2": {"c", "d"},
+								},
+								AdditionalHeaders: &graphql.HttpHeaders{
+									"h1": {"e", "f"},
+									"h2": {"g", "h"},
+								},
+							},
+						}}}},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					SpecificationUrl: "http://apispec.url",
+					SpecificationRequestParameters: &model.RequestParameters{
+						Headers: &map[string][]string{
+							"h1": {"e", "f"},
+							"h2": {"g", "h"}},
+						QueryParameters: &map[string][]string{
+							"q1": {"a", "b"},
+							"q2": {"c", "d"},
+						},
+					},
+				},
+			},
+		},
+		"simple API with Fetch Request protected with Basic Auth": {
+			given: model.GraphQLServiceDetails{
+				API: &graphql.APIDefinitionExt{
+
+					Spec: &graphql.APISpecExt{
+						FetchRequest: &graphql.FetchRequest{
+							URL: "http://apispec.url",
+							Auth: &graphql.Auth{
+								Credential: graphql.BasicCredentialData{
+									Username: "username",
+									Password: "password",
+								},
+							},
+						}}}},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					SpecificationUrl: "http://apispec.url",
+					SpecificationCredentials: &model.Credentials{
+						Basic: &model.BasicAuth{
+							Username: "username",
+							Password: "password",
+						},
+					},
+				},
+			},
+		},
+		"simple API with Fetch Request protected with Oauth": {
+			given: model.GraphQLServiceDetails{
+				API: &graphql.APIDefinitionExt{
+					Spec: &graphql.APISpecExt{
+						FetchRequest: &graphql.FetchRequest{
+							URL: "http://apispec.url",
+							Auth: &graphql.Auth{
+								Credential: graphql.OAuthCredentialData{
+									URL:          "http://oauth.url",
+									ClientID:     "client_id",
+									ClientSecret: "client_secret",
+								},
+							},
+						}}}},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					SpecificationUrl: "http://apispec.url",
+					SpecificationCredentials: &model.Credentials{
+						Oauth: &model.Oauth{
+							URL:          "http://oauth.url",
+							ClientID:     "client_id",
+							ClientSecret: "client_secret",
+						},
+					},
+				},
+			},
+		},
+		"events": {
+			given: model.GraphQLServiceDetails{
+				Event: &graphql.EventDefinition{
+					Spec: &graphql.EventSpec{
+						Data: ptrClob(graphql.CLOB(`asyncapi: "1.2.0"`)),
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Events: &model.Events{
+					Spec: json.RawMessage(`asyncapi: "1.2.0"`),
+				},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			// WHEN
+			actual, err := sut.GraphQLToServiceDetails(tc.given)
+			// THEN
+			require.NoError(t, err)
+			assert.Equal(t, tc.expected, actual)
+		})
+	}
 }
 
 func TestConvertGraphQLToModel(t *testing.T) {

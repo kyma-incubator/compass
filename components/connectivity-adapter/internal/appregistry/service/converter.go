@@ -24,12 +24,12 @@ func NewConverter() *converter {
 	return &converter{}
 }
 
-func (c *converter) DetailsToGraphQLInput(deprecated model.ServiceDetails) (graphql.ApplicationRegisterInput, error) {
+func (c *converter) DetailsToGraphQLInput(in model.ServiceDetails) (graphql.ApplicationRegisterInput, error) {
 	return graphql.ApplicationRegisterInput{}, errors.New("deprecated")
 }
 
-func (c *converter) DetailsToConvertedServiceDetails(id string, deprecated model.ServiceDetails) (model.ConvertedServiceDetails, error) {
-	out := model.ConvertedServiceDetails{
+func (c *converter) DetailsToGraphQLInputNew(id string, deprecated model.ServiceDetails) (model.GraphQLServiceDetailsInput, error) {
+	out := model.GraphQLServiceDetailsInput{
 		ID: id,
 	}
 	if deprecated.Api != nil {
@@ -188,6 +188,125 @@ func (c *converter) DetailsToConvertedServiceDetails(id string, deprecated model
 	}
 
 	return out, nil
+}
+
+func (c *converter) GraphQLToServiceDetails(in model.GraphQLServiceDetails) (model.ServiceDetails, error) {
+	outDeprecated := model.ServiceDetails{}
+	if in.API != nil {
+		outDeprecated.Api = &model.API{
+			TargetUrl: in.API.TargetURL,
+		}
+
+		if in.API.Spec != nil {
+			outDeprecated.Api.ApiType = string(in.API.Spec.Type)
+		}
+
+		if in.API.DefaultAuth != nil && in.API.DefaultAuth.Credential != nil {
+			if outDeprecated.Api.Credentials == nil {
+				outDeprecated.Api.Credentials = &model.CredentialsWithCSRF{}
+			}
+			switch actual := in.API.DefaultAuth.Credential.(type) {
+			case graphql.BasicCredentialData:
+				outDeprecated.Api.Credentials.BasicWithCSRF = &model.BasicAuthWithCSRF{
+					BasicAuth: model.BasicAuth{
+						Username: actual.Username,
+						Password: actual.Password,
+					},
+				}
+			case graphql.OAuthCredentialData:
+				outDeprecated.Api.Credentials.OauthWithCSRF = &model.OauthWithCSRF{
+					Oauth: model.Oauth{
+						URL:          actual.URL,
+						ClientID:     actual.ClientID,
+						ClientSecret: actual.ClientSecret,
+					},
+				}
+			}
+		}
+
+		if in.API.DefaultAuth != nil && in.API.DefaultAuth.AdditionalHeaders != nil {
+			inHeaders := *in.API.DefaultAuth.AdditionalHeaders
+			outDeprecated.Api.Headers = &map[string][]string{}
+			if outDeprecated.Api.RequestParameters == nil {
+				outDeprecated.Api.RequestParameters = &model.RequestParameters{}
+			}
+			if outDeprecated.Api.RequestParameters.Headers == nil {
+				outDeprecated.Api.RequestParameters.Headers = &map[string][]string{}
+			}
+
+			for k, v := range inHeaders {
+				(*outDeprecated.Api.Headers)[k] = v
+				(*outDeprecated.Api.RequestParameters.Headers)[k] = v
+			}
+		}
+
+		if in.API.DefaultAuth != nil && in.API.DefaultAuth.AdditionalQueryParams != nil {
+			in := *in.API.DefaultAuth.AdditionalQueryParams
+			outDeprecated.Api.QueryParameters = &map[string][]string{}
+			if outDeprecated.Api.RequestParameters == nil {
+				outDeprecated.Api.RequestParameters = &model.RequestParameters{}
+			}
+
+			if outDeprecated.Api.RequestParameters.QueryParameters == nil {
+				outDeprecated.Api.RequestParameters.QueryParameters = &map[string][]string{}
+			}
+
+			for k, v := range in {
+				(*outDeprecated.Api.QueryParameters)[k] = v
+				(*outDeprecated.Api.RequestParameters.QueryParameters)[k] = v
+			}
+		}
+
+		if in.API.Spec != nil && in.API.Spec.FetchRequest != nil {
+			outDeprecated.Api.SpecificationUrl = in.API.Spec.FetchRequest.URL
+			if in.API.Spec.FetchRequest.Auth != nil {
+				if in.API.Spec.FetchRequest.Auth.AdditionalQueryParams != nil || in.API.Spec.FetchRequest.Auth.AdditionalHeaders != nil {
+					outDeprecated.Api.SpecificationRequestParameters = &model.RequestParameters{}
+				}
+
+				if in.API.Spec.FetchRequest.Auth.AdditionalQueryParams != nil {
+					asMap := (map[string][]string)(*in.API.Spec.FetchRequest.Auth.AdditionalQueryParams)
+					outDeprecated.Api.SpecificationRequestParameters.QueryParameters = &asMap
+				}
+
+				if in.API.Spec.FetchRequest.Auth.AdditionalHeaders != nil {
+					asMap := (map[string][]string)(*in.API.Spec.FetchRequest.Auth.AdditionalHeaders)
+					outDeprecated.Api.SpecificationRequestParameters.Headers = &asMap
+				}
+
+				basic, isBasic := (in.API.Spec.FetchRequest.Auth.Credential).(graphql.BasicCredentialData)
+				oauth, isOauth := (in.API.Spec.FetchRequest.Auth.Credential).(graphql.OAuthCredentialData)
+
+				if isOauth || isBasic {
+					outCred := &model.Credentials{}
+					if isBasic {
+						outCred.Basic = &model.BasicAuth{
+							Username: basic.Username,
+							Password: basic.Password,
+						}
+					}
+					if isOauth {
+						outCred.Oauth = &model.Oauth{
+							URL:               oauth.URL,
+							ClientID:          oauth.ClientID,
+							ClientSecret:      oauth.ClientSecret,
+							RequestParameters: nil, // TODO not supported
+						}
+					}
+					outDeprecated.Api.SpecificationCredentials = outCred
+				}
+
+			}
+		}
+	}
+	if in.Event != nil {
+		if in.Event.Spec != nil && in.Event.Spec.Data != nil {
+			outDeprecated.Events = &model.Events{
+				Spec: []byte(string(*in.Event.Spec.Data)),
+			}
+		}
+	}
+	return outDeprecated, nil
 }
 
 func (c *converter) GraphQLToDetailsModel(in graphql.ApplicationExt) (model.ServiceDetails, error) {
