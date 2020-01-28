@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 )
@@ -53,16 +54,17 @@ func (f *OptionalComponentsService) ExecuteDisablers(components internal.Compone
 	return filterOut, nil
 }
 
-// ComputeComponentsToDisable returns disabler names that needs to be executed
+// ComputeComponentsToDisable returns disabler names that needs to be executed.
+// Comparing components names as case insensitive.
 func (f *OptionalComponentsService) ComputeComponentsToDisable(optComponentsToKeep []string) []string {
 	var (
 		allOptComponents       = f.GetAllOptionalComponentsNames()
-		optComponentsToInstall = toMap(optComponentsToKeep)
+		optComponentsToInstall = toNormalizedMap(optComponentsToKeep)
 		optComponentsToDisable []string
 	)
 
 	for _, name := range allOptComponents {
-		if _, found := optComponentsToInstall[name]; found {
+		if _, found := optComponentsToInstall[strings.ToLower(name)]; found {
 			continue
 		}
 		optComponentsToDisable = append(optComponentsToDisable, name)
@@ -70,11 +72,11 @@ func (f *OptionalComponentsService) ComputeComponentsToDisable(optComponentsToKe
 	return optComponentsToDisable
 }
 
-func toMap(in []string) map[string]struct{} {
+func toNormalizedMap(in []string) map[string]struct{} {
 	out := map[string]struct{}{}
 
 	for _, entry := range in {
-		out[entry] = struct{}{}
+		out[strings.ToLower(entry)] = struct{}{}
 	}
 
 	return out

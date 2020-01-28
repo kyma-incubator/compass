@@ -72,7 +72,7 @@ func (m *EnablePlans) Unmarshal(in string) error {
 	plans := strings.Split(in, ",")
 	for _, name := range plans {
 		if _, exists := planIDsMapping[name]; !exists {
-			return errors.Errorf("unrecognized %v plan name ")
+			return errors.Errorf("unrecognized %v plan name ", name)
 		}
 	}
 
