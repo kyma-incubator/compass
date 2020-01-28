@@ -179,8 +179,13 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
-	_, _ = writer.Write(output)
-
+	_, err = writer.Write(output)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while writing to the output")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
 	writer.WriteHeader(http.StatusNotImplemented)
 }
 
