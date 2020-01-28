@@ -15,14 +15,13 @@ set -e
 IMG_NAME="compass-schema-migrator"
 NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
-POSTGRES_VERSION="11"
+POSTGRES_IMAGE="test-postgres-image"
 
 DB_USER="usr"
 DB_PWD="pwd"
-DB_NAME="compass"
 DB_PORT="5432"
 DB_SSL_PARAM="disable"
-MIGRATION_PATHS=("director" "kyma-environment-broker")
+POSTGRES_MULTIPLE_DATABASES="compass, broker"
 
 function cleanup() {
     echo -e "${GREEN}Cleanup Postgres container and network${NC}"
@@ -36,25 +35,27 @@ echo -e "${GREEN}Create network${NC}"
 docker network create --driver bridge ${NETWORK}
 
 docker build -t ${IMG_NAME} ./
+docker build -t ${POSTGRES_IMAGE} -f ./postgres/Dockerfile ./postgres/
 
 echo -e "${GREEN}Start Postgres in detached mode${NC}"
 docker run -d --name ${POSTGRES_CONTAINER} \
-            --network=${NETWORK} \
-            -e POSTGRES_USER=${DB_USER} \
-            -e POSTGRES_PASSWORD=${DB_PWD} \
-            -e POSTGRES_DB=${DB_NAME} \
-            postgres:${POSTGRES_VERSION}
+              --network=${NETWORK} \
+              -e POSTGRES_USER=${DB_USER} \
+              -e POSTGRES_PASSWORD=${DB_PWD} \
+              -e POSTGRES_MULTIPLE_DATABASES="${POSTGRES_MULTIPLE_DATABASES}" \
+          ${POSTGRES_IMAGE}
 
 function migrationUP() {
     echo -e "${GREEN}Run UP migrations ${NC}"
 
     migration_path=$1
+    db_name=$2
     docker run --rm --network=${NETWORK} \
             -e DB_USER=${DB_USER} \
             -e DB_PASSWORD=${DB_PWD} \
             -e DB_HOST=${POSTGRES_CONTAINER} \
             -e DB_PORT=${DB_PORT} \
-            -e DB_NAME=${DB_NAME} \
+            -e DB_NAME=${db_name} \
             -e DB_SSL=${DB_SSL_PARAM} \
             -e MIGRATION_PATH=${migration_path} \
             -e DIRECTION="up" \
@@ -68,12 +69,13 @@ function migrationDOWN() {
     echo -e "${GREEN}Run DOWN migrations ${NC}"
 
     migration_path=$1
+    db_name=$2
     docker run --rm --network=${NETWORK} \
             -e DB_USER=${DB_USER} \
             -e DB_PASSWORD=${DB_PWD} \
             -e DB_HOST=${POSTGRES_CONTAINER} \
             -e DB_PORT=${DB_PORT} \
-            -e DB_NAME=${DB_NAME} \
+            -e DB_NAME=${db_name} \
             -e DB_SSL=${DB_SSL_PARAM} \
             -e MIGRATION_PATH=${migration_path} \
             -e DIRECTION="down" \
@@ -84,9 +86,14 @@ function migrationDOWN() {
     docker exec ${POSTGRES_CONTAINER} psql -U usr compass -c "select * from schema_migrations"
 }
 
-for i in "${MIGRATION_PATHS[@]}"
-do
-   echo -e "${GREEN}Migrations for \"${i}\" path${NC}"
-   migrationUP "$i"
-   migrationDOWN "$i"
-done
+function migrationProcess() {
+    path=$1
+    db=$2
+
+    echo -e "${GREEN}Migrations for \"${db}\" database and \"${path}\" path${NC}"
+    migrationUP "${path}" "${db}"
+    migrationDOWN "${path}" "${db}"
+}
+
+migrationProcess "director" "compass"
+migrationProcess "kyma-environment-broker" "broker"

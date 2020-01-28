@@ -131,7 +131,7 @@ func (dc *Client) setToken() error {
 	return nil
 }
 
-func (dc Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error) {
+func (dc *Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error) {
 	if response.Status == nil {
 		return "", TemporaryError{"response status from director is nil"}
 	}
