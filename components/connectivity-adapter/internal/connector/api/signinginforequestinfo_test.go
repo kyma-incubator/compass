@@ -67,7 +67,7 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 			API: model.Api{
 				RuntimeURLs: &model.RuntimeURLs{
 					EventsURL:   "www.event-service.com/myapp/v1/events",
-					MetadataURL: "www.connectivity-adapter-mtls.com/myapp/v1/metadata",
+					MetadataURL: "www.connectivity-adapter-mtls.com/myapp/v1/metadata/services",
 				},
 				InfoURL:         "www.connectivity-adapter-mtls.com/v1/applications/management/info",
 				CertificatesURL: "www.connectivity-adapter.com/v1/applications/certificates",
@@ -116,37 +116,37 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		connectorClientMock.AssertExpectations(t)
 	})
 
-	testCases := []struct {
-		description string
-		request     *http.Request
-	}{
-		{
-			"Should return error when Authorization context not passed",
-			newRequestWithContext(strings.NewReader(""), nil, nil),
-		},
-		{
-			"Should return error when Base URL context not passed",
-			newRequestWithContext(strings.NewReader(""), headersFromToken, nil),
-		},
-	}
+	t.Run("Should return error when Authorization context not passed", func(t *testing.T) {
+		// given
+		connectorClientMock := &mocks.Client{}
 
-	for _, tc := range testCases {
-		t.Run("Should return error when Authorization context not passed", func(t *testing.T) {
-			// given
-			connectorClientMock := &mocks.Client{}
+		r := httptest.NewRecorder()
+		req := newRequestWithContext(strings.NewReader(""), nil, nil)
+		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New())
 
-			r := httptest.NewRecorder()
+		// when
+		handler.GetSigningRequestInfo(r, req)
 
-			handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New())
+		// then
+		assert.Equal(t, http.StatusForbidden, r.Code)
+		connectorClientMock.AssertNotCalled(t, "Configuration")
+	})
 
-			// when
-			handler.GetSigningRequestInfo(r, tc.request)
+	t.Run("Should return error when Base URLs context not passed", func(t *testing.T) {
+		// given
+		connectorClientMock := &mocks.Client{}
 
-			// then
-			assert.Equal(t, http.StatusInternalServerError, r.Code)
-			connectorClientMock.AssertNotCalled(t, "Configuration")
-		})
-	}
+		r := httptest.NewRecorder()
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken, nil)
+		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New())
+
+		// when
+		handler.GetSigningRequestInfo(r, req)
+
+		// then
+		assert.Equal(t, http.StatusInternalServerError, r.Code)
+		connectorClientMock.AssertNotCalled(t, "Configuration")
+	})
 }
 
 func newRequestWithContext(body io.Reader, headers map[string]string, baseURLs *middlewares.BaseURLs) *http.Request {

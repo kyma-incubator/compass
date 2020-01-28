@@ -13,11 +13,13 @@ global:
       id: 2bf03de1-23b1-4063-9d3e-67096800accc
 
   images:
+    kymaContainerRegistry:
+      path: eu.gcr.io/kyma-project
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-634"
+      version: "PR-734"
     connectivity_adapter:
       dir:
       version: "PR-734"
@@ -53,7 +55,10 @@ global:
         version: "02e8358c"
       provisioner:
         dir:
-      version: "PR-552"
+        version: "PR-552"
+      connector_service:
+        dir:
+        version: "PR-7003"
 
   isLocalEnv: false
   oauth2:

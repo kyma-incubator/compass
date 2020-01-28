@@ -68,10 +68,10 @@ func TestHandlerManagementInfo(t *testing.T) {
 			URLs: model.MgmtURLs{
 				RuntimeURLs: &model.RuntimeURLs{
 					EventsURL:   "www.event-service.com/myapp/v1/events",
-					MetadataURL: "www.connectivity-adapter-mtls.com/myapp/v1/metadata",
+					MetadataURL: "www.connectivity-adapter-mtls.com/myapp/v1/metadata/services",
 				},
-				RenewCertURL:  "www.connectivity-adapter-mtls.com/applications/certificates/renewals",
-				RevokeCertURL: "www.connectivity-adapter-mtls.com/applications/certificates/revocations",
+				RenewCertURL:  "www.connectivity-adapter-mtls.com/v1/applications/certificates/renewals",
+				RevokeCertURL: "www.connectivity-adapter-mtls.com/v1/applications/certificates/revocations",
 			},
 			CertificateInfo: model.CertInfo{
 				Subject:      "O=Org,OU=OrgUnit,L=Gliwice,ST=Province,C=PL,CN=CommonName",
@@ -117,35 +117,35 @@ func TestHandlerManagementInfo(t *testing.T) {
 		connectorClientMock.AssertExpectations(t)
 	})
 
-	testCases := []struct {
-		description string
-		request     *http.Request
-	}{
-		{
-			"Should return error when Authorization context not passed",
-			newRequestWithContext(strings.NewReader(""), nil, nil),
-		},
-		{
-			"Should return error when Base URL context not passed",
-			newRequestWithContext(strings.NewReader(""), headersFromToken, nil),
-		},
-	}
+	t.Run("Should return error when Authorization context not passed", func(t *testing.T) {
+		// given
+		connectorClientMock := &mocks.Client{}
 
-	for _, tc := range testCases {
-		t.Run("Should return error when Authorization context not passed", func(t *testing.T) {
-			// given
-			connectorClientMock := &mocks.Client{}
+		r := httptest.NewRecorder()
+		req := newRequestWithContext(strings.NewReader(""), nil, nil)
+		handler := NewManagementInfoHandler(connectorClientMock, logrus.New())
 
-			r := httptest.NewRecorder()
+		// when
+		handler.GetManagementInfo(r, req)
 
-			handler := NewManagementInfoHandler(connectorClientMock, logrus.New())
+		// then
+		assert.Equal(t, http.StatusForbidden, r.Code)
+		connectorClientMock.AssertNotCalled(t, "Configuration")
+	})
 
-			// when
-			handler.GetManagementInfo(r, tc.request)
+	t.Run("Should return error when Base URLs context not passed", func(t *testing.T) {
+		// given
+		connectorClientMock := &mocks.Client{}
 
-			// then
-			assert.Equal(t, http.StatusInternalServerError, r.Code)
-			connectorClientMock.AssertNotCalled(t, "Configuration")
-		})
-	}
+		r := httptest.NewRecorder()
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken, nil)
+		handler := NewManagementInfoHandler(connectorClientMock, logrus.New())
+
+		// when
+		handler.GetManagementInfo(r, req)
+
+		// then
+		assert.Equal(t, http.StatusInternalServerError, r.Code)
+		connectorClientMock.AssertNotCalled(t, "Configuration")
+	})
 }

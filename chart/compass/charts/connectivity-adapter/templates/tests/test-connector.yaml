@@ -23,7 +23,7 @@ spec:
       serviceAccountName: {{ template "fullname" . }}-tests
       containers:
       - name: "tests"
-        image: "eu.gcr.io/kyma-project/connector-service-tests:27eff119"
+        image: {{ .Values.global.images.kymaContainerRegistry.path }}/{{ .Values.global.images.tests.connector_service.dir }}connector-service-tests:{{ .Values.global.images.tests.connector_service.version }}
         imagePullPolicy: IfNotPresent
         env:
           - name: INTERNAL_API_URL
@@ -31,11 +31,15 @@ spec:
           - name: EXTERNAL_API_URL
             value: http://compass-connectivity-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connectivity_adapter.external_api.port }}
           - name: GATEWAY_URL
-            value: https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}
+            value:  "https://{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}"
+          - name: EVENTS_BASE_URL
+            value: https://gateway.{{ .Values.global.ingress.domainName }}
           - name: SKIP_SSL_VERIFY
             value: "{{ .Values.global.isLocalEnv }}"
           - name: CENTRAL
             value: "false"
+          - name: COMPASS
+            value: "true"
         command:
           - "/bin/sh"
         args:

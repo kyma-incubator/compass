@@ -87,7 +87,7 @@ func TestHandler_Create(t *testing.T) {
 			GraphQLRequestBuilderFn:    EmptyGraphQLRequestBuilderFn(),
 			LoggerAssertionsFn:         SingleErrorLoggerAssertions("while unmarshalling service: invalid character 'e' in literal true (expecting 'r')"),
 			ExpectedResponseStatusCode: http.StatusBadRequest,
-			ExpectedResponseBody:       "{\"code\":4,\"error\":\"while unmarshalling service: invalid character 'e' in literal true (expecting 'r')\"}\n",
+			ExpectedResponseBody:       "{\"code\":400,\"error\":\"while unmarshalling service: invalid character 'e' in literal true (expecting 'r')\"}\n",
 		},
 		{
 			Name:            "Error - Validation",
@@ -101,7 +101,7 @@ func TestHandler_Create(t *testing.T) {
 			},
 			GraphQLRequestBuilderFn:    EmptyGraphQLRequestBuilderFn(),
 			ExpectedResponseStatusCode: http.StatusBadRequest,
-			ExpectedResponseBody:       fmt.Sprintf("{\"code\":4,\"error\":\"while validating input: %s\"}\n", testErr.Error()),
+			ExpectedResponseBody:       fmt.Sprintf("{\"code\":400,\"error\":\"while validating input: %s\"}\n", testErr.Error()),
 		},
 		{
 			Name:            "Error - Converter",
@@ -116,7 +116,7 @@ func TestHandler_Create(t *testing.T) {
 			ValidatorFn:                SuccessfulValidatorFn(svcDetailsModel),
 			GraphQLRequestBuilderFn:    EmptyGraphQLRequestBuilderFn(),
 			ExpectedResponseStatusCode: http.StatusInternalServerError,
-			ExpectedResponseBody:       fmt.Sprintf("{\"code\":1,\"error\":\"while converting service input: %s\"}\n", testErr.Error()),
+			ExpectedResponseBody:       fmt.Sprintf("{\"code\":500,\"error\":\"while converting service input: %s\"}\n", testErr.Error()),
 		},
 		{
 			Name:            "Error - Request Builder",
@@ -131,7 +131,7 @@ func TestHandler_Create(t *testing.T) {
 			},
 			LoggerAssertionsFn:         SingleErrorLoggerAssertions("while building Application Register input: Test err"),
 			ExpectedResponseStatusCode: http.StatusInternalServerError,
-			ExpectedResponseBody:       fmt.Sprintf("{\"code\":1,\"error\":\"while building Application Register input: %s\"}\n", testErr.Error()),
+			ExpectedResponseBody:       fmt.Sprintf("{\"code\":500,\"error\":\"while building Application Register input: %s\"}\n", testErr.Error()),
 		},
 		{
 			Name:      "Error - GraphQL Request",
@@ -146,7 +146,7 @@ func TestHandler_Create(t *testing.T) {
 			ValidatorFn:                SuccessfulValidatorFn(svcDetailsModel),
 			GraphQLRequestBuilderFn:    SuccessfulRegisterAppGraphQLRequestBuilderFn(gqlAppInput, expectedGQLReq),
 			ExpectedResponseStatusCode: http.StatusInternalServerError,
-			ExpectedResponseBody:       fmt.Sprintf("{\"code\":1,\"error\":\"while creating service: %s\"}\n", testErr.Error()),
+			ExpectedResponseBody:       fmt.Sprintf("{\"code\":500,\"error\":\"while creating service: %s\"}\n", testErr.Error()),
 		},
 	}
 	for _, tc := range testCases {
@@ -238,7 +238,7 @@ func TestHandler_Get(t *testing.T) {
 			},
 			ConverterFn:                EmptyConverterFn(),
 			ExpectedResponseStatusCode: http.StatusNotFound,
-			ExpectedResponseBody:       fmt.Sprintf("{\"code\":2,\"error\":\"entity with ID %s not found\"}\n", id),
+			ExpectedResponseBody:       fmt.Sprintf("{\"code\":404,\"error\":\"entity with ID %s not found\"}\n", id),
 		},
 		{
 			Name: "Error - Converter",
@@ -261,7 +261,7 @@ func TestHandler_Get(t *testing.T) {
 			},
 			LoggerAssertionsFn:         SingleErrorLoggerAssertions("while converting model: Test err"),
 			ExpectedResponseStatusCode: http.StatusInternalServerError,
-			ExpectedResponseBody:       "{\"code\":1,\"error\":\"while converting model: Test err\"}\n",
+			ExpectedResponseBody:       "{\"code\":500,\"error\":\"while converting model: Test err\"}\n",
 		},
 		{
 			Name: "Error - GraphQL Request",
@@ -273,7 +273,7 @@ func TestHandler_Get(t *testing.T) {
 			ConverterFn:                EmptyConverterFn(),
 			LoggerAssertionsFn:         SingleErrorLoggerAssertions("while getting service: Test err"),
 			ExpectedResponseStatusCode: http.StatusInternalServerError,
-			ExpectedResponseBody:       "{\"code\":1,\"error\":\"while getting service: Test err\"}\n",
+			ExpectedResponseBody:       "{\"code\":500,\"error\":\"while getting service: Test err\"}\n",
 		},
 	}
 	for _, tc := range testCases {
@@ -340,7 +340,7 @@ func TestHandler_Delete(t *testing.T) {
 		{
 			Name:                       "Error - Not Found",
 			GraphQLClientErr:           notFoundErr,
-			ExpectedResponseBody:       fmt.Sprintf("{\"code\":2,\"error\":\"entity with ID %s not found\"}\n", id),
+			ExpectedResponseBody:       fmt.Sprintf("{\"code\":404,\"error\":\"entity with ID %s not found\"}\n", id),
 			ExpectedResponseStatusCode: http.StatusNotFound,
 		},
 		{
@@ -354,7 +354,7 @@ func TestHandler_Delete(t *testing.T) {
 				assert.Equal(t, fmt.Sprintf("while deleting service: %s", testErr.Error()), entry.Message)
 			},
 			GraphQLClientErr:           testErr,
-			ExpectedResponseBody:       fmt.Sprintf("{\"code\":1,\"error\":\"%s\"}\n", testErr.Error()),
+			ExpectedResponseBody:       fmt.Sprintf("{\"code\":500,\"error\":\"%s\"}\n", testErr.Error()),
 			ExpectedResponseStatusCode: http.StatusInternalServerError,
 		},
 	}

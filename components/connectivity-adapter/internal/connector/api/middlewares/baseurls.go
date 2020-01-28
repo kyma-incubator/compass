@@ -2,6 +2,9 @@ package middlewares
 
 import (
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 )
 
 //go:generate mockery -name=RuntimeBaseURLProvider -output=automock -outpkg=automock -case=underscore
@@ -28,7 +31,7 @@ func (bm baseURLsMiddleware) GetBaseUrls(handler http.Handler) http.Handler {
 
 		eventServiceBaseURL, err := bm.runtimeBaseURLProvider.EventServiceBaseURL()
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			reqerror.WriteError(w, err, apperrors.CodeInternal)
 
 			return
 		}

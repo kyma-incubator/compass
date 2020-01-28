@@ -8,7 +8,7 @@ const (
 	TokenFormat                       = "?token=%s"
 	CertsEndpoint                     = "/v1/applications/certificates"
 	ManagementInfoEndpoint            = "/v1/applications/management/info"
-	ApplicationRegistryEndpointFormat = "/%s/v1/metadata"
+	ApplicationRegistryEndpointFormat = "/%s/v1/metadata/services"
 	EventsEndpointFormat              = "/%s/v1/events"
 	RenewCertURLFormat                = "%s/v1/applications/certificates/renewals"
 	RevocationCertURLFormat           = "%s/v1/applications/certificates/revocations"
