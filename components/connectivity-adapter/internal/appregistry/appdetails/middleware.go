@@ -17,21 +17,27 @@ import (
 const appNameVar = "app-name"
 const nameKey = "name"
 
-type applicationMiddleware struct {
-	cliProvider gqlcli.Provider
-	logger      *log.Logger
-	gqlProvider gql.GqlFieldsProvider
+//go:generate mockery -name=GraphQLRequestBuilder -output=automock -outpkg=automock -case=underscore
+type GraphQLRequestBuilder interface {
+	GetApplicationsByName(appName string) *gcli.Request
 }
 
-func NewApplicationMiddleware(cliProvider gqlcli.Provider, logger *log.Logger, fieldProvider gql.GqlFieldsProvider) *applicationMiddleware {
-	return &applicationMiddleware{cliProvider: cliProvider, logger: logger, gqlProvider: fieldProvider}
+type applicationMiddleware struct {
+	cliProvider     gqlcli.Provider
+	logger          *log.Logger
+	gqlProvider     gql.GqlFieldsProvider
+	gqlQueryBuilder GraphQLRequestBuilder
+}
+
+func NewApplicationMiddleware(cliProvider gqlcli.Provider, logger *log.Logger, gqlQueryBuilder GraphQLRequestBuilder) *applicationMiddleware {
+	return &applicationMiddleware{cliProvider: cliProvider, logger: logger, gqlQueryBuilder: gqlQueryBuilder}
 }
 
 func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		variables := mux.Vars(r)
 		appName := variables[appNameVar]
-		query := FixAppByNameQuery(mw.gqlProvider, appName)
+		query := mw.gqlQueryBuilder.GetApplicationsByName(appName)
 
 		client := mw.cliProvider.GQLClient(r)
 		var apps GqlSuccessfulAppPage
@@ -56,19 +62,13 @@ func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 		}
 
 		app := apps.Result.Data[0]
-		if app == nil {
-			message := fmt.Sprintf("service with name %s not found", appName)
-			reqerror.WriteErrorMessage(w, message, apperrors.CodeNotFound)
-			return
-		}
-
 		ctx := SaveToContext(r.Context(), *app)
 		requestWithCtx := r.WithContext(ctx)
 		next.ServeHTTP(w, requestWithCtx)
 	})
 }
 
-func FixAppByNameQuery(gql gql.GqlFieldsProvider, appName string) *gcli.Request {
+func FixAppsByNameQuery(gql gql.GqlFieldsProvider, appName string) *gcli.Request {
 	return gcli.NewRequest(fmt.Sprintf(`query {
 			result: applications(filter: {key:"%s", query: "\"%s\""}) {
 					%s
