@@ -1,25 +1,24 @@
-package gardener
+package api
 
 import (
 	"context"
 	"fmt"
 	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1alpha1"
-	gardener "github.com/gardener/gardener/pkg/apis/garden"
+	"github.com/gardener/gardener/pkg/apis/garden"
 	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/garden/clientset/versioned/typed/garden/v1beta1"
 	"github.com/kubernetes/client-go/kubernetes/scheme"
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
@@ -50,13 +49,6 @@ const (
 	namespace  = "default"
 	timeout    = 10 * time.Second
 	syncPeriod = 5 * time.Second
-
-	kymaVersion                   = "1.8"
-	kymaSystemNamespace           = "kyma-system"
-	kymaIntegrationNamespace      = "kyma-integration"
-	clusterEssentialsComponent    = "cluster-essentials"
-	coreComponent                 = "core"
-	applicationConnectorComponent = "application-connector"
 
 	mockedKubeconfig = `apiVersion: v1
 clusters:
@@ -94,7 +86,7 @@ func TestMain(m *testing.M) {
 
 	syncPeriod := syncPeriod
 
-	mgr, err = ctrl.NewManager(cfg, ctrl.Options{SyncPeriod: &syncPeriod, Namespace: "default"})
+	mgr, err = ctrl.NewManager(cfg, ctrl.Options{SyncPeriod: &syncPeriod, Namespace: namespace})
 
 	if err != nil {
 		logrus.Errorf("unable to create shoot controller mgr: %s", err.Error())
@@ -115,7 +107,7 @@ func setupEnv() error {
 		return errors.Wrap(err, "Failed to start test environment")
 	}
 
-	err = gardener.AddToScheme(scheme.Scheme)
+	err = garden.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return errors.Wrap(err, "Failed to add to schema")
 	}
@@ -125,14 +117,15 @@ func setupEnv() error {
 
 func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	//given
-	runtimeID := "4ca8e595-fe37-4ed0-a5dd-d008544949d8"
-
 	installationServiceMock := &installationMocks.Service{}
 	installationServiceMock.On("InstallKyma", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("model.Release"),
 		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
 
 	installationServiceMock.On("TriggerInstallation", mock.Anything, mock.AnythingOfType("model.Release"),
 		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
+
+	installationServiceMock.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
+	installationServiceMock.On("TriggerUninstall", mock.Anything).Return(nil)
 
 	ctx := context.Background()
 
@@ -146,71 +139,138 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	defer containerCleanupFunc()
 
 	connection, err := database.InitializeDatabase(connString, testutils.SchemaFilePath, 5)
-
 	require.NoError(t, err)
 	require.NotNil(t, connection)
 
 	defer testutils.CloseDatabase(t, connection)
 
+	kymaConfig := fixKymaGraphQLConfigInput()
+
+	clusterConfigurations := getTestClusterConfigurations()
 	directorServiceMock := &directormock.DirectorClient{}
-	directorServiceMock.On("CreateRuntime", mock.Anything).Return(runtimeID, nil)
-	directorServiceMock.On("DeleteRuntime", mock.Anything).Return(nil)
 
 	gardenerClient := newFakeGardenerClient(t, cfg)
 	shootInterface := gardenerClient.Shoots(namespace)
-	secretsInterace := setupSecretsClient(t, cfg)
+	secretsInterface := setupSecretsClient(t, cfg)
 	dbsFactory := dbsession.NewFactory(connection)
 
-	controler, err := NewShootController(namespace, mgr, shootInterface, secretsInterace, installationServiceMock, dbsFactory, timeout, directorServiceMock)
+	controler, err := gardener.NewShootController(namespace, mgr, shootInterface, secretsInterface, installationServiceMock, dbsFactory, timeout, directorServiceMock)
+	require.NoError(t, err)
 
 	go func() {
 		err := controler.StartShootController()
 		require.NoError(t, err)
 	}()
 
-	uuidGenerator := uuid.NewUUIDGenerator()
-	provisioner := NewProvisioner(namespace, shootInterface)
+	for _, config := range clusterConfigurations {
+		t.Run(config.description, func(t *testing.T) {
 
-	releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
+			directorServiceMock.Calls = nil
+			directorServiceMock.ExpectedCalls = nil
 
-	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project")
-	graphQLConverter := provisioning.NewGraphQLConverter()
+			directorServiceMock.On("CreateRuntime", mock.Anything).Return(config.runtimeID, nil)
+			directorServiceMock.On("DeleteRuntime", mock.Anything).Return(nil)
 
-	provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator)
+			uuidGenerator := uuid.NewUUIDGenerator()
+			provisioner := gardener.NewProvisioner(namespace, shootInterface)
 
-	err = insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
-	require.NoError(t, err)
+			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 
-	//when
-	provisionRuntime, err := provisioningService.ProvisionRuntime(getProvisionRuntimeInput())
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project")
+			graphQLConverter := provisioning.NewGraphQLConverter()
 
-	//then
-	require.NoError(t, err)
-	require.NotEmpty(t, provisionRuntime)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator)
 
-	//wait for Shoot to update
-	time.Sleep(syncPeriod)
+			resolver := NewResolver(provisioningService)
 
-	list, err := shootInterface.List(metav1.ListOptions{})
+			err = insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
+			require.NoError(t, err)
 
-	shoot := &list.Items[0]
+			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: config.runtimeInput, ClusterConfig: config.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
-	require.NoError(t, err)
-	assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-	assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
-	assert.Equal(t, "provisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
+			//when
+			provisionRuntime, err := resolver.ProvisionRuntime(ctx, fullConfig)
 
-	simmulateSuccessfullClusterProvisioning(t, shootInterface, secretsInterace, shoot)
+			//then
+			require.NoError(t, err)
+			require.NotEmpty(t, provisionRuntime)
 
-	//wait for Shoot to update
-	time.Sleep(syncPeriod)
+			//when
+			//wait for Shoot to update
+			time.Sleep(syncPeriod)
 
-	shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
-	require.NoError(t, err)
+			list, err := shootInterface.List(metav1.ListOptions{})
+			shoot := &list.Items[0]
 
-	for k, v := range shoot.Annotations {
-		fmt.Println("Key:", k, "Value:", v)
+			//then
+			require.NoError(t, err)
+			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
+			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
+			assert.Equal(t, "provisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
+			assert.Equal(t, "provisioning-in-progress", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning-step"])
+
+			simmulateSuccessfullClusterProvisioning(t, shootInterface, secretsInterface, shoot)
+
+			//when
+			//wait for Shoot to update
+			time.Sleep(syncPeriod)
+			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
+
+			//then
+			require.NoError(t, err)
+			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
+			assert.Equal(t, "provisioning-finished", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning-step"])
+			assert.Equal(t, "provisioned", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
+			assert.Equal(t, "installed", shoot.Annotations["compass.provisioner.kyma-project.io/kyma-installation"])
+
+			//when
+			shoot = ensureShootWontBeDeleted(t, shootInterface, shoot)
+			deprovisionRuntimeID, err := resolver.DeprovisionRuntime(ctx, config.runtimeID)
+
+			//then
+			require.NoError(t, err)
+			require.NotEmpty(t, deprovisionRuntimeID)
+
+			//when
+			//wait for Shoot to update
+			time.Sleep(syncPeriod)
+			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
+
+			//then
+			require.NoError(t, err)
+			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
+			assert.Equal(t, "deprovisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning-step"])
+			assert.Equal(t, deprovisionRuntimeID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
+			assert.Equal(t, "deprovisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
+			assert.Equal(t, "uninstalling", shoot.Annotations["compass.provisioner.kyma-project.io/kyma-installation"])
+
+			//when
+			shoot = ensureShootWillBeDeleted(t, shootInterface, shoot)
+			time.Sleep(syncPeriod)
+			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
+
+			//then
+			require.Error(t, err)
+			require.Empty(t, shoot)
+		})
 	}
+}
+
+func ensureShootWillBeDeleted(t *testing.T, shootInterface gardener_apis.ShootInterface, shoot *gardener_types.Shoot) *gardener_types.Shoot {
+	return setFinalizers(t, shootInterface, shoot, []string{})
+}
+
+func ensureShootWontBeDeleted(t *testing.T, shootInterface gardener_apis.ShootInterface, shoot *gardener_types.Shoot) *gardener_types.Shoot {
+	return setFinalizers(t, shootInterface, shoot, []string{"finalizer"})
+}
+
+func setFinalizers(t *testing.T, shootInterface gardener_apis.ShootInterface, shoot *gardener_types.Shoot, finalizers []string) *gardener_types.Shoot {
+	shoot.SetFinalizers(finalizers)
+
+	update, err := shootInterface.Update(shoot)
+	require.NoError(t, err)
+
+	return update
 }
 
 func newFakeGardenerClient(t *testing.T, config *rest.Config) gardener_apis.GardenV1beta1Interface {
@@ -414,141 +474,4 @@ func setupSecretsClient(t *testing.T, config *rest.Config) v1core.SecretInterfac
 	require.NoError(t, err)
 
 	return coreClient.Secrets(namespace)
-}
-
-func getProvisionRuntimeInput() gqlschema.ProvisionRuntimeInput {
-	return gqlschema.ProvisionRuntimeInput{
-		RuntimeInput: &gqlschema.RuntimeInput{
-			Name:        "something",
-			Description: new(string),
-		},
-		ClusterConfig: &gqlschema.ClusterConfigInput{
-			GardenerConfig: &gqlschema.GardenerConfigInput{
-				KubernetesVersion: "version",
-				NodeCount:         3,
-				VolumeSizeGb:      1024,
-				MachineType:       "n1-standard-1",
-				Region:            "region",
-				Provider:          "GCP",
-				Seed:              stringToPointer("gcp-eu1"),
-				TargetSecret:      "secret",
-				DiskType:          "ssd",
-				WorkerCidr:        "cidr",
-				AutoScalerMin:     1,
-				AutoScalerMax:     5,
-				MaxSurge:          1,
-				MaxUnavailable:    2,
-				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-					GcpConfig: &gqlschema.GCPProviderConfigInput{
-						Zone: "zone",
-					},
-				},
-			},
-		},
-		Credentials: &gqlschema.CredentialsInput{SecretName: "secret_1"},
-		KymaConfig: &gqlschema.KymaConfigInput{
-			Version: kymaVersion,
-			Components: []*gqlschema.ComponentConfigurationInput{
-				{
-					Component: clusterEssentialsComponent,
-					Namespace: kymaSystemNamespace,
-				},
-				{
-					Component: coreComponent,
-					Namespace: kymaSystemNamespace,
-					Configuration: []*gqlschema.ConfigEntryInput{
-						fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
-						fixGQLConfigEntryInput("test.config.key2", "value2", util.BoolPtr(false)),
-					},
-				},
-				{
-					Component: applicationConnectorComponent,
-					Namespace: kymaIntegrationNamespace,
-					Configuration: []*gqlschema.ConfigEntryInput{
-						fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
-						fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
-					},
-				},
-			},
-			Configuration: []*gqlschema.ConfigEntryInput{
-				fixGQLConfigEntryInput("global.config.key", "globalValue", util.BoolPtr(false)),
-				fixGQLConfigEntryInput("global.config.key2", "globalValue2", util.BoolPtr(false)),
-				fixGQLConfigEntryInput("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
-			},
-		},
-	}
-}
-
-func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntryInput {
-	return &gqlschema.ConfigEntryInput{
-		Key:    key,
-		Value:  val,
-		Secret: secret,
-	}
-}
-
-func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
-
-	return &gqlschema.KymaConfig{
-		Version: util.StringPtr(kymaVersion),
-		Components: []*gqlschema.ComponentConfiguration{
-			{
-				Component:     clusterEssentialsComponent,
-				Namespace:     kymaSystemNamespace,
-				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
-			},
-			{
-				Component: coreComponent,
-				Namespace: kymaSystemNamespace,
-				Configuration: []*gqlschema.ConfigEntry{
-					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
-				},
-			},
-			{
-				Component: applicationConnectorComponent,
-				Namespace: kymaIntegrationNamespace,
-				Configuration: []*gqlschema.ConfigEntry{
-					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
-				},
-			},
-		},
-		Configuration: []*gqlschema.ConfigEntry{
-			fixGQLConfigEntry("global.config.key", "globalValue", util.BoolPtr(false)),
-			fixGQLConfigEntry("global.config.key2", "globalValue2", util.BoolPtr(false)),
-			fixGQLConfigEntry("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
-		},
-	}
-}
-
-func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
-	return &gqlschema.ConfigEntry{
-		Key:    key,
-		Value:  val,
-		Secret: secret,
-	}
-}
-
-func insertDummyReleaseIfNotExist(releaseRepo release.Repository, id, version string) error {
-	_, err := releaseRepo.GetReleaseByVersion(version)
-	if err == nil {
-		return nil
-	}
-
-	if err.Code() != dberrors.CodeNotFound {
-		return err
-	}
-	_, err = releaseRepo.SaveRelease(model.Release{
-		Id:            id,
-		Version:       version,
-		TillerYAML:    "tiller YAML",
-		InstallerYAML: "installer YAML",
-	})
-
-	return err
-}
-
-func stringToPointer(str string) *string {
-	return &str
 }
