@@ -67,7 +67,7 @@ func (c Client) FetchTenantEventsPage(eventsType EventsType, pageNumber int) (*T
 	defer func() {
 		err := res.Body.Close()
 		if err != nil {
-			log.Warnf("WARNING: Unable to close response body. Cause: %v", err)
+			log.Warnf("Unable to close response body. Cause: %v", err)
 		}
 	}()
 
