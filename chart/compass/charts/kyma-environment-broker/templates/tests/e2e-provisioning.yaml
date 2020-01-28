@@ -1,0 +1,116 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "kyma-env-broker.fullname" .}}-e2e-provisioning
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "kyma-env-broker.fullname" . }}-e2e-provisioning
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "kyma-env-broker.fullname" . }}-e2e-provisioning
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "kyma-env-broker.fullname" . }}-e2e-provisioning
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "kyma-env-broker.fullname" . }}-e2e-provisioning
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: ["testing.kyma-project.io"]
+    resources: ["clustertestsuites", "testdefinitions"]
+    verbs: ["*"]
+---
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-e2e-provisioning
+  namespace: {{ .Release.Namespace }}
+  labels:
+    kyma-project.io/test-kind: e2e
+    app: {{ .Chart.Name }}-e2e-provisioning-test
+    app.kubernetes.io/name: {{ .Chart.Name }}-e2e-provisioning-test
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+spec:
+  disableConcurrency: false
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "kyma-env-broker.fullname" .}}-e2e-provisioning
+      containers:
+      - name: tests
+        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e_provisioning.dir }}e2e-provisioning-test:{{ .Values.global.images.tests.e2e_provisioning.version }}
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: APP_BROKER_URL
+            value: 'https://{{ include "kyma-env-broker.fullname" .}}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.broker.port }}'
+          - name: APP_BROKER_SERVICE_CLASS_ID
+            value: "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+          - name: APP_SERVICE_MANAGER_SECRET_NAME
+            value: {{ .Values.serviceManger.secretName }}
+          - name: APP_SERVICE_MANAGER_SECRET_NAMESPACE
+            value: "compass-system"
+          - name: APP_SERVICE_MANAGER_CLASS_NAME
+            value: "xsuaa"
+          - name: APP_PROPERTIES_PROVISION_TIMEOUT
+            value: "3h"
+          - name: APP_PROPERTIES_PROVISION_GCP
+            value: "false"
+          - name: APP_BROKER_AUTH_USERNAME
+            value: "{{ .Values.broker.username }}"
+          - name: APP_BROKER_AUTH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "kyma-env-broker.fullname" . }}
+                key: broker-password
+        command:
+          - "bash"
+          args:
+            - "-c"
+            - |
+              MAX_RETRIES=60
+
+              # copied from registration-job
+              function wait_for_access_to_api_server() {
+                local cnt=0
+                set +o errexit
+                while :
+                do
+                  kubectl version > /dev/null 2>&1
+                  if [[ $? -eq 0 ]]; then
+                    echo "Successfully accessed API Server"
+                    break
+                  else
+                    ((cnt++))
+                    if (( cnt > $MAX_RETRIES )); then
+                      echo "Max retries has been reached (retries $MAX_RETRIES). Exit."
+                      exit 1
+                    fi
+
+                    echo "Cannot access API Server waiting 5s..."
+                    sleep 5
+                  fi
+                done
+                set -o errexit
+              }
+              echo 'KEB e2e provisioning test start'
+              wait_for_access_to_api_server
+              ./entrypoint.sh
+              exit_code=$?
+              echo "code is $exit_code"
+              echo 'killing pilot-agent...'
+              curl -XPOST http://127.0.0.1:15020/quitquitquit
+              sleep 4
+              exit $exit_code

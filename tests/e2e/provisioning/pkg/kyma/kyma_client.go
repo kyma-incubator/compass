@@ -2,17 +2,18 @@ package kyma
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"net/http"
 )
 
 type Client struct {
 	client http.Client
-	log    logrus.Logger
+	log    logrus.FieldLogger
 }
 
-func NewClient(log logrus.Logger) *Client {
+func NewClient(log logrus.FieldLogger) *Client {
 	return &Client{
 		client: http.Client{},
 		log:    log,
@@ -20,6 +21,7 @@ func NewClient(log logrus.Logger) *Client {
 }
 
 func (c *Client) CallDashboard(dashboardURL string) error {
+	c.log.Info("Calling the dashboard URL")
 	resp, err := c.client.Get(dashboardURL)
 	if err != nil {
 		return errors.Wrapf(err, "while calling dashboard '%s'", dashboardURL)

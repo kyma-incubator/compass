@@ -2,11 +2,38 @@
 
 
 [[projects]]
+  digest = "1:f84da532ef028ec1a939c4086e44cae3a2463a6679c31614fc23c325565b813f"
+  name = "github.com/99designs/gqlgen"
+  packages = [
+    "graphql",
+    "graphql/introspection",
+  ]
+  pruneopts = "UT"
+  revision = "f276a4e6773992c572119b22821d375ad008c53d"
+  version = "v0.10.2"
+
+[[projects]]
+  digest = "1:35a3c0cb74b67330a1593e1ca2bca87d914c372eb60ebccc0902743d8466e3d6"
+  name = "github.com/agnivade/levenshtein"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "5f1ee18e3efadffd18ef076ac4181cc92d87188c"
+  version = "v1.0.3"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = "UT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
+
+[[projects]]
+  digest = "1:582b704bebaa06b48c29b0cec224a6058a09c86883aaddabde889cd1a5f73e1b"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0cd6bf5da1e1c83f8b45653022c74f71af0538a4"
   version = "v1.1.1"
 
 [[projects]]
@@ -16,6 +43,25 @@
   pruneopts = "UT"
   revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
   version = "v1.0.2"
+
+[[projects]]
+  branch = "master"
+  digest = "1:05f62b9994a2a9e428d6df0d7c7e4ba97d83c1f0aaf686e895d815a0a1c7b122"
+  name = "github.com/kyma-incubator/compass"
+  packages = [
+    "components/director/pkg/scalar",
+    "components/provisioner/pkg/gqlschema",
+  ]
+  pruneopts = "UT"
+  revision = "021066127912f83f6383fa91333a88433cd4a32f"
+
+[[projects]]
+  digest = "1:606f32078f27fd7d858c8e7750482e6e29d0b22d13a4e9af5b70d36fdcc3d98e"
+  name = "github.com/pivotal-cf/brokerapi"
+  packages = ["v7/domain"]
+  pruneopts = "UT"
+  revision = "c6d8338e2a6ae0313e16c8658f916bfdf2441f03"
+  version = "v7.1.0"
 
 [[projects]]
   digest = "1:9e1d37b58d17113ec3cb5608ac0382313c5b59470b94ed97d0976e69c7022314"
@@ -51,6 +97,30 @@
   pruneopts = "UT"
   revision = "221dbe5ed46703ee255b1da0dec05086f5035f62"
   version = "v1.4.0"
+
+[[projects]]
+  digest = "1:7078327e83236f36a7b676f2ce704dc6ec46f47e52ba9fc2aa32f04be006ac96"
+  name = "github.com/thanhpk/randstr"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "6e89fe966579c5905054d46d61cf1621ef291e2c"
+  version = "v1.0.4"
+
+[[projects]]
+  digest = "1:831b94be76a8fe3b3b882e52752423070f1b2d7940ecc381cdac66ac01492bfd"
+  name = "github.com/vektah/gqlparser"
+  packages = [
+    ".",
+    "ast",
+    "gqlerror",
+    "lexer",
+    "parser",
+    "validator",
+    "validator/rules",
+  ]
+  pruneopts = "UT"
+  revision = "1315dbaf2eab07d828e3e198a9a699e686b2b594"
+  version = "v1.2.1"
 
 [[projects]]
   digest = "1:bb32a7e267540d9f2d26753426d5e360c5bd858b9b78e26b9f0c99219024d8f5"
@@ -99,9 +169,13 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/google/uuid",
+    "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
+    "github.com/pivotal-cf/brokerapi/v7/domain",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/require",
+    "github.com/thanhpk/randstr",
     "github.com/vrischmann/envconfig",
     "k8s.io/apimachinery/pkg/util/wait",
   ]
