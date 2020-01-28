@@ -27,8 +27,8 @@ This table lists the environment variables, their descriptions, and default valu
 | **APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME** | Specifies the name of the Secret created by the Integration System. | `compass-kyma-environment-broker-credentials` |
 | **APP_DIRECTOR_SKIP_CERT_VERIFICATION** | Specifies whether TLS checks the presented certificates. | `false` |
 | **APP_DATABASE_USER** | Defines the database username. | `postgres` |
-| **APP_DATABASE_PASSWORD** | Defines the database user password | `password` |
-| **APP_DATABASE_HOST** | Defines the database host | `localhost` |
-| **APP_DATABASE_PORT** | Defines the database port | `5432` |
-| **APP_DATABASE_NAME** | Defines the database name | `broker` |
+| **APP_DATABASE_PASSWORD** | Defines the database user password. | `password` |
+| **APP_DATABASE_HOST** | Defines the database host. | `localhost` |
+| **APP_DATABASE_PORT** | Defines the database port. | `5432` |
+| **APP_DATABASE_NAME** | Defines the database name. | `broker` |
 | **APP_DATABASE_SSL** | Specifies the SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html).  | `disable`|
