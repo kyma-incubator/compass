@@ -73,6 +73,10 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
 
   4. Download the service account configuration (`kubeconfig.yaml`) and use it to create a Secret in the `compass-system` Namespace with the key named `credentials` and the value encoded with base64.
 
+     ```bash
+     kubectl -n compass-system create secret generic {SECRET_NAME} --from-file=credentials={PATH_TO_KUBECONFIG}
+     ```
+    
   5. Make a call to the Runtime Provisioner to create a cluster on GCP.
     
       > **NOTE:** The cluster name must start with a lowercase letter followed by up to 19 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.                                                                 
@@ -80,7 +84,12 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
       ```graphql
       mutation { 
         provisionRuntime(
-          id:"61d1841b-ccb5-44ed-a9ec-45f70cd2b0d6" config: {
+          config: {
+            Runtime {
+                name: "{RUNTIME_NAME}"
+                description: "{RUNTIME_DESCRIPTION}"
+                labels: {RUNTIME_LABELS}
+            } 
             clusterConfig: {
               gardenerConfig: {
                 name: "{CLUSTER_NAME}" 
@@ -111,7 +120,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
       }
       ```
     
-      A successful call returns the ID of the provisioning operation:
+      A successful call returns the operation status:
     
       ```graphql
       {
@@ -119,7 +128,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
           "provisionRuntime": "7a8dc760-812c-4a35-a5fe-656a648ee2c8"
         }
       }
-      ```
+      ``` 
     
   </details>
 
@@ -138,6 +147,10 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
 
   4. Download the service account configuration (`kubeconfig.yaml`) and use it to create a Secret in the `compass-system` Namespace with the key `credentials` and the value encoded with base64.
 
+     ```bash
+     kubectl -n compass-system create secret generic {SECRET_NAME} --from-file=credentials={PATH_TO_KUBECONFIG}
+     ```
+    
   5. Make a call to the Runtime Provisioner to create a cluster on Azure.
 
       > **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
@@ -203,6 +216,10 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
 
   4. Download the service account configuration (`kubeconfig.yaml`) and use it to create a Secret in the `compass-system` Namespace with the key `credentials` and the value encoded with base64.
 
+     ```bash
+     kubectl -n compass-system create secret generic {SECRET_NAME} --from-file=credentials={PATH_TO_KUBECONFIG}
+     ```
+
   5. Make a call to the Runtime Provisioner to create a cluster on AWS.
 
       > **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
@@ -212,8 +229,11 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
       ```graphql
       mutation { 
         provisionRuntime(
-          id:"61d1841b-ccb5-44ed-a9ec-15f70cd2b0d2" 
           config: {
+            runtimeInput: {
+              name: {RUNTIME_NAME}
+              labels: { key: [value, “xxx”]
+            }
             clusterConfig: {
               gardenerConfig: {
                 name: "{CLUSTER_NAME}"
@@ -262,4 +282,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     
 </div>
 
-The operation of provisioning is asynchronous. Use the provisioning operation ID (`provisionRuntime`) to [check the Runtime Operation Status](08-03-runtime-operation-status.md) and verify that the provisioning was successful. Use the Runtime ID (`id`) to [check the Runtime Status](08-04-runtime-status.md). 
+The operation of provisioning is asynchronous. The operation of provisioning returns the Runtime Operation Status containing the operation ID. Use the Runtime ID (`id`) to [check the Runtime Status](08-04-runtime-status.md). 
+
+> **NOTE:** To see how to provide the labels, see [this](../compass/03-02-labeling.md) document. To see an example of label usage, go [here](../../componentss/director/examples/register-application/register-application.graphql). 
