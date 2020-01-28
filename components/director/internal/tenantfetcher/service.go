@@ -14,7 +14,7 @@ import (
 //go:generate mockery -name=TenantStorageService -output=automock -outpkg=automock -case=underscore
 type TenantStorageService interface {
 	Create(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
-	Delete(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
+	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
@@ -74,7 +74,7 @@ func (s Service) SyncTenants() error {
 	if err != nil {
 		return errors.Wrap(err, "while storing new tenants")
 	}
-	err = s.tenantStorageService.Delete(ctx, tenantsToDelete)
+	err = s.tenantStorageService.DeleteMany(ctx, tenantsToDelete)
 	if err != nil {
 		return errors.Wrap(err, "while removing tenants")
 	}

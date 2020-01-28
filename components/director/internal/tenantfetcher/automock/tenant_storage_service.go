@@ -25,8 +25,8 @@ func (_m *TenantStorageService) Create(ctx context.Context, tenantInputs []model
 	return r0
 }
 
-// Delete provides a mock function with given fields: ctx, tenantInputs
-func (_m *TenantStorageService) Delete(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
+// DeleteMany provides a mock function with given fields: ctx, tenantInputs
+func (_m *TenantStorageService) DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
 	ret := _m.Called(ctx, tenantInputs)
 
 	var r0 error
