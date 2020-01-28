@@ -7,6 +7,7 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/gardener/gardener v0.33.7
+	github.com/gardener/gardener-extensions v0.0.0-20191028142629-438a3dcf5eca
 	github.com/gocraft/dbr/v2 v2.6.3
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.3

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
-	"github.com/gardener/gardener/pkg/client/garden/clientset/versioned/fake"
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
@@ -22,8 +22,6 @@ const (
 
 func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 	clientset := fake.NewSimpleClientset()
-
-	//shootClient := clientset.GardenV1beta1().Shoots(gardenerNamespace)
 
 	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{})
 	require.NoError(t, err)
@@ -54,7 +52,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 
 	t.Run("should start provisioning", func(t *testing.T) {
 		// given
-		shootClient := clientset.GardenV1beta1().Shoots(gardenerNamespace)
+		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
 		provisionerClient := NewProvisioner(gardenerNamespace, shootClient)
 

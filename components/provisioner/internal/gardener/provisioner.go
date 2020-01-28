@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	gardener_apis "github.com/gardener/gardener/pkg/client/garden/clientset/versioned/typed/garden/v1beta1"
+	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 )
 
@@ -24,14 +24,17 @@ type GardenerProvisioner struct {
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) error {
-	shootTemplate := cluster.ClusterConfig.ToShootTemplate(g.namespace)
+	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace)
+	if err != nil {
+		return fmt.Errorf("Failed to convert cluster config to Shoot template")
+	}
 
 	annotate(shootTemplate, operationIdAnnotation, operationId)
 	annotate(shootTemplate, provisioningAnnotation, Provisioning.String())
 	annotate(shootTemplate, runtimeIdAnnotation, cluster.ID)
 	annotate(shootTemplate, provisioningStepAnnotation, ProvisioningInProgressStep.String())
 
-	_, err := g.client.Create(shootTemplate)
+	_, err = g.client.Create(shootTemplate)
 	if err != nil {
 		return fmt.Errorf("error creating Shoot for %s cluster: %s", cluster.ID, err.Error())
 	}
