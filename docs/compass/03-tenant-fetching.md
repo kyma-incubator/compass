@@ -14,12 +14,12 @@ Tenant Fetcher CRON Job can be configured with helm value overrides listed below
 | **global.tenantFetcher.enabled** | false | Enables Tenant Fetcher CRON Job |
 | **global.tenantFetcher.providerName** | "compass" | Name of tenants provider |
 | **global.tenantFetcher.schedule** | "*/5 * * * *" | CRON Job schedule |
-| **global.tenantFetcher.oauth.client** | None | OAuth 2.0 client id, used to connect to Tenant Events API |
-| **global.tenantFetcher.oauth.secret** | None | OAuth 2.0 client secret, used to connect to Tenant Events API |
+| **global.tenantFetcher.oauth.client** | None | OAuth 2.0 client id |
+| **global.tenantFetcher.oauth.secret** | None | OAuth 2.0 client secret |
 | **global.tenantFetcher.oauth.tokenURL** | None | Endpoint for fetching OAuth 2.0 access token to Tenant Events API |
 | **global.tenantFetcher.endpoints.tenantCreated** | "127.0.0.1/events?type=created" | Tenant Events API endpoint for fetching created tenants |
-| **global.tenantFetcher.endpoints.tenantDeleted** | "127.0.0.1/events?type=deleted" | Tenant Events API endpoint for fetching created tenants |
-| **global.tenantFetcher.endpoints.tenantUpdated** | "127.0.0.1/events?type=updated" | Tenant Events API endpoint for fetching created tenants |
+| **global.tenantFetcher.endpoints.tenantDeleted** | "127.0.0.1/events?type=deleted" | Tenant Events API endpoint for fetching deleted tenants |
+| **global.tenantFetcher.endpoints.tenantUpdated** | "127.0.0.1/events?type=updated" | Tenant Events API endpoint for fetching updated tenants |
 | **global.tenantFetcher.fieldMapping.idField** | "id" | Name of field in event data payload containing tenant name |
 | **global.tenantFetcher.fieldMapping.nameField** | "name" | Name of field in event data payload containing tenant id |
 | **global.tenantFetcher.fieldMapping.discriminatorField** | None | Optional name of field in event data payload used to filter created tenants, if provided only events containing this field with value specified in discriminatorValue will be used |
@@ -32,11 +32,11 @@ Tenant Events API should be using OAuth 2.0 Client Credentials authorization flo
 
 ### Endpoints
 
-Three endpoints are supported, for different types of events.
+Three endpoints are supported, each for different type of events.
 All endpoints should accept the same query parameters specified below.
 Each endpoint should return specific payload. 
 
-#### Query params
+#### Query parameters
 
 Every endpoint should support following query parameters:
 - `ts` - specifies timestamp in Unix time, specifies date since which events should we fetched.
@@ -45,9 +45,58 @@ Every endpoint should support following query parameters:
 
 #### Tenant creation endpoint
 
-Creation event payload:
+JSON payload:
 ```json
 {
-
+  "events": [
+    {
+      "eventData": "{\"id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"name\":\"Tenant 1\",\"discriminator\":\"default\"}"
+    }
+  ],
+  "totalResults": 27, 
+  "totalPages": 1
 }
 ```
+
+`eventData` field contains escaped JSON string, with following fields that can be configured in values overrides:
+- `id` - unique id of tenant
+- `name` - name of tenant
+- `discriminator` - optional field that can be used to distinguish different types of tenants
+
+#### Tenant deletion endpoint
+
+JSON payload:
+```json
+{
+  "events": [
+    {
+      "eventData": "{\"id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"name\":\"Tenant 1\"}"
+    }
+  ],
+  "totalResults": 27, 
+  "totalPages": 1
+}
+```
+
+`eventData` field contains escaped JSON string, with following fields that can be configured in values overrides:
+- `id` - unique id of tenant
+- `name` - name of tenant
+
+#### Tenant update endpoint
+
+JSON payload:
+```json
+{
+  "events": [
+    {
+      "eventData": "{\"id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"name\":\"Tenant 1\"}"
+    }
+  ],
+  "totalResults": 27, 
+  "totalPages": 1
+}
+```
+
+`eventData` field contains escaped JSON string, with following fields that can be configured in values overrides:
+- `id` - unique id of tenant
+- `name` - name of tenant
