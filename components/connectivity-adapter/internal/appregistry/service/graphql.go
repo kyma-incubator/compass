@@ -17,7 +17,6 @@ type GraphQLizer interface {
 
 const nameKey = "name"
 
-
 //go:generate mockery -name=GqlFieldsProvider -output=automock -outpkg=automock -case=underscore
 type GqlFieldsProvider interface {
 	ForApplication(ctx ...gql.FieldCtx) string
@@ -73,7 +72,6 @@ func (b *gqlRequestBuilder) GetApplicationRequest(id string) *gcli.Request {
 			}
 		}`, id, b.gqlFieldsProvider.ForApplication()))
 }
-
 
 func (b *gqlRequestBuilder) GetApplicationsByName(appName string) *gcli.Request {
 	return gcli.NewRequest(fmt.Sprintf(`query {

@@ -169,9 +169,15 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	fmt.Printf("%v", app)
-	// TODO: Implement it
-	writer.WriteHeader(http.StatusOK)
+	output, err := json.Marshal(app)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while marshalling output")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+	_, _ = writer.Write(output)
+	writer.WriteHeader(http.StatusNotImplemented)
 }
 
 func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
