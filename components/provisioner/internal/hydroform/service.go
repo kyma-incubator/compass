@@ -2,7 +2,6 @@ package hydroform
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -10,14 +9,11 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/pkg/errors"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -33,14 +29,14 @@ type Service interface {
 }
 
 type service struct {
-	hydroformClient client.Client
-	secretsClient   v1.SecretInterface
+	hydroformClient        client.Client
+	gardenerKubeconfigPath string
 }
 
-func NewHydroformService(hydroformClient client.Client, secretsClient v1.SecretInterface) Service {
+func NewHydroformService(hydroformClient client.Client, gardenerKubeconfigPath string) Service {
 	return &service{
-		hydroformClient: hydroformClient,
-		secretsClient:   secretsClient,
+		hydroformClient:        hydroformClient,
+		gardenerKubeconfigPath: gardenerKubeconfigPath,
 	}
 }
 
@@ -52,13 +48,8 @@ type ClusterInfo struct {
 
 func (s service) ProvisionCluster(clusterData model.Cluster) (ClusterInfo, error) {
 	log.Infof("Preparing config for %s Runtime provisioning", clusterData.ID)
-	credentialsFile, err := s.saveCredentialsToFile(clusterData.CredentialsSecretName)
-	if err != nil {
-		return ClusterInfo{}, errors.WithMessagef(err, "Failed to save credentials to secret for %s Runtime", clusterData.ID)
-	}
-	defer removeFile(credentialsFile)
 
-	cluster, provider, err := clusterData.ClusterConfig.ToHydroformConfiguration(credentialsFile)
+	cluster, provider, err := clusterData.ClusterConfig.ToHydroformConfiguration(s.gardenerKubeconfigPath)
 	if err != nil {
 		return ClusterInfo{}, errors.WithMessagef(err, "Failed to convert  Provider config to Hydroform config for %s Runtime: %s", clusterData.ID, err.Error())
 	}
@@ -101,13 +92,8 @@ func (s service) ProvisionCluster(clusterData model.Cluster) (ClusterInfo, error
 
 func (s service) DeprovisionCluster(clusterData model.Cluster) error {
 	log.Infof("Preparing config for %s Runtime deprovisioning", clusterData.ID)
-	credentialsFile, err := s.saveCredentialsToFile(clusterData.CredentialsSecretName)
-	if err != nil {
-		return errors.WithMessagef(err, "Failed to save credentials to secret for %s Runtime", clusterData.ID)
-	}
-	defer removeFile(credentialsFile)
 
-	cluster, provider, err := clusterData.ClusterConfig.ToHydroformConfiguration(credentialsFile)
+	cluster, provider, err := clusterData.ClusterConfig.ToHydroformConfiguration(s.gardenerKubeconfigPath)
 	if err != nil {
 		return errors.WithMessagef(err, "Failed to convert Provider config to Hydroform %s Runtime: %s", clusterData.ID, err.Error())
 	}
@@ -123,30 +109,6 @@ func (s service) DeprovisionCluster(clusterData model.Cluster) error {
 
 	log.Infof("Starting deprovisioning of %s Runtime", clusterData.ID)
 	return s.hydroformClient.Deprovision(cluster, provider)
-}
-
-func (s service) saveCredentialsToFile(secretName string) (string, error) {
-	secret, err := s.secretsClient.Get(secretName, meta.GetOptions{})
-	if err != nil {
-		return "", errors.WithMessagef(err, "Failed to get credentials from %s secret", secretName)
-	}
-
-	credBytes, ok := secret.Data[credentialsKey]
-	if !ok {
-		return "", errors.New("Credentials not found within the secret")
-	}
-
-	tempFile, err := ioutil.TempFile("", secretName)
-	if err != nil {
-		return "", errors.Wrap(err, "Failed to create credentials file")
-	}
-
-	_, err = tempFile.Write(credBytes)
-	if err != nil {
-		return "", errors.WithMessagef(err, "Failed to save credentials to %s file", tempFile.Name())
-	}
-
-	return tempFile.Name(), nil
 }
 
 func removeFile(fileName string) {

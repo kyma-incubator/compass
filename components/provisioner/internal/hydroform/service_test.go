@@ -2,6 +2,8 @@ package hydroform
 
 import (
 	"bytes"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
@@ -17,8 +19,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"k8s.io/client-go/kubernetes/fake"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client/mocks"
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/stretchr/testify/mock"
@@ -26,12 +26,16 @@ import (
 )
 
 type mockProviderConfiguration struct {
-	cluster  *types.Cluster
-	provider *types.Provider
-	err      error
+	t               *testing.T
+	cluster         *types.Cluster
+	provider        *types.Provider
+	credentialsFile string
+	err             error
 }
 
 func (c mockProviderConfiguration) ToHydroformConfiguration(credentialsFileName string) (*types.Cluster, *types.Provider, error) {
+	assert.Equal(c.t, c.credentialsFile, credentialsFileName)
+
 	return c.cluster, c.provider, c.err
 }
 
@@ -42,6 +46,8 @@ func (c mockProviderConfiguration) ToShootTemplate(namespace string) *gardener_t
 const (
 	credentialsSecret = "credentials-secret"
 	secretsNamespace  = "namespace"
+
+	testCredentials = "test credentials"
 )
 
 var (
@@ -57,29 +63,37 @@ var (
 
 func TestService_ProvisionCluster(t *testing.T) {
 
+	file, err := createTestCredentialsFile()
+	require.NoError(t, err)
+	defer os.Remove(file)
+
 	hydroformCluster := &types.Cluster{}
 	hydroformProvider := &types.Provider{}
 
 	clusterData := model.Cluster{
-		ID:            "abcd",
-		ClusterConfig: mockProviderConfiguration{cluster: hydroformCluster, provider: hydroformProvider},
+		ID: "abcd",
+		ClusterConfig: mockProviderConfiguration{
+			t:               t,
+			credentialsFile: file,
+			cluster:         hydroformCluster,
+			provider:        hydroformProvider,
+		},
 	}
 
 	stateFileBytes := bytes.NewBuffer([]byte{})
-	err := statefile.Write(terraformStateFile, stateFileBytes)
+	err = statefile.Write(terraformStateFile, stateFileBytes)
 	require.NoError(t, err)
 
 	t.Run("Should provision cluster", func(t *testing.T) {
 		//given
 		hydroformClient := &mocks.Client{}
-		secretsClient := fake.NewSimpleClientset(secret).CoreV1().Secrets(secretsNamespace)
 
 		hydroformClient.On("Provision", hydroformCluster, hydroformProvider, mock.AnythingOfType("types.Option")).
 			Return(&types.Cluster{ClusterInfo: &types.ClusterInfo{InternalState: &types.InternalState{TerraformState: terraformStateFile}}}, nil)
 		hydroformClient.On("Status", mock.Anything, mock.Anything).Return(&types.ClusterStatus{Phase: types.Provisioned}, nil)
 		hydroformClient.On("Credentials", mock.Anything, mock.Anything).Return([]byte("kubeconfig"), nil)
 
-		hydroformService := NewHydroformService(hydroformClient, secretsClient)
+		hydroformService := NewHydroformService(hydroformClient, file)
 
 		//when
 		info, err := hydroformService.ProvisionCluster(clusterData)
@@ -96,15 +110,21 @@ func TestService_ProvisionCluster(t *testing.T) {
 
 func TestService_ProvisionCluster_Errors(t *testing.T) {
 
+	file, err := createTestCredentialsFile()
+	require.NoError(t, err)
+	defer os.Remove(file)
+
 	hydroformCluster := &types.Cluster{}
 	hydroformProvider := &types.Provider{}
 
 	clusterData := model.Cluster{
-		ID:            "abcd",
-		ClusterConfig: mockProviderConfiguration{cluster: hydroformCluster, provider: hydroformProvider},
-	}
-
-	secretsClient := fake.NewSimpleClientset(secret).CoreV1().Secrets(secretsNamespace)
+		ID: "abcd",
+		ClusterConfig: mockProviderConfiguration{
+			t:               t,
+			credentialsFile: file,
+			cluster:         hydroformCluster,
+			provider:        hydroformProvider,
+		}}
 
 	for _, testCase := range []struct {
 		description string
@@ -138,7 +158,7 @@ func TestService_ProvisionCluster_Errors(t *testing.T) {
 
 			testCase.mockFunc(hydroformClient)
 
-			hydroformService := NewHydroformService(hydroformClient, secretsClient)
+			hydroformService := NewHydroformService(hydroformClient, file)
 
 			//when
 			_, err := hydroformService.ProvisionCluster(clusterData)
@@ -155,41 +175,10 @@ func TestService_ProvisionCluster_Errors(t *testing.T) {
 		hydroformClient := &mocks.Client{}
 		clusterData := model.Cluster{
 			ID:            "abcd",
-			ClusterConfig: mockProviderConfiguration{err: errors.New("error")},
+			ClusterConfig: mockProviderConfiguration{t: t, credentialsFile: file, err: errors.New("error")},
 		}
 
-		hydroformService := NewHydroformService(hydroformClient, secretsClient)
-
-		//when
-		_, err := hydroformService.ProvisionCluster(clusterData)
-
-		//then
-		require.Error(t, err)
-		hydroformClient.AssertExpectations(t)
-	})
-
-	t.Run("should return error when no credentials in secret", func(t *testing.T) {
-		//given
-		hydroformClient := &mocks.Client{}
-		secretsClient := fake.NewSimpleClientset(&v1.Secret{ObjectMeta: v12.ObjectMeta{Name: credentialsSecret, Namespace: secretsNamespace}}).
-			CoreV1().Secrets(secretsNamespace)
-
-		hydroformService := NewHydroformService(hydroformClient, secretsClient)
-
-		//when
-		_, err := hydroformService.ProvisionCluster(clusterData)
-
-		//then
-		require.Error(t, err)
-		hydroformClient.AssertExpectations(t)
-	})
-
-	t.Run("should return error when credentials secret not found", func(t *testing.T) {
-		//given
-		hydroformClient := &mocks.Client{}
-		emptySecretsClient := fake.NewSimpleClientset().CoreV1().Secrets(secretsNamespace)
-
-		hydroformService := NewHydroformService(hydroformClient, emptySecretsClient)
+		hydroformService := NewHydroformService(hydroformClient, file)
 
 		//when
 		_, err := hydroformService.ProvisionCluster(clusterData)
@@ -203,22 +192,30 @@ func TestService_ProvisionCluster_Errors(t *testing.T) {
 
 func TestService_DeprovisionCluster(t *testing.T) {
 
+	file, err := createTestCredentialsFile()
+	require.NoError(t, err)
+	defer os.Remove(file)
+
 	stateFileBytes := bytes.NewBuffer([]byte{})
-	err := statefile.Write(terraformStateFile, stateFileBytes)
+	err = statefile.Write(terraformStateFile, stateFileBytes)
 	require.NoError(t, err)
 
 	clusterData := model.Cluster{
 		ID:             "abcd",
 		TerraformState: stateFileBytes.Bytes(),
-		ClusterConfig:  mockProviderConfiguration{cluster: &types.Cluster{}, provider: &types.Provider{}},
+		ClusterConfig: mockProviderConfiguration{
+			t:               t,
+			credentialsFile: file,
+			cluster:         &types.Cluster{},
+			provider:        &types.Provider{},
+		},
 	}
 
 	t.Run("Should deprovision cluster", func(t *testing.T) {
 		//given
 		hydroformClient := &mocks.Client{}
-		secretsClient := fake.NewSimpleClientset(secret).CoreV1().Secrets(secretsNamespace)
 
-		hydroformService := NewHydroformService(hydroformClient, secretsClient)
+		hydroformService := NewHydroformService(hydroformClient, file)
 
 		hydroformClient.On("Deprovision", mock.Anything, mock.Anything).Return(nil)
 
@@ -235,13 +232,12 @@ func TestService_DeprovisionCluster(t *testing.T) {
 		clusterData := model.Cluster{
 			ID:             "abcd",
 			TerraformState: []byte("invalid json"),
-			ClusterConfig:  mockProviderConfiguration{cluster: &types.Cluster{}, provider: &types.Provider{}},
+			ClusterConfig:  mockProviderConfiguration{t: t, credentialsFile: file, cluster: &types.Cluster{}, provider: &types.Provider{}},
 		}
 
 		hydroformClient := &mocks.Client{}
-		secretsClient := fake.NewSimpleClientset(secret).CoreV1().Secrets(secretsNamespace)
 
-		hydroformService := NewHydroformService(hydroformClient, secretsClient)
+		hydroformService := NewHydroformService(hydroformClient, file)
 
 		//when
 		err := hydroformService.DeprovisionCluster(clusterData)
@@ -254,13 +250,12 @@ func TestService_DeprovisionCluster(t *testing.T) {
 	t.Run("should return error when failed to convert provider config to Hydroform config", func(t *testing.T) {
 		//given
 		hydroformClient := &mocks.Client{}
-		secretsClient := fake.NewSimpleClientset(secret).CoreV1().Secrets(secretsNamespace)
 		clusterData := model.Cluster{
 			ID:            "abcd",
-			ClusterConfig: mockProviderConfiguration{err: errors.New("error")},
+			ClusterConfig: mockProviderConfiguration{t: t, credentialsFile: file, err: errors.New("error")},
 		}
 
-		hydroformService := NewHydroformService(hydroformClient, secretsClient)
+		hydroformService := NewHydroformService(hydroformClient, file)
 
 		//when
 		err := hydroformService.DeprovisionCluster(clusterData)
@@ -270,19 +265,18 @@ func TestService_DeprovisionCluster(t *testing.T) {
 		hydroformClient.AssertExpectations(t)
 	})
 
-	t.Run("Should return error when credentials secret not found", func(t *testing.T) {
-		//given
-		hydroformClient := &mocks.Client{}
-		secretsClient := fake.NewSimpleClientset().CoreV1().Secrets(secretsNamespace)
+}
 
-		hydroformService := NewHydroformService(hydroformClient, secretsClient)
+func createTestCredentialsFile() (string, error) {
+	tempFile, err := ioutil.TempFile("", "test_credentials")
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to create credentials file")
+	}
 
-		//when
-		err := hydroformService.DeprovisionCluster(clusterData)
+	_, err = tempFile.Write([]byte(testCredentials))
+	if err != nil {
+		return "", errors.WithMessagef(err, "Failed to save credentials to %s file", tempFile.Name())
+	}
 
-		//then
-		require.Error(t, err)
-		hydroformClient.AssertExpectations(t)
-	})
-
+	return tempFile.Name(), nil
 }
