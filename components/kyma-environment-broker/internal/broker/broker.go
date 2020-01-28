@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
@@ -38,7 +39,7 @@ type DirectorClient interface {
 	GetConsoleURL(accountID, runtimeID string) (string, error)
 }
 
-type Structdumper interface {
+type StructDumper interface {
 	Dump(value ...interface{})
 }
 
@@ -52,32 +53,61 @@ type ProvisioningConfig struct {
 	GardenerProjectName string
 }
 
+var planIDsMapping = map[string]string{
+	"azure": azurePlanID,
+	"gcp":   gcpPlanID,
+}
+
+// Config represents configuration for broker
+type Config struct {
+	EnablePlans EnablePlans `envconfig:"default=azure"`
+}
+
+// EnablePlans defines the plans that should be available for provisioning
+type EnablePlans []string
+
+// Unmarshal provides custom parsing of Log Level.
+// Implements envconfig.Unmarshal interface.
+func (m *EnablePlans) Unmarshal(in string) error {
+	plans := strings.Split(in, ",")
+	for _, name := range plans {
+		if _, exists := planIDsMapping[name]; !exists {
+			return errors.Errorf("unrecognized %v plan name ")
+		}
+	}
+
+	*m = plans
+	return nil
+}
+
 // KymaEnvBroker implements the Kyma Environment Broker
 type KymaEnvBroker struct {
-	dumper             Structdumper
-	config             ProvisioningConfig
+	dumper             StructDumper
+	provisioningCfg    ProvisioningConfig
 	provisionerClient  provisioner.Client
 	instancesStorage   storage.Instances
 	builderFactory     InputBuilderForPlan
 	DirectorClient    DirectorClient
 	optionalComponents OptionalComponentNamesProvider
+	enabledPlanIDs     map[string]struct{}
 }
 
-var enabledPlanIDs = map[string]struct{}{
-	azurePlanID: {},
-	gcpPlanID:   {},
-	// add plan IDs which must be enabled
-}
+func New(cfg Config, pCli provisioner.Client, dCli DirectorClient, provisioningCfg ProvisioningConfig, instStorage storage.Instances, optComponentsSvc OptionalComponentNamesProvider,
+	builderFactory InputBuilderForPlan, dumper StructDumper) (*KymaEnvBroker, error) {
 
-func New(pCli provisioner.Client, cfg ProvisioningConfig, dCli DirectorClient, instStorage storage.Instances,
-	optComponentsSvc OptionalComponentNamesProvider, builderFactory InputBuilderForPlan, dumper Structdumper) (*KymaEnvBroker, error) {
+	enabledPlanIDs := map[string]struct{}{}
+	for _, planName := range cfg.EnablePlans {
+		id := planIDsMapping[planName]
+		enabledPlanIDs[id] = struct{}{}
+	}
 
 	return &KymaEnvBroker{
 		provisionerClient:  pCli,
 		DirectorClient:     dCli,
 		dumper:             dumper,
-		config:             cfg,
+		provisioningCfg:    provisioningCfg,
 		instancesStorage:   instStorage,
+		enabledPlanIDs:     enabledPlanIDs,
 		builderFactory:     builderFactory,
 		optionalComponents: optComponentsSvc,
 	}, nil
@@ -90,7 +120,7 @@ func (b *KymaEnvBroker) Services(ctx context.Context) ([]domain.Service, error) 
 
 	for _, plan := range plans {
 		// filter out not enabled plans
-		if _, exists := enabledPlanIDs[plan.planDefinition.ID]; !exists {
+		if _, exists := b.enabledPlanIDs[plan.planDefinition.ID]; !exists {
 			continue
 		}
 		p := plan.planDefinition
@@ -153,6 +183,10 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not read parameters, instanceID %s", instanceID))
 	}
 
+	if _, exists := b.enabledPlanIDs[details.PlanID]; !exists {
+		return domain.ProvisionedServiceSpec{}, errors.Errorf("Plan ID %q is not recognized", details.PlanID)
+	}
+
 	// create input parameters according to selected plan
 	inputBuilder, found := b.builderFactory.ForPlan(details.PlanID)
 	if !found {
@@ -162,7 +196,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	inputBuilder.
 		SetERSContext(ersContext).
 		SetProvisioningParameters(parameters).
-		SetProvisioningConfig(b.config)
+		SetProvisioningConfig(b.provisioningCfg)
 
 	input, err := inputBuilder.Build()
 	if err != nil {

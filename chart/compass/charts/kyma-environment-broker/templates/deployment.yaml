@@ -40,6 +40,8 @@ spec:
           image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-broker:{{ .Values.global.images.kyma_environment_broker.version }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           env:
+            - name: APP_BROKER_ENABLE_PLANS
+              value: "{{ .Values.enablePlans }}"
             - name: APP_PROVISIONING_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_PROVISIONING_SECRET_NAME

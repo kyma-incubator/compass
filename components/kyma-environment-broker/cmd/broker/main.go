@@ -40,6 +40,8 @@ type Config struct {
 
 	KymaVersion                          string
 	ManagedRuntimeComponentsYAMLFilePath string
+
+	Broker broker.Config
 }
 
 func main() {
@@ -100,8 +102,7 @@ func main() {
 	dumper, err := broker.NewDumper()
 	fatalOnError(err)
 
-	// create kyma environment broker
-	kymaEnvBroker, err := broker.New(provisionerClient, cfg.Provisioning, directorClient, db.Instances(), optComponentsSvc, inputFactory, dumper)
+	kymaEnvBroker, err := broker.New(cfg.Broker, provisionerClient, directorClient, cfg.Provisioning, db.Instances(), optComponentsSvc, inputFactory, dumper)
 	fatalOnError(err)
 
 	// create and run broker OSB API
