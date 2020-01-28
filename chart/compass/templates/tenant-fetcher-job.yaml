@@ -54,11 +54,20 @@ spec:
               - name: APP_TENANT_PROVIDER
                 value: {{ .Values.global.tenantFetcher.providerName }}
               - name: APP_CLIENT_ID
-                value: {{ .Values.global.tenantFetcher.oauth.client }}
+                valueFrom:
+                  secretKeyRef:
+                    name: compass-tenant-fetcher-secret
+                    key: oauth-client
               - name: APP_CLIENT_SECRET
-                value: {{ .Values.global.tenantFetcher.oauth.secret }}
+                valueFrom:
+                  secretKeyRef:
+                    name: compass-tenant-fetcher-secret
+                    key: oauth-secret
               - name: APP_OAUTH_TOKEN_ENDPOINT
-                value: {{ .Values.global.tenantFetcher.oauth.tokenURL }}
+                valueFrom:
+                  secretKeyRef:
+                    name: compass-tenant-fetcher-secret
+                    key: oauth-token-endpoint
               - name: APP_MAPPING_FIELD_ID
                 value: {{ .Values.global.tenantFetcher.fieldMapping.idField }}
               - name: APP_MAPPING_FIELD_NAME
@@ -71,7 +80,7 @@ spec:
               - "/bin/sh"
             args:
               - "-c"
-              - "sleep 20; ./tenantfetcher; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+              - "./tenantfetcher; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
           {{if eq .Values.global.database.embedded.enabled false}}
           - name: cloudsql-proxy
             image: gcr.io/cloudsql-docker/gce-proxy:1.13

@@ -26,7 +26,5 @@ dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
 build-local:
-	env go build -o director ./cmd/director/main.go
-	rm director
-	env go build -o tenantfetcher ./cmd/tenantfetcher/main.go
-	rm tenantfetcher
+	env go build -o bin/director ./cmd/director/main.go
+	env go build -o bin/tenantfetcher ./cmd/tenantfetcher/main.go
