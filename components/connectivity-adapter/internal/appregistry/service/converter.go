@@ -528,13 +528,6 @@ func (c *converter) getUnmappedFromLabel(labels graphql.Labels, field string) st
 	return ""
 }
 
-func getLabelsOrNilIfEmpty(in graphql.Labels) *graphql.Labels {
-	if len(in) == 0 {
-		return nil
-	}
-	return &in
-}
-
 func ptrStringOrNilForEmpty(s string) *string {
 	if s == "" {
 		return nil
