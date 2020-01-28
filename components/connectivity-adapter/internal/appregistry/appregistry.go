@@ -1,8 +1,9 @@
 package appregistry
 
 import (
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
 
 	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
 
