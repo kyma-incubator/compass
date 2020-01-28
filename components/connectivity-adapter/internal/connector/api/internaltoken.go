@@ -36,7 +36,7 @@ func (th *tokenHandler) GetToken(w http.ResponseWriter, r *http.Request) {
 		reqerror.WriteErrorMessage(w, "Failed to get token.", apperrors.CodeForbidden)
 	}
 
-	res := model.MakeTokenResponse(application, th.connectivityAdapterBaseURL, token)
+	res := model.MakeTokenResponse(th.connectivityAdapterBaseURL, token)
 
 	respondWithBody(w, http.StatusCreated, res, contextLogger)
 }

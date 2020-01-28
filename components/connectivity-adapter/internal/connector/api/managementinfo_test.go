@@ -67,8 +67,9 @@ func TestHandlerManagementInfo(t *testing.T) {
 			},
 			URLs: model.MgmtURLs{
 				RuntimeURLs: &model.RuntimeURLs{
-					EventsURL:   "www.event-service.com/myapp/v1/events",
-					MetadataURL: "www.connectivity-adapter-mtls.com/myapp/v1/metadata/services",
+					EventsURL:     "www.event-service.com/myapp/v1/events",
+					EventsInfoURL: "www.event-service.com/myapp/v1/events/subscribed",
+					MetadataURL:   "www.connectivity-adapter-mtls.com/myapp/v1/metadata/services",
 				},
 				RenewCertURL:  "www.connectivity-adapter-mtls.com/v1/applications/certificates/renewals",
 				RevokeCertURL: "www.connectivity-adapter-mtls.com/v1/applications/certificates/revocations",

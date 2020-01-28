@@ -66,8 +66,9 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 			CsrURL: "www.connectivity-adapter.com/v1/applications/certificates?token=new_token",
 			API: model.Api{
 				RuntimeURLs: &model.RuntimeURLs{
-					EventsURL:   "www.event-service.com/myapp/v1/events",
-					MetadataURL: "www.connectivity-adapter-mtls.com/myapp/v1/metadata/services",
+					EventsURL:     "www.event-service.com/myapp/v1/events",
+					EventsInfoURL: "www.event-service.com/myapp/v1/events/subscribed",
+					MetadataURL:   "www.connectivity-adapter-mtls.com/myapp/v1/metadata/services",
 				},
 				InfoURL:         "www.connectivity-adapter-mtls.com/v1/applications/management/info",
 				CertificatesURL: "www.connectivity-adapter.com/v1/applications/certificates",

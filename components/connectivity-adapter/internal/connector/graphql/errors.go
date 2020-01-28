@@ -17,7 +17,7 @@ func toAppError(err error) apperrors.AppError {
 		return apperrors.WrongInput(err.Error())
 	}
 
-	if strings.Contains(err.Error(), "Error while parsing base64 content") {
+	if strings.Contains(err.Error(), "Error while parsing the base64 content") {
 		return apperrors.WrongInput(err.Error())
 	}
 

@@ -49,7 +49,7 @@ func extractHeaders(r *http.Request) (map[string]string, error) {
 		}, nil
 	}
 
-	return map[string]string{}, errors.New("Invalid token.")
+	return map[string]string{}, errors.New("invalid token or certificate")
 }
 
 func (ah AuthorizationHeaders) GetClientID() string {

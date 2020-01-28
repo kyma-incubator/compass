@@ -10,6 +10,7 @@ const (
 	ManagementInfoEndpoint            = "/v1/applications/management/info"
 	ApplicationRegistryEndpointFormat = "/%s/v1/metadata/services"
 	EventsEndpointFormat              = "/%s/v1/events"
+	EventsInfoEndpointFormat          = "/%s/v1/events/subscribed"
 	RenewCertURLFormat                = "%s/v1/applications/certificates/renewals"
 	RevocationCertURLFormat           = "%s/v1/applications/certificates/revocations"
 	SigningRequestInfoEndpoint        = "%s/v1/applications/signingRequests/info"
@@ -39,7 +40,7 @@ type MgmtInfoReponse struct {
 }
 
 type RuntimeURLs struct {
-	EventsInfoURL string `json:"eventsInfoUrl"` // TODO: Where is it used?
+	EventsInfoURL string `json:"eventsInfoUrl"`
 	EventsURL     string `json:"eventsUrl"`
 	MetadataURL   string `json:"metadataUrl"`
 }
@@ -90,8 +91,9 @@ func MakeApiURLs(application, connectivityAdapterBaseURL string, connectivityAda
 
 func makeRuntimeURLs(application, connectivityAdapterBaseURL string, eventServiceBaseURL string) *RuntimeURLs {
 	return &RuntimeURLs{
-		MetadataURL: connectivityAdapterBaseURL + fmt.Sprintf(ApplicationRegistryEndpointFormat, application),
-		EventsURL:   eventServiceBaseURL + fmt.Sprintf(EventsEndpointFormat, application),
+		MetadataURL:   connectivityAdapterBaseURL + fmt.Sprintf(ApplicationRegistryEndpointFormat, application),
+		EventsURL:     eventServiceBaseURL + fmt.Sprintf(EventsEndpointFormat, application),
+		EventsInfoURL: eventServiceBaseURL + fmt.Sprintf(EventsInfoEndpointFormat, application),
 	}
 }
 
@@ -111,7 +113,7 @@ func MakeManagementURLs(application, connectivityAdapterMTLSBaseURL string, even
 	}
 }
 
-func MakeTokenResponse(application string, connectivityAdapterBaseURL string, token string) TokenResponse {
+func MakeTokenResponse(connectivityAdapterBaseURL string, token string) TokenResponse {
 	csrInfoUrl := fmt.Sprintf(SigningRequestInfoEndpoint, connectivityAdapterBaseURL)
 
 	return TokenResponse{
