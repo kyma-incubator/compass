@@ -31,10 +31,10 @@ func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		variables := mux.Vars(r)
 		appName := variables[appNameVar]
-		query := fixAppByNameQuery(mw.gqlProvider, appName)
+		query := FixAppByNameQuery(mw.gqlProvider, appName)
 
 		client := mw.cliProvider.GQLClient(r)
-		var apps gqlSuccessfulAppPage
+		var apps GqlSuccessfulAppPage
 		err := client.Run(r.Context(), query, &apps)
 		if err != nil {
 			wrappedErr := errors.Wrap(err, "while getting service")
@@ -68,7 +68,7 @@ func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 	})
 }
 
-func fixAppByNameQuery(gql gql.GqlFieldsProvider, appName string) *gcli.Request {
+func FixAppByNameQuery(gql gql.GqlFieldsProvider, appName string) *gcli.Request {
 	return gcli.NewRequest(fmt.Sprintf(`query {
 			result: applications(filter: {key:"%s", query: "\"%s\""}) {
 					%s
@@ -76,6 +76,6 @@ func fixAppByNameQuery(gql gql.GqlFieldsProvider, appName string) *gcli.Request 
 	}`, nameKey, appName, gql.Page(gql.ForApplication())))
 }
 
-type gqlSuccessfulAppPage struct {
+type GqlSuccessfulAppPage struct {
 	Result graphql.ApplicationPageExt `json:"result"`
 }
