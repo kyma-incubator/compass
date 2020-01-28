@@ -3,6 +3,11 @@ package api
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+
 	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1alpha1"
 	"github.com/gardener/gardener/pkg/apis/garden"
 	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
@@ -33,12 +38,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
-	"os"
-	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"testing"
-	"time"
 )
 
 var testEnv *envtest.Environment
