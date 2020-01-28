@@ -68,14 +68,6 @@ func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 	})
 }
 
-func FixAppsByNameQuery(gql gql.GqlFieldsProvider, appName string) *gcli.Request {
-	return gcli.NewRequest(fmt.Sprintf(`query {
-			result: applications(filter: {key:"%s", query: "\"%s\""}) {
-					%s
-			}
-	}`, nameKey, appName, gql.Page(gql.ForApplication())))
-}
-
 type GqlSuccessfulAppPage struct {
 	Result graphql.ApplicationPageExt `json:"result"`
 }

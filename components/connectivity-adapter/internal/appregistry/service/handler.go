@@ -160,6 +160,8 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 
 func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	h.logger.Println("List")
+	//TODO: Implement it, currently this endpoint purpose is for manually testing appdetails middleware
+
 	ctx := request.Context()
 	app, err := appdetails.LoadFromContext(ctx)
 	if err != nil {
@@ -177,6 +179,7 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	_, _ = writer.Write(output)
+
 	writer.WriteHeader(http.StatusNotImplemented)
 }
 
