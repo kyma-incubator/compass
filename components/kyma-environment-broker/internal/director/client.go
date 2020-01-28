@@ -138,10 +138,6 @@ func (dc Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error)
 	if response.Status.Condition == graphql.RuntimeStatusConditionFailed {
 		return "", fmt.Errorf("response status condition from director is %s", graphql.RuntimeStatusConditionFailed)
 	}
-	// TODO: uncomment when status will be set on director side
-	//if response.Status.Condition != graphql.RuntimeStatusConditionReady {
-	//	return "", TemporaryError{fmt.Sprintf("response status condition is not %q", graphql.RuntimeStatusConditionReady)}
-	//}
 
 	value, ok := response.Labels[consoleURLLabelKey]
 	if !ok {

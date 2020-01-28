@@ -72,6 +72,8 @@ func main() {
 	// create director client on the base of graphQL client and OAuth client
 	httpClient := http_client.NewHTTPClient(30, cfg.Director.SkipCertVerification)
 	graphQLClient := gcli.NewClient(cfg.Director.URL, gcli.WithHTTPClient(httpClient))
+	// TODO: remove after debug mode
+	graphQLClient.Log = func(s string) { log.Println(s) }
 	oauthClient := oauth.NewOauthClient(httpClient, cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
 	fatalOnError(oauthClient.WaitForCredentials())
 	directorClient := director.NewDirectorClient(oauthClient, graphQLClient)
