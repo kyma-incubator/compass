@@ -77,7 +77,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
      kubectl -n compass-system create secret generic {SECRET_NAME} --from-file=credentials={PATH_TO_KUBECONFIG}
      ```
     
-  5. Make a call to the Runtime Provisioner to create a cluster on GCP.
+  5. Make a call to the Runtime Provisioner to create a cluster on GCP. Note, that the Runtime Agent component in the Kyma configuration is mandatory.
     
       > **NOTE:** The cluster name must start with a lowercase letter followed by up to 19 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.                                                                 
                                                                           
@@ -113,6 +113,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
             kymaConfig: {
               version: "1.8.0"
               components: [
+                { component: "compass-runtime-agent", namespace: "compass-system" }
                 {
                   component: "{KYMA_COMPONENT_NAME}"
                   namespace: "{NAMESPACE_TO_INSTALL_COMPONENT_TO}"
@@ -175,7 +176,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
      kubectl -n compass-system create secret generic {SECRET_NAME} --from-file=credentials={PATH_TO_KUBECONFIG}
      ```
     
-  5. Make a call to the Runtime Provisioner to create a cluster on Azure.
+  5. Make a call to the Runtime Provisioner to create a cluster on Azure. Note, that the Runtime Agent component in the Kyma configuration is mandatory.
 
       > **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
     
@@ -244,7 +245,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
      kubectl -n compass-system create secret generic {SECRET_NAME} --from-file=credentials={PATH_TO_KUBECONFIG}
      ```
 
-  5. Make a call to the Runtime Provisioner to create a cluster on AWS.
+  5. Make a call to the Runtime Provisioner to create a cluster on AWS. Note, that the Runtime Agent component in the Kyma configuration is mandatory.
 
       > **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
     
