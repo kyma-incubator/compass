@@ -72,7 +72,7 @@ func TestRuntimeInput_Validate_Description(t *testing.T) {
 		},
 		{
 			Name:          "Invalid - Too long",
-			Value:         str.Ptr(inputvalidationtest.String129Long),
+			Value:         str.Ptr(inputvalidationtest.String2001Long),
 			ExpectedValid: false,
 		},
 	}
