@@ -15,7 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const appNameVar = "app-name"
+const appNamePathVariable = "app-name"
 const nameKey = "name"
 
 //go:generate mockery -name=GraphQLRequestBuilder -output=automock -outpkg=automock -case=underscore
@@ -37,7 +37,7 @@ func NewApplicationMiddleware(cliProvider gqlcli.Provider, logger *log.Logger, g
 func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		variables := mux.Vars(r)
-		appName := variables[appNameVar]
+		appName := variables[appNamePathVariable]
 		query := mw.gqlQueryBuilder.GetApplicationsByName(appName)
 
 		client := mw.cliProvider.GQLClient(r)

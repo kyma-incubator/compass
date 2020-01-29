@@ -171,21 +171,8 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
+	log.Infof("Application from ctx: %+v", app)
 
-	output, err := json.Marshal(app)
-	if err != nil {
-		wrappedErr := errors.Wrap(err, "while marshalling output")
-		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
-		return
-	}
-	_, err = writer.Write(output)
-	if err != nil {
-		wrappedErr := errors.Wrap(err, "while writing to the output")
-		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
-		return
-	}
 	writer.WriteHeader(http.StatusNotImplemented)
 }
 
