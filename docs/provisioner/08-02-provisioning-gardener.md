@@ -284,17 +284,17 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
       > **NOTE:** The cluster name must start with a lowercase letter followed by up to 19 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.                                                                  
                                                                           
       ```graphql
-      mutation { 
+      mutation {
         provisionRuntime(
           config: {
             runtimeInput: {
-              name: {RUNTIME_NAME}
-              labels: { key: [value, “xxx”]
+              name: "{RUNTIME_NAME}"
+              labels: {RUNTIME_LABELS}
             }
             clusterConfig: {
               gardenerConfig: {
-                name: "{CLUSTER_NAME}"
-                projectName: "{GARDENER_PROJECT_NAME}"
+                name: "{CLUSTER_NAME}" 
+                projectName: "{GARDENER_PROJECT_NAME}" 
                 kubernetesVersion: "1.15.4"
                 diskType: "gp2"
                 volumeSizeGB: 35
@@ -303,7 +303,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 region: "eu-west-1"
                 provider: "aws"
                 seed: "aws-eu1"
-                targetSecret: "{GARDENER_AWS_SECRET_NAME}"
+                targetSecret: "{GARDENER_GCP_SECRET_NAME}"
                 workerCidr: "10.250.0.0/19"
                 autoScalerMin: 2
                 autoScalerMax: 4
@@ -311,18 +311,43 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 maxUnavailable: 1
                 providerSpecificConfig: { 
                   awsConfig: {
-                    publicCidr: "10.250.96.0/22",
-                    vpcCidr:         "10.250.0.0/16",
-                    internalCidr:   "10.250.112.0/22",
-                    zone:            "eu-west-1b",
-                  }
+                    publicCidr: "10.250.96.0/22"
+                    vpcCidr: "10.250.0.0/16"
+                    internalCidr: "10.250.112.0/22"
+                    zone: "eu-west-1b"
+                  } 
                 }
               }
             }
-            kymaConfig: { version: "1.5", modules: Backup }
-            credentials: { secretName: "{GARDENER_SERVICE_ACCOUNT_CONFIGURATION_SECRET_NAME}" }
+            kymaConfig: {
+              version: "1.8.0"
+              components: [
+                { component: "compass-runtime-agent", namespace: "compass-system" }
+                {
+                  component: "{KYMA_COMPONENT_NAME}"
+                  namespace: "{NAMESPACE_TO_INSTALL_COMPONENT_TO}"
+                  configuration: [
+                    { key: "{CONFIG_PROPERTY_KEY}"
+                      value: "{CONFIG_PROPERTY_VALUE}"
+                      secret: {true|false} # Specifies if the property is confidential
+                    }
+                  ]
+                }
+              ]
+              configuration: [
+                { 
+                  key: "{CONFIG_PROPERTY_KEY}"
+                  value: "{CONFIG_PROPERTY_VALUE}"
+                  secret: {true|false} # Specifies if the property is confidential
+                }
+              ]
+            }
+            credentials: { secretName: "{GARDENER_SERVICE_ACCOUNT_CONFIGURATION_SECERT_NAME}" }
           }
-        )
+        ) {
+          runtimeID
+          id
+        }
       }
       ```
     
@@ -342,6 +367,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     
 </div>
 
-The operation of provisioning is asynchronous. The operation of provisioning returns the Runtime Operation Status containing the operation ID (id). Use the provisioning operation ID (`provisionRuntime.id`) to [check the Runtime Operation Status](08-03-runtime-operation-status.md) and verify that the provisioning was successful. Use the Runtime ID (`provisionRuntime.runtimeID`) to [check the Runtime Status](08-04-runtime-status.md). 
+The operation of provisioning is asynchronous. The operation of provisioning returns the Runtime Operation Status containing the runtime ID (`provisionRuntime.runtimeID`) and the operation ID (`provisionRuntime.id`). Use the Runtime ID to [check the Runtime Status](08-04-runtime-status.md). Use the provisioning operation ID to [check the Runtime Operation Status](08-03-runtime-operation-status.md) and verify that the provisioning was successful.
 
 > **NOTE:** To see how to provide the labels, see [this](../compass/03-02-labeling.md) document. To see an example of label usage, go [here](../../componentss/director/examples/register-application/register-application.graphql). 

@@ -11,7 +11,7 @@ It is powered by [Hydroform](https://github.com/kyma-incubator/hydroform) and it
     * Microsoft Azure
     * Amazon Web Services (AWS).
     
-Note that the operations of provisioning and deprovisioning are asynchronous. The operation of provisioning returns the Runtime Operation Status containing the operation ID. The operation of deprovisioning returns the operation ID, which you can use to [check the Runtime Operation Status](08-03-runtime-operation-status.md).
+Note that the operations of provisioning and deprovisioning are asynchronous. The operation of provisioning returns the Runtime Operation Status containing the runtime ID and the operation ID. The operation of deprovisioning returns the operation ID. You can use the operation ID to [check the Runtime Operation Status](08-03-runtime-operation-status.md).
 
 The Runtime Provisioner exposes an API to manage cluster provisioning, installation, and deprovisioning. 
 
