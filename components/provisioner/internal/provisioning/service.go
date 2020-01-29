@@ -2,7 +2,6 @@ package provisioning
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes"
 	"time"
 
 	uuid "github.com/kyma-incubator/compass/components/provisioner/internal/uuid"

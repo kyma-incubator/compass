@@ -3,6 +3,7 @@ package gardener
 import (
 	"context"
 	"fmt"
+	proviRuntime "github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
@@ -36,7 +37,8 @@ func NewReconciler(
 	shootClient v1beta1.ShootInterface,
 	installationService installation.Service,
 	installationTimeout time.Duration,
-	directorClient director.DirectorClient) *Reconciler {
+	directorClient director.DirectorClient,
+	runtimeConfigurator proviRuntime.Configurator) *Reconciler {
 	return &Reconciler{
 		client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
@@ -49,6 +51,7 @@ func NewReconciler(
 			installationService:     installationService,
 			kymaInstallationTimeout: installationTimeout,
 			directorClient:          directorClient,
+			runtimeConfigurator:runtimeConfigurator,
 		},
 	}
 }
@@ -69,6 +72,7 @@ type ProvisioningOperator struct {
 	dbsFactory                  dbsession.Factory
 	kymaInstallationTimeout     time.Duration
 	directorClient              director.DirectorClient
+	runtimeConfigurator proviRuntime.Configurator
 }
 
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
@@ -217,7 +221,7 @@ func (r *ProvisioningOperator) setDeprovisioningFinished(cluster model.Cluster, 
 		return fmt.Errorf("error setting deprovisioning operation %s as succeeded: %s", lastOp.ID, dberr.Error())
 	}
 
-	err := r.directorClient.DeleteRuntime(cluster.ID)
+	err := r.directorClient.DeleteRuntime(cluster.ID, cluster.Tenant)
 	if err != nil {
 		return fmt.Errorf("error deleting Runtime form Director: %s", err.Error())
 	}

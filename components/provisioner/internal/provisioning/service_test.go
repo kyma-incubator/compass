@@ -2,8 +2,6 @@ package provisioning
 
 import (
 	"errors"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	runtimeConfigMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes/mocks"
 	"testing"
 	"time"
 
@@ -140,7 +138,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		directorServiceMock := &directormock.DirectorClient{}
 		provisioner := &mocks2.Provisioner{}
 
-		directorServiceMock.On("CreateRuntime", mock.Anything).Return(runtimeID, nil)
+		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
 		writeSessionWithinTransactionMock.On("InsertGCPConfig", mock.AnythingOfType("model.GCPConfig")).Return(nil)
@@ -153,7 +151,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator)
 
 		//when
-		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInput)
+		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
 		require.NoError(t, err)
 
 		//then
@@ -171,7 +169,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		directorServiceMock := &directormock.DirectorClient{}
 		provisioner := &mocks2.Provisioner{}
 
-		directorServiceMock.On("CreateRuntime", mock.Anything).Return(runtimeID, nil)
+		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
 		writeSessionWithinTransactionMock.On("InsertGardenerConfig", mock.AnythingOfType("model.GardenerConfig")).Return(nil)
@@ -180,12 +178,12 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		writeSessionWithinTransactionMock.On("Commit").Return(dberrors.Internal("error"))
 		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
 		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(nil)
-		directorServiceMock.On("DeleteRuntime", runtimeID).Return(nil)
+		directorServiceMock.On("DeleteRuntime", runtimeID, tenant).Return(nil)
 
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator)
 
 		//when
-		_, err := service.ProvisionRuntime(provisionRuntimeInput)
+		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
 		require.Error(t, err)
 
 		//then
@@ -233,7 +231,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		//given
 		directorServiceMock := &directormock.DirectorClient{}
 
-		directorServiceMock.On("CreateRuntime", mock.Anything).Return("", errors.New("error"))
+		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return("", errors.New("error"))
 
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, nil, nil, uuidGenerator)
 
@@ -309,7 +307,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator())
 
 		//when
-		_, err := resolver.DeprovisionRuntime(runtimeID)
+		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
 		require.Error(t, err)
 
 		//then
@@ -331,7 +329,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator())
 
 		//when
-		_, err := resolver.DeprovisionRuntime(runtimeID)
+		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
 		require.Error(t, err)
 
 		//then
@@ -353,7 +351,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator())
 
 		//when
-		_, err := resolver.DeprovisionRuntime(runtimeID)
+		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
 		require.Error(t, err)
 
 		//then
@@ -373,7 +371,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator())
 
 		//when
-		_, err := resolver.DeprovisionRuntime(runtimeID)
+		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
 		require.Error(t, err)
 
 		//then

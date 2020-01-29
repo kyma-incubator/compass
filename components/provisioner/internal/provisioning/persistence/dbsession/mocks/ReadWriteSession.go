@@ -123,6 +123,29 @@ func (_m *ReadWriteSession) GetOperation(operationID string) (model.Operation, d
 	return r0, r1
 }
 
+// GetTenant provides a mock function with given fields: runtimeID
+func (_m *ReadWriteSession) GetTenant(runtimeID string) (string, dberrors.Error) {
+	ret := _m.Called(runtimeID)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(runtimeID)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 dberrors.Error
+	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+		r1 = rf(runtimeID)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(dberrors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
 // InsertCluster provides a mock function with given fields: cluster
 func (_m *ReadWriteSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	ret := _m.Called(cluster)
@@ -201,31 +224,6 @@ func (_m *ReadWriteSession) InsertOperation(operation model.Operation) dberrors.
 	}
 
 	return r0
-}
-
-// ListGardenerClusters provides a mock function with given fields:
-func (_m *ReadWriteSession) ListGardenerClusters() ([]model.Cluster, dberrors.Error) {
-	ret := _m.Called()
-
-	var r0 []model.Cluster
-	if rf, ok := ret.Get(0).(func() []model.Cluster); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.Cluster)
-		}
-	}
-
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func() dberrors.Error); ok {
-		r1 = rf()
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
-		}
-	}
-
-	return r0, r1
 }
 
 // MarkClusterAsDeleted provides a mock function with given fields: runtimeID

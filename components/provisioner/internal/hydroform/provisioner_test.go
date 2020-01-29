@@ -2,6 +2,7 @@ package hydroform_test
 
 import (
 	"errors"
+	runtimeMocks "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/mocks"
 	"testing"
 
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
@@ -22,6 +23,7 @@ const (
 	operationId    = "operationId"
 	kubeconfigFile = "kubeconfig data"
 	kymaVersion    = "1.9.0"
+	tenant         = "tenant"
 )
 
 var (
@@ -53,6 +55,7 @@ func Test_Provision(t *testing.T) {
 		installationSvc := &installationMocks.Service{}
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionMock := &sessionMocks.WriteSession{}
+		configurator := &runtimeMocks.Configurator{}
 
 		hydroformMock.On("ProvisionCluster", cluster).Return(
 			hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")},
@@ -62,8 +65,9 @@ func Test_Provision(t *testing.T) {
 		writeSessionMock.On("UpdateCluster", runtimeId, kubeconfigFile, []byte("")).Return(nil)
 		installationSvc.On("InstallKyma", runtimeId, kubeconfigFile, kymaRelease, globalConfig, componentsConfig).Return(nil)
 		writeSessionMock.On("UpdateOperationState", operationId, "Operation succeeded.", model.Succeeded).Return(nil)
+		configurator.On("ConfigureRuntime", cluster, kubeconfigFile).Return(nil)
 
-		hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformMock, installationSvc, sessionFactoryMock, nil)
+		hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformMock, installationSvc, sessionFactoryMock, nil, configurator)
 
 		// when
 		channel, err := hydroformProvisioner.Provision(cluster, operationId)
@@ -75,11 +79,38 @@ func Test_Provision(t *testing.T) {
 
 	for _, testCase := range []struct {
 		description string
-		mockFunc    func(*mocks.Service, *sessionMocks.Factory, *installationMocks.Service, *sessionMocks.WriteSession)
+		mockFunc    func(*mocks.Service, *sessionMocks.Factory, *installationMocks.Service, *sessionMocks.WriteSession, *runtimeMocks.Configurator)
 	}{
 		{
+			description: "fail to configure Runtime",
+			mockFunc: func(
+				hydroformMock *mocks.Service,
+				sessionFactoryMock *sessionMocks.Factory,
+				installationSvc *installationMocks.Service,
+				writeSessionMock *sessionMocks.WriteSession,
+				configurator *runtimeMocks.Configurator) {
+
+				hydroformMock.On("ProvisionCluster", cluster).Return(
+					hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")},
+					nil,
+				)
+				sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock, nil)
+				writeSessionMock.On("UpdateCluster", runtimeId, kubeconfigFile, []byte("")).Return(nil)
+				installationSvc.On("InstallKyma", runtimeId, kubeconfigFile, kymaRelease, globalConfig, componentsConfig).Return(nil)
+				configurator.On("ConfigureRuntime", cluster, kubeconfigFile).Return(errors.New("error"))
+				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed).Return(nil)
+
+			},
+		},
+		{
 			description: "fail to install Kyma",
-			mockFunc: func(hydroformMock *mocks.Service, sessionFactoryMock *sessionMocks.Factory, installationSvc *installationMocks.Service, writeSessionMock *sessionMocks.WriteSession) {
+			mockFunc: func(
+				hydroformMock *mocks.Service,
+				sessionFactoryMock *sessionMocks.Factory,
+				installationSvc *installationMocks.Service,
+				writeSessionMock *sessionMocks.WriteSession,
+				configurator *runtimeMocks.Configurator) {
+
 				hydroformMock.On("ProvisionCluster", cluster).Return(
 					hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")},
 					nil,
@@ -88,12 +119,17 @@ func Test_Provision(t *testing.T) {
 				writeSessionMock.On("UpdateCluster", runtimeId, kubeconfigFile, []byte("")).Return(nil)
 				installationSvc.On("InstallKyma", runtimeId, kubeconfigFile, kymaRelease, globalConfig, componentsConfig).Return(errors.New("error"))
 				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed).Return(nil)
-
 			},
 		},
 		{
 			description: "fail to save kubeconfig",
-			mockFunc: func(hydroformMock *mocks.Service, sessionFactoryMock *sessionMocks.Factory, installationSvc *installationMocks.Service, writeSessionMock *sessionMocks.WriteSession) {
+			mockFunc: func(
+				hydroformMock *mocks.Service,
+				sessionFactoryMock *sessionMocks.Factory,
+				installationSvc *installationMocks.Service,
+				writeSessionMock *sessionMocks.WriteSession,
+				configurator *runtimeMocks.Configurator) {
+
 				hydroformMock.On("ProvisionCluster", cluster).Return(
 					hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")},
 					nil,
@@ -106,7 +142,13 @@ func Test_Provision(t *testing.T) {
 		},
 		{
 			description: "status different than Provisioned",
-			mockFunc: func(hydroformMock *mocks.Service, sessionFactoryMock *sessionMocks.Factory, installationSvc *installationMocks.Service, writeSessionMock *sessionMocks.WriteSession) {
+			mockFunc: func(
+				hydroformMock *mocks.Service,
+				sessionFactoryMock *sessionMocks.Factory,
+				installationSvc *installationMocks.Service,
+				writeSessionMock *sessionMocks.WriteSession,
+				configurator *runtimeMocks.Configurator) {
+
 				hydroformMock.On("ProvisionCluster", cluster).Return(
 					hydroform.ClusterInfo{ClusterStatus: types.Errored, KubeConfig: kubeconfigFile, State: []byte("")},
 					nil,
@@ -117,7 +159,13 @@ func Test_Provision(t *testing.T) {
 		},
 		{
 			description: "failed to provision",
-			mockFunc: func(hydroformMock *mocks.Service, sessionFactoryMock *sessionMocks.Factory, installationSvc *installationMocks.Service, writeSessionMock *sessionMocks.WriteSession) {
+			mockFunc: func(
+				hydroformMock *mocks.Service,
+				sessionFactoryMock *sessionMocks.Factory,
+				installationSvc *installationMocks.Service,
+				writeSessionMock *sessionMocks.WriteSession,
+				configurator *runtimeMocks.Configurator) {
+
 				hydroformMock.On("ProvisionCluster", cluster).Return(hydroform.ClusterInfo{}, errors.New("error"))
 				sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock, nil)
 				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed).Return(nil)
@@ -131,10 +179,11 @@ func Test_Provision(t *testing.T) {
 			installationSvc := &installationMocks.Service{}
 			sessionFactoryMock := &sessionMocks.Factory{}
 			writeSessionMock := &sessionMocks.WriteSession{}
+			confugurator := &runtimeMocks.Configurator{}
 
-			testCase.mockFunc(hydroformMock, sessionFactoryMock, installationSvc, writeSessionMock)
+			testCase.mockFunc(hydroformMock, sessionFactoryMock, installationSvc, writeSessionMock, confugurator)
 
-			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformMock, installationSvc, sessionFactoryMock, nil)
+			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformMock, installationSvc, sessionFactoryMock, nil, confugurator)
 
 			// when
 			channel, err := hydroformProvisioner.Provision(cluster, operationId)
@@ -149,7 +198,8 @@ func Test_Provision(t *testing.T) {
 
 func Test_Deprovision(t *testing.T) {
 	cluster := model.Cluster{
-		ID: runtimeId,
+		ID:     runtimeId,
+		Tenant: tenant,
 		KymaConfig: model.KymaConfig{
 			Release:             kymaRelease,
 			GlobalConfiguration: globalConfig,
@@ -167,10 +217,10 @@ func Test_Deprovision(t *testing.T) {
 		hydroformMock.On("DeprovisionCluster", cluster).Return(nil)
 		sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock, nil)
 		writeSessionMock.On("MarkClusterAsDeleted", runtimeId).Return(nil)
-		directorServiceMock.On("DeleteRuntime", runtimeId).Return(nil)
+		directorServiceMock.On("DeleteRuntime", runtimeId, tenant).Return(nil)
 		writeSessionMock.On("UpdateOperationState", operationId, "Operation succeeded.", model.Succeeded).Return(nil)
 
-		hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformMock, nil, sessionFactoryMock, directorServiceMock)
+		hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformMock, nil, sessionFactoryMock, directorServiceMock, nil)
 
 		// when
 		op, channel, err := hydroformProvisioner.Deprovision(cluster, operationId)
@@ -191,7 +241,7 @@ func Test_Deprovision(t *testing.T) {
 				hydroformMock.On("DeprovisionCluster", cluster).Return(nil)
 				sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock, nil)
 				writeSessionMock.On("MarkClusterAsDeleted", runtimeId).Return(nil)
-				directorServiceMock.On("DeleteRuntime", runtimeId).Return(errors.New("error"))
+				directorServiceMock.On("DeleteRuntime", runtimeId, tenant).Return(errors.New("error"))
 				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed).Return(nil)
 			},
 		},
@@ -222,7 +272,7 @@ func Test_Deprovision(t *testing.T) {
 
 			testCase.mockFunc(hydroformMock, sessionFactoryMock, writeSessionMock, directorServiceMock)
 
-			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformMock, nil, sessionFactoryMock, directorServiceMock)
+			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformMock, nil, sessionFactoryMock, directorServiceMock, nil)
 
 			// when
 			op, channel, err := hydroformProvisioner.Deprovision(cluster, operationId)

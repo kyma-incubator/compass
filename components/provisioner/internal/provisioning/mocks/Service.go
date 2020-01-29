@@ -12,20 +12,20 @@ type Service struct {
 	mock.Mock
 }
 
-// DeprovisionRuntime provides a mock function with given fields: id
-func (_m *Service) DeprovisionRuntime(id string) (string, error) {
-	ret := _m.Called(id)
+// DeprovisionRuntime provides a mock function with given fields: id, tenant
+func (_m *Service) DeprovisionRuntime(id string, tenant string) (string, error) {
+	ret := _m.Called(id, tenant)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
+		r0 = rf(id, tenant)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(id)
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(id, tenant)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -33,13 +33,13 @@ func (_m *Service) DeprovisionRuntime(id string) (string, error) {
 	return r0, r1
 }
 
-// ProvisionRuntime provides a mock function with given fields: config
-func (_m *Service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (*gqlschema.OperationStatus, error) {
-	ret := _m.Called(config)
+// ProvisionRuntime provides a mock function with given fields: config, tenant
+func (_m *Service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string) (*gqlschema.OperationStatus, error) {
+	ret := _m.Called(config, tenant)
 
 	var r0 *gqlschema.OperationStatus
-	if rf, ok := ret.Get(0).(func(gqlschema.ProvisionRuntimeInput) *gqlschema.OperationStatus); ok {
-		r0 = rf(config)
+	if rf, ok := ret.Get(0).(func(gqlschema.ProvisionRuntimeInput, string) *gqlschema.OperationStatus); ok {
+		r0 = rf(config, tenant)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*gqlschema.OperationStatus)
@@ -47,8 +47,8 @@ func (_m *Service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (*gq
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(gqlschema.ProvisionRuntimeInput) error); ok {
-		r1 = rf(config)
+	if rf, ok := ret.Get(1).(func(gqlschema.ProvisionRuntimeInput, string) error); ok {
+		r1 = rf(config, tenant)
 	} else {
 		r1 = ret.Error(1)
 	}

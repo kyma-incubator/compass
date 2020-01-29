@@ -2,6 +2,7 @@ package hydroform
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
@@ -21,23 +22,29 @@ const (
 	retryCount = 5
 )
 
-func NewHydroformProvisioner(hydroformSvc Service, installationSvc installation.Service, factory dbsession.Factory, directorClient director.DirectorClient) *HydroformProvisioner {
+func NewHydroformProvisioner(
+	hydroformSvc Service,
+	installationSvc installation.Service,
+	factory dbsession.Factory,
+	directorClient director.DirectorClient,
+	runtimeConfigurator runtime.Configurator) *HydroformProvisioner {
 	return &HydroformProvisioner{
-		hydroformSvc:     hydroformSvc,
-		installationSvc:  installationSvc,
-		dbSessionFactory: factory,
-		directorService:  directorClient,
-		logger:           logrus.WithField("Component", "HydroformProvisioner"),
+		hydroformSvc:        hydroformSvc,
+		installationSvc:     installationSvc,
+		dbSessionFactory:    factory,
+		directorService:     directorClient,
+		runtimeConfigurator: runtimeConfigurator,
+		logger:              logrus.WithField("Component", "HydroformProvisioner"),
 	}
 }
 
 type HydroformProvisioner struct {
-	hydroformSvc     Service
-	installationSvc  installation.Service
-	dbSessionFactory dbsession.Factory
-	directorService  director.DirectorClient
-
-	logger *logrus.Entry
+	hydroformSvc        Service
+	installationSvc     installation.Service
+	dbSessionFactory    dbsession.Factory
+	directorService     director.DirectorClient
+	runtimeConfigurator runtime.Configurator
+	logger              *logrus.Entry
 }
 
 func (h *HydroformProvisioner) ProvisionCluster(clusterConfig model.Cluster, operationId string) error {
@@ -109,7 +116,16 @@ func (h *HydroformProvisioner) startProvisioning(operationID string, cluster mod
 		return
 	}
 
-	log.Infof("Kyma installed successfully on %s Runtime. Operation %s finished. Setting status to success.", cluster.ID, operationID)
+	log.Infof("Kyma installed successfully on %s Runtime. Applying configuration to Runtime", cluster.ID)
+
+	err = h.runtimeConfigurator.ConfigureRuntime(cluster, info.KubeConfig)
+	if err != nil {
+		log.Errorf("Error applying configuration to runtime %s: %s", cluster.ID, err.Error())
+		h.setOperationAsFailed(log, operationID, err.Error())
+		return
+	}
+
+	log.Infof("Operation %s finished. Setting status to success.", operationID)
 
 	updateOperationStatus(log, func() error {
 		return h.setOperationAsSucceeded(operationID)
@@ -136,7 +152,7 @@ func (h *HydroformProvisioner) startDeprovisioning(operationID string, cluster m
 		return
 	}
 
-	err = h.directorService.DeleteRuntime(cluster.ID)
+	err = h.directorService.DeleteRuntime(cluster.ID, cluster.Tenant)
 	if err != nil {
 		log.Errorf("Deprovisioning finished. Failed to unregister Runtime %s: %s", cluster.ID, err.Error())
 		h.setOperationAsFailed(log, operationID, err.Error())

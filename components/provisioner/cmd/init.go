@@ -3,10 +3,8 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"io/ioutil"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes/clientbuilder"
-
 	"net/http"
 	"path/filepath"
 	"time"
@@ -59,7 +57,7 @@ func newDirectorClient(config config) (director.DirectorClient, error) {
 	gqlClient := graphql.NewGraphQLClient(config.DirectorURL, true, config.SkipDirectorCertVerification)
 	oauthClient := oauth.NewOauthClient(newHTTPClient(config.SkipDirectorCertVerification), secretsRepo, config.OauthCredentialsSecretName)
 
-	return director.NewDirectorClient(gqlClient, oauthClient, config.DefaultTenant), nil
+	return director.NewDirectorClient(gqlClient, oauthClient), nil
 }
 
 func newShootController(
@@ -69,7 +67,8 @@ func newShootController(
 	gardenerClientSet *gardener_apis.GardenV1beta1Client,
 	dbsFactory dbsession.Factory,
 	installationSvc installation.Service,
-	direcotrClietnt director.DirectorClient) (*gardener.ShootController, error) {
+	direcotrClietnt director.DirectorClient,
+	runtimeConfigurator runtime.Configurator) (*gardener.ShootController, error) {
 	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
 	if err != nil {
 		return nil, err
@@ -79,7 +78,7 @@ func newShootController(
 
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
-	return gardener.NewShootController(gardenerNamespace, gardenerClusterCfg, shootClient, secretsInterface, installationSvc, dbsFactory, cfg.Installation.Timeout, direcotrClietnt)
+	return gardener.NewShootController(gardenerNamespace, gardenerClusterCfg, shootClient, secretsInterface, installationSvc, dbsFactory, cfg.Installation.Timeout, direcotrClietnt, runtimeConfigurator)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {

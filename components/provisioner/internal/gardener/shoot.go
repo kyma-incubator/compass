@@ -54,7 +54,12 @@ func KubeconfigForShoot(secretsClient v12.SecretInterface, shootName string) (*r
 		return nil, fmt.Errorf("error fetching kubeconfig: %s", err.Error())
 	}
 
-	kubeconfig, err := clientcmd.NewClientConfigFromBytes([]byte(kubeconfigRaw))
+	return ParseToK8sConfig(kubeconfigRaw)
+
+}
+
+func ParseToK8sConfig(kubeconfigRaw []byte) (*restclient.Config, error) {
+	kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigRaw)
 	if err != nil {
 		return nil, fmt.Errorf("error constructing kubeconfig from raw config: %s", err.Error())
 	}
@@ -65,5 +70,4 @@ func KubeconfigForShoot(secretsClient v12.SecretInterface, shootName string) (*r
 	}
 
 	return clientConfig, nil
-
 }

@@ -2,6 +2,7 @@ package gardener
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
@@ -30,7 +31,8 @@ func NewShootController(
 	installationService installation.Service,
 	dbsFactory dbsession.Factory,
 	installationTimeout time.Duration,
-	directorClient director.DirectorClient) (*ShootController, error) {
+	directorClient director.DirectorClient,
+	runtimeConfigurator runtime.Configurator) (*ShootController, error) {
 	defaultSyncPeriod := 3 * time.Minute
 
 	mgr, err := ctrl.NewManager(k8sConfig, ctrl.Options{SyncPeriod: &defaultSyncPeriod, Namespace: namespace})
@@ -45,7 +47,7 @@ func NewShootController(
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&gardener_types.Shoot{}).
-		Complete(NewReconciler(mgr, dbsFactory, secretsClient, shootClient, installationService, installationTimeout, directorClient))
+		Complete(NewReconciler(mgr, dbsFactory, secretsClient, shootClient, installationService, installationTimeout, directorClient, runtimeConfigurator))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create controller: %w", err)
 	}

@@ -4,7 +4,9 @@ import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes/mocks"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
+	"k8s.io/client-go/kubernetes/fake"
 	"testing"
 	"time"
 
@@ -43,10 +45,10 @@ const (
 	coreComponent                 = "core"
 	applicationConnectorComponent = "application-connector"
 
-	gardenerProject = "gardener-project"
-	runtimeAgentComponent         = "compass-runtime-agent"
-	compassSystemNamespace        = "compass-system"
-	tenant   = "tenant"
+	gardenerProject        = "gardener-project"
+	runtimeAgentComponent  = "compass-runtime-agent"
+	compassSystemNamespace = "compass-system"
+	tenant                 = "tenant"
 )
 
 func waitForOperationCompleted(provisioningService provisioning.Service, operationID string, seconds uint) error {
@@ -224,8 +226,10 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
 			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
-			configProviderMock := &mocks.ConfigProvider{}
-			configProviderMock.On("CreateConfigMapForRuntime", mock.Anything, mock.Anything).Return(nil, nil)
+			cmClientBuilder := &mocks2.ConfigMapClientBuilder{}
+			configMapClient := fake.NewSimpleClientset().CoreV1().ConfigMaps(compassSystemNamespace)
+			cmClientBuilder.On("CreateK8SConfigMapClient", mockedKubeConfigValue, compassSystemNamespace).Return(configMapClient, nil)
+			runtimeConfigurator := runtime.NewRuntimeConfigurator(cmClientBuilder, directorServiceMock)
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
@@ -233,10 +237,10 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject)
 			graphQLConverter := provisioning.NewGraphQLConverter()
-			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock)
+			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock, runtimeConfigurator)
 			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator)
-			validator := NewValidator(persistenceService)
-			provisioner := NewResolver(provisioningService)
+			validator := NewValidator(dbSessionFactory.NewReadSession())
+			provisioner := NewResolver(provisioningService, validator)
 
 			err := insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
 			require.NoError(t, err)

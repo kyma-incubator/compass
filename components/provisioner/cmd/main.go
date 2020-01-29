@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder"
 	"net/http"
 	"strings"
 	"time"
@@ -118,15 +120,17 @@ func main() {
 	directorClient, err := newDirectorClient(cfg)
 	exitOnError(err, "Failed to initialize Director client")
 
+	runtimeConfigurator := runtime.NewRuntimeConfigurator(clientbuilder.NewConfigMapClientBuilder(), directorClient)
+
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {
 	case "hydroform":
 		exitOnError(err, "Faield to initialize secrets repository")
 		hydroformSvc := hydroform.NewHydroformService(client.NewHydroformClient(), cfg.Gardener.KubeconfigPath)
-		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient)
+		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
 		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient)
-		shootController, err := newShootController(cfg, gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, installationService, directorClient)
+		shootController, err := newShootController(cfg, gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, installationService, directorClient, runtimeConfigurator)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {
 			err := shootController.StartShootController()
@@ -137,8 +141,9 @@ func main() {
 	}
 
 	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseRepository, directorClient)
+	validator := api.NewValidator(dbsFactory.NewReadSession())
 
-	resolver := api.NewResolver(provisioningSVC)
+	resolver := api.NewResolver(provisioningSVC, validator)
 
 	httpClient := newHTTPClient(false)
 	logger := log.WithField("Component", "Artifact Downloader")

@@ -63,9 +63,15 @@ func (r *ProvisioningOperator) ProceedToInstallation(log *logrus.Entry, shoot ga
 func (r *ProvisioningOperator) InstallationInProgress(log *logrus.Entry, shoot gardener_types.Shoot, operationId string) (ctrl.Result, error) {
 	log.Infof("Shoot is on installation in progress step")
 
-	kubeconfig, err := KubeconfigForShoot(r.secretsClient, shoot.Name)
+	rawKubeconfig, err := FetchKubeconfigForShoot(r.secretsClient, shoot.Name)
 	if err != nil {
-		log.Errorf("failed to get client kubeconfig: %s", err.Error())
+		log.Errorf("failed to get client kubeconfig when checking Installation state: %s", err.Error())
+		return ctrl.Result{}, err
+	}
+
+	kubeconfig, err := ParseToK8sConfig(rawKubeconfig)
+	if err != nil {
+		log.Errorf("failed to parse kubeconfig when checking Installation state: %s", err.Error())
 		return ctrl.Result{}, err
 	}
 
@@ -89,14 +95,30 @@ func (r *ProvisioningOperator) InstallationInProgress(log *logrus.Entry, shoot g
 	log.Infof("Installation State: %s, Description: %s", installationState.State, installationState.Description)
 
 	if installationState.State == "Installed" {
-		err := r.ProceedToFinishedStep(log, shoot, operationId)
+		err := r.configureRuntime(log, shoot, operationId, string(rawKubeconfig))
 		if err != nil {
-			log.Errorf("Failed to proceed to provisioning finished step: %s", err.Error())
+			log.Errorf("Failed to configure Runtime: %s", err.Error())
 			return ctrl.Result{}, err
 		}
+		return ctrl.Result{}, nil
 	}
 
 	return r.proceedToFailedStepIfTimeoutReached(log, shoot, operationId)
+}
+
+func (r *ProvisioningOperator) configureRuntime(log *logrus.Entry, shoot gardener_types.Shoot, operationId, kubeconfig string) error {
+	cluster, dberr := r.dbsFactory.NewReadSession().GetGardenerClusterByName(shoot.Name)
+	if dberr != nil {
+		return fmt.Errorf("error configuring Runtime: %s", dberr.Error())
+	}
+
+	err := r.runtimeConfigurator.ConfigureRuntime(cluster, kubeconfig)
+	if err != nil {
+		return fmt.Errorf("error configuring Runtime: %s", err.Error())
+	}
+	log.Infof("Runtime %s configured", cluster.ID)
+
+	return r.ProceedToFinishedStep(log, shoot, operationId)
 }
 
 func (r *ProvisioningOperator) proceedToFailedStepIfTimeoutReached(log *logrus.Entry, shoot gardener_types.Shoot, operationId string) (ctrl.Result, error) {
