@@ -22,7 +22,7 @@ This document contains validation rules for all input types.
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `ASCII`, `max=100` | varchar(256) in db  
-description: String | false |`max=128` |  
+description: String | false |`max=2000` |  
 targetURL: String! | true | `url`, `max=256` |  varchar(256) in db
 group: String | false | `max=36` |  varchar(256) in db
 spec: APISpecInput | false | | 
@@ -46,7 +46,7 @@ fetchRequest: FetchRequestInput | false | |  
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `ASCII`, `max=100` | varchar(256) in db  
-description: String | false | `max=128` |  
+description: String | false | `max=2000` |  
 spec: EventSpecInput! | false | | 
 group: String | false | `max=36` | varchar(256) in db  
 version: VersionInput | false | |  
@@ -78,7 +78,7 @@ Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` | max 36 characters
 providerName String!| true | `max=256` | varchar(256) in db
-description: String | false | `max=128` |  
+description: String | false | `max=2000` |  
 labels: Labels (map[string]interface{}) | false | key: `required` |  
 webhooks: [WebhookInput!] | false | `[required]` |  
 healthCheckURL: String | false | `url`, `max=256` | varchar(256) in db  
@@ -92,7 +92,7 @@ Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` | max 36 characters
 providerName String!| true | `max=256` | varchar(256) in db
-description: String | false | `max=128` |  
+description: String | false | `max=2000` |  
 healthCheckURL: String | false | `url`, `max=256` | varchar(256) in db  
 
 ### ApplicationTemplateInput
@@ -102,7 +102,7 @@ healthCheckURL: String | false | `url`, `max=256` | varchar(256) in db  
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` |
-description: String | false | `max=128` |  
+description: String | false | `max=2000` |  
 applicationInput: ApplicationCreateInput! | true | |  
 placeholders: [PlaceholderDefinitionInput!] | false | `[required]` |  
 accessLevel: ApplicationTemplateAccessLevel! | true | `oneof=[GLOBAL]` | 
@@ -112,7 +112,7 @@ accessLevel: ApplicationTemplateAccessLevel! | true | `oneof=[GLOBAL]` |
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` |
-description: String | false | `max=128` |
+description: String | false | `max=2000` |
 
 ### ApplicationFromTemplateInput
 
@@ -135,7 +135,7 @@ value: String! | true | |
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` | varchar(256) in db
-description: String | false | `max=128` |
+description: String | false | `max=2000` |
 labels: Labels (map[string]interface{}) | false | key: `required` |
 
 ### IntegrationSystemInput
@@ -143,7 +143,7 @@ labels: Labels (map[string]interface{}) | false | key: `required` |
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` | varchar(256) in db  
-description: String | false | `max=128` |  
+description: String | false | `max=2000` |  
 
 ### DocumentInput
 
@@ -151,7 +151,7 @@ Field | Required | Rules | Comment
 --- | --- | --- | ---
 title: String! | true | `max=128` |  varchar(256) in db
 displayName: String! | true | `max=128` |  varchar(256) in db
-description: String! | true | `max=128` |  
+description: String! | true | `max=2000` |  
 format: DocumentFormat! | true | `oneof=[MARKDOWN]` |  
 kind: String | false | `max=256` |  varchar(256) in db
 data: CLOB (string) | false | |  
