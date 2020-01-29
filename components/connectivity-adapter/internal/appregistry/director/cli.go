@@ -121,3 +121,33 @@ func (r *directorClient) GetApplicationsByNameRequest(appName string) *gcli.Requ
 			}
 	}`, nameKey, appName, r.gqlFieldsProvider.Page(r.gqlFieldsProvider.ForApplication())))
 }
+
+func (r *directorClient) DeleteAPIDefinition(apiID string) error {
+	gqlRequest := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		deleteAPIDefinition(id: "%s") {
+			id
+		}	
+	}`, apiID))
+
+	err := r.cli.Run(context.Background(), gqlRequest, nil)
+	if err != nil {
+		return errors.Wrap(err, "while doing GraphQL request")
+	}
+	return nil
+}
+
+func (r *directorClient) DeleteEventDefinition(eventID string) error {
+	gqlRequest := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		deleteEventDefinition(id: "%s") {
+			id
+		}	
+	}`, eventID))
+
+	err := r.cli.Run(context.Background(), gqlRequest, nil)
+	if err != nil {
+		return errors.Wrap(err, "while doing GraphQL request")
+	}
+	return nil
+}

@@ -3,7 +3,6 @@ package service
 import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
 
@@ -13,14 +12,16 @@ type DirectorClient interface {
 	CreateEventDefinition(appID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error)
 
 	SetApplicationLabel(appID string, label graphql.LabelInput) error
-	GetApplicationsByNameRequest(appName string) *gcli.Request
-	//DeleteAPIDefinition(apiID string) (string, error)
-	//DeleteEventDefinition(eventID string) (string, error)
+	DeleteAPIDefinition(apiID string) error
+	DeleteEventDefinition(eventID string) error
 }
 
+//go:generate mockery -name=AppLabeler -output=automock -outpkg=automock -case=underscore
 type AppLabeler interface {
-	WriteService(appDetails graphql.ApplicationExt, serviceReference LegacyServiceReference) (graphql.LabelInput, error)
-	ReadService(appDetails graphql.ApplicationExt, serviceID string) GraphQLServiceDetails
+	WriteServiceReference(appDetails graphql.ApplicationExt, serviceReference LegacyServiceReference) (graphql.LabelInput, error)
+	DeleteServiceReference(appDetails graphql.ApplicationExt, serviceID string) (graphql.LabelInput, error)
+	ReadServiceReference(appDetails graphql.ApplicationExt, serviceID string) (LegacyServiceReference, error)
+	ReadService(appDetails graphql.ApplicationExt, serviceID string) (GraphQLServiceDetails, error)
 }
 
 type serviceManager struct {
@@ -59,7 +60,7 @@ func (s *serviceManager) Create(serviceDetails model.GraphQLServiceDetailsInput)
 		eventID = &id
 	}
 
-	label, err := s.appLabeler.WriteService(s.appDetails, LegacyServiceReference{
+	label, err := s.appLabeler.WriteServiceReference(s.appDetails, LegacyServiceReference{
 		ID:         serviceDetails.ID,
 		APIDefID:   apiID,
 		EventDefID: eventID,
@@ -91,20 +92,37 @@ func (s *serviceManager) Update(serviceDetails model.GraphQLServiceDetailsInput)
 }
 
 func (s *serviceManager) Delete(serviceID string) error {
-	serviceDetails, err := s.GetFromApplicationDetails(serviceID)
+	serviceRef, err := s.appLabeler.ReadServiceReference(s.appDetails, serviceID)
 	if err != nil {
 		return err
 	}
 
-	if serviceDetails.API != nil {
-		// TODO: Delete API
+	if serviceRef.APIDefID != nil {
+		err := s.directorClient.DeleteAPIDefinition(*serviceRef.APIDefID)
+		if err != nil {
+			return errors.Wrap(err, "while deleting API Definition")
+		}
 	}
 
-	if serviceDetails.Event != nil {
-		// TODO: Delete Event
+	if serviceRef.EventDefID != nil {
+		err := s.directorClient.DeleteAPIDefinition(*serviceRef.EventDefID)
+		if err != nil {
+			return errors.Wrap(err, "while deleting Event Definition")
+		}
 	}
 
-	// TODO: Remove service from App label
+	label, err := s.appLabeler.DeleteServiceReference(s.appDetails, serviceRef.ID)
+	if err != nil {
+		return errors.Wrap(err, "while writing Application label")
+
+		// TODO: Should we somehow restore deleted API and Event Definitions? ( ಠ_ಠ)
+	}
+
+	err = s.directorClient.SetApplicationLabel(s.appDetails.Application.ID, label)
+	if err != nil {
+		return errors.Wrap(err, "while setting Application label")
+		// TODO: revert creating API and EventAPI definitions
+	}
 
 	return nil
 }
