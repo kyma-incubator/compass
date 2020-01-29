@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
 
@@ -12,7 +13,7 @@ type DirectorClient interface {
 	CreateEventDefinition(appID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error)
 
 	SetApplicationLabel(appID string, label graphql.LabelInput) error
-
+	GetApplicationsByNameRequest(appName string) *gcli.Request
 	//DeleteAPIDefinition(apiID string) (string, error)
 	//DeleteEventDefinition(eventID string) (string, error)
 }
@@ -28,10 +29,10 @@ type serviceManager struct {
 	appLabeler     AppLabeler
 }
 
-func NewServiceManager(gqlRequester DirectorClient, appLabeler AppLabeler, appDetails graphql.ApplicationExt) (*serviceManager, error) {
+func NewServiceManager(directorCli DirectorClient, appLabeler AppLabeler, appDetails graphql.ApplicationExt) (*serviceManager, error) {
 	return &serviceManager{
 		appDetails:     appDetails,
-		directorClient: gqlRequester,
+		directorClient: directorCli,
 		appLabeler:     appLabeler,
 	}, nil
 }

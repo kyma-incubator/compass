@@ -7,7 +7,7 @@ import (
 
 type GraphQLClientContextKey struct{}
 
-var NoGraphQLClientError = errors.New("cannot read GraphQL client details from context")
+var NoGraphQLClientError = errors.New("cannot read GraphQL client from context")
 var NilContextError = errors.New("context is empty")
 
 func LoadFromContext(ctx context.Context) (GraphQLClient, error) {

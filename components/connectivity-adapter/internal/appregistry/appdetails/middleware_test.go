@@ -9,10 +9,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/director"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/service"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
@@ -36,8 +37,8 @@ func TestMiddleware(t *testing.T) {
 
 		logger, _ := test.NewNullLogger()
 
-		gqlQueryBuilder := service.NewGqlRequestBuilder(nil, &gql.GqlFieldsProvider{})
-		expectedQuery := gqlQueryBuilder.GetApplicationsByName(appName)
+		gqlQueryBuilder := director.NewClient(nil, &gql.Graphqlizer{}, &gql.GqlFieldsProvider{})
+		expectedQuery := gqlQueryBuilder.GetApplicationsByNameRequest(appName)
 
 		var apps appdetails.GqlSuccessfulAppPage
 		gqlClient := &automock.GraphQLClient{}
@@ -46,7 +47,7 @@ func TestMiddleware(t *testing.T) {
 		cliProvider := &automock.Provider{}
 		cliProvider.On("GQLClient", mock.AnythingOfType("*http.Request")).Return(gqlClient)
 
-		appMidlleware := appdetails.NewApplicationMiddleware(cliProvider, logger, gqlQueryBuilder)
+		appMidlleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
 
 		router := mux.NewRouter()
 		router.HandleFunc("/{app-name}", assertAppInContext(t, app))
@@ -65,8 +66,8 @@ func TestMiddleware(t *testing.T) {
 		logger, _ := test.NewNullLogger()
 		emptyResponse := graphql.ApplicationPageExt{}
 
-		gqlQueryBuilder := service.NewGqlRequestBuilder(nil, &gql.GqlFieldsProvider{})
-		expectedQuery := gqlQueryBuilder.GetApplicationsByName(appName)
+		gqlQueryBuilder := director.NewClient(nil, &gql.Graphqlizer{}, &gql.GqlFieldsProvider{})
+		expectedQuery := gqlQueryBuilder.GetApplicationsByNameRequest(appName)
 
 		var apps appdetails.GqlSuccessfulAppPage
 		gqlClient := &automock.GraphQLClient{}
@@ -74,7 +75,7 @@ func TestMiddleware(t *testing.T) {
 
 		cliProvider := &automock.Provider{}
 		cliProvider.On("GQLClient", mock.AnythingOfType("*http.Request")).Return(gqlClient)
-		appMidlleware := appdetails.NewApplicationMiddleware(cliProvider, logger, gqlQueryBuilder)
+		appMidlleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
 
 		router := mux.NewRouter()
 		router.Use(appMidlleware.Middleware)
@@ -98,8 +99,8 @@ func TestMiddleware(t *testing.T) {
 		logger, _ := test.NewNullLogger()
 		appPage := graphql.ApplicationPageExt{ApplicationPage: graphql.ApplicationPage{},
 			Data: []*graphql.ApplicationExt{&app, &app}}
-		gqlQueryBuilder := service.NewGqlRequestBuilder(nil, &gql.GqlFieldsProvider{})
-		expectedQuery := gqlQueryBuilder.GetApplicationsByName(appName)
+		gqlQueryBuilder := director.NewClient(nil, &gql.Graphqlizer{}, &gql.GqlFieldsProvider{})
+		expectedQuery := gqlQueryBuilder.GetApplicationsByNameRequest(appName)
 
 		var apps appdetails.GqlSuccessfulAppPage
 		gqlClient := &automock.GraphQLClient{}
@@ -107,7 +108,7 @@ func TestMiddleware(t *testing.T) {
 
 		cliProvider := &automock.Provider{}
 		cliProvider.On("GQLClient", mock.AnythingOfType("*http.Request")).Return(gqlClient)
-		appMidlleware := appdetails.NewApplicationMiddleware(cliProvider, logger, gqlQueryBuilder)
+		appMidlleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
 
 		router := mux.NewRouter()
 		router.Use(appMidlleware.Middleware)
@@ -130,8 +131,8 @@ func TestMiddleware(t *testing.T) {
 	t.Run("director returns error", func(t *testing.T) {
 		logger, hook := test.NewNullLogger()
 
-		gqlQueryBuilder := service.NewGqlRequestBuilder(nil, &gql.GqlFieldsProvider{})
-		expectedQuery := gqlQueryBuilder.GetApplicationsByName(appName)
+		gqlQueryBuilder := director.NewClient(nil, &gql.Graphqlizer{}, &gql.GqlFieldsProvider{})
+		expectedQuery := gqlQueryBuilder.GetApplicationsByNameRequest(appName)
 
 		var apps appdetails.GqlSuccessfulAppPage
 		gqlClient := &automock.GraphQLClient{}
@@ -139,7 +140,7 @@ func TestMiddleware(t *testing.T) {
 
 		cliProvider := &automock.Provider{}
 		cliProvider.On("GQLClient", mock.AnythingOfType("*http.Request")).Return(gqlClient)
-		appMidlleware := appdetails.NewApplicationMiddleware(cliProvider, logger, gqlQueryBuilder)
+		appMidlleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
 
 		router := mux.NewRouter()
 		router.Use(appMidlleware.Middleware)

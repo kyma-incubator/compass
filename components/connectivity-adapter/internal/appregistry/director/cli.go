@@ -1,9 +1,8 @@
-package service
+package director
 
 import (
 	"context"
 	"fmt"
-	"regexp"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -28,6 +27,8 @@ type GqlFieldsProvider interface {
 	Page(item string) string
 }
 
+const nameKey = "name"
+
 type gqlCreateApplicationResponse struct {
 	Result graphql.Application `json:"result"`
 }
@@ -42,7 +43,7 @@ type directorClient struct {
 	gqlFieldsProvider GqlFieldsProvider
 }
 
-func NewDirectorClient(cli gqlcli.GraphQLClient, graphqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider) *directorClient {
+func NewClient(cli gqlcli.GraphQLClient, graphqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider) *directorClient {
 	return &directorClient{cli: cli, graphqlizer: graphqlizer, gqlFieldsProvider: gqlFieldsProvider}
 }
 
@@ -113,7 +114,10 @@ func (r *directorClient) CreateEventDefinition(appID string, eventDefinitionInpu
 	return resp.Result.ID, nil
 }
 
-func removeDoubleQuotesFromJSONKeys(in string) string {
-	var validRegex = regexp.MustCompile(`"(\w+|\$\w+)"\s*:`)
-	return validRegex.ReplaceAllString(in, `$1:`)
+func (r *directorClient) GetApplicationsByNameRequest(appName string) *gcli.Request {
+	return gcli.NewRequest(fmt.Sprintf(`query {
+			result: applications(filter: {key:"%s", query: "\"%s\""}) {
+					%s
+			}
+	}`, nameKey, appName, r.gqlFieldsProvider.Page(r.gqlFieldsProvider.ForApplication())))
 }

@@ -126,37 +126,37 @@ func (c *converter) DetailsToGraphQLInput(id string, deprecated model.ServiceDet
 			}
 		}
 
-		if deprecated.Api.SpecificationUrl != "" {
+		if deprecated.Api.SpecificationUrl != "" || deprecated.Api.SpecificationCredentials != nil || deprecated.Api.SpecificationRequestParameters != nil {
 			if out.API.Spec == nil {
 				out.API.Spec = &graphql.APISpecInput{}
 			}
 			out.API.Spec.FetchRequest = &graphql.FetchRequestInput{
 				URL: deprecated.Api.SpecificationUrl,
 			}
+		}
 
-			if deprecated.Api.SpecificationCredentials != nil || deprecated.Api.SpecificationRequestParameters != nil {
-				out.API.Spec.FetchRequest.Auth = &graphql.AuthInput{}
-			}
+		if deprecated.Api.SpecificationCredentials != nil || deprecated.Api.SpecificationRequestParameters != nil {
+			out.API.Spec.FetchRequest.Auth = &graphql.AuthInput{}
+		}
 
-			if deprecated.Api.SpecificationCredentials != nil {
-				if deprecated.Api.SpecificationCredentials.Oauth != nil {
-					inOauth := deprecated.Api.SpecificationCredentials.Oauth
-					out.API.Spec.FetchRequest.Auth.Credential = &graphql.CredentialDataInput{
-						Oauth: &graphql.OAuthCredentialDataInput{
-							URL:          inOauth.URL,
-							ClientID:     inOauth.ClientID,
-							ClientSecret: inOauth.ClientSecret,
-						},
-					}
+		if deprecated.Api.SpecificationCredentials != nil {
+			if deprecated.Api.SpecificationCredentials.Oauth != nil {
+				inOauth := deprecated.Api.SpecificationCredentials.Oauth
+				out.API.Spec.FetchRequest.Auth.Credential = &graphql.CredentialDataInput{
+					Oauth: &graphql.OAuthCredentialDataInput{
+						URL:          inOauth.URL,
+						ClientID:     inOauth.ClientID,
+						ClientSecret: inOauth.ClientSecret,
+					},
 				}
-				if deprecated.Api.SpecificationCredentials.Basic != nil {
-					inBasic := deprecated.Api.SpecificationCredentials.Basic
-					out.API.Spec.FetchRequest.Auth.Credential = &graphql.CredentialDataInput{
-						Basic: &graphql.BasicCredentialDataInput{
-							Username: inBasic.Username,
-							Password: inBasic.Password,
-						},
-					}
+			}
+			if deprecated.Api.SpecificationCredentials.Basic != nil {
+				inBasic := deprecated.Api.SpecificationCredentials.Basic
+				out.API.Spec.FetchRequest.Auth.Credential = &graphql.CredentialDataInput{
+					Basic: &graphql.BasicCredentialDataInput{
+						Username: inBasic.Username,
+						Password: inBasic.Password,
+					},
 				}
 			}
 		}
