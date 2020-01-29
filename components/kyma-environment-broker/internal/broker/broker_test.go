@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,7 +26,7 @@ const (
 func TestBroker_Services(t *testing.T) {
 	// given
 	memStorage := storage.NewMemoryStorage()
-	broker, err := broker.NewBroker(nil, broker.ProvisioningConfig{}, memStorage.Instances())
+	broker, err := broker.NewBroker(nil, broker.ProvisioningConfig{}, nil, memStorage.Instances())
 	require.NoError(t, err)
 
 	// when
@@ -57,9 +57,10 @@ func TestBroker_ProvisioningScenario(t *testing.T) {
 	const clusterName = "cluster-testing"
 
 	fCli := provisioner.NewFakeClient()
+	fdCli := director.NewFakeDirectorClient()
 	memStorage := storage.NewMemoryStorage()
 
-	kymaEnvBroker, err := broker.NewBroker(fCli, broker.ProvisioningConfig{}, memStorage.Instances())
+	kymaEnvBroker, err := broker.NewBroker(fCli, broker.ProvisioningConfig{}, fdCli, memStorage.Instances())
 	require.NoError(t, err)
 
 	// when

@@ -1,5 +1,7 @@
 package internal
 
+import "time"
+
 type Instance struct {
 	InstanceID      string
 	RuntimeID       string
@@ -9,4 +11,8 @@ type Instance struct {
 
 	DashboardURL           string
 	ProvisioningParameters string
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DelatedAt time.Time
 }

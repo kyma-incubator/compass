@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/pkg/errors"
@@ -19,8 +22,13 @@ import (
 const (
 	kymaServiceID = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
 
-	fixedDummyURL = "https://dummy.dashboard.com"
+	// time delay after which the instance becomes obsolete in the process of polling for last operation
+	delayInstanceTime = 3 * time.Hour
 )
+
+type DirectorClient interface {
+	GetConsoleURL(accountID, runtimeID string) (string, error)
+}
 
 // OptionalComponentNamesProvider provides optional components names
 type OptionalComponentNamesProvider interface {
@@ -43,6 +51,7 @@ type KymaEnvBroker struct {
 
 	Config            ProvisioningConfig
 	ProvisionerClient provisioner.Client
+	DirectorClient    DirectorClient
 
 	InstancesStorage   storage.Instances
 	optionalComponents OptionalComponentNamesProvider
@@ -54,7 +63,7 @@ var enabledPlanIDs = map[string]struct{}{
 	// add plan IDs which must be enabled
 }
 
-func NewBroker(pCli provisioner.Client, cfg ProvisioningConfig, instStorage storage.Instances) (*KymaEnvBroker, error) {
+func NewBroker(pCli provisioner.Client, cfg ProvisioningConfig, dCli DirectorClient, instStorage storage.Instances) (*KymaEnvBroker, error) {
 	dumper, err := NewDumper()
 	if err != nil {
 		return nil, err
@@ -62,6 +71,7 @@ func NewBroker(pCli provisioner.Client, cfg ProvisioningConfig, instStorage stor
 
 	return &KymaEnvBroker{
 		ProvisionerClient:  pCli,
+		DirectorClient:     dCli,
 		Dumper:             dumper,
 		Config:             cfg,
 		InstancesStorage:   instStorage,
@@ -236,7 +246,7 @@ func (b *KymaEnvBroker) GetInstance(ctx context.Context, instanceID string) (dom
 	spec := domain.GetInstanceDetailsSpec{
 		ServiceID:    inst.ServiceID,
 		PlanID:       inst.ServicePlanID,
-		DashboardURL: "",
+		DashboardURL: inst.DashboardURL,
 		Parameters:   decodedParams,
 	}
 	return spec, nil
@@ -262,31 +272,34 @@ func (b *KymaEnvBroker) LastOperation(ctx context.Context, instanceID string, de
 	if err != nil {
 		return domain.LastOperation{}, errors.Wrapf(err, "while getting instance from storage")
 	}
+	_, err = url.ParseRequestURI(instance.DashboardURL)
+	if err == nil {
+		return domain.LastOperation{
+			State:       domain.Succeeded,
+			Description: "Dashboard URL already exists in the instance",
+		}, nil
+	}
 
 	status, err := b.ProvisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, details.OperationData)
 	if err != nil {
-		b.Dumper.Dump("Got error: ", err)
+		b.Dumper.Dump("Provisioner client returns error on runtime operation status call: ", err)
 		return domain.LastOperation{}, errors.Wrapf(err, "while getting last operation")
 	}
 	b.Dumper.Dump("Got status:", status)
 
 	var lastOpStatus domain.LastOperationState
+	var msg string
+	if status.Message != nil {
+		msg = *status.Message
+	}
+
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
-		lastOpStatus = domain.Succeeded
-
-		// todo: this is a temporary solution until the dashboard url is saved in the director
-		b.Dumper.Dump("Saving dummy dashboard url for instance ID: ", instanceID)
-		inst, err := b.InstancesStorage.GetByID(instanceID)
-		if err != nil {
-			b.Dumper.Dump("Got error: ", err)
+		operationStatus, directorMsg := b.handleDashboardURL(instance)
+		if directorMsg != "" {
+			msg = directorMsg
 		}
-		inst.DashboardURL = fixedDummyURL
-		err = b.InstancesStorage.Update(*inst)
-		if err != nil {
-			b.Dumper.Dump("Got error: ", err)
-		}
-
+		lastOpStatus = operationStatus
 	case gqlschema.OperationStateInProgress:
 		lastOpStatus = domain.InProgress
 	case gqlschema.OperationStatePending:
@@ -294,15 +307,49 @@ func (b *KymaEnvBroker) LastOperation(ctx context.Context, instanceID string, de
 	case gqlschema.OperationStateFailed:
 		lastOpStatus = domain.Failed
 	}
-	msg := ""
-	if status.Message != nil {
-		msg = *status.Message
-	}
 
 	return domain.LastOperation{
 		State:       lastOpStatus,
 		Description: msg,
 	}, nil
+}
+
+func (b *KymaEnvBroker) handleDashboardURL(instance *internal.Instance) (domain.LastOperationState, string) {
+	b.Dumper.Dump("Get dashboard url for instance ID: ", instance.InstanceID)
+
+	dashboardURL, err := b.DirectorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
+	if director.IsTemporaryError(err) {
+		b.Dumper.Dump("DirectorClient cannot get Console URL (temporary): ", err.Error())
+		state, msg := b.checkInstanceOutdated(instance)
+		return state, fmt.Sprintf("cannot get URL from director: %s", msg)
+	}
+	if err != nil {
+		b.Dumper.Dump("DirectorClient cannot get Console URL: ", err.Error())
+		return domain.Failed, fmt.Sprintf("cannot get URL from director: %s", err.Error())
+	}
+
+	instance.DashboardURL = dashboardURL
+	err = b.InstancesStorage.Update(*instance)
+	if err != nil {
+		b.Dumper.Dump(fmt.Sprintf("Instance storage cannot update instance: %s", err))
+		state, msg := b.checkInstanceOutdated(instance)
+		return state, fmt.Sprintf("cannot update instance in storage: %s", msg)
+	}
+
+	return domain.Succeeded, ""
+}
+
+func (b *KymaEnvBroker) checkInstanceOutdated(instance *internal.Instance) (domain.LastOperationState, string) {
+	addTime := instance.CreatedAt.Add(delayInstanceTime)
+	subTime := time.Now().Sub(addTime)
+
+	if subTime > 0 {
+		// after delayInstanceTime Instance last operation is marked as failed
+		b.Dumper.Dump(fmt.Sprintf("Cannot get Dashboard URL for instance %s", instance.InstanceID))
+		return domain.Failed, "instance is out of date"
+	}
+
+	return domain.InProgress, "action can be processed again"
 }
 
 // Bind creates a new service binding
