@@ -15,7 +15,7 @@ set -e
 IMG_NAME="compass-schema-migrator"
 NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
-POSTGRES_IMAGE="test-postgres-image"
+POSTGRES_VERSION="11"
 
 DB_USER="usr"
 DB_PWD="pwd"
@@ -35,15 +35,15 @@ echo -e "${GREEN}Create network${NC}"
 docker network create --driver bridge ${NETWORK}
 
 docker build -t ${IMG_NAME} ./
-docker build -t ${POSTGRES_IMAGE} -f ./postgres/Dockerfile ./postgres/
 
 echo -e "${GREEN}Start Postgres in detached mode${NC}"
 docker run -d --name ${POSTGRES_CONTAINER} \
-              --network=${NETWORK} \
-              -e POSTGRES_USER=${DB_USER} \
-              -e POSTGRES_PASSWORD=${DB_PWD} \
-              -e POSTGRES_MULTIPLE_DATABASES="${POSTGRES_MULTIPLE_DATABASES}" \
-          ${POSTGRES_IMAGE}
+            --network=${NETWORK} \
+            -e POSTGRES_USER=${DB_USER} \
+            -e POSTGRES_PASSWORD=${DB_PWD} \
+            -e POSTGRES_MULTIPLE_DATABASES="${POSTGRES_MULTIPLE_DATABASES}" \
+            -v $(pwd)/multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/multiple-postgresql-databases.sh \
+            postgres:${POSTGRES_VERSION}
 
 function migrationUP() {
     echo -e "${GREEN}Run UP migrations ${NC}"
