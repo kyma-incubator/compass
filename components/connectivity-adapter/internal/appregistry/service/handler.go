@@ -100,24 +100,14 @@ func NewHandler(converter Converter, validator Validator, serviceManager Service
 func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	defer h.closeBody(request)
 
-	var details model.ServiceDetails
-	err := json.NewDecoder(request.Body).Decode(&details)
+	serviceDetails, err := h.decodeAndValidateInput(request)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "while unmarshalling service")
-		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeWrongInput)
-		return
-	}
-
-	appErr := h.validator.Validate(details)
-	if appErr != nil {
-		wrappedErr := errors.Wrap(appErr, "while validating input")
-		reqerror.WriteError(writer, wrappedErr, appErr.Code())
-		return
+		h.logger.Error(err)
+		reqerror.WriteAppError(writer, err)
 	}
 
 	serviceID := h.uidService.Generate()
-	converted, err := h.converter.DetailsToGraphQLInput(serviceID, details)
+	converted, err := h.converter.DetailsToGraphQLInput(serviceID, serviceDetails)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while converting service input")
 		h.logger.Error(wrappedErr)
@@ -125,11 +115,9 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	serviceManager, err := h.serviceManager.ForRequest(request)
+	serviceManager, err := h.loadServiceManager(request)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "while requesting Service Manager")
-		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		h.writeErrorInternal(writer, err)
 		return
 	}
 
@@ -217,8 +205,42 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	defer h.closeBody(request)
 
-	// TODO: Implement it
-	writer.WriteHeader(http.StatusNotImplemented)
+	id := h.getServiceID(request)
+
+	serviceDetails, err := h.decodeAndValidateInput(request)
+	if err != nil {
+		h.logger.Error(err)
+		reqerror.WriteAppError(writer, err)
+	}
+
+	converted, err := h.converter.DetailsToGraphQLInput(id, serviceDetails)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while converting service input")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	serviceManager, err := h.loadServiceManager(request)
+	if err != nil {
+		h.writeErrorInternal(writer, err)
+		return
+	}
+
+	err = serviceManager.Update(converted)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			h.writeErrorNotFound(writer, id)
+			return
+		}
+
+		wrappedErr := errors.Wrap(err, "while updating Service")
+		h.logger.WithField("ID", id).Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
@@ -226,11 +248,9 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 
 	id := h.getServiceID(request)
 
-	serviceManager, err := h.serviceManager.ForRequest(request)
+	serviceManager, err := h.loadServiceManager(request)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "while requesting Service Manager")
-		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		h.writeErrorInternal(writer, err)
 		return
 	}
 
@@ -256,9 +276,44 @@ func (h *Handler) closeBody(rq *http.Request) {
 	}
 }
 
+func (h *Handler) decodeAndValidateInput(request *http.Request) (model.ServiceDetails, error) {
+	var details model.ServiceDetails
+	err := json.NewDecoder(request.Body).Decode(&details)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while unmarshalling service")
+		h.logger.Error(wrappedErr)
+
+		appErr := apperrors.WrongInput(wrappedErr.Error())
+		return model.ServiceDetails{}, appErr
+	}
+
+	appErr := h.validator.Validate(details)
+	if appErr != nil {
+		wrappedAppErr := appErr.Append("while validating input")
+		return model.ServiceDetails{}, wrappedAppErr
+	}
+
+	return details, nil
+}
+
+func (h *Handler) loadServiceManager(request *http.Request) (ServiceManager, error) {
+	serviceManager, err := h.serviceManager.ForRequest(request)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while requesting Service Manager")
+		h.logger.Error(wrappedErr)
+		return nil, wrappedErr
+	}
+
+	return serviceManager, nil
+}
+
 func (h *Handler) writeErrorNotFound(writer http.ResponseWriter, id string) {
 	message := fmt.Sprintf("entity with ID %s not found", id)
 	reqerror.WriteErrorMessage(writer, message, apperrors.CodeNotFound)
+}
+
+func (h *Handler) writeErrorInternal(writer http.ResponseWriter, err error) {
+	reqerror.WriteError(writer, err, apperrors.CodeInternal)
 }
 
 func (h *Handler) getServiceID(request *http.Request) string {
