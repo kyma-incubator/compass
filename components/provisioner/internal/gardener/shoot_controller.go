@@ -5,15 +5,14 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 
+	"time"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
-
-	restclient "k8s.io/client-go/rest"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 
