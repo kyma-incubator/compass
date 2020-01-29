@@ -26,7 +26,6 @@ func NewManagementInfoHandler(client graphql.Client, logger *log.Logger) managem
 
 func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *http.Request) {
 
-	// TODO: make sure only calls with certificate are accepted
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
 		mh.logger.Errorf("Failed to read authorization context: %s.", err)
@@ -78,7 +77,7 @@ func (m *managementInfoHandler) makeManagementInfoResponse(
 	certInfo model.CertInfo) model.MgmtInfoReponse {
 
 	return model.MgmtInfoReponse{
-		ClientIdentity:  model.MakeClientIdentity(application, "", ""), // TODO: how to get tenant? Is it vital?
+		ClientIdentity:  model.MakeClientIdentity(application, "", ""),
 		URLs:            model.MakeManagementURLs(application, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
 		CertificateInfo: certInfo,
 	}

@@ -28,12 +28,19 @@ func NewTokenHandler(client graphql.Client, connectivityAdapterBaseURL string, l
 
 func (th *tokenHandler) GetToken(w http.ResponseWriter, r *http.Request) {
 	application := r.Header.Get(ApplicationHeader)
+	if application == "" {
+		th.logger.Error("Required headers not specified.")
+		reqerror.WriteErrorMessage(w, "Required headers not specified.", apperrors.CodeWrongInput)
+
+		return
+	}
+
 	contextLogger := th.logger.WithField("application", application)
 
 	token, err := th.gqlClient.Token(application)
 	if err != nil {
 		th.logger.Errorf("Failed to get token: %s.", err)
-		reqerror.WriteErrorMessage(w, "Failed to get token.", apperrors.CodeForbidden)
+		reqerror.WriteErrorMessage(w, "Failed to get token.", apperrors.CodeInternal)
 	}
 
 	res := model.MakeTokenResponse(th.connectivityAdapterBaseURL, token)

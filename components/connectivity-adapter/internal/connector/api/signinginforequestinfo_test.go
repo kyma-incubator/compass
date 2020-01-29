@@ -92,8 +92,6 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		err = json.Unmarshal(responseBody, &infoResponse)
 		require.NoError(t, err)
 
-		require.NoError(t, err)
-
 		assert.Equal(t, http.StatusOK, r.Code)
 		assert.EqualValues(t, expectedInfoResponse, infoResponse)
 	})
@@ -130,7 +128,6 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 
 		// then
 		assert.Equal(t, http.StatusForbidden, r.Code)
-		connectorClientMock.AssertNotCalled(t, "Configuration")
 	})
 
 	t.Run("Should return error when Base URLs context not passed", func(t *testing.T) {
@@ -146,7 +143,6 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 
 		// then
 		assert.Equal(t, http.StatusInternalServerError, r.Code)
-		connectorClientMock.AssertNotCalled(t, "Configuration")
 	})
 }
 

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
@@ -79,6 +80,21 @@ func TestHandler_Certificates(t *testing.T) {
 
 		// then
 		assert.Equal(t, http.StatusInternalServerError, r.Code)
+	})
+
+	t.Run("Should return error when Authorization context not passed", func(t *testing.T) {
+		// given
+		connectorClientMock := &mocks.Client{}
+
+		r := httptest.NewRecorder()
+		req := newRequestWithContext(strings.NewReader(""), nil, nil)
+		handler := NewCertificatesHandler(connectorClientMock, logrus.New())
+
+		// when
+		handler.SignCSR(r, req)
+
+		// then
+		assert.Equal(t, http.StatusForbidden, r.Code)
 	})
 }
 

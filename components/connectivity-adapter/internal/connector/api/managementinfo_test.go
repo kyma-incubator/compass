@@ -93,8 +93,6 @@ func TestHandlerManagementInfo(t *testing.T) {
 		err = json.Unmarshal(responseBody, &managementInfoResponse)
 		require.NoError(t, err)
 
-		require.NoError(t, err)
-
 		assert.Equal(t, http.StatusOK, r.Code)
 		assert.Equal(t, expectedManagementInfoResponse, managementInfoResponse)
 	})
@@ -131,7 +129,6 @@ func TestHandlerManagementInfo(t *testing.T) {
 
 		// then
 		assert.Equal(t, http.StatusForbidden, r.Code)
-		connectorClientMock.AssertNotCalled(t, "Configuration")
 	})
 
 	t.Run("Should return error when Base URLs context not passed", func(t *testing.T) {
@@ -147,6 +144,5 @@ func TestHandlerManagementInfo(t *testing.T) {
 
 		// then
 		assert.Equal(t, http.StatusInternalServerError, r.Code)
-		connectorClientMock.AssertNotCalled(t, "Configuration")
 	})
 }

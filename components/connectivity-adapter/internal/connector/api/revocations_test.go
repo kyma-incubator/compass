@@ -66,7 +66,6 @@ func TestHandlerRevocations(t *testing.T) {
 
 		// then
 		assert.Equal(t, http.StatusForbidden, r.Code)
-		connectorClientMock.AssertNotCalled(t, "Revoke")
 	})
 
 }

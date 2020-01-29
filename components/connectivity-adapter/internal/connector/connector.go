@@ -17,7 +17,7 @@ type Config struct {
 	ConnectorInternalEndpoint string `envconfig:"default=http://compass-connector-internal.compass-system.svc.cluster.local:3001/graphql"`
 	AdapterBaseURL            string `envconfig:"default=https://adapter-gateway.kyma.local"`
 	AdapterMtlsBaseURL        string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
-	// TODO: remove one getting Events Base URL from Director is implemented
+	// TODO: remove once getting Events Base URL from Director is implemented
 	EventBaseURL string `envconfig:"default=https://gateway.kyma.local"`
 }
 
