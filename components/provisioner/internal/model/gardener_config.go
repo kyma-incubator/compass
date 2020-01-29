@@ -40,7 +40,6 @@ type GardenerConfig struct {
 	GardenerProviderConfig GardenerProviderConfig
 }
 
-// TODO: test
 func (c GardenerConfig) ToShootTemplate(namespace string) *gardener_types.Shoot {
 	allowPrivlagedContainers := true
 
