@@ -51,13 +51,13 @@ func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 		}
 
 		if len(apps.Result.Data) == 0 {
-			message := fmt.Sprintf("service with name %s not found", appName)
+			message := fmt.Sprintf("application with name %s not found", appName)
 			reqerror.WriteErrorMessage(w, message, apperrors.CodeNotFound)
 			return
 		}
 
 		if len(apps.Result.Data) != 1 {
-			message := fmt.Sprintf("found more than 1 service with name %s", appName)
+			message := fmt.Sprintf("found more than 1 application with name %s", appName)
 			reqerror.WriteErrorMessage(w, message, apperrors.CodeInternal)
 			return
 		}

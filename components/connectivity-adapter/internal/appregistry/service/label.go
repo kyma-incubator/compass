@@ -1,7 +1,11 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -22,21 +26,32 @@ func NewAppLabeler() *labeler {
 
 func (l *labeler) WriteService(appDetails graphql.ApplicationExt, serviceReference LegacyServiceReference) (graphql.LabelInput, error) {
 	value := appDetails.Labels[legacyServicesLabelKey]
-
 	if value == nil {
-		value = make(map[string]LegacyServiceReference)
+		value = "{}"
 	}
 
-	services, ok := value.(map[string]interface{})
+	strValue, ok := value.(string)
 	if !ok {
-		return graphql.LabelInput{}, fmt.Errorf("invalid type: expected: map[string]LegacyServiceReference; actual: %T", value)
+		return graphql.LabelInput{}, fmt.Errorf("invalid type: expected: string; actual: %T", value)
+	}
+
+	var services map[string]LegacyServiceReference
+
+	err := json.Unmarshal([]byte(strValue), &services)
+	if err != nil {
+		return graphql.LabelInput{}, errors.Wrap(err, "while unmarshalling JSON value")
 	}
 
 	services[serviceReference.ID] = serviceReference
 
+	marshalledServices, err := json.Marshal(services)
+	if err != nil {
+		return graphql.LabelInput{}, errors.Wrap(err, "while marshalling JSON value")
+	}
+
 	return graphql.LabelInput{
 		Key:   legacyServicesLabelKey,
-		Value: services,
+		Value: strconv.Quote(string(marshalledServices)),
 	}, nil
 }
 

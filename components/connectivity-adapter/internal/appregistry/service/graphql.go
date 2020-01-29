@@ -2,9 +2,8 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"strconv"
+	"regexp"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -48,21 +47,15 @@ func NewGqlRequester(cli gqlcli.GraphQLClient, graphqlizer GraphQLizer, gqlField
 }
 
 func (r *gqlRequester) SetApplicationLabel(appID string, label graphql.LabelInput) error {
-	jsonValue, err := json.Marshal(label.Value)
-	if err != nil {
-		return errors.Wrap(err, "while marshalling JSON value")
-	}
-	value := strconv.Quote(string(jsonValue))
-
 	gqlRequest := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: setApplicationLabel(applicationID: "%s", key: "%s", value: %s) {
 					%s
 				}
 			}`,
-			appID, label.Key, value, r.gqlFieldsProvider.ForLabel()))
+			appID, label.Key, label.Value, r.gqlFieldsProvider.ForLabel()))
 
-	err = r.cli.Run(context.Background(), gqlRequest, nil)
+	err := r.cli.Run(context.Background(), gqlRequest, nil)
 	if err != nil {
 		return errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -118,4 +111,9 @@ func (r *gqlRequester) CreateEventDefinition(appID string, eventDefinitionInput 
 	}
 
 	return resp.Result.ID, nil
+}
+
+func removeDoubleQuotesFromJSONKeys(in string) string {
+	var validRegex = regexp.MustCompile(`"(\w+|\$\w+)"\s*:`)
+	return validRegex.ReplaceAllString(in, `$1:`)
 }

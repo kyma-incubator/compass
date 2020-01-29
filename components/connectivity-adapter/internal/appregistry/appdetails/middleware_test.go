@@ -91,7 +91,7 @@ func TestMiddleware(t *testing.T) {
 		var response map[string]interface{}
 		err := json.Unmarshal(rw.Body.Bytes(), &response)
 		require.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`service with name %s not found`, appName), response["error"])
+		assert.Equal(t, fmt.Sprintf(`application with name %s not found`, appName), response["error"])
 	})
 
 	t.Run("found more than one application", func(t *testing.T) {
@@ -124,7 +124,7 @@ func TestMiddleware(t *testing.T) {
 		var response map[string]interface{}
 		err := json.Unmarshal(rw.Body.Bytes(), &response)
 		require.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`found more than 1 service with name %s`, appName), response["error"])
+		assert.Equal(t, fmt.Sprintf(`found more than 1 application with name %s`, appName), response["error"])
 	})
 
 	t.Run("director returns error", func(t *testing.T) {

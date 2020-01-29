@@ -26,9 +26,11 @@ func (c *converter) DetailsToGraphQLInput(id string, deprecated model.ServiceDet
 	out := model.GraphQLServiceDetailsInput{
 		ID: id,
 	}
+
 	if deprecated.Api != nil {
 
 		out.API = &graphql.APIDefinitionInput{
+			Name:      deprecated.Name,
 			TargetURL: deprecated.Api.TargetUrl,
 		}
 
@@ -159,7 +161,7 @@ func (c *converter) DetailsToGraphQLInput(id string, deprecated model.ServiceDet
 			}
 		}
 
-		if deprecated.Api.SpecificationRequestParameters != nil {
+		if deprecated.Api.SpecificationRequestParameters != nil && out.API.Spec.FetchRequest != nil {
 			if deprecated.Api.SpecificationRequestParameters.Headers != nil {
 				h := (graphql.HttpHeaders)(*deprecated.Api.SpecificationRequestParameters.Headers)
 				out.API.Spec.FetchRequest.Auth.AdditionalHeaders = &h
@@ -174,6 +176,7 @@ func (c *converter) DetailsToGraphQLInput(id string, deprecated model.ServiceDet
 	if deprecated.Events != nil && deprecated.Events.Spec != nil {
 		out.Event =
 			&graphql.EventDefinitionInput{
+				Name: deprecated.Name,
 				Spec: &graphql.EventSpecInput{
 					Data: ptrClob(graphql.CLOB(deprecated.Events.Spec)),
 				},
