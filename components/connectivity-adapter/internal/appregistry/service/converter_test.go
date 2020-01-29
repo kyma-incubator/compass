@@ -423,7 +423,7 @@ func TestConversionDeprecatedServiceDetailsToGraphQLInput(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			// WHEN
-			actual, err := sut.DetailsToGraphQLInputNew("id", tc.given)
+			actual, err := sut.DetailsToGraphQLInput("id", tc.given)
 
 			// THEN
 			require.NoError(t, err)
