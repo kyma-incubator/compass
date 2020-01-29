@@ -372,7 +372,7 @@ func TestService_Sync(t *testing.T) {
 		ExpectedOutput      error
 	}{
 		{
-			Name: "Succes",
+			Name: "Success",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
 				tenantMappingRepo.On("List", ctx, 100, "").Return(&tenantsFromDb, nil).Once()

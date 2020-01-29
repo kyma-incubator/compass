@@ -65,6 +65,7 @@ global:
   tenantConfig:
     useDefaultTenants: true
     useExternalTenants: false
+    useExternalTenantsConfigMapFromChart: false
     externalTenantsProvider: ""
 
   connector:

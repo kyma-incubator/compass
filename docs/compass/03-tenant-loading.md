@@ -5,8 +5,16 @@ This document describes how Compass handles initial tenant loading.
 
 ## Job
 
-In Compass the user can define his own tenants. There is a special `compass-director-tenant-loader` job provided for that operation. User has to define a ConfigMap which has a JSON file containing tenants as a data.
-There is also `compass-director-default-tenant-loader` job which loads tenants defined in the `global.tenants` field from [compass/values.yaml](../../chart/compass/values.yaml) file with `tenantProvider` value set to `dummy`.
+In Compass the user can define his own tenants. There is a special `compass-director-external-tenant-loader` job provided for that operation. To use that job, the user has to follow these steps:
+ - change the `useExternalTenants` value to `true`, 
+ - define a ConfigMap which has a JSON file containing tenants as a data (example below),
+ 
+or 
+ - reuse [existing ConfigMap](../../chart/compass/charts/director/templates/configmap-external-tenant-config.yaml) by setting `useExternalTenants` and `useExternalTenantsConfigMapFromChart` values to true.
+
+There is also `compass-director-default-tenant-loader` job which loads tenants defined in the `global.tenants` field with `tenantProvider` value set to `dummy`.
+
+All mentioned values can be found from [here](../../chart/compass/values.yaml).
 
 These jobs load the file with tenants from the ConfigMap, parse its content and add it to Compass storage as external tenants with mapping to internal(technical) tenants.
 
@@ -15,7 +23,7 @@ Example ConfigMap:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: compass-director-tenant-config
+  name: compass-director-external-tenant-config
   namespace: compass-system
 data:
   tenants.json: |-

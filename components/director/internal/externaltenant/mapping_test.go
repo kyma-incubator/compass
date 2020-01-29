@@ -3,6 +3,8 @@ package externaltenant_test
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/externaltenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,21 +17,21 @@ func TestMapTenants(t *testing.T) {
 	invalidPath := "foo"
 
 	provider := "testProvider"
-	expectedTenants := []externaltenant.TenantMappingInput{
+	expectedTenants := []model.BusinessTenantMappingInput{
 		{
-			Name:             "default",
-			ExternalTenantID: "id-default",
-			Provider:         provider,
+			Name:           "default",
+			ExternalTenant: "id-default",
+			Provider:       provider,
 		},
 		{
-			Name:             "foo",
-			ExternalTenantID: "id-foo",
-			Provider:         provider,
+			Name:           "foo",
+			ExternalTenant: "id-foo",
+			Provider:       provider,
 		},
 		{
-			Name:             "bar",
-			ExternalTenantID: "id-bar",
-			Provider:         provider,
+			Name:           "bar",
+			ExternalTenant: "id-bar",
+			Provider:       provider,
 		},
 	}
 
