@@ -27,9 +27,9 @@ func main() {
 	exitOnError(err, "while loading app config")
 
 	router := mux.NewRouter()
+	router.HandleFunc("/v1/health", health.HandleFunc).Methods(http.MethodGet)
 
-	v1Router := router.PathPrefix("/v1").Subrouter()
-	v1Router.HandleFunc("/health", health.HandleFunc).Methods(http.MethodGet)
+	v1Router := router.PathPrefix("/{app-name}/v1").Subrouter()
 
 	appRegistryRouter := v1Router.PathPrefix("/metadata").Subrouter()
 	appregistry.RegisterHandler(appRegistryRouter, cfg.AppRegistry)

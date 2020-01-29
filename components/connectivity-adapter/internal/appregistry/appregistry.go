@@ -3,6 +3,8 @@ package appregistry
 import (
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
+
 	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/service/validation"
@@ -30,6 +32,9 @@ func RegisterHandler(router *mux.Router, cfg Config) {
 	gqlRequestBuilder := service.NewGqlRequestBuilder(graphqlizer, gqlFieldsProvider)
 	serviceHandler := service.NewHandler(gqlCliProvider, converter, validator, gqlRequestBuilder, logger)
 
+	appMidlleware := appdetails.NewApplicationMiddleware(gqlCliProvider, logger, gqlRequestBuilder)
+
+	router.Use(appMidlleware.Middleware)
 	router.HandleFunc("/services", serviceHandler.List).Methods(http.MethodGet)
 	router.HandleFunc("/services", serviceHandler.Create).Methods(http.MethodPost)
 	router.HandleFunc("/services/{serviceId}", serviceHandler.Get).Methods(http.MethodGet)
