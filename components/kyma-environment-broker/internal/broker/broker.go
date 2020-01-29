@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
@@ -87,7 +87,7 @@ type KymaEnvBroker struct {
 	provisionerClient  provisioner.Client
 	instancesStorage   storage.Instances
 	builderFactory     InputBuilderForPlan
-	DirectorClient    DirectorClient
+	DirectorClient     DirectorClient
 	optionalComponents OptionalComponentNamesProvider
 	enabledPlanIDs     map[string]struct{}
 }

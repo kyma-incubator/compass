@@ -36,7 +36,7 @@ func TestBroker_Services(t *testing.T) {
 	optComponentsNames := []string{"monitoring", "kiali", "loki", "jaeger"}
 	optComponentsProviderMock.On("GetAllOptionalComponentsNames").Return(optComponentsNames)
 
-	kymaEnvBroker, err := broker.New(broker.Config{EnablePlans: []string{"gcp", "azure"}}, nil, broker.ProvisioningConfig{}, nil, memStorage.Instances(), optComponentsProviderMock, nil, &broker.DumyDumper{})
+	kymaEnvBroker, err := broker.New(broker.Config{EnablePlans: []string{"gcp", "azure"}}, nil, nil, broker.ProvisioningConfig{}, memStorage.Instances(), optComponentsProviderMock, nil, &broker.DumyDumper{})
 	require.NoError(t, err)
 
 	// when
@@ -79,7 +79,7 @@ func TestBroker_ProvisioningScenario(t *testing.T) {
 		inputToReturn: fixInput,
 	}
 
-	kymaEnvBroker, err := broker.New(broker.Config{EnablePlans: []string{"gcp", "azure"}}, fCli, broker.ProvisioningConfig{}, fdCli, memStorage.Instances(), nil, factoryBuilderFake, &broker.DumyDumper{})
+	kymaEnvBroker, err := broker.New(broker.Config{EnablePlans: []string{"gcp", "azure"}}, fCli, fdCli, broker.ProvisioningConfig{}, memStorage.Instances(), nil, factoryBuilderFake, &broker.DumyDumper{})
 	require.NoError(t, err)
 
 	// when
