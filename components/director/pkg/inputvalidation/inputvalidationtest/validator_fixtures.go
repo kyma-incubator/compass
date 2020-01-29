@@ -3,11 +3,11 @@ package inputvalidationtest
 import "strings"
 
 var (
-	String37Long  = strings.Repeat("a", 37)
-	String129Long = strings.Repeat("a", 129)
-	String257Long = strings.Repeat("a", 257)
-	String2001Long = string.Repeat("a", 2001)
-	URL257Long    = "http://url.com/" + strings.Repeat("a", 242)
+	String37Long   = strings.Repeat("a", 37)
+	String129Long  = strings.Repeat("a", 129)
+	String257Long  = strings.Repeat("a", 257)
+	String2001Long = strings.Repeat("a", 2001)
+	URL257Long     = "http://url.com/" + strings.Repeat("a", 242)
 )
 
 const (
