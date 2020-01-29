@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/cluster_config"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -22,7 +23,7 @@ type (
 		ComputeComponentsToDisable(optComponentsToKeep []string) []string
 	}
 
-	hyperscalerInputProvider interface {
+	HyperscalerInputProvider interface {
 		Defaults() *gqlschema.ClusterConfigInput
 		ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO)
 	}
@@ -49,6 +50,10 @@ type InputBuilderFactory struct {
 	fullComponentsList internal.ComponentConfigurationInputList
 }
 
+var _ HyperscalerInputProvider = &cluster_config.AwsInputProvider{}
+var _ HyperscalerInputProvider = &cluster_config.GcpInputProvider{}
+var _ HyperscalerInputProvider = &cluster_config.AzureInputProvider{}
+
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullComponentsList []v1alpha1.KymaComponent, kymaVersion string, smOverride internal.ServiceManagerOverride) InputBuilderForPlan {
 	return &InputBuilderFactory{
 		kymaVersion:        kymaVersion,
@@ -59,12 +64,12 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullCompo
 }
 
 func (f *InputBuilderFactory) ForPlan(planID string) (ConcreteInputBuilder, bool) {
-	var provider hyperscalerInputProvider
+	var provider HyperscalerInputProvider
 	switch planID {
 	case gcpPlanID:
-		provider = &gcpInputProvider{}
+		provider = &cluster_config.GcpInputProvider{}
 	case azurePlanID:
-		provider = &azureInputProvider{}
+		provider = &cluster_config.AzureInputProvider{}
 	// insert cases for other providers like AWS or GCP
 	default:
 		return nil, false
@@ -84,7 +89,7 @@ type InputBuilder struct {
 	planID                    string
 	kymaVersion               string
 	serviceManager            internal.ServiceManagerOverride
-	hyperscalerInputProvider  hyperscalerInputProvider
+	hyperscalerInputProvider  HyperscalerInputProvider
 	optionalComponentsService OptionalComponentService
 	fullRuntimeComponentList  internal.ComponentConfigurationInputList
 

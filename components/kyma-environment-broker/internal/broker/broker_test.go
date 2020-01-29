@@ -1,132 +1,112 @@
 package broker_test
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const (
 	serviceID       = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
 	planID          = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 	globalAccountID = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
+
+	instID = "inst-id"
 )
 
-func TestBroker_Services(t *testing.T) {
-	// given
-	memStorage := storage.NewMemoryStorage()
+type brokerTest struct {
+	t      *testing.T
+	broker *broker.KymaEnvBroker
 
-	optComponentsProviderMock := &automock.OptionalComponentNamesProvider{}
-	defer optComponentsProviderMock.AssertExpectations(t)
-
-	optComponentsNames := []string{"monitoring", "kiali", "loki", "jaeger"}
-	optComponentsProviderMock.On("GetAllOptionalComponentsNames").Return(optComponentsNames)
-
-	kymaEnvBroker, err := broker.New(broker.Config{EnablePlans: []string{"gcp", "azure"}}, nil, nil, broker.ProvisioningConfig{}, memStorage.Instances(), optComponentsProviderMock, nil, &broker.DumyDumper{})
-	require.NoError(t, err)
-
-	// when
-	services, err := kymaEnvBroker.Services(context.TODO())
-
-	// then
-	require.NoError(t, err)
-	assert.Len(t, services, 1)
-	assert.Len(t, services[0].Plans, 2)
-
-	// assert provisioning schema
-	componentItem := services[0].Plans[0].Schemas.Instance.Create.Parameters["properties"].(map[string]interface{})["components"]
-	componentJSON, err := json.Marshal(componentItem)
-	require.NoError(t, err)
-	assert.JSONEq(t, fmt.Sprintf(`
-		{
-		  "type": "array",
-		  "items": {
-			  "type": "string",
-			  "enum": %s
-		  }
-		}`, toJSONList(optComponentsNames)), string(componentJSON))
+	storage           storage.BrokerStorage
+	ocnp              broker.OptionalComponentNamesProvider
+	provisionerClient provisioner.Client
+	directorClient    broker.DirectorClient
+	builder           broker.InputBuilderForPlan
 }
 
-func toJSONList(in []string) string {
-	return fmt.Sprintf(`["%s"]`, strings.Join(in, `", "`))
+func newTestBroker(t *testing.T) *brokerTest {
+	return &brokerTest{t: t}
 }
 
-func TestBroker_ProvisioningScenario(t *testing.T) {
-	// given
-	const instID = "inst-id"
-	const clusterName = "cluster-testing"
+func (bt *brokerTest) addStorage(s storage.BrokerStorage) *brokerTest {
+	bt.storage = s
+	bt.t.Log("storage added to test broker")
+	return bt
+}
 
-	fCli := provisioner.NewFakeClient()
-	fdCli := director.NewFakeDirectorClient()
-	memStorage := storage.NewMemoryStorage()
+func (bt *brokerTest) addProvisionerClient(pc provisioner.Client) *brokerTest {
+	bt.provisionerClient = pc
+	bt.t.Log("provisioner client added to test broker")
+	return bt
+}
 
-	fixInput := schema.ProvisionRuntimeInput{}
-	factoryBuilderFake := &InputBuilderForPlanFake{
-		inputToReturn: fixInput,
+func (bt *brokerTest) addDirectorClient(dc broker.DirectorClient) *brokerTest {
+	bt.directorClient = dc
+	bt.t.Log("director client added to test broker")
+	return bt
+}
+
+func (bt *brokerTest) addOptionalComponentNamesProvider(ocnp broker.OptionalComponentNamesProvider) *brokerTest {
+	bt.ocnp = ocnp
+	bt.t.Log("components names provider added to test broker")
+	return bt
+}
+
+func (bt *brokerTest) addInputBuilder(ib broker.InputBuilderForPlan) *brokerTest {
+	bt.builder = ib
+	bt.t.Log("concrete input builder added to test broker")
+	return bt
+}
+
+func (bt *brokerTest) createTestBroker() {
+	if bt.storage == nil {
+		bt.t.Log("default MemoryStorage will be used in test broker")
+		bt.storage = storage.NewMemoryStorage()
+	}
+	if bt.provisionerClient == nil {
+		bt.t.Log("default provisioner FakeClient will be used in test broker")
+		bt.provisionerClient = provisioner.NewFakeClient()
+	}
+	if bt.directorClient == nil {
+		bt.t.Log("default director FakeClient will be used in test broker")
+		bt.directorClient = director.NewFakeDirectorClient()
 	}
 
-	kymaEnvBroker, err := broker.New(broker.Config{EnablePlans: []string{"gcp", "azure"}}, fCli, fdCli, broker.ProvisioningConfig{}, memStorage.Instances(), nil, factoryBuilderFake, &broker.DumyDumper{})
-	require.NoError(t, err)
+	if bt.builder == nil {
+		bt.t.Log("default InputBuilderForPlanFake will be used in test broker")
+		bt.builder = InputBuilderForPlanFake{
+			inputToReturn: schema.ProvisionRuntimeInput{},
+		}
+	}
 
-	// when
-	res, err := kymaEnvBroker.Provision(context.TODO(), instID, domain.ProvisionDetails{
-		ServiceID:     serviceID,
-		PlanID:        planID,
-		RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-		RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s"}`, globalAccountID)),
-	}, true)
-	require.NoError(t, err)
+	kymaEnvBroker, err := broker.New(
+		broker.Config{EnablePlans: []string{"gcp", "azure"}},
+		bt.provisionerClient,
+		bt.directorClient,
+		broker.ProvisioningConfig{},
+		bt.storage.Instances(),
+		bt.ocnp,
+		bt.builder,
+		&broker.DumyDumper{},
+	)
+	if err != nil {
+		bt.t.Fatalf("cannot create broker: %s", err)
+	}
 
-	// then
-	assert.Equal(t, fixInput, fCli.GetProvisionRuntimeInput(0))
-
-	inst, err := memStorage.Instances().GetByID(instID)
-	require.NoError(t, err)
-	assert.Equal(t, inst.InstanceID, instID)
-
-	// when
-	op, err := kymaEnvBroker.LastOperation(context.TODO(), instID, domain.PollDetails{
-		ServiceID:     serviceID,
-		PlanID:        planID,
-		OperationData: res.OperationData,
-	})
-
-	// then
-	require.NoError(t, err)
-	assert.Equal(t, domain.InProgress, op.State)
-
-	// when
-	fCli.FinishProvisionerOperation(res.OperationData, schema.OperationStateSucceeded)
-	op, err = kymaEnvBroker.LastOperation(context.TODO(), instID, domain.PollDetails{
-		ServiceID:     serviceID,
-		PlanID:        planID,
-		OperationData: res.OperationData,
-	})
-
-	// then
-	require.NoError(t, err)
-	assert.Equal(t, domain.Succeeded, op.State)
+	bt.broker = kymaEnvBroker
 }
 
 type InputBuilderForPlanFake struct {
 	inputToReturn schema.ProvisionRuntimeInput
 }
 
-func (i *InputBuilderForPlanFake) ForPlan(planID string) (broker.ConcreteInputBuilder, bool) {
+func (i InputBuilderForPlanFake) ForPlan(planID string) (broker.ConcreteInputBuilder, bool) {
 	return &ConcreteInputBuilderFake{
 		input: i.inputToReturn,
 	}, true

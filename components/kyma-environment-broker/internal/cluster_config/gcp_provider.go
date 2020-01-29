@@ -1,15 +1,13 @@
-package broker
+package cluster_config
 
 import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
-type gcpInputProvider struct{}
+type GcpInputProvider struct{}
 
-var _ hyperscalerInputProvider = &gcpInputProvider{}
-
-func (p *gcpInputProvider) Defaults() *gqlschema.ClusterConfigInput {
+func (p *GcpInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion: "1.15.5",
@@ -33,6 +31,6 @@ func (p *gcpInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *gcpInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
+func (p *GcpInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
 	updateString(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zone, params.Zone)
 }
