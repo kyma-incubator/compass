@@ -222,27 +222,31 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
-	//defer h.closeBody(request)
-	//gqlCli := h.cliProvider.GQLClient(request)
-	//
-	//id := h.getServiceID(request)
-	//gqlRequest := h.directorClient.UnregisterApplicationRequest(id)
-	//
-	//err := gqlCli.Run(context.Background(), gqlRequest, nil)
-	//if err != nil {
-	//	if apperrors.IsNotFoundError(err) {
-	//		h.writeErrorNotFound(writer, id)
-	//		return
-	//	}
-	//
-	//	h.logger.WithField("ID", id).Error(errors.Wrap(err, "while deleting service"))
-	//	reqerror.WriteError(writer, err, apperrors.CodeInternal)
-	//	return
-	//}
-	//
-	//writer.WriteHeader(http.StatusNoContent)
+	defer h.closeBody(request)
 
-	writer.WriteHeader(http.StatusNotImplemented)
+	id := h.getServiceID(request)
+
+	serviceManager, err := h.serviceManager.ForRequest(request)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while requesting Service Manager")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	err = serviceManager.Delete(id)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			h.writeErrorNotFound(writer, id)
+			return
+		}
+
+		h.logger.WithField("ID", id).Error(errors.Wrap(err, "while deleting service"))
+		reqerror.WriteError(writer, err, apperrors.CodeInternal)
+		return
+	}
+
+	writer.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) closeBody(rq *http.Request) {

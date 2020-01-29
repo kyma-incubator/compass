@@ -5,7 +5,6 @@ package apperrors
 
 import (
 	"fmt"
-	"strings"
 )
 
 const (
@@ -74,5 +73,10 @@ func IsNotFoundError(err error) bool {
 		return false
 	}
 
-	return strings.Contains(err.Error(), "Object was not found")
+	appErr, ok := err.(appError)
+	if !ok {
+		return false
+	}
+
+	return appErr.Code() == CodeNotFound
 }
