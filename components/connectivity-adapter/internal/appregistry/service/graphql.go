@@ -20,8 +20,6 @@ type GraphQLizer interface {
 	EventDefinitionInputToGQL(in graphql.EventDefinitionInput) (string, error)
 }
 
-const appNameFilterKey = "name"
-
 //go:generate mockery -name=GqlFieldsProvider -output=automock -outpkg=automock -case=underscore
 type GqlFieldsProvider interface {
 	ForApplication(ctx ...gql.FieldCtx) string
@@ -120,13 +118,4 @@ func (r *gqlRequester) CreateEventDefinition(appID string, eventDefinitionInput 
 	}
 
 	return resp.Result.ID, nil
-}
-
-// TODO: Refactor - use GraphQL client inside
-func (r *gqlRequester) GetApplicationsByName(appName string) *gcli.Request {
-	return gcli.NewRequest(fmt.Sprintf(`query {
-			result: applications(filter: {key:"%s", query: "\"%s\""}) {
-					%s
-			}
-	}`, appNameFilterKey, appName, r.gqlFieldsProvider.Page(r.gqlFieldsProvider.ForApplication())))
 }

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -24,11 +22,7 @@ func NewConverter() *converter {
 	return &converter{}
 }
 
-func (c *converter) DetailsToGraphQLInput(in model.ServiceDetails) (graphql.ApplicationRegisterInput, error) {
-	return graphql.ApplicationRegisterInput{}, errors.New("deprecated")
-}
-
-func (c *converter) DetailsToGraphQLInputNew(id string, deprecated model.ServiceDetails) (model.GraphQLServiceDetailsInput, error) {
+func (c *converter) DetailsToGraphQLInput(id string, deprecated model.ServiceDetails) (model.GraphQLServiceDetailsInput, error) {
 	out := model.GraphQLServiceDetailsInput{
 		ID: id,
 	}

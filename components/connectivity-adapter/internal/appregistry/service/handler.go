@@ -31,8 +31,8 @@ type GraphQLServiceDetails struct {
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
-	DetailsToGraphQLInput(id string, deprecated model.ServiceDetails) (GraphQLServiceDetailsInput, error)
-	GraphQLToServiceDetails(converted GraphQLServiceDetails) (model.ServiceDetails, error)
+	DetailsToGraphQLInput(id string, deprecated model.ServiceDetails) (model.GraphQLServiceDetailsInput, error)
+	GraphQLToServiceDetails(converted model.GraphQLServiceDetails) (model.ServiceDetails, error)
 }
 
 ////go:generate mockery -name=AppOperator -output=automock -outpkg=automock -case=underscore
@@ -60,10 +60,10 @@ type ServiceManagerProvider interface {
 
 //go:generate mockery -name=ServiceManager -output=automock -outpkg=automock -case=underscore
 type ServiceManager interface {
-	Create(serviceDetails GraphQLServiceDetailsInput) error
-	GetFromApplicationDetails(serviceID string) (GraphQLServiceDetails, error)
-	ListFromApplicationDetails() ([]GraphQLServiceDetails, error)
-	Update(serviceDetails GraphQLServiceDetailsInput) error
+	Create(serviceDetails model.GraphQLServiceDetailsInput) error
+	GetFromApplicationDetails(serviceID string) (model.GraphQLServiceDetails, error)
+	ListFromApplicationDetails() ([]model.GraphQLServiceDetails, error)
+	Update(serviceDetails model.GraphQLServiceDetailsInput) error
 	Delete(serviceID string) error
 }
 

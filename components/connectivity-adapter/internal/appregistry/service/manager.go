@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
 )
@@ -35,7 +36,7 @@ func NewServiceManager(gqlRequester GraphQLRequester, appLabeler AppLabeler, app
 	}, nil
 }
 
-func (s *serviceManager) Create(serviceDetails GraphQLServiceDetailsInput) error {
+func (s *serviceManager) Create(serviceDetails model.GraphQLServiceDetailsInput) error {
 	appID := s.appDetails.ID
 
 	var apiID, eventID *string
@@ -76,15 +77,15 @@ func (s *serviceManager) Create(serviceDetails GraphQLServiceDetailsInput) error
 	return nil
 }
 
-func (s *serviceManager) GetFromApplicationDetails(serviceID string) (GraphQLServiceDetails, error) {
+func (s *serviceManager) GetFromApplicationDetails(serviceID string) (model.GraphQLServiceDetails, error) {
 	panic("implement me")
 }
 
-func (s *serviceManager) ListFromApplicationDetails() ([]GraphQLServiceDetails, error) {
+func (s *serviceManager) ListFromApplicationDetails() ([]model.GraphQLServiceDetails, error) {
 	panic("implement me")
 }
 
-func (s *serviceManager) Update(serviceDetails GraphQLServiceDetailsInput) error {
+func (s *serviceManager) Update(serviceDetails model.GraphQLServiceDetailsInput) error {
 	panic("implement me")
 }
 
