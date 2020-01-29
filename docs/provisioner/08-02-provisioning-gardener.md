@@ -120,7 +120,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                   configuration: [
                     { key: "{CONFIG_PROPERTY_KEY}"
                       value: "{CONFIG_PROPERTY_VALUE}"
-                      secret: {TRUE|FALSE} # Specifies if the property is confidential
+                      secret: {true|false} # Specifies if the property is confidential
                     }
                   ]
                 }
@@ -129,7 +129,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 { 
                   key: "{CONFIG_PROPERTY_KEY}"
                   value: "{CONFIG_PROPERTY_VALUE}"
-                  secret: {TRUE|FALSE} # Specifies if the property is confidential
+                  secret: {true|false} # Specifies if the property is confidential
                 }
               ]
             }
@@ -183,13 +183,17 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
       > **NOTE:** The cluster name must start with a lowercase letter followed by up to 19 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.                                                                  
                                                                           
       ```graphql
-      mutation { 
+      mutation {
         provisionRuntime(
-          id:"61d1841b-ccb5-44ed-a9ec-45f70cd1b0d3" config: {
+          config: {
+            runtimeInput: {
+              name: "{RUNTIME_NAME}"
+              labels: {RUNTIME_LABELS}
+            }
             clusterConfig: {
               gardenerConfig: {
-                name: "{CLUSTER_NAME}"
-                projectName: "{GARDENER_PROJECT_NAME}"
+                name: "{CLUSTER_NAME}" 
+                projectName: "{GARDENER_PROJECT_NAME}" 
                 kubernetesVersion: "1.15.4"
                 diskType: "Standard_LRS"
                 volumeSizeGB: 35
@@ -198,19 +202,44 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 region: "westeurope"
                 provider: "azure"
                 seed: "az-eu1"
-                targetSecret: "{GARDENER_AZURE_SECRET_NAME}"
+                targetSecret: "{GARDENER_GCP_SECRET_NAME}"
                 workerCidr: "10.250.0.0/19"
                 autoScalerMin: 2
                 autoScalerMax: 4
                 maxSurge: 4
                 maxUnavailable: 1
-                providerSpecificConfig: {  azureConfig: { vnetCidr: "10.250.0.0/19" } }
+                providerSpecificConfig: { azureConfig: { vnetCidr: "10.250.0.0/19" } }
               }
             }
-            kymaConfig: { version: "1.5", modules: Backup }
-            credentials: { secretName: "{GARDENER_SERVICE_ACCOUNT_CONFIGURATION_SECRET_NAME}" }
+            kymaConfig: {
+              version: "1.8.0"
+              components: [
+                { component: "compass-runtime-agent", namespace: "compass-system" }
+                {
+                  component: "{KYMA_COMPONENT_NAME}"
+                  namespace: "{NAMESPACE_TO_INSTALL_COMPONENT_TO}"
+                  configuration: [
+                    { key: "{CONFIG_PROPERTY_KEY}"
+                      value: "{CONFIG_PROPERTY_VALUE}"
+                      secret: {true|false} # Specifies if the property is confidential
+                    }
+                  ]
+                }
+              ]
+              configuration: [
+                { 
+                  key: "{CONFIG_PROPERTY_KEY}"
+                  value: "{CONFIG_PROPERTY_VALUE}"
+                  secret: {true|false} # Specifies if the property is confidential
+                }
+              ]
+            }
+            credentials: { secretName: "{GARDENER_SERVICE_ACCOUNT_CONFIGURATION_SECERT_NAME}" }
           }
-        )
+        ) {
+          runtimeID
+          id
+        }
       }
       ```
     
@@ -219,7 +248,10 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
       ```graphql
       {
         "data": {
-          "provisionRuntime": "af0c8122-27ee-4a36-afa5-6e26c39929f2"
+          "provisionRuntime": {
+            "runtimeID": "{RUNTIME_ID}",
+            "id": "{OPERATION_ID}"
+          }
         }
       }
       ```
