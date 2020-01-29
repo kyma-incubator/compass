@@ -24,11 +24,17 @@ const (
 type ComponentsListProvider struct {
 	kymaVersion                      string
 	managedRuntimeComponentsYAMLPath string
+	httpClient                       HTTPDoer
+}
+
+type HTTPDoer interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // NewComponentsListProvider returns new instance of the ComponentsListProvider
-func NewComponentsListProvider(kymaVersion string, managedRuntimeComponentsYAMLPath string) *ComponentsListProvider {
+func NewComponentsListProvider(client HTTPDoer, kymaVersion string, managedRuntimeComponentsYAMLPath string) *ComponentsListProvider {
 	return &ComponentsListProvider{
+		httpClient:                       client,
 		kymaVersion:                      kymaVersion,
 		managedRuntimeComponentsYAMLPath: managedRuntimeComponentsYAMLPath,
 	}
@@ -61,11 +67,15 @@ func (r ComponentsListProvider) AllComponents() ([]v1alpha1.KymaComponent, error
 func (r ComponentsListProvider) getOpenSourceKymaComponents() (comp []v1alpha1.KymaComponent, err error) {
 	installerYamlURL := r.getInstallerYamlURL()
 
-	resp, err := http.Get(installerYamlURL)
+	req, err := http.NewRequest(http.MethodGet, installerYamlURL, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating http request")
+	}
+
+	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
-
 	defer func() {
 		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
 			err = multierror.Append(err, errors.Wrap(drainErr, "while trying to drain body reader"))
@@ -95,17 +105,17 @@ func (r ComponentsListProvider) getOpenSourceKymaComponents() (comp []v1alpha1.K
 func (r ComponentsListProvider) getManagedRuntimeComponents() ([]v1alpha1.KymaComponent, error) {
 	yamlFile, err := ioutil.ReadFile(r.managedRuntimeComponentsYAMLPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "while reading YAML file with managed components managedList")
+		return nil, errors.Wrap(err, "while reading YAML file with managed components mangedList")
 	}
 
-	var managedList struct {
+	var mangedList struct {
 		Components []v1alpha1.KymaComponent `json:"components"`
 	}
-	err = yaml.Unmarshal(yamlFile, &managedList)
+	err = yaml.Unmarshal(yamlFile, &mangedList)
 	if err != nil {
-		return nil, errors.Wrap(err, "while unmarshaling YAML file with managed components managedList")
+		return nil, errors.Wrap(err, "while unmarshaling YAML file with managed components mangedList")
 	}
-	return managedList.Components, nil
+	return mangedList.Components, nil
 }
 
 // Installation represents the installer CR.

@@ -93,7 +93,7 @@ func main() {
 
 	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
 
-	runtimeProvider := runtime.NewComponentsListProvider(cfg.KymaVersion, cfg.ManagedRuntimeComponentsYAMLFilePath)
+	runtimeProvider := runtime.NewComponentsListProvider(http.DefaultClient, cfg.KymaVersion, cfg.ManagedRuntimeComponentsYAMLFilePath)
 	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
 	fatalOnError(err)
 
