@@ -3,24 +3,24 @@ package main
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/pkg/errors"
+	"github.com/vrischmann/envconfig"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/externaltenant"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	log "github.com/sirupsen/logrus"
-	"github.com/vrischmann/envconfig"
 )
 
 type jobConfig struct {
-	TenantsSrc     string `envconfig:"default=/data/tenants.json"`
-	TenantProvider string `envconfig:"default=dummy"`
-	Database       persistence.DatabaseConfig
+	Database persistence.DatabaseConfig
 }
 
 func main() {
+	const tenantsDirectoryPath = "/data/"
+
 	cfg := jobConfig{}
 	err := envconfig.Init(&cfg)
 	exitOnError(err, "error while loading app config")
@@ -41,7 +41,7 @@ func main() {
 	UIDSvc := uid.NewService()
 	tenantSvc := tenant.NewService(tenantRepo, UIDSvc)
 
-	tenants, err := externaltenant.MapTenants(cfg.TenantsSrc, cfg.TenantProvider)
+	tenants, err := externaltenant.MapTenants(tenantsDirectoryPath)
 	exitOnError(err, "error while mapping tenants from file")
 
 	tx, err := transact.Begin()

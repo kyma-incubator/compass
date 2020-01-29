@@ -1,6 +1,7 @@
 package externaltenant_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -12,51 +13,60 @@ import (
 
 func TestMapTenants(t *testing.T) {
 	//given
-	validSrcPath := "./testdata/valid_tenants.json"
-	pathToInvalidJSON := "./testdata/invalid.json"
+	validTenantSrcPath := "./testdata/tenants/"
+	directoryWithInvalidTenantJSON := "./testdata/invalidtenants/"
 	invalidPath := "foo"
 
-	provider := "testProvider"
+	firstProvider := "valid_tenants.json"
+	secondProvider := "valid_tenants2.json"
+
 	expectedTenants := []model.BusinessTenantMappingInput{
 		{
 			Name:           "default",
 			ExternalTenant: "id-default",
-			Provider:       provider,
+			Provider:       firstProvider,
 		},
 		{
 			Name:           "foo",
 			ExternalTenant: "id-foo",
-			Provider:       provider,
+			Provider:       firstProvider,
 		},
 		{
 			Name:           "bar",
 			ExternalTenant: "id-bar",
-			Provider:       provider,
+			Provider:       secondProvider,
+		},
+		{
+			Name:           "baz",
+			ExternalTenant: "id-baz",
+			Provider:       secondProvider,
 		},
 	}
 
 	t.Run("should return tenants", func(t *testing.T) {
 		//when
-		actualTenants, err := externaltenant.MapTenants(validSrcPath, provider)
+		actualTenants, err := externaltenant.MapTenants(validTenantSrcPath)
 
 		//then
 		require.NoError(t, err)
 		assert.Equal(t, expectedTenants, actualTenants)
 	})
 
-	t.Run("should fail while reading tenants file", func(t *testing.T) {
+	t.Run("should fail while reading tenants directory", func(t *testing.T) {
 		//when
-		_, err := externaltenant.MapTenants(invalidPath, provider)
+		_, err := externaltenant.MapTenants(invalidPath)
 
 		//then
 		require.Error(t, err)
+		assert.Equal(t, err.Error(), fmt.Sprintf("while reading directory with tenant files %s: open %s: no such file or directory", invalidPath, invalidPath))
 	})
 
 	t.Run("should fail while unmarshalling tenants", func(t *testing.T) {
 		//when
-		_, err := externaltenant.MapTenants(pathToInvalidJSON, provider)
+		_, err := externaltenant.MapTenants(directoryWithInvalidTenantJSON)
 
 		//then
 		require.Error(t, err)
+		assert.Equal(t, err.Error(), fmt.Sprintf("while unmarshalling tenants from file %s%s: invalid character '\\n' in string literal", directoryWithInvalidTenantJSON, "invalid.json"))
 	})
 }

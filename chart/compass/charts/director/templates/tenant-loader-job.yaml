@@ -1,8 +1,8 @@
-{{- if eq .Values.global.tenantConfig.useExternalTenants true }}
+{{- if or (eq .Values.global.tenantConfig.useExternalTenants true) (eq .Values.global.tenantConfig.useDefaultTenants true) }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-    name: {{ template "fullname" . }}-external-tenant-loader
+    name: {{ template "fullname" . }}-tenant-loader
     labels:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
@@ -53,12 +53,17 @@ spec:
                             secretKeyRef:
                                 name: compass-postgresql
                                 key: postgresql-sslMode
-                      - name: TENANT_PROVIDER
-                        value: {{ .Values.global.tenantConfig.externalTenantsProvider }}
                   volumeMounts:
-                    - name: tenant-config
-                      mountPath: /data/tenants.json
+                    {{if eq .Values.global.tenantConfig.useDefaultTenants true}}
+                    - name: default-tenant-config
+                      mountPath: /data/default-tenants.json
                       subPath: tenants.json
+                    {{end}}
+                    {{if eq .Values.global.tenantConfig.useExternalTenants true}}
+                    - name: external-tenant-config
+                      mountPath: /data/external-tenants.json
+                      subPath: tenants.json
+                    {{end}}
                   command:
                     - "/bin/sh"
                   args:
@@ -78,9 +83,16 @@ spec:
                       readOnly: true
               {{end}}
             volumes:
-              - name: tenant-config
+            {{if eq .Values.global.tenantConfig.useDefaultTenants true}}
+              - name: default-tenant-config
+                configMap:
+                  name: {{ template "fullname" . }}-default-tenant-config
+            {{end}}
+            {{if eq .Values.global.tenantConfig.useExternalTenants true}}
+              - name: external-tenant-config
                 configMap:
                   name: {{ template "fullname" . }}-external-tenant-config
+            {{end}}
             {{if eq .Values.global.database.embedded.enabled false}}
               - name: cloudsql-instance-credentials
                 secret:

@@ -6,9 +6,5 @@
   {
     "id":"id-foo",
     "name":"foo"
-  },
-  {
-    "id":"id-bar",
-    "name":"bar"
   }
 ]

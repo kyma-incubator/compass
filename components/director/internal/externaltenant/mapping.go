@@ -9,20 +9,31 @@ import (
 	"github.com/pkg/errors"
 )
 
-func MapTenants(srcPath, provider string) ([]model.BusinessTenantMappingInput, error) {
-	bytes, err := ioutil.ReadFile(srcPath)
+func MapTenants(tenantsDirectoryPath string) ([]model.BusinessTenantMappingInput, error) {
+
+	files, err := ioutil.ReadDir(tenantsDirectoryPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "while reading external tenants file")
+		return nil, errors.Wrapf(err, "while reading directory with tenant files %s", tenantsDirectoryPath)
 	}
 
-	var tenants []model.BusinessTenantMappingInput
-	if err := json.Unmarshal(bytes, &tenants); err != nil {
-		return nil, errors.Wrapf(err, "while unmarshaling external tenants from file %s", srcPath)
+	var outputTenants []model.BusinessTenantMappingInput
+	for _, f := range files {
+		bytes, err := ioutil.ReadFile(tenantsDirectoryPath + f.Name())
+		if err != nil {
+			return nil, errors.Wrapf(err, "while reading tenants file %s", tenantsDirectoryPath+f.Name())
+		}
+
+		var tenantsFromFile []model.BusinessTenantMappingInput
+		if err := json.Unmarshal(bytes, &tenantsFromFile); err != nil {
+			return nil, errors.Wrapf(err, "while unmarshalling tenants from file %s", tenantsDirectoryPath+f.Name())
+		}
+
+		for i := range tenantsFromFile {
+			tenantsFromFile[i].Provider = f.Name()
+		}
+
+		outputTenants = append(outputTenants, tenantsFromFile...)
 	}
 
-	for i := range tenants {
-		tenants[i].Provider = provider
-	}
-
-	return tenants, nil
+	return outputTenants, nil
 }

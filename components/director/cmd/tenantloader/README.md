@@ -2,18 +2,24 @@
 
 ## Overview
 
-It is an application that is supposed to synchronize given tenants from given file with Compass.
+It is an application that is supposed to synchronize given tenants from given directory with Compass.
 
 ## How to run
-The user has to provide two environment variables:
+The user has to provide these environment variables:
 
-- `TENANTS_SRC` - which is a path to JSON file which holds tenant data
-- `TENANT_PROVIDER` - which specifies the provider of tenants
+| ENV                                      | Default                         | Description                                                   |
+| ---------------------------------------- | ------------------------------- | ------------------------------------------------------------- |
+| APP_DB_USER                              | postgres                        | Database username                                             |
+| APP_DB_PASSWORD                          | pgsql@12345                     | Database password                                             |
+| APP_DB_HOST                              | localhost                       | Database host                                                 |
+| APP_DB_PORT                              | 5432                            | Database port                                                 |
+| APP_DB_NAME                              | postgres                        | Database name                                                 |
+| APP_DB_SSL                               | disable                         | Database SSL mode (disable / enable)                          |
 
 ## Application flow
 
-1. Read the file from source provided in `TENANTS_SRC` environment variable.
-2. Try to parse JSON file to tenant structure
+1. Read the `/data/` directory with tenants files inside
+2. Try to parse each JSON file from the directory to tenant structure
 3. Synchronise tenants with Compass
 
 ## Supported format of JSON file with tenants
