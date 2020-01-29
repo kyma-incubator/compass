@@ -89,50 +89,6 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 	return cluster, nil
 }
 
-func (r readSession) ListGardenerClusters() ([]model.Cluster, dberrors.Error) {
-	var clustersWithProvider []struct {
-		model.Cluster
-		gardenerConfigRead
-	}
-
-	_, err := r.session.
-		Select(
-			"cluster.id", "cluster.kubeconfig",
-			"cluster.credentials_secret_name", "cluster.creation_timestamp", "cluster.deleted",
-			"name", "project_name", "kubernetes_version",
-			"node_count", "volume_size_gb", "disk_type", "machine_type", "provider", "seed",
-			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
-			"max_surge", "max_unavailable", "provider_specific_config").
-		From("gardener_config").
-		Join("cluster", "gardener_config.cluster_id=cluster.id").
-		Load(&clustersWithProvider)
-
-	if err != nil {
-		if err != dbr.ErrNotFound {
-			return nil, dberrors.NotFound("Cannot list Gardener Cluster with name: %s", err.Error())
-		}
-
-		return nil, dberrors.Internal("Failed to get Gardener Cluster: %s", err)
-	}
-
-	var clusters = make([]model.Cluster, 0, len(clustersWithProvider))
-
-	for _, c := range clustersWithProvider {
-		cluster := c.Cluster
-
-		err := c.gardenerConfigRead.DecodeProviderConfig()
-		if err != nil {
-			return nil, dberrors.Internal("Failed to decode Gardener provider config fetched from database: %s", err.Error())
-		}
-
-		cluster.ClusterConfig = c.gardenerConfigRead.GardenerConfig
-
-		clusters = append(clusters, cluster)
-	}
-
-	return clusters, nil
-}
-
 func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
 	var kymaConfig []struct {
 		ID                  string

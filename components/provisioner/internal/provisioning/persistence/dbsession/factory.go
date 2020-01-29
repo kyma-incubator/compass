@@ -19,7 +19,6 @@ type ReadSession interface {
 	GetCluster(runtimeID string) (model.Cluster, dberrors.Error)
 	GetOperation(operationID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
-	ListGardenerClusters() ([]model.Cluster, dberrors.Error)
 	GetGardenerClusterByName(name string) (model.Cluster, dberrors.Error)
 }
 
