@@ -353,6 +353,14 @@
   revision = "9aebb389a40600880243fb04efea85c2d1408a33"
 
 [[projects]]
+  digest = "1:bde204c6c8dd5169cd05ed5aa9a1e027bc8d2cdd172c5e80b971cb4e14b55e3c"
+  name = "github.com/kyma-project/kyma"
+  packages = ["components/kyma-operator/pkg/apis/installer/v1alpha1"]
+  pruneopts = "UT"
+  revision = "119010d0810e5e1e23b78e1058f2b0fbea293ae9"
+  version = "1.9.0"
+
+[[projects]]
   digest = "1:9ff22c26414baf7deaf74f2a788fe7b97666048bcbe346c52cfe823442abbdfb"
   name = "github.com/lib/pq"
   packages = [
@@ -784,8 +792,8 @@
     "storage/v1beta1",
   ]
   pruneopts = "UT"
-  revision = "4c9a86741a7ab3890dd9e0777e85d8eee48bf59c"
-  version = "v0.17.0"
+  revision = "7643814f1c97f24ccfb38c2b85a7bb3c7f494346"
+  version = "v0.17.1"
 
 [[projects]]
   digest = "1:cdcbb89b4547028b1dfd8d1afca6a2a33a6a1730ce07a3265728b39b8ae476bc"
@@ -835,7 +843,7 @@
   ]
   pruneopts = "UT"
   revision = "79c2a76c473a20cdc4ce59cae4b72529b5d9d16b"
-  version = "v0.17.0"
+  version = "v0.17.1"
 
 [[projects]]
   digest = "1:d15037d80d60d48c1b94aa84baebe1bdf3a1990df0eb0978b372c976cababa11"
@@ -892,7 +900,7 @@
   name = "k8s.io/utils"
   packages = ["integer"]
   pruneopts = "UT"
-  revision = "94aeca20bf0991bf33922a5938174b9147ab8ca7"
+  revision = "5f6fbceb4c31d35291b2de756aeaae2ddeee3e92"
 
 [[projects]]
   digest = "1:6b41fd5562bac43f021d440591d881fc6f53c78ba756fe2ec545a50b0dc9d69f"
@@ -927,9 +935,11 @@
     "github.com/gocraft/dbr",
     "github.com/google/uuid",
     "github.com/gorilla/handlers",
+    "github.com/hashicorp/go-multierror",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
     "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql",
+    "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
     "github.com/machinebox/graphql",
     "github.com/pivotal-cf/brokerapi",
@@ -945,6 +955,7 @@
     "github.com/testcontainers/testcontainers-go",
     "github.com/testcontainers/testcontainers-go/wait",
     "github.com/vrischmann/envconfig",
+    "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/runtime",

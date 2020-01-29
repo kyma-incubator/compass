@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
 	"code.cloudfoundry.org/lager"
@@ -34,11 +36,12 @@ type Config struct {
 	Director     director.Config
 	Database     storage.Config
 
-	ServiceManager struct {
-		URL      string
-		Password string
-		Username string
-	}
+	ServiceManager internal.ServiceManagerOverride
+
+	KymaVersion                          string
+	ManagedRuntimeComponentsYAMLFilePath string
+
+	Broker broker.Config
 }
 
 func main() {
@@ -60,8 +63,7 @@ func main() {
 		Password: cfg.Auth.Password,
 	}
 
-	// create provisioner client
-	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, cfg.ServiceManager.URL, cfg.ServiceManager.Username, cfg.ServiceManager.Password, true)
+	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 
 	// create kubernetes client
 	k8sCfg, err := config.GetConfig()
@@ -82,8 +84,25 @@ func main() {
 	db, err := storage.New(cfg.Database.ConnectionURL())
 	fatalOnError(err)
 
-	// create kyma environment broker
-	kymaEnvBroker, err := broker.NewBroker(provisionerClient, cfg.Provisioning, directorClient, db.Instances())
+	optionalComponentsDisablers := runtime.ComponentsDisablers{
+		"Loki":       runtime.NewLokiDisabler(),
+		"Kiali":      runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
+		"Jaeger":     runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
+		"Monitoring": runtime.NewGenericComponentDisabler("monitoring", "kyma-system"),
+	}
+
+	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
+
+	runtimeProvider := runtime.NewComponentsListProvider(cfg.KymaVersion, cfg.ManagedRuntimeComponentsYAMLFilePath)
+	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
+	fatalOnError(err)
+
+	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager)
+
+	dumper, err := broker.NewDumper()
+	fatalOnError(err)
+
+	kymaEnvBroker, err := broker.New(cfg.Broker, provisionerClient, directorClient, cfg.Provisioning, db.Instances(), optComponentsSvc, inputFactory, dumper)
 	fatalOnError(err)
 
 	// create and run broker OSB API
