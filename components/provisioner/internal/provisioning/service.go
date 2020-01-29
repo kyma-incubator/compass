@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes"
 	"time"
 
 	"github.com/pkg/errors"
@@ -27,52 +28,54 @@ const (
 
 //go:generate mockery -name=Service
 type Service interface {
-	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, string, <-chan struct{}, error)
+	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string) (string, string, <-chan struct{}, error)
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(id string) (string, <-chan struct{}, error)
+	DeprovisionRuntime(id, tenant string) (string, <-chan struct{}, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error)
 }
 
 type service struct {
-	persistenceService  persistence.Service
-	hydroform           hydroform.Service
-	installationService installation.Service
-	inputConverter      InputConverter
-	graphQLConverter    GraphQLConverter
-	directorService     director.DirectorClient
+	persistenceService    persistence.Service
+	hydroform             hydroform.Service
+	installationService   installation.Service
+	inputConverter        InputConverter
+	graphQLConverter      GraphQLConverter
+	directorService       director.DirectorClient
+	runtimeConfigProvider runtimes.ConfigProvider
 }
 
 func NewProvisioningService(persistenceService persistence.Service, inputConverter InputConverter,
-	graphQLConverter GraphQLConverter, hydroform hydroform.Service, installationService installation.Service, directorService director.DirectorClient) Service {
+	graphQLConverter GraphQLConverter, hydroform hydroform.Service, installationService installation.Service, directorService director.DirectorClient, runtimeConfigProvider runtimes.ConfigProvider) Service {
 	return &service{
-		persistenceService:  persistenceService,
-		hydroform:           hydroform,
-		installationService: installationService,
-		inputConverter:      inputConverter,
-		graphQLConverter:    graphQLConverter,
-		directorService:     directorService,
+		persistenceService:    persistenceService,
+		hydroform:             hydroform,
+		installationService:   installationService,
+		inputConverter:        inputConverter,
+		graphQLConverter:      graphQLConverter,
+		directorService:       directorService,
+		runtimeConfigProvider: runtimeConfigProvider,
 	}
 }
 
-func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, string, <-chan struct{}, error) {
+func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string) (string, string, <-chan struct{}, error) {
 	runtimeInput := config.RuntimeInput
 
-	runtimeID, err := r.directorService.CreateRuntime(runtimeInput)
+	runtimeID, err := r.directorService.CreateRuntime(runtimeInput, tenant)
 	if err != nil {
 		return "", "", nil, err
 	}
 
-	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config)
+	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config, tenant)
 	if err != nil {
-		r.unregisterFailedRuntime(runtimeID)
+		r.unregisterFailedRuntime(runtimeID, tenant)
 		return "", "", nil, err
 	}
 
 	operation, err := r.persistenceService.SetProvisioningStarted(runtimeID, cluster)
 	if err != nil {
-		r.unregisterFailedRuntime(runtimeID)
+		r.unregisterFailedRuntime(runtimeID, tenant)
 		return "", "", nil, err
 	}
 
@@ -83,15 +86,15 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (stri
 	return operation.ID, runtimeID, finished, nil
 }
 
-func (r *service) unregisterFailedRuntime(id string) {
+func (r *service) unregisterFailedRuntime(id, tenant string) {
 	log.Infof("Unregistering failed Runtime %s...", id)
-	err := r.directorService.DeleteRuntime(id)
+	err := r.directorService.DeleteRuntime(id, tenant)
 	if err != nil {
 		log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())
 	}
 }
 
-func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error) {
+func (r *service) DeprovisionRuntime(id, tenant string) (string, <-chan struct{}, error) {
 	lastOperation, err := r.persistenceService.GetLastOperation(id)
 	if err != nil {
 		return "", nil, err
@@ -113,7 +116,7 @@ func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 
 	finished := make(chan struct{})
 
-	go r.startDeprovisioning(operation.ID, cluster, finished)
+	go r.startDeprovisioning(operation.ID, tenant, cluster, finished)
 
 	return operation.ID, finished, nil
 }
@@ -175,14 +178,24 @@ func (r *service) startProvisioning(operationID string, cluster model.Cluster, f
 		return
 	}
 
-	log.Infof("Kyma installed successfully on %s Runtime. Operation %s finished. Setting status to success.", cluster.ID, operationID)
+	log.Infof("Kyma installed successfully on %s Runtime. Applying configuration to Runtime", cluster.ID)
+
+	err = r.applyConfigToRuntime(cluster, info.KubeConfig)
+
+	if err != nil {
+		log.Errorf("Error applying configuration to runtime %s: %s", cluster.ID, err.Error())
+		r.setOperationAsFailed(operationID, err.Error())
+		return
+	}
+
+	log.Infof("Operation %s finished. Setting status to success.", operationID)
 
 	updateOperationStatus(func() error {
 		return r.persistenceService.SetOperationAsSucceeded(operationID)
 	})
 }
 
-func (r *service) startDeprovisioning(operationID string, cluster model.Cluster, finished chan<- struct{}) {
+func (r *service) startDeprovisioning(operationID, tenant string, cluster model.Cluster, finished chan<- struct{}) {
 	defer close(finished)
 	log.Infof("Deprovisioning runtime %s is starting", cluster.ID)
 	err := r.hydroform.DeprovisionCluster(cluster)
@@ -192,7 +205,7 @@ func (r *service) startDeprovisioning(operationID string, cluster model.Cluster,
 		return
 	}
 
-	err = r.directorService.DeleteRuntime(cluster.ID)
+	err = r.directorService.DeleteRuntime(cluster.ID, tenant)
 	if err != nil {
 		log.Errorf("Deprovisioning finished. Failed to unregister Runtime %s: %s", cluster.ID, err.Error())
 		r.setOperationAsFailed(operationID, err.Error())
@@ -209,6 +222,24 @@ func (r *service) setOperationAsFailed(operationID, message string) {
 	updateOperationStatus(func() error {
 		return r.persistenceService.SetOperationAsFailed(operationID, message)
 	})
+}
+
+func (r *service) applyConfigToRuntime(cluster model.Cluster, kubeconfig string) error {
+	token, err := r.directorService.GetConnectionToken(cluster.ID, cluster.Tenant)
+	if err != nil {
+		return err
+	}
+
+	config := runtimes.RuntimeConfig{
+		ConnectorURL: token.ConnectorURL,
+		OneTimeToken: token.Token,
+		RuntimeID:    cluster.ID,
+		Tenant:       cluster.Tenant,
+	}
+
+	_, err = r.runtimeConfigProvider.CreateConfigMapForRuntime(config, kubeconfig)
+
+	return err
 }
 
 func updateOperationStatus(updateFunction func() error) {

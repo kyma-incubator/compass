@@ -21,7 +21,7 @@ type Service interface {
 	UpdateClusterData(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error
 	CleanupClusterData(runtimeID string) dberrors.Error
 	GetClusterData(runtimeID string) (model.Cluster, dberrors.Error)
-
+	GetTenant(runtimeID string) (string, error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 	GetOperation(operationID string) (model.Operation, error)
 	SetOperationAsFailed(operationID string, message string) error
@@ -184,6 +184,12 @@ func (ps persistenceService) GetOperation(operationID string) (model.Operation, 
 	session := ps.dbSessionFactory.NewReadSession()
 
 	return session.GetOperation(operationID)
+}
+
+func (ps persistenceService) GetTenant(runtimeID string) (string, error) {
+	session := ps.dbSessionFactory.NewReadSession()
+
+	return session.GetTenant(runtimeID)
 }
 
 func (ps persistenceService) SetOperationAsFailed(operationID string, message string) error {

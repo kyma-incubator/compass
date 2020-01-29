@@ -28,6 +28,7 @@ type Cluster struct {
 	TerraformState        []byte
 	CredentialsSecretName string
 	CreationTimestamp     time.Time
+	Tenant                string
 
 	ClusterConfig ProviderConfiguration `db:"-"`
 	KymaConfig    KymaConfig            `db:"-"`
