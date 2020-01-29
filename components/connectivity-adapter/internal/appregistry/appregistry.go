@@ -25,7 +25,7 @@ func RegisterHandler(router *mux.Router, cfg Config) {
 	logger.SetReportCaller(true)
 
 	gqlCliProvider := gqlcli.NewProvider(cfg.DirectorEndpoint)
-	serviceManagerProvider := service.NewServiceManagerProvider(gqlCliProvider)
+	serviceManagerProvider := service.NewServiceManagerProvider()
 
 	converter := service.NewConverter()
 	validator := validation.NewServiceDetailsValidator()

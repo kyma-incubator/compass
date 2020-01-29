@@ -64,7 +64,8 @@ func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 
 		app := apps.Result.Data[0]
 		ctx := SaveToContext(r.Context(), *app)
-		requestWithCtx := r.WithContext(ctx)
+		ctxWithCli := gqlcli.SaveToContext(ctx, client)
+		requestWithCtx := r.WithContext(ctxWithCli)
 		next.ServeHTTP(w, requestWithCtx)
 	})
 }

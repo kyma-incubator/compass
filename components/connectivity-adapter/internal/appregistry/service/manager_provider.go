@@ -10,11 +10,15 @@ import (
 )
 
 type serviceManagerProvider struct {
-	gqlProvider gqlcli.Provider
+	graphqlizer       *gql.Graphqlizer
+	gqlFieldsProvider *gql.GqlFieldsProvider
 }
 
-func NewServiceManagerProvider(gqlProvider gqlcli.Provider) *serviceManagerProvider {
-	return &serviceManagerProvider{gqlProvider: gqlProvider}
+func NewServiceManagerProvider() *serviceManagerProvider {
+	return &serviceManagerProvider{
+		graphqlizer:       &gql.Graphqlizer{},
+		gqlFieldsProvider: &gql.GqlFieldsProvider{},
+	}
 }
 
 func (s *serviceManagerProvider) ForRequest(r *http.Request) (ServiceManager, error) {
@@ -23,8 +27,12 @@ func (s *serviceManagerProvider) ForRequest(r *http.Request) (ServiceManager, er
 		return nil, errors.Wrap(err, "while loading Application details from context")
 	}
 
-	gqlCli := s.gqlProvider.GQLClient(r)
-	gqlRequester := NewGqlRequester(gqlCli, &gql.Graphqlizer{}, &gql.GqlFieldsProvider{})
+	gqlCli, err := gqlcli.LoadFromContext(r.Context())
+	if err != nil {
+		return nil, errors.Wrap(err, "while loading GraphQL client from context")
+	}
+
+	gqlRequester := NewGqlRequester(gqlCli, s.graphqlizer, s.gqlFieldsProvider)
 	labeler := NewAppLabeler()
 
 	return NewServiceManager(gqlRequester, labeler, appDetails)
