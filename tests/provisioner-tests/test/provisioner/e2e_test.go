@@ -1,24 +1,18 @@
 package provisioner
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/assertions"
-
 	"github.com/pkg/errors"
-
 	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
-
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
-
 	"github.com/stretchr/testify/assert"
-
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/require"
 )
@@ -61,15 +55,16 @@ func Test_E2E_Gardener(t *testing.T) {
 
 	for _, provider := range testSuite.providers {
 
-		runtimeId := uuid.New().String()
-
 		// Provision runtime
+		runtimeName := fmt.Sprintf("%s%s", "runtime", uuid.New().String()[:4])
 		credentialsInput := gqlschema.CredentialsInput{SecretName: testSuite.GardenerCredentialsSecretName}
 
 		provisioningInput := gqlschema.ProvisionRuntimeInput{
+			RuntimeInput: &gqlschema.RuntimeInput{
+				Name: runtimeName,
+			},
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{
-					Name:                   toLowerCase(provider) + "-" + randStringBytes(3) + "-test",
 					ProjectName:            config.GardenerProjectName,
 					KubernetesVersion:      "1.15.4",
 					NodeCount:              3,
@@ -89,13 +84,15 @@ func Test_E2E_Gardener(t *testing.T) {
 				},
 			},
 			Credentials: &credentialsInput,
-			KymaConfig:  &gqlschema.KymaConfigInput{Version: "1.8.0", Modules: gqlschema.AllKymaModule},
+			KymaConfig: &gqlschema.KymaConfigInput{Version: "1.8.0", Components: []*gqlschema.ComponentConfigurationInput{
+				{Component: "core", Namespace: "kyma-system"},
+			}},
 		}
 
-		logrus.Infof("Provisioning %s runtime on %s...", runtimeId, provider)
-		provisioningOperationId, err := testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
+		logrus.Infof("Provisioning %s runtime on %s...", runtimeName, provider)
+		provisioningOperationId, runtimeId, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
 		assertions.RequireNoError(t, err)
-		logrus.Infof("Provisioning operation id: %s", provisioningOperationId)
+		logrus.Infof("Provisioning operation id: %s, runtime id: %s", provisioningOperationId, runtimeId)
 		defer ensureClusterIsDeprovisioned(runtimeId)
 
 		var provisioningOperationStatus gqlschema.OperationStatus
@@ -119,7 +116,7 @@ func Test_E2E_Gardener(t *testing.T) {
 					return errors.New("Operation %s not in progress")
 				}
 
-				_, err = testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
+				_, _, err = testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
 				if err == nil {
 					return errors.New("Operation scheduled successfully while other operation in progress")
 				}
@@ -156,12 +153,14 @@ func Test_E2e(t *testing.T) {
 
 	logrus.Infof("Starting provisioner tests concerning GCP. Test id: %s", testSuite.TestId)
 
-	runtimeId := uuid.New().String()
-
 	// Provision runtime
+	runtimeName := fmt.Sprintf("%s%s", "runtime", uuid.New().String()[:4])
 	credentialsInput := gqlschema.CredentialsInput{SecretName: testSuite.GCPCredentialsSecretName}
 
 	provisioningInput := gqlschema.ProvisionRuntimeInput{
+		RuntimeInput: &gqlschema.RuntimeInput{
+			Name: runtimeName,
+		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GcpConfig: &gqlschema.GCPConfigInput{
 				Name:              "gke-provisioner-test-" + testSuite.TestId,
@@ -174,13 +173,15 @@ func Test_E2e(t *testing.T) {
 			},
 		},
 		Credentials: &credentialsInput,
-		KymaConfig:  &gqlschema.KymaConfigInput{Version: "1.6", Modules: gqlschema.AllKymaModule},
+		KymaConfig: &gqlschema.KymaConfigInput{Version: "1.8.0", Components: []*gqlschema.ComponentConfigurationInput{
+			{Component: "core", Namespace: "kyma-system"},
+		}},
 	}
 
-	logrus.Infof("Provisioning %s runtime on GCP...", runtimeId)
-	provisioningOperationId, err := testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
+	logrus.Infof("Provisioning %s runtime on GCP...", runtimeName)
+	provisioningOperationId, runtimeId,  err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
 	assertions.RequireNoError(t, err)
-	logrus.Infof("Provisioning operation id: %s", provisioningOperationId)
+	logrus.Infof("Provisioning operation id: %s, runtime id: %s", provisioningOperationId, runtimeId)
 	defer ensureClusterIsDeprovisioned(runtimeId)
 
 	var provisioningOperationStatus gqlschema.OperationStatus
@@ -203,7 +204,7 @@ func Test_E2e(t *testing.T) {
 				return errors.New("Operation %s not in progress")
 			}
 
-			_, err = testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
+			_, _, err = testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
 			if err == nil {
 				return errors.New("Operation scheduled successfully while other operation in progress")
 			}
@@ -302,9 +303,6 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 		t.FailNow()
 	}
 
-	assert.Equal(t, input.ClusterConfig.GardenerConfig.Name, ClusterConfig.Name)
-
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Name, ClusterConfig.Name)
 	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Region, ClusterConfig.Region)
 	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.ProjectName, ClusterConfig.ProjectName)
 	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.KubernetesVersion, ClusterConfig.KubernetesVersion)

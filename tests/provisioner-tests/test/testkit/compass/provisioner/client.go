@@ -9,7 +9,7 @@ import (
 )
 
 type Client interface {
-	ProvisionRuntime(runtimeID string, config schema.ProvisionRuntimeInput) (string, error)
+	ProvisionRuntime(config schema.ProvisionRuntimeInput) (operationStatusID string, runtimeID string, err error)
 	UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(runtimeID string) (string, error)
 	ReconnectRuntimeAgent(runtimeID string) (string, error)
@@ -31,21 +31,24 @@ func NewProvisionerClient(endpoint string, queryLogging bool) Client {
 	}
 }
 
-func (c client) ProvisionRuntime(runtimeID string, config schema.ProvisionRuntimeInput) (string, error) {
+func (c client) ProvisionRuntime(config schema.ProvisionRuntimeInput) (operationStatusID string, runtimeID string, err error) {
 	provisionRuntimeIptGQL, err := c.graphqlizer.ProvisionRuntimeInputToGraphQL(config)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to convert Provision Runtime Input to query")
+		return "", "", errors.Wrap(err, "Failed to convert Provision Runtime Input to query")
 	}
 
-	query := c.queryProvider.provisionRuntime(runtimeID, provisionRuntimeIptGQL)
+	query := c.queryProvider.provisionRuntime(provisionRuntimeIptGQL)
 	req := gcli.NewRequest(query)
 
-	var operationId string
-	err = c.graphQLClient.ExecuteRequest(req, &operationId, "")
+	var operationStatus schema.OperationStatus
+	err = c.graphQLClient.ExecuteRequest(req, &operationStatus, "")
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to provision Runtime")
+		return "", "", errors.Wrap(err, "Failed to provision Runtime")
 	}
-	return operationId, nil
+	if operationStatus.ID == nil || operationStatus.RuntimeID == nil {
+		return "", "", errors.New("Failed to receive proper Operation Status response")
+	}
+	return *operationStatus.ID, *operationStatus.RuntimeID, nil
 }
 
 func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error) {

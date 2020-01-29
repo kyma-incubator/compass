@@ -14,6 +14,9 @@ type graphqlizer struct{}
 
 func (g *graphqlizer) ProvisionRuntimeInputToGraphQL(in gqlschema.ProvisionRuntimeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
+		{{- if .RuntimeInput }}
+		runtimeInput: {{ RuntimeInputToGraphQL .RuntimeInput }}
+		{{- end }}
 		{{- if .ClusterConfig }}
 		clusterConfig: {{ ClusterConfigToGraphQL .ClusterConfig }}
 		{{- end }}
@@ -22,6 +25,19 @@ func (g *graphqlizer) ProvisionRuntimeInputToGraphQL(in gqlschema.ProvisionRunti
 		{{- end }}
 		{{- if .Credentials }}
 		credentials: {{ CredentialsInputToGraphQL .Credentials }}
+		{{- end }}
+	}`)
+}
+
+func (g *graphqlizer) RuntimeInputToGraphQL(in gqlschema.RuntimeInput) (string, error) {
+	// TODO: Check if labels are converted correctly
+	return g.genericToGraphQL(in, `{
+		name: "{{ .Name }}"	
+		{{- if .Description }}
+		description: {{ .Description }}
+		{{- end }}
+		{{- if .Labels }}
+		labels: {{ .Labels }}
 		{{- end }}
 	}`)
 }
@@ -57,7 +73,6 @@ func (g *graphqlizer) CredentialsInputToGraphQL(in gqlschema.CredentialsInput) (
 func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 
 	return g.genericToGraphQL(in, `{
-		name: "{{ .Name }}"
         projectName: "{{ .ProjectName }}"
 		kubernetesVersion: "{{ .KubernetesVersion }}"
 		nodeCount: {{ .NodeCount }}
@@ -125,20 +140,50 @@ func (g *graphqlizer) UpgradeClusterConfigToGraphQL(in gqlschema.UpgradeClusterI
 
 func (g *graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-		{{- if .Version }}
 		version: "{{.Version}}"
-		{{- end }}
-		{{- if .Modules }}
-		modules: [
-			{{- range $i, $e := .Modules }}
-			{{- if $i}}, {{- end}} {{ $e }}
+		{{- if .Components }}
+		components: [
+			{{- range $i, $e := .Components }}
+			{{- if $i}}, {{- end}} {{ ComponentConfigurationInputToGQL $e }}
 			{{- end }}]
+		{{- end }}
+		{{- if .Configuration }}
+		configuration: [
+			{{- range $i, $e := .Configuration }}
+			{{- if $i}}, {{- end}} {{ ConfigEntryInputToGQL $e }}
+			{{- end }}]
+		{{- end }}
+	}`)
+}
+
+func (g *graphqlizer) ComponentConfigurationInputToGQL(in gqlschema.ComponentConfigurationInput) (string, error) {
+	return g.genericToGraphQL(in, `{
+		component: "{{.Component}}"
+		namespace: "{{.Namespace}}"
+		{{- if .Configuration }}
+		configuration: [
+			{{- range $i, $e := .Configuration }}
+			{{- if $i}}, {{- end}} {{ ConfigEntryInputToGQL $e }}
+			{{- end }}]
+		{{- end }}
+	}`)
+}
+
+func (g *graphqlizer) ConfigEntryInputToGQL(in gqlschema.ConfigEntryInput) (string, error) {
+	return g.genericToGraphQL(in, `{
+		key: "{{.Key}}"
+		value: "{{.Value}}"
+		{{- if .Secret }}
+		secret: {{.Secret}}
 		{{- end }}
 	}`)
 }
 
 func (g *graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
+	fm["RuntimeInputToGraphQL"] = g.RuntimeInputToGraphQL
+	fm["ComponentConfigurationInputToGQL"] = g.ComponentConfigurationInputToGQL
+	fm["ConfigEntryInputToGQL"] = g.ConfigEntryInputToGQL
 	fm["ClusterConfigToGraphQL"] = g.ClusterConfigToGraphQL
 	fm["KymaConfigToGraphQL"] = g.KymaConfigToGraphQL
 	fm["UpgradeClusterConfigToGraphQL"] = g.UpgradeClusterConfigToGraphQL
