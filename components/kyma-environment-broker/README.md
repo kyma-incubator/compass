@@ -2,14 +2,14 @@
 
 ## Overview
 
-Kyma Environment Broker is a component that allows you to provision Kyma as a Runtime on clusters provided by third-party providers. It uses Provisioner's API to install Kyma on a given cluster.
+Kyma Environment Broker (KEB) is a component that allows you to provision Kyma as a Runtime on clusters provided by third-party providers. It uses Provisioner's API to install Kyma on a given cluster.
 
 For more information, read the [documentation](../../docs/kyma-environment-broker).
 
 
-## Development
+## Configuration
 
-This table lists the environment variables, their descriptions, and default values:
+The KEB binary allows to override some configuration parameters. You can specify following environment variables:
 
 | Name | Description | Default value |
 |-----|---------|:--------:|
@@ -32,3 +32,49 @@ This table lists the environment variables, their descriptions, and default valu
 | **APP_DATABASE_PORT** | Defines the database port. | `5432` |
 | **APP_DATABASE_NAME** | Defines the database name. | `broker` |
 | **APP_DATABASE_SSL** | Specifies the SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html).  | `disable`|
+
+
+## Development
+
+This section presents how to add or remove functionality for disabling components.
+
+### Add option to disable components (make it optional) 
+
+If disabling a given component means only removing it from the list you can use the generic disabler:
+  
+```go
+runtime.NewGenericComponentDisabler("component-name", "component-namespace")
+``` 
+
+If disabling a given component requires more complex logic, create a new file called `internal/runtime/{compoent-name}_disabler.go` 
+and implement a service which fulfills the following interface:
+
+```go
+// OptionalComponentDisabler disables component form the given list and returns a modified list
+type OptionalComponentDisabler interface {
+	Disable(components internal.ComponentConfigurationInputList) internal.ComponentConfigurationInputList
+```
+
+> **NOTE**: Check the [LokiDisabler](`internal/runtime/loki_disabler.go`) as an example of custom service for disabling component.
+
+In each method, the framework injects the  **components** parameter which is a list of components that are sent to provisioner. 
+The implemented method is responsible for disabling component and as a result, returns modified list. 
+  
+This interface allows you to easily register the disabler in the [`cmd/broker/main.go`](./cmd/broker/main.go) file by adding a new entry in the **optionalComponentsDisablers** list:
+
+```go
+// Register disabler. Convention:
+// {component-name} : {component-disabler-service}
+//
+// Using map is intentional - we ensure that component name is not duplicated.
+optionalComponentsDisablers := runtime.ComponentsDisablers{
+		"Loki":       runtime.NewLokiDisabler(),
+		"Kiali":      runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
+		"Jaeger":     runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
+		"Monitoring": runtime.NewGenericComponentDisabler("monitoring", "kyma-system"),
+}
+```
+
+### Remove option to disable component (make it required)
+
+To remove option to disable component, you simply need to remove a given entry from the **optionalComponentsDisablers** list in the [`cmd/broker/main.go`](./cmd/broker/main.go) file.
