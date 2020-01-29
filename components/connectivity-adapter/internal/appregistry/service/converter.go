@@ -242,19 +242,16 @@ func (c *converter) GraphQLToServiceDetails(in model.GraphQLServiceDetails) (mod
 
 		if in.API.DefaultAuth != nil && in.API.DefaultAuth.AdditionalQueryParams != nil {
 			in := *in.API.DefaultAuth.AdditionalQueryParams
-			outDeprecated.Api.QueryParameters = &map[string][]string{}
+			outQueryParameters := &map[string][]string{}
+
+			for k, v := range in {
+				(*outQueryParameters)[k] = v
+			}
+			outDeprecated.Api.QueryParameters = outQueryParameters
 			if outDeprecated.Api.RequestParameters == nil {
 				outDeprecated.Api.RequestParameters = &model.RequestParameters{}
 			}
-
-			if outDeprecated.Api.RequestParameters.QueryParameters == nil {
-				outDeprecated.Api.RequestParameters.QueryParameters = &map[string][]string{}
-			}
-
-			for k, v := range in {
-				(*outDeprecated.Api.QueryParameters)[k] = v
-				(*outDeprecated.Api.RequestParameters.QueryParameters)[k] = v
-			}
+			outDeprecated.Api.RequestParameters.QueryParameters = outQueryParameters
 		}
 
 		if in.API.Spec != nil && in.API.Spec.FetchRequest != nil {
