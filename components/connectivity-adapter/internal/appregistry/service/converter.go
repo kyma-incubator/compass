@@ -299,6 +299,7 @@ func (c *converter) GraphQLToServiceDetails(in model.GraphQLServiceDetails) (mod
 				Spec: []byte(string(*in.Event.Spec.Data)),
 			}
 		}
+		//TODO: convert also fetchRequest
 	}
 	return outDeprecated, nil
 }

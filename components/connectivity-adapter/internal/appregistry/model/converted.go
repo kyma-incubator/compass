@@ -11,5 +11,5 @@ type GraphQLServiceDetailsInput struct {
 type GraphQLServiceDetails struct {
 	ID    string
 	API   *graphql.APIDefinitionExt
-	Event *graphql.EventDefinition
+	Event *graphql.EventAPIDefinitionExt
 }

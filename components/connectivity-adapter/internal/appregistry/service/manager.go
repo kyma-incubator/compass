@@ -56,7 +56,35 @@ func (s *serviceManager) Create(serviceDetails model.GraphQLServiceDetailsInput)
 }
 
 func (s *serviceManager) GetFromApplicationDetails(serviceID string) (model.GraphQLServiceDetails, error) {
-	panic("implement me")
+	serviceRef, err := s.appLabeler.ReadServiceReference(s.appDetails, serviceID)
+	if err != nil {
+		return model.GraphQLServiceDetails{}, err
+	}
+	var outputApi graphql.APIDefinitionExt
+	for _, api := range s.appDetails.APIDefinitions.Data {
+		if api == nil {
+			continue
+		}
+		if api.ID == *serviceRef.APIDefID {
+			outputApi = *api
+		}
+	}
+
+	var outputEvent graphql.EventAPIDefinitionExt
+	for _, event := range s.appDetails.EventDefinitions.Data {
+		if event == nil {
+			continue
+		}
+		if event.ID == *serviceRef.EventDefID {
+			outputEvent = *event
+		}
+	}
+
+	return model.GraphQLServiceDetails{
+		ID:    serviceRef.ID,
+		API:   &outputApi,
+		Event: &outputEvent,
+	}, nil
 }
 
 func (s *serviceManager) ListFromApplicationDetails() ([]model.GraphQLServiceDetails, error) {

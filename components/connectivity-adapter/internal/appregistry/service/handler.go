@@ -147,41 +147,33 @@ type SuccessfulCreateResponse struct {
 }
 
 func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
-	//defer h.closeBody(request)
-	//gqlCli := h.cliProvider.GQLClient(request)
-	//
-	//id := h.getServiceID(request)
-	//gqlRequest := h.directorClient.GetApplicationRequest(id)
-	//
-	//var resp gqlGetApplicationResponse
-	//err := gqlCli.Run(context.Background(), gqlRequest, &resp)
-	//if err != nil {
-	//	wrappedErr := errors.Wrap(err, "while getting service")
-	//	h.logger.Error(wrappedErr)
-	//	reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
-	//	return
-	//}
-	//
-	//if resp.Result == nil {
-	//	h.writeErrorNotFound(writer, id)
-	//	return
-	//}
-	//
-	//serviceModel, err := h.converter.GraphQLToDetailsModel(*resp.Result)
-	//if err != nil {
-	//	wrappedErr := errors.Wrap(err, "while converting model")
-	//	h.logger.Error(wrappedErr)
-	//	reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
-	//	return
-	//}
-	//
-	//err = json.NewEncoder(writer).Encode(&serviceModel)
-	//if err != nil {
-	//	wrappedErr := errors.Wrap(err, "while encoding response")
-	//	h.logger.Error(wrappedErr)
-	//	reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
-	//	return
-	//}
+	defer h.closeBody(request)
+	serviceID := h.getServiceID(request)
+
+	serviceManager, err := h.serviceManager.ForRequest(request)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while requesting Service Manager")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	output, err := serviceManager.GetFromApplicationDetails(serviceID)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while fetching service")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	err = json.NewEncoder(writer).Encode(&output)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while encoding response")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
 	writer.WriteHeader(http.StatusNotImplemented)
 }
 
