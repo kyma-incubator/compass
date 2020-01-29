@@ -31,7 +31,7 @@ func TestLoadFromContext(t *testing.T) {
 			Name:               "Error",
 			Context:            context.TODO(),
 			ExpectedResult:     nil,
-			ExpectedErrMessage: "cannot read Application details from context",
+			ExpectedErrMessage: "cannot read GraphQL client from context",
 		},
 	}
 

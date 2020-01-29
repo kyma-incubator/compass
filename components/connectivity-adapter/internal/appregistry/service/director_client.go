@@ -36,17 +36,17 @@ type gqlGetApplicationResponse struct {
 	Result *graphql.ApplicationExt `json:"result"`
 }
 
-type gqlRequester struct {
+type directorClient struct {
 	cli               gqlcli.GraphQLClient
 	graphqlizer       GraphQLizer
 	gqlFieldsProvider GqlFieldsProvider
 }
 
-func NewGqlRequester(cli gqlcli.GraphQLClient, graphqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider) *gqlRequester {
-	return &gqlRequester{cli: cli, graphqlizer: graphqlizer, gqlFieldsProvider: gqlFieldsProvider}
+func NewDirectorClient(cli gqlcli.GraphQLClient, graphqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider) *directorClient {
+	return &directorClient{cli: cli, graphqlizer: graphqlizer, gqlFieldsProvider: gqlFieldsProvider}
 }
 
-func (r *gqlRequester) SetApplicationLabel(appID string, label graphql.LabelInput) error {
+func (r *directorClient) SetApplicationLabel(appID string, label graphql.LabelInput) error {
 	gqlRequest := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: setApplicationLabel(applicationID: "%s", key: "%s", value: %s) {
@@ -63,7 +63,7 @@ func (r *gqlRequester) SetApplicationLabel(appID string, label graphql.LabelInpu
 	return nil
 }
 
-func (r *gqlRequester) CreateAPIDefinition(appID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error) {
+func (r *directorClient) CreateAPIDefinition(appID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error) {
 	inStr, err := r.graphqlizer.APIDefinitionInputToGQL(apiDefinitionInput)
 	if err != nil {
 		return "", errors.Wrap(err, "while preparing GraphQL input")
@@ -88,7 +88,7 @@ func (r *gqlRequester) CreateAPIDefinition(appID string, apiDefinitionInput grap
 	return resp.Result.ID, nil
 }
 
-func (r *gqlRequester) CreateEventDefinition(appID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error) {
+func (r *directorClient) CreateEventDefinition(appID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error) {
 	inStr, err := r.graphqlizer.EventDefinitionInputToGQL(eventDefinitionInput)
 	if err != nil {
 		return "", errors.Wrap(err, "while preparing GraphQL input")

@@ -6,8 +6,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=GraphQLRequester -output=automock -outpkg=automock -case=underscore
-type GraphQLRequester interface {
+//go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
+type DirectorClient interface {
 	CreateAPIDefinition(appID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error)
 	CreateEventDefinition(appID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error)
 
@@ -23,16 +23,16 @@ type AppLabeler interface {
 }
 
 type serviceManager struct {
-	appDetails   graphql.ApplicationExt
-	gqlRequester GraphQLRequester
-	appLabeler   AppLabeler
+	appDetails     graphql.ApplicationExt
+	directorClient DirectorClient
+	appLabeler     AppLabeler
 }
 
-func NewServiceManager(gqlRequester GraphQLRequester, appLabeler AppLabeler, appDetails graphql.ApplicationExt) (*serviceManager, error) {
+func NewServiceManager(gqlRequester DirectorClient, appLabeler AppLabeler, appDetails graphql.ApplicationExt) (*serviceManager, error) {
 	return &serviceManager{
-		appDetails:   appDetails,
-		gqlRequester: gqlRequester,
-		appLabeler:   appLabeler,
+		appDetails:     appDetails,
+		directorClient: gqlRequester,
+		appLabeler:     appLabeler,
 	}, nil
 }
 
@@ -41,7 +41,7 @@ func (s *serviceManager) Create(serviceDetails model.GraphQLServiceDetailsInput)
 
 	var apiID, eventID *string
 	if serviceDetails.API != nil {
-		id, err := s.gqlRequester.CreateAPIDefinition(appID, *serviceDetails.API)
+		id, err := s.directorClient.CreateAPIDefinition(appID, *serviceDetails.API)
 		if err != nil {
 			return errors.Wrap(err, "while creating API Definition")
 		}
@@ -50,7 +50,7 @@ func (s *serviceManager) Create(serviceDetails model.GraphQLServiceDetailsInput)
 	}
 
 	if serviceDetails.Event != nil {
-		id, err := s.gqlRequester.CreateEventDefinition(appID, *serviceDetails.Event)
+		id, err := s.directorClient.CreateEventDefinition(appID, *serviceDetails.Event)
 		if err != nil {
 			return errors.Wrap(err, "while creating Event API Definition")
 		}
@@ -68,7 +68,7 @@ func (s *serviceManager) Create(serviceDetails model.GraphQLServiceDetailsInput)
 		// TODO: revert creating API and EventAPI definitions
 	}
 
-	err = s.gqlRequester.SetApplicationLabel(appID, label)
+	err = s.directorClient.SetApplicationLabel(appID, label)
 	if err != nil {
 		return errors.Wrap(err, "while setting Application label")
 		// TODO: revert creating API and EventAPI definitions

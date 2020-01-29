@@ -32,8 +32,8 @@ func (s *serviceManagerProvider) ForRequest(r *http.Request) (ServiceManager, er
 		return nil, errors.Wrap(err, "while loading GraphQL client from context")
 	}
 
-	gqlRequester := NewGqlRequester(gqlCli, s.graphqlizer, s.gqlFieldsProvider)
+	directorClient := NewDirectorClient(gqlCli, s.graphqlizer, s.gqlFieldsProvider)
 	labeler := NewAppLabeler()
 
-	return NewServiceManager(gqlRequester, labeler, appDetails)
+	return NewServiceManager(directorClient, labeler, appDetails)
 }

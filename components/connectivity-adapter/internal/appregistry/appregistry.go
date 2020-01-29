@@ -34,6 +34,7 @@ func RegisterHandler(router *mux.Router, cfg Config) {
 	graphqlizer := &gql.Graphqlizer{}
 	gqlFieldsProvider := &gql.GqlFieldsProvider{}
 	gqlRequestBuilder := service.NewGqlRequestBuilder(graphqlizer, gqlFieldsProvider)
+
 	serviceHandler := service.NewHandler(converter, validator, serviceManagerProvider, uidService, logger)
 
 	appMiddleware := appdetails.NewApplicationMiddleware(gqlCliProvider, logger, gqlRequestBuilder)

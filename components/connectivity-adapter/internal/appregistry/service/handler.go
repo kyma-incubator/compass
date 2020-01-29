@@ -42,8 +42,8 @@ type Converter interface {
 //	ListServicesFromLabels(labels graphql.Labels) ([]ConvertedServiceDetails, error)
 //}
 //
-////go:generate mockery -name=GraphQLRequester -output=automock -outpkg=automock -case=underscore
-//type GraphQLRequester interface {
+////go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
+//type DirectorClient interface {
 //	//SetApplicationLegacyServicesLabel(id string, legacyServices []ConvertedServiceDetails) error
 //
 //	CreateAPIDefinition(appID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error)
@@ -116,7 +116,7 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	serviceID := h.uidService.Generate() // Service ID
+	serviceID := h.uidService.Generate()
 	converted, err := h.converter.DetailsToGraphQLInput(serviceID, details)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while converting service input")
@@ -163,7 +163,7 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 	//gqlCli := h.cliProvider.GQLClient(request)
 	//
 	//id := h.getServiceID(request)
-	//gqlRequest := h.gqlRequester.GetApplicationRequest(id)
+	//gqlRequest := h.directorClient.GetApplicationRequest(id)
 	//
 	//var resp gqlGetApplicationResponse
 	//err := gqlCli.Run(context.Background(), gqlRequest, &resp)
@@ -226,7 +226,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 	//gqlCli := h.cliProvider.GQLClient(request)
 	//
 	//id := h.getServiceID(request)
-	//gqlRequest := h.gqlRequester.UnregisterApplicationRequest(id)
+	//gqlRequest := h.directorClient.UnregisterApplicationRequest(id)
 	//
 	//err := gqlCli.Run(context.Background(), gqlRequest, nil)
 	//if err != nil {

@@ -6,7 +6,7 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
-// TODO: Remove this file and migrate to GraphQLRequester
+// TODO: Remove this file and migrate to DirectorClient
 
 const nameKey = "name"
 
