@@ -64,8 +64,26 @@ spec:
                   args:
                     - "-c"
                     - "./tenantloader; exit_code=$?; sleep 5; echo '# KILLING PILOT-AGENT #'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+              {{if eq .Values.global.database.embedded.enabled false}}
+                - name: cloudsql-proxy
+                  image: gcr.io/cloudsql-docker/gce-proxy:1.13
+                  command:
+                    - /bin/sh
+                  args:
+                    - -c
+                    - "trap 'exit 0' SIGINT; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json"
+                  volumeMounts:
+                    - name: cloudsql-instance-credentials
+                      mountPath: /secrets/cloudsql-instance-credentials
+                      readOnly: true
+              {{end}}
             volumes:
               - name: tenant-config
                 configMap:
                   name: {{ template "fullname" . }}-external-tenant-config
-{{ end }}
+            {{if eq .Values.global.database.embedded.enabled false}}
+              - name: cloudsql-instance-credentials
+                secret:
+                  secretName: cloudsql-instance-credentials
+            {{end}}
+  {{ end }}

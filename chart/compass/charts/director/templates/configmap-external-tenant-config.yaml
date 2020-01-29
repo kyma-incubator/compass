@@ -9,4 +9,14 @@ metadata:
     release: {{ .Release.Name }}
 data:
   tenants.json: |-
+    [
+      {
+        "name": "tenant-name-1",
+        "id": "tenant-id-1"
+      },
+      {
+        "name": "tenant-name-2",
+        "id": "tenant-id-2"
+      }
+    ]
 {{end}}

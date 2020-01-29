@@ -10,7 +10,7 @@ In Compass the user can define his own tenants. There is a special `compass-dire
  - define a ConfigMap which has a JSON file containing tenants as a data (example below),
  
 or 
- - reuse [existing ConfigMap](../../chart/compass/charts/director/templates/configmap-external-tenant-config.yaml) by setting `useExternalTenants` and `useExternalTenantsConfigMapFromChart` values to true.
+ - reuse [existing ConfigMap](../../chart/compass/charts/director/templates/configmap-external-tenant-config.yaml) by setting `useExternalTenants` and `useExternalTenantsConfigMapFromChart` values to true. The user should change the data to what is appropriate for his use-case 
 
 There is also `compass-director-default-tenant-loader` job which loads tenants defined in the `global.tenants` field with `tenantProvider` value set to `dummy`.
 

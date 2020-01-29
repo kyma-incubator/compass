@@ -14,7 +14,7 @@ The user has to provide two environment variables:
 
 1. Read the file from source provided in `TENANTS_SRC` environment variable.
 2. Try to parse JSON file to tenant structure
-3. Synchronise tenants with Compass (not implemented yet)
+3. Synchronise tenants with Compass
 
 ## Supported format of JSON file with tenants
 ```json
