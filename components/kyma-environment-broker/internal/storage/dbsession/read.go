@@ -21,8 +21,8 @@ func (r readSession) GetInstanceByID(instanceID string) (internal.Instance, dber
 		LoadOne(&instance)
 
 	if err != nil {
-		if err != dbr.ErrNotFound {
-			return internal.Instance{}, dberr.NotFound("Cannot find Instance for instanceID:'%s", instanceID)
+		if err == dbr.ErrNotFound {
+			return internal.Instance{}, dberr.NotFound("Cannot find Instance for instanceID:'%s'", instanceID)
 		}
 		return internal.Instance{}, dberr.Internal("Failed to get Instance: %s", err)
 	}

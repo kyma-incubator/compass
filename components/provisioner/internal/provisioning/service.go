@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes"
 	"time"
 
 	uuid "github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
@@ -21,9 +22,9 @@ import (
 
 //go:generate mockery -name=Service
 type Service interface {
-	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (*gqlschema.OperationStatus, error)
+	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string) (*gqlschema.OperationStatus, error)
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(id string) (string, error)
+	DeprovisionRuntime(id, tenant string) (string, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error)
@@ -63,17 +64,17 @@ func NewProvisioningService(
 	}
 }
 
-func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (*gqlschema.OperationStatus, error) {
+func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string) (*gqlschema.OperationStatus, error) {
 	runtimeInput := config.RuntimeInput
 
-	runtimeID, err := r.directorService.CreateRuntime(runtimeInput)
+	runtimeID, err := r.directorService.CreateRuntime(runtimeInput, tenant)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to register Runtime: %s", err.Error())
 	}
 
-	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config)
+	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config, tenant)
 	if err != nil {
-		r.unregisterFailedRuntime(runtimeID)
+		r.unregisterFailedRuntime(runtimeID, tenant)
 		return nil, err
 	}
 
@@ -86,34 +87,34 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (*gql
 	// Try to set provisioning started before triggering it (which is hard to interrupt) to verify all unique constraints
 	operation, err := r.setProvisioningStarted(dbSession, runtimeID, cluster)
 	if err != nil {
-		r.unregisterFailedRuntime(runtimeID)
+		r.unregisterFailedRuntime(runtimeID, tenant)
 		return nil, err
 	}
 
 	err = r.provisioner.ProvisionCluster(cluster, operation.ID)
 	if err != nil {
-		r.unregisterFailedRuntime(runtimeID)
+		r.unregisterFailedRuntime(runtimeID, tenant)
 		return nil, fmt.Errorf("Failed to start provisioning: %s", err.Error())
 	}
 
 	err = dbSession.Commit()
 	if err != nil {
-		r.unregisterFailedRuntime(runtimeID)
+		r.unregisterFailedRuntime(runtimeID, tenant)
 		return nil, fmt.Errorf("Failed to commit transaction: %s", err.Error())
 	}
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
-func (r *service) unregisterFailedRuntime(id string) {
+func (r *service) unregisterFailedRuntime(id, tenant string) {
 	log.Infof("Unregistering failed Runtime %s...", id)
-	err := r.directorService.DeleteRuntime(id)
+	err := r.directorService.DeleteRuntime(id, tenant)
 	if err != nil {
 		log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())
 	}
 }
 
-func (r *service) DeprovisionRuntime(id string) (string, error) {
+func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {
 	session := r.dbSessionFactory.NewReadWriteSession()
 
 	lastOperation, dberr := session.GetLastOperation(id)

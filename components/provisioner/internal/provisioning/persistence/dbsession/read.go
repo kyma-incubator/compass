@@ -13,12 +13,31 @@ type readSession struct {
 	session *dbr.Session
 }
 
+func (r readSession) GetTenant(runtimeID string) (string, dberrors.Error) {
+	var tenant string
+
+	err := r.session.
+		Select("tenant").
+		From("cluster").
+		Where(dbr.Eq("cluster.id", runtimeID)).
+		LoadOne(&tenant)
+
+	if err != nil {
+		if err != dbr.ErrNotFound {
+			return "", dberrors.NotFound("Cannot find Tenant for runtimeID:'%s", runtimeID)
+		}
+
+		return "", dberrors.Internal("Failed to get Tenant: %s", err)
+	}
+	return tenant, nil
+}
+
 func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error) {
 	var cluster model.Cluster
 
 	err := r.session.
 		Select(
-			"id", "kubeconfig", "terraform_state",
+			"id", "kubeconfig", "terraform_state", "tenant",
 			"credentials_secret_name", "creation_timestamp", "deleted").
 		From("cluster").
 		Where(dbr.Eq("cluster.id", runtimeID)).
@@ -54,7 +73,7 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 
 	err := r.session.
 		Select(
-			"cluster.id", "cluster.kubeconfig",
+			"cluster.id", "cluster.kubeconfig", "cluster.tenant",
 			"cluster.credentials_secret_name", "cluster.creation_timestamp", "cluster.deleted",
 			"name", "project_name", "kubernetes_version",
 			"node_count", "volume_size_gb", "disk_type", "machine_type", "provider", "seed",

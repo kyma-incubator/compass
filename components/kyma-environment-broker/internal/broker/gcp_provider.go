@@ -5,10 +5,9 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
-type gcpInputProvider struct {
-}
+type gcpInputProvider struct{}
 
-var _ inputProvider = &gcpInputProvider{}
+var _ hyperscalerInputProvider = &gcpInputProvider{}
 
 func (p *gcpInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
@@ -34,6 +33,6 @@ func (p *gcpInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *gcpInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params *internal.ProvisioningParametersDTO) {
+func (p *gcpInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
 	updateString(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zone, params.Zone)
 }

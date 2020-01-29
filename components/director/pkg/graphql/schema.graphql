@@ -583,7 +583,7 @@ type SystemAuth {
 }
 
 type Tenant {
-	tenant: String!
+	id: ID!
 	name: String
 }
 

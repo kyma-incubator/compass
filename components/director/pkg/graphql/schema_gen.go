@@ -383,8 +383,8 @@ type ComplexityRoot struct {
 	}
 
 	Tenant struct {
-		Name   func(childComplexity int) int
-		Tenant func(childComplexity int) int
+		ID   func(childComplexity int) int
+		Name func(childComplexity int) int
 	}
 
 	Version struct {
@@ -2299,19 +2299,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SystemAuth.ID(childComplexity), true
 
+	case "Tenant.id":
+		if e.complexity.Tenant.ID == nil {
+			break
+		}
+
+		return e.complexity.Tenant.ID(childComplexity), true
+
 	case "Tenant.name":
 		if e.complexity.Tenant.Name == nil {
 			break
 		}
 
 		return e.complexity.Tenant.Name(childComplexity), true
-
-	case "Tenant.tenant":
-		if e.complexity.Tenant.Tenant == nil {
-			break
-		}
-
-		return e.complexity.Tenant.Tenant(childComplexity), true
 
 	case "Version.deprecated":
 		if e.complexity.Version.Deprecated == nil {
@@ -3037,7 +3037,7 @@ type SystemAuth {
 }
 
 type Tenant {
-	tenant: String!
+	id: ID!
 	name: String
 }
 
@@ -13996,7 +13996,7 @@ func (ec *executionContext) _SystemAuth_auth(ctx context.Context, field graphql.
 	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Tenant_tenant(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
+func (ec *executionContext) _Tenant_id(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14015,7 +14015,7 @@ func (ec *executionContext) _Tenant_tenant(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Tenant, nil
+		return obj.ID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14030,7 +14030,7 @@ func (ec *executionContext) _Tenant_tenant(ctx context.Context, field graphql.Co
 	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Tenant_name(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
@@ -18621,8 +18621,8 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Tenant")
-		case "tenant":
-			out.Values[i] = ec._Tenant_tenant(ctx, field, obj)
+		case "id":
+			out.Values[i] = ec._Tenant_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

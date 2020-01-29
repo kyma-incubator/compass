@@ -15,7 +15,7 @@ import (
 )
 
 type InputConverter interface {
-	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.Cluster, error)
+	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant string) (model.Cluster, error)
 }
 
 func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository, gardenerProject string) InputConverter {
@@ -32,7 +32,7 @@ type converter struct {
 	gardenerProject string
 }
 
-func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.Cluster, error) {
+func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant string) (model.Cluster, error) {
 	var err error
 
 	var kymaConfig model.KymaConfig
@@ -61,6 +61,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		CredentialsSecretName: credSecretName,
 		KymaConfig:            kymaConfig,
 		ClusterConfig:         providerConfig,
+		Tenant:                tenant,
 	}, nil
 }
 

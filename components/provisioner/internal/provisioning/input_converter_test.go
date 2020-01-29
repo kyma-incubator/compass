@@ -78,6 +78,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			Kubeconfig:            nil,
 			KymaConfig:            fixKymaConfig(),
 			CredentialsSecretName: "secretName",
+			Tenant:                tenant,
 		}
 	}
 
@@ -145,6 +146,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		Kubeconfig:            nil,
 		KymaConfig:            fixKymaConfig(),
 		CredentialsSecretName: "secretName",
+		Tenant:                tenant,
 	}
 
 	azureGardenerProvider := &gqlschema.AzureProviderConfigInput{VnetCidr: "cidr"}
@@ -210,6 +212,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		Kubeconfig:            nil,
 		KymaConfig:            fixKymaConfig(),
 		CredentialsSecretName: "secretName",
+		Tenant:                tenant,
 	}
 
 	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
@@ -281,6 +284,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		Kubeconfig:            nil,
 		KymaConfig:            fixKymaConfig(),
 		CredentialsSecretName: "secretName",
+		Tenant:                tenant,
 	}
 
 	zone := "zone"
@@ -327,7 +331,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject)
 
 			//when
-			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input)
+			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input, tenant)
 
 			//then
 			require.NoError(t, err)
@@ -360,7 +364,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject)
 
 		//when
-		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
+		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant)
 
 		//then
 		require.Error(t, err)
@@ -376,7 +380,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		inputConverter := NewInputConverter(nil, nil, gardenerProject)
 
 		//when
-		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
+		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant)
 
 		//then
 		require.Error(t, err)
@@ -397,7 +401,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		inputConverter := NewInputConverter(uuidGeneratorMock, nil, gardenerProject)
 
 		//when
-		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
+		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant)
 
 		//then
 		require.Error(t, err)

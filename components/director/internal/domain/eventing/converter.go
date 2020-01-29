@@ -11,7 +11,7 @@ func RuntimeEventingConfigurationToGraphQL(in *model.RuntimeEventingConfiguratio
 	}
 
 	return &graphql.RuntimeEventingConfiguration{
-		DefaultURL: in.DefaultURL,
+		DefaultURL: in.DefaultURL.String(),
 	}
 }
 
@@ -21,6 +21,6 @@ func ApplicationEventingConfigurationToGraphQL(in *model.ApplicationEventingConf
 	}
 
 	return &graphql.ApplicationEventingConfiguration{
-		DefaultURL: in.DefaultURL,
+		DefaultURL: in.DefaultURL.String(),
 	}
 }

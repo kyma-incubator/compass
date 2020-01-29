@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	"net/http"
 	"strings"
 	"time"
@@ -40,7 +41,6 @@ type config struct {
 	PlaygroundAPIEndpoint        string `envconfig:"default=/graphql"`
 	CredentialsNamespace         string `envconfig:"default=compass-system"`
 	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
-	DefaultTenant                string `envconfig:"default=3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
 	OauthCredentialsSecretName   string `envconfig:"default=compass-provisioner-credentials"`
 
@@ -70,12 +70,12 @@ type config struct {
 
 func (c *config) String() string {
 	return fmt.Sprintf("Address: %s, APIEndpoint: %s, CredentialsNamespace: %s, "+
-		"DirectorURL: %s, DefaultTenant: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s"+
+		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s"+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, DatabaseSchemaFilePath: %s, "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, Provisioner: %s",
 		c.Address, c.APIEndpoint, c.CredentialsNamespace,
-		c.DirectorURL, c.DefaultTenant, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
+		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode, c.Database.SchemaFilePath,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Provisioner)
@@ -154,8 +154,9 @@ func main() {
 	executableSchema := gqlschema.NewExecutableSchema(gqlCfg)
 
 	log.Infof("Registering endpoint on %s...", cfg.APIEndpoint)
-
 	router := mux.NewRouter()
+	router.Use(middlewares.ExtractTenant)
+
 	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
 

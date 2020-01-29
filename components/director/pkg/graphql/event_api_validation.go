@@ -2,13 +2,14 @@ package graphql
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/pkg/errors"
 )
 
 func (i EventDefinitionInput) Validate() error {
 	return validation.ValidateStruct(&i,
-		validation.Field(&i.Name, validation.Required, inputvalidation.Name),
+		validation.Field(&i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
 		validation.Field(&i.Description, validation.RuneLength(0, shortStringLengthLimit)),
 		validation.Field(&i.Spec, validation.NilOrNotEmpty),
 		validation.Field(&i.Group, validation.RuneLength(0, groupLengthLimit)),

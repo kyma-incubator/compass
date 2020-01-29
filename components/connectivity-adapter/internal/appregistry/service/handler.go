@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gcli "github.com/machinebox/graphql"
@@ -159,7 +161,18 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 
 func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	h.logger.Println("List")
-	// TODO: Implement it
+	//TODO: Implement it, currently this endpoint purpose is for manually testing appdetails middleware
+
+	ctx := request.Context()
+	app, err := appdetails.LoadFromContext(ctx)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while getting service from context")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+	log.Infof("Application from ctx: %+v", app)
+
 	writer.WriteHeader(http.StatusNotImplemented)
 }
 

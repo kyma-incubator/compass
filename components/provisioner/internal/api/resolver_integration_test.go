@@ -2,6 +2,9 @@ package api
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes/mocks"
 	"testing"
 	"time"
 
@@ -41,6 +44,9 @@ const (
 	applicationConnectorComponent = "application-connector"
 
 	gardenerProject = "gardener-project"
+	runtimeAgentComponent         = "compass-runtime-agent"
+	compassSystemNamespace        = "compass-system"
+	tenant   = "tenant"
 )
 
 func waitForOperationCompleted(provisioningService provisioning.Service, operationID string, seconds uint) error {
@@ -181,7 +187,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	uuidGenerator := uuid.NewUUIDGenerator()
 
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 
 	cleanupNetwork, err := testutils.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
@@ -214,8 +220,12 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 		t.Run(cfg.description, func(t *testing.T) {
 
 			directorServiceMock := &directormock.DirectorClient{}
-			directorServiceMock.On("CreateRuntime", mock.Anything).Return(cfg.runtimeID, nil)
-			directorServiceMock.On("DeleteRuntime", mock.Anything).Return(nil)
+			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(cfg.runtimeID, nil)
+			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
+			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
+
+			configProviderMock := &mocks.ConfigProvider{}
+			configProviderMock.On("CreateConfigMapForRuntime", mock.Anything, mock.Anything).Return(nil, nil)
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
@@ -225,6 +235,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			graphQLConverter := provisioning.NewGraphQLConverter()
 			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock)
 			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator)
+			validator := NewValidator(persistenceService)
 			provisioner := NewResolver(provisioningService)
 
 			err := insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
@@ -363,6 +374,14 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
 				},
 			},
+			{
+				Component: runtimeAgentComponent,
+				Namespace: compassSystemNamespace,
+				Configuration: []*gqlschema.ConfigEntryInput{
+					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
+				},
+			},
 		},
 		Configuration: []*gqlschema.ConfigEntryInput{
 			fixGQLConfigEntryInput("global.config.key", "globalValue", util.BoolPtr(false)),
@@ -401,6 +420,14 @@ func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 			{
 				Component: applicationConnectorComponent,
 				Namespace: kymaIntegrationNamespace,
+				Configuration: []*gqlschema.ConfigEntry{
+					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
+				},
+			},
+			{
+				Component: runtimeAgentComponent,
+				Namespace: compassSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),

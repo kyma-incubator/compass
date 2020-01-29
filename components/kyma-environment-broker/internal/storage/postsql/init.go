@@ -13,13 +13,14 @@ import (
 )
 
 const (
-	schemaName        = "public"
-	connectionRetries = 10
+	schemaName         = "public"
+	InstancesTableName = "instances"
+	connectionRetries  = 10
 )
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
 func InitializeDatabase(connectionURL string) (*dbr.Connection, error) {
-	connection, err := waitForDatabaseAccess(connectionURL, connectionRetries)
+	connection, err := WaitForDatabaseAccess(connectionURL, connectionRetries)
 	if err != nil {
 		return nil, err
 	}
@@ -33,14 +34,6 @@ func InitializeDatabase(connectionURL string) (*dbr.Connection, error) {
 		log.Info("Database already initialized")
 		return connection, nil
 	}
-
-	log.Info("Database not initialized. Setting up schema...")
-	for _, v := range Tables {
-		if _, err := connection.Exec(v); err != nil {
-			return nil, err
-		}
-	}
-	log.Info("Database initialized successfully")
 
 	return connection, nil
 }
@@ -75,7 +68,7 @@ func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 	return tableName == InstancesTableName, nil
 }
 
-func waitForDatabaseAccess(connString string, retryCount int) (*dbr.Connection, error) {
+func WaitForDatabaseAccess(connString string, retryCount int) (*dbr.Connection, error) {
 	var connection *dbr.Connection
 	var err error
 	for ; retryCount > 0; retryCount-- {

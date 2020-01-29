@@ -20,6 +20,7 @@ type ReadSession interface {
 	GetOperation(operationID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 	GetGardenerClusterByName(name string) (model.Cluster, dberrors.Error)
+	GetTenant(runtimeID string) (string, dberrors.Error)
 }
 
 //go:generate mockery -name=WriteSession

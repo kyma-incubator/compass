@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,15 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
-	v1 "k8s.io/api/core/v1"
-
 	"github.com/pkg/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	log "github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	log "github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=Client
@@ -45,7 +42,7 @@ func NewOauthClient(httpClient *http.Client, k8sClient client.Client, secretName
 func (c *oauthClient) GetAuthorizationToken() (Token, error) {
 	credentials, err := c.getCredentials()
 	if err != nil {
-		return Token{}, err
+		return Token{}, errors.Wrap(err, "while get credentials from secret")
 	}
 
 	return c.getAuthorizationToken(credentials)
@@ -58,12 +55,10 @@ func (c *oauthClient) WaitForCredentials() error {
 			Namespace: c.secretNamespace,
 			Name:      c.secretName,
 		}, secret)
-		switch {
-		case apierrors.IsNotFound(err):
+		// it fails on connection-refused error on first call and it restarts our application.
+		if err != nil {
 			log.Warnf("secret %s not found", c.secretName)
 			return false, nil
-		case err != nil:
-			return false, errors.Wrapf(err, "while waiting for secret %s", c.secretName)
 		}
 		return true, nil
 	})
@@ -97,8 +92,7 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 
 	request, err := http.NewRequest(http.MethodPost, credentials.tokensEndpoint, strings.NewReader(form.Encode()))
 	if err != nil {
-		log.Errorf("Failed to create authorisation token request")
-		return Token{}, err
+		return Token{}, errors.Wrap(err, "while creating authorisation token request")
 	}
 
 	request.SetBasicAuth(credentials.clientID, credentials.clientSecret)
@@ -106,28 +100,33 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 
 	response, err := c.httpClient.Do(request)
 	if err != nil {
-		return Token{}, err
+		return Token{}, errors.Wrap(err, "while send request to token endpoint")
 	}
 	defer func() {
 		if err := response.Body.Close(); err != nil {
-			log.Warnf("Cannot close connection body")
+			log.Warnf("Cannot close connection body inside oauth client")
 		}
 	}()
 
 	if response.StatusCode != http.StatusOK {
-		return Token{}, fmt.Errorf("Get token call returned unexpected status code, %d, %s", response.StatusCode, response.Status)
+		return Token{}, fmt.Errorf("while calling to token endpoint: unexpected status code, %d, %s", response.StatusCode, response.Status)
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return Token{}, fmt.Errorf("Failed to read token response body from '%s': %s", credentials.tokensEndpoint, err.Error())
+		return Token{}, errors.Wrapf(err, "while reading token response body from %q", credentials.tokensEndpoint)
 	}
 
 	tokenResponse := Token{}
 	err = json.Unmarshal(body, &tokenResponse)
 	if err != nil {
-		return Token{}, fmt.Errorf("failed to unmarshal token response body: %s", err.Error())
+		return Token{}, errors.Wrap(err, "while unmarshalling token response body")
 	}
+
+	if tokenResponse.AccessToken == "" {
+		return Token{}, errors.New("while fetching token: access token from oauth client is empty")
+	}
+
 	log.Errorf("Successfully unmarshal response oauth token for accessing Director")
 	tokenResponse.Expiration += time.Now().Unix()
 

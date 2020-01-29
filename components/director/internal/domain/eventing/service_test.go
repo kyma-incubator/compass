@@ -30,7 +30,7 @@ func Test_CleanupAfterUnregisteringApplication(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, EmptyEventingURL, eventingCfg.DefaultURL)
+		require.Equal(t, "", eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, labelRepo)
 	})
 
@@ -67,9 +67,12 @@ func Test_CleanupAfterUnregisteringApplication(t *testing.T) {
 }
 
 func Test_SetForApplication(t *testing.T) {
+	app := fixApplicationModel("test-app")
+
 	t.Run("Success when assigning new default runtime, when there was no previous one", func(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
+		app := fixApplicationModel("test-app")
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
@@ -85,12 +88,12 @@ func Test_SetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		eventingCfg, err := svc.SetForApplication(ctx, runtimeID, applicationID)
+		eventingCfg, err := svc.SetForApplication(ctx, runtimeID, app)
 
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, dummyEventingURL, eventingCfg.DefaultURL)
+		require.Equal(t, fmt.Sprintf(eventURLSchema, app.Name), eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -114,12 +117,12 @@ func Test_SetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		eventingCfg, err := svc.SetForApplication(ctx, runtimeID, applicationID)
+		eventingCfg, err := svc.SetForApplication(ctx, runtimeID, app)
 
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, dummyEventingURL, eventingCfg.DefaultURL)
+		require.Equal(t, fmt.Sprintf(eventURLSchema, app.Name), eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -128,7 +131,7 @@ func Test_SetForApplication(t *testing.T) {
 		svc := NewService(nil, nil)
 
 		// WHEN
-		_, err := svc.SetForApplication(context.TODO(), uuid.Nil, uuid.Nil)
+		_, err := svc.SetForApplication(context.TODO(), uuid.Nil, model.Application{})
 
 		// THEN
 		require.Error(t, err)
@@ -147,7 +150,7 @@ func Test_SetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, app)
 
 		// THEN
 		require.Error(t, err)
@@ -167,7 +170,7 @@ func Test_SetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, app)
 
 		// THEN
 		require.Error(t, err)
@@ -189,7 +192,7 @@ func Test_SetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, app)
 
 		// THEN
 		require.Error(t, err)
@@ -213,7 +216,7 @@ func Test_SetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, app)
 
 		// THEN
 		require.Error(t, err)
@@ -237,7 +240,7 @@ func Test_SetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, app)
 
 		// THEN
 		require.Error(t, err)
@@ -263,7 +266,7 @@ func Test_SetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, app)
 
 		// THEN
 		require.Error(t, err)
@@ -289,7 +292,7 @@ func Test_SetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, app)
 
 		// THEN
 		require.Error(t, err)
@@ -316,7 +319,7 @@ func Test_SetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, app)
 
 		// THEN
 		require.Error(t, err)
@@ -345,7 +348,7 @@ func Test_SetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, app)
 
 		// THEN
 		require.Error(t, err)
@@ -355,6 +358,8 @@ func Test_SetForApplication(t *testing.T) {
 }
 
 func Test_UnsetForApplication(t *testing.T) {
+	app := fixApplicationModel("test-app")
+
 	t.Run("Success when there is no default runtime assigned for eventing", func(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
@@ -365,12 +370,12 @@ func Test_UnsetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, nil)
 
 		// WHEN
-		eventingCfg, err := svc.UnsetForApplication(ctx, applicationID)
+		eventingCfg, err := svc.UnsetForApplication(ctx, app)
 
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, EmptyEventingURL, eventingCfg.DefaultURL)
+		require.Equal(t, EmptyEventingURL, eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo)
 	})
 
@@ -389,12 +394,12 @@ func Test_UnsetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		eventingCfg, err := svc.UnsetForApplication(ctx, applicationID)
+		eventingCfg, err := svc.UnsetForApplication(ctx, app)
 
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, dummyEventingURL, eventingCfg.DefaultURL)
+		require.Equal(t, fmt.Sprintf(eventURLSchema, app.Name), eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -403,7 +408,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		svc := NewService(nil, nil)
 
 		// WHEN
-		_, err := svc.UnsetForApplication(context.TODO(), uuid.Nil)
+		_, err := svc.UnsetForApplication(context.TODO(), app)
 
 		// THEN
 		require.Error(t, err)
@@ -421,7 +426,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, nil)
 
 		// WHEN
-		_, err := svc.UnsetForApplication(ctx, applicationID)
+		_, err := svc.UnsetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -440,7 +445,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, nil)
 
 		// WHEN
-		_, err := svc.UnsetForApplication(ctx, applicationID)
+		_, err := svc.UnsetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -462,7 +467,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.UnsetForApplication(ctx, applicationID)
+		_, err := svc.UnsetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -486,7 +491,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.UnsetForApplication(ctx, applicationID)
+		_, err := svc.UnsetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -496,6 +501,9 @@ func Test_UnsetForApplication(t *testing.T) {
 }
 
 func Test_GetForApplication(t *testing.T) {
+	app := fixApplicationModel("test-app")
+	appEventURL := fixAppEventURL(t, "test-app")
+
 	t.Run("Success when there is default runtime labeled for application eventing", func(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
@@ -513,12 +521,12 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		eventingCfg, err := svc.GetForApplication(ctx, applicationID)
+		eventingCfg, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, dummyEventingURL, eventingCfg.DefaultURL)
+		require.Equal(t, appEventURL, eventingCfg.DefaultURL)
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -539,12 +547,12 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		eventingCfg, err := svc.GetForApplication(ctx, applicationID)
+		eventingCfg, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, dummyEventingURL, eventingCfg.DefaultURL)
+		require.Equal(t, appEventURL, eventingCfg.DefaultURL)
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -563,12 +571,12 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		eventingCfg, err := svc.GetForApplication(ctx, applicationID)
+		eventingCfg, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, EmptyEventingURL, eventingCfg.DefaultURL)
+		require.Equal(t, "", eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -584,12 +592,12 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		eventingCfg, err := svc.GetForApplication(ctx, applicationID)
+		eventingCfg, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, EmptyEventingURL, eventingCfg.DefaultURL)
+		require.Equal(t, "", eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -612,12 +620,12 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		eventingCfg, err := svc.GetForApplication(ctx, applicationID)
+		eventingCfg, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, EmptyEventingURL, eventingCfg.DefaultURL)
+		require.Equal(t, "", eventingCfg.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -626,7 +634,7 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(nil, nil)
 
 		// WHEN
-		_, err := svc.GetForApplication(context.TODO(), uuid.Nil)
+		_, err := svc.GetForApplication(context.TODO(), app)
 
 		// THEN
 		require.Error(t, err)
@@ -635,7 +643,7 @@ func Test_GetForApplication(t *testing.T) {
 
 	t.Run("Error when labeling oldest runtime for application eventing returns error", func(t *testing.T) {
 		// GIVEN
-		expectedError := fmt.Sprintf(`while setting the runtime as default for eveting for application: while labeling the runtime [ID=%s] as default for eventing for application [ID=%s]: some error`, runtimeID, applicationID)
+		expectedError := fmt.Sprintf(`while setting the runtime as default for eventing for application: while labeling the runtime [ID=%s] as default for eventing for application [ID=%s]: some error`, runtimeID, applicationID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
@@ -651,7 +659,7 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.GetForApplication(ctx, applicationID)
+		_, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -674,7 +682,7 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.GetForApplication(ctx, applicationID)
+		_, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -697,7 +705,7 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.GetForApplication(ctx, applicationID)
+		_, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -718,7 +726,7 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.GetForApplication(ctx, applicationID)
+		_, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -736,7 +744,7 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, nil)
 
 		// WHEN
-		_, err := svc.GetForApplication(ctx, applicationID)
+		_, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -756,7 +764,7 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.GetForApplication(ctx, applicationID)
+		_, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -778,7 +786,7 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.GetForApplication(ctx, applicationID)
+		_, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -800,7 +808,7 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.GetForApplication(ctx, applicationID)
+		_, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -824,7 +832,7 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.GetForApplication(ctx, applicationID)
+		_, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -850,7 +858,7 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.GetForApplication(ctx, applicationID)
+		_, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -876,7 +884,7 @@ func Test_GetForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.GetForApplication(ctx, applicationID)
+		_, err := svc.GetForApplication(ctx, app)
 
 		// THEN
 		require.Error(t, err)
@@ -892,7 +900,7 @@ func Test_GetForRuntime(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(), RuntimeEventingURLLabel).
 			Return(nil, apperrors.NewNotFoundError(""))
-		expectedEventingCfg := fixRuntimeEventngCfgWithEmptyURL()
+		expectedEventingCfg := fixRuntimeEventngCfgWithEmptyURL(t)
 		eventingSvc := NewService(nil, labelRepo)
 
 		// WHEN
@@ -910,7 +918,7 @@ func Test_GetForRuntime(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(), RuntimeEventingURLLabel).
 			Return(fixRuntimeEventingURLLabel(), nil)
-		expectedEventingCfg := fixRuntimeEventngCfgWithURL(dummyEventingURL)
+		expectedEventingCfg := fixRuntimeEventngCfgWithURL(t, runtimeEventURL)
 		eventingSvc := NewService(nil, labelRepo)
 
 		// WHEN
