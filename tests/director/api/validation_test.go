@@ -140,7 +140,7 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 
 // Application Validation
 
-const longDescErrorMsg = "graphql: validation error for type %s: description: the length must be no more than 128."
+const longDescErrorMsg = "graphql: validation error for type %s: description: the length must be no more than 2000."
 
 func TestCreateApplication_Validation(t *testing.T) {
 	//GIVEN
