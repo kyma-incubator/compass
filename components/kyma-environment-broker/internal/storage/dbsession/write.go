@@ -1,6 +1,8 @@
 package dbsession
 
 import (
+	"time"
+
 	dbr "github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
@@ -21,6 +23,8 @@ func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
 		Pair("service_plan_id", instance.ServicePlanID).
 		Pair("dashboard_url", instance.DashboardURL).
 		Pair("provisioning_parameters", instance.ProvisioningParameters).
+		// in postgres database it will be equal to "0001-01-01 00:00:00+00"
+		Pair("delated_at", time.Time{}).
 		Exec()
 	if err != nil {
 		return dberr.Internal("Failed to insert record to Instance table: %s", err)
@@ -31,7 +35,7 @@ func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
 
 func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
 	_, err := ws.update(postsql.InstancesTableName).
-		Where(dbr.Eq(postsql.InstancesTableName+".instance_id", instance.InstanceID)).
+		Where(dbr.Eq("instance_id", instance.InstanceID)).
 		Set("instance_id", instance.InstanceID).
 		Set("runtime_id", instance.RuntimeID).
 		Set("global_account_id", instance.GlobalAccountID).
@@ -39,8 +43,12 @@ func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
 		Set("service_plan_id", instance.ServicePlanID).
 		Set("dashboard_url", instance.DashboardURL).
 		Set("provisioning_parameters", instance.ProvisioningParameters).
+		Set("updated_at", time.Now()).
 		Exec()
 	if err != nil {
+		if err == dbr.ErrNotFound {
+			return dberr.NotFound("Cannot find Instance for instanceID:'%s'", instance.InstanceID)
+		}
 		return dberr.Internal("Failed to update record to Instance table: %s", err)
 	}
 

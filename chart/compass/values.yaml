@@ -25,7 +25,7 @@ global:
       version: "PR-734"
     director:
       dir:
-      version: "PR-648"
+      version: "PR-739"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -34,10 +34,10 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-648"
+      version: "PR-712"
     provisioner:
       dir:
-      version: "PR-666"
+      version: "PR-693"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -45,11 +45,11 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-705"
+      version: "PR-670"
     tests:
       director:
         dir:
-        version: "PR-648"
+        version: "PR-739"
       connector:
         dir:
         version: "02e8358c"

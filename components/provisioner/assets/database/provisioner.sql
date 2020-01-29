@@ -6,6 +6,7 @@ CREATE TABLE cluster
     runtime_name varchar(256) NOT NULL,
     kubeconfig text,
     terraform_state bytea,
+    tenant varchar(256) NOT NULL,
     credentials_secret_name varchar(256) NOT NULL,
     creation_timestamp timestamp without time zone NOT NULL
 );

@@ -98,7 +98,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
-	t.Run("Error - forbidden when tenant is empty", func(t *testing.T) {
+	t.Run("Success - when tenant is empty", func(t *testing.T) {
 		//given
 		tnt := ""
 		middleware := createMiddleware(t, true)
@@ -114,8 +114,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 		middleware(handler).ServeHTTP(rr, req)
 
 		//then
-		assert.Equal(t, "{\"errors\":[{\"message\":\"forbidden: invalid tenant\"}]}\n", rr.Body.String())
-		assert.Equal(t, http.StatusForbidden, rr.Code)
+		assert.Equal(t, "OK", rr.Body.String())
+		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
 	t.Run("Error - token with no signing method when it's not allowed", func(t *testing.T) {

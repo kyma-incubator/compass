@@ -272,7 +272,7 @@ func requestOneTimeTokenForRuntime(t *testing.T, ctx context.Context, id string)
 func getIntegrationSystem(t *testing.T, ctx context.Context, id string) *graphql.IntegrationSystemExt {
 	intSysRequest := fixIntegrationSystemRequest(id)
 	intSys := graphql.IntegrationSystemExt{}
-	require.NoError(t, tc.RunOperation(ctx, intSysRequest, &intSys))
+	require.NoError(t, tc.RunOperationWithoutTenant(ctx, intSysRequest, &intSys))
 	return &intSys
 }
 
@@ -284,7 +284,7 @@ func registerIntegrationSystem(t *testing.T, ctx context.Context, name string) *
 	}
 	req := fixRegisterIntegrationSystemRequest(in)
 	out := &graphql.IntegrationSystemExt{}
-	err = tc.RunOperation(ctx, req, out)
+	err = tc.RunOperationWithoutTenant(ctx, req, out)
 	require.NotEmpty(t, out)
 	require.NoError(t, err)
 	return out
@@ -292,21 +292,21 @@ func registerIntegrationSystem(t *testing.T, ctx context.Context, name string) *
 
 func unregisterIntegrationSystem(t *testing.T, ctx context.Context, id string) {
 	req := fixunregisterIntegrationSystem(id)
-	err := tc.RunOperation(ctx, req, nil)
+	err := tc.RunOperationWithoutTenant(ctx, req, nil)
 	require.NoError(t, err)
 }
 
 func requestClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Context, id string) graphql.SystemAuth {
 	req := fixRequestClientCredentialsForIntegrationSystem(id)
 	out := graphql.SystemAuth{}
-	err := tc.RunOperation(ctx, req, &out)
+	err := tc.RunOperationWithoutTenant(ctx, req, &out)
 	require.NoError(t, err)
 	return out
 }
 
 func deleteSystemAuthForIntegrationSystem(t *testing.T, ctx context.Context, id string) {
 	req := fixDeleteSystemAuthForIntegrationSystemRequest(id)
-	err := tc.RunOperation(ctx, req, nil)
+	err := tc.RunOperationWithoutTenant(ctx, req, nil)
 	require.NoError(t, err)
 }
 

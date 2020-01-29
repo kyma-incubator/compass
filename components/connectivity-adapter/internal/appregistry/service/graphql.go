@@ -15,9 +15,12 @@ type GraphQLizer interface {
 	ApplicationRegisterInputToGQL(in graphql.ApplicationRegisterInput) (string, error)
 }
 
+const nameKey = "name"
+
 //go:generate mockery -name=GqlFieldsProvider -output=automock -outpkg=automock -case=underscore
 type GqlFieldsProvider interface {
 	ForApplication(ctx ...gql.FieldCtx) string
+	Page(item string) string
 }
 
 type gqlCreateApplicationResponse struct {
@@ -68,4 +71,12 @@ func (b *gqlRequestBuilder) GetApplicationRequest(id string) *gcli.Request {
 					%s
 			}
 		}`, id, b.gqlFieldsProvider.ForApplication()))
+}
+
+func (b *gqlRequestBuilder) GetApplicationsByName(appName string) *gcli.Request {
+	return gcli.NewRequest(fmt.Sprintf(`query {
+			result: applications(filter: {key:"%s", query: "\"%s\""}) {
+					%s
+			}
+	}`, nameKey, appName, b.gqlFieldsProvider.Page(b.gqlFieldsProvider.ForApplication())))
 }

@@ -2,21 +2,33 @@
 
 ## Overview
 
-Kyma Environment Broker provides a way to run Kyma as a Runtime on clusters provided by different cloud providers, such as AWS, GCP or Azure. The broker provides services that install Kyma with a separate plan for each provider.
-It uses the Compass Provisioner API to install Kyma on the given cluster.
+Kyma Environment Broker is a component that allows you to provision Kyma as a Runtime on clusters provided by third-party providers. It uses Provisioner's API to install Kyma on a given cluster.
+
+For more information, read the [documentation](../../docs/kyma-environment-broker).
+
 
 ## Development
 
-Use the following environment variables to configure the Kyma Environment Broker:
+This table lists the environment variables, their descriptions, and default values:
 
-| Name | Required | Default | Description |
-|-----|:---------:|--------|------------|
-| **APP_PORT** | No | `8080` | The port on which the HTTP server listens. |
-| **APP_PROVISIONING_URL** | No |  | Specifies an URL to the provisioner API. |
-| **APP_PROVISIONING_SECRET_NAME** | No | | Specifies the name of the Secret which holds credentials to the Provisioner API. |
-| **APP_PROVISIONING_GARDENER_PROJECT_NAME** | No | `true` | Defines the used Gardener project name. |
-| **APP_PROVISIONING_GCP_SECRET_NAME** | No | | Defines the name of the Secret which holds credentials to GCP. |
-| **APP_PROVISIONING_AWS_SECRET_NAME** | No | | Defines the name of the Secret which holds credentials to AWS. |
-| **APP_PROVISIONING_AZURE_SECRET_NAME** | No | | Defines the name of the Secret which holds credentials to Azure. |
-| **APP_AUTH_USERNAME** | No | | Specifies the Kyma Environment Service Broker authentication username. |
-| **APP_AUTH_PASSWORD** | No | | Specifies the Kyma Environment Service Broker authentication password. |
+| Name | Description | Default value |
+|-----|---------|:--------:|
+| **APP_PORT** | Specifies the port on which the HTTP server listens. | `8080` |
+| **APP_PROVISIONING_URL** | Specifies a URL to the Provisioner's API. | None |
+| **APP_PROVISIONING_SECRET_NAME** | Specifies the name of the Secret which holds credentials to the Provisioner's API. | None |
+| **APP_PROVISIONING_GARDENER_PROJECT_NAME** | Defines the Gardener project name. | `true` |
+| **APP_PROVISIONING_GCP_SECRET_NAME** | Defines the name of the Secret which holds credentials to GCP. | None |
+| **APP_PROVISIONING_AWS_SECRET_NAME** | Defines the name of the Secret which holds credentials to AWS. | None |
+| **APP_PROVISIONING_AZURE_SECRET_NAME** | Defines the name of the Secret which holds credentials to Azure. | None |
+| **APP_AUTH_USERNAME** | Specifies the Kyma Environment Service Broker authentication username. | None |
+| **APP_AUTH_PASSWORD** | Specifies the Kyma Environment Service Broker authentication password. | None |
+| **APP_DIRECTOR_NAMESPACE** | Specifies the Namespace in which Director is deployed. | `compass-system` |
+| **APP_DIRECTOR_URL** | Specifies the Director's URL. | `http://compass-director.compass-system.svc.cluster.local:3000/graphql` |
+| **APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME** | Specifies the name of the Secret created by the Integration System. | `compass-kyma-environment-broker-credentials` |
+| **APP_DIRECTOR_SKIP_CERT_VERIFICATION** | Specifies whether TLS checks the presented certificates. | `false` |
+| **APP_DATABASE_USER** | Defines the database username. | `postgres` |
+| **APP_DATABASE_PASSWORD** | Defines the database user password. | `password` |
+| **APP_DATABASE_HOST** | Defines the database host. | `localhost` |
+| **APP_DATABASE_PORT** | Defines the database port. | `5432` |
+| **APP_DATABASE_NAME** | Defines the database name. | `broker` |
+| **APP_DATABASE_SSL** | Specifies the SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html).  | `disable`|

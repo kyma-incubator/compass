@@ -2,6 +2,7 @@ package application
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -140,11 +141,26 @@ func (c *converter) CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (
 	return string(appInput), nil
 }
 
+func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application {
+	if obj == nil {
+		return nil
+	}
+
+	return &model.Application{
+		ID:                  obj.ID,
+		ProviderName:        obj.ProviderName,
+		Tenant:              tenantID,
+		Name:                obj.Name,
+		Description:         obj.Description,
+		Status:              c.statusToModel(obj.Status),
+		HealthCheckURL:      obj.HealthCheckURL,
+		IntegrationSystemID: obj.IntegrationSystemID,
+	}
+}
+
 func (c *converter) statusToGraphQL(in *model.ApplicationStatus) *graphql.ApplicationStatus {
 	if in == nil {
-		return &graphql.ApplicationStatus{
-			Condition: graphql.ApplicationStatusConditionInitial,
-		}
+		return &graphql.ApplicationStatus{Condition: graphql.ApplicationStatusConditionInitial}
 	}
 
 	var condition graphql.ApplicationStatusCondition
@@ -163,5 +179,28 @@ func (c *converter) statusToGraphQL(in *model.ApplicationStatus) *graphql.Applic
 	return &graphql.ApplicationStatus{
 		Condition: condition,
 		Timestamp: graphql.Timestamp(in.Timestamp),
+	}
+}
+
+func (c *converter) statusToModel(in *graphql.ApplicationStatus) *model.ApplicationStatus {
+	if in == nil {
+		return &model.ApplicationStatus{Condition: model.ApplicationStatusConditionInitial}
+	}
+
+	var condition model.ApplicationStatusCondition
+
+	switch in.Condition {
+	case graphql.ApplicationStatusConditionInitial:
+		condition = model.ApplicationStatusConditionInitial
+	case graphql.ApplicationStatusConditionFailed:
+		condition = model.ApplicationStatusConditionFailed
+	case graphql.ApplicationStatusConditionReady:
+		condition = model.ApplicationStatusConditionReady
+	default:
+		condition = model.ApplicationStatusConditionInitial
+	}
+	return &model.ApplicationStatus{
+		Condition: condition,
+		Timestamp: time.Time(in.Timestamp),
 	}
 }

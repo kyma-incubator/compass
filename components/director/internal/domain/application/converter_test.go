@@ -3,6 +3,8 @@ package application_test
 import (
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -301,7 +303,42 @@ func TestConverter_CreateInputGQLJSONConversion(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), expectedErr)
 	})
+}
 
+func TestConverter_ConvertToModel(t *testing.T) {
+	conv := application.NewConverter(nil, nil, nil, nil)
+
+	t.Run("Successful full model", func(t *testing.T) {
+		tenantID := uuid.New().String()
+		appGraphql := fixGQLApplication(uuid.New().String(), "app", "desc")
+
+		//WHEN
+		appModel := conv.GraphQLToModel(appGraphql, tenantID)
+		outputGraphql := conv.ToGraphQL(appModel)
+
+		//THEN
+		assert.Equal(t, appGraphql, outputGraphql)
+	})
+
+	t.Run("Success empty model", func(t *testing.T) {
+		//GIVEN
+		appGraphql := &graphql.Application{}
+
+		//WHEN
+		appModel := conv.GraphQLToModel(appGraphql, uuid.New().String())
+		outputGraphql := conv.ToGraphQL(appModel)
+
+		//THEN
+		appGraphql.Status = &graphql.ApplicationStatus{Condition: graphql.ApplicationStatusConditionInitial}
+		assert.Equal(t, appGraphql, outputGraphql)
+	})
+
+	t.Run("Nil model", func(t *testing.T) {
+		//WHEN
+		output := conv.GraphQLToModel(nil, uuid.New().String())
+		//THEN
+		require.Nil(t, output)
+	})
 }
 
 func assertApplicationDefinition(t *testing.T, appModel *model.Application, entity *application.Entity) {

@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	Name = &nameRule{}
+	DNSName = &dnsNameRule{}
 )
 
-type nameRule struct{}
+type dnsNameRule struct{}
 
-func (v *nameRule) Validate(value interface{}) error {
+func (v *dnsNameRule) Validate(value interface{}) error {
 	s, isNil, err := ensureIsString(value)
 	if err != nil {
 		return err

@@ -29,3 +29,17 @@ func (_m *GqlFieldsProvider) ForApplication(ctx ...gql.FieldCtx) string {
 
 	return r0
 }
+
+// Page provides a mock function with given fields: item
+func (_m *GqlFieldsProvider) Page(item string) string {
+	ret := _m.Called(item)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(item)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
