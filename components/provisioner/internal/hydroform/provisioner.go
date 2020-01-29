@@ -2,8 +2,9 @@ package hydroform
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 

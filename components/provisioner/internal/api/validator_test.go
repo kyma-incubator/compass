@@ -1,12 +1,13 @@
 package api
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	dbMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestValidator_ValidateInput(t *testing.T) {

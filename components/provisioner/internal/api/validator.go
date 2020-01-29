@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )

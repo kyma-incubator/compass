@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 
 	log "github.com/sirupsen/logrus"

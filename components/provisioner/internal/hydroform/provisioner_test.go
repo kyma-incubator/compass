@@ -2,8 +2,9 @@ package hydroform_test
 
 import (
 	"errors"
-	runtimeMocks "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/mocks"
 	"testing"
+
+	runtimeMocks "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/mocks"
 
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"

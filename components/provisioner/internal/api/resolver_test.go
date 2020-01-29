@@ -2,9 +2,10 @@ package api
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	validatorMocks "github.com/kyma-incubator/compass/components/provisioner/internal/api/mocks"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 

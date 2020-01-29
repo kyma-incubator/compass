@@ -3,11 +3,12 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 

@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"

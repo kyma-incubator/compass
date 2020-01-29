@@ -3,8 +3,9 @@ package gardener
 import (
 	"context"
 	"fmt"
-	proviRuntime "github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"time"
+
+	proviRuntime "github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 
@@ -51,7 +52,7 @@ func NewReconciler(
 			installationService:     installationService,
 			kymaInstallationTimeout: installationTimeout,
 			directorClient:          directorClient,
-			runtimeConfigurator:runtimeConfigurator,
+			runtimeConfigurator:     runtimeConfigurator,
 		},
 	}
 }
@@ -72,7 +73,7 @@ type ProvisioningOperator struct {
 	dbsFactory                  dbsession.Factory
 	kymaInstallationTimeout     time.Duration
 	directorClient              director.DirectorClient
-	runtimeConfigurator proviRuntime.Configurator
+	runtimeConfigurator         proviRuntime.Configurator
 }
 
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {

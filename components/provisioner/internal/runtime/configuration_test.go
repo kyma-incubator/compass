@@ -2,6 +2,8 @@ package runtime
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -10,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
-	"testing"
 )
 
 func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
