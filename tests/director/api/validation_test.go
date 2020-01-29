@@ -146,7 +146,7 @@ func TestCreateApplication_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	app := fixSampleApplicationRegisterInputWithName("placeholder", "name")
-	longDesc := strings.Repeat("a", 129)
+	longDesc := strings.Repeat("a", 2001)
 	app.Description = &longDesc
 
 	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(app)
