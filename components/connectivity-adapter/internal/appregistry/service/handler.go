@@ -153,8 +153,12 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 	serviceManager, err := h.serviceManager.ForRequest(request)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while requesting Service Manager")
-		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		if apperrors.IsNotFoundError(err) {
+			h.writeErrorNotFound(writer, serviceID)
+		} else {
+			h.logger.Error(wrappedErr)
+			reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		}
 		return
 	}
 
