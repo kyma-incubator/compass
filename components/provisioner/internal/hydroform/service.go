@@ -2,7 +2,6 @@ package hydroform
 
 import (
 	"bytes"
-	"os"
 	"time"
 
 	"github.com/hashicorp/terraform/states/statefile"
@@ -109,11 +108,4 @@ func (s service) DeprovisionCluster(clusterData model.Cluster) error {
 
 	log.Infof("Starting deprovisioning of %s Runtime", clusterData.ID)
 	return s.hydroformClient.Deprovision(cluster, provider)
-}
-
-func removeFile(fileName string) {
-	err := os.Remove(fileName)
-	if err != nil {
-		log.Errorf("Error while removing temporary credentials file %s: %s", fileName, err.Error())
-	}
 }

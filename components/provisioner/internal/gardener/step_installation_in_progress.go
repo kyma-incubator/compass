@@ -32,7 +32,7 @@ func (r *ProvisioningOperator) ProceedToInstallation(log *logrus.Entry, shoot ga
 
 	dberr = session.UpdateCluster(cluster.ID, string(kubeconfig), nil)
 	if dberr != nil {
-		log.Errorf("Error saving kubeconfig in database: %s", err.Error())
+		log.Errorf("Error saving kubeconfig in database: %s", dberr.Error())
 		return dberr
 	}
 

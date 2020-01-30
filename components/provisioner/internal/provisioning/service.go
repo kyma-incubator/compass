@@ -137,7 +137,7 @@ func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {
 
 	dberr = session.InsertOperation(operation)
 	if dberr != nil {
-		return "", fmt.Errorf("Failed to insert operation to database: %s", err.Error())
+		return "", fmt.Errorf("Failed to insert operation to database: %s", dberr.Error())
 	}
 
 	return operation.ID, nil

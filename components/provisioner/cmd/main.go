@@ -126,7 +126,6 @@ func main() {
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {
 	case "hydroform":
-		exitOnError(err, "Faield to initialize secrets repository")
 		hydroformSvc := hydroform.NewHydroformService(client.NewHydroformClient(), cfg.Gardener.KubeconfigPath)
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
