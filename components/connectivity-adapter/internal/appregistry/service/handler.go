@@ -191,7 +191,7 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	var services []model.Service
+	services := []model.Service{}
 	for _, value := range output {
 		detailedService, err := h.converter.GraphQLToServiceDetails(value)
 		if err != nil {

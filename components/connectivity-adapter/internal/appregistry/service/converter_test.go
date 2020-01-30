@@ -1053,7 +1053,7 @@ func TestConverter_ServiceDetailsToService(t *testing.T) {
 		Description:      "description",
 		ShortDescription: "short description",
 		Identifier:       "identifie",
-		Labels:           &map[string]string{"blalb": "blalba",},
+		Labels:           &map[string]string{"blalb": "blalba"},
 	}
 	id := "id"
 
