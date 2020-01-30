@@ -36,32 +36,6 @@ func TestSchemaInitializer(t *testing.T) {
 			defer CloseDatabase(t, connection)
 
 			// then
-			err = CheckIfAllDatabaseTablesArePresent(connection)
-
-			assert.NoError(t, err)
-		})
-
-		t.Run("Should skip database initialization when schema already applied", func(t *testing.T) {
-			//given
-			containerCleanupFunc, connString, err := InitTestDBContainer(t, ctx, "test_DB_2")
-			require.NoError(t, err)
-			defer containerCleanupFunc()
-
-			// when
-			connection, err := postsql.InitializeDatabase(connString)
-
-			require.NoError(t, err)
-			require.NotNil(t, connection)
-			defer CloseDatabase(t, connection)
-
-			connection2, secondAttemptInitError := postsql.InitializeDatabase(connString)
-
-			// then
-			require.NoError(t, secondAttemptInitError)
-			require.NotNil(t, connection2)
-			defer CloseDatabase(t, connection2)
-
-			err = CheckIfAllDatabaseTablesArePresent(connection2)
 			assert.NoError(t, err)
 		})
 
@@ -90,6 +64,9 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
+			err = InitTestDBTables(t, connString)
+			require.NoError(t, err)
+
 			// when
 			brokerStorage, err := New(connString)
 
@@ -110,10 +87,18 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.NoError(t, err)
 			require.NotNil(t, inst)
 
-			assert.Equal(t, fixInstance, inst)
+			assert.Equal(t, fixInstance.InstanceID, inst.InstanceID)
+			assert.Equal(t, fixInstance.RuntimeID, inst.RuntimeID)
+			assert.Equal(t, fixInstance.GlobalAccountID, inst.GlobalAccountID)
+			assert.Equal(t, fixInstance.ServiceID, inst.ServiceID)
+			assert.Equal(t, fixInstance.ServicePlanID, inst.ServicePlanID)
+			assert.Equal(t, fixInstance.DashboardURL, inst.DashboardURL)
+			assert.Equal(t, fixInstance.ProvisioningParameters, inst.ProvisioningParameters)
+			assert.NotEmpty(t, inst.CreatedAt)
+			assert.NotEmpty(t, inst.UpdatedAt)
+			assert.Equal(t, "0001-01-01 00:00:00 +0000 UTC", inst.DelatedAt.String())
 		})
 	})
-
 }
 
 func fixInstance(testData string) *internal.Instance {

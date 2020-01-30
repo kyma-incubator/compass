@@ -13,8 +13,8 @@ import (
 func (i ApplicationTemplateInput) Validate() error {
 	return validation.Errors{
 		"Rule.ValidPlaceholders": i.validPlaceholders(),
-		"Name":                   validation.Validate(i.Name, validation.Required, inputvalidation.Name),
-		"Description":            validation.Validate(i.Description, validation.RuneLength(0, shortStringLengthLimit)),
+		"Name":                   validation.Validate(i.Name, validation.Required, inputvalidation.DNSName),
+		"Description":            validation.Validate(i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		"Placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),
 		"AccessLevel":            validation.Validate(i.AccessLevel, validation.Required, validation.In(ApplicationTemplateAccessLevelGlobal)),
 	}.Filter()
@@ -68,15 +68,15 @@ func (i ApplicationTemplateInput) ensurePlaceholdersUsed() error {
 
 func (i PlaceholderDefinitionInput) Validate() error {
 	return validation.ValidateStruct(&i,
-		validation.Field(&i.Name, validation.Required, inputvalidation.Name),
-		validation.Field(&i.Description, validation.RuneLength(0, shortStringLengthLimit)),
+		validation.Field(&i.Name, validation.Required, inputvalidation.DNSName),
+		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 	)
 }
 
 func (i ApplicationFromTemplateInput) Validate() error {
 	return validation.Errors{
 		"Rule.UniquePlaceholders": i.ensureUniquePlaceholders(),
-		"TemplateName":            validation.Validate(i.TemplateName, validation.Required, inputvalidation.Name),
+		"TemplateName":            validation.Validate(i.TemplateName, validation.Required, inputvalidation.DNSName),
 		"Values":                  validation.Validate(i.Values, validation.Each(validation.Required)),
 	}.Filter()
 }
@@ -98,7 +98,7 @@ func (i ApplicationFromTemplateInput) ensureUniquePlaceholders() error {
 
 func (i TemplateValueInput) Validate() error {
 	return validation.ValidateStruct(&i,
-		validation.Field(&i.Placeholder, validation.Required, inputvalidation.Name),
+		validation.Field(&i.Placeholder, validation.Required, inputvalidation.DNSName),
 		validation.Field(&i.Value, validation.RuneLength(0, shortStringLengthLimit)),
 	)
 }

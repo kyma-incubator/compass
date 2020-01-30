@@ -18,8 +18,10 @@ go run cmd//main.go
 
 The Connectivity Adapter binary allows you to override some configuration parameters. You can specify the following environment variables:
 
-| Environment variable              | Default value      | Description                                       |
-| ---------------- | -------------- | ------------------------------------------------- |
-| **APP_ADDRESS**      | `127.0.0.1:8080` | Address and port for the service to listen on |
-| **APP_APP_REGISTRY_DIRECTOR_ENDPOINT** | `127.0.0.1:3000/graphql` | GraphQL endpoint of the running Director component                      |
- 
+| Environment variable                    | Default value                                                                    | Description                                                                 |                                                                             
+| ----------------------------------------| ---------------------------------------------------------------------------------| --------------------------------------------------------------------------- |
+| **APP_ADDRESS**      | `127.0.0.1:8080` | Address and port for the service to listen on                                    |                                                                             |
+| **APP_APP_REGISTRY_DIRECTOR_ENDPOINT**  | `127.0.0.1:3000/graphql`                                                         | GraphQL endpoint of the running Director component                          |                      
+| **APP_CONNECTOR_CONNECTOR_ENDPOINT**    | `http://compass-connector.compass-system.svc.cluster.local:3000/graphql`         | GraphQL endpoint of the running Connector component                         |
+| **APP_CONNECTOR_ADAPTER_BASE_URL**      | `https://adapter-gateway.kyma.local`                                             | Token secured endpoint of the Connectivity Adapter component                |
+| **APP_CONNECTOR_ADAPTER_MTLS_BASE_URL** | `https://adapter-gateway-mtls.kyma.local`                                        | Certificate secured endpoint of the Connectivity Adapter component          |

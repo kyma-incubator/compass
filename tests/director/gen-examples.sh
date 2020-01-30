@@ -65,6 +65,7 @@ docker run --rm --network=${NETWORK} \
     -e DB_NAME=${DB_NAME} \
     -e DB_SSL=${DB_SSL_PARAM} \
     -e DIRECTION="up" \
+    -e MIGRATION_PATH="director" \
     ${MIGRATOR_IMG_NAME}
 
 echo -e "${GREEN}Building Director image...${NC}"

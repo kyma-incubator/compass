@@ -442,7 +442,8 @@ func TestUpdateApplication(t *testing.T) {
 	expectedApp.Name = "after"
 	expectedApp.ProviderName = ptr.String("after")
 	expectedApp.Description = ptr.String("after")
-	expectedApp.HealthCheckURL = ptr.String("https://kyma-project.io")
+	expectedApp.HealthCheckURL = ptr.String(webhookURL)
+	expectedApp.Labels["name"] = "after"
 
 	updateInput := fixSampleApplicationUpdateInput("after")
 	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)

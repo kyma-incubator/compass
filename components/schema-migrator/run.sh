@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-for var in DB_USER DB_HOST DB_NAME DB_PORT DB_PASSWORD DIRECTION; do
+for var in DB_USER DB_HOST DB_NAME DB_PORT DB_PASSWORD MIGRATION_PATH DIRECTION; do
     if [ -z "${!var}" ] ; then
         echo "ERROR: $var is not set"
         discoverUnsetVar=true
@@ -42,7 +42,7 @@ fi
 
 CONNECTION_STRING="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME"
 
-CMD="migrate -path migrations -database "$CONNECTION_STRING" ${DIRECTION}"
+CMD="migrate -path migrations/${MIGRATION_PATH} -database "$CONNECTION_STRING" ${DIRECTION}"
 echo '# STARTING MIGRATION #'
 if [[ "${NON_INTERACTIVE}" == "true" ]]; then
     yes | $CMD

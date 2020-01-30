@@ -56,14 +56,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			if err != nil {
 				wrappedErr := errors.Wrap(err, "while parsing token")
 				log.Error(wrappedErr)
-
-				vErr, ok := err.(*jwt.ValidationError)
-				if !ok || !isInvalidTenantError(vErr.Inner) {
-					a.writeError(w, wrappedErr.Error(), http.StatusUnauthorized)
-					return
-				}
-
-				a.writeError(w, fmt.Sprintf("forbidden: %s", err.Error()), http.StatusForbidden)
+				a.writeError(w, wrappedErr.Error(), http.StatusUnauthorized)
 				return
 			}
 

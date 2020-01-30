@@ -2,6 +2,8 @@ package main
 
 import (
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes/clientbuilder"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -49,8 +51,7 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 		gardenerAccountPool = hyperscaler.NewAccountPool(gardenerSecrets)
 	}
 
-	tenantName := config.DefaultTenant
-	accountProvider := hyperscaler.NewAccountProvider(compassAccountPool, gardenerAccountPool, tenantName)
+	accountProvider := hyperscaler.NewAccountProvider(compassAccountPool, gardenerAccountPool)
 
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo, accountProvider)
 	graphQLConverter := provisioning.NewGraphQLConverter()
@@ -58,9 +59,11 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 	gqlClient := graphql.NewGraphQLClient(config.DirectorURL, true, config.SkipDirectorCertVerification)
 	oauthClient := oauth.NewOauthClient(newHTTPClient(config.SkipDirectorCertVerification), compassSecrets, config.OauthCredentialsSecretName)
 
-	directorClient := director.NewDirectorClient(gqlClient, oauthClient, config.DefaultTenant)
+	directorClient := director.NewDirectorClient(gqlClient, oauthClient)
 
-	return provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformService, installationService, directorClient)
+	configProvider := runtimes.NewRuntimeConfigProvider(config.CredentialsNamespace, clientbuilder.NewConfigMapClientBuilder())
+
+	return provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformService, installationService, directorClient, configProvider)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
@@ -115,7 +118,10 @@ func newResolver(config config, persistenceService persistence.Service, releaseR
 		return nil, errors.Wrap(err, "Failed to create Gardener secrets interface")
 	}
 
-	return api.NewResolver(newProvisioningService(config, persistenceService, compassSecrets, gardenerSecrets, releaseRepo)), nil
+	return api.NewResolver(
+		newProvisioningService(config, persistenceService, compassSecrets, gardenerSecrets, releaseRepo),
+		api.NewValidator(persistenceService),
+	), nil
 }
 
 func initRepositories(config config, connectionString string) (persistence.Service, release.Repository, error) {

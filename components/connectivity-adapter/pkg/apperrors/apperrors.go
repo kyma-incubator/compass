@@ -5,7 +5,6 @@ package apperrors
 
 import (
 	"fmt"
-	"strings"
 )
 
 const (
@@ -14,6 +13,7 @@ const (
 	CodeAlreadyExists            = 3
 	CodeWrongInput               = 4
 	CodeUpstreamServerCallFailed = 5
+	CodeForbidden                = 6
 )
 
 type AppError interface {
@@ -73,5 +73,10 @@ func IsNotFoundError(err error) bool {
 		return false
 	}
 
-	return strings.Contains(err.Error(), "Object was not found")
+	appErr, ok := err.(appError)
+	if !ok {
+		return false
+	}
+
+	return appErr.Code() == CodeNotFound
 }

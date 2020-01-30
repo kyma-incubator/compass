@@ -1,6 +1,7 @@
 package application_test
 
 import (
+	"net/url"
 	"testing"
 	"time"
 
@@ -407,10 +408,13 @@ func fixLabelInput(key string, value string, objectID string, objectType model.L
 	}
 }
 
-func fixModelApplicationEventingConfiguration(url string) *model.ApplicationEventingConfiguration {
+func fixModelApplicationEventingConfiguration(t *testing.T, rawURL string) *model.ApplicationEventingConfiguration {
+	validURL, err := url.Parse(rawURL)
+	require.NoError(t, err)
+	require.NotNil(t, validURL)
 	return &model.ApplicationEventingConfiguration{
 		EventingConfiguration: model.EventingConfiguration{
-			DefaultURL: url,
+			DefaultURL: *validURL,
 		},
 	}
 }

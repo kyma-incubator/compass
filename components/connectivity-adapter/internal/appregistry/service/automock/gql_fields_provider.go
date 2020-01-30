@@ -10,6 +10,26 @@ type GqlFieldsProvider struct {
 	mock.Mock
 }
 
+// ForAPIDefinition provides a mock function with given fields: ctx
+func (_m *GqlFieldsProvider) ForAPIDefinition(ctx ...gql.FieldCtx) string {
+	_va := make([]interface{}, len(ctx))
+	for _i := range ctx {
+		_va[_i] = ctx[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(...gql.FieldCtx) string); ok {
+		r0 = rf(ctx...)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // ForApplication provides a mock function with given fields: ctx
 func (_m *GqlFieldsProvider) ForApplication(ctx ...gql.FieldCtx) string {
 	_va := make([]interface{}, len(ctx))
@@ -23,6 +43,48 @@ func (_m *GqlFieldsProvider) ForApplication(ctx ...gql.FieldCtx) string {
 	var r0 string
 	if rf, ok := ret.Get(0).(func(...gql.FieldCtx) string); ok {
 		r0 = rf(ctx...)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// ForEventDefinition provides a mock function with given fields:
+func (_m *GqlFieldsProvider) ForEventDefinition() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// ForLabel provides a mock function with given fields:
+func (_m *GqlFieldsProvider) ForLabel() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Page provides a mock function with given fields: item
+func (_m *GqlFieldsProvider) Page(item string) string {
+	ret := _m.Called(item)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(item)
 	} else {
 		r0 = ret.Get(0).(string)
 	}

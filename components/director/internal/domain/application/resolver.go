@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -37,6 +39,7 @@ type ApplicationConverter interface {
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
 	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
+	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
 }
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
@@ -78,7 +81,7 @@ type EventAPIConverter interface {
 //go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
 type EventingService interface {
 	CleanupAfterUnregisteringApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
-	GetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
+	GetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error)
 }
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
@@ -740,10 +743,14 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 	if obj == nil {
 		return nil, errors.New("Application cannot be empty")
 	}
-
-	appID, err := uuid.Parse(obj.ID)
+	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "while parsing application ID as UUID")
+		return nil, errors.New("error while loading tenant from context")
+	}
+
+	app := r.appConverter.GraphQLToModel(obj, tenantID)
+	if app == nil {
+		return nil, errors.New("application cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -754,7 +761,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventingCfg, err := r.eventingSvc.GetForApplication(ctx, appID)
+	eventingCfg, err := r.eventingSvc.GetForApplication(ctx, *app)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching eventing cofiguration for application")
 	}

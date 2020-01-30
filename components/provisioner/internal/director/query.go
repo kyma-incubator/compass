@@ -15,3 +15,10 @@ func (qp queryProvider) deleteRuntimeMutation(runtimeID string) string {
 		id
 }}`, runtimeID)
 }
+
+func (qp queryProvider) requestOneTimeTokeneMutation(runtimeID string) string {
+	return fmt.Sprintf(`mutation {
+	result: requestOneTimeTokenForRuntime(id: "%s") {
+		token connectorURL
+}}`, runtimeID)
+}

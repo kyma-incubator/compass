@@ -21,18 +21,23 @@ func TestEventAPIDefinitionInput_Validate_Name(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
+			Name:          "Valid Printable ASCII",
+			Value:         "V1 +=_-)(*&^%$#@!?/>.<,|\\\"':;}{][",
+			ExpectedValid: true,
+		},
+		{
 			Name:          "Empty string",
 			Value:         inputvalidationtest.EmptyString,
 			ExpectedValid: false,
 		},
 		{
-			Name:          "Invalid Upper Case Letters",
-			Value:         "Invalid",
+			Name:          "String longer than 100 chars",
+			Value:         inputvalidationtest.String129Long,
 			ExpectedValid: false,
 		},
 		{
-			Name:          "String longer than 37 chars",
-			Value:         inputvalidationtest.String37Long,
+			Name:          "String contains invalid ASCII",
+			Value:         "ąćńłóęǖǘǚǜ",
 			ExpectedValid: false,
 		},
 	}
@@ -76,8 +81,8 @@ func TestEventAPIDefinitionInput_Validate_Description(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name:          "String longer than 128 chars",
-			Value:         str.Ptr(inputvalidationtest.String129Long),
+			Name:          "String longer than 2000 chars",
+			Value:         str.Ptr(inputvalidationtest.String2001Long),
 			ExpectedValid: false,
 		},
 	}

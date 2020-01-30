@@ -2,6 +2,11 @@ package eventing
 
 import (
 	"context"
+	"fmt"
+	"net/url"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
@@ -16,7 +21,10 @@ var tenantID = uuid.New()
 var runtimeID = uuid.New()
 var applicationID = uuid.New()
 
-const dummyEventingURL = "https://eventing.domain.local"
+const (
+	eventURLSchema  = "https://eventing.domain.local/%s/v1/events"
+	runtimeEventURL = "https://eventing.domain.local"
+)
 
 func fixCtxWithTenant() context.Context {
 	ctx := context.TODO()
@@ -32,20 +40,22 @@ func fixRuntimeEventingURLLabel() *model.Label {
 		ObjectID:   runtimeID.String(),
 		ObjectType: model.RuntimeLabelableObject,
 		Tenant:     tenantID.String(),
-		Value:      dummyEventingURL,
+		Value:      runtimeEventURL,
 	}
 }
 
-func fixRuntimeEventngCfgWithURL(url string) *model.RuntimeEventingConfiguration {
+func fixRuntimeEventngCfgWithURL(t *testing.T, rawURL string) *model.RuntimeEventingConfiguration {
+	validURL := fixValidURL(t, rawURL)
+
 	return &model.RuntimeEventingConfiguration{
 		EventingConfiguration: model.EventingConfiguration{
-			DefaultURL: url,
+			DefaultURL: validURL,
 		},
 	}
 }
 
-func fixRuntimeEventngCfgWithEmptyURL() *model.RuntimeEventingConfiguration {
-	return fixRuntimeEventngCfgWithURL(EmptyEventingURL)
+func fixRuntimeEventngCfgWithEmptyURL(t *testing.T) *model.RuntimeEventingConfiguration {
+	return fixRuntimeEventngCfgWithURL(t, EmptyEventingURL)
 }
 
 func fixRuntimes() []*model.Runtime {
@@ -130,10 +140,11 @@ func fixMatcherDefaultEventingForAppLabel() func(l *model.Label) bool {
 	}
 }
 
-func fixModelApplicationEventingConfiguration(url string) *model.ApplicationEventingConfiguration {
+func fixModelApplicationEventingConfiguration(t *testing.T, rawURL string) *model.ApplicationEventingConfiguration {
+	validURL := fixValidURL(t, rawURL)
 	return &model.ApplicationEventingConfiguration{
 		EventingConfiguration: model.EventingConfiguration{
-			DefaultURL: url,
+			DefaultURL: validURL,
 		},
 	}
 }
@@ -142,4 +153,24 @@ func fixGQLApplicationEventingConfiguration(url string) *graphql.ApplicationEven
 	return &graphql.ApplicationEventingConfiguration{
 		DefaultURL: url,
 	}
+}
+
+func fixValidURL(t *testing.T, rawURL string) url.URL {
+	eventingURL, err := url.Parse(rawURL)
+	require.NoError(t, err)
+	require.NotNil(t, eventingURL)
+	return *eventingURL
+}
+
+func fixApplicationModel(name string) model.Application {
+	return model.Application{
+		ID:     applicationID.String(),
+		Tenant: tenantID.String(),
+		Name:   name,
+	}
+}
+
+func fixAppEventURL(t *testing.T, appName string) url.URL {
+	eventURL := fmt.Sprintf(eventURLSchema, appName)
+	return fixValidURL(t, eventURL)
 }
