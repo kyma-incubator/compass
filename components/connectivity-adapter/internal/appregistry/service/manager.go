@@ -22,6 +22,7 @@ type AppLabeler interface {
 	DeleteServiceReference(appDetails graphql.ApplicationExt, serviceID string) (graphql.LabelInput, error)
 	ReadServiceReference(appDetails graphql.ApplicationExt, serviceID string) (LegacyServiceReference, error)
 	ReadService(appDetails graphql.ApplicationExt, serviceID string) (model.GraphQLServiceDetails, error)
+	ListServices(appDetails graphql.ApplicationExt) ([]model.GraphQLServiceDetails, error)
 }
 
 type serviceManager struct {
@@ -56,15 +57,11 @@ func (s *serviceManager) Create(serviceDetails model.GraphQLServiceDetailsInput)
 }
 
 func (s *serviceManager) GetFromApplicationDetails(serviceID string) (model.GraphQLServiceDetails, error) {
-	output, err := s.appLabeler.ReadService(s.appDetails, serviceID)
-	if err != nil {
-		return model.GraphQLServiceDetails{}, err
-	}
-	return output, err
+	return s.appLabeler.ReadService(s.appDetails, serviceID)
 }
 
 func (s *serviceManager) ListFromApplicationDetails() ([]model.GraphQLServiceDetails, error) {
-	panic("implement me")
+	return s.appLabeler.ListServices(s.appDetails)
 }
 
 func (s *serviceManager) Update(serviceDetails model.GraphQLServiceDetailsInput) error {

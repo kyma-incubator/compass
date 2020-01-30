@@ -190,6 +190,7 @@ func (c *converter) DetailsToGraphQLInput(id string, deprecated model.ServiceDet
 func (c *converter) GraphQLToServiceDetails(in model.GraphQLServiceDetails) (model.ServiceDetails, error) {
 	outDeprecated := model.ServiceDetails{}
 	if in.API != nil {
+		outDeprecated.Name = in.API.Name
 		outDeprecated.Api = &model.API{
 			TargetUrl: in.API.TargetURL,
 		}
@@ -482,6 +483,17 @@ func (c *converter) GraphQLToDetailsModel(in graphql.ApplicationExt) (model.Serv
 	// TODO docs later
 	return outDeprecated, nil
 
+}
+
+func (c *converter) ServiceDetailsToService(in model.ServiceDetails) (model.Service, error) {
+	return model.Service{
+		ID:          "",
+		Provider:    in.Provider,
+		Name:        in.Name,
+		Description: in.Description,
+		Identifier:  in.Identifier,
+		Labels:      in.Labels,
+	}, nil
 }
 
 func (c *converter) GraphQLToModel(in graphql.ApplicationExt) (model.Service, error) {

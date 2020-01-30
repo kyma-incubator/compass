@@ -3,9 +3,8 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"net/http"
-
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
@@ -19,6 +18,7 @@ import (
 type Converter interface {
 	DetailsToGraphQLInput(id string, deprecated model.ServiceDetails) (model.GraphQLServiceDetailsInput, error)
 	GraphQLToServiceDetails(converted model.GraphQLServiceDetails) (model.ServiceDetails, error)
+	GraphQLToModel(in graphql.ApplicationExt) (model.Service, error)
 }
 
 ////go:generate mockery -name=AppOperator -output=automock -outpkg=automock -case=underscore
@@ -175,18 +175,48 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
-	h.logger.Println("List")
-	//TODO: Implement it, currently this endpoint purpose is for manually testing appdetails middleware
+	defer h.closeBody(request)
+	serviceID := h.getServiceID(request)
 
-	ctx := request.Context()
-	app, err := appdetails.LoadFromContext(ctx)
+	serviceManager, err := h.serviceManager.ForRequest(request)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "while getting service from context")
+		wrappedErr := errors.Wrap(err, "while requesting Service Manager")
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	output, err := serviceManager.ListFromApplicationDetails()
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			h.writeErrorNotFound(writer, serviceID)
+			return
+		}
+		wrappedErr := errors.Wrap(err, "while fetching service")
 		h.logger.Error(wrappedErr)
 		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
-	log.Infof("Application from ctx: %+v", app)
+
+	var services []model.Service
+	for _, value := range output {
+		detailedService, err := h.converter.GraphQLToServiceDetails(value)
+		if err != nil {
+			wrappedErr := errors.Wrap(err, "while converting service")
+			h.logger.Error(wrappedErr)
+			reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+			return
+		}
+
+
+		services = append(services, )
+	}
+	err = json.NewEncoder(writer).Encode(&services)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while encoding response")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
 
 	writer.WriteHeader(http.StatusNotImplemented)
 }

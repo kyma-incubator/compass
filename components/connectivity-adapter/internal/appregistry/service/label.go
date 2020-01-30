@@ -97,6 +97,22 @@ func (l *labeler) ReadService(appDetails graphql.ApplicationExt, serviceID strin
 	}, nil
 }
 
+func (l *labeler) ListServices(appDetails graphql.ApplicationExt) ([]model.GraphQLServiceDetails, error) {
+	services, err := l.readLabel(appDetails)
+	if err != nil {
+		return nil, err
+	}
+	var serviceReferences []model.GraphQLServiceDetails
+	for serviceIDKey, _ := range services {
+		value, err := l.ReadService(appDetails, serviceIDKey)
+		if err != nil {
+			return nil, err
+		}
+		serviceReferences = append(serviceReferences, value)
+	}
+	return serviceReferences, nil
+}
+
 func (l *labeler) readLabel(appDetails graphql.ApplicationExt) (map[string]LegacyServiceReference, error) {
 	value := appDetails.Labels[legacyServicesLabelKey]
 	if value == nil {
