@@ -21,7 +21,7 @@ type AppLabeler interface {
 	WriteServiceReference(appDetails graphql.ApplicationExt, serviceReference LegacyServiceReference) (graphql.LabelInput, error)
 	DeleteServiceReference(appDetails graphql.ApplicationExt, serviceID string) (graphql.LabelInput, error)
 	ReadServiceReference(appDetails graphql.ApplicationExt, serviceID string) (LegacyServiceReference, error)
-	ReadService(appDetails graphql.ApplicationExt, serviceID string) (GraphQLServiceDetails, error)
+	ReadService(appDetails graphql.ApplicationExt, serviceID string) (model.GraphQLServiceDetails, error)
 }
 
 type serviceManager struct {
@@ -56,39 +56,11 @@ func (s *serviceManager) Create(serviceDetails model.GraphQLServiceDetailsInput)
 }
 
 func (s *serviceManager) GetFromApplicationDetails(serviceID string) (model.GraphQLServiceDetails, error) {
-	serviceRef, err := s.appLabeler.ReadServiceReference(s.appDetails, serviceID)
+	output, err := s.appLabeler.ReadService(s.appDetails, serviceID)
 	if err != nil {
 		return model.GraphQLServiceDetails{}, err
 	}
-	var outputApi *graphql.APIDefinitionExt
-	if serviceRef.APIDefID != nil {
-		for _, api := range s.appDetails.APIDefinitions.Data {
-			if api == nil {
-				continue
-			}
-			if api.ID == *serviceRef.APIDefID {
-				outputApi = api
-			}
-		}
-	}
-
-	var outputEvent *graphql.EventAPIDefinitionExt
-	if serviceRef.EventDefID != nil {
-		for _, event := range s.appDetails.EventDefinitions.Data {
-			if event == nil {
-				continue
-			}
-			if event.ID == *serviceRef.EventDefID {
-				outputEvent = event
-			}
-		}
-	}
-
-	return model.GraphQLServiceDetails{
-		ID:    serviceRef.ID,
-		API:   outputApi,
-		Event: outputEvent,
-	}, nil
+	return output, err
 }
 
 func (s *serviceManager) ListFromApplicationDetails() ([]model.GraphQLServiceDetails, error) {

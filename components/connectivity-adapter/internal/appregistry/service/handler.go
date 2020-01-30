@@ -7,27 +7,13 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
-
-type GraphQLServiceDetailsInput struct {
-	ID    string
-	API   *graphql.APIDefinitionInput
-	Event *graphql.EventDefinitionInput
-}
-
-type GraphQLServiceDetails struct {
-	ID    string
-	API   *graphql.APIDefinitionExt
-	Event *graphql.EventDefinition
-}
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
@@ -159,13 +145,13 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 
 	output, err := serviceManager.GetFromApplicationDetails(serviceID)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "while fetching service")
 		if apperrors.IsNotFoundError(err) {
 			h.writeErrorNotFound(writer, serviceID)
-		} else {
-			h.logger.Error(wrappedErr)
-			reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+			return
 		}
+		wrappedErr := errors.Wrap(err, "while fetching service")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
