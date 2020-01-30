@@ -957,9 +957,11 @@ func Test2(t *testing.T) {
 		},
 		"events": {
 			given: model.GraphQLServiceDetails{
-				Event: &graphql.EventDefinition{
-					Spec: &graphql.EventSpec{
-						Data: ptrClob(graphql.CLOB(`asyncapi: "1.2.0"`)),
+				Event: &graphql.EventAPIDefinitionExt{
+					Spec: &graphql.EventAPISpecExt{
+						EventSpec: graphql.EventSpec{
+							Data: ptrClob(`asyncapi: "1.2.0"`),
+						},
 					},
 				},
 			},
