@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
 //go:generate mockery -name=TenantMappingRepository -output=automock -outpkg=automock -case=underscore
@@ -145,6 +146,9 @@ func (s *service) Delete(ctx context.Context, tenantInputs []model.BusinessTenan
 	for _, tenantInput := range tenantInputs {
 		tenant, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenantInput.ExternalTenant)
 		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				continue
+			}
 			return errors.Wrap(err, "while getting the tenant mapping")
 		}
 
