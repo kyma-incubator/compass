@@ -56,20 +56,13 @@ func (c GardenerConfig) ToShootTemplate(namespace string) (*gardener_types.Shoot
 			SecretBindingName: c.TargetSecret,
 			SeedName:          seed,
 			Region:            c.Region,
-			//Cloud: gardener_types.Cloud{
-			//	Region: c.Region,
-			//	SecretBindingRef: corev1.LocalObjectReference{
-			//		Name: c.TargetSecret,
-			//	},
-			//	Seed: seed,
-			//},
 			Kubernetes: gardener_types.Kubernetes{
 				AllowPrivilegedContainers: &allowPrivlagedContainers,
 				Version:                   c.KubernetesVersion,
 			},
 			Networking: gardener_types.Networking{
-				Type:  "calico",        // Default value
-				Nodes: "10.250.0.0/19", // TODO: it is required - provide configuration in API
+				Type:  "calico",        // Default value - we may consider adding it to API (if Hydroform will support it)
+				Nodes: "10.250.0.0/19", // TODO: it is required - provide configuration in API (when Hydroform will support it)
 			},
 			Maintenance: &gardener_types.Maintenance{},
 		},
@@ -208,9 +201,15 @@ func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
 	}
 
+	gcpControlPlane := NewGCPControlPlane(c.input.Zone)
+	jsonCPData, err := json.Marshal(gcpControlPlane)
+	if err != nil {
+		return fmt.Errorf("error encoding control plane config: %s", err.Error())
+	}
+
 	shoot.Spec.Provider = gardener_types.Provider{
 		Type:                 "gcp",
-		ControlPlaneConfig:   nil,
+		ControlPlaneConfig:   &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonCPData}},
 		InfrastructureConfig: &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonData}},
 		Workers:              workers,
 	}
@@ -274,9 +273,15 @@ func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, sh
 		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
 	}
 
+	azureControlPlane := NewAzureControlPlane()
+	jsonCPData, err := json.Marshal(azureControlPlane)
+	if err != nil {
+		return fmt.Errorf("error encoding control plane config: %s", err.Error())
+	}
+
 	shoot.Spec.Provider = gardener_types.Provider{
-		Type:                 "az",
-		ControlPlaneConfig:   nil,
+		Type:                 "azure",
+		ControlPlaneConfig:   &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonCPData}},
 		InfrastructureConfig: &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonData}},
 		Workers:              workers,
 	}
@@ -335,9 +340,15 @@ func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
 	}
 
+	awsControlPlane := NewAWSControlPlane()
+	jsonCPData, err := json.Marshal(awsControlPlane)
+	if err != nil {
+		return fmt.Errorf("error encoding control plane config: %s", err.Error())
+	}
+
 	shoot.Spec.Provider = gardener_types.Provider{
 		Type:                 "aws",
-		ControlPlaneConfig:   nil,
+		ControlPlaneConfig:   &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonCPData}},
 		InfrastructureConfig: &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonData}},
 		Workers:              workers,
 	}

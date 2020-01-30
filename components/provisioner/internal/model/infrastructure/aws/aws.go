@@ -13,7 +13,7 @@ type InfrastructureConfig struct {
 	// EnableECRAccess specifies whether the IAM role policy for the worker nodes shall contain
 	// permissions to access the ECR.
 	// default: true
-	EnableECRAccess *bool `json:"enableECRAccess"`
+	EnableECRAccess *bool `json:"enableECRAccess,omitempty"`
 
 	// Networks is the AWS specific network configuration (VPC, subnets, etc.)
 	Networks Networks `json:"networks"`
@@ -42,7 +42,7 @@ type Zone struct {
 // VPC contains information about the AWS VPC and some related resources.
 type VPC struct {
 	// ID is the VPC id.
-	ID *string `json:"id"`
+	ID *string `json:"id,omitempty"`
 	// CIDR is the VPC CIDR.
-	CIDR *string `json:"cidr"`
+	CIDR *string `json:"cidr,omitempty"`
 }

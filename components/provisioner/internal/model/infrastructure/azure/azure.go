@@ -8,7 +8,7 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 type InfrastructureConfig struct {
 	metav1.TypeMeta
 	// ResourceGroup is azure resource group
-	ResourceGroup *ResourceGroup `json:"resourceGroup"`
+	ResourceGroup *ResourceGroup `json:"resourceGroup,omitempty"`
 	// Networks is the network configuration (VNets, subnets, etc.)
 	Networks NetworkConfig `json:"networks"`
 	// Zoned indicates whether the cluster uses zones
@@ -28,17 +28,17 @@ type NetworkConfig struct {
 	// Workers is the worker subnet range to create (used for the VMs).
 	Workers string `json:"workers"`
 	// ServiceEndpoints is a list of Azure ServiceEndpoints which should be associated with the worker subnet.
-	ServiceEndpoints []string `json:"serviceEndpoints"`
+	ServiceEndpoints []string `json:"serviceEndpoints,omitempty"`
 }
 
 // VNet contains information about the VNet and some related resources.
 type VNet struct {
 	// Name is the VNet name.
-	Name *string `json:"name"`
+	Name *string `json:"name,omitempty"`
 	// ResourceGroup is the resource group where the existing vNet belongs to.
-	ResourceGroup *string `json:"resourceGroup"`
+	ResourceGroup *string `json:"resourceGroup,omitempty"`
 	// CIDR is the VNet CIDR
-	CIDR *string `json:"cidr"`
+	CIDR *string `json:"cidr,omitempty"`
 }
 
 // VNetStatus contains the VNet name.
@@ -46,5 +46,5 @@ type VNetStatus struct {
 	// Name is the VNet name.
 	Name string `json:"name"`
 	// ResourceGroup is the resource group where the existing vNet belongs to.
-	ResourceGroup *string `json:"resourceGroup"`
+	ResourceGroup *string `json:"resourceGroup,omitempty"`
 }
