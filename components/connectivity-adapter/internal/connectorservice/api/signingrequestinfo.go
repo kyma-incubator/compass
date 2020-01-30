@@ -1,11 +1,11 @@
 package api
 
 import (
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
@@ -21,11 +21,11 @@ const (
 )
 
 type csrInfoHandler struct {
-	gqlClient graphql.Client
+	gqlClient connector.Client
 	logger    *log.Logger
 }
 
-func NewSigningRequestInfoHandler(client graphql.Client, logger *log.Logger) csrInfoHandler {
+func NewSigningRequestInfoHandler(client connector.Client, logger *log.Logger) csrInfoHandler {
 	return csrInfoHandler{
 		gqlClient: client,
 		logger:    logger,
@@ -64,7 +64,7 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	certInfo := graphql.ToCertInfo(configuration)
+	certInfo := connector.ToCertInfo(configuration)
 
 	//TODO: handle case when configuration.Token is nil
 	csrInfoResponse := ci.makeCSRInfoResponse(

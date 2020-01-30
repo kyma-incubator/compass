@@ -1,10 +1,10 @@
 package api
 
 import (
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/director"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
@@ -14,13 +14,13 @@ import (
 )
 
 type managementInfoHandler struct {
-	gqlClient                      graphql.Client
+	gqlClient                      connector.Client
 	logger                         *log.Logger
 	connectivityAdapterMTLSBaseURL string
 	directorClientProvider         director.DirectorClientProvider
 }
 
-func NewManagementInfoHandler(client graphql.Client, logger *log.Logger, connectivityAdapterMTLSBaseURL string, directorClientProvider director.DirectorClientProvider) managementInfoHandler {
+func NewManagementInfoHandler(client connector.Client, logger *log.Logger, connectivityAdapterMTLSBaseURL string, directorClientProvider director.DirectorClientProvider) managementInfoHandler {
 	return managementInfoHandler{
 		gqlClient:                      client,
 		logger:                         logger,
@@ -64,7 +64,7 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 		return
 	}
 
-	certInfo := graphql.ToCertInfo(configuration)
+	certInfo := connector.ToCertInfo(configuration)
 
 	//TODO: handle case when configuration.Token is nil
 	managementInfoResponse := mh.makeManagementInfoResponse(

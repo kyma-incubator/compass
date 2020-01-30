@@ -2,11 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
@@ -18,11 +18,11 @@ type certRequest struct {
 }
 
 type certificatesHandler struct {
-	client graphql.Client
+	client connector.Client
 	logger *log.Logger
 }
 
-func NewCertificatesHandler(client graphql.Client, logger *log.Logger) certificatesHandler {
+func NewCertificatesHandler(client connector.Client, logger *log.Logger) certificatesHandler {
 	return certificatesHandler{
 		client: client,
 		logger: logger,
@@ -58,7 +58,7 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		certResponse := graphql.ToCertResponse(certificationResult)
+		certResponse := connector.ToCertResponse(certificationResult)
 		respondWithBody(w, http.StatusCreated, certResponse, contextLogger)
 	}
 }

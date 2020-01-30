@@ -1,10 +1,10 @@
 package api
 
 import (
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
@@ -12,11 +12,11 @@ import (
 )
 
 type revocationsHandler struct {
-	gqlClient graphql.Client
+	gqlClient connector.Client
 	logger    *log.Logger
 }
 
-func NewRevocationsHandler(client graphql.Client, logger *log.Logger) revocationsHandler {
+func NewRevocationsHandler(client connector.Client, logger *log.Logger) revocationsHandler {
 	return revocationsHandler{
 		gqlClient: client,
 		logger:    logger,

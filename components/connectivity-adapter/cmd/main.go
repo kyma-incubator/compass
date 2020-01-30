@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry"
-	connector "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector"
+	connector "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/health"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"

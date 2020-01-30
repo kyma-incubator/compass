@@ -1,10 +1,10 @@
 package api
 
 import (
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	log "github.com/sirupsen/logrus"
@@ -13,12 +13,12 @@ import (
 const ApplicationHeader = "Application"
 
 type tokenHandler struct {
-	gqlClient                  graphql.Client
+	gqlClient                  connector.Client
 	logger                     *log.Logger
 	connectivityAdapterBaseURL string
 }
 
-func NewTokenHandler(client graphql.Client, connectivityAdapterBaseURL string, logger *log.Logger) tokenHandler {
+func NewTokenHandler(client connector.Client, connectivityAdapterBaseURL string, logger *log.Logger) tokenHandler {
 	return tokenHandler{
 		gqlClient:                  client,
 		connectivityAdapterBaseURL: connectivityAdapterBaseURL,

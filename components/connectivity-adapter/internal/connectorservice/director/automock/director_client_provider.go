@@ -2,7 +2,7 @@
 
 package automock
 
-import director "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/director"
+import director "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director"
 import http "net/http"
 import mock "github.com/stretchr/testify/mock"
 

@@ -12,10 +12,10 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
-	directorMocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/director/automock"
-	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql/automock"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
+	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector/automock"
+	directorMocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director/automock"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	externalSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -120,6 +120,11 @@ func TestHandlerManagementInfo(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
 		directorClientProviderMock := &directorMocks.DirectorClientProvider{}
+		directorClientMock := &directorMocks.Client{}
+
+		directorClientMock.On("GetApplication", "systemAuthID").Return(externalSchema.ApplicationExt{}, nil)
+
+		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 
 		connectorClientMock.On("Configuration", headersFromToken).Return(schema.Configuration{}, apperrors.Internal("error"))
 
@@ -151,21 +156,5 @@ func TestHandlerManagementInfo(t *testing.T) {
 
 		// then
 		assert.Equal(t, http.StatusForbidden, r.Code)
-	})
-
-	t.Run("Should return error when Base URLs context not passed", func(t *testing.T) {
-		// given
-		connectorClientMock := &mocks.Client{}
-		directorClientProviderMock := &directorMocks.DirectorClientProvider{}
-
-		r := httptest.NewRecorder()
-		req := newRequestWithContext(strings.NewReader(""), headersFromToken, nil)
-		handler := NewManagementInfoHandler(connectorClientMock, logrus.New(), "", directorClientProviderMock)
-
-		// when
-		handler.GetManagementInfo(r, req)
-
-		// then
-		assert.Equal(t, http.StatusInternalServerError, r.Code)
 	})
 }

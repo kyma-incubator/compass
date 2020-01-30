@@ -1,15 +1,15 @@
-package connector
+package connectorservice
 
 import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/director"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director"
 
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -29,7 +29,7 @@ func RegisterExternalHandler(router *mux.Router, config Config, directorURL stri
 	logger := logrus.New().WithField("component", "connector").Logger
 	logger.SetReportCaller(true)
 
-	client, err := graphql.NewClient(config.ConnectorEndpoint, config.ConnectorInternalEndpoint, timeout)
+	client, err := connector.NewClient(config.ConnectorEndpoint, config.ConnectorInternalEndpoint, timeout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to initialize compass client")
 	}
@@ -51,27 +51,27 @@ func RegisterExternalHandler(router *mux.Router, config Config, directorURL stri
 	return nil
 }
 
-func newSigningRequestInfoHandler(config Config, client graphql.Client, logger *logrus.Logger) http.Handler {
+func newSigningRequestInfoHandler(config Config, client connector.Client, logger *logrus.Logger) http.Handler {
 	signingRequestInfo := api.NewSigningRequestInfoHandler(client, logger)
 	signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetSigningRequestInfo)
 
 	return signingRequestInfoHandler
 }
 
-func newManagementInfoHandler(config Config, client graphql.Client, logger *logrus.Logger, directorURL string) http.Handler {
+func newManagementInfoHandler(config Config, client connector.Client, logger *logrus.Logger, directorURL string) http.Handler {
 	managementInfo := api.NewManagementInfoHandler(client, logger, config.AdapterMtlsBaseURL, director.NewClientProvider(directorURL))
 	managementInfoHandler := http.HandlerFunc(managementInfo.GetManagementInfo)
 
 	return managementInfoHandler
 }
 
-func newCertificateHandler(client graphql.Client, logger *logrus.Logger) http.Handler {
+func newCertificateHandler(client connector.Client, logger *logrus.Logger) http.Handler {
 	handler := api.NewCertificatesHandler(client, logger)
 
 	return http.HandlerFunc(handler.SignCSR)
 }
 
-func newRevocationsHandler(client graphql.Client, logger *logrus.Logger) http.Handler {
+func newRevocationsHandler(client connector.Client, logger *logrus.Logger) http.Handler {
 	handler := api.NewRevocationsHandler(client, logger)
 
 	return http.HandlerFunc(handler.RevokeCertificate)
@@ -81,7 +81,7 @@ func RegisterInternalHandler(router *mux.Router, config Config) error {
 	logger := logrus.New().WithField("component", "connector internal").Logger
 	logger.SetReportCaller(true)
 
-	client, err := graphql.NewClient(config.ConnectorEndpoint, config.ConnectorInternalEndpoint, timeout)
+	client, err := connector.NewClient(config.ConnectorEndpoint, config.ConnectorInternalEndpoint, timeout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to initialize compass client")
 	}
