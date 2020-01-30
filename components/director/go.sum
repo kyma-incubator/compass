@@ -73,6 +73,7 @@ github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kyma-incubator/compass v0.0.0-20200127085942-af27833a9197 h1:uVuCNdR2dwE1zr5W9LvcAq6KejXc4VXm2WJ0JKjIJOc=
+github.com/kyma-incubator/compass v0.0.0-20200129102621-4af258c9ba86 h1:h1cMG22eMoZ6XzoReUYBtCYYfZ9OwVpoP48IAHlJIxI=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979 h1:wnrU/8skRjKqboJrlK1Mw9oQRuGs2sWMTrlIctNa3SQ=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/lestrrat-go/jwx v0.9.0 h1:Fnd0EWzTm0kFrBPzE/PEPp9nzllES5buMkksPMjEKpM=

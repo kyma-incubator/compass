@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -24,17 +22,15 @@ func NewConverter() *converter {
 	return &converter{}
 }
 
-func (c *converter) DetailsToGraphQLInput(in model.ServiceDetails) (graphql.ApplicationRegisterInput, error) {
-	return graphql.ApplicationRegisterInput{}, errors.New("deprecated")
-}
-
-func (c *converter) DetailsToGraphQLInputNew(id string, deprecated model.ServiceDetails) (model.GraphQLServiceDetailsInput, error) {
+func (c *converter) DetailsToGraphQLInput(id string, deprecated model.ServiceDetails) (model.GraphQLServiceDetailsInput, error) {
 	out := model.GraphQLServiceDetailsInput{
 		ID: id,
 	}
+
 	if deprecated.Api != nil {
 
 		out.API = &graphql.APIDefinitionInput{
+			Name:      deprecated.Name,
 			TargetURL: deprecated.Api.TargetUrl,
 		}
 
@@ -130,42 +126,42 @@ func (c *converter) DetailsToGraphQLInputNew(id string, deprecated model.Service
 			}
 		}
 
-		if deprecated.Api.SpecificationUrl != "" {
+		if deprecated.Api.SpecificationUrl != "" || deprecated.Api.SpecificationCredentials != nil || deprecated.Api.SpecificationRequestParameters != nil {
 			if out.API.Spec == nil {
 				out.API.Spec = &graphql.APISpecInput{}
 			}
 			out.API.Spec.FetchRequest = &graphql.FetchRequestInput{
 				URL: deprecated.Api.SpecificationUrl,
 			}
+		}
 
-			if deprecated.Api.SpecificationCredentials != nil || deprecated.Api.SpecificationRequestParameters != nil {
-				out.API.Spec.FetchRequest.Auth = &graphql.AuthInput{}
-			}
+		if deprecated.Api.SpecificationCredentials != nil || deprecated.Api.SpecificationRequestParameters != nil {
+			out.API.Spec.FetchRequest.Auth = &graphql.AuthInput{}
+		}
 
-			if deprecated.Api.SpecificationCredentials != nil {
-				if deprecated.Api.SpecificationCredentials.Oauth != nil {
-					inOauth := deprecated.Api.SpecificationCredentials.Oauth
-					out.API.Spec.FetchRequest.Auth.Credential = &graphql.CredentialDataInput{
-						Oauth: &graphql.OAuthCredentialDataInput{
-							URL:          inOauth.URL,
-							ClientID:     inOauth.ClientID,
-							ClientSecret: inOauth.ClientSecret,
-						},
-					}
+		if deprecated.Api.SpecificationCredentials != nil {
+			if deprecated.Api.SpecificationCredentials.Oauth != nil {
+				inOauth := deprecated.Api.SpecificationCredentials.Oauth
+				out.API.Spec.FetchRequest.Auth.Credential = &graphql.CredentialDataInput{
+					Oauth: &graphql.OAuthCredentialDataInput{
+						URL:          inOauth.URL,
+						ClientID:     inOauth.ClientID,
+						ClientSecret: inOauth.ClientSecret,
+					},
 				}
-				if deprecated.Api.SpecificationCredentials.Basic != nil {
-					inBasic := deprecated.Api.SpecificationCredentials.Basic
-					out.API.Spec.FetchRequest.Auth.Credential = &graphql.CredentialDataInput{
-						Basic: &graphql.BasicCredentialDataInput{
-							Username: inBasic.Username,
-							Password: inBasic.Password,
-						},
-					}
+			}
+			if deprecated.Api.SpecificationCredentials.Basic != nil {
+				inBasic := deprecated.Api.SpecificationCredentials.Basic
+				out.API.Spec.FetchRequest.Auth.Credential = &graphql.CredentialDataInput{
+					Basic: &graphql.BasicCredentialDataInput{
+						Username: inBasic.Username,
+						Password: inBasic.Password,
+					},
 				}
 			}
 		}
 
-		if deprecated.Api.SpecificationRequestParameters != nil {
+		if deprecated.Api.SpecificationRequestParameters != nil && out.API.Spec.FetchRequest != nil {
 			if deprecated.Api.SpecificationRequestParameters.Headers != nil {
 				h := (graphql.HttpHeaders)(*deprecated.Api.SpecificationRequestParameters.Headers)
 				out.API.Spec.FetchRequest.Auth.AdditionalHeaders = &h
@@ -180,6 +176,7 @@ func (c *converter) DetailsToGraphQLInputNew(id string, deprecated model.Service
 	if deprecated.Events != nil && deprecated.Events.Spec != nil {
 		out.Event =
 			&graphql.EventDefinitionInput{
+				Name: deprecated.Name,
 				Spec: &graphql.EventSpecInput{
 					Data: ptrClob(graphql.CLOB(deprecated.Events.Spec)),
 				},

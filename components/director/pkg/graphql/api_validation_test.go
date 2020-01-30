@@ -82,8 +82,8 @@ func TestAPIDefinitionInput_Validate_Description(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name:          "String longer than 128 chars",
-			Value:         str.Ptr(inputvalidationtest.String129Long),
+			Name:          "String longer than 2000 chars",
+			Value:         str.Ptr(inputvalidationtest.String2001Long),
 			ExpectedValid: false,
 		},
 	}

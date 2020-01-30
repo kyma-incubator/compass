@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/director"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
@@ -16,7 +18,6 @@ import (
 )
 
 const appNamePathVariable = "app-name"
-const nameKey = "name"
 
 //go:generate mockery -name=GraphQLRequestBuilder -output=automock -outpkg=automock -case=underscore
 type GraphQLRequestBuilder interface {
@@ -24,23 +25,24 @@ type GraphQLRequestBuilder interface {
 }
 
 type applicationMiddleware struct {
-	cliProvider     gqlcli.Provider
-	logger          *log.Logger
-	gqlProvider     gql.GqlFieldsProvider
-	gqlQueryBuilder GraphQLRequestBuilder
+	cliProvider gqlcli.Provider
+	logger      *log.Logger
+	gqlProvider gql.GqlFieldsProvider
 }
 
-func NewApplicationMiddleware(cliProvider gqlcli.Provider, logger *log.Logger, gqlQueryBuilder GraphQLRequestBuilder) *applicationMiddleware {
-	return &applicationMiddleware{cliProvider: cliProvider, logger: logger, gqlQueryBuilder: gqlQueryBuilder}
+func NewApplicationMiddleware(cliProvider gqlcli.Provider, logger *log.Logger) *applicationMiddleware {
+	return &applicationMiddleware{cliProvider: cliProvider, logger: logger}
 }
 
 func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		variables := mux.Vars(r)
 		appName := variables[appNamePathVariable]
-		query := mw.gqlQueryBuilder.GetApplicationsByName(appName)
 
 		client := mw.cliProvider.GQLClient(r)
+		directorCli := director.NewClient(client, &gql.Graphqlizer{}, &gql.GqlFieldsProvider{})
+		query := directorCli.GetApplicationsByNameRequest(appName)
+
 		var apps GqlSuccessfulAppPage
 		err := client.Run(r.Context(), query, &apps)
 		if err != nil {
@@ -51,20 +53,21 @@ func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 		}
 
 		if len(apps.Result.Data) == 0 {
-			message := fmt.Sprintf("service with name %s not found", appName)
+			message := fmt.Sprintf("application with name %s not found", appName)
 			reqerror.WriteErrorMessage(w, message, apperrors.CodeNotFound)
 			return
 		}
 
 		if len(apps.Result.Data) != 1 {
-			message := fmt.Sprintf("found more than 1 service with name %s", appName)
+			message := fmt.Sprintf("found more than 1 application with name %s", appName)
 			reqerror.WriteErrorMessage(w, message, apperrors.CodeInternal)
 			return
 		}
 
 		app := apps.Result.Data[0]
 		ctx := SaveToContext(r.Context(), *app)
-		requestWithCtx := r.WithContext(ctx)
+		ctxWithCli := gqlcli.SaveToContext(ctx, client)
+		requestWithCtx := r.WithContext(ctxWithCli)
 		next.ServeHTTP(w, requestWithCtx)
 	})
 }

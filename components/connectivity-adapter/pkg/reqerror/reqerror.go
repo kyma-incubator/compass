@@ -23,6 +23,15 @@ func WriteError(writer http.ResponseWriter, err error, appErrorCode int) {
 	WriteErrorMessage(writer, err.Error(), appErrorCode)
 }
 
+func WriteAppError(writer http.ResponseWriter, err error) {
+	errCode := apperrors.CodeInternal
+	appErr, ok := err.(apperrors.AppError)
+	if ok {
+		errCode = appErr.Code()
+	}
+	WriteErrorMessage(writer, err.Error(), errCode)
+}
+
 func WriteErrorMessage(writer http.ResponseWriter, errMessage string, appErrorCode int) {
 	writer.Header().Set(HeaderContentTypeKey, HeaderContentTypeValue)
 	writer.WriteHeader(errorCodeToHTTPStatus(appErrorCode))

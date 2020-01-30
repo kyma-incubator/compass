@@ -50,7 +50,8 @@ func TestVersionInput_Validate_Value(t *testing.T) {
 }
 
 func TestVersionInput_Validate_Deprecated(t *testing.T) {
-	boolean := true
+	booleanTrue := true
+	booleanFalse := false
 
 	testCases := []struct {
 		Name          string
@@ -58,8 +59,13 @@ func TestVersionInput_Validate_Deprecated(t *testing.T) {
 		ExpectedValid bool
 	}{
 		{
-			Name:          "ExpectedValid",
-			Value:         &boolean,
+			Name:          "ExpectedValid - true",
+			Value:         &booleanTrue,
+			ExpectedValid: true,
+		},
+		{
+			Name:          "ExpectedValid - false",
+			Value:         &booleanFalse,
 			ExpectedValid: true,
 		},
 		{
@@ -132,7 +138,8 @@ func TestVersionInput_Validate_DeprecatedSince(t *testing.T) {
 }
 
 func TestVersionInput_Validate_ForRemoval(t *testing.T) {
-	boolean := true
+	booleanTrue := true
+	booleanFalse := false
 
 	testCases := []struct {
 		Name          string
@@ -140,8 +147,13 @@ func TestVersionInput_Validate_ForRemoval(t *testing.T) {
 		ExpectedValid bool
 	}{
 		{
-			Name:          "ExpectedValid",
-			Value:         &boolean,
+			Name:          "ExpectedValid - true",
+			Value:         &booleanTrue,
+			ExpectedValid: true,
+		},
+		{
+			Name:          "ExpectedValid - false",
+			Value:         &booleanFalse,
 			ExpectedValid: true,
 		},
 		{

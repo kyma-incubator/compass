@@ -10,6 +10,27 @@ type GraphQLizer struct {
 	mock.Mock
 }
 
+// APIDefinitionInputToGQL provides a mock function with given fields: in
+func (_m *GraphQLizer) APIDefinitionInputToGQL(in graphql.APIDefinitionInput) (string, error) {
+	ret := _m.Called(in)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(graphql.APIDefinitionInput) string); ok {
+		r0 = rf(in)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(graphql.APIDefinitionInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ApplicationRegisterInputToGQL provides a mock function with given fields: in
 func (_m *GraphQLizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegisterInput) (string, error) {
 	ret := _m.Called(in)
@@ -23,6 +44,27 @@ func (_m *GraphQLizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegis
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(graphql.ApplicationRegisterInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// EventDefinitionInputToGQL provides a mock function with given fields: in
+func (_m *GraphQLizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput) (string, error) {
+	ret := _m.Called(in)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(graphql.EventDefinitionInput) string); ok {
+		r0 = rf(in)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(graphql.EventDefinitionInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

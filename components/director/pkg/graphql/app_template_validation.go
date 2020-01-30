@@ -14,7 +14,7 @@ func (i ApplicationTemplateInput) Validate() error {
 	return validation.Errors{
 		"Rule.ValidPlaceholders": i.validPlaceholders(),
 		"Name":                   validation.Validate(i.Name, validation.Required, inputvalidation.DNSName),
-		"Description":            validation.Validate(i.Description, validation.RuneLength(0, shortStringLengthLimit)),
+		"Description":            validation.Validate(i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		"Placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),
 		"AccessLevel":            validation.Validate(i.AccessLevel, validation.Required, validation.In(ApplicationTemplateAccessLevelGlobal)),
 	}.Filter()
@@ -69,7 +69,7 @@ func (i ApplicationTemplateInput) ensurePlaceholdersUsed() error {
 func (i PlaceholderDefinitionInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, inputvalidation.DNSName),
-		validation.Field(&i.Description, validation.RuneLength(0, shortStringLengthLimit)),
+		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 	)
 }
 
