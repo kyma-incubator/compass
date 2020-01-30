@@ -295,6 +295,7 @@ func (c *converter) GraphQLToServiceDetails(in model.GraphQLServiceDetails) (mod
 		}
 	}
 	if in.Event != nil {
+		outDeprecated.Name = in.Event.Name
 		if in.Event.Spec != nil && in.Event.Spec.Data != nil {
 			outDeprecated.Events = &model.Events{
 				Spec: []byte(string(*in.Event.Spec.Data)),
