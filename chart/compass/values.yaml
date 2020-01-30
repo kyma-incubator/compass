@@ -23,7 +23,7 @@ global:
       version: "PR-765"
     director:
       dir:
-      version: "PR-747"
+      version: "PR-673"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -61,6 +61,10 @@ global:
 
   director:
     port: 3000
+
+  tenantConfig:
+    useDefaultTenants: true
+    useExternalTenants: false
 
   connector:
     graphql:
