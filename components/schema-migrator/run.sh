@@ -10,10 +10,6 @@ if [ "${discoverUnsetVar}" = true ] ; then
     exit 1
 fi
 
-if [ -z "${!SEED}" ] ; then
-    makeSeeding=true
-fi
-
 if [[ "${DIRECTION}" == "up" ]]; then
     echo "Migration UP"
 elif [[ "${DIRECTION}" == "down" ]]; then
@@ -54,16 +50,4 @@ else
     $CMD
 fi
 
-if [ ${makeSeeding} ]; then
-  CMD="migrate -path seeds/${SEED} -database "$CONNECTION_STRING" ${DIRECTION}"
-  echo $CMD
-  ls -R
-  echo '# STARTING SEEDING #'
-  if [[ "${NON_INTERACTIVE}" == "true" ]]; then
-      yes | $CMD
-  else
-      $CMD
-  fi
-
-fi
 

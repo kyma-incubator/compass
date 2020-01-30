@@ -51,6 +51,7 @@ docker run -d --name ${POSTGRES_CONTAINER} \
     -e POSTGRES_USER=${DB_USER} \
     -e POSTGRES_PASSWORD=${DB_PWD} \
     -e POSTGRES_DB=${DB_NAME} \
+    -p 5432:5432 \
     postgres:${POSTGRES_VERSION}
 
 echo -e "${GREEN}Building migration image...${NC}"
@@ -67,6 +68,10 @@ docker run --rm --network=${NETWORK} \
     -e DIRECTION="up" \
     -e MIGRATION_PATH="director" \
     ${MIGRATOR_IMG_NAME}
+
+
+echo -e "${GREEN}Seeding the db...${NC}"
+PGPASSWORD=${DB_PWD} psql -h localhost -U ${DB_USER} -f <(cat seeds/tenants/*.sql) ${DB_NAME}
 
 echo -e "${GREEN}Building Director image...${NC}"
 
