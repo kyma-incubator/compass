@@ -155,7 +155,15 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = json.NewEncoder(writer).Encode(&output)
+	service, err := h.converter.GraphQLToServiceDetails(output)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while converting service")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	err = json.NewEncoder(writer).Encode(&service)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while encoding response")
 		h.logger.Error(wrappedErr)
