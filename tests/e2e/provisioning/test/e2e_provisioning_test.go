@@ -3,30 +3,23 @@ package test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/stretchr/testify/require"
 )
 
-func TestKymaProvisioningE2E(t *testing.T) {
+func Test_E2E_Provisioning(t *testing.T) {
 	ts := newTestSuite(t)
-	instanceID, operationID, err := ts.brokerClient.ProvisionRuntime()
+	operationID, err := ts.brokerClient.ProvisionRuntime()
 	require.NoError(t, err)
+	defer ts.TearDown()
 
-	err = ts.brokerClient.AwaitProvisioningSucceeded(instanceID, operationID)
-	require.NoError(t, err)
+	err = ts.brokerClient.AwaitProvisioningSucceeded(operationID)
+	assert.NoError(t, err)
 
-	dashboardURL, err := ts.brokerClient.GetInstanceDetails(instanceID)
-	require.NoError(t, err)
-	require.NotEmpty(t, dashboardURL)
+	dashboardURL, err := ts.brokerClient.FetchDashboardURL()
+	assert.NoError(t, err)
 
-	err = ts.kymaClient.CallDashboard(dashboardURL)
-	require.NoError(t, err)
-
-	ts.log.Info("Provisioning test end with success")
-	ts.log.Info("Cleaning up...")
-
-	// Fetch gardener kubeconfig which is inside gardener secret
-	// From gardener we can fetch the runtime's kubeconfig and trigger the cleaning logic. Delete instances -> brokers..
-
-	// deprovision runtime via broker?
-	// service-manager service instance leftovers cleaning?
+	err = ts.kymaClient.CallDashboardURL(dashboardURL)
+	assert.NoError(t, err)
 }

@@ -2,7 +2,7 @@
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
-APP_NAME=connector-tests
+APP_NAME=e2e-provisioning
 NAMESPACE=compass-system
 
 discoverUnsetVar=false

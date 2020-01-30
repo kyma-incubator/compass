@@ -1,33 +1,45 @@
 package test
 
 import (
+	"fmt"
+	"strings"
 	"testing"
-	"time"
 
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/broker"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/kyma"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/google/uuid"
+	"github.com/thanhpk/randstr"
+
+	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/broker"
+	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/gardener"
+	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/kyma"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/vrischmann/envconfig"
 )
 
 type Config struct {
-	Broker broker.Config
+	Broker   broker.Config
+	Gardener gardener.Config
 
-	ServiceManager struct {
-		ClassName string
-	}
-	Properties struct {
-		ProvisionTimeout time.Duration
-		ProvisionGCP     bool
-	}
+	WorkingNamespace string
 }
 
 type Suite struct {
-	log          logrus.FieldLogger
-	brokerClient *broker.Client
-	kymaClient   *kyma.Client
-	config       *Config
+	t *testing.T
+
+	log            logrus.FieldLogger
+	brokerClient   *broker.Client
+	kymaClient     *kyma.Client
+	gardenerClient *gardener.Client
+}
+
+func (ts *Suite) TearDown() {
+	ts.log.Info("Cleaning up...")
+	err := ts.gardenerClient.RuntimeTearDown()
+	assert.NoError(ts.t, err)
+	err = ts.brokerClient.DeprovisionRuntime()
+	require.NoError(ts.t, err)
 }
 
 func newTestSuite(t *testing.T) *Suite {
@@ -35,14 +47,22 @@ func newTestSuite(t *testing.T) *Suite {
 	err := envconfig.InitWithPrefix(cfg, "APP")
 	require.NoError(t, err)
 
+	instanceUUID, err := uuid.NewRandom()
+	require.NoError(t, err)
+	instanceID := instanceUUID.String()
+	clusterName := fmt.Sprintf("%s-%s", "e2e-provisioning", strings.ToLower(randstr.String(10)))
+
 	log := logrus.New()
-	brokerClient := broker.NewClient(cfg.Broker, cfg.Properties.ProvisionGCP, cfg.Properties.ProvisionTimeout, log)
 	kymaClient := kyma.NewClient(log)
+	brokerClient := broker.NewClient(cfg.Broker, clusterName, instanceID, log)
+	gardenerClient, err := gardener.NewClient(cfg.Gardener, clusterName, cfg.WorkingNamespace, log)
+	require.NoError(t, err)
 
 	return &Suite{
-		config:       cfg,
-		log:          log,
-		kymaClient:   kymaClient,
-		brokerClient: brokerClient,
+		t:              t,
+		log:            log,
+		brokerClient:   brokerClient,
+		kymaClient:     kymaClient,
+		gardenerClient: gardenerClient,
 	}
 }
