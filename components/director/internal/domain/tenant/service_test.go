@@ -126,58 +126,35 @@ func TestService_GetInternalTenant(t *testing.T) {
 func TestService_List(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test")
-	modelTenantMappingPage := newModelBusinessTenantMapingPage([]*model.BusinessTenantMapping{
+	modelTenantMappings := []*model.BusinessTenantMapping{
 		newModelBusinessTenantMapping("foo1", "bar1"),
 		newModelBusinessTenantMapping("foo2", "bar2"),
-	})
+	}
 
 	testCases := []struct {
 		Name                string
 		TenantMappingRepoFn func() *automock.TenantMappingRepository
-		InputPageSize       int
 		ExpectedError       error
-		ExpectedOutput      *model.BusinessTenantMappingPage
+		ExpectedOutput      []*model.BusinessTenantMapping
 	}{
 		{
 			Name: "Success",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("List", ctx, 50, testCursor).Return(&modelTenantMappingPage, nil).Once()
+				tenantMappingRepo.On("List", ctx).Return(modelTenantMappings, nil).Once()
 				return tenantMappingRepo
 			},
-			InputPageSize:  50,
-			ExpectedOutput: &modelTenantMappingPage,
+			ExpectedOutput: modelTenantMappings,
 		},
 		{
 			Name: "Error when listing integration system",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("List", ctx, 50, testCursor).Return(&model.BusinessTenantMappingPage{}, testError).Once()
+				tenantMappingRepo.On("List", ctx).Return([]*model.BusinessTenantMapping{}, testError).Once()
 				return tenantMappingRepo
 			},
-			InputPageSize:  50,
 			ExpectedError:  testError,
-			ExpectedOutput: &model.BusinessTenantMappingPage{},
-		},
-		{
-			Name: "Error when page size too small",
-			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
-				tenantMappingRepo := &automock.TenantMappingRepository{}
-				return tenantMappingRepo
-			},
-			InputPageSize:  0,
-			ExpectedError:  errors.New("page size must be between 1 and 100"),
-			ExpectedOutput: nil,
-		},
-		{
-			Name: "Error when page size too big",
-			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
-				intSysRepo := &automock.TenantMappingRepository{}
-				return intSysRepo
-			},
-			InputPageSize:  101,
-			ExpectedError:  errors.New("page size must be between 1 and 100"),
-			ExpectedOutput: nil,
+			ExpectedOutput: []*model.BusinessTenantMapping{},
 		},
 	}
 
@@ -187,7 +164,7 @@ func TestService_List(t *testing.T) {
 			svc := tenant.NewService(tenantMappingRepo, nil)
 
 			// WHEN
-			result, err := svc.List(ctx, testCase.InputPageSize, testCursor)
+			result, err := svc.List(ctx)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -367,8 +344,7 @@ func TestService_Sync(t *testing.T) {
 
 	tenantFromDb := newModelBusinessTenantMapping(testID, "test3").WithExternalTenant("external3")
 
-	tenantsFromDb := newModelBusinessTenantMapingPage(
-		[]*model.BusinessTenantMapping{&tenantFromDb})
+	tenantsFromDb := []*model.BusinessTenantMapping{&tenantFromDb}
 
 	tenantToDelete := newModelBusinessTenantMapping(testID, "test3").WithStatus(model.Inactive).WithExternalTenant("external3")
 
@@ -387,7 +363,7 @@ func TestService_Sync(t *testing.T) {
 			Name: "Success",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("List", ctx, 100, "").Return(&tenantsFromDb, nil).Once()
+				tenantMappingRepo.On("List", ctx).Return(tenantsFromDb, nil).Once()
 				tenantMappingRepo.On("Update", ctx, &tenantToDelete).Return(nil).Once()
 				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(false, nil).Once()
 				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[1].ExternalTenant).Return(true, nil).Once()
@@ -400,7 +376,7 @@ func TestService_Sync(t *testing.T) {
 			Name: "Error when listing",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("List", ctx, 100, "").Return(nil, testErr).Once()
+				tenantMappingRepo.On("List", ctx).Return(nil, testErr).Once()
 				return tenantMappingRepo
 			},
 			ExpectedOutput: testErr,
@@ -409,7 +385,7 @@ func TestService_Sync(t *testing.T) {
 			Name: "Error when deleting",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("List", ctx, 100, "").Return(&tenantsFromDb, nil).Once()
+				tenantMappingRepo.On("List", ctx).Return(tenantsFromDb, nil).Once()
 				tenantMappingRepo.On("Update", ctx, &tenantToDelete).Return(testErr).Once()
 				return tenantMappingRepo
 			},
@@ -419,7 +395,7 @@ func TestService_Sync(t *testing.T) {
 			Name: "Error when checking the existence",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("List", ctx, 100, "").Return(&tenantsFromDb, nil).Once()
+				tenantMappingRepo.On("List", ctx).Return(tenantsFromDb, nil).Once()
 				tenantMappingRepo.On("Update", ctx, &tenantToDelete).Return(nil).Once()
 				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(false, testErr).Once()
 				return tenantMappingRepo
@@ -430,7 +406,7 @@ func TestService_Sync(t *testing.T) {
 			Name: "Error when creating tenant",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("List", ctx, 100, "").Return(&tenantsFromDb, nil).Once()
+				tenantMappingRepo.On("List", ctx).Return(tenantsFromDb, nil).Once()
 				tenantMappingRepo.On("Update", ctx, &tenantToDelete).Return(nil).Once()
 				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(false, nil).Once()
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(testErr).Once()

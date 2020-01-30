@@ -8,7 +8,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 const (
@@ -63,18 +62,6 @@ func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
 
 func fixTenantMappingCreateArgs(ent tenant.Entity) []driver.Value {
 	return []driver.Value{ent.ID, ent.Name, ent.ExternalTenant, ent.ProviderName, ent.Status}
-}
-
-func newModelBusinessTenantMapingPage(tenants []*model.BusinessTenantMapping) model.BusinessTenantMappingPage {
-	return model.BusinessTenantMappingPage{
-		Data: tenants,
-		PageInfo: &pagination.Page{
-			StartCursor: "start",
-			EndCursor:   "end",
-			HasNextPage: false,
-		},
-		TotalCount: len(tenants),
-	}
 }
 
 func newModelBusinessTenantMappingInput(name string) model.BusinessTenantMappingInput {
