@@ -8,7 +8,7 @@ This application fetches events containing information about created, updated, a
 
 Tenant Fetcher requires access to:
 1. Configured PostgreSQL database with the imported Director's database schema.
-2. API that can be called to fetch tenant Events. For details about implementing the Tenant Events API that the Tenant Fetcher can consume, see [this](https://github.com/kyma-incubator/compass/blob/master/docs/compass/03-tenant-fetching.md) document. 
+2. API that can be called to fetch tenant events. For details about implementing the Tenant Events API that the Tenant Fetcher can consume, see [this](https://github.com/kyma-incubator/compass/blob/master/docs/compass/03-tenant-fetching.md) document. 
 
 ## Configuration
 
