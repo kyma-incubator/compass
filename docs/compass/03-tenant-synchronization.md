@@ -1,4 +1,4 @@
-# Tenant fetching
+# Tenant synchronization
 
 ## Overview
 
@@ -22,7 +22,7 @@ Tenant Fetcher CRON Job can be configured with helm value overrides listed below
 | **global.tenantFetcher.endpoints.tenantUpdated** | "127.0.0.1/events?type=updated" | Tenant Events API endpoint for fetching updated tenants |
 | **global.tenantFetcher.fieldMapping.idField** | "id" | Name of field in event data payload containing tenant name |
 | **global.tenantFetcher.fieldMapping.nameField** | "name" | Name of field in event data payload containing tenant id |
-| **global.tenantFetcher.fieldMapping.discriminatorField** | None | Optional name of field in event data payload used to filter created tenants, if provided only events containing this field with value specified in discriminatorValue will be used |
+| **global.tenantFetcher.fieldMapping.discriminatorField** | None | Optional name of field in event data payload used to filter created tenants, if provided, only events containing this field with value specified in discriminatorValue will be used |
 | **global.tenantFetcher.fieldMapping.discriminatorValue** | None | Optional value of discriminator field used to filter created tenants, used only if discriminatorField is provided  |
 
 ## Tenant Events API
@@ -50,7 +50,7 @@ JSON payload:
 {
   "events": [
     {
-      "eventData": "{\"id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"name\":\"Tenant 1\",\"discriminator\":\"default\"}"
+      "eventData": "{\"$id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"$name\":\"Tenant 1\",\"$discriminator\":\"default\"}"
     }
   ],
   "totalResults": 27, 
@@ -59,9 +59,9 @@ JSON payload:
 ```
 
 `eventData` field contains escaped JSON string, with following fields that can be configured in values overrides:
-- `id` - unique id of tenant
-- `name` - name of tenant
-- `discriminator` - optional field that can be used to distinguish different types of tenants
+- `$id` - unique id of tenant
+- `$name` - name of tenant
+- `$discriminator` - optional field that can be used to distinguish different types of tenants
 
 #### Tenant deletion endpoint
 
@@ -70,7 +70,7 @@ JSON payload:
 {
   "events": [
     {
-      "eventData": "{\"id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"name\":\"Tenant 1\"}"
+      "eventData": "{\"$id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"$name\":\"Tenant 1\"}"
     }
   ],
   "totalResults": 27, 
@@ -79,8 +79,8 @@ JSON payload:
 ```
 
 `eventData` field contains escaped JSON string, with following fields that can be configured in values overrides:
-- `id` - unique id of tenant
-- `name` - name of tenant
+- `$id` - unique id of tenant
+- `$name` - name of tenant
 
 #### Tenant update endpoint
 
@@ -89,7 +89,7 @@ JSON payload:
 {
   "events": [
     {
-      "eventData": "{\"id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"name\":\"Tenant 1\"}"
+      "eventData": "{\"$id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"$name\":\"Tenant 1\"}"
     }
   ],
   "totalResults": 27, 
@@ -98,5 +98,5 @@ JSON payload:
 ```
 
 `eventData` field contains escaped JSON string, with following fields that can be configured in values overrides:
-- `id` - unique id of tenant
-- `name` - name of tenant
+- `$id` - unique id of tenant
+- `$name` - name of tenant
