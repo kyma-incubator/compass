@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
-
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
@@ -19,6 +17,7 @@ import (
 type Converter interface {
 	DetailsToGraphQLInput(id string, deprecated model.ServiceDetails) (model.GraphQLServiceDetailsInput, error)
 	GraphQLToServiceDetails(converted model.GraphQLServiceDetails) (model.ServiceDetails, error)
+	ServiceDetailsToService(in model.ServiceDetails, serviceID string) (model.Service, error)
 }
 
 ////go:generate mockery -name=AppOperator -output=automock -outpkg=automock -case=underscore
@@ -175,20 +174,52 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
-	h.logger.Println("List")
-	//TODO: Implement it, currently this endpoint purpose is for manually testing appdetails middleware
+	defer h.closeBody(request)
 
-	ctx := request.Context()
-	app, err := appdetails.LoadFromContext(ctx)
+	serviceManager, err := h.serviceManager.ForRequest(request)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "while getting service from context")
+		wrappedErr := errors.Wrap(err, "while requesting Service Manager")
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	output, err := serviceManager.ListFromApplicationDetails()
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while fetching service")
 		h.logger.Error(wrappedErr)
 		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
-	log.Infof("Application from ctx: %+v", app)
 
-	writer.WriteHeader(http.StatusNotImplemented)
+	services := []model.Service{}
+	for _, value := range output {
+		detailedService, err := h.converter.GraphQLToServiceDetails(value)
+		if err != nil {
+			wrappedErr := errors.Wrap(err, "while converting graphql to detailed service")
+			h.logger.Error(wrappedErr)
+			reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+			return
+		}
+
+		service, err := h.converter.ServiceDetailsToService(detailedService, value.ID)
+		if err != nil {
+			wrappedErr := errors.Wrap(err, "while converting detailed service to service")
+			h.logger.Error(wrappedErr)
+			reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+			return
+		}
+
+		services = append(services, service)
+	}
+	err = json.NewEncoder(writer).Encode(&services)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while encoding response")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
