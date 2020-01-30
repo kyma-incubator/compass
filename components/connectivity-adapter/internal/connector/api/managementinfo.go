@@ -42,7 +42,6 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 	systemAuthID := authorizationHeaders.GetClientID()
 	contextLogger := contextLogger(mh.logger, systemAuthID)
 
-	// <AG>
 	directorClient := mh.directorClientProvider.Client(r)
 
 	application, err := directorClient.GetApplication(systemAuthID)
@@ -53,10 +52,6 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 
 		return
 	}
-
-	log.Info("Events base: " + application.EventingConfiguration.DefaultURL)
-
-	// <AG>
 
 	contextLogger.Info("Getting Management Info")
 

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
@@ -16,6 +18,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	externalSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +33,7 @@ func TestHandlerManagementInfo(t *testing.T) {
 	}
 
 	headersFromToken := map[string]string{
-		oathkeeper.ClientIdFromTokenHeader: "myapp",
+		oathkeeper.ClientIdFromTokenHeader: "systemAuthID",
 	}
 
 	t.Run("Should get Signing Request Info", func(t *testing.T) {
@@ -57,7 +60,18 @@ func TestHandlerManagementInfo(t *testing.T) {
 			},
 		}
 
-		directorClientProviderMock.On("").Return(directorClientMock)
+		directorApp := externalSchema.ApplicationExt{
+			Application: externalSchema.Application{
+				Name: "myApp",
+			},
+			EventingConfiguration: externalSchema.ApplicationEventingConfiguration{
+				DefaultURL: "www.event-service.com",
+			},
+		}
+
+		directorClientMock.On("GetApplication", "systemAuthID").Return(directorApp, nil)
+
+		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 
 		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
 		handler := NewManagementInfoHandler(connectorClientMock, logrus.New(), "www.connectivity-adapter-mtls.com", directorClientProviderMock)
@@ -68,13 +82,13 @@ func TestHandlerManagementInfo(t *testing.T) {
 
 		expectedManagementInfoResponse := model.MgmtInfoReponse{
 			ClientIdentity: model.ClientIdentity{
-				Application: "myapp",
+				Application: "myApp",
 			},
 			URLs: model.MgmtURLs{
 				RuntimeURLs: &model.RuntimeURLs{
-					EventsURL:     "www.event-service.com/myapp/v1/events",
-					EventsInfoURL: "www.event-service.com/myapp/v1/events/subscribed",
-					MetadataURL:   "www.connectivity-adapter-mtls.com/myapp/v1/metadata/services",
+					EventsURL:     "www.event-service.com/myApp/v1/events",
+					EventsInfoURL: "www.event-service.com/myApp/v1/events/subscribed",
+					MetadataURL:   "www.connectivity-adapter-mtls.com/myApp/v1/metadata/services",
 				},
 				RenewCertURL:  "www.connectivity-adapter-mtls.com/v1/applications/certificates/renewals",
 				RevokeCertURL: "www.connectivity-adapter-mtls.com/v1/applications/certificates/revocations",
