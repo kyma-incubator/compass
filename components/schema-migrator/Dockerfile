@@ -9,7 +9,6 @@ RUN wget https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_
 RUN mv migrate.linux-amd64 /usr/local/bin/migrate
 
 COPY ./migrations/ ./migrations
-COPY ./seeds/ ./seeds
 COPY ./run.sh ./run.sh
 
 ENTRYPOINT ["./run.sh"]

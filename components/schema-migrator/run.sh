@@ -49,5 +49,3 @@ if [[ "${NON_INTERACTIVE}" == "true" ]]; then
 else
     $CMD
 fi
-
-
