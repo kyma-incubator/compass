@@ -2,9 +2,9 @@
 
 ## Overview
 
-It is an application that is supposed to synchronize given tenants from given directory with Compass.
+The tenant loader is an application that synchronizes tenants from a given directory with Compass.
 
-## How to run
+## How to run 
 The user has to provide these environment variables:
 
 | ENV                                      | Default                         | Description                                                   |
@@ -18,11 +18,11 @@ The user has to provide these environment variables:
 
 ## Application flow
 
-1. Read the `/data/` directory with tenants files inside
-2. Try to parse each JSON file from the directory to tenant structure
-3. Synchronise tenants with Compass
+1. Read the `/data/` directory where tenant files reside
+2. Try to parse each `.json` file from the directory to the tenant structure
+3. Synchronize tenants with Compass
 
-## Supported format of JSON file with tenants
+## Supported format of .json file with tenants
 ```json
 [
   {
