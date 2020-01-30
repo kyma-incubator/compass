@@ -15,6 +15,7 @@ func TestMapTenants(t *testing.T) {
 	//given
 	validTenantSrcPath := "./testdata/tenants/"
 	directoryWithInvalidTenantJSON := "./testdata/invalidtenants/"
+	directoryWithInvalidFiles := "./testdata/invalidfiletypes/"
 	invalidPath := "foo"
 
 	firstProvider := "valid_tenants.json"
@@ -58,7 +59,16 @@ func TestMapTenants(t *testing.T) {
 
 		//then
 		require.Error(t, err)
-		assert.Equal(t, err.Error(), fmt.Sprintf("while reading directory with tenant files %s: open %s: no such file or directory", invalidPath, invalidPath))
+		assert.Equal(t, err.Error(), fmt.Sprintf("while reading directory with tenant files [%s]: open %s: no such file or directory", invalidPath, invalidPath))
+	})
+
+	t.Run("should fail while reading file with tenants - unsupported file extension", func(t *testing.T) {
+		//when
+		_, err := externaltenant.MapTenants(directoryWithInvalidFiles)
+
+		//then
+		require.Error(t, err)
+		assert.Equal(t, err.Error(), "unsupported file format [.txt]")
 	})
 
 	t.Run("should fail while unmarshalling tenants", func(t *testing.T) {
@@ -67,6 +77,6 @@ func TestMapTenants(t *testing.T) {
 
 		//then
 		require.Error(t, err)
-		assert.Equal(t, err.Error(), fmt.Sprintf("while unmarshalling tenants from file %s%s: invalid character '\\n' in string literal", directoryWithInvalidTenantJSON, "invalid.json"))
+		assert.Equal(t, err.Error(), fmt.Sprintf("while unmarshalling tenants from file [%s%s]: invalid character '\\n' in string literal", directoryWithInvalidTenantJSON, "invalid.json"))
 	})
 }

@@ -91,7 +91,7 @@ spec:
             {{if eq .Values.global.tenantConfig.useExternalTenants true}}
               - name: external-tenant-config
                 configMap:
-                  name: {{ template "fullname" . }}-external-tenant-config
+                  name: compass-director-external-tenant-config
             {{end}}
             {{if eq .Values.global.database.embedded.enabled false}}
               - name: cloudsql-instance-credentials

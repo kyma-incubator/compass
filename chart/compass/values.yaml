@@ -65,7 +65,6 @@ global:
   tenantConfig:
     useDefaultTenants: true
     useExternalTenants: false
-    useExternalTenantsConfigMapFromChart: false
 
   connector:
     graphql:
