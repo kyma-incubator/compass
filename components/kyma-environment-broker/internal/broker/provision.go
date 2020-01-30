@@ -7,15 +7,53 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/pkg/errors"
 )
 
+type ProvisionEndpoint struct {
+	instancesStorage  storage.Instances
+	builderFactory    InputBuilderForPlan
+	provisioningCfg   ProvisioningConfig
+	provisionerClient provisioner.Client
+	dumper            StructDumper
+	enabledPlanIDs    map[string]struct{}
+}
+
+// ProvisioningConfig holds all configurations connected with Provisioner API
+type ProvisioningConfig struct {
+	URL                 string
+	SecretName          string
+	GCPSecretName       string
+	AzureSecretName     string
+	AWSSecretName       string
+	GardenerProjectName string
+}
+
+func NewProvision(cfg Config, instancesStorage storage.Instances, builderFactory InputBuilderForPlan, provisioningCfg ProvisioningConfig, provisionerClient provisioner.Client, dumper StructDumper) *ProvisionEndpoint {
+	enabledPlanIDs := map[string]struct{}{}
+	for _, planName := range cfg.EnablePlans {
+		id := planIDsMapping[planName]
+		enabledPlanIDs[id] = struct{}{}
+	}
+
+	return &ProvisionEndpoint{
+		instancesStorage:  instancesStorage,
+		builderFactory:    builderFactory,
+		provisioningCfg:   provisioningCfg,
+		provisionerClient: provisionerClient,
+		dumper:            dumper,
+		enabledPlanIDs:    enabledPlanIDs,
+	}
+}
+
 // Provision creates a new service instance
 //   PUT /v2/service_instances/{instance_id}
-func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
+func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
 	b.dumper.Dump("Provision instanceID:", instanceID)
 	b.dumper.Dump("Provision details:", details)
 	b.dumper.Dump("Provision asyncAllowed:", asyncAllowed)

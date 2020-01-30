@@ -7,9 +7,34 @@ import (
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
+// OptionalComponentNamesProvider provides optional components names
+type OptionalComponentNamesProvider interface {
+	GetAllOptionalComponentsNames() []string
+}
+
+type ServicesEndpoint struct {
+	dumper             StructDumper
+	optionalComponents OptionalComponentNamesProvider
+	enabledPlanIDs     map[string]struct{}
+}
+
+func NewServices(cfg Config, optComponentsSvc OptionalComponentNamesProvider, dumper StructDumper) *ServicesEndpoint {
+	enabledPlanIDs := map[string]struct{}{}
+	for _, planName := range cfg.EnablePlans {
+		id := planIDsMapping[planName]
+		enabledPlanIDs[id] = struct{}{}
+	}
+
+	return &ServicesEndpoint{
+		dumper:             dumper,
+		optionalComponents: optComponentsSvc,
+		enabledPlanIDs:     enabledPlanIDs,
+	}
+}
+
 // Services gets the catalog of services offered by the service broker
 //   GET /v2/catalog
-func (b *KymaEnvBroker) Services(ctx context.Context) ([]domain.Service, error) {
+func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, error) {
 	var availableServicePlans []domain.ServicePlan
 
 	for _, plan := range plans {
@@ -48,7 +73,7 @@ func (b *KymaEnvBroker) Services(ctx context.Context) ([]domain.Service, error) 
 	}, nil
 }
 
-func (b *KymaEnvBroker) addComponentsToSchema(schema *map[string]interface{}) {
+func (b *ServicesEndpoint) addComponentsToSchema(schema *map[string]interface{}) {
 	props := (*schema)["properties"].(map[string]interface{})
 	props["components"] = map[string]interface{}{
 		"type": "array",

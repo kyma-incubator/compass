@@ -8,15 +8,38 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 )
 
+const (
+	// time delay after which the instance becomes obsolete in the process of polling for last operation
+	delayInstanceTime = 3 * time.Hour
+)
+
+type LastOperationEndpoint struct {
+	instancesStorage  storage.Instances
+	provisionerClient provisioner.Client
+	DirectorClient    DirectorClient
+	dumper            StructDumper
+}
+
+func NewLastOperation(instancesStorage storage.Instances, provisionerClient provisioner.Client, directorClient DirectorClient, dumper StructDumper) *LastOperationEndpoint {
+	return &LastOperationEndpoint{
+		instancesStorage:  instancesStorage,
+		provisionerClient: provisionerClient,
+		DirectorClient:    directorClient,
+		dumper:            dumper,
+	}
+}
+
 // LastOperation fetches last operation state for a service instance
 //   GET /v2/service_instances/{instance_id}/last_operation
-func (b *KymaEnvBroker) LastOperation(ctx context.Context, instanceID string, details domain.PollDetails) (domain.LastOperation, error) {
+func (b *LastOperationEndpoint) LastOperation(ctx context.Context, instanceID string, details domain.PollDetails) (domain.LastOperation, error) {
 	b.dumper.Dump("LastOperation instanceID:", instanceID)
 	b.dumper.Dump("LastOperation details:", details)
 
@@ -66,7 +89,7 @@ func (b *KymaEnvBroker) LastOperation(ctx context.Context, instanceID string, de
 	}, nil
 }
 
-func (b *KymaEnvBroker) handleDashboardURL(instance *internal.Instance) (domain.LastOperationState, string) {
+func (b *LastOperationEndpoint) handleDashboardURL(instance *internal.Instance) (domain.LastOperationState, string) {
 	b.dumper.Dump("Get dashboard url for instance ID: ", instance.InstanceID)
 
 	dashboardURL, err := b.DirectorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
@@ -91,7 +114,7 @@ func (b *KymaEnvBroker) handleDashboardURL(instance *internal.Instance) (domain.
 	return domain.Succeeded, ""
 }
 
-func (b *KymaEnvBroker) checkInstanceOutdated(instance *internal.Instance) (domain.LastOperationState, string) {
+func (b *LastOperationEndpoint) checkInstanceOutdated(instance *internal.Instance) (domain.LastOperationState, string) {
 	addTime := instance.CreatedAt.Add(delayInstanceTime)
 	subTime := time.Now().Sub(addTime)
 

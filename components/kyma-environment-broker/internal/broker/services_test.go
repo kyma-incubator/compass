@@ -7,27 +7,29 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker/automock"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestBroker_Services(t *testing.T) {
+func TestServices_Services(t *testing.T) {
 	// given
-	testBroker := newTestBroker(t)
-
 	optComponentsProviderMock := &automock.OptionalComponentNamesProvider{}
 	defer optComponentsProviderMock.AssertExpectations(t)
 
 	optComponentsNames := []string{"monitoring", "kiali", "loki", "jaeger"}
 	optComponentsProviderMock.On("GetAllOptionalComponentsNames").Return(optComponentsNames)
 
-	testBroker.addOptionalComponentNamesProvider(optComponentsProviderMock).createTestBroker()
-	kymaEnvBroker := testBroker.broker
+	servicesEndpoint := broker.NewServices(
+		broker.Config{EnablePlans: []string{"gcp", "azure"}},
+		optComponentsProviderMock,
+		&broker.DumyDumper{},
+	)
 
 	// when
-	services, err := kymaEnvBroker.Services(context.TODO())
+	services, err := servicesEndpoint.Services(context.TODO())
 
 	// then
 	require.NoError(t, err)
