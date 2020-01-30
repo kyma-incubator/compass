@@ -71,7 +71,7 @@ docker run --rm --network=${NETWORK} \
 
 
 echo -e "${GREEN}Seeding the db...${NC}"
-PGPASSWORD=${DB_PWD} psql -h localhost -U ${DB_USER} -f <(cat seeds/tenants/*.sql) ${DB_NAME}
+PGPASSWORD=${DB_PWD} psql -h ${POSTGRES_CONTAINER} -U ${DB_USER} -f <(cat seeds/tenants/*.sql) ${DB_NAME}
 
 echo -e "${GREEN}Building Director image...${NC}"
 

@@ -11,7 +11,7 @@ RUN CGO_ENABLED=0 go test -c ./api && \
 
 FROM alpine:3.10
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache bash postgresql-client curl
 
 LABEL source=git@github.com:kyma-incubator/compass.git
 
