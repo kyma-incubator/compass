@@ -39,9 +39,9 @@ Every endpoint should return a specific payload.
 - **Query parameters**
 
 Every endpoint should support the following query parameters:
-- `ts` - specifies a timestamp in Unix time, that is the date since which events should we fetched.
-- `page` - specifies the page number that should be fetched, starting from 1.
-- `resultsPerPage` - specifies how many results should be included in a single page. 
+- `ts` - specifies a timestamp in Unix time, that is the date since which events should we fetched
+- `page` - specifies the page number that should be fetched, starting from 1
+- `resultsPerPage` - specifies how many results should be included in a single page
 
 - **Tenant creation endpoint**
 
