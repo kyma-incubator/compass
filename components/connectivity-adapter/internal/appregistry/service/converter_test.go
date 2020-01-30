@@ -1045,6 +1045,31 @@ func TestConvertGraphQLToModel(t *testing.T) {
 
 }
 
+func TestConverter_ServiceDetailsToService(t *testing.T) {
+	//GIVEN
+	input := model.ServiceDetails{
+		Provider:         "provider",
+		Name:             "name",
+		Description:      "description",
+		ShortDescription: "short description",
+		Identifier:       "identifie",
+		Labels:           &map[string]string{"blalb": "blalba",},
+	}
+	id := "id"
+
+	//WHEN
+	sut := NewConverter()
+	output, err := sut.ServiceDetailsToService(input, id)
+
+	//THEN
+	require.NoError(t, err)
+	assert.Equal(t, input.Provider, output.Provider)
+	assert.Equal(t, input.Name, output.Name)
+	assert.Equal(t, input.Description, output.Description)
+	assert.Equal(t, input.Identifier, output.Identifier)
+	assert.Equal(t, input.Labels, output.Labels)
+}
+
 func fixLabels() (graphql.Labels, error) {
 	l := graphql.Labels{}
 	j := `{ "ignored-group": ["production", "experimental"], "ignored-scenarios": ["DEFAULT"], "simple-label":"simple-value", "embedded":{"key":"value"} }`

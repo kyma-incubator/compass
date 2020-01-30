@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -18,7 +17,7 @@ import (
 type Converter interface {
 	DetailsToGraphQLInput(id string, deprecated model.ServiceDetails) (model.GraphQLServiceDetailsInput, error)
 	GraphQLToServiceDetails(converted model.GraphQLServiceDetails) (model.ServiceDetails, error)
-	GraphQLToModel(in graphql.ApplicationExt) (model.Service, error)
+	ServiceDetailsToService(in model.ServiceDetails, serviceID string) (model.Service, error)
 }
 
 ////go:generate mockery -name=AppOperator -output=automock -outpkg=automock -case=underscore
@@ -176,7 +175,6 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 
 func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	defer h.closeBody(request)
-	serviceID := h.getServiceID(request)
 
 	serviceManager, err := h.serviceManager.ForRequest(request)
 	if err != nil {
@@ -187,10 +185,6 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 
 	output, err := serviceManager.ListFromApplicationDetails()
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			h.writeErrorNotFound(writer, serviceID)
-			return
-		}
 		wrappedErr := errors.Wrap(err, "while fetching service")
 		h.logger.Error(wrappedErr)
 		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
@@ -201,14 +195,21 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	for _, value := range output {
 		detailedService, err := h.converter.GraphQLToServiceDetails(value)
 		if err != nil {
-			wrappedErr := errors.Wrap(err, "while converting service")
+			wrappedErr := errors.Wrap(err, "while converting graphql to detailed service")
 			h.logger.Error(wrappedErr)
 			reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 			return
 		}
 
+		service, err := h.converter.ServiceDetailsToService(detailedService, value.ID)
+		if err != nil {
+			wrappedErr := errors.Wrap(err, "while converting detailed service to service")
+			h.logger.Error(wrappedErr)
+			reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+			return
+		}
 
-		services = append(services, )
+		services = append(services, service)
 	}
 	err = json.NewEncoder(writer).Encode(&services)
 	if err != nil {
@@ -218,7 +219,7 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	writer.WriteHeader(http.StatusNotImplemented)
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {

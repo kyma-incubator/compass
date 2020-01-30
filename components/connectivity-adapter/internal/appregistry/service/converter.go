@@ -485,9 +485,9 @@ func (c *converter) GraphQLToDetailsModel(in graphql.ApplicationExt) (model.Serv
 
 }
 
-func (c *converter) ServiceDetailsToService(in model.ServiceDetails) (model.Service, error) {
+func (c *converter) ServiceDetailsToService(in model.ServiceDetails, serviceID string) (model.Service, error) {
 	return model.Service{
-		ID:          "",
+		ID:          serviceID,
 		Provider:    in.Provider,
 		Name:        in.Name,
 		Description: in.Description,
