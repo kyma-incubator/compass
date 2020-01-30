@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 
 	"github.com/pkg/errors"
@@ -62,8 +64,37 @@ func (l *labeler) DeleteServiceReference(appDetails graphql.ApplicationExt, serv
 	return l.writeLabel(services)
 }
 
-func (l *labeler) ReadService(appDetails graphql.ApplicationExt, serviceID string) (GraphQLServiceDetails, error) {
-	panic("implement me")
+func (l *labeler) ReadService(appDetails graphql.ApplicationExt, serviceID string) (model.GraphQLServiceDetails, error) {
+	serviceRef, err := l.ReadServiceReference(appDetails, serviceID)
+	if err != nil {
+		return model.GraphQLServiceDetails{}, err
+	}
+
+	var outputApi *graphql.APIDefinitionExt
+	if serviceRef.APIDefID != nil {
+		for _, api := range appDetails.APIDefinitions.Data {
+			if api != nil && api.ID == *serviceRef.APIDefID {
+				outputApi = api
+				break
+			}
+		}
+	}
+
+	var outputEvent *graphql.EventAPIDefinitionExt
+	if serviceRef.EventDefID != nil {
+		for _, event := range appDetails.EventDefinitions.Data {
+			if event != nil && event.ID == *serviceRef.EventDefID {
+				outputEvent = event
+				break
+			}
+		}
+	}
+
+	return model.GraphQLServiceDetails{
+		ID:    serviceRef.ID,
+		API:   outputApi,
+		Event: outputEvent,
+	}, nil
 }
 
 func (l *labeler) readLabel(appDetails graphql.ApplicationExt) (map[string]LegacyServiceReference, error) {
