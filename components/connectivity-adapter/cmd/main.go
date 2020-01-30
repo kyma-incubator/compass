@@ -71,13 +71,12 @@ func initExternalAPIHandler(cfg config) (http.Handler, error) {
 	router := mux.NewRouter()
 	router.HandleFunc("/v1/health", health.HandleFunc).Methods(http.MethodGet)
 
-	v1Router := router.PathPrefix("/{app-name}/v1").Subrouter()
+	applicationRegistryRouterV1 := router.PathPrefix("/{app-name}/v1").Subrouter()
+	connectorRouter := router.PathPrefix("/v1/applications").Subrouter()
 
-	appRegistryRouter := v1Router.PathPrefix("/metadata").Subrouter()
+	appRegistryRouter := applicationRegistryRouterV1.PathPrefix("/metadata").Subrouter()
 	appregistry.RegisterHandler(appRegistryRouter, cfg.AppRegistry)
-
-	connectorRouter := v1Router.PathPrefix("/applications").Subrouter()
-	err := connector.RegisterExternalHandler(connectorRouter, cfg.Connector)
+	err := connector.RegisterExternalHandler(connectorRouter, cfg.Connector, cfg.AppRegistry.DirectorEndpoint)
 	if err != nil {
 		return nil, err
 	}

@@ -12,7 +12,7 @@ func toAppError(err error) apperrors.AppError {
 		return nil
 	}
 
-	// Find some better way to distinguish error type
+	// TODO: Find some better way to distinguish error type
 	if strings.Contains(err.Error(), "CSR: Invalid") {
 		return apperrors.WrongInput(err.Error())
 	}

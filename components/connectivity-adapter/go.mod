@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f
+	github.com/google/martian v2.1.0+incompatible
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.3
 	github.com/kyma-incubator/compass v0.0.0-20200123101435-9cd00b2924b8

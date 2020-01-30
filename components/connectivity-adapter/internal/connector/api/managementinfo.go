@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/director"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
@@ -13,14 +14,18 @@ import (
 )
 
 type managementInfoHandler struct {
-	gqlClient graphql.Client
-	logger    *log.Logger
+	gqlClient                      graphql.Client
+	logger                         *log.Logger
+	connectivityAdapterMTLSBaseURL string
+	directorClientProvider         director.DirectorClientProvider
 }
 
-func NewManagementInfoHandler(client graphql.Client, logger *log.Logger) managementInfoHandler {
+func NewManagementInfoHandler(client graphql.Client, logger *log.Logger, connectivityAdapterMTLSBaseURL string, directorClientProvider director.DirectorClientProvider) managementInfoHandler {
 	return managementInfoHandler{
-		gqlClient: client,
-		logger:    logger,
+		gqlClient:                      client,
+		logger:                         logger,
+		connectivityAdapterMTLSBaseURL: connectivityAdapterMTLSBaseURL,
+		directorClientProvider:         directorClientProvider,
 	}
 }
 
@@ -34,16 +39,24 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 		return
 	}
 
-	application := authorizationHeaders.GetClientID()
-	contextLogger := contextLogger(mh.logger, application)
+	systemAuthID := authorizationHeaders.GetClientID()
+	contextLogger := contextLogger(mh.logger, systemAuthID)
 
-	baseURLs, err := middlewares.GetBaseURLsFromContext(r.Context(), middlewares.BaseURLsKey)
+	// <AG>
+	directorClient := mh.directorClientProvider.Client(r)
+
+	application, err := directorClient.GetApplication(systemAuthID)
 	if err != nil {
-		contextLogger.Errorf("Failed to read Base URL context: %s.", err)
-		reqerror.WriteErrorMessage(w, "Failed to read Base URL context.", apperrors.CodeInternal)
+		err = errors.Wrap(err, "Failed to get application")
+		contextLogger.Error(err.Error())
+		reqerror.WriteError(w, err, apperrors.CodeInternal)
 
 		return
 	}
+
+	log.Info("Events base: " + application.EventingConfiguration.DefaultURL)
+
+	// <AG>
 
 	contextLogger.Info("Getting Management Info")
 
@@ -60,10 +73,10 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 
 	//TODO: handle case when configuration.Token is nil
 	managementInfoResponse := mh.makeManagementInfoResponse(
-		application,
+		application.Name,
 		configuration.Token.Token,
-		baseURLs.ConnectivityAdapterMTLSBaseURL,
-		baseURLs.EventServiceBaseURL,
+		mh.connectivityAdapterMTLSBaseURL,
+		application.EventingConfiguration.DefaultURL,
 		certInfo)
 
 	respondWithBody(w, http.StatusOK, managementInfoResponse, contextLogger)

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/director"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
@@ -17,15 +19,13 @@ type Config struct {
 	ConnectorInternalEndpoint string `envconfig:"default=http://compass-connector-internal.compass-system.svc.cluster.local:3001/graphql"`
 	AdapterBaseURL            string `envconfig:"default=https://adapter-gateway.kyma.local"`
 	AdapterMtlsBaseURL        string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
-	// TODO: remove once getting Events Base URL from Director is implemented
-	EventBaseURL string `envconfig:"default=https://gateway.kyma.local"`
 }
 
 const (
 	timeout = 30 * time.Second
 )
 
-func RegisterExternalHandler(router *mux.Router, config Config) error {
+func RegisterExternalHandler(router *mux.Router, config Config, directorURL string) error {
 	logger := logrus.New().WithField("component", "connector").Logger
 	logger.SetReportCaller(true)
 
@@ -38,7 +38,7 @@ func RegisterExternalHandler(router *mux.Router, config Config) error {
 	router.Use(mux.MiddlewareFunc(authorizationMiddleware.GetAuthorizationHeaders))
 
 	signingRequestInfoHandler := newSigningRequestInfoHandler(config, client, logger)
-	managementInfoHandler := newManagementInfoHandler(config, client, logger)
+	managementInfoHandler := newManagementInfoHandler(config, client, logger, directorURL)
 	certificatesHandler := newCertificateHandler(client, logger)
 	revocationsHandler := newRevocationsHandler(client, logger)
 
@@ -52,21 +52,17 @@ func RegisterExternalHandler(router *mux.Router, config Config) error {
 }
 
 func newSigningRequestInfoHandler(config Config, client graphql.Client, logger *logrus.Logger) http.Handler {
-	eventBaseURLProvider := newEventBaseURLProvider(config)
-	baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterBaseURL, config.AdapterMtlsBaseURL, eventBaseURLProvider)
 	signingRequestInfo := api.NewSigningRequestInfoHandler(client, logger)
 	signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetSigningRequestInfo)
 
-	return baseURLsMiddleware.GetBaseUrls(signingRequestInfoHandler)
+	return signingRequestInfoHandler
 }
 
-func newManagementInfoHandler(config Config, client graphql.Client, logger *logrus.Logger) http.Handler {
-	eventBaseURLProvider := newEventBaseURLProvider(config)
-	baseURLsMiddleware := middlewares.NewBaseURLsMiddleware(config.AdapterMtlsBaseURL, config.AdapterMtlsBaseURL, eventBaseURLProvider)
-	managementInfo := api.NewManagementInfoHandler(client, logger)
+func newManagementInfoHandler(config Config, client graphql.Client, logger *logrus.Logger, directorURL string) http.Handler {
+	managementInfo := api.NewManagementInfoHandler(client, logger, config.AdapterMtlsBaseURL, director.NewClientProvider(directorURL))
 	managementInfoHandler := http.HandlerFunc(managementInfo.GetManagementInfo)
 
-	return baseURLsMiddleware.GetBaseUrls(managementInfoHandler)
+	return managementInfoHandler
 }
 
 func newCertificateHandler(client graphql.Client, logger *logrus.Logger) http.Handler {
