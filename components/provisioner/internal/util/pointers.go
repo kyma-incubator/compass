@@ -1,5 +1,7 @@
 package util
 
+import "k8s.io/apimachinery/pkg/util/intstr"
+
 func StringPtr(str string) *string {
 	return &str
 }
@@ -14,4 +16,8 @@ func BoolFromPtr(val *bool) bool {
 	}
 
 	return *val
+}
+
+func IntOrStrPtr(intOrStr intstr.IntOrString) *intstr.IntOrString {
+	return &intOrStr
 }

@@ -3,9 +3,26 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
+	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -45,40 +62,92 @@ type config struct {
 		Timeout                     time.Duration `envconfig:"default=40m"`
 		ErrorsCountFailureThreshold int           `envconfig:"default=5"`
 	}
+
+	Gardener struct {
+		Project        string `envconfig:"default=gardenerProject"`
+		KubeconfigPath string `envconfig:"default=./dev/kubeconfig.yaml"`
+	}
+
+	Provisioner string `envconfig:"default=gardener"`
 }
 
 func (c *config) String() string {
 	return fmt.Sprintf("Address: %s, APIEndpoint: %s, CredentialsNamespace: %s, "+
 		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s"+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
-		"DatabaseName: %s, DatabaseSSLMode: %s, DatabaseSchemaFilePath: %s",
+		"DatabaseName: %s, DatabaseSSLMode: %s, DatabaseSchemaFilePath: %s, "+
+		"GardenerProject: %s, GardenerKubeconfigPath: %s, Provisioner: %s",
 		c.Address, c.APIEndpoint, c.CredentialsNamespace,
 		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
-		c.Database.Name, c.Database.SSLMode, c.Database.SchemaFilePath)
+		c.Database.Name, c.Database.SSLMode, c.Database.SchemaFilePath,
+		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Provisioner)
 }
 
 func main() {
+	formatter := &log.TextFormatter{
+		FullTimestamp: true,
+	}
+	log.SetFormatter(formatter)
+
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Failed to load application config")
 
-	log.Println("Starting Provisioner")
-	log.Printf("Config: %s", cfg.String())
+	log.Infof("Starting Provisioner")
+	log.Infof("Config: %s", cfg.String())
 
 	connString := fmt.Sprintf(connStringFormat, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
 		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
 
-	persistenceService, releaseRepository, err := initRepositories(cfg, connString)
+	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 
-	exitOnError(err, "Failed to initialize Repositories ")
+	gardenerClusterConfig, err := newGardenerClusterConfig(cfg)
+	exitOnError(err, "Failed to initialize Gardener cluster client")
 
-	resolver, err := newResolver(cfg, persistenceService, releaseRepository)
-	exitOnError(err, "Failed to initialize GraphQL resolver ")
+	gardenerClientSet, err := gardener.NewClient(gardenerClusterConfig)
+	exitOnError(err, "Failed to create Gardener cluster clientset")
 
-	client := newHTTPClient(false)
+	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
+
+	connection, err := database.InitializeDatabase(connString, cfg.Database.SchemaFilePath, databaseConnectionRetries)
+	exitOnError(err, "Failed to initialize persistence")
+
+	dbsFactory := dbsession.NewFactory(connection)
+	releaseRepository := release.NewReleaseRepository(connection, uuid.NewUUIDGenerator())
+
+	installationService := installation.NewInstallationService(cfg.Installation.Timeout, installationSDK.NewKymaInstaller, cfg.Installation.ErrorsCountFailureThreshold)
+
+	directorClient, err := newDirectorClient(cfg)
+	exitOnError(err, "Failed to initialize Director client")
+
+	runtimeConfigurator := runtime.NewRuntimeConfigurator(clientbuilder.NewConfigMapClientBuilder(), directorClient)
+
+	var provisioner provisioning.Provisioner
+	switch strings.ToLower(cfg.Provisioner) {
+	case "hydroform":
+		hydroformSvc := hydroform.NewHydroformService(client.NewHydroformClient(), cfg.Gardener.KubeconfigPath)
+		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
+	case "gardener":
+		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient)
+		shootController, err := newShootController(cfg, gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, installationService, directorClient, runtimeConfigurator)
+		exitOnError(err, "Failed to create Shoot controller.")
+		go func() {
+			err := shootController.StartShootController()
+			exitOnError(err, "Failed to start Shoot Controller")
+		}()
+	default:
+		log.Fatalf("Error: invalid provisioner provided: %s", cfg.Provisioner)
+	}
+
+	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseRepository, directorClient)
+	validator := api.NewValidator(dbsFactory.NewReadSession())
+
+	resolver := api.NewResolver(provisioningSVC, validator)
+
+	httpClient := newHTTPClient(false)
 	logger := log.WithField("Component", "Artifact Downloader")
-	downloader := release.NewArtifactsDownloader(releaseRepository, 5, false, client, logger)
+	downloader := release.NewArtifactsDownloader(releaseRepository, 5, false, httpClient, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -89,7 +158,7 @@ func main() {
 	}
 	executableSchema := gqlschema.NewExecutableSchema(gqlCfg)
 
-	log.Printf("Registering endpoint on %s...", cfg.APIEndpoint)
+	log.Infof("Registering endpoint on %s...", cfg.APIEndpoint)
 	router := mux.NewRouter()
 	router.Use(middlewares.ExtractTenant)
 
@@ -98,7 +167,7 @@ func main() {
 
 	http.Handle("/", router)
 
-	log.Printf("API listening on %s...", cfg.Address)
+	log.Infof("API listening on %s...", cfg.Address)
 
 	if err := http.ListenAndServe(cfg.Address, router); err != nil {
 		panic(err)

@@ -5,10 +5,12 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -201,7 +203,7 @@ func TestService_List(t *testing.T) {
 	}
 }
 
-func TestService_Delete(t *testing.T) {
+func TestService_DeleteMany(t *testing.T) {
 	//GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test")
 	tenantInput := newModelBusinessTenantMappingInput(testName)
@@ -214,11 +216,21 @@ func TestService_Delete(t *testing.T) {
 		ExpectedOutput      error
 	}{
 		{
-			Name: "Succes",
+			Name: "Success",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
 				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).Return(tenantModel, nil).Once()
 				tenantMappingRepo.On("Update", ctx, &tenantModelInactive).Return(nil).Once()
+				return tenantMappingRepo
+			},
+			ExpectedOutput: nil,
+		},
+		{
+			Name: "Success when tenant not found",
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).
+					Return(tenantModel, apperrors.NewNotFoundError("test")).Once()
 				return tenantMappingRepo
 			},
 			ExpectedOutput: nil,
@@ -250,7 +262,7 @@ func TestService_Delete(t *testing.T) {
 			svc := tenant.NewService(tenantMappingRepo, nil)
 
 			// WHEN
-			err := svc.Delete(ctx, []model.BusinessTenantMappingInput{tenantInput})
+			err := svc.DeleteMany(ctx, []model.BusinessTenantMappingInput{tenantInput})
 
 			// THEN
 			if testCase.ExpectedOutput != nil {

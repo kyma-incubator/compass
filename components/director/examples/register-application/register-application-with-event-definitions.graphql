@@ -9,7 +9,11 @@ mutation {
         {
           name: "comments-v1"
           description: "comments events"
-          spec: { data: "asyncapi", type: ASYNC_API, format: YAML }
+          spec: {
+            data: "{\"asyncapi\":\"1.2.0\"}"
+            type: ASYNC_API
+            format: YAML
+          }
           group: "comments"
           version: {
             value: "v1"

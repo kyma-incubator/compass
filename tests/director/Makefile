@@ -30,7 +30,7 @@ generate-director-examples:
 		-e HOST_ROOT_PATH=$(COMPONENT_DIR)/../.. \
 		--network=gen-examples-network \
 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
-		$(DOCKER_CREATE_OPTS) 	./gen-examples.sh
+		$(DOCKER_CREATE_OPTS) bash -c "apt-get update && apt install postgresql-client -y && ./gen-examples.sh"
 	@docker network rm gen-examples-network
 	@if [ -n "$$(git status -s ../../examples )" ]; then \
 		echo -e "✗ Code and examples are out-of-sync" \
