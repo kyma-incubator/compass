@@ -34,8 +34,6 @@ resources: {}
 
 provisioner:
   URL: "http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"
-  # todo: remove the flag after new provisioner is merged
-  processRuntimeID: true
   gardener:
     # name of the secret with kubeconfig to the gardener cluster
     secretName: "gopher-canary-gardener"

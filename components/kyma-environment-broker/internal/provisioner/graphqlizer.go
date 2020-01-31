@@ -61,8 +61,6 @@ func (g *graphqlizer) CredentialsInputToGraphQL(in gqlschema.CredentialsInput) (
 
 func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-		name: "{{.Name}}"
-        projectName: "{{.ProjectName}}"
 		kubernetesVersion: "{{.KubernetesVersion}}"
 		nodeCount: {{.NodeCount}}
 		volumeSizeGB: {{.VolumeSizeGb }}
