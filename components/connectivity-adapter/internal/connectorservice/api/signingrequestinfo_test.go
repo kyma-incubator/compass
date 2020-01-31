@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -10,9 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
-	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql/automock"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
+
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
+	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector/automock"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/sirupsen/logrus"
@@ -21,12 +22,6 @@ import (
 )
 
 func TestHandler_SigningRequestInfo(t *testing.T) {
-
-	baseURLs := middlewares.BaseURLs{
-		ConnectivityAdapterBaseURL:     "www.connectivity-adapter.com",
-		ConnectivityAdapterMTLSBaseURL: "www.connectivity-adapter-mtls.com",
-		EventServiceBaseURL:            "www.event-service.com",
-	}
 
 	headersFromToken := map[string]string{
 		oathkeeper.ClientIdFromTokenHeader: "myapp",
@@ -55,9 +50,9 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		}
 
 		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
-		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New())
+		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New(), "www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com")
 
-		req := newRequestWithContext(strings.NewReader(""), headersFromToken, &baseURLs)
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 
 		r := httptest.NewRecorder()
 
@@ -65,8 +60,9 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 			CsrURL: "www.connectivity-adapter.com/v1/applications/certificates?token=new_token",
 			API: model.Api{
 				RuntimeURLs: &model.RuntimeURLs{
-					EventsURL:   "www.event-service.com/myapp/v1/events",
-					MetadataURL: "www.connectivity-adapter-mtls.com/myapp/v1/metadata",
+					EventsURL:     "",
+					EventsInfoURL: "/subscribed",
+					MetadataURL:   "www.connectivity-adapter-mtls.com/myapp/v1/metadata/services",
 				},
 				InfoURL:         "www.connectivity-adapter-mtls.com/v1/applications/management/info",
 				CertificatesURL: "www.connectivity-adapter.com/v1/applications/certificates",
@@ -90,8 +86,6 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		err = json.Unmarshal(responseBody, &infoResponse)
 		require.NoError(t, err)
 
-		require.NoError(t, err)
-
 		assert.Equal(t, http.StatusOK, r.Code)
 		assert.EqualValues(t, expectedInfoResponse, infoResponse)
 	})
@@ -99,13 +93,13 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 	t.Run("Should return error when failed to call Compass Connector", func(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
-		connectorClientMock.On("Configuration", headersFromToken).Return(schema.Configuration{}, errors.New("failed to execute graphql query"))
+		connectorClientMock.On("Configuration", headersFromToken).Return(schema.Configuration{}, apperrors.Internal("error"))
 
-		req := newRequestWithContext(strings.NewReader(""), headersFromToken, &baseURLs)
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 
 		r := httptest.NewRecorder()
 
-		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New())
+		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New(), "www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com")
 
 		// when
 		handler.GetSigningRequestInfo(r, req)
@@ -115,47 +109,26 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		connectorClientMock.AssertExpectations(t)
 	})
 
-	testCases := []struct {
-		description string
-		request     *http.Request
-	}{
-		{
-			"Should return error when Authorization context not passed",
-			newRequestWithContext(strings.NewReader(""), nil, nil),
-		},
-		{
-			"Should return error when Base URL context not passed",
-			newRequestWithContext(strings.NewReader(""), headersFromToken, nil),
-		},
-	}
+	t.Run("Should return error when Authorization context not passed", func(t *testing.T) {
+		// given
+		connectorClientMock := &mocks.Client{}
 
-	for _, tc := range testCases {
-		t.Run("Should return error when Authorization context not passed", func(t *testing.T) {
-			// given
-			connectorClientMock := &mocks.Client{}
+		r := httptest.NewRecorder()
+		req := newRequestWithContext(strings.NewReader(""), nil)
+		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New(), "www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com")
 
-			r := httptest.NewRecorder()
+		// when
+		handler.GetSigningRequestInfo(r, req)
 
-			handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New())
-
-			// when
-			handler.GetSigningRequestInfo(r, tc.request)
-
-			// then
-			assert.Equal(t, http.StatusInternalServerError, r.Code)
-			connectorClientMock.AssertNotCalled(t, "Configuration")
-		})
-	}
+		// then
+		assert.Equal(t, http.StatusForbidden, r.Code)
+	})
 }
 
-func newRequestWithContext(body io.Reader, headers map[string]string, baseURLs *middlewares.BaseURLs) *http.Request {
+func newRequestWithContext(body io.Reader, headers map[string]string) *http.Request {
 	req := httptest.NewRequest(http.MethodPost, "http://www.someurl.com/get", body)
 
 	newContext := req.Context()
-
-	if baseURLs != nil {
-		newContext = middlewares.PutIntoContext(newContext, middlewares.BaseURLsKey, *baseURLs)
-	}
 
 	if headers != nil {
 		newContext = middlewares.PutIntoContext(newContext, middlewares.AuthorizationHeadersKey, middlewares.AuthorizationHeaders(headers))

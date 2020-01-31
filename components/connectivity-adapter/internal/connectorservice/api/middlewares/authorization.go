@@ -5,6 +5,9 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
+
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 )
 
@@ -19,7 +22,7 @@ func (c authorizationHeadersMiddleware) GetAuthorizationHeaders(handler http.Han
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		headers, err := extractHeaders(r)
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
+			reqerror.WriteError(w, err, apperrors.CodeForbidden)
 
 			return
 		}
@@ -46,10 +49,10 @@ func extractHeaders(r *http.Request) (map[string]string, error) {
 		}, nil
 	}
 
-	return map[string]string{}, errors.New("authorization failed")
+	return map[string]string{}, errors.New("invalid token or certificate")
 }
 
-func (ah AuthorizationHeaders) GetClientID() string {
+func (ah AuthorizationHeaders) GetSystemAuthID() string {
 	clientIDFromToken := ah[oathkeeper.ClientIdFromTokenHeader]
 
 	if clientIDFromToken != "" {

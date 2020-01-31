@@ -38,7 +38,7 @@ func WriteErrorMessage(writer http.ResponseWriter, errMessage string, appErrorCo
 
 	response := ErrorResponse{
 		Error: errMessage,
-		Code:  appErrorCode,
+		Code:  errorCodeToHTTPStatus(appErrorCode),
 	}
 
 	err := json.NewEncoder(writer).Encode(response)
@@ -63,6 +63,8 @@ func errorCodeToHTTPStatus(code int) int {
 		return http.StatusBadRequest
 	case apperrors.CodeUpstreamServerCallFailed:
 		return http.StatusBadGateway
+	case apperrors.CodeForbidden:
+		return http.StatusForbidden
 	default:
 		return http.StatusInternalServerError
 	}

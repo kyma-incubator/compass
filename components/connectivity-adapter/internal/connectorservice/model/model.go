@@ -8,10 +8,10 @@ const (
 	TokenFormat                       = "?token=%s"
 	CertsEndpoint                     = "/v1/applications/certificates"
 	ManagementInfoEndpoint            = "/v1/applications/management/info"
-	ApplicationRegistryEndpointFormat = "/%s/v1/metadata"
-	EventsEndpointFormat              = "/%s/v1/events"
-	RenewCertURLFormat                = "%s/applications/certificates/renewals"
-	RevocationCertURLFormat           = "%s/applications/certificates/revocations"
+	ApplicationRegistryEndpointFormat = "/%s/v1/metadata/services"
+	EventsInfoEndpoint                = "/subscribed"
+	RenewCertURLFormat                = "%s/v1/applications/certificates/renewals"
+	RevocationCertURLFormat           = "%s/v1/applications/certificates/revocations"
 )
 
 type CertRequest struct {
@@ -37,7 +37,7 @@ type MgmtInfoReponse struct {
 }
 
 type RuntimeURLs struct {
-	EventsInfoURL string `json:"eventsInfoUrl"` // TODO: Where is it used?
+	EventsInfoURL string `json:"eventsInfoUrl"`
 	EventsURL     string `json:"eventsUrl"`
 	MetadataURL   string `json:"metadataUrl"`
 }
@@ -66,6 +66,11 @@ type ClientIdentity struct {
 	Tenant      string `json:"tenant,omitempty"`
 }
 
+type TokenResponse struct {
+	URL   string `json:"url"`
+	Token string `json:"token"`
+}
+
 func MakeCSRURL(newToken, connectivityAdapterBaseURL string) string {
 	csrURL := connectivityAdapterBaseURL + CertsEndpoint
 	tokenParam := fmt.Sprintf(TokenFormat, newToken)
@@ -83,8 +88,9 @@ func MakeApiURLs(application, connectivityAdapterBaseURL string, connectivityAda
 
 func makeRuntimeURLs(application, connectivityAdapterBaseURL string, eventServiceBaseURL string) *RuntimeURLs {
 	return &RuntimeURLs{
-		MetadataURL: connectivityAdapterBaseURL + fmt.Sprintf(ApplicationRegistryEndpointFormat, application),
-		EventsURL:   eventServiceBaseURL + fmt.Sprintf(EventsEndpointFormat, application),
+		MetadataURL:   connectivityAdapterBaseURL + fmt.Sprintf(ApplicationRegistryEndpointFormat, application),
+		EventsURL:     eventServiceBaseURL,
+		EventsInfoURL: eventServiceBaseURL + EventsInfoEndpoint,
 	}
 }
 

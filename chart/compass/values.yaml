@@ -20,7 +20,7 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-776"
+      version: "PR-734"
     director:
       dir:
       version: "PR-771"
@@ -53,7 +53,7 @@ global:
         version: "02e8358c"
       provisioner:
         dir:
-      version: "PR-552"
+        version: "PR-552"
 
   isLocalEnv: false
   oauth2:

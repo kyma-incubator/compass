@@ -1,7 +1,7 @@
-package graphql
+package connector
 
 import (
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 )
 

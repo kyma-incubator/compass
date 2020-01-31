@@ -3,9 +3,10 @@ package api
 import (
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
+
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
@@ -21,19 +22,22 @@ const (
 )
 
 type csrInfoHandler struct {
-	gqlClient graphql.Client
-	logger    *log.Logger
+	gqlClient                      connector.Client
+	logger                         *log.Logger
+	connectivityAdapterBaseURL     string
+	connectivityAdapterMTLSBaseURL string
 }
 
-func NewSigningRequestInfoHandler(client graphql.Client, logger *log.Logger) csrInfoHandler {
+func NewSigningRequestInfoHandler(client connector.Client, logger *log.Logger, connectivityAdapterBaseURL string, connectivityAdapterMTLSBaseURL string) csrInfoHandler {
 	return csrInfoHandler{
-		gqlClient: client,
-		logger:    logger,
+		gqlClient:                      client,
+		logger:                         logger,
+		connectivityAdapterBaseURL:     connectivityAdapterBaseURL,
+		connectivityAdapterMTLSBaseURL: connectivityAdapterMTLSBaseURL,
 	}
 }
 
 func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Request) {
-	// TODO: make sure only calls with token are accepted
 
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
@@ -42,16 +46,8 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	application := authorizationHeaders.GetClientID()
-	contextLogger := contextLogger(ci.logger, authorizationHeaders.GetClientID())
-
-	baseURLs, err := middlewares.GetBaseURLsFromContext(r.Context(), middlewares.BaseURLsKey)
-	if err != nil {
-		contextLogger.Errorf("Failed to read Base URL context: %s.", err)
-		reqerror.WriteErrorMessage(w, "Base URLs not provided.", apperrors.CodeInternal)
-
-		return
-	}
+	systemAuthID := authorizationHeaders.GetSystemAuthID()
+	contextLogger := contextLogger(ci.logger, authorizationHeaders.GetSystemAuthID())
 
 	contextLogger.Info("Getting Certificate Signing Request Info")
 
@@ -64,15 +60,15 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	certInfo := graphql.ToCertInfo(configuration)
+	certInfo := connector.ToCertInfo(configuration)
 
 	//TODO: handle case when configuration.Token is nil
 	csrInfoResponse := ci.makeCSRInfoResponse(
-		application,
+		systemAuthID,
 		configuration.Token.Token,
-		baseURLs.ConnectivityAdapterBaseURL,
-		baseURLs.ConnectivityAdapterMTLSBaseURL,
-		baseURLs.EventServiceBaseURL,
+		ci.connectivityAdapterBaseURL,
+		ci.connectivityAdapterMTLSBaseURL,
+		"",
 		certInfo)
 
 	respondWithBody(w, http.StatusOK, csrInfoResponse, contextLogger)

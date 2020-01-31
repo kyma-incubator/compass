@@ -3,15 +3,16 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
-	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql/automock"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/model"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
+
+	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector/automock"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/sirupsen/logrus"
@@ -21,10 +22,6 @@ import (
 
 func TestHandler_Certificates(t *testing.T) {
 
-	baseURLs := middlewares.BaseURLs{
-		ConnectivityAdapterBaseURL: "www.connectivity-adapter.com",
-		EventServiceBaseURL:        "www.event-service.com",
-	}
 	headersFromToken := map[string]string{
 		oathkeeper.ClientIdFromTokenHeader: "myapp",
 	}
@@ -40,7 +37,7 @@ func TestHandler_Certificates(t *testing.T) {
 		}, nil)
 
 		handler := NewCertificatesHandler(connectorClientMock, logrus.New())
-		req := newRequestWithContext(bytes.NewReader(signatureRequestRaw), headersFromToken, &baseURLs)
+		req := newRequestWithContext(bytes.NewReader(signatureRequestRaw), headersFromToken)
 
 		r := httptest.NewRecorder()
 
@@ -66,10 +63,10 @@ func TestHandler_Certificates(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
 		connectorClientMock.On("SignCSR", "Q1NSCg==", headersFromToken).
-			Return(schema.CertificationResult{}, errors.New("some error"))
+			Return(schema.CertificationResult{}, apperrors.Internal("error"))
 
 		handler := NewCertificatesHandler(connectorClientMock, logrus.New())
-		req := newRequestWithContext(bytes.NewReader(signatureRequestRaw), headersFromToken, &baseURLs)
+		req := newRequestWithContext(bytes.NewReader(signatureRequestRaw), headersFromToken)
 
 		r := httptest.NewRecorder()
 
@@ -78,6 +75,21 @@ func TestHandler_Certificates(t *testing.T) {
 
 		// then
 		assert.Equal(t, http.StatusInternalServerError, r.Code)
+	})
+
+	t.Run("Should return error when Authorization context not passed", func(t *testing.T) {
+		// given
+		connectorClientMock := &mocks.Client{}
+
+		r := httptest.NewRecorder()
+		req := newRequestWithContext(strings.NewReader(""), nil)
+		handler := NewCertificatesHandler(connectorClientMock, logrus.New())
+
+		// when
+		handler.SignCSR(r, req)
+
+		// then
+		assert.Equal(t, http.StatusForbidden, r.Code)
 	})
 }
 

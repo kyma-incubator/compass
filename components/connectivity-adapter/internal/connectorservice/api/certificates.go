@@ -5,8 +5,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/api/middlewares"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector/graphql"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
+
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
@@ -18,11 +19,11 @@ type certRequest struct {
 }
 
 type certificatesHandler struct {
-	client graphql.Client
+	client connector.Client
 	logger *log.Logger
 }
 
-func NewCertificatesHandler(client graphql.Client, logger *log.Logger) certificatesHandler {
+func NewCertificatesHandler(client connector.Client, logger *log.Logger) certificatesHandler {
 	return certificatesHandler{
 		client: client,
 		logger: logger,
@@ -37,29 +38,30 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contextLogger := contextLogger(ch.logger, authorizationHeaders.GetClientID())
+	contextLogger := contextLogger(ch.logger, authorizationHeaders.GetSystemAuthID())
 	certRequest, err := readCertRequest(r, contextLogger)
 	if err != nil {
 		err = errors.Wrap(err, "Failed to read certificate request")
 		contextLogger.Error(err.Error())
-		reqerror.WriteError(w, err, apperrors.CodeInternal)
+		reqerror.WriteError(w, err, apperrors.CodeWrongInput)
 
 		return
 	}
 
 	contextLogger.Info("Generating certificate")
 
-	certificationResult, err := ch.client.SignCSR(certRequest.CSR, authorizationHeaders)
-	if err != nil {
-		err = errors.Wrap(err, "Failed to generate certificate")
-		contextLogger.Error(err.Error())
-		reqerror.WriteError(w, err, apperrors.CodeInternal)
+	{
+		certificationResult, err := ch.client.SignCSR(certRequest.CSR, authorizationHeaders)
+		if err != nil {
+			contextLogger.Error(err.Error())
+			reqerror.WriteError(w, err, err.Code())
 
-		return
+			return
+		}
+
+		certResponse := connector.ToCertResponse(certificationResult)
+		respondWithBody(w, http.StatusCreated, certResponse, contextLogger)
 	}
-
-	certResponse := graphql.ToCertResponse(certificationResult)
-	respondWithBody(w, http.StatusCreated, certResponse, contextLogger)
 }
 
 func readCertRequest(r *http.Request, logger *log.Entry) (*certRequest, error) {
