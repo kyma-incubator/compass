@@ -33,6 +33,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [query runtimes with label filter](./query-runtimes/query-runtimes-with-label-filter.graphql)
 - [query runtimes with pagination](./query-runtimes/query-runtimes-with-pagination.graphql)
 - [query runtimes](./query-runtimes/query-runtimes.graphql)
+- [query tenants](./query-tenants/query-tenants.graphql)
 - [register application with api definitions](./register-application/register-application-with-api-definitions.graphql)
 - [register application with documents](./register-application/register-application-with-documents.graphql)
 - [register application with event definitions](./register-application/register-application-with-event-definitions.graphql)

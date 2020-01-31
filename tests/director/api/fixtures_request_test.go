@@ -412,6 +412,15 @@ func fixIntegrationSystemRequest(intSysID string) *gcli.Request {
 			intSysID, tc.gqlFieldsProvider.ForIntegrationSystem()))
 }
 
+func fixTenantsRequest() *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: tenants {
+						%s
+					}
+				}`, tc.gqlFieldsProvider.ForTenant()))
+}
+
 // DELETE
 func fixDeleteLabelDefinitionRequest(labelDefinitionKey string, deleteRelatedLabels bool) *gcli.Request {
 	return gcli.NewRequest(
