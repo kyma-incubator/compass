@@ -18,5 +18,3 @@ func NewClient(config *restclient.Config) (*gardener_apis.CoreV1beta1Client, err
 
 	return clientset, nil
 }
-
-//spec.cloud.gcp.networks.workers[0]: Invalid value: "": invalid CIDR address:

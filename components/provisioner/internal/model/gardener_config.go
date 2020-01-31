@@ -250,9 +250,6 @@ type AWSGardenerConfig struct {
 	input *gqlschema.AWSProviderConfigInput `db:"-"`
 }
 
-type AzureGardenerProvider struct {
-}
-
 func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 	shoot.Spec.CloudProfileName = "az"
 
