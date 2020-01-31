@@ -27,8 +27,8 @@ func TestResolver_Tenants(t *testing.T) {
 	}
 
 	graphqlTenants := []*graphql.Tenant{
-		newGraphQLTenant(testID, testName),
-		newGraphQLTenant("test1", "name1"),
+		newGraphQLTenant(testID, "", testName),
+		newGraphQLTenant("test1", "", "name1"),
 	}
 
 	testCases := []struct {

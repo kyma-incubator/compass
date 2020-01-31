@@ -584,6 +584,7 @@ type SystemAuth {
 
 type Tenant {
 	id: ID!
+	internalID: ID!
 	name: String
 }
 

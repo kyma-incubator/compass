@@ -44,8 +44,9 @@ func (c *converter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
 	}
 
 	return &graphql.Tenant{
-		ID:   in.ExternalTenant,
-		Name: str.Ptr(in.Name),
+		ID:         in.ExternalTenant,
+		InternalID: in.ID,
+		Name:       str.Ptr(in.Name),
 	}
 
 }

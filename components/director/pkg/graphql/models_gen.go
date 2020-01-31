@@ -374,8 +374,9 @@ type TemplateValueInput struct {
 }
 
 type Tenant struct {
-	ID   string  `json:"id"`
-	Name *string `json:"name"`
+	ID         string  `json:"id"`
+	InternalID string  `json:"internalID"`
+	Name       *string `json:"name"`
 }
 
 type Version struct {
