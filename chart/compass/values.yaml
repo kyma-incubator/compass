@@ -16,7 +16,7 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-765"
+      version: "PR-776"
     director:
       dir:
       version: "PR-706"
