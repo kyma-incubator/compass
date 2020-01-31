@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/assertions"
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
 	"github.com/stretchr/testify/assert"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,13 +24,11 @@ const (
 
 func Test_E2E_Gardener(t *testing.T) {
 	gardenerInputs := map[string]gqlschema.GardenerConfigInput{
-		//At the moment, only Azure config is used
 		GCP: {
 			MachineType:  "n1-standard-4",
 			DiskType:     "pd-standard",
 			Region:       "europe-west4",
-			Seed:         "gcp-eu1",
-			TargetSecret: config.GardenerGCPSecret,
+			TargetSecret: config.Gardener.GCPSecret,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
 					Zone: "europe-west4-a",
@@ -41,8 +39,7 @@ func Test_E2E_Gardener(t *testing.T) {
 			MachineType:  "Standard_D2_v3",
 			DiskType:     "Standard_LRS",
 			Region:       "westeurope",
-			Seed:         "az-eu1",
-			TargetSecret: config.GardenerAzureSecret,
+			TargetSecret: config.Gardener.AzureSecret,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
@@ -51,13 +48,15 @@ func Test_E2E_Gardener(t *testing.T) {
 		},
 	}
 
-	logrus.Infof("Starting Compass Provisioner tests concerning Gardener. Test ID: %s", testSuite.TestId)
+	log := logrus.WithField("TestId", testSuite.TestId)
 
-	for _, provider := range testSuite.providers {
+	log.Infof("Starting Compass Provisioner tests on Gardener")
+
+	// TODO: run in different Gorutines
+	for _, provider := range testSuite.gardenerProviders {
 
 		// Provision runtime
 		runtimeName := fmt.Sprintf("%s%s", "runtime", uuid.New().String()[:4])
-		credentialsInput := gqlschema.CredentialsInput{SecretName: testSuite.GardenerCredentialsSecretName}
 
 		provisioningInput := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput: &gqlschema.RuntimeInput{
@@ -65,7 +64,6 @@ func Test_E2E_Gardener(t *testing.T) {
 			},
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{
-					ProjectName:            config.GardenerProjectName,
 					KubernetesVersion:      "1.15.4",
 					NodeCount:              3,
 					DiskType:               gardenerInputs[provider].DiskType,
@@ -83,16 +81,15 @@ func Test_E2E_Gardener(t *testing.T) {
 					ProviderSpecificConfig: gardenerInputs[provider].ProviderSpecificConfig,
 				},
 			},
-			Credentials: &credentialsInput,
 			KymaConfig: &gqlschema.KymaConfigInput{Version: "1.8.0", Components: []*gqlschema.ComponentConfigurationInput{
 				{Component: "core", Namespace: "kyma-system"},
 			}},
 		}
 
-		logrus.Infof("Provisioning %s runtime on %s...", runtimeName, provider)
+		log.Infof("Provisioning %s runtime on %s...", runtimeName, provider)
 		provisioningOperationId, runtimeId, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
 		assertions.RequireNoError(t, err)
-		logrus.Infof("Provisioning operation id: %s, runtime id: %s", provisioningOperationId, runtimeId)
+		log.Infof("Provisioning operation id: %s, runtime id: %s", provisioningOperationId, runtimeId)
 		defer ensureClusterIsDeprovisioned(runtimeId)
 
 		var provisioningOperationStatus gqlschema.OperationStatus
@@ -100,13 +97,13 @@ func Test_E2E_Gardener(t *testing.T) {
 		//Check if another provisioning of the same cluster can start while previous one is in progress
 		err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
 			func() error {
-				logrus.Infof("Waiting for provisioning to finish...")
+				log.Infof("Waiting for provisioning to finish...")
 				var waitErr error
 				provisioningOperationStatus, waitErr = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationId)
 				return waitErr
 			},
 			func() error {
-				logrus.Infof("Checking if operation will fail while other in progress...")
+				log.Infof("Checking if operation will fail while other in progress...")
 				operationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(provisioningOperationId)
 				if err != nil {
 					return errors.WithMessagef(err, "Failed to get %s operation status", provisioningOperationId)
@@ -127,23 +124,32 @@ func Test_E2E_Gardener(t *testing.T) {
 		assertions.RequireNoError(t, err, "Provisioning operation status: ", provisioningOperationStatus.State)
 
 		assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeId, provisioningOperationStatus)
-		logrus.Infof("Runtime provisioned successfully on %s", provider)
+		log.Infof("Runtime provisioned successfully on %s", provider)
 
-		logrus.Infof("Fetching %s runtime status...", provider)
+		log.Infof("Fetching %s runtime status...", provider)
 		runtimeStatus, err := testSuite.ProvisionerClient.RuntimeStatus(runtimeId)
 		assertions.RequireNoError(t, err)
 
 		assertGardenerRuntimeConfiguration(t, provisioningInput, runtimeStatus)
 
-		logrus.Infof("Deprovisioning %s runtime on...", provider)
+		log.Infof("Preparing K8s client...")
+		k8sClient := testSuite.KubernetesClientFromRawConfig(t, *runtimeStatus.RuntimeConfiguration.Kubeconfig)
+
+		logrus.Infof("Accessing API Server on provisioned cluster...")
+		_, err = k8sClient.ServerVersion()
+		assertions.RequireNoError(t, err)
+
+		// TODO: Run E2e Runtime tests
+
+		log.Infof("Deprovisioning %s runtime on...", provider)
 		deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeId)
 		assertions.RequireNoError(t, err)
-		logrus.Infof("Deprovisioning operation id: %s", deprovisioningOperationId)
+		log.Infof("Deprovisioning operation id: %s", deprovisioningOperationId)
 
 		deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationId)
 		assertions.RequireNoError(t, err)
 		assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeId, deprovisioningOperationStatus)
-		logrus.Infof("Runtime deprovisioned successfully")
+		log.Infof("Runtime deprovisioned successfully")
 	}
 }
 
@@ -155,7 +161,6 @@ func Test_E2e(t *testing.T) {
 
 	// Provision runtime
 	runtimeName := fmt.Sprintf("%s%s", "runtime", uuid.New().String()[:4])
-	credentialsInput := gqlschema.CredentialsInput{SecretName: testSuite.GCPCredentialsSecretName}
 
 	provisioningInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
@@ -164,7 +169,7 @@ func Test_E2e(t *testing.T) {
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GcpConfig: &gqlschema.GCPConfigInput{
 				Name:              "gke-provisioner-test-" + testSuite.TestId,
-				ProjectName:       config.GCPProjectName,
+				ProjectName:       config.GCP.ProjectName,
 				KubernetesVersion: "1.14",
 				NumberOfNodes:     3,
 				BootDiskSizeGb:    35, // minimal value
@@ -172,14 +177,13 @@ func Test_E2e(t *testing.T) {
 				Region:            gcpClusterZone,
 			},
 		},
-		Credentials: &credentialsInput,
 		KymaConfig: &gqlschema.KymaConfigInput{Version: "1.8.0", Components: []*gqlschema.ComponentConfigurationInput{
 			{Component: "core", Namespace: "kyma-system"},
 		}},
 	}
 
 	logrus.Infof("Provisioning %s runtime on GCP...", runtimeName)
-	provisioningOperationId, runtimeId,  err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
+	provisioningOperationId, runtimeId, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
 	assertions.RequireNoError(t, err)
 	logrus.Infof("Provisioning operation id: %s, runtime id: %s", provisioningOperationId, runtimeId)
 	defer ensureClusterIsDeprovisioned(runtimeId)
@@ -296,27 +300,28 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 	require.NotNil(t, status.LastOperationStatus)
 	//require.NotNil(t, status.RuntimeConnectionStatus) // TODO - uncomment when implemented
 
-	ClusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(gqlschema.GardenerConfig)
+	clusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(gqlschema.GardenerConfig)
 
 	if !ok {
 		t.Error("Cluster Config does not match GardenerConfig type")
 		t.FailNow()
 	}
 
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Region, ClusterConfig.Region)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.ProjectName, ClusterConfig.ProjectName)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.KubernetesVersion, ClusterConfig.KubernetesVersion)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.VolumeSizeGb, ClusterConfig.VolumeSizeGb)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.MachineType, ClusterConfig.MachineType)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.NodeCount, ClusterConfig.NodeCount)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Seed, ClusterConfig.Seed)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.DiskType, ClusterConfig.DiskType)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Provider, ClusterConfig.Provider)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.WorkerCidr, ClusterConfig.WorkerCidr)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.MaxUnavailable, ClusterConfig.MaxUnavailable)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMin, ClusterConfig.AutoScalerMin)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMax, ClusterConfig.AutoScalerMax)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.MaxSurge, ClusterConfig.MaxSurge)
+	assert.NotEmpty(t, clusterConfig.Name)
+	assert.NotEmpty(t, clusterConfig.Seed)
+
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Region, clusterConfig.Region)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.KubernetesVersion, clusterConfig.KubernetesVersion)
+	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.VolumeSizeGb, clusterConfig.VolumeSizeGb)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.MachineType, clusterConfig.MachineType)
+	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.NodeCount, clusterConfig.NodeCount)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.DiskType, clusterConfig.DiskType)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Provider, clusterConfig.Provider)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.WorkerCidr, clusterConfig.WorkerCidr)
+	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.MaxUnavailable, clusterConfig.MaxUnavailable)
+	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMin, clusterConfig.AutoScalerMin)
+	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMax, clusterConfig.AutoScalerMax)
+	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.MaxSurge, clusterConfig.MaxSurge)
 
 	verifyProviderConfig(t, *input.ClusterConfig.GardenerConfig.ProviderSpecificConfig, status.RuntimeConfiguration.ClusterConfig)
 }

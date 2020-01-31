@@ -157,16 +157,14 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "safe-changes-gardener-azure-from-rafalpotempa"
-  digest = "1:05f62b9994a2a9e428d6df0d7c7e4ba97d83c1f0aaf686e895d815a0a1c7b122"
+  digest = "1:fac838305e332f0283de5aa98dcb02f39ab86dd7507b2b664f12898c28ba59fc"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/scalar",
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "4374684cfd969d82d0773d6be754f235d219aca0"
-  source = "github.com/franpog859/compass"
+  revision = "197b9f0c491038c7b8e938c500ce75cb4a349566"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"

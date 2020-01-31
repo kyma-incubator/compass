@@ -5,8 +5,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  source = "github.com/franpog859/compass"
-  branch = "safe-changes-gardener-azure-from-rafalpotempa"
+  revision = "197b9f0c491038c7b8e938c500ce75cb4a349566"
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"
