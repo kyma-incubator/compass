@@ -15,6 +15,7 @@ import (
 const serviceManagerComponentName = "service-manager-proxy"
 
 //go:generate mockery -name=OptionalComponentService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery -name=InputBuilderForPlan -output=automock -outpkg=automock -case=underscore
 
 // Defines dependency
 type (
@@ -49,10 +50,6 @@ type InputBuilderFactory struct {
 	serviceManager     internal.ServiceManagerOverride
 	fullComponentsList internal.ComponentConfigurationInputList
 }
-
-var _ HyperscalerInputProvider = &cluster_config.AwsInputProvider{}
-var _ HyperscalerInputProvider = &cluster_config.GcpInputProvider{}
-var _ HyperscalerInputProvider = &cluster_config.AzureInputProvider{}
 
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullComponentsList []v1alpha1.KymaComponent, kymaVersion string, smOverride internal.ServiceManagerOverride) InputBuilderForPlan {
 	return &InputBuilderFactory{

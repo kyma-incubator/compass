@@ -44,19 +44,6 @@ type Config struct {
 	Broker broker.Config
 }
 
-type KymaEnvironmentBroker struct {
-	*broker.ServicesEndpoint
-	*broker.ProvisionEndpoint
-	*broker.DeprovisionEndpoint
-	*broker.UpdateEndpoint
-	*broker.GetInstanceEndpoint
-	*broker.LastOperationEndpoint
-	*broker.BindEndpoint
-	*broker.UnbindEndpoint
-	*broker.GetBindingEndpoint
-	*broker.LastBindingOperationEndpoint
-}
-
 func main() {
 	// create and fill config
 	var cfg Config
@@ -115,7 +102,7 @@ func main() {
 	dumper, err := broker.NewDumper()
 	fatalOnError(err)
 
-	kymaEnvBroker := &KymaEnvironmentBroker{
+	kymaEnvBroker := &broker.KymaEnvironmentBroker{
 		broker.NewServices(cfg.Broker, optComponentsSvc, dumper),
 		broker.NewProvision(cfg.Broker, db.Instances(), inputFactory, cfg.Provisioning, provisionerClient, dumper),
 		broker.NewDeprovision(db.Instances(), provisionerClient, dumper),

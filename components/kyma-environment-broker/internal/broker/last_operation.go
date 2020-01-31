@@ -21,6 +21,10 @@ const (
 	delayInstanceTime = 3 * time.Hour
 )
 
+type DirectorClient interface {
+	GetConsoleURL(accountID, runtimeID string) (string, error)
+}
+
 type LastOperationEndpoint struct {
 	instancesStorage  storage.Instances
 	provisionerClient provisioner.Client

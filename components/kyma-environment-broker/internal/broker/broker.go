@@ -10,22 +10,22 @@ const (
 	kymaServiceID = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
 )
 
-//go:generate mockery -name=OptionalComponentNamesProvider -output=automock -outpkg=automock -case=underscore
-//go:generate mockery -name=InputBuilderForPlan -output=automock -outpkg=automock -case=underscore
-
-type (
-	DirectorClient interface {
-		GetConsoleURL(accountID, runtimeID string) (string, error)
-	}
-
-	StructDumper interface {
-		Dump(value ...interface{})
-	}
-)
-
 var planIDsMapping = map[string]string{
 	"azure": azurePlanID,
 	"gcp":   gcpPlanID,
+}
+
+type KymaEnvironmentBroker struct {
+	*ServicesEndpoint
+	*ProvisionEndpoint
+	*DeprovisionEndpoint
+	*UpdateEndpoint
+	*GetInstanceEndpoint
+	*LastOperationEndpoint
+	*BindEndpoint
+	*UnbindEndpoint
+	*GetBindingEndpoint
+	*LastBindingOperationEndpoint
 }
 
 // Config represents configuration for broker
