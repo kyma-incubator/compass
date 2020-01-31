@@ -1,9 +1,10 @@
 package gardener
 
 import (
+	"testing"
+
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
 )
 
 func Test_annotate(t *testing.T) {

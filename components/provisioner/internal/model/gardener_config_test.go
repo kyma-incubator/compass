@@ -2,8 +2,9 @@ package model
 
 import (
 	"fmt"
-	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"testing"
+
+	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"

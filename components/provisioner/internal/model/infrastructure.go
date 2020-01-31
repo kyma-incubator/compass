@@ -24,7 +24,7 @@ func NewGCPInfrastructure(workerCIDR string) *gcp.InfrastructureConfig {
 			APIVersion: gcpAPIVersion,
 		},
 		Networks: gcp.NetworkConfig{
-			Worker: workerCIDR,
+			Worker:  workerCIDR,
 			Workers: util.StringPtr(workerCIDR),
 		},
 	}
