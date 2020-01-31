@@ -73,13 +73,6 @@ func (c GardenerConfig) ToShootTemplate(namespace string) (*gardener_types.Shoot
 		return nil, fmt.Errorf("error extending shoot config with Provider: %s", err.Error())
 	}
 
-	s, err := json.Marshal(shoot)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(string(s))
-
 	return shoot, nil
 }
 

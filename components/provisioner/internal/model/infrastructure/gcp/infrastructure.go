@@ -26,7 +26,7 @@ type NetworkConfig struct {
 	// Deprecated - use `workers` instead.
 	Worker string `json:"worker"`
 	// Workers is the worker subnet range to create (used for the VMs).
-	Workers *string `json:"workers,omitempty"` // TODO: migrate to Workers, when it is properly handled by Gardener
+	Workers *string `json:"workers,omitempty"`
 	// FlowLogs contains the flow log configuration for the subnet.
 	FlowLogs *FlowLogs `json:"flowLogs,omitempty"`
 }

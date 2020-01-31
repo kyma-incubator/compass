@@ -276,7 +276,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						},
 						InfrastructureConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","networks":{"worker":"10.10.10.10/255","workers":""}}`),
+								Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","networks":{"worker":"10.10.10.10/255","workers":"10.10.10.10/255"}}`),
 							},
 						},
 						Workers: []gardener_types.Worker{
@@ -314,7 +314,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Type: "azure",
 						ControlPlaneConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","zone":"zone"}`)},
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`)},
 						},
 						InfrastructureConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
@@ -356,7 +356,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Type: "aws",
 						ControlPlaneConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","zone":"zone"}`)},
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1"}`)},
 						},
 						InfrastructureConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{

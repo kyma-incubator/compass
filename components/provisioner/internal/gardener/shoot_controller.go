@@ -17,7 +17,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 
 	"github.com/sirupsen/logrus"
 
