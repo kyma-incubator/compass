@@ -94,4 +94,4 @@ APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token
 APP_ONE_TIME_TOKEN_URL="http://connector.not.configured.url/graphql" \
 APP_CONNECTOR_URL="http://connector.not.configured.url/graphql" \
 APP_LEGACY_CONNECTOR_URL="https://adapter-gateway.kyma.local/v1/applications/signingRequests/info" \
-go run ${ROOT_PATH}/cmd/main.go
+go run ${ROOT_PATH}/cmd/director/main.go

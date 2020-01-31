@@ -3,10 +3,10 @@ package tenant
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=TenantMappingRepository -output=automock -outpkg=automock -case=underscore
@@ -141,8 +141,7 @@ func (s *service) createIfNotExists(ctx context.Context, tenants []model.Busines
 	return nil
 }
 
-func (s *service) Delete(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
-
+func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
 	for _, tenantInput := range tenantInputs {
 		tenant, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenantInput.ExternalTenant)
 		if err != nil {
