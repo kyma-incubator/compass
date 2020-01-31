@@ -40,10 +40,10 @@ func initAPIHandler(cfg config) (http.Handler, error) {
 	router := mux.NewRouter()
 	router.HandleFunc("/v1/health", health.HandleFunc).Methods(http.MethodGet)
 
-	applicationRegistryRouterV1 := router.PathPrefix("/{app-name}/v1").Subrouter()
+	applicationRegistryRouter := router.PathPrefix("/{app-name}/v1").Subrouter()
 	connectorRouter := router.PathPrefix("/v1/applications").Subrouter()
 
-	appRegistryRouter := applicationRegistryRouterV1.PathPrefix("/metadata").Subrouter()
+	appRegistryRouter := applicationRegistryRouter.PathPrefix("/metadata").Subrouter()
 	appregistry.RegisterHandler(appRegistryRouter, cfg.AppRegistry)
 	err := connector.RegisterHandler(connectorRouter, cfg.Connector, cfg.AppRegistry.DirectorEndpoint)
 	if err != nil {
