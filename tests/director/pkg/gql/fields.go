@@ -268,3 +268,9 @@ func (fp *GqlFieldsProvider) ForViewer() string {
 		id
 		type`
 }
+
+func (fp *GqlFieldsProvider) ForTenant() string {
+	return `
+		id
+		name`
+}

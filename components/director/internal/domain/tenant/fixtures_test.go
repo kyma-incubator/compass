@@ -4,11 +4,13 @@ import (
 	"database/sql/driver"
 	"errors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 const (
@@ -65,22 +67,17 @@ func fixTenantMappingCreateArgs(ent tenant.Entity) []driver.Value {
 	return []driver.Value{ent.ID, ent.Name, ent.ExternalTenant, ent.ProviderName, ent.Status}
 }
 
-func newModelBusinessTenantMapingPage(tenants []*model.BusinessTenantMapping) model.BusinessTenantMappingPage {
-	return model.BusinessTenantMappingPage{
-		Data: tenants,
-		PageInfo: &pagination.Page{
-			StartCursor: "start",
-			EndCursor:   "end",
-			HasNextPage: false,
-		},
-		TotalCount: len(tenants),
-	}
-}
-
 func newModelBusinessTenantMappingInput(name string) model.BusinessTenantMappingInput {
 	return model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: testExternal,
 		Provider:       testProvider,
+	}
+}
+
+func newGraphQLTenant(id, name string) *graphql.Tenant {
+	return &graphql.Tenant{
+		ID:   id,
+		Name: str.Ptr(name),
 	}
 }

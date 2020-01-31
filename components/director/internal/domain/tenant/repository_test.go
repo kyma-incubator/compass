@@ -291,21 +291,19 @@ func TestPgRepository_List(t *testing.T) {
 			{id: "id2", name: "name2", externalTenant: testExternal, provider: "Compass", status: tenant.Active},
 			{id: "id3", name: "name3", externalTenant: testExternal, provider: "Compass", status: tenant.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings ORDER BY id LIMIT 3 OFFSET 0`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings`)).
 			WillReturnRows(rowsToReturn)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT COUNT(*) FROM public.business_tenant_mappings`)).
-			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		result, err := tenantMappingRepo.List(ctx, testPageSize, testCursor)
+		result, err := tenantMappingRepo.List(ctx)
 
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		assert.Equal(t, intSysModels, result.Data)
+		assert.Equal(t, intSysModels, result)
 	})
 
 	t.Run("Error when listing", func(t *testing.T) {
@@ -314,19 +312,19 @@ func TestPgRepository_List(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings ORDER BY id LIMIT 3 OFFSET 0`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings`)).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		result, err := tenantMappingRepo.List(ctx, testPageSize, testCursor)
+		result, err := tenantMappingRepo.List(ctx)
 
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testError.Error())
-		require.Nil(t, result.Data)
+		require.Nil(t, result)
 	})
 }
 

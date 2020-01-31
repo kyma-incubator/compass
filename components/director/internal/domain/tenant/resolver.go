@@ -3,40 +3,58 @@ package tenant
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+//go:generate mockery -name=BusinessTenantMappingService -output=automock -outpkg=automock -case=underscore
+type BusinessTenantMappingService interface {
+	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
+}
+
+//go:generate mockery -name=BusinessTenantMappingConverter -output=automock -outpkg=automock -case=underscore
+type BusinessTenantMappingConverter interface {
+	MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant
+}
+
 type Resolver struct {
+	transact persistence.Transactioner
+
+	srv  BusinessTenantMappingService
+	conv BusinessTenantMappingConverter
 }
 
 func (r *Resolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
 
-	return fixTenantPage(), nil
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	tenants, err := r.srv.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	gqlTenants := r.conv.MultipleToGraphQL(tenants)
+	return gqlTenants, nil
 
 }
 
-func NewResolver() *Resolver {
-	return &Resolver{}
-}
-
-func fixTenantPage() []*graphql.Tenant {
-	return []*graphql.Tenant{
-		{
-			ID:   "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae",
-			Name: str.Ptr("default"),
-		},
-		{
-			ID:   "1eba80dd-8ff6-54ee-be4d-77944d17b10b",
-			Name: str.Ptr("foo"),
-		},
-		{
-			ID:   "9ca034f1-11ab-5b25-b76f-dc77106f571d",
-			Name: str.Ptr("bar"),
-		},
-		{
-			ID:   "1143ea4c-76da-472b-9e01-930f90639cdc",
-			Name: str.Ptr("generated"),
-		}}
+func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter) *Resolver {
+	return &Resolver{
+		transact: transact,
+		srv:      srv,
+		conv:     conv,
+	}
 }

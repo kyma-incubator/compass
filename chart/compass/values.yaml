@@ -7,6 +7,10 @@ global:
       id: 1eba80dd-8ff6-54ee-be4d-77944d17b10b
     - name: bar
       id: 9ca034f1-11ab-5b25-b76f-dc77106f571d
+    - name: foobar
+      id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
+    - name: foobaz
+      id: 2bf03de1-23b1-4063-9d3e-67096800accc
 
   images:
     containerRegistry:
@@ -19,7 +23,7 @@ global:
       version: "PR-776"
     director:
       dir:
-      version: "PR-706"
+      version: "PR-771"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -43,7 +47,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-770"
+        version: "PR-771"
       connector:
         dir:
         version: "02e8358c"
