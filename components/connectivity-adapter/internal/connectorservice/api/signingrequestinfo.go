@@ -1,8 +1,9 @@
 package api
 
 import (
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"

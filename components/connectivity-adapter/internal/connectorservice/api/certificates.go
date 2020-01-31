@@ -2,9 +2,10 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"

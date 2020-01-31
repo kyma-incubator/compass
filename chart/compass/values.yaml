@@ -13,8 +13,6 @@ global:
       id: 2bf03de1-23b1-4063-9d3e-67096800accc
 
   images:
-    kymaContainerRegistry:
-      path: eu.gcr.io/kyma-project
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
@@ -130,10 +128,7 @@ global:
           - "Certificate-Data"
 
   connectivity_adapter:
-    internal_api:
-      port: 8090
-    external_api:
-      port: 8080
+    port: 8080
     tls:
       host: adapter-gateway
     mtls:

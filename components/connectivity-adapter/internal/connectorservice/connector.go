@@ -25,7 +25,7 @@ const (
 	timeout = 30 * time.Second
 )
 
-func RegisterExternalHandler(router *mux.Router, config Config, directorURL string) error {
+func RegisterHandler(router *mux.Router, config Config, directorURL string) error {
 	logger := logrus.New().WithField("component", "connector").Logger
 	logger.SetReportCaller(true)
 
@@ -75,19 +75,4 @@ func newRevocationsHandler(client connector.Client, logger *logrus.Logger) http.
 	handler := api.NewRevocationsHandler(client, logger)
 
 	return http.HandlerFunc(handler.RevokeCertificate)
-}
-
-func RegisterInternalHandler(router *mux.Router, config Config) error {
-	logger := logrus.New().WithField("component", "connector internal").Logger
-	logger.SetReportCaller(true)
-
-	client, err := connector.NewClient(config.ConnectorEndpoint, config.ConnectorInternalEndpoint, timeout)
-	if err != nil {
-		return errors.Wrap(err, "Failed to initialize compass client")
-	}
-
-	tokenHandler := api.NewTokenHandler(client, config.AdapterBaseURL, logger)
-	router.HandleFunc("/tokens", tokenHandler.GetToken).Methods(http.MethodPost)
-
-	return nil
 }
