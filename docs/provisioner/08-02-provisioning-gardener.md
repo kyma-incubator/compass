@@ -91,8 +91,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
             }
             clusterConfig: {
               gardenerConfig: {
-                name: "{CLUSTER_NAME}" 
-                projectName: "{GARDENER_PROJECT_NAME}" 
                 kubernetesVersion: "1.15.4"
                 diskType: "pd-standard"
                 volumeSizeGB: 30
@@ -192,8 +190,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
             }
             clusterConfig: {
               gardenerConfig: {
-                name: "{CLUSTER_NAME}" 
-                projectName: "{GARDENER_PROJECT_NAME}" 
                 kubernetesVersion: "1.15.4"
                 diskType: "Standard_LRS"
                 volumeSizeGB: 35
@@ -293,8 +289,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
             }
             clusterConfig: {
               gardenerConfig: {
-                name: "{CLUSTER_NAME}" 
-                projectName: "{GARDENER_PROJECT_NAME}" 
                 kubernetesVersion: "1.15.4"
                 diskType: "gp2"
                 volumeSizeGB: 35
