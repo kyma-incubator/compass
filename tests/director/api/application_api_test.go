@@ -123,7 +123,7 @@ func TestRegisterApplicationWithAPIs(t *testing.T) {
 				Spec: &graphql.APISpecInput{
 					Type:   graphql.APISpecTypeOpenAPI,
 					Format: graphql.SpecFormatYaml,
-					Data:   ptr.CLOB(graphql.CLOB("openapi")),
+					Data:   ptr.CLOB(`{"openapi":"3.0.2"}`),
 				},
 			},
 			{
@@ -155,7 +155,7 @@ func TestRegisterApplicationWithAPIs(t *testing.T) {
 				Spec: &graphql.APISpecInput{
 					Type:   graphql.APISpecTypeOdata,
 					Format: graphql.SpecFormatXML,
-					Data:   ptr.CLOB(graphql.CLOB("odata")),
+					Data:   ptr.CLOB("odata"),
 				},
 			},
 		},
@@ -206,7 +206,7 @@ func TestRegisterApplicationWithEventDefinitions(t *testing.T) {
 				Spec: &graphql.EventSpecInput{
 					Type:   graphql.EventSpecTypeAsyncAPI,
 					Format: graphql.SpecFormatYaml,
-					Data:   ptr.CLOB(graphql.CLOB([]byte("asyncapi"))),
+					Data:   ptr.CLOB(`{"asyncapi":"1.2.0"}`),
 				},
 			},
 			{
@@ -279,7 +279,7 @@ func TestRegisterApplicationWithDocuments(t *testing.T) {
 				Description: "Troubleshooting description",
 				Format:      graphql.DocumentFormatMarkdown,
 				DisplayName: "display-name",
-				Data:        ptr.CLOB(graphql.CLOB("No problems, everything works on my machine")),
+				Data:        ptr.CLOB("No problems, everything works on my machine"),
 			},
 		},
 		Labels: &graphql.Labels{

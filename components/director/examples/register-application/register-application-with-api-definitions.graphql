@@ -11,7 +11,11 @@ mutation {
           description: "api for adding comments"
           targetURL: "http://mywordpress.com/comments"
           group: "comments"
-          spec: { data: "openapi", type: OPEN_API, format: YAML }
+          spec: {
+            data: "{\"openapi\":\"3.0.2\"}"
+            type: OPEN_API
+            format: YAML
+          }
           version: {
             value: "v1"
             deprecated: true
