@@ -147,7 +147,7 @@ func TestService_List(t *testing.T) {
 			ExpectedOutput: modelTenantMappings,
 		},
 		{
-			Name: "Error when listing integration system",
+			Name: "Error when tenants",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
 				tenantMappingRepo.On("List", ctx).Return([]*model.BusinessTenantMapping{}, testError).Once()
