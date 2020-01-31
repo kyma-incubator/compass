@@ -14,7 +14,7 @@ import (
 )
 
 type config struct {
-	APIAddress string `envconfig:"default=127.0.0.1:8080"`
+	Address string `envconfig:"default=127.0.0.1:8080"`
 
 	AppRegistry appregistry.Config
 	Connector   connector.Config
@@ -31,9 +31,9 @@ func main() {
 		exitOnError(err, "Failed to init External Connector handler")
 	}
 
-	log.Printf("API listening on %s", cfg.APIAddress)
-	err = http.ListenAndServe(cfg.APIAddress, handler)
-	exitOnError(err, fmt.Sprintf("while listening on %s", cfg.APIAddress))
+	log.Printf("API listening on %s", cfg.Address)
+	err = http.ListenAndServe(cfg.Address, handler)
+	exitOnError(err, fmt.Sprintf("while listening on %s", cfg.Address))
 }
 
 func initAPIHandler(cfg config) (http.Handler, error) {
@@ -50,7 +50,7 @@ func initAPIHandler(cfg config) (http.Handler, error) {
 		return nil, err
 	}
 
-	return connectorRouter, nil
+	return router, nil
 }
 
 func exitOnError(err error, context string) {
