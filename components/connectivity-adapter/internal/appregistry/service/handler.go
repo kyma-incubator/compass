@@ -225,12 +225,14 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	defer h.closeBody(request)
 
+	h.logger.Info("UPDATE beginning")
 	id := h.getServiceID(request)
 
 	serviceDetails, err := h.decodeAndValidateInput(request)
 	if err != nil {
 		h.logger.Error(err)
 		reqerror.WriteAppError(writer, err)
+		return
 	}
 
 	converted, err := h.converter.DetailsToGraphQLInput(id, serviceDetails)
@@ -250,6 +252,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	err = serviceManager.Update(converted)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
+			h.logger.Error("not found err", err)
 			h.writeErrorNotFound(writer, id)
 			return
 		}
@@ -260,7 +263,13 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	writer.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(writer).Encode(&serviceDetails)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while encoding response")
+		h.logger.Error(wrappedErr)
+		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
 }
 
 func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
