@@ -23,7 +23,7 @@ spec:
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.global.connectivity_adapter.external_api.port }}
+              containerPort: {{ .Values.global.connectivity_adapter.port }}
               protocol: TCP
           env:
             - name: APP_ADDRESS
