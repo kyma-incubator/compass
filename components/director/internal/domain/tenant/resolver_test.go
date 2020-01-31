@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -114,10 +116,8 @@ func TestResolver_Tenants(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			persist.AssertExpectations(t)
-			transact.AssertExpectations(t)
-			tenantSvc.AssertExpectations(t)
-			tenantConv.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)
+
 		})
 	}
 

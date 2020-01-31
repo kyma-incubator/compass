@@ -13,6 +13,7 @@
   - "runtime:write"
   - "label_definition:read"
   - "label_definition:write"
+  - "tenant:read"
 - username: "reader"
   tenants: 
   - "dcfc43da-9215-46ab-b377-7177b9c94a48"

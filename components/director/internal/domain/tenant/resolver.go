@@ -42,8 +42,7 @@ func (r *Resolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
