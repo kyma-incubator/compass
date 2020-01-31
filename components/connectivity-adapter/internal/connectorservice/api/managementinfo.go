@@ -17,10 +17,10 @@ type managementInfoHandler struct {
 	gqlClient                      connector.Client
 	logger                         *log.Logger
 	connectivityAdapterMTLSBaseURL string
-	directorClientProvider         director.DirectorClientProvider
+	directorClientProvider         director.ClientProvider
 }
 
-func NewManagementInfoHandler(client connector.Client, logger *log.Logger, connectivityAdapterMTLSBaseURL string, directorClientProvider director.DirectorClientProvider) managementInfoHandler {
+func NewManagementInfoHandler(client connector.Client, logger *log.Logger, connectivityAdapterMTLSBaseURL string, directorClientProvider director.ClientProvider) managementInfoHandler {
 	return managementInfoHandler{
 		gqlClient:                      client,
 		logger:                         logger,
@@ -39,7 +39,7 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 		return
 	}
 
-	systemAuthID := authorizationHeaders.GetClientID()
+	systemAuthID := authorizationHeaders.GetSystemAuthID()
 	contextLogger := contextLogger(mh.logger, systemAuthID)
 
 	directorClient := mh.directorClientProvider.Client(r)

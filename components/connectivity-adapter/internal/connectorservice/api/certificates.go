@@ -38,7 +38,7 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contextLogger := contextLogger(ch.logger, authorizationHeaders.GetClientID())
+	contextLogger := contextLogger(ch.logger, authorizationHeaders.GetSystemAuthID())
 	certRequest, err := readCertRequest(r, contextLogger)
 	if err != nil {
 		err = errors.Wrap(err, "Failed to read certificate request")

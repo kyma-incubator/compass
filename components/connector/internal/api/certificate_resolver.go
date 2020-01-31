@@ -135,7 +135,7 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 func decodeStringFromBase64(string string) ([]byte, apperrors.AppError) {
 	bytes, err := base64.StdEncoding.DecodeString(string)
 	if err != nil {
-		return nil, apperrors.BadRequest("Error while parsing the base64 content. An incorrect value was provided.")
+		return nil, apperrors.BadRequest("Error while parsing base64 content. Incorrect value provided.")
 	}
 
 	return bytes, nil

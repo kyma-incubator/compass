@@ -52,7 +52,7 @@ func extractHeaders(r *http.Request) (map[string]string, error) {
 	return map[string]string{}, errors.New("invalid token or certificate")
 }
 
-func (ah AuthorizationHeaders) GetClientID() string {
+func (ah AuthorizationHeaders) GetSystemAuthID() string {
 	clientIDFromToken := ah[oathkeeper.ClientIdFromTokenHeader]
 
 	if clientIDFromToken != "" {

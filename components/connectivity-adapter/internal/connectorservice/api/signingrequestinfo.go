@@ -43,8 +43,8 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	application := authorizationHeaders.GetClientID()
-	contextLogger := contextLogger(ci.logger, authorizationHeaders.GetClientID())
+	systemAuthID := authorizationHeaders.GetSystemAuthID()
+	contextLogger := contextLogger(ci.logger, authorizationHeaders.GetSystemAuthID())
 
 	baseURLs, err := middlewares.GetBaseURLsFromContext(r.Context(), middlewares.BaseURLsKey)
 	if err != nil {
@@ -69,7 +69,7 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 
 	//TODO: handle case when configuration.Token is nil
 	csrInfoResponse := ci.makeCSRInfoResponse(
-		application,
+		systemAuthID,
 		configuration.Token.Token,
 		baseURLs.ConnectivityAdapterBaseURL,
 		baseURLs.ConnectivityAdapterMTLSBaseURL,

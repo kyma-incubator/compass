@@ -39,7 +39,7 @@ func TestHandlerManagementInfo(t *testing.T) {
 	t.Run("Should get Signing Request Info", func(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
-		directorClientProviderMock := &directorMocks.DirectorClientProvider{}
+		directorClientProviderMock := &directorMocks.ClientProvider{}
 		directorClientMock := &directorMocks.Client{}
 
 		newToken := "new_token"
@@ -119,7 +119,7 @@ func TestHandlerManagementInfo(t *testing.T) {
 	t.Run("Should return error when failed to call Compass Connector", func(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
-		directorClientProviderMock := &directorMocks.DirectorClientProvider{}
+		directorClientProviderMock := &directorMocks.ClientProvider{}
 		directorClientMock := &directorMocks.Client{}
 
 		directorClientMock.On("GetApplication", "systemAuthID").Return(externalSchema.ApplicationExt{}, nil)
@@ -145,7 +145,7 @@ func TestHandlerManagementInfo(t *testing.T) {
 	t.Run("Should return error when Authorization context not passed", func(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
-		directorClientProviderMock := &directorMocks.DirectorClientProvider{}
+		directorClientProviderMock := &directorMocks.ClientProvider{}
 
 		r := httptest.NewRecorder()
 		req := newRequestWithContext(strings.NewReader(""), nil, nil)

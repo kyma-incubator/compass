@@ -33,8 +33,7 @@ func (rh *revocationsHandler) RevokeCertificate(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	application := authorizationHeaders.GetClientID()
-	contextLogger := contextLogger(rh.logger, application)
+	contextLogger := contextLogger(rh.logger, authorizationHeaders.GetSystemAuthID())
 
 	contextLogger.Info("Revoke certificate")
 
