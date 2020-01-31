@@ -1,9 +1,7 @@
 
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
-    name: String
     clusterConfig: ClusterConfig
-    credentialsSecretName: String
     kymaConfig: KymaConfig
     kubeconfig: String
 }
@@ -12,7 +10,6 @@ union ClusterConfig = GardenerConfig | GCPConfig
 
 type GardenerConfig {
     name: String
-    projectName: String
     kubernetesVersion: String
     nodeCount: Int
     volumeSizeGB: Int
@@ -133,8 +130,8 @@ input RuntimeInput {
 input ProvisionRuntimeInput {
     runtimeInput: RuntimeInput!         # Configuration of the Runtime to register in Director
     clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
-    credentials: CredentialsInput!      # Credentials
     kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
+    credentials: CredentialsInput       # Credentials # Field is ignored for now
 }
 
 input CredentialsInput {
@@ -146,15 +143,13 @@ input ClusterConfigInput {
     gcpConfig: GCPConfigInput               # GCP-specific configuration for the cluster to be provisioned
 }
 
-input GardenerConfigInput {
-    projectName: String!                            # Gardener project in which the cluster is created
+input GardenerConfigInput {                   # Gardener project in which the cluster is created
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     nodeCount: Int!                                 # Number of nodes to create
     volumeSizeGB: Int!                              # Size of the available disk, provided in GB
     machineType: String!                            # Type of node machines, varies depending on the target provider
     region: String!                                 # Region in which the cluster is created
     provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
-    seed: String!                                   # Name of the seed cluster that runs the control plane of the Shoot
     targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
     diskType: String!                               # Disk type, varies depending on the target provider
     workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
@@ -163,6 +158,7 @@ input GardenerConfigInput {
     maxSurge: Int!                                  # Maximum number of VMs created during an update
     maxUnavailable: Int!                            # Maximum number of VMs that can be unavailable during an update
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
+    seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
 }
 
 input ProviderSpecificInput {

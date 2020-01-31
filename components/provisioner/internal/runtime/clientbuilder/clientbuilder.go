@@ -2,9 +2,10 @@ package clientbuilder
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/typed/core/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/clientcmd"
 )
 

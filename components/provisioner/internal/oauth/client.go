@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"strings"
 	"time"
@@ -83,7 +84,11 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 	defer util.Close(response.Body)
 
 	if response.StatusCode != http.StatusOK {
-		return Token{}, fmt.Errorf("Get token call returned unexpected status code, %d, %s", response.StatusCode, response.Status)
+		dump, err := httputil.DumpResponse(response, true)
+		if err != nil {
+			dump = []byte("failed to dump response body")
+		}
+		return Token{}, fmt.Errorf("Get token call returned unexpected status: %s. Response dump: %s", response.Status, string(dump))
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
@@ -98,7 +103,7 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 		return Token{}, fmt.Errorf("failed to unmarshal token response body: %s", err.Error())
 	}
 
-	log.Errorf("Successfully unmarshal response oauth token for accessing Director")
+	log.Infof("Successfully unmarshal response oauth token for accessing Director")
 
 	tokenResponse.Expiration += now
 
