@@ -8,6 +8,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	tenantHeader = "Tenant"
+)
+
 type Client interface {
 	ProvisionRuntime(config schema.ProvisionRuntimeInput) (operationStatusID string, runtimeID string, err error)
 	UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error)
@@ -18,13 +22,15 @@ type Client interface {
 }
 
 type client struct {
+	tenant        string
 	graphQLClient *graphql.Client
 	queryProvider queryProvider
 	graphqlizer   graphqlizer
 }
 
-func NewProvisionerClient(endpoint string, queryLogging bool) Client {
+func NewProvisionerClient(endpoint, tenant string, queryLogging bool) Client {
 	return &client{
+		tenant:        tenant,
 		graphQLClient: graphql.NewGraphQLClient(endpoint, true, queryLogging),
 		queryProvider: queryProvider{},
 		graphqlizer:   graphqlizer{},
@@ -38,7 +44,7 @@ func (c client) ProvisionRuntime(config schema.ProvisionRuntimeInput) (operation
 	}
 
 	query := c.queryProvider.provisionRuntime(provisionRuntimeIptGQL)
-	req := gcli.NewRequest(query)
+	req := c.newRequest(query)
 
 	var operationStatus schema.OperationStatus
 	err = c.graphQLClient.ExecuteRequest(req, &operationStatus, "")
@@ -58,7 +64,7 @@ func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInp
 	}
 
 	query := c.queryProvider.upgradeRuntime(runtimeID, upgradeRuntimeIptGQL)
-	req := gcli.NewRequest(query)
+	req := c.newRequest(query)
 
 	var operationId string
 	err = c.graphQLClient.ExecuteRequest(req, &operationId, "")
@@ -70,7 +76,7 @@ func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInp
 
 func (c client) DeprovisionRuntime(runtimeID string) (string, error) {
 	query := c.queryProvider.deprovisionRuntime(runtimeID)
-	req := gcli.NewRequest(query)
+	req := c.newRequest(query)
 
 	var operationId string
 	err := c.graphQLClient.ExecuteRequest(req, &operationId, "")
@@ -82,7 +88,7 @@ func (c client) DeprovisionRuntime(runtimeID string) (string, error) {
 
 func (c client) ReconnectRuntimeAgent(runtimeID string) (string, error) {
 	query := c.queryProvider.reconnectRuntimeAgent(runtimeID)
-	req := gcli.NewRequest(query)
+	req := c.newRequest(query)
 
 	var operationId string
 	err := c.graphQLClient.ExecuteRequest(req, &operationId, "")
@@ -107,7 +113,7 @@ type RuntimeConfiguration struct {
 
 func (c client) RuntimeStatus(runtimeID string) (RuntimeStatus, error) {
 	query := c.queryProvider.runtimeStatus(runtimeID)
-	req := gcli.NewRequest(query)
+	req := c.newRequest(query)
 
 	var response RuntimeStatus
 	err := c.graphQLClient.ExecuteRequest(req, &response, &RuntimeStatus{})
@@ -119,7 +125,7 @@ func (c client) RuntimeStatus(runtimeID string) (RuntimeStatus, error) {
 
 func (c client) RuntimeOperationStatus(operationID string) (schema.OperationStatus, error) {
 	query := c.queryProvider.runtimeOperationStatus(operationID)
-	req := gcli.NewRequest(query)
+	req := c.newRequest(query)
 
 	var response schema.OperationStatus
 	err := c.graphQLClient.ExecuteRequest(req, &response, &schema.OperationStatus{})
@@ -127,4 +133,12 @@ func (c client) RuntimeOperationStatus(operationID string) (schema.OperationStat
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to get Runtime operation status")
 	}
 	return response, nil
+}
+
+func (c client) newRequest(query string) *gcli.Request {
+	req := gcli.NewRequest(query)
+
+	req.Header.Add(tenantHeader, c.tenant)
+
+	return req
 }

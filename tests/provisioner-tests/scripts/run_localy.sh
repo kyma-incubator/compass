@@ -2,7 +2,7 @@
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
-for var in  APP_GCP_CREDENTIALS APP_GCP_PROJECT_NAME; do
+for var in APP_GARDENER_GCP_SECRET; do
     if [ -z "${!var}" ] ; then
         echo "ERROR: $var is not set"
         discoverUnsetVar=true
@@ -24,7 +24,7 @@ pushd ${CURRENT_DIR}/..
 
 go clean --testcache
 
-go test ./...
+go test ./... -timeout 120m
 
 popd
 

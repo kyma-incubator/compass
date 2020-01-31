@@ -23,9 +23,6 @@ func (g *graphqlizer) ProvisionRuntimeInputToGraphQL(in gqlschema.ProvisionRunti
 		{{- if .KymaConfig }}
 		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }}
 		{{- end }}
-		{{- if .Credentials }}
-		credentials: {{ CredentialsInputToGraphQL .Credentials }}
-		{{- end }}
 	}`)
 }
 
@@ -73,7 +70,6 @@ func (g *graphqlizer) CredentialsInputToGraphQL(in gqlschema.CredentialsInput) (
 func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 
 	return g.genericToGraphQL(in, `{
-        projectName: "{{ .ProjectName }}"
 		kubernetesVersion: "{{ .KubernetesVersion }}"
 		nodeCount: {{ .NodeCount }}
 		volumeSizeGB: {{ .VolumeSizeGb }}
@@ -81,7 +77,9 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		region: "{{ .Region }}"
 		provider: "{{ .Provider }}"
 		diskType: "{{ .DiskType }}"
+		{{- if .Seed }}
 		seed: "{{ .Seed }}"
+		{{- end }}
 		targetSecret: "{{ .TargetSecret }}"
 		workerCidr: "{{ .WorkerCidr }}"
         autoScalerMin: {{ .AutoScalerMin }}

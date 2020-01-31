@@ -22,6 +22,8 @@ const (
 	gcpClusterZone = "europe-west4-b"
 )
 
+// TODO: On error fetch logs from Provisioner?
+
 func Test_E2E_Gardener(t *testing.T) {
 	gardenerInputs := map[string]gqlschema.GardenerConfigInput{
 		GCP: {
@@ -71,7 +73,6 @@ func Test_E2E_Gardener(t *testing.T) {
 					MachineType:            gardenerInputs[provider].MachineType,
 					Region:                 gardenerInputs[provider].Region,
 					Provider:               toLowerCase(provider),
-					Seed:                   gardenerInputs[provider].Seed,
 					TargetSecret:           gardenerInputs[provider].TargetSecret,
 					WorkerCidr:             "10.250.0.0/19",
 					AutoScalerMin:          2,
@@ -81,8 +82,136 @@ func Test_E2E_Gardener(t *testing.T) {
 					ProviderSpecificConfig: gardenerInputs[provider].ProviderSpecificConfig,
 				},
 			},
-			KymaConfig: &gqlschema.KymaConfigInput{Version: "1.8.0", Components: []*gqlschema.ComponentConfigurationInput{
-				{Component: "core", Namespace: "kyma-system"},
+			KymaConfig: &gqlschema.KymaConfigInput{Version: config.Kyma.Version, Components: []*gqlschema.ComponentConfigurationInput{
+				// TODO: Parse installer CR
+				{
+					Component: "cluster-essentials",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "testing",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "istio-init",
+					Namespace: "istio-system",
+				},
+				{
+					Component: "istio",
+					Namespace: "istio-system",
+				},
+				{
+					Component: "xip-patch",
+					Namespace: "kyma-installer",
+				},
+				{
+					Component: "istio-kyma-patch",
+					Namespace: "istio-system",
+				},
+				{
+					Component: "knative-serving-init",
+					Namespace: "knative-serving",
+				},
+				{
+					Component: "knative-serving",
+					Namespace: "knative-serving",
+				},
+				{
+					Component: "knative-eventing",
+					Namespace: "knative-eventing",
+				},
+				{
+					Component: "prometheus-operator",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "dex",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "ory",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "api-gateway",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "service-catalog",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "service-catalog-addons",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "helm-broker",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "nats-streaming",
+					Namespace: "natss",
+				},
+				{
+					Component: "assetstore",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "cms",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "core",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "knative-provisioner-natss",
+					Namespace: "knative-eventing",
+				},
+				{
+					Component: "event-bus",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "application-connector-ingress",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "application-connector-helper",
+					Namespace: "kyma-integration",
+				},
+				{
+					Component: "application-connector",
+					Namespace: "kyma-integration",
+				},
+				{
+					Component: "backup-init",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "backup",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "logging",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "jaeger",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "monitoring",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "kiali",
+					Namespace: "kyma-system",
+				},
+				{
+					Component: "compass-runtime-agent",
+					Namespace: "compass-system",
+				},
 			}},
 		}
 

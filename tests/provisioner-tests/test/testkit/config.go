@@ -10,11 +10,14 @@ import (
 
 type TestConfig struct {
 	InternalProvisionerURL string `envconfig:"default=http://localhost:3000/graphql"`
+	Tenant                 string `envconfig:"default=3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
 
 	Gardener GardenerConfig
 
 	// Currently Provisioner do not support standalone GCP
 	GCP GCPConfig
+
+	Kyma KymaConfig
 
 	QueryLogging bool `envconfig:"default=false"`
 }
@@ -25,15 +28,15 @@ type KymaConfig struct {
 
 type GardenerConfig struct {
 	Providers   []string `envconfig:"default=GCP"` // TODO: make Azure and GCP both as default
-	AzureSecret string
-	GCPSecret   string
+	AzureSecret string   `envconfig:"default=''"`
+	GCPSecret   string   `envconfig:"default=''"`
 }
 
 // GCPConfig specifies config for test on GCP
 type GCPConfig struct {
 	// Credentials is base64 encoded service account key
-	Credentials string
-	ProjectName string
+	Credentials string `envconfig:"default=''"`
+	ProjectName string `envconfig:"default=''"`
 }
 
 func (c TestConfig) String() string {

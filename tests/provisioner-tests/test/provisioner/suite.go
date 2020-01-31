@@ -49,7 +49,7 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	// TODO: Sleep ensures that the Istio Sidecar is up before running the tests. We can consider adding some health endpoint in the service to avoid hardcoded sleep.
 	time.Sleep(15 * time.Second)
 
-	provisionerClient := provisioner.NewProvisionerClient(config.InternalProvisionerURL, config.QueryLogging)
+	provisionerClient := provisioner.NewProvisionerClient(config.InternalProvisionerURL, config.Tenant, config.QueryLogging)
 
 	testId := randStringBytes(8)
 

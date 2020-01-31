@@ -62,7 +62,6 @@ func clusterConfig() string {
 	return fmt.Sprintf(`
 		... on GardenerConfig {
 			kubernetesVersion
-			projectName
 			nodeCount 
 			volumeSizeGB
 			diskType
