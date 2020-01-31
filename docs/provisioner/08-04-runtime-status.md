@@ -28,7 +28,6 @@ query { runtimeStatus(id: "{RUNTIME_ID}") {
           name workerCidr region diskType maxSurge nodeCount volumeSizeGB projectName machineType targetSecret 
           autoScalerMin autoScalerMax provider maxUnavailable kubernetesVersion }
       }
-      credentialsSecretName
       kymaConfig {
         version  components {
           component
