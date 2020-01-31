@@ -3,6 +3,10 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
+	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
+	"k8s.io/client-go/kubernetes/fake"
 	"os"
 	"path/filepath"
 	"testing"
@@ -19,6 +23,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+	runtimeConfigrtr "github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/hydroform/install/installation"
@@ -121,7 +126,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	installationServiceMock.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
 	installationServiceMock.On("TriggerUninstall", mock.Anything).Return(nil)
 
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 
 	cleanupNetwork, err := testutils.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
@@ -143,12 +148,17 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	clusterConfigurations := getTestClusterConfigurations()
 	directorServiceMock := &directormock.DirectorClient{}
 
+	cmClientBuilder := &mocks2.ConfigMapClientBuilder{}
+	configMapClient := fake.NewSimpleClientset().CoreV1().ConfigMaps(compassSystemNamespace)
+	cmClientBuilder.On("CreateK8SConfigMapClient", mockedKubeconfig, compassSystemNamespace).Return(configMapClient, nil)
+	runtimeConfigurator := runtimeConfigrtr.NewRuntimeConfigurator(cmClientBuilder, directorServiceMock)
+
 	gardenerClient := newFakeGardenerClient(t, cfg)
 	shootInterface := gardenerClient.Shoots(namespace)
 	secretsInterface := setupSecretsClient(t, cfg)
 	dbsFactory := dbsession.NewFactory(connection)
 
-	controler, err := gardener.NewShootController(namespace, mgr, shootInterface, secretsInterface, installationServiceMock, dbsFactory, timeout, directorServiceMock)
+	controler, err := gardener.NewShootController(namespace, mgr, shootInterface, secretsInterface, installationServiceMock, dbsFactory, timeout, directorServiceMock, runtimeConfigurator)
 	require.NoError(t, err)
 
 	go func() {
@@ -158,12 +168,14 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	for _, config := range clusterConfigurations {
 		t.Run(config.description, func(t *testing.T) {
+			configMapClient.Delete(runtimeConfigrtr.ConfigMapName, &metav1.DeleteOptions{})
 
 			directorServiceMock.Calls = nil
 			directorServiceMock.ExpectedCalls = nil
 
-			directorServiceMock.On("CreateRuntime", mock.Anything).Return(config.runtimeID, nil)
-			directorServiceMock.On("DeleteRuntime", mock.Anything).Return(nil)
+			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(config.runtimeID, nil)
+			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
+			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
 			uuidGenerator := uuid.NewUUIDGenerator()
 			provisioner := gardener.NewProvisioner(namespace, shootInterface)
@@ -175,7 +187,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator)
 
-			resolver := NewResolver(provisioningService)
+			validator := NewValidator(dbsFactory.NewReadSession())
+
+			resolver := NewResolver(provisioningService, validator)
 
 			err = insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
 			require.NoError(t, err)
