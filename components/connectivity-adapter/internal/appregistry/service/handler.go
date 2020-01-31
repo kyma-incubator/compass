@@ -225,7 +225,6 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	defer h.closeBody(request)
 
-	h.logger.Info("UPDATE beginning")
 	id := h.getServiceID(request)
 
 	serviceDetails, err := h.decodeAndValidateInput(request)
@@ -245,6 +244,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 
 	serviceManager, err := h.loadServiceManager(request)
 	if err != nil {
+		h.logger.Error(err)
 		h.writeErrorInternal(writer, err)
 		return
 	}
@@ -252,7 +252,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	err = serviceManager.Update(converted)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			h.logger.Error("not found err", err)
+			h.logger.Error(err)
 			h.writeErrorNotFound(writer, id)
 			return
 		}

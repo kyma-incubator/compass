@@ -2,9 +2,7 @@ package gqlcli
 
 import (
 	"crypto/tls"
-	"fmt"
 	"net/http"
-	"net/http/httputil"
 	"time"
 
 	gcli "github.com/machinebox/graphql"
@@ -39,8 +37,5 @@ func newAuthorizedHTTPClient(authorizationHeaderValue string) *http.Client {
 
 func (t *authenticatedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Authorization", t.authorizationHeaderValue)
-
-	out, err := httputil.DumpRequestOut(req, true)
-	fmt.Println("dump", string(out), err)
 	return t.Transport.RoundTrip(req)
 }
