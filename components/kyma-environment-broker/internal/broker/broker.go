@@ -46,7 +46,6 @@ type StructDumper interface {
 // ProvisioningConfig holds all configurations connected with Provisioner API
 type ProvisioningConfig struct {
 	URL                 string
-	SecretName          string
 	GCPSecretName       string
 	AzureSecretName     string
 	AWSSecretName       string
