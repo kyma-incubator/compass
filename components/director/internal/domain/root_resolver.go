@@ -76,6 +76,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	intSysConverter := integrationsystem.NewConverter()
 	appTemplateConverter := apptemplate.NewConverter(appConverter)
+	tenantConverter := tenant.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
@@ -91,6 +92,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	apiRtmAuthRepo := apiruntimeauth.NewRepository(apiRtmAuthConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
+	tenantRepo := tenant.NewRepository(tenantConverter)
 
 	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL)
 
@@ -112,6 +114,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	oAuth20Svc := oauth20.NewService(scopeCfgProvider, uidSvc, oAuth20Cfg)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc),
@@ -129,7 +132,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
 		intSys:      integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:      viewer.NewViewerResolver(),
-		tenant:      tenant.NewResolver(),
+		tenant:      tenant.NewResolver(transact, tenantSvc, tenantConverter),
 	}
 }
 

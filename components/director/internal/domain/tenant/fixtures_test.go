@@ -4,6 +4,9 @@ import (
 	"database/sql/driver"
 	"errors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -69,5 +72,12 @@ func newModelBusinessTenantMappingInput(name string) model.BusinessTenantMapping
 		Name:           name,
 		ExternalTenant: testExternal,
 		Provider:       testProvider,
+	}
+}
+
+func newGraphQLTenant(id, name string) *graphql.Tenant {
+	return &graphql.Tenant{
+		ID:   id,
+		Name: str.Ptr(name),
 	}
 }
