@@ -14,16 +14,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewMapperForSystemAuth(systemAuthSvc systemauth.SystemAuthService, scopesGetter ScopesGetter) *mapperForSystemAuth {
+func NewMapperForSystemAuth(systemAuthSvc systemauth.SystemAuthService, scopesGetter ScopesGetter, tenantRepo TenantRepository) *mapperForSystemAuth {
 	return &mapperForSystemAuth{
 		systemAuthSvc: systemAuthSvc,
 		scopesGetter:  scopesGetter,
+		tenantRepo:    tenantRepo,
 	}
 }
 
 type mapperForSystemAuth struct {
 	systemAuthSvc systemauth.SystemAuthService
 	scopesGetter  ScopesGetter
+	tenantRepo    TenantRepository
 }
 
 func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (ObjectContext, error) {
@@ -38,13 +40,13 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData ReqD
 	}
 
 	var scopes string
-	var tenant string
+	var tenantCtx TenantContext
 
 	switch refObjType {
 	case model.IntegrationSystemReference:
-		tenant, scopes, err = m.getTenantAndScopesForIntegrationSystem(reqData)
+		tenantCtx, scopes, err = m.getTenantAndScopesForIntegrationSystem(ctx, reqData)
 	case model.RuntimeReference, model.ApplicationReference:
-		tenant, scopes, err = m.getTenantAndScopesForApplicationOrRuntime(sysAuth, refObjType, reqData, authFlow)
+		tenantCtx, scopes, err = m.getTenantAndScopesForApplicationOrRuntime(ctx, sysAuth, refObjType, reqData, authFlow)
 	default:
 		return ObjectContext{}, errors.Errorf("unsupported reference object type (%s)", refObjType)
 	}
@@ -63,63 +65,77 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData ReqD
 		return ObjectContext{}, errors.New("while mapping reference type to consumer type")
 	}
 
-	return NewObjectContext(scopes, tenant, refObjID, consumerType), nil
+	return NewObjectContext(tenantCtx, scopes, refObjID, consumerType), nil
 }
 
-func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(reqData ReqData) (string, string, error) {
-	var tenant, scopes string
+func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(ctx context.Context, reqData ReqData) (TenantContext, string, error) {
+	var externalTenantID, scopes string
 
-	tenant, err := reqData.GetTenantID()
+	scopes, err := reqData.GetScopes()
 	if err != nil {
-		return "", "", errors.Wrap(err, "while fetching tenant")
+		return TenantContext{}, scopes, errors.Wrap(err, "while fetching scopes")
 	}
 
-	scopes, err = reqData.GetScopes()
+	externalTenantID, err = reqData.GetExternalTenantID()
 	if err != nil {
-		return "", "", errors.Wrap(err, "while fetching scopes")
+		if !apperrors.IsKeyDoesNotExist(err) {
+			return TenantContext{}, scopes, errors.Wrap(err, "while fetching external tenant")
+		}
+
+		return TenantContext{}, scopes, nil
 	}
 
-	return tenant, scopes, nil
+	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
+	if err != nil {
+		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
+	}
+
+	return NewTenantContext(externalTenantID, tenantMapping.ID), scopes, nil
 }
 
-func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(sysAuth *model.SystemAuth, refObjType model.SystemAuthReferenceObjectType, reqData ReqData, authFlow AuthFlow) (string, string, error) {
-	var tenant, scopes string
+func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx context.Context, sysAuth *model.SystemAuth, refObjType model.SystemAuthReferenceObjectType, reqData ReqData, authFlow AuthFlow) (TenantContext, string, error) {
+	var externalTenantID, scopes string
 	var err error
+
+	if sysAuth.TenantID == nil {
+		return TenantContext{}, scopes, errors.New("system auth tenant id cannot be nil")
+	}
 
 	if authFlow.IsOAuth2Flow() {
 		scopes, err = reqData.GetScopes()
 		if err != nil {
-			return "", "", errors.Wrap(err, "while fetching scopes")
+			return TenantContext{}, scopes, errors.Wrap(err, "while fetching scopes")
 		}
 	}
 
 	if authFlow.IsCertFlow() {
 		declaredScopes, err := m.scopesGetter.GetRequiredScopes(buildPath(refObjType))
 		if err != nil {
-			return "", "", errors.Wrap(err, "while fetching scopes")
+			return TenantContext{}, scopes, errors.Wrap(err, "while fetching scopes")
 		}
 
 		scopes = strings.Join(declaredScopes, " ")
 	}
 
-	if sysAuth.TenantID == nil {
-		return "", "", errors.New("system auth tenant id cannot be nil")
-	}
-
-	tenant, err = reqData.GetTenantID()
+	externalTenantID, err = reqData.GetExternalTenantID()
 	if err != nil {
 		if !apperrors.IsKeyDoesNotExist(err) {
-			return "", "", errors.Wrap(err, "while fetching tenant")
+			return TenantContext{}, scopes, errors.Wrap(err, "while fetching tenant")
 		}
 
-		return *sysAuth.TenantID, scopes, nil
+		return NewTenantContext(externalTenantID, *sysAuth.TenantID), scopes, nil
 	}
 
-	if tenant != *sysAuth.TenantID {
-		return "", "", errors.New("tenant missmatch")
+	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
+	if err != nil {
+		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
 
-	return tenant, scopes, nil
+	if tenantMapping.ID != *sysAuth.TenantID {
+		return TenantContext{}, scopes, errors.New("tenant mismatch")
+	}
+
+	return NewTenantContext(externalTenantID, *sysAuth.TenantID), scopes, nil
 }
 
 func buildPath(refObjectType model.SystemAuthReferenceObjectType) string {

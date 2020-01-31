@@ -31,11 +31,11 @@ const (
 	OAuth2Flow      AuthFlow = "OAuth2"
 	JWTAuthFlow     AuthFlow = "JWT"
 
-	ClientIDKey     = "client_id"
-	UsernameKey     = "name"
-	ClientIDCertKey = "client-id-from-certificate"
-	TenantKey       = "tenant"
-	ScopesKey       = "scope"
+	ClientIDKey       = "client_id"
+	UsernameKey       = "name"
+	ClientIDCertKey   = "client-id-from-certificate"
+	ExternalTenantKey = "tenant"
+	ScopesKey         = "scope"
 
 	clientCredentialScopesPrefix = "clientCredentialsRegistrationScopes"
 )
@@ -90,26 +90,26 @@ func (d *ReqData) GetAuthID() (string, AuthFlow, error) {
 	return "", "", errors.New("unable to find valid auth ID")
 }
 
-// GetTenantID returns tenant ID from the parsed request input if it is defined
-func (d *ReqData) GetTenantID() (string, error) {
-	if tenantVal := d.Body.Header.Get(TenantKey); tenantVal != "" {
+// GetExternalTenantID returns external tenant ID from the parsed request input if it is defined
+func (d *ReqData) GetExternalTenantID() (string, error) {
+	if tenantVal := d.Body.Header.Get(ExternalTenantKey); tenantVal != "" {
 		return tenantVal, nil
 	}
 
-	if tenantVal, ok := d.Body.Extra[TenantKey]; ok {
+	if tenantVal, ok := d.Body.Extra[ExternalTenantKey]; ok {
 		tenant, err := str.Cast(tenantVal)
 		if err != nil {
-			return "", errors.Wrapf(err, "while parsing the value for %s", TenantKey)
+			return "", errors.Wrapf(err, "while parsing the value for %s", ExternalTenantKey)
 		}
 
 		return tenant, nil
 	}
 
-	if tenantVal := d.Header.Get(TenantKey); tenantVal != "" {
+	if tenantVal := d.Header.Get(ExternalTenantKey); tenantVal != "" {
 		return tenantVal, nil
 	}
 
-	return "", apperrors.NewKeyDoesNotExistError(TenantKey)
+	return "", apperrors.NewKeyDoesNotExistError(ExternalTenantKey)
 }
 
 // GetScopes returns scopes from the parsed request input if defined
@@ -126,18 +126,30 @@ func (d *ReqData) GetScopes() (string, error) {
 	return "", apperrors.NewKeyDoesNotExistError(ScopesKey)
 }
 
+type TenantContext struct {
+	ExternalTenantID string
+	TenantID         string
+}
+
+func NewTenantContext(externalTenantID, tenantID string) TenantContext {
+	return TenantContext{
+		ExternalTenantID: externalTenantID,
+		TenantID:         tenantID,
+	}
+}
+
 type ObjectContext struct {
+	TenantContext
 	Scopes       string
-	TenantID     string
 	ConsumerID   string
 	ConsumerType consumer.ConsumerType
 }
 
-func NewObjectContext(scopes, tenantID, consumerID string, consumerType consumer.ConsumerType) ObjectContext {
+func NewObjectContext(tenantCtx TenantContext, scopes, consumerID string, consumerType consumer.ConsumerType) ObjectContext {
 	return ObjectContext{
-		Scopes:       scopes,
-		TenantID:     tenantID,
-		ConsumerID:   consumerID,
-		ConsumerType: consumerType,
+		TenantContext: tenantCtx,
+		Scopes:        scopes,
+		ConsumerID:    consumerID,
+		ConsumerType:  consumerType,
 	}
 }

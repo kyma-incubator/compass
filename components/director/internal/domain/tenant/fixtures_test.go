@@ -75,9 +75,10 @@ func newModelBusinessTenantMappingInput(name string) model.BusinessTenantMapping
 	}
 }
 
-func newGraphQLTenant(id, name string) *graphql.Tenant {
+func newGraphQLTenant(id, internalID, name string) *graphql.Tenant {
 	return &graphql.Tenant{
-		ID:   id,
-		Name: str.Ptr(name),
+		ID:         id,
+		InternalID: internalID,
+		Name:       str.Ptr(name),
 	}
 }
