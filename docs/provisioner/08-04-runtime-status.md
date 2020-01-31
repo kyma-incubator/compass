@@ -67,7 +67,6 @@ An example response for a successful request looks like this:
       },
       "runtimeConfiguration": {
         "clusterConfig": {CLUSTER_CONFIG},
-        "credentialsSecretName": "{GARDENER_SERVICE_ACCOUNT_CONFIGURATION_SECERT_NAME}",
         "kymaConfig": {
           "version": "1.8.0",
           "components": [{COMPONENTS_LIST}]
