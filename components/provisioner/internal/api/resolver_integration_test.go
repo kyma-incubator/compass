@@ -211,7 +211,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 	kymaConfig := fixKymaGraphQLConfigInput()
 
 	providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
-	accountProvider := hyperscaler.NewAccountProvider(nil, nil, "default-tenant")
+	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
 
 	runtimeInput := &gqlschema.RuntimeInput{
 		Name:        "test runtime",

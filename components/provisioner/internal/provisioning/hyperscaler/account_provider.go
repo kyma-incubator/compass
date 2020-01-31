@@ -12,25 +12,20 @@ import (
 type AccountProvider interface {
 	CompassCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
 	GardnerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
-	CompassSecretName(input *gqlschema.ProvisionRuntimeInput) (string, error)
-	GardenerSecretName(input *gqlschema.GardenerConfigInput) (string, error)
+	CompassSecretName(input *gqlschema.ProvisionRuntimeInput, tenantName string) (string, error)
+	GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error)
 }
 
 type accountProvider struct {
 	compassPool  AccountPool
 	gardenerPool AccountPool
-	tenantName   string
 }
 
-func NewAccountProvider(
-	compassPool AccountPool,
-	gardenerPool AccountPool,
-	tenantName string) AccountProvider {
+func NewAccountProvider(compassPool AccountPool, gardenerPool AccountPool) AccountProvider {
 
 	return &accountProvider{
 		compassPool:  compassPool,
 		gardenerPool: gardenerPool,
-		tenantName:   tenantName,
 	}
 }
 
@@ -53,16 +48,19 @@ func HyperscalerTypeFromProvisionInput(input *gqlschema.ProvisionRuntimeInput) (
 func (p *accountProvider) CompassCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
 
 	return p.compassPool.Credentials(hyperscalerType, tenantName)
-
 }
 
 func (p *accountProvider) GardnerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
 
-	return p.gardenerPool.Credentials(hyperscalerType, tenantName)
+	if p.gardenerPool == nil {
+		return Credentials{},
+			errors.New("Failed to get Gardener Credentials. Gardener Account pool is not configured")
+	}
 
+	return p.gardenerPool.Credentials(hyperscalerType, tenantName)
 }
 
-func (p *accountProvider) CompassSecretName(input *gqlschema.ProvisionRuntimeInput) (string, error) {
+func (p *accountProvider) CompassSecretName(input *gqlschema.ProvisionRuntimeInput, tenantName string) (string, error) {
 
 	if input.Credentials != nil && len(input.Credentials.SecretName) > 0 {
 		return input.Credentials.SecretName, nil
@@ -74,7 +72,7 @@ func (p *accountProvider) CompassSecretName(input *gqlschema.ProvisionRuntimeInp
 		return "", err
 	}
 
-	credential, err := p.CompassCredentials(hyperscalerType, p.tenantName)
+	credential, err := p.CompassCredentials(hyperscalerType, tenantName)
 
 	if err != nil {
 		return "", err
@@ -83,7 +81,7 @@ func (p *accountProvider) CompassSecretName(input *gqlschema.ProvisionRuntimeInp
 
 }
 
-func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInput) (string, error) {
+func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error) {
 
 	// If Gardener config already has a TargetSecret, just return that
 	if len(input.TargetSecret) > 0 {
@@ -96,7 +94,7 @@ func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInpu
 		return "", err
 	}
 
-	credential, err := p.GardnerCredentials(hyperscalerType, p.tenantName)
+	credential, err := p.GardnerCredentials(hyperscalerType, tenantName)
 
 	if err != nil {
 		return "", err

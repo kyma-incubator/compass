@@ -46,7 +46,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	releaseRepo := &releaseMocks.Repository{}
 	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 
-	accountProvider := hyperscaler.NewAccountProvider(nil, nil, "default-tenant")
+	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
 	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, accountProvider)
 	graphQLConverter := NewGraphQLConverter()
 

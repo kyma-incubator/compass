@@ -50,13 +50,13 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 
 	var providerConfig model.ProviderConfiguration
 	if input.ClusterConfig != nil {
-		providerConfig, err = c.providerConfigFromInput(runtimeID, *input.ClusterConfig)
+		providerConfig, err = c.providerConfigFromInput(runtimeID, *input.ClusterConfig, tenant)
 		if err != nil {
 			return model.Cluster{}, err
 		}
 	}
 
-	credSecretName, err := c.hyperscalerAccountProvider.CompassSecretName(&input)
+	credSecretName, err := c.hyperscalerAccountProvider.CompassSecretName(&input, tenant)
 
 	if err != nil {
 		return model.Cluster{}, err
@@ -72,10 +72,10 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}, nil
 }
 
-func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput) (model.ProviderConfiguration, error) {
+func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput, tenant string) (model.ProviderConfiguration, error) {
 	if input.GardenerConfig != nil {
 		config := input.GardenerConfig
-		return c.gardenerConfigFromInput(runtimeID, *config)
+		return c.gardenerConfigFromInput(runtimeID, *config, tenant)
 	}
 	if input.GcpConfig != nil {
 		config := input.GcpConfig
@@ -84,7 +84,7 @@ func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.Clu
 	return nil, errors.New("cluster config does not match any provider")
 }
 
-func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
+func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput, tenant string) (model.GardenerConfig, error) {
 	id := c.uuidGenerator.New()
 	name := c.createGardenerClusterName(input.Provider)
 
@@ -94,7 +94,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		return model.GardenerConfig{}, err
 	}
 
-	targetSecret, err := c.hyperscalerAccountProvider.GardenerSecretName(&input)
+	targetSecret, err := c.hyperscalerAccountProvider.GardenerSecretName(&input, tenant)
 
 	if err != nil {
 		return model.GardenerConfig{}, err
@@ -126,10 +126,10 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 }
 
 func (c converter) createGardenerClusterName(provider string) string {
-	uuid := c.uuidGenerator.New()
+	id := c.uuidGenerator.New()
 	provider = util.RemoveNotAllowedCharacters(provider)
 
-	name := strings.ReplaceAll(uuid, "-", "")
+	name := strings.ReplaceAll(id, "-", "")
 	name = fmt.Sprintf("%.3s-%.7s", provider, name)
 	name = util.StartWithLetter(name)
 	name = strings.ToLower(name)

@@ -340,7 +340,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 	}
 
-	accountProvider := hyperscaler.NewAccountProvider(nil, nil, "default-tenant")
+	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
 
 	for _, testCase := range configurations {
 		t.Run(testCase.description, func(t *testing.T) {
