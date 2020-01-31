@@ -22,3 +22,5 @@ To access the Runtime Provisioner, forward the port that the GraphQL Server is l
 ```bash
 kubectl -n compass-system port-forward svc/compass-provisioner 3000:3000
 ```
+
+When making a call to the Runtime Provisioner, make sure to attach a Tenant header to the request.
