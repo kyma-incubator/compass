@@ -11,7 +11,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector/automock"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
@@ -23,10 +22,6 @@ import (
 
 func TestHandler_Certificates(t *testing.T) {
 
-	baseURLs := middlewares.BaseURLs{
-		ConnectivityAdapterBaseURL: "www.connectivity-adapter.com",
-		EventServiceBaseURL:        "www.event-service.com",
-	}
 	headersFromToken := map[string]string{
 		oathkeeper.ClientIdFromTokenHeader: "myapp",
 	}
@@ -42,7 +37,7 @@ func TestHandler_Certificates(t *testing.T) {
 		}, nil)
 
 		handler := NewCertificatesHandler(connectorClientMock, logrus.New())
-		req := newRequestWithContext(bytes.NewReader(signatureRequestRaw), headersFromToken, &baseURLs)
+		req := newRequestWithContext(bytes.NewReader(signatureRequestRaw), headersFromToken)
 
 		r := httptest.NewRecorder()
 
@@ -71,7 +66,7 @@ func TestHandler_Certificates(t *testing.T) {
 			Return(schema.CertificationResult{}, apperrors.Internal("error"))
 
 		handler := NewCertificatesHandler(connectorClientMock, logrus.New())
-		req := newRequestWithContext(bytes.NewReader(signatureRequestRaw), headersFromToken, &baseURLs)
+		req := newRequestWithContext(bytes.NewReader(signatureRequestRaw), headersFromToken)
 
 		r := httptest.NewRecorder()
 
@@ -87,7 +82,7 @@ func TestHandler_Certificates(t *testing.T) {
 		connectorClientMock := &mocks.Client{}
 
 		r := httptest.NewRecorder()
-		req := newRequestWithContext(strings.NewReader(""), nil, nil)
+		req := newRequestWithContext(strings.NewReader(""), nil)
 		handler := NewCertificatesHandler(connectorClientMock, logrus.New())
 
 		// when

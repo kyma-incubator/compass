@@ -9,12 +9,9 @@ const (
 	CertsEndpoint                     = "/v1/applications/certificates"
 	ManagementInfoEndpoint            = "/v1/applications/management/info"
 	ApplicationRegistryEndpointFormat = "/%s/v1/metadata/services"
-	EventsEndpointFormat              = "/%s/v1/events"
-	EventsInfoEndpointFormat          = "/%s/v1/events/subscribed"
+	EventsInfoEndpoint                = "/subscribed"
 	RenewCertURLFormat                = "%s/v1/applications/certificates/renewals"
 	RevocationCertURLFormat           = "%s/v1/applications/certificates/revocations"
-	SigningRequestInfoEndpoint        = "%s/v1/applications/signingRequests/info"
-	TokenURLFormat                    = "%s?token=%s"
 )
 
 type CertRequest struct {
@@ -92,8 +89,8 @@ func MakeApiURLs(application, connectivityAdapterBaseURL string, connectivityAda
 func makeRuntimeURLs(application, connectivityAdapterBaseURL string, eventServiceBaseURL string) *RuntimeURLs {
 	return &RuntimeURLs{
 		MetadataURL:   connectivityAdapterBaseURL + fmt.Sprintf(ApplicationRegistryEndpointFormat, application),
-		EventsURL:     eventServiceBaseURL + fmt.Sprintf(EventsEndpointFormat, application),
-		EventsInfoURL: eventServiceBaseURL + fmt.Sprintf(EventsInfoEndpointFormat, application),
+		EventsURL:     eventServiceBaseURL,
+		EventsInfoURL: eventServiceBaseURL + EventsInfoEndpoint,
 	}
 }
 
@@ -110,14 +107,5 @@ func MakeManagementURLs(application, connectivityAdapterMTLSBaseURL string, even
 		RuntimeURLs:   makeRuntimeURLs(application, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
 		RenewCertURL:  fmt.Sprintf(RenewCertURLFormat, connectivityAdapterMTLSBaseURL),
 		RevokeCertURL: fmt.Sprintf(RevocationCertURLFormat, connectivityAdapterMTLSBaseURL),
-	}
-}
-
-func MakeTokenResponse(connectivityAdapterBaseURL string, token string) TokenResponse {
-	csrInfoUrl := fmt.Sprintf(SigningRequestInfoEndpoint, connectivityAdapterBaseURL)
-
-	return TokenResponse{
-		Token: token,
-		URL:   fmt.Sprintf(TokenURLFormat, csrInfoUrl, token),
 	}
 }

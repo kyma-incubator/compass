@@ -12,7 +12,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector/automock"
 	directorMocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director/automock"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
@@ -25,12 +24,6 @@ import (
 )
 
 func TestHandlerManagementInfo(t *testing.T) {
-
-	baseURLs := middlewares.BaseURLs{
-		ConnectivityAdapterBaseURL:     "www.connectivity-adapter.com",
-		ConnectivityAdapterMTLSBaseURL: "www.connectivity-adapter-mtls.com",
-		EventServiceBaseURL:            "www.event-service.com",
-	}
 
 	headersFromToken := map[string]string{
 		oathkeeper.ClientIdFromTokenHeader: "systemAuthID",
@@ -65,7 +58,7 @@ func TestHandlerManagementInfo(t *testing.T) {
 				Name: "myApp",
 			},
 			EventingConfiguration: directorSchema.ApplicationEventingConfiguration{
-				DefaultURL: "www.event-service.com",
+				DefaultURL: "www.event-service.com/myApp/v1/events",
 			},
 		}
 
@@ -76,7 +69,7 @@ func TestHandlerManagementInfo(t *testing.T) {
 		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
 		handler := NewManagementInfoHandler(connectorClientMock, logrus.New(), "www.connectivity-adapter-mtls.com", directorClientProviderMock)
 
-		req := newRequestWithContext(strings.NewReader(""), headersFromToken, &baseURLs)
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 
 		r := httptest.NewRecorder()
 
@@ -126,7 +119,7 @@ func TestHandlerManagementInfo(t *testing.T) {
 
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 
-		req := newRequestWithContext(strings.NewReader(""), headersFromToken, &baseURLs)
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 
 		r := httptest.NewRecorder()
 
@@ -152,7 +145,7 @@ func TestHandlerManagementInfo(t *testing.T) {
 
 		connectorClientMock.On("Configuration", headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
 
-		req := newRequestWithContext(strings.NewReader(""), headersFromToken, &baseURLs)
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 
 		r := httptest.NewRecorder()
 
@@ -172,7 +165,7 @@ func TestHandlerManagementInfo(t *testing.T) {
 		directorClientProviderMock := &directorMocks.ClientProvider{}
 
 		r := httptest.NewRecorder()
-		req := newRequestWithContext(strings.NewReader(""), nil, nil)
+		req := newRequestWithContext(strings.NewReader(""), nil)
 		handler := NewManagementInfoHandler(connectorClientMock, logrus.New(), "", directorClientProviderMock)
 
 		// when

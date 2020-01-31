@@ -52,7 +52,7 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
 		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New(), "www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com")
 
-		req := newRequestWithContext(strings.NewReader(""), headersFromToken, nil)
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 
 		r := httptest.NewRecorder()
 
@@ -60,8 +60,8 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 			CsrURL: "www.connectivity-adapter.com/v1/applications/certificates?token=new_token",
 			API: model.Api{
 				RuntimeURLs: &model.RuntimeURLs{
-					EventsURL:     "/myapp/v1/events",
-					EventsInfoURL: "/myapp/v1/events/subscribed",
+					EventsURL:     "",
+					EventsInfoURL: "/subscribed",
 					MetadataURL:   "www.connectivity-adapter-mtls.com/myapp/v1/metadata/services",
 				},
 				InfoURL:         "www.connectivity-adapter-mtls.com/v1/applications/management/info",
@@ -95,7 +95,7 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		connectorClientMock := &mocks.Client{}
 		connectorClientMock.On("Configuration", headersFromToken).Return(schema.Configuration{}, apperrors.Internal("error"))
 
-		req := newRequestWithContext(strings.NewReader(""), headersFromToken, nil)
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 
 		r := httptest.NewRecorder()
 
@@ -114,7 +114,7 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		connectorClientMock := &mocks.Client{}
 
 		r := httptest.NewRecorder()
-		req := newRequestWithContext(strings.NewReader(""), nil, nil)
+		req := newRequestWithContext(strings.NewReader(""), nil)
 		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New(), "www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com")
 
 		// when
@@ -125,14 +125,10 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 	})
 }
 
-func newRequestWithContext(body io.Reader, headers map[string]string, baseURLs *middlewares.BaseURLs) *http.Request {
+func newRequestWithContext(body io.Reader, headers map[string]string) *http.Request {
 	req := httptest.NewRequest(http.MethodPost, "http://www.someurl.com/get", body)
 
 	newContext := req.Context()
-
-	if baseURLs != nil {
-		newContext = middlewares.PutIntoContext(newContext, middlewares.BaseURLsKey, *baseURLs)
-	}
 
 	if headers != nil {
 		newContext = middlewares.PutIntoContext(newContext, middlewares.AuthorizationHeadersKey, middlewares.AuthorizationHeaders(headers))

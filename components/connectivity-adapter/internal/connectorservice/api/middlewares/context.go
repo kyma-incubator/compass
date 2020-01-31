@@ -10,13 +10,6 @@ type ContextKey string
 type AuthorizationHeaders map[string]string
 
 const AuthorizationHeadersKey ContextKey = "ClientIdWithContext"
-const BaseURLsKey ContextKey = "BaseURLs"
-
-type BaseURLs struct {
-	ConnectivityAdapterBaseURL     string
-	ConnectivityAdapterMTLSBaseURL string
-	EventServiceBaseURL            string
-}
 
 func GetAuthHeadersFromContext(ctx context.Context, key ContextKey) (AuthorizationHeaders, error) {
 	value := ctx.Value(key)

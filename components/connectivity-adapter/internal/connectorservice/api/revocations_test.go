@@ -25,7 +25,7 @@ func TestHandlerRevocations(t *testing.T) {
 		connectorClientMock.On("Revoke", headersFromCertificate).Return(nil)
 		handler := NewRevocationsHandler(connectorClientMock, logrus.New())
 
-		req := newRequestWithContext(strings.NewReader(""), headersFromCertificate, nil)
+		req := newRequestWithContext(strings.NewReader(""), headersFromCertificate)
 
 		r := httptest.NewRecorder()
 
@@ -42,7 +42,7 @@ func TestHandlerRevocations(t *testing.T) {
 		connectorClientMock.On("Revoke", headersFromCertificate).Return(apperrors.Internal("error"))
 		handler := NewRevocationsHandler(connectorClientMock, logrus.New())
 
-		req := newRequestWithContext(strings.NewReader(""), headersFromCertificate, nil)
+		req := newRequestWithContext(strings.NewReader(""), headersFromCertificate)
 
 		r := httptest.NewRecorder()
 
@@ -58,7 +58,7 @@ func TestHandlerRevocations(t *testing.T) {
 		connectorClientMock := &mocks.Client{}
 
 		r := httptest.NewRecorder()
-		req := newRequestWithContext(strings.NewReader(""), nil, nil)
+		req := newRequestWithContext(strings.NewReader(""), nil)
 		handler := NewRevocationsHandler(connectorClientMock, logrus.New())
 
 		// when
