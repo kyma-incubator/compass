@@ -3138,6 +3138,10 @@ type Query {
 	"""
 	integrationSystem(id: ID!): IntegrationSystem @hasScopes(path: "graphql.query.integrationSystem")
 	viewer: Viewer! @hasScopes(path: "graphql.query.viewer")
+	"""
+	**Examples**
+	- [query tenants](examples/query-tenants/query-tenants.graphql)
+	"""
 	tenants: [Tenant!]! @hasScopes(path: "graphql.query.tenants")
 }
 
