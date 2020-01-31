@@ -29,17 +29,6 @@ func GetAuthHeadersFromContext(ctx context.Context, key ContextKey) (Authorizati
 	return headers, nil
 }
 
-func GetBaseURLsFromContext(ctx context.Context, key ContextKey) (BaseURLs, error) {
-	value := ctx.Value(key)
-
-	baseURLs, ok := value.(BaseURLs)
-	if !ok {
-		return BaseURLs{}, errors.New(fmt.Sprintf("Cannot read %s key from context", string(key)))
-	}
-
-	return baseURLs, nil
-}
-
 func PutIntoContext(ctx context.Context, key ContextKey, value interface{}) context.Context {
 	return context.WithValue(ctx, key, value)
 }

@@ -54,9 +54,6 @@ global:
       provisioner:
         dir:
         version: "PR-552"
-      connector_service:
-        dir:
-        version: "PR-7003"
 
   isLocalEnv: false
   oauth2:

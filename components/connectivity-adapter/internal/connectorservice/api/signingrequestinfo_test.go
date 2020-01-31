@@ -23,12 +23,6 @@ import (
 
 func TestHandler_SigningRequestInfo(t *testing.T) {
 
-	baseURLs := middlewares.BaseURLs{
-		ConnectivityAdapterBaseURL:     "www.connectivity-adapter.com",
-		ConnectivityAdapterMTLSBaseURL: "www.connectivity-adapter-mtls.com",
-		EventServiceBaseURL:            "www.event-service.com",
-	}
-
 	headersFromToken := map[string]string{
 		oathkeeper.ClientIdFromTokenHeader: "myapp",
 	}
@@ -56,9 +50,9 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		}
 
 		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
-		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New())
+		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New(), "www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com")
 
-		req := newRequestWithContext(strings.NewReader(""), headersFromToken, &baseURLs)
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken, nil)
 
 		r := httptest.NewRecorder()
 
@@ -66,8 +60,8 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 			CsrURL: "www.connectivity-adapter.com/v1/applications/certificates?token=new_token",
 			API: model.Api{
 				RuntimeURLs: &model.RuntimeURLs{
-					EventsURL:     "www.event-service.com/myapp/v1/events",
-					EventsInfoURL: "www.event-service.com/myapp/v1/events/subscribed",
+					EventsURL:     "/myapp/v1/events",
+					EventsInfoURL: "/myapp/v1/events/subscribed",
 					MetadataURL:   "www.connectivity-adapter-mtls.com/myapp/v1/metadata/services",
 				},
 				InfoURL:         "www.connectivity-adapter-mtls.com/v1/applications/management/info",
@@ -101,11 +95,11 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		connectorClientMock := &mocks.Client{}
 		connectorClientMock.On("Configuration", headersFromToken).Return(schema.Configuration{}, apperrors.Internal("error"))
 
-		req := newRequestWithContext(strings.NewReader(""), headersFromToken, &baseURLs)
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken, nil)
 
 		r := httptest.NewRecorder()
 
-		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New())
+		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New(), "www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com")
 
 		// when
 		handler.GetSigningRequestInfo(r, req)
@@ -121,28 +115,13 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 
 		r := httptest.NewRecorder()
 		req := newRequestWithContext(strings.NewReader(""), nil, nil)
-		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New())
+		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New(), "www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com")
 
 		// when
 		handler.GetSigningRequestInfo(r, req)
 
 		// then
 		assert.Equal(t, http.StatusForbidden, r.Code)
-	})
-
-	t.Run("Should return error when Base URLs context not passed", func(t *testing.T) {
-		// given
-		connectorClientMock := &mocks.Client{}
-
-		r := httptest.NewRecorder()
-		req := newRequestWithContext(strings.NewReader(""), headersFromToken, nil)
-		handler := NewSigningRequestInfoHandler(connectorClientMock, logrus.New())
-
-		// when
-		handler.GetSigningRequestInfo(r, req)
-
-		// then
-		assert.Equal(t, http.StatusInternalServerError, r.Code)
 	})
 }
 

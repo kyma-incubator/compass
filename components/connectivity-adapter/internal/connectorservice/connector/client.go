@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 
-	externalSchema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -34,33 +34,33 @@ func NewClient(compassConnectorAPIURL string, compassConnectorInternalAPIURL str
 
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
 type Client interface {
-	Configuration(headers map[string]string) (externalSchema.Configuration, apperrors.AppError)
-	SignCSR(csr string, headers map[string]string) (externalSchema.CertificationResult, apperrors.AppError)
+	Configuration(headers map[string]string) (schema.Configuration, apperrors.AppError)
+	SignCSR(csr string, headers map[string]string) (schema.CertificationResult, apperrors.AppError)
 	Revoke(headers map[string]string) apperrors.AppError
 	Token(application string) (string, apperrors.AppError)
 }
 
-func (c client) Configuration(headers map[string]string) (externalSchema.Configuration, apperrors.AppError) {
+func (c client) Configuration(headers map[string]string) (schema.Configuration, apperrors.AppError) {
 	query := c.queryProvider.configuration()
 
 	var response ConfigurationResponse
 
 	err := c.executeExternal(headers, query, &response)
 	if err != nil {
-		return externalSchema.Configuration{}, toAppError(errors.Wrap(err, "Failed to get configuration"))
+		return schema.Configuration{}, toAppError(errors.Wrap(err, "Failed to get configuration"))
 	}
 
 	return response.Result, nil
 }
 
-func (c client) SignCSR(csr string, headers map[string]string) (externalSchema.CertificationResult, apperrors.AppError) {
+func (c client) SignCSR(csr string, headers map[string]string) (schema.CertificationResult, apperrors.AppError) {
 	query := c.queryProvider.signCSR(csr)
 
 	var response CertificateResponse
 
 	err := c.executeExternal(headers, query, &response)
 	if err != nil {
-		return externalSchema.CertificationResult{}, toAppError(errors.Wrap(err, "Failed to sign csr"))
+		return schema.CertificationResult{}, toAppError(errors.Wrap(err, "Failed to sign csr"))
 	}
 
 	return response.Result, nil
@@ -112,11 +112,11 @@ func (c *client) execute(client *graphql.Client, headers map[string]string, quer
 }
 
 type ConfigurationResponse struct {
-	Result externalSchema.Configuration `json:"result"`
+	Result schema.Configuration `json:"result"`
 }
 
 type CertificateResponse struct {
-	Result externalSchema.CertificationResult `json:"result"`
+	Result schema.CertificationResult `json:"result"`
 }
 
 type RevokeResponse struct {
@@ -124,5 +124,5 @@ type RevokeResponse struct {
 }
 
 type TokenResponse struct {
-	Result externalSchema.Token `json:"result"`
+	Result schema.Token `json:"result"`
 }

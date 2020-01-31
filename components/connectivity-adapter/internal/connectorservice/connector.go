@@ -52,7 +52,7 @@ func RegisterHandler(router *mux.Router, config Config, directorURL string) erro
 }
 
 func newSigningRequestInfoHandler(config Config, client connector.Client, logger *logrus.Logger) http.Handler {
-	signingRequestInfo := api.NewSigningRequestInfoHandler(client, logger)
+	signingRequestInfo := api.NewSigningRequestInfoHandler(client, logger, config.AdapterBaseURL, config.AdapterMtlsBaseURL)
 	signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetSigningRequestInfo)
 
 	return signingRequestInfoHandler

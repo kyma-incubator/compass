@@ -22,19 +22,22 @@ const (
 )
 
 type csrInfoHandler struct {
-	gqlClient connector.Client
-	logger    *log.Logger
+	gqlClient                      connector.Client
+	logger                         *log.Logger
+	connectivityAdapterBaseURL     string
+	connectivityAdapterMTLSBaseURL string
 }
 
-func NewSigningRequestInfoHandler(client connector.Client, logger *log.Logger) csrInfoHandler {
+func NewSigningRequestInfoHandler(client connector.Client, logger *log.Logger, connectivityAdapterBaseURL string, connectivityAdapterMTLSBaseURL string) csrInfoHandler {
 	return csrInfoHandler{
-		gqlClient: client,
-		logger:    logger,
+		gqlClient:                      client,
+		logger:                         logger,
+		connectivityAdapterBaseURL:     connectivityAdapterBaseURL,
+		connectivityAdapterMTLSBaseURL: connectivityAdapterMTLSBaseURL,
 	}
 }
 
 func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Request) {
-	// TODO: make sure only calls with token are accepted
 
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
@@ -45,14 +48,6 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 
 	systemAuthID := authorizationHeaders.GetSystemAuthID()
 	contextLogger := contextLogger(ci.logger, authorizationHeaders.GetSystemAuthID())
-
-	baseURLs, err := middlewares.GetBaseURLsFromContext(r.Context(), middlewares.BaseURLsKey)
-	if err != nil {
-		contextLogger.Errorf("Failed to read Base URL context: %s.", err)
-		reqerror.WriteErrorMessage(w, "Base URLs not provided.", apperrors.CodeInternal)
-
-		return
-	}
 
 	contextLogger.Info("Getting Certificate Signing Request Info")
 
@@ -71,9 +66,9 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 	csrInfoResponse := ci.makeCSRInfoResponse(
 		systemAuthID,
 		configuration.Token.Token,
-		baseURLs.ConnectivityAdapterBaseURL,
-		baseURLs.ConnectivityAdapterMTLSBaseURL,
-		baseURLs.EventServiceBaseURL,
+		ci.connectivityAdapterBaseURL,
+		ci.connectivityAdapterMTLSBaseURL,
+		"",
 		certInfo)
 
 	respondWithBody(w, http.StatusOK, csrInfoResponse, contextLogger)

@@ -77,7 +77,7 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 	respondWithBody(w, http.StatusOK, managementInfoResponse, contextLogger)
 }
 
-func (m *managementInfoHandler) makeManagementInfoResponse(
+func (mh *managementInfoHandler) makeManagementInfoResponse(
 	application,
 	newToken,
 	connectivityAdapterMTLSBaseURL,
