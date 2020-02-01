@@ -12,7 +12,7 @@ require (
 	github.com/kyma-incubator/compass/tests/director v0.0.0-20200131115844-0d9526181230
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
-	github.com/pkg/errors v0.9.0
+	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0
 	github.com/vektah/gqlparser v1.2.1 // indirect

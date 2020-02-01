@@ -154,7 +154,7 @@ func (s *serviceManager) deleteAPIandEventDefinitions(serviceRef LegacyServiceRe
 	}
 
 	if serviceRef.EventDefID != nil {
-		err := s.directorClient.DeleteAPIDefinition(*serviceRef.EventDefID)
+		err := s.directorClient.DeleteEventDefinition(*serviceRef.EventDefID)
 		if err != nil {
 			return errors.Wrap(err, "while deleting Event Definition")
 		}
