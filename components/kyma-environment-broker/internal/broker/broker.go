@@ -45,10 +45,10 @@ type StructDumper interface {
 
 // ProvisioningConfig holds all configurations connected with Provisioner API
 type ProvisioningConfig struct {
-	URL                 string
-	GCPSecretName       string
-	AzureSecretName     string
-	AWSSecretName       string
+	URL             string
+	GCPSecretName   string
+	AzureSecretName string
+	AWSSecretName   string
 }
 
 var planIDsMapping = map[string]string{

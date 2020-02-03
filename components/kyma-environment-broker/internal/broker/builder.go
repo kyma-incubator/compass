@@ -200,7 +200,7 @@ func (b *InputBuilder) applyTemporaryCustomization(in *gqlschema.ProvisionRuntim
 
 func (b *InputBuilder) initInput() gqlschema.ProvisionRuntimeInput {
 	return gqlschema.ProvisionRuntimeInput{
-		RuntimeInput: &gqlschema.RuntimeInput{},
+		RuntimeInput:  &gqlschema.RuntimeInput{},
 		ClusterConfig: b.hyperscalerInputProvider.Defaults(),
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version:    b.kymaVersion,
