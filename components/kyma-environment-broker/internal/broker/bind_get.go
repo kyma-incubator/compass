@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"errors"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
@@ -20,6 +21,5 @@ func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, binding
 	b.dumper.Dump("GetBinding instanceID:", instanceID)
 	b.dumper.Dump("GetBinding bindingID:", bindingID)
 
-	spec := domain.GetBindingSpec{}
-	return spec, nil
+	return domain.GetBindingSpec{}, errors.New("not supported")
 }

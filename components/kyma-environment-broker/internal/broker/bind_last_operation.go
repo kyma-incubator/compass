@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"errors"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
@@ -21,6 +22,5 @@ func (b *LastBindingOperationEndpoint) LastBindingOperation(ctx context.Context,
 	b.dumper.Dump("LastBindingOperation bindingID:", bindingID)
 	b.dumper.Dump("LastBindingOperation details:", details)
 
-	op := domain.LastOperation{}
-	return op, nil
+	return domain.LastOperation{}, errors.New("not supported")
 }

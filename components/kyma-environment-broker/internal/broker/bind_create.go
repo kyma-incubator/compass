@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"errors"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
@@ -21,12 +22,5 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 	b.dumper.Dump("Bind details:", details)
 	b.dumper.Dump("Bind asyncAllowed:", asyncAllowed)
 
-	binding := domain.Binding{
-		Credentials: map[string]interface{}{
-			"host":     "test",
-			"port":     "1234",
-			"password": "nimda123",
-		},
-	}
-	return binding, nil
+	return domain.Binding{}, errors.New("not supported")
 }

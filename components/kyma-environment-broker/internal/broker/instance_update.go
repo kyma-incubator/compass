@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"errors"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
@@ -21,5 +22,5 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 	b.dumper.Dump("Update details:", details)
 	b.dumper.Dump("Update asyncAllowed:", asyncAllowed)
 
-	return domain.UpdateServiceSpec{}, nil
+	return domain.UpdateServiceSpec{}, errors.New("not supported")
 }

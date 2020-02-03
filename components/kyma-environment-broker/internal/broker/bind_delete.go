@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"errors"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
@@ -21,6 +22,5 @@ func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID strin
 	b.dumper.Dump("Unbind details:", details)
 	b.dumper.Dump("Unbind asyncAllowed:", asyncAllowed)
 
-	unbind := domain.UnbindSpec{}
-	return unbind, nil
+	return domain.UnbindSpec{}, errors.New("not supported")
 }
