@@ -42,5 +42,8 @@ This table lists the environment variables, their descriptions, and default valu
 | **APP_DATABASE_PORT** | Database port | `5432` |
 | **APP_DATABASE_NAME** | Database name | `provisioner` |
 | **APP_DATABASE_SSL_MODE** | SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html)  | `disable`|
+| **APP_DIRECTOR_URL** | Director URL | `https://compass-gateway-auth-oauth.kyma.local/director/graphql` |
 | **APP_INSTALLATION_TIMEOUT** | Kyma installation timeout | `30m`|
 | **APP_INSTALLATION_ERRORS_COUNT_FAILURE_THRESHOLD** | Number of installation errors that cause installation to fail  | `5`|
+| **APP_OAUTH_CREDENTIALS_SECRET_NAME** | Runtime Provisioner credentials | `compass-provisioner-credentials` |
+| **APP_SKIP_DIRECTOR_CERT_VERIFICATION** | Flag to skip certificate verification for Director | `false` |
