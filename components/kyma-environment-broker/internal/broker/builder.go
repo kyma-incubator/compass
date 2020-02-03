@@ -194,6 +194,9 @@ func (b *InputBuilder) applyTemporaryCustomization(in *gqlschema.ProvisionRuntim
 	}
 
 	in.ClusterConfig.GardenerConfig.ProjectName = b.provisioningConfig.GardenerProjectName
+	in.Credentials = &gqlschema.CredentialsInput{
+		SecretName: b.provisioningConfig.AzureSecretName,
+	}
 
 	return nil
 }
