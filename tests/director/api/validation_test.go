@@ -140,13 +140,13 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 
 // Application Validation
 
-const longDescErrorMsg = "graphql: validation error for type %s: description: the length must be no more than 128."
+const longDescErrorMsg = "graphql: validation error for type %s: description: the length must be no more than 2000."
 
 func TestCreateApplication_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	app := fixSampleApplicationRegisterInputWithName("placeholder", "name")
-	longDesc := strings.Repeat("a", 129)
+	longDesc := strings.Repeat("a", 2001)
 	app.Description = &longDesc
 
 	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(app)
@@ -167,7 +167,7 @@ func TestUpdateApplication_Validation(t *testing.T) {
 	app := registerApplication(t, ctx, "app-name")
 	defer unregisterApplication(t, app.ID)
 
-	longDesc := strings.Repeat("a", 129)
+	longDesc := strings.Repeat("a", 2001)
 	appUpdate := graphql.ApplicationUpdateInput{Name: "name", ProviderName: str.Ptr("compass"), Description: &longDesc}
 	appInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(appUpdate)
 	require.NoError(t, err)
@@ -205,7 +205,7 @@ func TestCreateIntegrationSystem_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	intSys := graphql.IntegrationSystemInput{Name: "valid-name"}
-	longDesc := strings.Repeat("a", 129)
+	longDesc := strings.Repeat("a", 2001)
 	intSys.Description = &longDesc
 
 	isInputGQL, err := tc.graphqlizer.IntegrationSystemInputToGQL(intSys)
@@ -225,7 +225,7 @@ func TestUpdateIntegrationSystem_Validation(t *testing.T) {
 	ctx := context.TODO()
 	intSys := registerIntegrationSystem(t, ctx, "integration-system")
 	defer unregisterIntegrationSystem(t, ctx, intSys.ID)
-	longDesc := strings.Repeat("a", 256)
+	longDesc := strings.Repeat("a", 2001)
 	intSysUpdate := graphql.IntegrationSystemInput{Name: "name", Description: &longDesc}
 	isUpdateGQL, err := tc.graphqlizer.IntegrationSystemInputToGQL(intSysUpdate)
 	require.NoError(t, err)
@@ -287,7 +287,7 @@ func TestAddEventAPI_Validation(t *testing.T) {
 	defer unregisterApplication(t, app.ID)
 
 	eventAPI := fixEventAPIDefinitionInput()
-	longDesc := strings.Repeat("a", 129)
+	longDesc := strings.Repeat("a", 2001)
 	eventAPI.Description = &longDesc
 	evenApiGQL, err := tc.graphqlizer.EventDefinitionInputToGQL(eventAPI)
 	require.NoError(t, err)
@@ -309,7 +309,7 @@ func TestUpdateEventAPI_Validation(t *testing.T) {
 	eventAPIUpdate := fixEventAPIDefinitionInput()
 	eventAPI := addEventDefinition(t, ctx, app.ID, eventAPIUpdate)
 
-	longDesc := strings.Repeat("a", 129)
+	longDesc := strings.Repeat("a", 2001)
 	eventAPIUpdate.Description = &longDesc
 	evenApiGQL, err := tc.graphqlizer.EventDefinitionInputToGQL(eventAPIUpdate)
 	require.NoError(t, err)

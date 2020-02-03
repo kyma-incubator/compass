@@ -12,9 +12,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -57,10 +57,12 @@ func TestService_Create(t *testing.T) {
 		model.ScenariosKey:      model.ScenariosDefaultValue,
 		"integration-system-id": intSysID,
 		"label":                 "value",
+		"name":                  "foo.bar-not",
 	}
 	defaultLabelsWithoutIntSys := map[string]interface{}{
 		model.ScenariosKey:      model.ScenariosDefaultValue,
 		"integration-system-id": "",
+		"name":                  "test",
 	}
 
 	id := "foo"
@@ -512,6 +514,7 @@ func TestService_Update(t *testing.T) {
 	applicationModelBefore := fixModelApplicationWithAllUpdatableFields(id, tnt, "initialn", "initiald", "initialu")
 	applicationModelAfter := fixModelApplicationWithAllUpdatableFields(id, tnt, updatedName, updatedDescription, updatedURL)
 	intSysLabel := fixLabelInput("integration-system-id", intSysID, id, model.ApplicationLabelableObject)
+	nameLabel := fixLabelInput("name", updatedName, id, model.ApplicationLabelableObject)
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
 
@@ -530,7 +533,7 @@ func TestService_Update(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
 				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
-				repo.On("Exists", ctx, tnt, id).Return(true, nil).Once()
+				repo.On("Exists", ctx, tnt, id).Return(true, nil).Twice()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -541,6 +544,7 @@ func TestService_Update(t *testing.T) {
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
 				svc.On("UpsertLabel", ctx, tnt, intSysLabel).Return(nil).Once()
+				svc.On("UpsertLabel", ctx, tnt, nameLabel).Return(nil).Once()
 				return svc
 			},
 			InputID:            "foo",

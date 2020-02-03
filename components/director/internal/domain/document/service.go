@@ -8,8 +8,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/pkg/errors"
 )
 

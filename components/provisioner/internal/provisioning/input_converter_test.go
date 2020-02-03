@@ -4,7 +4,9 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	realeaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -23,6 +25,8 @@ const (
 	clusterEssentialsComponent    = "cluster-essentials"
 	coreComponent                 = "core"
 	applicationConnectorComponent = "application-connector"
+
+	gardenerProject = "gardener-project"
 )
 
 func Test_ProvisioningInputToCluster(t *testing.T) {
@@ -32,6 +36,11 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	createGQLRuntimeInputGCP := func(zone *string) gqlschema.ProvisionRuntimeInput {
 		return gqlschema.ProvisionRuntimeInput{
+			RuntimeInput: &gqlschema.RuntimeInput{
+				Name:        "runtimeName",
+				Description: nil,
+				Labels:      &gqlschema.Labels{},
+			},
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GcpConfig: &gqlschema.GCPConfigInput{
 					Name:              "Something",
@@ -69,23 +78,27 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			Kubeconfig:            nil,
 			KymaConfig:            fixKymaConfig(),
 			CredentialsSecretName: "secretName",
+			Tenant:                tenant,
 		}
 	}
 
 	gcpGardenerProvider := &gqlschema.GCPProviderConfigInput{Zone: "zone"}
 
-	gardenerGCPQGLInput := gqlschema.ProvisionRuntimeInput{
+	gardenerGCPGQLInput := gqlschema.ProvisionRuntimeInput{
+		RuntimeInput: &gqlschema.RuntimeInput{
+			Name:        "runtimeName",
+			Description: nil,
+			Labels:      &gqlschema.Labels{},
+		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:              "Something",
-				ProjectName:       "Project",
 				KubernetesVersion: "version",
 				NodeCount:         3,
 				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
 				Provider:          "GCP",
-				Seed:              "gcp-eu1",
+				Seed:              util.StringPtr("gcp-eu1"),
 				TargetSecret:      "secret",
 				DiskType:          "ssd",
 				WorkerCidr:        "cidr",
@@ -111,8 +124,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "Something",
-			ProjectName:            "Project",
+			Name:                   "gcp-verylon",
+			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
 			KubernetesVersion:      "version",
@@ -133,22 +146,25 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		Kubeconfig:            nil,
 		KymaConfig:            fixKymaConfig(),
 		CredentialsSecretName: "secretName",
+		Tenant:                tenant,
 	}
 
 	azureGardenerProvider := &gqlschema.AzureProviderConfigInput{VnetCidr: "cidr"}
 
-	gardenerAzureQGLInput := gqlschema.ProvisionRuntimeInput{
+	gardenerAzureGQLInput := gqlschema.ProvisionRuntimeInput{
+		RuntimeInput: &gqlschema.RuntimeInput{
+			Name:        "runtimeName",
+			Description: nil,
+			Labels:      &gqlschema.Labels{},
+		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:              "Something",
-				ProjectName:       "Project",
 				KubernetesVersion: "version",
 				NodeCount:         3,
 				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
 				Provider:          "Azure",
-				Seed:              "az-eu1",
 				TargetSecret:      "secret",
 				DiskType:          "ssd",
 				WorkerCidr:        "cidr",
@@ -174,8 +190,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "Something",
-			ProjectName:            "Project",
+			Name:                   "azu-verylon",
+			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
 			KubernetesVersion:      "version",
@@ -183,7 +199,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			VolumeSizeGB:           1024,
 			DiskType:               "ssd",
 			Provider:               "Azure",
-			Seed:                   "az-eu1",
+			Seed:                   "",
 			TargetSecret:           "secret",
 			WorkerCidr:             "cidr",
 			AutoScalerMin:          1,
@@ -196,6 +212,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		Kubeconfig:            nil,
 		KymaConfig:            fixKymaConfig(),
 		CredentialsSecretName: "secretName",
+		Tenant:                tenant,
 	}
 
 	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
@@ -205,18 +222,21 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		PublicCidr:   "cidr",
 	}
 
-	gardenerAWSQGLInput := gqlschema.ProvisionRuntimeInput{
+	gardenerAWSGQLInput := gqlschema.ProvisionRuntimeInput{
+		RuntimeInput: &gqlschema.RuntimeInput{
+			Name:        "runtimeName",
+			Description: nil,
+			Labels:      &gqlschema.Labels{},
+		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:              "Something",
-				ProjectName:       "Project",
 				KubernetesVersion: "version",
 				NodeCount:         3,
 				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
 				Provider:          "AWS",
-				Seed:              "aws-eu1",
+				Seed:              util.StringPtr("aws-eu1"),
 				TargetSecret:      "secret",
 				DiskType:          "ssd",
 				WorkerCidr:        "cidr",
@@ -242,8 +262,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "Something",
-			ProjectName:            "Project",
+			Name:                   "aws-verylon",
+			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
 			KubernetesVersion:      "version",
@@ -264,6 +284,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		Kubeconfig:            nil,
 		KymaConfig:            fixKymaConfig(),
 		CredentialsSecretName: "secretName",
+		Tenant:                tenant,
 	}
 
 	zone := "zone"
@@ -284,17 +305,17 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			description: "Should create proper runtime config struct with GCP input (empty zone)",
 		},
 		{
-			input:       gardenerGCPQGLInput,
+			input:       gardenerGCPGQLInput,
 			expected:    expectedGardenerGCPRuntimeConfig,
 			description: "Should create proper runtime config struct with Gardener input for GCP provider",
 		},
 		{
-			input:       gardenerAzureQGLInput,
+			input:       gardenerAzureGQLInput,
 			expected:    expectedGardenerAzureRuntimeConfig,
 			description: "Should create proper runtime config struct with Gardener input for Azure provider",
 		},
 		{
-			input:       gardenerAWSQGLInput,
+			input:       gardenerAWSGQLInput,
 			expected:    expectedGardenerAWSRuntimeConfig,
 			description: "Should create proper runtime config struct with Gardener input for AWS provider",
 		},
@@ -305,11 +326,12 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			//given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			uuidGeneratorMock.On("New").Return("id").Times(5)
+			uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hypens")
 
-			inputConverter := NewInputConverter(uuidGeneratorMock, readSession)
+			inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject)
 
 			//when
-			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input)
+			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input, tenant)
 
 			//then
 			require.NoError(t, err)
@@ -339,10 +361,10 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			},
 		}
 
-		inputConverter := NewInputConverter(uuidGeneratorMock, readSession)
+		inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject)
 
 		//when
-		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
+		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant)
 
 		//then
 		require.Error(t, err)
@@ -355,10 +377,10 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			ClusterConfig: &gqlschema.ClusterConfigInput{},
 		}
 
-		inputConverter := NewInputConverter(nil, nil)
+		inputConverter := NewInputConverter(nil, nil, gardenerProject)
 
 		//when
-		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
+		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant)
 
 		//then
 		require.Error(t, err)
@@ -376,16 +398,90 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			},
 		}
 
-		inputConverter := NewInputConverter(uuidGeneratorMock, nil)
+		inputConverter := NewInputConverter(uuidGeneratorMock, nil, gardenerProject)
 
 		//when
-		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
+		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant)
 
 		//then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "provider config not specified")
 	})
 
+}
+
+func newInputConverterTester(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository) *converter {
+	return &converter{
+		uuidGenerator: uuidGenerator,
+		releaseRepo:   releaseRepo,
+	}
+}
+
+func TestConverter_CreateGardenerClusterName(t *testing.T) {
+
+	providerInputs := []struct {
+		provider     string
+		expectedName string
+		description  string
+	}{
+		{
+			provider:     "gcp",
+			expectedName: "gcp-id",
+			description:  "regular GCP provider name",
+		},
+		{
+			provider:     "aws",
+			expectedName: "aws-id",
+			description:  "regular AWS provider name",
+		},
+		{
+			provider:     "azure",
+			expectedName: "azu-id",
+			description:  "regular Azure provider name",
+		},
+		{
+			provider:     "GCP",
+			expectedName: "gcp-id",
+			description:  "capitalized GCP provider name",
+		},
+		{
+			provider:     "AWS",
+			expectedName: "aws-id",
+			description:  "capitalized AWS provider name",
+		},
+		{
+			provider:     "AZURE",
+			expectedName: "azu-id",
+			description:  "capitalized Azure provider name",
+		},
+		{
+			provider:     "-",
+			expectedName: "c--id",
+			description:  "wrong provider name that contains only hyphen: \"-\"",
+		},
+		{
+			provider:     "!#$@^%&*gcp",
+			expectedName: "gcp-id",
+			description:  "wrong provider name with non-alphanumeric characters",
+		},
+		{
+			provider:     "912740131aws---",
+			expectedName: "aws-id",
+			description:  "wrong provider name with numbers",
+		},
+	}
+
+	for _, testCase := range providerInputs {
+		t.Run(testCase.description, func(t *testing.T) {
+			uuidGeneratorMock := &mocks.UUIDGenerator{}
+			uuidGeneratorMock.On("New").Return("id")
+
+			inputConverter := newInputConverterTester(uuidGeneratorMock, nil)
+			generatedName := inputConverter.createGardenerClusterName(testCase.provider)
+
+			assert.Equal(t, testCase.expectedName, generatedName)
+		})
+	}
 }
 
 func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {

@@ -56,7 +56,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 	graphQLConverter := NewGraphQLConverter()
 
 	t.Run("Should create proper runtime status struct for GCP config", func(t *testing.T) {
-		name := "Something"
+		clusterName := "Something"
 		project := "Project"
 		numberOfNodes := 3
 		bootDiskSize := 256
@@ -112,7 +112,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			},
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
 				ClusterConfig: gqlschema.GCPConfig{
-					Name:              &name,
+					Name:              &clusterName,
 					ProjectName:       &project,
 					MachineType:       &machine,
 					Region:            &region,
@@ -121,9 +121,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					BootDiskSizeGb:    &bootDiskSize,
 					KubernetesVersion: &kubeversion,
 				},
-				KymaConfig:            fixKymaGraphQLConfig(),
-				Kubeconfig:            &kubeconfig,
-				CredentialsSecretName: &secretName,
+				KymaConfig: fixKymaGraphQLConfig(),
+				Kubeconfig: &kubeconfig,
 			},
 		}
 
@@ -136,7 +135,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 	t.Run("Should create proper runtime status struct for gardener config", func(t *testing.T) {
 		//given
-		name := "Something"
+		clusterName := "Something"
 		project := "Project"
 		nodes := 3
 		disk := "standard"
@@ -170,7 +169,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
 			RuntimeConfiguration: model.Cluster{
 				ClusterConfig: model.GardenerConfig{
-					Name:                   name,
+					Name:                   clusterName,
 					ProjectName:            project,
 					NodeCount:              nodes,
 					DiskType:               disk,
@@ -211,8 +210,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			},
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
 				ClusterConfig: gqlschema.GardenerConfig{
-					Name:              &name,
-					ProjectName:       &project,
+					Name:              &clusterName,
 					NodeCount:         &nodes,
 					DiskType:          &disk,
 					MachineType:       &machine,
@@ -231,9 +229,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						Zone: &zone,
 					},
 				},
-				KymaConfig:            fixKymaGraphQLConfig(),
-				Kubeconfig:            &kubeconfig,
-				CredentialsSecretName: &secretName,
+				KymaConfig: fixKymaGraphQLConfig(),
+				Kubeconfig: &kubeconfig,
 			},
 		}
 

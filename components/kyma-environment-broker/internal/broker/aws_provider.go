@@ -5,10 +5,9 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
-type awsInputProvider struct {
-}
+type awsInputProvider struct{}
 
-var _ inputProvider = &awsInputProvider{}
+var _ hyperscalerInputProvider = &awsInputProvider{}
 
 func (p *awsInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
@@ -20,7 +19,6 @@ func (p *awsInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:       "m4.2xlarge",
 			Region:            "eu-west-1",
 			Provider:          "aws",
-			Seed:              "aws-eu1",
 			WorkerCidr:        "10.250.0.0/19",
 			AutoScalerMin:     2,
 			AutoScalerMax:     4,
@@ -38,6 +36,6 @@ func (p *awsInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *awsInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params *internal.ProvisioningParametersDTO) {
+func (p *awsInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
 	updateString(&input.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zone, params.Zone)
 }

@@ -4,118 +4,143 @@ import (
 	"fmt"
 	"time"
 
+	uuid "github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-incubator/hydroform/types"
-)
-
-const (
-	interval   = 2 * time.Second
-	retryCount = 5
 )
 
 //go:generate mockery -name=Service
 type Service interface {
-	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, string, <-chan struct{}, error)
+	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string) (*gqlschema.OperationStatus, error)
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(id string) (string, <-chan struct{}, error)
+	DeprovisionRuntime(id, tenant string) (string, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error)
 }
 
-type service struct {
-	persistenceService  persistence.Service
-	hydroform           hydroform.Service
-	installationService installation.Service
-	inputConverter      InputConverter
-	graphQLConverter    GraphQLConverter
-	directorService     director.DirectorClient
+//go:generate mockery -name=Provisioner
+type Provisioner interface {
+	ProvisionCluster(cluster model.Cluster, operationId string) error
+	DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error)
 }
 
-func NewProvisioningService(persistenceService persistence.Service, inputConverter InputConverter,
-	graphQLConverter GraphQLConverter, hydroform hydroform.Service, installationService installation.Service, directorService director.DirectorClient) Service {
+type service struct {
+	inputConverter   InputConverter
+	graphQLConverter GraphQLConverter
+	directorService  director.DirectorClient
+
+	dbSessionFactory dbsession.Factory
+	provisioner      Provisioner
+	uuidGenerator    uuid.UUIDGenerator
+}
+
+func NewProvisioningService(
+	inputConverter InputConverter,
+	graphQLConverter GraphQLConverter,
+	directorService director.DirectorClient,
+	factory dbsession.Factory,
+	provisioner Provisioner,
+	generator uuid.UUIDGenerator,
+) Service {
 	return &service{
-		persistenceService:  persistenceService,
-		hydroform:           hydroform,
-		installationService: installationService,
-		inputConverter:      inputConverter,
-		graphQLConverter:    graphQLConverter,
-		directorService:     directorService,
+		inputConverter:   inputConverter,
+		graphQLConverter: graphQLConverter,
+		directorService:  directorService,
+		dbSessionFactory: factory,
+		provisioner:      provisioner,
+		uuidGenerator:    generator,
 	}
 }
 
-func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, string, <-chan struct{}, error) {
+func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string) (*gqlschema.OperationStatus, error) {
 	runtimeInput := config.RuntimeInput
 
-	runtimeID, err := r.directorService.CreateRuntime(runtimeInput)
+	runtimeID, err := r.directorService.CreateRuntime(runtimeInput, tenant)
 	if err != nil {
-		return "", "", nil, err
+		return nil, fmt.Errorf("Failed to register Runtime: %s", err.Error())
 	}
 
-	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config)
+	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config, tenant)
 	if err != nil {
-		r.unregisterFailedRuntime(runtimeID)
-		return "", "", nil, err
+		r.unregisterFailedRuntime(runtimeID, tenant)
+		return nil, err
 	}
 
-	operation, err := r.persistenceService.SetProvisioningStarted(runtimeID, cluster)
+	dbSession, err := r.dbSessionFactory.NewSessionWithinTransaction()
 	if err != nil {
-		r.unregisterFailedRuntime(runtimeID)
-		return "", "", nil, err
+		return nil, fmt.Errorf("Failed to create repository: %s", err)
+	}
+	defer dbSession.RollbackUnlessCommitted()
+
+	// Try to set provisioning started before triggering it (which is hard to interrupt) to verify all unique constraints
+	operation, err := r.setProvisioningStarted(dbSession, runtimeID, cluster)
+	if err != nil {
+		r.unregisterFailedRuntime(runtimeID, tenant)
+		return nil, err
 	}
 
-	finished := make(chan struct{})
+	err = r.provisioner.ProvisionCluster(cluster, operation.ID)
+	if err != nil {
+		r.unregisterFailedRuntime(runtimeID, tenant)
+		return nil, fmt.Errorf("Failed to start provisioning: %s", err.Error())
+	}
 
-	go r.startProvisioning(operation.ID, cluster, finished)
+	err = dbSession.Commit()
+	if err != nil {
+		r.unregisterFailedRuntime(runtimeID, tenant)
+		return nil, fmt.Errorf("Failed to commit transaction: %s", err.Error())
+	}
 
-	return operation.ID, runtimeID, finished, nil
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
-func (r *service) unregisterFailedRuntime(id string) {
+func (r *service) unregisterFailedRuntime(id, tenant string) {
 	log.Infof("Unregistering failed Runtime %s...", id)
-	err := r.directorService.DeleteRuntime(id)
+	err := r.directorService.DeleteRuntime(id, tenant)
 	if err != nil {
 		log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())
 	}
 }
 
-func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error) {
-	lastOperation, err := r.persistenceService.GetLastOperation(id)
-	if err != nil {
-		return "", nil, err
+func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {
+	session := r.dbSessionFactory.NewReadWriteSession()
+
+	lastOperation, dberr := session.GetLastOperation(id)
+	if dberr != nil {
+		return "", fmt.Errorf("Failed to get last operation: %s", dberr.Error())
 	}
 
 	if lastOperation.State == model.InProgress {
-		return "", nil, errors.Errorf("cannot start new operation for %s Runtime while previous one is in progress", id)
+		return "", errors.Errorf("cannot start new operation for %s Runtime while previous one is in progress", id)
 	}
 
-	cluster, dberr := r.persistenceService.GetClusterData(id)
+	cluster, dberr := session.GetCluster(id)
 	if dberr != nil {
-		return "", nil, dberr
+		return "", fmt.Errorf("Failed to get cluster: %s", dberr.Error())
 	}
 
-	operation, err := r.persistenceService.SetDeprovisioningStarted(id)
+	operation, err := r.provisioner.DeprovisionCluster(cluster, r.uuidGenerator.New())
 	if err != nil {
-		return "", nil, err
+		return "", fmt.Errorf("Failed to start deprovisioning: %s", err.Error())
 	}
 
-	finished := make(chan struct{})
+	dberr = session.InsertOperation(operation)
+	if dberr != nil {
+		return "", fmt.Errorf("Failed to insert operation to database: %s", dberr.Error())
+	}
 
-	go r.startDeprovisioning(operation.ID, cluster, finished)
-
-	return operation.ID, finished, nil
+	return operation.ID, nil
 }
 
 func (r *service) UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error) {
@@ -127,7 +152,7 @@ func (r *service) ReconnectRuntimeAgent(id string) (string, error) {
 }
 
 func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, error) {
-	runtimeStatus, err := r.persistenceService.GetRuntimeStatus(runtimeID)
+	runtimeStatus, err := r.getRuntimeStatus(runtimeID)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +161,9 @@ func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, err
 }
 
 func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.OperationStatus, error) {
-	operation, err := r.persistenceService.GetOperation(operationID)
+	readSession := r.dbSessionFactory.NewReadSession()
+
+	operation, err := readSession.GetOperation(operationID)
 	if err != nil {
 		return nil, err
 	}
@@ -144,76 +171,80 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
-func (r *service) startProvisioning(operationID string, cluster model.Cluster, finished chan<- struct{}) {
-	defer close(finished)
+func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error) {
+	session := r.dbSessionFactory.NewReadSession()
 
-	log.Infof("Provisioning runtime %s is starting...", cluster.ID)
-	info, err := r.hydroform.ProvisionCluster(cluster)
+	operation, err := session.GetLastOperation(runtimeID)
 	if err != nil {
-		log.Errorf("Error provisioning runtime %s: %s", cluster.ID, err.Error())
-		r.setOperationAsFailed(operationID, err.Error())
-		return
-	}
-	if info.ClusterStatus != types.Provisioned {
-		log.Errorf("Provisioning runtime %s failed, cluster status: %s", cluster.ID, info.ClusterStatus)
-		r.setOperationAsFailed(operationID, fmt.Sprintf("Provisioning failed for unknown reason, cluster status: %s", info.ClusterStatus))
-		return
+		return model.RuntimeStatus{}, err
 	}
 
-	err = r.persistenceService.UpdateClusterData(cluster.ID, info.KubeConfig, info.State)
+	cluster, err := session.GetCluster(runtimeID)
 	if err != nil {
-		log.Errorf("Failed to update runtime with status")
-		r.setOperationAsFailed(operationID, err.Error())
-		return
+		return model.RuntimeStatus{}, err
 	}
 
-	log.Infof("Runtime %s provisioned successfully. Starting Kyma installation...", cluster.ID)
-	err = r.installationService.InstallKyma(cluster.ID, info.KubeConfig, cluster.KymaConfig.Release, cluster.KymaConfig.GlobalConfiguration, cluster.KymaConfig.Components)
-	if err != nil {
-		log.Errorf("Error installing Kyma on runtime %s: %s", cluster.ID, err.Error())
-		r.setOperationAsFailed(operationID, err.Error())
-		return
-	}
-
-	log.Infof("Kyma installed successfully on %s Runtime. Operation %s finished. Setting status to success.", cluster.ID, operationID)
-
-	updateOperationStatus(func() error {
-		return r.persistenceService.SetOperationAsSucceeded(operationID)
-	})
+	return model.RuntimeStatus{
+		LastOperationStatus:  operation,
+		RuntimeConfiguration: cluster,
+	}, nil
 }
 
-func (r *service) startDeprovisioning(operationID string, cluster model.Cluster, finished chan<- struct{}) {
-	defer close(finished)
-	log.Infof("Deprovisioning runtime %s is starting", cluster.ID)
-	err := r.hydroform.DeprovisionCluster(cluster)
+func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runtimeID string, cluster model.Cluster) (model.Operation, dberrors.Error) {
+	timestamp := time.Now()
+
+	cluster.CreationTimestamp = timestamp
+
+	err := dbSession.InsertCluster(cluster)
 	if err != nil {
-		log.Errorf("Deprovisioning runtime %s failed: %s", cluster.ID, err.Error())
-		r.setOperationAsFailed(operationID, err.Error())
-		return
+		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	err = r.directorService.DeleteRuntime(cluster.ID)
-	if err != nil {
-		log.Errorf("Deprovisioning finished. Failed to unregister Runtime %s: %s", cluster.ID, err.Error())
-		r.setOperationAsFailed(operationID, err.Error())
-		return
+	gcpConfig, isGCP := cluster.GCPConfig()
+	if isGCP {
+		err = dbSession.InsertGCPConfig(gcpConfig)
+		if err != nil {
+			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
+		}
 	}
 
-	log.Infof("Deprovisioning runtime %s finished successfully. Operation %s finished. Setting status to success.", cluster.ID, operationID)
-	updateOperationStatus(func() error {
-		return r.persistenceService.SetOperationAsSucceeded(operationID)
-	})
+	gardenerConfig, isGardener := cluster.GardenerConfig()
+	if isGardener {
+		err = dbSession.InsertGardenerConfig(gardenerConfig)
+		if err != nil {
+			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
+		}
+	}
+
+	err = dbSession.InsertKymaConfig(cluster.KymaConfig)
+	if err != nil {
+		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
+	}
+
+	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, timestamp, "Provisioning started", "Failed to set provisioning started: %s")
+	if err != nil {
+		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
+	}
+
+	return operation, nil
 }
 
-func (r *service) setOperationAsFailed(operationID, message string) {
-	updateOperationStatus(func() error {
-		return r.persistenceService.SetOperationAsFailed(operationID, message)
-	})
-}
+func (r *service) setOperationStarted(dbSession dbsession.WriteSession, runtimeID string, operationType model.OperationType, timestamp time.Time, message string, errorMessageFmt string) (model.Operation, dberrors.Error) {
+	id := r.uuidGenerator.New()
 
-func updateOperationStatus(updateFunction func() error) {
-	err := util.Retry(interval, retryCount, updateFunction)
-	if err != nil {
-		log.Errorf("Failed to set operation status, %s", err.Error())
+	operation := model.Operation{
+		ID:             id,
+		Type:           operationType,
+		StartTimestamp: timestamp,
+		State:          model.InProgress,
+		Message:        message,
+		ClusterID:      runtimeID,
 	}
+
+	err := dbSession.InsertOperation(operation)
+	if err != nil {
+		return model.Operation{}, dberrors.Internal(errorMessageFmt, err)
+	}
+
+	return operation, nil
 }

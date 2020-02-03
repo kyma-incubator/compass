@@ -106,8 +106,8 @@ func TestDocumentInput_Validate_Description(t *testing.T) {
 			ExpectedValid: false,
 		},
 		{
-			Name:          "String longer than 128 chars",
-			Value:         inputvalidationtest.String129Long,
+			Name:          "String longer than 2000 chars",
+			Value:         inputvalidationtest.String2001Long,
 			ExpectedValid: false,
 		},
 	}

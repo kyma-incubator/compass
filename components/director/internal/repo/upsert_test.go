@@ -20,9 +20,9 @@ import (
 )
 
 func TestUpsert(t *testing.T) {
-	expectedQuery := regexp.QuoteMeta(`INSERT INTO users ( id_col, tenant_col, first_name, last_name, age ) 
-		VALUES ( ?, ?, ?, ?, ? ) ON CONFLICT ( tenant_col, first_name, last_name ) DO UPDATE SET age=EXCLUDED.age`)
-	sut := repo.NewUpserter("users", []string{"id_col", "tenant_col", "first_name", "last_name", "age"}, []string{"tenant_col", "first_name", "last_name"}, []string{"age"})
+	expectedQuery := regexp.QuoteMeta(`INSERT INTO users ( id_col, tenant_id, first_name, last_name, age ) 
+		VALUES ( ?, ?, ?, ?, ? ) ON CONFLICT ( tenant_id, first_name, last_name ) DO UPDATE SET age=EXCLUDED.age`)
+	sut := repo.NewUpserter("users", []string{"id_col", "tenant_id", "first_name", "last_name", "age"}, []string{"tenant_id", "first_name", "last_name"}, []string{"age"})
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)
@@ -90,7 +90,7 @@ func TestUpsert(t *testing.T) {
 }
 
 func TestUpsertWhenWrongConfiguration(t *testing.T) {
-	sut := repo.NewUpserter("users", []string{"id_col", "tenant_col", "column_does_not_exist"}, []string{"id_col", "tenant_col"}, []string{"column_does_not_exist"})
+	sut := repo.NewUpserter("users", []string{"id_col", "tenant_id", "column_does_not_exist"}, []string{"id_col", "tenant_id"}, []string{"column_does_not_exist"})
 	// GIVEN
 	db, mock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), db)

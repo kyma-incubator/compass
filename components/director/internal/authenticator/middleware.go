@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/dgrijalva/jwt-go"
@@ -56,14 +56,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			if err != nil {
 				wrappedErr := errors.Wrap(err, "while parsing token")
 				log.Error(wrappedErr)
-
-				vErr, ok := err.(*jwt.ValidationError)
-				if !ok || !isInvalidTenantError(vErr.Inner) {
-					a.writeError(w, wrappedErr.Error(), http.StatusUnauthorized)
-					return
-				}
-
-				a.writeError(w, fmt.Sprintf("forbidden: %s", err.Error()), http.StatusForbidden)
+				a.writeError(w, wrappedErr.Error(), http.StatusUnauthorized)
 				return
 			}
 

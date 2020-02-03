@@ -5,6 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
+	"k8s.io/client-go/kubernetes/fake"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -24,7 +30,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -40,6 +45,11 @@ const (
 	clusterEssentialsComponent    = "cluster-essentials"
 	coreComponent                 = "core"
 	applicationConnectorComponent = "application-connector"
+
+	gardenerProject        = "gardener-project"
+	runtimeAgentComponent  = "compass-runtime-agent"
+	compassSystemNamespace = "compass-system"
+	tenant                 = "tenant"
 )
 
 func waitForOperationCompleted(provisioningService provisioning.Service, operationID string, seconds uint) error {
@@ -72,15 +82,13 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 
 	clusterConfigForGardenerWithGCP := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			Name:              "Something",
-			ProjectName:       "Project",
 			KubernetesVersion: "version",
 			NodeCount:         3,
 			VolumeSizeGb:      1024,
 			MachineType:       "n1-standard-1",
 			Region:            "region",
 			Provider:          "GCP",
-			Seed:              "gcp-eu1",
+			Seed:              util.StringPtr("gcp-eu1"),
 			TargetSecret:      "secret",
 			DiskType:          "ssd",
 			WorkerCidr:        "cidr",
@@ -98,15 +106,13 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 
 	clusterConfigForGardenerWithAzure := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			Name:              "Something",
-			ProjectName:       "Project",
 			KubernetesVersion: "version",
 			NodeCount:         3,
 			VolumeSizeGb:      1024,
 			MachineType:       "n1-standard-1",
 			Region:            "region",
 			Provider:          "Azure",
-			Seed:              "gcp-eu1",
+			Seed:              util.StringPtr("gcp-eu1"),
 			TargetSecret:      "secret",
 			DiskType:          "ssd",
 			WorkerCidr:        "cidr",
@@ -124,15 +130,13 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 
 	clusterConfigForGardenerWithAWS := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			Name:              "Something",
-			ProjectName:       "Project",
 			KubernetesVersion: "version",
 			NodeCount:         3,
 			VolumeSizeGb:      1024,
 			MachineType:       "n1-standard-1",
 			Region:            "region",
 			Provider:          "AWS",
-			Seed:              "aws-eu1",
+			Seed:              nil,
 			TargetSecret:      "secret",
 			DiskType:          "ssd",
 			WorkerCidr:        "cidr",
@@ -186,7 +190,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	uuidGenerator := uuid.NewUUIDGenerator()
 
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 
 	cleanupNetwork, err := testutils.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
@@ -219,34 +223,35 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 		t.Run(cfg.description, func(t *testing.T) {
 
 			directorServiceMock := &directormock.DirectorClient{}
-			directorServiceMock.On("CreateRuntime", mock.Anything).Return(cfg.runtimeID, nil)
-			directorServiceMock.On("DeleteRuntime", mock.Anything).Return(nil)
+			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(cfg.runtimeID, nil)
+			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
+			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
+
+			cmClientBuilder := &mocks2.ConfigMapClientBuilder{}
+			configMapClient := fake.NewSimpleClientset().CoreV1().ConfigMaps(compassSystemNamespace)
+			cmClientBuilder.On("CreateK8SConfigMapClient", mockedKubeConfigValue, compassSystemNamespace).Return(configMapClient, nil)
+			runtimeConfigurator := runtime.NewRuntimeConfigurator(cmClientBuilder, directorServiceMock)
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
 			dbSessionFactory := dbsession.NewFactory(connection)
-			persistenceService := persistence.NewService(dbSessionFactory, uuidGenerator)
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
-			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository)
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject)
 			graphQLConverter := provisioning.NewGraphQLConverter()
-			provisioningService := provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformServiceMock, installationServiceMock, directorServiceMock)
-			provisioner := NewResolver(provisioningService)
+			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock, runtimeConfigurator)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator)
+			validator := NewValidator(dbSessionFactory.NewReadSession())
+			provisioner := NewResolver(provisioningService, validator)
 
 			err := insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
 			require.NoError(t, err)
 
 			status, err := provisioner.ProvisionRuntime(ctx, fullConfig)
+			require.NoError(t, err)
 
 			require.NotNil(t, status)
-			if status != nil {
-				require.NotNil(t, status.RuntimeID)
-
-				if status.RuntimeID != nil {
-					assert.Equal(t, cfg.runtimeID, *status.RuntimeID)
-				}
-			}
-
-			require.NoError(t, err)
+			require.NotNil(t, status.RuntimeID)
+			assert.Equal(t, cfg.runtimeID, *status.RuntimeID)
 
 			messageProvisioningStarted := "Provisioning started"
 
@@ -283,7 +288,8 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, statusForProvisioningSucceeded, runtimeStatusProvisioned.LastOperationStatus)
 			assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioningStarted.RuntimeConfiguration.KymaConfig)
 
-			clusterData, err := persistenceService.GetClusterData(cfg.runtimeID)
+			session := dbSessionFactory.NewReadSession()
+			clusterData, err := session.GetCluster(cfg.runtimeID)
 			require.NoError(t, err)
 			require.NotNil(t, clusterData)
 			require.NotNil(t, clusterData.Kubeconfig)
@@ -348,7 +354,6 @@ func insertDummyReleaseIfNotExist(releaseRepo release.Repository, id, version st
 	return err
 }
 
-// TODO - those are the same functions as in Converters tests - think of some way to not to duplicate all that code
 func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 
 	return &gqlschema.KymaConfigInput{
@@ -369,6 +374,14 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 			{
 				Component: applicationConnectorComponent,
 				Namespace: kymaIntegrationNamespace,
+				Configuration: []*gqlschema.ConfigEntryInput{
+					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
+				},
+			},
+			{
+				Component: runtimeAgentComponent,
+				Namespace: compassSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
@@ -412,6 +425,14 @@ func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 			{
 				Component: applicationConnectorComponent,
 				Namespace: kymaIntegrationNamespace,
+				Configuration: []*gqlschema.ConfigEntry{
+					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
+				},
+			},
+			{
+				Component: runtimeAgentComponent,
+				Namespace: compassSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),

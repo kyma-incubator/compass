@@ -23,17 +23,17 @@ func TestList(t *testing.T) {
 	homer := User{FirstName: "Homer", LastName: "Simpson", Age: 55, Tenant: givenTenant, ID: homerID}
 	homerRow := []driver.Value{homerID, givenTenant, "Homer", "Simpson", 55}
 
-	sut := repo.NewLister("users", "tenant_col",
-		[]string{"id_col", "tenant_col", "first_name", "last_name", "age"})
+	sut := repo.NewLister("users", "tenant_id",
+		[]string{"id_col", "tenant_id", "first_name", "last_name", "age"})
 
 	t.Run("lists all items successfully", func(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
 		defer mock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id_col", "tenant_col", "first_name", "last_name", "age"}).
+		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"}).
 			AddRow(peterRow...).
 			AddRow(homerRow...)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_col, first_name, last_name, age FROM users WHERE tenant_col=$1`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id=$1`)).
 			WithArgs(givenTenant).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
@@ -49,9 +49,9 @@ func TestList(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
 		defer mock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id_col", "tenant_col", "first_name", "last_name", "age"}).
+		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"}).
 			AddRow(peterRow...)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_col, first_name, last_name, age FROM users WHERE tenant_col=$1 AND first_name='Peter' AND age > 18`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id=$1 AND first_name='Peter' AND age > 18`)).
 			WithArgs(givenTenant).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection

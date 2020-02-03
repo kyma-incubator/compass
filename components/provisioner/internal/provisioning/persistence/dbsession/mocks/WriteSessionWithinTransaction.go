@@ -127,6 +127,22 @@ func (_m *WriteSessionWithinTransaction) InsertOperation(operation model.Operati
 	return r0
 }
 
+// MarkClusterAsDeleted provides a mock function with given fields: runtimeID
+func (_m *WriteSessionWithinTransaction) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
+	ret := _m.Called(runtimeID)
+
+	var r0 dberrors.Error
+	if rf, ok := ret.Get(0).(func(string) dberrors.Error); ok {
+		r0 = rf(runtimeID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dberrors.Error)
+		}
+	}
+
+	return r0
+}
+
 // RollbackUnlessCommitted provides a mock function with given fields:
 func (_m *WriteSessionWithinTransaction) RollbackUnlessCommitted() {
 	_m.Called()

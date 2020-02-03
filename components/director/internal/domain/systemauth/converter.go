@@ -51,7 +51,7 @@ func (c *converter) ToEntity(in model.SystemAuth) (Entity, error) {
 
 	return Entity{
 		ID:                  in.ID,
-		TenantID:            in.TenantID,
+		TenantID:            repo.NewNullableString(in.TenantID),
 		AppID:               repo.NewNullableString(in.AppID),
 		RuntimeID:           repo.NewNullableString(in.RuntimeID),
 		IntegrationSystemID: repo.NewNullableString(in.IntegrationSystemID),
@@ -72,7 +72,7 @@ func (c *converter) FromEntity(in Entity) (model.SystemAuth, error) {
 
 	return model.SystemAuth{
 		ID:                  in.ID,
-		TenantID:            in.TenantID,
+		TenantID:            repo.StringPtrFromNullableString(in.TenantID),
 		AppID:               repo.StringPtrFromNullableString(in.AppID),
 		RuntimeID:           repo.StringPtrFromNullableString(in.RuntimeID),
 		IntegrationSystemID: repo.StringPtrFromNullableString(in.IntegrationSystemID),

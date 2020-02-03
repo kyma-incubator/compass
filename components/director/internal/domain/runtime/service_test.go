@@ -6,9 +6,9 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -25,6 +25,9 @@ func TestService_Create(t *testing.T) {
 	modelInput := model.RuntimeInput{
 		Name:        "foo.bar-not",
 		Description: &desc,
+		Labels: map[string]interface{}{
+			model.ScenariosKey: "DEFAULT",
+		},
 	}
 
 	runtimeModel := mock.MatchedBy(func(rtm *model.Runtime) bool {

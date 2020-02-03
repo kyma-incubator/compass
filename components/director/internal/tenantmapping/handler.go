@@ -8,6 +8,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/pkg/errors"
 )
@@ -24,7 +25,7 @@ type ReqDataParser interface {
 
 //go:generate mockery -name=ObjectContextForUserProvider -output=automock -outpkg=automock -case=underscore
 type ObjectContextForUserProvider interface {
-	GetObjectContext(reqData ReqData, authID string) (ObjectContext, error)
+	GetObjectContext(ctx context.Context, reqData ReqData, authID string) (ObjectContext, error)
 }
 
 //go:generate mockery -name=ObjectContextForSystemAuthProvider -output=automock -outpkg=automock -case=underscore
@@ -35,6 +36,11 @@ type ObjectContextForSystemAuthProvider interface {
 //go:generate mockery -name=Logger -output=automock -outpkg=automock -case=underscore
 type Logger interface {
 	Error(args ...interface{})
+}
+
+//go:generate mockery -name=TenantRepository -output=automock -outpkg=automock -case=underscore
+type TenantRepository interface {
+	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
 
 type Handler struct {
@@ -90,6 +96,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	}
 
 	reqData.Body.Extra["tenant"] = objCtx.TenantID
+	reqData.Body.Extra["externalTenant"] = objCtx.ExternalTenantID
 	reqData.Body.Extra["scope"] = objCtx.Scopes
 	reqData.Body.Extra["consumerID"] = objCtx.ConsumerID
 	reqData.Body.Extra["consumerType"] = objCtx.ConsumerType
@@ -105,7 +112,7 @@ func (h *Handler) getObjectContext(ctx context.Context, reqData ReqData) (Object
 
 	switch authFlow {
 	case JWTAuthFlow:
-		return h.mapperForUser.GetObjectContext(reqData, authID)
+		return h.mapperForUser.GetObjectContext(ctx, reqData, authID)
 	case OAuth2Flow, CertificateFlow:
 		return h.mapperForSystemAuth.GetObjectContext(ctx, reqData, authID, authFlow)
 	}

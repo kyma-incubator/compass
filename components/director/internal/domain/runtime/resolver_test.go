@@ -4,9 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
 
@@ -1252,7 +1254,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	defaultEveningURL := "https://eventing.domain.local"
-	modelRuntimeEventingCfg := fixModelRuntimeEventingConfiguration(defaultEveningURL)
+	modelRuntimeEventingCfg := fixModelRuntimeEventingConfiguration(t, defaultEveningURL)
 	gqlRuntimeEventingCfg := fixGQLRuntimeEventingConfiguration(defaultEveningURL)
 
 	testCases := []struct {
@@ -1361,7 +1363,7 @@ func fixOAuths() []model.SystemAuth {
 	return []model.SystemAuth{
 		{
 			ID:       "foo",
-			TenantID: "foo",
+			TenantID: str.Ptr("foo"),
 			Value: &model.Auth{
 				Credential: model.CredentialData{
 					Basic: nil,
@@ -1375,12 +1377,12 @@ func fixOAuths() []model.SystemAuth {
 		},
 		{
 			ID:       "bar",
-			TenantID: "bar",
+			TenantID: str.Ptr("bar"),
 			Value:    nil,
 		},
 		{
 			ID:       "test",
-			TenantID: "test",
+			TenantID: str.Ptr("test"),
 			Value: &model.Auth{
 				Credential: model.CredentialData{
 					Basic: &model.BasicCredentialData{

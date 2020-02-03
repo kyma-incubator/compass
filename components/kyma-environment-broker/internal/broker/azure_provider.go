@@ -5,10 +5,9 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
-type azureInputProvider struct {
-}
+type azureInputProvider struct{}
 
-var _ inputProvider = &azureInputProvider{}
+var _ hyperscalerInputProvider = &azureInputProvider{}
 
 func (p *azureInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
@@ -25,7 +24,6 @@ func (p *azureInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 			AutoScalerMax:     4,
 			MaxSurge:          4,
 			MaxUnavailable:    1,
-			Seed:              "az-eu1",
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
@@ -35,5 +33,5 @@ func (p *azureInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *azureInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params *internal.ProvisioningParametersDTO) {
+func (p *azureInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
 }

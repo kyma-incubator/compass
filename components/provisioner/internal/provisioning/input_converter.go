@@ -1,6 +1,9 @@
 package provisioning
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
@@ -12,22 +15,24 @@ import (
 )
 
 type InputConverter interface {
-	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.Cluster, error)
+	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant string) (model.Cluster, error)
 }
 
-func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository) InputConverter {
+func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository, gardenerProject string) InputConverter {
 	return &converter{
-		uuidGenerator: uuidGenerator,
-		releaseRepo:   releaseRepo,
+		uuidGenerator:   uuidGenerator,
+		releaseRepo:     releaseRepo,
+		gardenerProject: gardenerProject,
 	}
 }
 
 type converter struct {
-	uuidGenerator uuid.UUIDGenerator
-	releaseRepo   release.ReadRepository
+	uuidGenerator   uuid.UUIDGenerator
+	releaseRepo     release.ReadRepository
+	gardenerProject string
 }
 
-func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.Cluster, error) {
+func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant string) (model.Cluster, error) {
 	var err error
 
 	var kymaConfig model.KymaConfig
@@ -56,6 +61,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		CredentialsSecretName: credSecretName,
 		KymaConfig:            kymaConfig,
 		ClusterConfig:         providerConfig,
+		Tenant:                tenant,
 	}, nil
 }
 
@@ -73,6 +79,7 @@ func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.Clu
 
 func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
 	id := c.uuidGenerator.New()
+	name := c.createGardenerClusterName(input.Provider)
 
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 
@@ -80,17 +87,22 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		return model.GardenerConfig{}, err
 	}
 
+	var seed string
+	if input.Seed != nil {
+		seed = *input.Seed
+	}
+
 	return model.GardenerConfig{
 		ID:                     id,
-		Name:                   input.Name,
-		ProjectName:            input.ProjectName,
+		Name:                   name,
+		ProjectName:            c.gardenerProject,
 		KubernetesVersion:      input.KubernetesVersion,
 		NodeCount:              input.NodeCount,
 		VolumeSizeGB:           input.VolumeSizeGb,
 		DiskType:               input.DiskType,
 		MachineType:            input.MachineType,
 		Provider:               input.Provider,
-		Seed:                   input.Seed,
+		Seed:                   seed,
 		TargetSecret:           input.TargetSecret,
 		WorkerCidr:             input.WorkerCidr,
 		Region:                 input.Region,
@@ -101,6 +113,17 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		ClusterID:              runtimeID,
 		GardenerProviderConfig: providerSpecificConfig,
 	}, nil
+}
+
+func (c converter) createGardenerClusterName(provider string) string {
+	uuid := c.uuidGenerator.New()
+	provider = util.RemoveNotAllowedCharacters(provider)
+
+	name := strings.ReplaceAll(uuid, "-", "")
+	name = fmt.Sprintf("%.3s-%.7s", provider, name)
+	name = util.StartWithLetter(name)
+	name = strings.ToLower(name)
+	return name
 }
 
 func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {

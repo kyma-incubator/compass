@@ -1,8 +1,12 @@
 package storage
 
-import "fmt"
+import (
+	"fmt"
+)
 
-const connectionURLFormat = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
+const (
+	connectionURLFormat = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
+)
 
 type Config struct {
 	User     string `envconfig:"default=postgres"`

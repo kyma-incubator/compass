@@ -72,7 +72,10 @@ set -e
 
 echo -e "${GREEN}Populate DB${NC}"
 
-PGPASSWORD=pwd psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/migrations/*.up.sql) ${DB_NAME}
+PGPASSWORD=pwd psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql) ${DB_NAME}
+
+PGPASSWORD=pwd psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql) ${DB_NAME}
+
 
 if [[  ${SKIP_APP_START} ]]; then
         echo -e "${GREEN}Skipping starting application${NC}"
@@ -93,4 +96,5 @@ APP_OAUTH20_CLIENT_ENDPOINT="https://oauth2-admin.kyma.local/clients" \
 APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token" \
 APP_ONE_TIME_TOKEN_URL="http://connector.not.configured.url/graphql" \
 APP_CONNECTOR_URL="http://connector.not.configured.url/graphql" \
-go run ${ROOT_PATH}/cmd/main.go
+APP_LEGACY_CONNECTOR_URL="https://adapter-gateway.kyma.local/v1/applications/signingRequests/info" \
+go run ${ROOT_PATH}/cmd/director/main.go

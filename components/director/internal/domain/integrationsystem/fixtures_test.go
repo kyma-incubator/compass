@@ -157,7 +157,7 @@ func fixGQLAuth() *graphql.Auth {
 func fixModelSystemAuth(id, intSysID string, auth *model.Auth) model.SystemAuth {
 	return model.SystemAuth{
 		ID:                  id,
-		TenantID:            model.IntegrationSystemTenant,
+		TenantID:            nil,
 		IntegrationSystemID: &intSysID,
 		Value:               auth,
 	}

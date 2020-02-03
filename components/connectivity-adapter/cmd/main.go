@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connector"
+	connector "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/health"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
@@ -22,23 +22,35 @@ type config struct {
 
 func main() {
 	cfg := config{}
+
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "while loading app config")
 
-	router := mux.NewRouter()
+	handler, err := initAPIHandler(cfg)
+	if err != nil {
+		exitOnError(err, "Failed to init External Connector handler")
+	}
 
-	v1Router := router.PathPrefix("/v1").Subrouter()
-	v1Router.HandleFunc("/health", health.HandleFunc).Methods(http.MethodGet)
-
-	appRegistryRouter := v1Router.PathPrefix("/metadata").Subrouter()
-	appregistry.RegisterHandler(appRegistryRouter, cfg.AppRegistry)
-
-	connectorRouter := v1Router.PathPrefix("/applications").Subrouter()
-	connector.RegisterHandler(connectorRouter, cfg.Connector)
-
-	log.Printf("Listening on %s", cfg.Address)
-	err = http.ListenAndServe(cfg.Address, router)
+	log.Printf("API listening on %s", cfg.Address)
+	err = http.ListenAndServe(cfg.Address, handler)
 	exitOnError(err, fmt.Sprintf("while listening on %s", cfg.Address))
+}
+
+func initAPIHandler(cfg config) (http.Handler, error) {
+	router := mux.NewRouter()
+	router.HandleFunc("/v1/health", health.HandleFunc).Methods(http.MethodGet)
+
+	applicationRegistryRouter := router.PathPrefix("/{app-name}/v1").Subrouter()
+	connectorRouter := router.PathPrefix("/v1/applications").Subrouter()
+
+	appRegistryRouter := applicationRegistryRouter.PathPrefix("/metadata").Subrouter()
+	appregistry.RegisterHandler(appRegistryRouter, cfg.AppRegistry)
+	err := connector.RegisterHandler(connectorRouter, cfg.Connector, cfg.AppRegistry.DirectorEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	return router, nil
 }
 
 func exitOnError(err error, context string) {

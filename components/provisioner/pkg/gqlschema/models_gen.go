@@ -115,7 +115,6 @@ type GCPProviderConfigInput struct {
 
 type GardenerConfig struct {
 	Name                   *string                `json:"name"`
-	ProjectName            *string                `json:"projectName"`
 	KubernetesVersion      *string                `json:"kubernetesVersion"`
 	NodeCount              *int                   `json:"nodeCount"`
 	VolumeSizeGb           *int                   `json:"volumeSizeGB"`
@@ -136,15 +135,12 @@ type GardenerConfig struct {
 func (GardenerConfig) IsClusterConfig() {}
 
 type GardenerConfigInput struct {
-	Name                   string                 `json:"name"`
-	ProjectName            string                 `json:"projectName"`
 	KubernetesVersion      string                 `json:"kubernetesVersion"`
 	NodeCount              int                    `json:"nodeCount"`
 	VolumeSizeGb           int                    `json:"volumeSizeGB"`
 	MachineType            string                 `json:"machineType"`
 	Region                 string                 `json:"region"`
 	Provider               string                 `json:"provider"`
-	Seed                   string                 `json:"seed"`
 	TargetSecret           string                 `json:"targetSecret"`
 	DiskType               string                 `json:"diskType"`
 	WorkerCidr             string                 `json:"workerCidr"`
@@ -153,6 +149,7 @@ type GardenerConfigInput struct {
 	MaxSurge               int                    `json:"maxSurge"`
 	MaxUnavailable         int                    `json:"maxUnavailable"`
 	ProviderSpecificConfig *ProviderSpecificInput `json:"providerSpecificConfig"`
+	Seed                   *string                `json:"seed"`
 }
 
 type KymaConfig struct {
@@ -184,15 +181,14 @@ type ProviderSpecificInput struct {
 type ProvisionRuntimeInput struct {
 	RuntimeInput  *RuntimeInput       `json:"runtimeInput"`
 	ClusterConfig *ClusterConfigInput `json:"clusterConfig"`
-	Credentials   *CredentialsInput   `json:"credentials"`
 	KymaConfig    *KymaConfigInput    `json:"kymaConfig"`
+	Credentials   *CredentialsInput   `json:"credentials"`
 }
 
 type RuntimeConfig struct {
-	ClusterConfig         ClusterConfig `json:"clusterConfig"`
-	CredentialsSecretName *string       `json:"credentialsSecretName"`
-	KymaConfig            *KymaConfig   `json:"kymaConfig"`
-	Kubeconfig            *string       `json:"kubeconfig"`
+	ClusterConfig ClusterConfig `json:"clusterConfig"`
+	KymaConfig    *KymaConfig   `json:"kymaConfig"`
+	Kubeconfig    *string       `json:"kubeconfig"`
 }
 
 type RuntimeConnectionStatus struct {

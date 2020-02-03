@@ -70,7 +70,7 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		region: "{{.Region}}"
 		provider: "{{ .Provider }}"
 		diskType: "{{.DiskType}}"
-		seed: "{{ .Seed }}"
+		seed: "az-eu3"
 		targetSecret: "{{ .TargetSecret }}"
 		workerCidr: "{{ .WorkerCidr }}"
         autoScalerMin: {{ .AutoScalerMin }}
@@ -134,118 +134,30 @@ func (g *graphqlizer) UpgradeClusterConfigToGraphQL(in gqlschema.UpgradeClusterI
 
 func (g *graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-		{{- if .Version }}
-		version: "{{.Version}}"
+		version: "{{ .Version }}"
+      	{{- with .Components }}
         components: [
+		  {{- range . }}
           {
-            component: "cluster-essentials"
-            namespace: "kyma-system"
+            component: "{{ .Component }}"
+            namespace: "{{ .Namespace }}"
+      	    {{- with .Configuration }}
             configuration: [
+			  {{- range . }}
               {
-                key: "component.key.dupa"
-                value: "component.value.dupa"
-              }
-              {
-                key: "component.key.dupa1"
-                value: "component.value.dupa1"
+                key: "{{ .Key }}"
+                value: "{{ .Value }}"
+				{{- if .Secret }}
                 secret: true
+				{{- end }}
               }
+		      {{- end }} 
             ]
+		    {{- end }} 
           }
-          {
-            component: "testing"
-            namespace: "kyma-system"
-          }
-          {
-            component: "istio-init"
-            namespace: "istio-system"
-          }
-          {
-            component: "istio"
-            namespace: "istio-system"
-          }
-          {
-            component: "xip-patch"
-            namespace: "kyma-installer"
-          }
-          {
-            component: "istio-kyma-patch"
-            namespace: "istio-system"
-          }
-          {
-            component: "knative-serving-init"
-            namespace: "knative-serving"
-          }
-          {
-            component: "knative-serving"
-            namespace: "knative-serving"
-          }
-          {
-            component: "knative-eventing"
-            namespace: "knative-eventing"
-          }
-          {
-            component: "dex"
-            namespace: "kyma-system"
-          }
-          {
-            component: "ory"
-            namespace: "kyma-system"
-          }
-          {
-            component: "api-gateway"
-            namespace: "kyma-system"
-          }
-          {
-            component: "service-catalog"
-            namespace: "kyma-system"
-          }
-          {
-            component: "service-catalog-addons"
-            namespace: "kyma-system"
-          }
-          {
-            component: "helm-broker"
-            namespace: "kyma-system"
-          }
-          {
-            component: "nats-streaming"
-            namespace: "natss"
-          }
-          {
-            component: "assetstore"
-            namespace: "kyma-system"
-          }
-          {
-            component: "cms"
-            namespace: "kyma-system"
-          }
-          {
-            component: "core"
-            namespace: "kyma-system"
-          }
-          {
-            component: "knative-provisioner-natss"
-            namespace: "knative-eventing"
-          }
-          {
-            component: "event-bus"
-            namespace: "kyma-system"
-          }
-          {
-            component: "application-connector-ingress"
-            namespace: "kyma-system"
-          }    
-          {
-            component: "application-connector-helper"
-            namespace: "kyma-integration"
-          }    
-          {
-            component: "application-connector"
-            namespace: "kyma-integration"
-          }         
+		  {{- end }} 
         ]
-		{{- end }}
+      	{{- end }}         
 	}`)
 }
 

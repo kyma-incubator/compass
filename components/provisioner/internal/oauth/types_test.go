@@ -1,9 +1,10 @@
 package oauth
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestToken_EmptyOrExpired(t *testing.T) {

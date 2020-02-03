@@ -1,8 +1,6 @@
 package provisioner
 
 import (
-	"fmt"
-
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
 	gcli "github.com/machinebox/graphql"
@@ -13,7 +11,7 @@ import (
 const accountIDKey = "tenant"
 
 type Client interface {
-	ProvisionRuntime(accountID, runtimeID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error)
+	ProvisionRuntime(accountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error)
 	UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(accountID, runtimeID string) (string, error)
 	ReconnectRuntimeAgent(accountID, runtimeID string) (string, error)
@@ -35,24 +33,23 @@ func NewProvisionerClient(endpoint string, queryLogging bool) Client {
 	}
 }
 
-func (c *client) ProvisionRuntime(accountID, runtimeID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
+func (c *client) ProvisionRuntime(accountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
 	provisionRuntimeIptGQL, err := c.graphqlizer.ProvisionRuntimeInputToGraphQL(config)
 	if err != nil {
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to convert Provision Runtime Input to query")
 	}
 
-	query := c.queryProvider.provisionRuntime(runtimeID, provisionRuntimeIptGQL)
+	query := c.queryProvider.provisionRuntime(provisionRuntimeIptGQL)
 	req := gcli.NewRequest(query)
 	req.Header.Add(accountIDKey, accountID)
 
-	fmt.Println(query)
-
-	var operationId string
-	err = c.graphQLClient.ExecuteRequest(req, &operationId, "")
+	var response schema.OperationStatus
+	err = c.graphQLClient.ExecuteRequest(req, &response, schema.OperationStatus{})
 	if err != nil {
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to provision Runtime")
 	}
-	return schema.OperationStatus{ID: &operationId, RuntimeID: &runtimeID}, nil
+
+	return response, nil
 }
 
 func (c *client) UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (string, error) {

@@ -2,7 +2,6 @@
 
 package automock
 
-import graphql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 
@@ -11,44 +10,44 @@ type Converter struct {
 	mock.Mock
 }
 
-// DetailsToGraphQL provides a mock function with given fields: in
-func (_m *Converter) DetailsToGraphQL(in model.ServiceDetails) graphql.Application {
-	ret := _m.Called(in)
+// DetailsToGraphQLInput provides a mock function with given fields: id, deprecated
+func (_m *Converter) DetailsToGraphQLInput(id string, deprecated model.ServiceDetails) (model.GraphQLServiceDetailsInput, error) {
+	ret := _m.Called(id, deprecated)
 
-	var r0 graphql.Application
-	if rf, ok := ret.Get(0).(func(model.ServiceDetails) graphql.Application); ok {
-		r0 = rf(in)
+	var r0 model.GraphQLServiceDetailsInput
+	if rf, ok := ret.Get(0).(func(string, model.ServiceDetails) model.GraphQLServiceDetailsInput); ok {
+		r0 = rf(id, deprecated)
 	} else {
-		r0 = ret.Get(0).(graphql.Application)
+		r0 = ret.Get(0).(model.GraphQLServiceDetailsInput)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, model.ServiceDetails) error); ok {
+		r1 = rf(id, deprecated)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
-// GraphQLToDetailsModel provides a mock function with given fields: in
-func (_m *Converter) GraphQLToDetailsModel(in graphql.Application) model.ServiceDetails {
-	ret := _m.Called(in)
+// GraphQLToServiceDetails provides a mock function with given fields: converted
+func (_m *Converter) GraphQLToServiceDetails(converted model.GraphQLServiceDetails) (model.ServiceDetails, error) {
+	ret := _m.Called(converted)
 
 	var r0 model.ServiceDetails
-	if rf, ok := ret.Get(0).(func(graphql.Application) model.ServiceDetails); ok {
-		r0 = rf(in)
+	if rf, ok := ret.Get(0).(func(model.GraphQLServiceDetails) model.ServiceDetails); ok {
+		r0 = rf(converted)
 	} else {
 		r0 = ret.Get(0).(model.ServiceDetails)
 	}
 
-	return r0
-}
-
-// GraphQLToModel provides a mock function with given fields: in
-func (_m *Converter) GraphQLToModel(in graphql.Application) model.Service {
-	ret := _m.Called(in)
-
-	var r0 model.Service
-	if rf, ok := ret.Get(0).(func(graphql.Application) model.Service); ok {
-		r0 = rf(in)
+	var r1 error
+	if rf, ok := ret.Get(1).(func(model.GraphQLServiceDetails) error); ok {
+		r1 = rf(converted)
 	} else {
-		r0 = ret.Get(0).(model.Service)
+		r1 = ret.Error(1)
 	}
 
-	return r0
+	return r0, r1
 }

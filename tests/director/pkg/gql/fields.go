@@ -227,7 +227,16 @@ func (fp *GqlFieldsProvider) ForLabelDefinition() string {
 		schema`
 }
 
-func (fp *GqlFieldsProvider) ForOneTimeToken() string {
+func (fp *GqlFieldsProvider) ForOneTimeTokenForApplication() string {
+	return `
+		token
+		connectorURL
+		raw
+		rawEncoded
+		legacyConnectorURL`
+}
+
+func (fp *GqlFieldsProvider) ForOneTimeTokenForRuntime() string {
 	return `
 		token
 		connectorURL
@@ -258,4 +267,10 @@ func (fp *GqlFieldsProvider) ForViewer() string {
 	return `
 		id
 		type`
+}
+
+func (fp *GqlFieldsProvider) ForTenant() string {
+	return `
+		id
+		name`
 }

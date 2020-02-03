@@ -54,3 +54,8 @@ func (d *Dumper) Dump(value ...interface{}) {
 	b.WriteString("\n")
 	fmt.Print(b.String())
 }
+
+// DumyDumper does nothing. Suitable for testing to silence the output.
+type DumyDumper struct{}
+
+func (d *DumyDumper) Dump(value ...interface{}) {}

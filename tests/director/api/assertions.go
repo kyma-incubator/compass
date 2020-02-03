@@ -14,7 +14,7 @@ func assertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 
 	assert.Equal(t, in.Name, actualApp.Name)
 	assert.Equal(t, in.Description, actualApp.Description)
-	assertLabels(t, *in.Labels, actualApp.Labels, actualApp.IntegrationSystemID)
+	assertLabels(t, *in.Labels, actualApp.Labels, actualApp)
 	assert.Equal(t, in.HealthCheckURL, actualApp.HealthCheckURL)
 	assert.Equal(t, in.ProviderName, actualApp.ProviderName)
 	assertWebhooks(t, in.Webhooks, actualApp.Webhooks)
@@ -24,13 +24,16 @@ func assertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 }
 
 //TODO: After fixing the 'Labels' scalar turn this back into regular assertion
-func assertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, id *string) {
+func assertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, app graphql.ApplicationExt) {
 	for key, value := range actual {
 		if key == "integration-system-id" {
-			if id == nil {
+			if app.IntegrationSystemID == nil {
 				continue
 			}
-			assert.Equal(t, value, id)
+			assert.Equal(t, value, app.IntegrationSystemID)
+			continue
+		} else if key == "name" {
+			assert.Equal(t, value, app.Name)
 			continue
 		}
 		assert.Equal(t, value, in[key])
@@ -206,11 +209,32 @@ func assertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []
 func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.RuntimeExt) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
-	if in.Labels != nil {
-		assert.Equal(t, *in.Labels, actualRuntime.Labels)
-	} else {
-		assert.Empty(t, actualRuntime.Labels)
+	assertRuntimeLabels(t, in.Labels, actualRuntime.Labels)
+}
+
+func assertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels) {
+	const scenariosKey = "scenarios"
+
+	if inLabels == nil {
+		assertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
+		assert.Equal(t, 1, len(actualLabels))
+		return
 	}
+
+	_, inHasScenarios := (*inLabels)[scenariosKey]
+	if !inHasScenarios {
+		assertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
+	}
+
+	for labelKey, labelValues := range *inLabels {
+		assertLabel(t, actualLabels, labelKey, labelValues)
+	}
+}
+
+func assertLabel(t *testing.T, actualLabels graphql.Labels, key string, values interface{}) {
+	labelValues, ok := actualLabels[key]
+	assert.True(t, ok)
+	assert.Equal(t, values, labelValues)
 }
 
 func assertIntegrationSystem(t *testing.T, in graphql.IntegrationSystemInput, actualIntegrationSystem graphql.IntegrationSystemExt) {

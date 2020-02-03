@@ -38,20 +38,20 @@ func (_m *ReadSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Err
 	return r0, r1
 }
 
-// GetKymaConfig provides a mock function with given fields: runtimeID
-func (_m *ReadSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
-	ret := _m.Called(runtimeID)
+// GetGardenerClusterByName provides a mock function with given fields: name
+func (_m *ReadSession) GetGardenerClusterByName(name string) (model.Cluster, dberrors.Error) {
+	ret := _m.Called(name)
 
-	var r0 model.KymaConfig
-	if rf, ok := ret.Get(0).(func(string) model.KymaConfig); ok {
-		r0 = rf(runtimeID)
+	var r0 model.Cluster
+	if rf, ok := ret.Get(0).(func(string) model.Cluster); ok {
+		r0 = rf(name)
 	} else {
-		r0 = ret.Get(0).(model.KymaConfig)
+		r0 = ret.Get(0).(model.Cluster)
 	}
 
 	var r1 dberrors.Error
 	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
-		r1 = rf(runtimeID)
+		r1 = rf(name)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(dberrors.Error)
@@ -107,17 +107,15 @@ func (_m *ReadSession) GetOperation(operationID string) (model.Operation, dberro
 	return r0, r1
 }
 
-// GetProviderConfig provides a mock function with given fields: runtimeID
-func (_m *ReadSession) GetProviderConfig(runtimeID string) (model.ProviderConfiguration, dberrors.Error) {
+// GetTenant provides a mock function with given fields: runtimeID
+func (_m *ReadSession) GetTenant(runtimeID string) (string, dberrors.Error) {
 	ret := _m.Called(runtimeID)
 
-	var r0 model.ProviderConfiguration
-	if rf, ok := ret.Get(0).(func(string) model.ProviderConfiguration); ok {
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
 		r0 = rf(runtimeID)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(model.ProviderConfiguration)
-		}
+		r0 = ret.Get(0).(string)
 	}
 
 	var r1 dberrors.Error

@@ -22,6 +22,8 @@ const (
 	runtimeTestingName = "Runtime Test name"
 	validTokenValue    = "12345"
 	tenantValue        = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
+	oneTimeToken       = "54321"
+	connectorURL       = "https://kyma.cx/connector/graphql"
 
 	expectedRegisterRuntimeQuery = `mutation {
 	result: registerRuntime(in: {
@@ -32,6 +34,11 @@ const (
 	expectedDeleteRuntimeQuery = `mutation {
 	result: unregisterRuntime(id: "test-runtime-ID-12345") {
 		id
+}}`
+
+	expectedOneTimeTokenQuery = `mutation {
+	result: requestOneTimeTokenForRuntime(id: "test-runtime-ID-12345") {
+		token connectorURL
 }}`
 )
 
@@ -79,10 +86,10 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
-		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput)
+		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput, tenantValue)
 
 		// then
 		assert.NoError(t, err)
@@ -99,10 +106,10 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
 
-		configClient := NewDirectorClient(nil, mockedOAuthClient, tenantValue)
+		configClient := NewDirectorClient(nil, mockedOAuthClient)
 
 		// when
-		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput)
+		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput, tenantValue)
 
 		// then
 		assert.Error(t, err)
@@ -119,10 +126,10 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(expiredToken, nil)
 
-		configClient := NewDirectorClient(nil, mockedOAuthClient, tenantValue)
+		configClient := NewDirectorClient(nil, mockedOAuthClient)
 
 		// when
-		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput)
+		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput, tenantValue)
 
 		// then
 		assert.Error(t, err)
@@ -134,10 +141,10 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(oauth.Token{}, errors.New("Failed token error"))
 
-		configClient := NewDirectorClient(nil, mockedOAuthClient, tenantValue)
+		configClient := NewDirectorClient(nil, mockedOAuthClient)
 
 		// when
-		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput)
+		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput, tenantValue)
 
 		// then
 		assert.Error(t, err)
@@ -161,10 +168,10 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 			cfg.Result = nil
 		}, expectedRequest)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
-		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput)
+		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput, tenantValue)
 
 		// then
 		assert.Error(t, err)
@@ -188,10 +195,10 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 			cfg.Result = nil
 		}, expectedRequest)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
-		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput)
+		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput, tenantValue)
 
 		// then
 		assert.Error(t, err)
@@ -229,10 +236,10 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
-		err := configClient.DeleteRuntime(runtimeTestingID)
+		err := configClient.DeleteRuntime(runtimeTestingID, tenantValue)
 
 		// then
 		assert.NoError(t, err)
@@ -248,10 +255,10 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(emptyToken, nil)
 
-		configClient := NewDirectorClient(nil, mockedOAuthClient, tenantValue)
+		configClient := NewDirectorClient(nil, mockedOAuthClient)
 
 		// when
-		err := configClient.DeleteRuntime(runtimeTestingID)
+		err := configClient.DeleteRuntime(runtimeTestingID, tenantValue)
 
 		// then
 		assert.Error(t, err)
@@ -267,10 +274,10 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(expiredToken, nil)
 
-		configClient := NewDirectorClient(nil, mockedOAuthClient, tenantValue)
+		configClient := NewDirectorClient(nil, mockedOAuthClient)
 
 		// when
-		err := configClient.DeleteRuntime(runtimeTestingID)
+		err := configClient.DeleteRuntime(runtimeTestingID, tenantValue)
 
 		// then
 		assert.Error(t, err)
@@ -281,10 +288,10 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(oauth.Token{}, errors.New("Failed token error"))
 
-		configClient := NewDirectorClient(nil, mockedOAuthClient, tenantValue)
+		configClient := NewDirectorClient(nil, mockedOAuthClient)
 
 		// when
-		err := configClient.DeleteRuntime(runtimeTestingID)
+		err := configClient.DeleteRuntime(runtimeTestingID, tenantValue)
 
 		// then
 		assert.Error(t, err)
@@ -308,10 +315,10 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 			cfg.Result = nil
 		}, expectedRequest)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
-		err := configClient.DeleteRuntime(runtimeTestingID)
+		err := configClient.DeleteRuntime(runtimeTestingID, tenantValue)
 
 		// then
 		assert.Error(t, err)
@@ -334,10 +341,10 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
-		err := configClient.DeleteRuntime(runtimeTestingID)
+		err := configClient.DeleteRuntime(runtimeTestingID, tenantValue)
 
 		// then
 		assert.Error(t, err)
@@ -368,12 +375,122 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
-		err := configClient.DeleteRuntime(runtimeTestingID)
+		err := configClient.DeleteRuntime(runtimeTestingID, tenantValue)
 
 		// then
 		assert.Error(t, err)
+	})
+}
+
+func TestDirectorClient_GetConnectionToken(t *testing.T) {
+	expectedRequest := gcli.NewRequest(expectedOneTimeTokenQuery)
+	expectedRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
+	expectedRequest.Header.Set(TenantHeader, tenantValue)
+
+	t.Run("Should return OneTimeToken when Oauth Token is valid", func(t *testing.T) {
+		//given
+		expectedResponse := &graphql.OneTimeTokenForRuntimeExt{
+			OneTimeTokenForRuntime: graphql.OneTimeTokenForRuntime{
+				TokenWithURL: graphql.TokenWithURL{
+					Token:        oneTimeToken,
+					ConnectorURL: connectorURL,
+				},
+			},
+		}
+
+		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*OneTimeTokenResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = expectedResponse
+		}, expectedRequest)
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		// when
+		receivedOneTimeToken, err := configClient.GetConnectionToken(runtimeTestingID, tenantValue)
+
+		//then
+		require.NoError(t, err)
+		require.NotEmpty(t, receivedOneTimeToken)
+		assert.Equal(t, oneTimeToken, receivedOneTimeToken.Token)
+		assert.Equal(t, connectorURL, receivedOneTimeToken.ConnectorURL)
+	})
+
+	t.Run("Should return error when Oauth Token is empty", func(t *testing.T) {
+		//given
+		token := oauth.Token{
+			AccessToken: "",
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(nil, mockedOAuthClient)
+
+		// when
+		receivedOneTimeToken, err := configClient.GetConnectionToken(runtimeTestingID, tenantValue)
+
+		//then
+		require.Error(t, err)
+		require.Empty(t, receivedOneTimeToken)
+	})
+
+	t.Run("Should return error when Oauth Token is expired", func(t *testing.T) {
+		//given
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  passedExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(nil, mockedOAuthClient)
+
+		// when
+		receivedOneTimeToken, err := configClient.GetConnectionToken(runtimeTestingID, tenantValue)
+
+		//then
+		require.Error(t, err)
+		require.Empty(t, receivedOneTimeToken)
+	})
+
+	t.Run("Should return error when Director call returns nil reponse", func(t *testing.T) {
+		//given
+		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*OneTimeTokenResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+		}, expectedRequest)
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		// when
+		receivedOneTimeToken, err := configClient.GetConnectionToken(runtimeTestingID, tenantValue)
+
+		//then
+		require.Error(t, err)
+		require.Empty(t, receivedOneTimeToken)
 	})
 }

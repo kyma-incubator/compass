@@ -3,7 +3,7 @@ package systemauth
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -15,7 +15,9 @@ type Repository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.SystemAuth, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
-	DeleteByIDForObject(ctx context.Context, tenant string, id string, objType model.SystemAuthReferenceObjectType) error
+	ListForObjectGlobal(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
+	DeleteByIDForObject(ctx context.Context, tenant, id string, objType model.SystemAuthReferenceObjectType) error
+	DeleteByIDForObjectGlobal(ctx context.Context, id string, objType model.SystemAuthReferenceObjectType) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -57,13 +59,13 @@ func (s *service) create(ctx context.Context, id string, objectType model.System
 	switch objectType {
 	case model.ApplicationReference:
 		systemAuth.AppID = &objectID
-		systemAuth.TenantID = tnt
+		systemAuth.TenantID = &tnt
 	case model.RuntimeReference:
 		systemAuth.RuntimeID = &objectID
-		systemAuth.TenantID = tnt
+		systemAuth.TenantID = &tnt
 	case model.IntegrationSystemReference:
 		systemAuth.IntegrationSystemID = &objectID
-		systemAuth.TenantID = model.IntegrationSystemTenant
+		systemAuth.TenantID = nil
 	default:
 		return "", errors.New("unknown reference object type")
 	}
@@ -82,11 +84,13 @@ func (s *service) GetByIDForObject(ctx context.Context, objectType model.SystemA
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	if objectType == model.IntegrationSystemReference {
-		tnt = model.IntegrationSystemTenant
-	}
+	var item *model.SystemAuth
 
-	item, err := s.repo.GetByID(ctx, tnt, authID)
+	if objectType == model.IntegrationSystemReference {
+		item, err = s.repo.GetByIDGlobal(ctx, authID)
+	} else {
+		item, err = s.repo.GetByID(ctx, tnt, authID)
+	}
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting SystemAuth with ID %s", authID)
 	}
@@ -109,11 +113,13 @@ func (s *service) ListForObject(ctx context.Context, objectType model.SystemAuth
 		return nil, err
 	}
 
-	if objectType == model.IntegrationSystemReference {
-		tnt = model.IntegrationSystemTenant
-	}
+	var systemAuths []model.SystemAuth
 
-	systemAuths, err := s.repo.ListForObject(ctx, tnt, objectType, objectID)
+	if objectType == model.IntegrationSystemReference {
+		systemAuths, err = s.repo.ListForObjectGlobal(ctx, objectType, objectID)
+	} else {
+		systemAuths, err = s.repo.ListForObject(ctx, tnt, objectType, objectID)
+	}
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing System Auths for %s with reference ID '%s'", objectType, objectID)
 	}
@@ -128,10 +134,10 @@ func (s *service) DeleteByIDForObject(ctx context.Context, objectType model.Syst
 	}
 
 	if objectType == model.IntegrationSystemReference {
-		tnt = model.IntegrationSystemTenant
+		err = s.repo.DeleteByIDForObjectGlobal(ctx, authID, objectType)
+	} else {
+		err = s.repo.DeleteByIDForObject(ctx, tnt, authID, objectType)
 	}
-
-	err = s.repo.DeleteByIDForObject(ctx, tnt, authID, objectType)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting System Auth with ID '%s' for %s", authID, objectType)
 	}

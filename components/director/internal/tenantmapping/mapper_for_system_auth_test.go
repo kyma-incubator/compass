@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
@@ -14,7 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	tenantmappingmock "github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -26,7 +26,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		expectedScopes := []string{"application:read"}
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: expectedTenantID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{}
@@ -37,12 +37,13 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		scopesGetterMock := getScopesGetterMock()
 		scopesGetterMock.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return(expectedScopes, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, scopesGetterMock)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, scopesGetterMock, nil)
 
 		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.CertificateFlow)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, "", objCtx.ExternalTenantID)
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
 		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
 		require.Equal(t, "Application", string(objCtx.ConsumerType))
@@ -54,17 +55,21 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		expectedTenantID := uuid.New()
+		expectedExternalTenantID := uuid.New().String()
 		expectedScopes := "application:read"
 		sysAuth := &model.SystemAuth{
 			ID:                  authID.String(),
 			IntegrationSystemID: str.Ptr(refObjID.String()),
 		}
-
+		tenantMappingModel := &model.BusinessTenantMapping{
+			ID:             expectedTenantID.String(),
+			ExternalTenant: expectedExternalTenantID,
+		}
 		reqData := tenantmapping.ReqData{
 			Body: tenantmapping.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.TenantKey: expectedTenantID.String(),
-					tenantmapping.ScopesKey: expectedScopes,
+					tenantmapping.ExternalTenantKey: expectedExternalTenantID,
+					tenantmapping.ScopesKey:         expectedScopes,
 				},
 			},
 		}
@@ -72,17 +77,21 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		tenantRepoMock := getTenantRepositoryMock()
+		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID).Return(tenantMappingModel, nil).Once()
+
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, tenantRepoMock)
 
 		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, expectedExternalTenantID, objCtx.ExternalTenantID)
 		require.Equal(t, expectedScopes, objCtx.Scopes)
 		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
 		require.Equal(t, "Integration System", string(objCtx.ConsumerType))
 
-		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
+		mock.AssertExpectationsForObjects(t, systemAuthSvcMock, tenantRepoMock)
 	})
 
 	t.Run("returns tenant and scopes from the ReqData in the Application or Runtime SystemAuth case for OAuth2 flow", func(t *testing.T) {
@@ -92,7 +101,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		expectedScopes := "application:read"
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: expectedTenantID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{
@@ -106,12 +115,13 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, "", objCtx.ExternalTenantID)
 		require.Equal(t, expectedScopes, objCtx.Scopes)
 		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
 		require.Equal(t, "Application", string(objCtx.ConsumerType))
@@ -127,7 +137,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(&model.SystemAuth{}, errors.New("some-error")).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -145,7 +155,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -154,49 +164,20 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
 
-	t.Run("returns error when unable to get the tenant from the ReqData in the Integration System SystemAuth case", func(t *testing.T) {
+	t.Run("returns error when unable to get the scopes from the ReqData in the Integration System SystemAuth case", func(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
+
 		sysAuth := &model.SystemAuth{
 			ID:                  authID.String(),
 			IntegrationSystemID: str.Ptr(refObjID.String()),
 		}
-
 		reqData := tenantmapping.ReqData{}
 
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
-
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
-
-		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Integration System: while fetching tenant: the key (tenant) does not exist in source object")
-
-		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
-	})
-
-	t.Run("returns error when unable to get the scopes from the ReqData in the Integration System SystemAuth case", func(t *testing.T) {
-		authID := uuid.New()
-		refObjID := uuid.New()
-		tenantID := uuid.New()
-		sysAuth := &model.SystemAuth{
-			ID:                  authID.String(),
-			IntegrationSystemID: str.Ptr(refObjID.String()),
-		}
-
-		reqData := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
-				Extra: map[string]interface{}{
-					tenantmapping.TenantKey: tenantID.String(),
-				},
-			},
-		}
-
-		systemAuthSvcMock := getSystemAuthSvcMock()
-		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
-
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -209,13 +190,16 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		sysAuth := &model.SystemAuth{
-			ID:    authID.String(),
-			AppID: str.Ptr(refObjID.String()),
+			ID:       authID.String(),
+			AppID:    str.Ptr(refObjID.String()),
+			TenantID: str.Ptr("123"),
 		}
+
 		reqData := tenantmapping.ReqData{
 			Body: tenantmapping.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.TenantKey: []byte{1, 2, 3},
+					tenantmapping.ExternalTenantKey: []byte{1, 2, 3},
+					tenantmapping.ScopesKey:         "application:read",
 				},
 			},
 		}
@@ -223,7 +207,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -235,17 +219,23 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 	t.Run("returns error when underlying tenant specified in the ReqData differs from the on defined in SystemAuth in the Application or Runtime SystemAuth case", func(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
+		externalTenantID := uuid.New().String()
 		tenant1ID := uuid.New()
 		tenant2ID := uuid.New()
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: tenant1ID.String(),
+			TenantID: str.Ptr(tenant1ID.String()),
 			AppID:    str.Ptr(refObjID.String()),
+		}
+		tenantMappingModel := &model.BusinessTenantMapping{
+			ID:             tenant2ID.String(),
+			ExternalTenant: externalTenantID,
 		}
 		reqData := tenantmapping.ReqData{
 			Body: tenantmapping.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.TenantKey: tenant2ID.String(),
+					tenantmapping.ExternalTenantKey: externalTenantID,
+					tenantmapping.ScopesKey:         "application:read",
 				},
 			},
 		}
@@ -253,11 +243,43 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		tenantRepoMock := getTenantRepositoryMock()
+		tenantRepoMock.On("GetByExternalTenant", mock.Anything, externalTenantID).Return(tenantMappingModel, nil).Once()
+
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, tenantRepoMock)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: tenant missmatch")
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: tenant mismatch")
+
+		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
+	})
+
+	t.Run("returns error when system auth tenant id is nil", func(t *testing.T) {
+		authID := uuid.New()
+		refObjID := uuid.New()
+		tenant2ID := uuid.New()
+		sysAuth := &model.SystemAuth{
+			ID:    authID.String(),
+			AppID: str.Ptr(refObjID.String()),
+		}
+		reqData := tenantmapping.ReqData{
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.ExternalTenantKey: tenant2ID.String(),
+					tenantmapping.ScopesKey:         "application:read",
+				},
+			},
+		}
+
+		systemAuthSvcMock := getSystemAuthSvcMock()
+		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
+
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
+
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
+
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: system auth tenant id cannot be nil")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -268,7 +290,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		tenant1ID := uuid.New()
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: tenant1ID.String(),
+			TenantID: str.Ptr(tenant1ID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{}
@@ -276,7 +298,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
@@ -291,7 +313,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		expectedTenantID := uuid.New()
 		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
-			TenantID: expectedTenantID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{}
@@ -302,7 +324,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		scopesGetterMock := getScopesGetterMock()
 		scopesGetterMock.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return([]string{}, errors.New("some-error")).Once()
 
-		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, scopesGetterMock)
+		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, scopesGetterMock, nil)
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.CertificateFlow)
 
@@ -320,4 +342,9 @@ func getSystemAuthSvcMock() *systemauthmock.SystemAuthService {
 func getScopesGetterMock() *tenantmappingmock.ScopesGetter {
 	scopesGetter := &tenantmappingmock.ScopesGetter{}
 	return scopesGetter
+}
+
+func getTenantRepositoryMock() *tenantmappingmock.TenantRepository {
+	tenantRepo := &tenantmappingmock.TenantRepository{}
+	return tenantRepo
 }

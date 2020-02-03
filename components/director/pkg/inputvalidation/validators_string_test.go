@@ -17,11 +17,11 @@ const (
 	dns1123Error = `[a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]`
 )
 
-func TestNameValidator_Validate(t *testing.T) {
+func TestDNSNameValidator_Validate(t *testing.T) {
 	// GIVEN
 	testError := errors.New(dns1123Error)
 
-	rule := inputvalidation.Name
+	rule := inputvalidation.DNSName
 
 	testCases := []struct {
 		Name          string

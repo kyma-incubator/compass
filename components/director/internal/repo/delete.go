@@ -10,7 +10,6 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/pkg/errors"
 )
@@ -39,22 +38,30 @@ func NewDeleterGlobal(tableName string) DeleterGlobal {
 }
 
 func (g *universalDeleter) DeleteOne(ctx context.Context, tenant string, conditions Conditions) error {
-	return g.unsafeDelete(ctx, str.Ptr(tenant), conditions, true)
+	if tenant == "" {
+		return errors.New("tenant cannot be empty")
+	}
+	conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
+	return g.unsafeDelete(ctx, conditions, true)
 }
 
 func (g *universalDeleter) DeleteMany(ctx context.Context, tenant string, conditions Conditions) error {
-	return g.unsafeDelete(ctx, str.Ptr(tenant), conditions, false)
+	if tenant == "" {
+		return errors.New("tenant cannot be empty")
+	}
+	conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
+	return g.unsafeDelete(ctx, conditions, false)
 }
 
 func (g *universalDeleter) DeleteOneGlobal(ctx context.Context, conditions Conditions) error {
-	return g.unsafeDelete(ctx, nil, conditions, true)
+	return g.unsafeDelete(ctx, conditions, true)
 }
 
 func (g *universalDeleter) DeleteManyGlobal(ctx context.Context, conditions Conditions) error {
-	return g.unsafeDelete(ctx, nil, conditions, false)
+	return g.unsafeDelete(ctx, conditions, false)
 }
 
-func (g *universalDeleter) unsafeDelete(ctx context.Context, tenant *string, conditions Conditions, requireSingleRemoval bool) error {
+func (g *universalDeleter) unsafeDelete(ctx context.Context, conditions Conditions, requireSingleRemoval bool) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
@@ -65,21 +72,15 @@ func (g *universalDeleter) unsafeDelete(ctx context.Context, tenant *string, con
 
 	stmtBuilder.WriteString(fmt.Sprintf("DELETE FROM %s", g.tableName))
 
-	if tenant != nil || len(conditions) > 0 {
+	if len(conditions) > 0 {
 		stmtBuilder.WriteString(" WHERE")
 	}
-	if tenant != nil {
-		stmtBuilder.WriteString(fmt.Sprintf(" %s = $1", *g.tenantColumn))
-		if len(conditions) > 0 {
-			stmtBuilder.WriteString(" AND")
-		}
-		startIdx = 2
-	}
+
 	err = writeEnumeratedConditions(&stmtBuilder, startIdx, conditions)
 	if err != nil {
 		return errors.Wrap(err, "while writing enumerated conditions")
 	}
-	allArgs := getAllArgs(tenant, conditions)
+	allArgs := getAllArgs(conditions)
 
 	res, err := persist.Exec(stmtBuilder.String(), allArgs...)
 	if persistence.IsConstraintViolation(err) {

@@ -8,12 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gocraft/dbr"
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
 
-	"github.com/lib/pq"
+	"github.com/gocraft/dbr"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -24,7 +22,6 @@ const (
 	DbPass            = "nimda"
 	DbName            = "broker"
 	DbPort            = "5432"
-	SchemaName        = "public"
 	DockerUserNetwork = "test_network"
 	EnvPipelineBuild  = "PIPELINE_BUILD"
 )
@@ -109,36 +106,19 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 	return cleanupFunc, connString, nil
 }
 
-func CheckIfAllDatabaseTablesArePresent(db *dbr.Connection) error {
-	tables := []string{postsql.InstancesTableName}
-
-	for _, table := range tables {
-		checkError := checkIfDBTableIsPresent(table, db)
-		if checkError != nil {
-			return checkError
-		}
-	}
-	return nil
-}
-
-func checkIfDBTableIsPresent(tableNameToCheck string, db *dbr.Connection) error {
-	checkQuery := fmt.Sprintf(`SELECT '%s.%s'::regclass;`, SchemaName, tableNameToCheck)
-	row := db.QueryRow(checkQuery)
-
-	var tableName string
-	err := row.Scan(&tableName)
-
+func InitTestDBTables(t *testing.T, connectionURL string) error {
+	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10)
 	if err != nil {
-		psqlErr, converted := err.(*pq.Error)
-
-		if converted && psqlErr.Code == postsql.TableNotExistsError {
-			return errors.Wrap(err, "Table is missing in the database")
-		}
-		return errors.Wrap(err, "Failed to check if table is present in the database")
+		t.Logf("Cannot connect to database with URL %s", connectionURL)
+		return err
 	}
 
-	if tableName != postsql.InstancesTableName {
-		return errors.Wrap(err, "Failed verify table name in the database")
+	for name, v := range fixTables() {
+		if _, err := connection.Exec(v); err != nil {
+			t.Logf("Cannot create table %s", name)
+			return err
+		}
+		t.Logf("Table %s added to database", name)
 	}
 
 	return nil
@@ -209,4 +189,21 @@ func EnsureTestNetworkForDB(t *testing.T, ctx context.Context) (func(), error) {
 	}
 
 	return cleanupFunc, nil
+}
+
+func fixTables() map[string]string {
+	return map[string]string{
+		postsql.InstancesTableName: fmt.Sprintf(
+			`CREATE TABLE %s (
+			instance_id varchar(255) PRIMARY KEY,
+			runtime_id varchar(255) NOT NULL,
+			global_account_id varchar(255) NOT NULL,
+			service_id varchar(255) NOT NULL,
+			service_plan_id varchar(255) NOT NULL,
+			dashboard_url varchar(255) NOT NULL,
+			provisioning_parameters text NOT NULL,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			delated_at TIMESTAMPTZ NOT NULL DEFAULT '0001-01-01 00:00:00+00'
+		)`, postsql.InstancesTableName)}
 }

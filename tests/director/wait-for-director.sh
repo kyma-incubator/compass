@@ -24,7 +24,7 @@ do
         break
     fi
     sleep 1
-    true $(( i++ ))
+    i=$((i+1))
 done
 
 set -e

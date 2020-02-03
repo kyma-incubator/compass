@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/viewer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
@@ -55,6 +56,7 @@ type RootResolver struct {
 	oAuth20     *oauth20.Resolver
 	intSys      *integrationsystem.Resolver
 	viewer      *viewer.Resolver
+	tenant      *tenant.Resolver
 }
 
 func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config) *RootResolver {
@@ -74,6 +76,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	intSysConverter := integrationsystem.NewConverter()
 	appTemplateConverter := apptemplate.NewConverter(appConverter)
+	tenantConverter := tenant.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
@@ -89,6 +92,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	apiRtmAuthRepo := apiruntimeauth.NewRepository(apiRtmAuthConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
+	tenantRepo := tenant.NewRepository(tenantConverter)
 
 	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL)
 
@@ -110,13 +114,14 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	oAuth20Svc := oauth20.NewService(scopeCfgProvider, uidSvc, oAuth20Cfg)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc),
 		appTemplate: apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
 		eventAPI:    eventdef.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
-		eventing:    eventing.NewResolver(transact, eventingSvc),
+		eventing:    eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
 		runtime:     runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
@@ -127,6 +132,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
 		intSys:      integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:      viewer.NewViewerResolver(),
+		tenant:      tenant.NewResolver(transact, tenantSvc, tenantConverter),
 	}
 }
 
@@ -178,6 +184,7 @@ func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	return r.app.Applications(ctx, filter, first, after)
 }
+
 func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
 	return r.app.Application(ctx, id)
 }
@@ -210,6 +217,10 @@ func (r *queryResolver) IntegrationSystems(ctx context.Context, first *int, afte
 }
 func (r *queryResolver) IntegrationSystem(ctx context.Context, id string) (*graphql.IntegrationSystem, error) {
 	return r.intSys.IntegrationSystem(ctx, id)
+}
+
+func (r *queryResolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
+	return r.tenant.Tenants(ctx)
 }
 
 type mutationResolver struct {

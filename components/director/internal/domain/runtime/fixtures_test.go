@@ -1,6 +1,7 @@
 package runtime_test
 
 import (
+	"net/url"
 	"testing"
 	"time"
 
@@ -221,7 +222,7 @@ func fixGQLAuth() *graphql.Auth {
 func fixModelSystemAuth(id, tenant, runtimeID string, auth *model.Auth) model.SystemAuth {
 	return model.SystemAuth{
 		ID:        id,
-		TenantID:  tenant,
+		TenantID:  &tenant,
 		RuntimeID: &runtimeID,
 		Value:     auth,
 	}
@@ -234,10 +235,11 @@ func fixGQLSystemAuth(id string, auth *graphql.Auth) *graphql.SystemAuth {
 	}
 }
 
-func fixModelRuntimeEventingConfiguration(url string) *model.RuntimeEventingConfiguration {
+func fixModelRuntimeEventingConfiguration(t *testing.T, rawURL string) *model.RuntimeEventingConfiguration {
+	validURL := fixValidURL(t, rawURL)
 	return &model.RuntimeEventingConfiguration{
 		EventingConfiguration: model.EventingConfiguration{
-			DefaultURL: url,
+			DefaultURL: validURL,
 		},
 	}
 }
@@ -246,4 +248,11 @@ func fixGQLRuntimeEventingConfiguration(url string) *graphql.RuntimeEventingConf
 	return &graphql.RuntimeEventingConfiguration{
 		DefaultURL: url,
 	}
+}
+
+func fixValidURL(t *testing.T, rawURL string) url.URL {
+	eventingURL, err := url.Parse(rawURL)
+	require.NoError(t, err)
+	require.NotNil(t, eventingURL)
+	return *eventingURL
 }

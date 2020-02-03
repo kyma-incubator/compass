@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
@@ -13,28 +15,38 @@ import (
 
 type Resolver struct {
 	provisioning provisioning.Service
+	validator    Validator
 }
 
 func (r *Resolver) Mutation() gqlschema.MutationResolver {
 	return &Resolver{
 		provisioning: r.provisioning,
+		validator:    r.validator,
 	}
 }
 func (r *Resolver) Query() gqlschema.QueryResolver {
 	return &Resolver{
 		provisioning: r.provisioning,
+		validator:    r.validator,
 	}
 }
 
-func NewResolver(provisioningService provisioning.Service) *Resolver {
+func NewResolver(provisioningService provisioning.Service, validator Validator) *Resolver {
 	return &Resolver{
 		provisioning: provisioningService,
+		validator:    validator,
 	}
 }
 
 func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.ProvisionRuntimeInput) (*gqlschema.OperationStatus, error) {
-	log.Infof("Requested provisioning of RUNTIME %s.", config.RuntimeInput.Name)
-	err := validateInput(config)
+	err := r.validator.ValidateInput(config)
+	if err != nil {
+		log.Errorf("Failed to provision Runtime %s", err)
+		return nil, err
+	}
+
+	tenant, err := getTenant(ctx)
+
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
 		return nil, err
@@ -48,45 +60,36 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 		return nil, err
 	}
 
-	operationID, runtimeID, _, err := r.provisioning.ProvisionRuntime(config)
+	operationStatus, err := r.provisioning.ProvisionRuntime(config, tenant)
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
 		return nil, err
 	}
-	log.Infof("Provisioning started for Runtime %s. Operation id %s", config.RuntimeInput.Name, operationID)
+	log.Infof("Provisioning started for Runtime %s. Operation id %s", config.RuntimeInput.Name, *operationStatus.ID)
 
-	messageProvisioningStarted := "Provisioning started"
-
-	return &gqlschema.OperationStatus{
-		ID:        &operationID,
-		Operation: gqlschema.OperationTypeProvision,
-		Message:   &messageProvisioningStarted,
-		RuntimeID: &runtimeID,
-	}, nil
-}
-
-func validateInput(config gqlschema.ProvisionRuntimeInput) error {
-	if len(config.KymaConfig.Components) == 0 {
-		return errors.New("cannot provision Runtime since Kyma components list is empty")
-	}
-
-	if config.RuntimeInput == nil {
-		return errors.New("cannot provision Runtime since runtime input is missing")
-	}
-
-	if config.Credentials == nil {
-		return errors.New("cannot provision Runtime since credentials are missing")
-	}
-
-	return nil
+	return operationStatus, nil
 }
 
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
 	log.Infof("Requested deprovisioning of Runtime %s.", id)
 
-	operationID, _, err := r.provisioning.DeprovisionRuntime(id)
+	tenant, err := getTenant(ctx)
+
 	if err != nil {
-		log.Errorf("Failed to provision Runtime %s: %s", id, err)
+		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
+		return "", err
+	}
+
+	err = r.validator.ValidateTenant(id, tenant)
+
+	if err != nil {
+		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
+		return "", err
+	}
+
+	operationID, err := r.provisioning.DeprovisionRuntime(id, tenant)
+	if err != nil {
+		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
 		return "", err
 	}
 	log.Infof("Deprovisioning started for Runtime %s. Operation id %s", id, operationID)
@@ -104,6 +107,20 @@ func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string
 
 func (r *Resolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
 	log.Infof("Requested to get status for Runtime %s.", runtimeID)
+
+	tenant, err := getTenant(ctx)
+
+	if err != nil {
+		log.Errorf("Failed to get status for Runtime %s: %s", runtimeID, err)
+		return nil, err
+	}
+
+	err = r.validator.ValidateTenant(runtimeID, tenant)
+
+	if err != nil {
+		log.Errorf("Failed to get status for Runtime %s: %s", runtimeID, err)
+		return nil, err
+	}
 
 	status, err := r.provisioning.RuntimeStatus(runtimeID)
 	if err != nil {
@@ -126,4 +143,13 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 	log.Infof("Getting Runtime operation status for Operation %s succeeded.", operationID)
 
 	return status, nil
+}
+
+func getTenant(ctx context.Context) (string, error) {
+	tenant, ok := ctx.Value(middlewares.Tenant).(string)
+
+	if !ok || tenant == "" {
+		return "", errors.New("tenant header is empty")
+	}
+	return tenant, nil
 }

@@ -1,0 +1,10 @@
+[
+  {
+    "id":"id-default",
+    "name":"default"
+  },
+  {
+    "id":"id-foo",
+    "name":"foo"
+  }
+]
