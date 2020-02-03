@@ -13,7 +13,7 @@ It allows you to provision the clusters in the following ways:
     
 During the operation of provisioning, you can pass a list of Kyma components you want installed on the provisioned Runtime with their custom configuration, as well as a custom Runtime configuration. 
     
-Note that the operations of provisioning and deprovisioning are asynchronous. The operation of provisioning returns the Runtime Operation Status containing the Runtime ID and the operation ID. The operation of deprovisioning returns the operation ID. You can use the operation ID to [check the Runtime Operation Status](08-03-runtime-operation-status.md).
+Note that the operations of provisioning and deprovisioning are asynchronous. The operation of provisioning returns the Runtime Operation Status containing the Runtime ID and the operation ID. The operation of deprovisioning returns the operation ID. You can use the operation ID to [check the Runtime Operation Status](08-03-runtime-operation-status.md) and the Runtime ID to [check the Runtime Status](08-04-runtime-status.md).
 
 The Runtime Provisioner exposes an API to manage cluster provisioning, installation, and deprovisioning. 
 
