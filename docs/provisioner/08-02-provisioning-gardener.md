@@ -77,7 +77,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
      kubectl -n compass-system create secret generic {SECRET_NAME} --from-file=credentials={PATH_TO_KUBECONFIG}
      ```
     
-  5. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on GCP. Note, that the Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory.
+  5. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on GCP. Note, that the Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory, and that the order of the components matters.
     
       > **NOTE:** The cluster name must start with a lowercase letter followed by up to 19 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.                                                                
                                                                           
@@ -174,7 +174,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
      kubectl -n compass-system create secret generic {SECRET_NAME} --from-file=credentials={PATH_TO_KUBECONFIG}
      ```
     
-  5. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on Azure. Note, that the Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory.
+  5. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on Azure. Note, that the Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory, and that the order of the components matters.
 
       > **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
     
@@ -198,7 +198,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 region: "westeurope"
                 provider: "azure"
                 seed: "az-eu1"
-                targetSecret: "{GARDENER_GCP_SECRET_NAME}"
+                targetSecret: "{GARDENER_AZURE_SECRET_NAME}"
                 workerCidr: "10.250.0.0/19"
                 autoScalerMin: 2
                 autoScalerMax: 4
@@ -273,7 +273,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
      kubectl -n compass-system create secret generic {SECRET_NAME} --from-file=credentials={PATH_TO_KUBECONFIG}
      ```
 
-  5. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on AWS. Note, that the Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory.
+  5. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on AWS. Note, that the Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory, and that the order of the components matters.
 
       > **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
     
@@ -297,7 +297,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 region: "eu-west-1"
                 provider: "aws"
                 seed: "aws-eu1"
-                targetSecret: "{GARDENER_GCP_SECRET_NAME}"
+                targetSecret: "{GARDENER_AWS_SECRET_NAME}"
                 workerCidr: "10.250.0.0/19"
                 autoScalerMin: 2
                 autoScalerMax: 4
