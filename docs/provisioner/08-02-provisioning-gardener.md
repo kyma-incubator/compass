@@ -125,7 +125,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 }
               ]
             }
-            credentials: { secretName: "{GARDENER_SERVICE_ACCOUNT_CONFIGURATION_SECERT_NAME}" }
           }
         ) {
           runtimeID
@@ -218,7 +217,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 }
               ]
             }
-            credentials: { secretName: "{GARDENER_SERVICE_ACCOUNT_CONFIGURATION_SECERT_NAME}" }
           }
         ) {
           runtimeID
@@ -318,7 +316,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 }
               ]
             }
-            credentials: { secretName: "{GARDENER_SERVICE_ACCOUNT_CONFIGURATION_SECERT_NAME}" }
           }
         ) {
           runtimeID
