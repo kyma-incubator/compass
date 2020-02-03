@@ -27,7 +27,7 @@ type KymaConfig struct {
 }
 
 type GardenerConfig struct {
-	Providers   []string `envconfig:"default=GCP"` // TODO: make Azure and GCP both as default
+	Providers   []string `envconfig:"default=GCP"` // TODO: default only Azure?
 	AzureSecret string   `envconfig:"default=''"`
 	GCPSecret   string   `envconfig:"default=''"`
 }

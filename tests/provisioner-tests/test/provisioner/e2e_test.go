@@ -2,6 +2,7 @@ package provisioner
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
 	"strings"
 	"testing"
 	"time"
@@ -10,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/assertions"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -22,9 +22,11 @@ const (
 	gcpClusterZone = "europe-west4-b"
 )
 
-// TODO: On error fetch logs from Provisioner?
+// TODO: Consider fetching logs from Provisioner on error
 
 func Test_E2E_Gardener(t *testing.T) {
+	t.SkipNow()
+
 	gardenerInputs := map[string]gqlschema.GardenerConfigInput{
 		GCP: {
 			MachineType:  "n1-standard-4",

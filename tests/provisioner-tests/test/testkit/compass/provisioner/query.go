@@ -46,6 +46,7 @@ func (qp queryProvider) runtimeOperationStatus(operationID string) string {
 }`, operationID, operationStatusData())
 }
 
+// TODO: update Kyma config
 func runtimeStatusData() string {
 	return fmt.Sprintf(`lastOperationStatus { operation state message }
 			runtimeConnectionStatus { status }
@@ -54,7 +55,9 @@ func runtimeStatusData() string {
 				clusterConfig { 
 					%s
 				} 
-				kymaConfig { version components configuration } 
+				kymaConfig { 
+					version
+				} 
 			}`, clusterConfig())
 }
 

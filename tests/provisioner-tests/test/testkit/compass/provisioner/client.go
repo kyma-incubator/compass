@@ -47,7 +47,7 @@ func (c client) ProvisionRuntime(config schema.ProvisionRuntimeInput) (operation
 	req := c.newRequest(query)
 
 	var operationStatus schema.OperationStatus
-	err = c.graphQLClient.ExecuteRequest(req, &operationStatus, "")
+	err = c.graphQLClient.ExecuteRequest(req, &operationStatus)
 	if err != nil {
 		return "", "", errors.Wrap(err, "Failed to provision Runtime")
 	}
@@ -67,7 +67,7 @@ func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInp
 	req := c.newRequest(query)
 
 	var operationId string
-	err = c.graphQLClient.ExecuteRequest(req, &operationId, "")
+	err = c.graphQLClient.ExecuteRequest(req, &operationId)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to upgrade Runtime")
 	}
@@ -79,7 +79,7 @@ func (c client) DeprovisionRuntime(runtimeID string) (string, error) {
 	req := c.newRequest(query)
 
 	var operationId string
-	err := c.graphQLClient.ExecuteRequest(req, &operationId, "")
+	err := c.graphQLClient.ExecuteRequest(req, &operationId)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to deprovision Runtime")
 	}
@@ -91,7 +91,7 @@ func (c client) ReconnectRuntimeAgent(runtimeID string) (string, error) {
 	req := c.newRequest(query)
 
 	var operationId string
-	err := c.graphQLClient.ExecuteRequest(req, &operationId, "")
+	err := c.graphQLClient.ExecuteRequest(req, &operationId)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to reconnect Runtime agent")
 	}
@@ -116,7 +116,7 @@ func (c client) RuntimeStatus(runtimeID string) (RuntimeStatus, error) {
 	req := c.newRequest(query)
 
 	var response RuntimeStatus
-	err := c.graphQLClient.ExecuteRequest(req, &response, &RuntimeStatus{})
+	err := c.graphQLClient.ExecuteRequest(req, &response)
 	if err != nil {
 		return RuntimeStatus{}, errors.Wrap(err, "Failed to get Runtime status")
 	}
@@ -128,7 +128,7 @@ func (c client) RuntimeOperationStatus(operationID string) (schema.OperationStat
 	req := c.newRequest(query)
 
 	var response schema.OperationStatus
-	err := c.graphQLClient.ExecuteRequest(req, &response, &schema.OperationStatus{})
+	err := c.graphQLClient.ExecuteRequest(req, &response)
 	if err != nil {
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to get Runtime operation status")
 	}
