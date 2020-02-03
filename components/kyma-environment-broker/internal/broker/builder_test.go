@@ -52,6 +52,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
+	assert.Equal(t, "azure-cluster", input.RuntimeInput.Name)
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
 	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)

@@ -17,7 +17,7 @@ type graphqlizer struct{}
 func (g *graphqlizer) ProvisionRuntimeInputToGraphQL(in gqlschema.ProvisionRuntimeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
       runtimeInput: {
-        name: "{{ .ClusterConfig.GardenerConfig.Name }}"
+        name: "{{ .RuntimeInput.Name }}"
       }
 		{{- if .ClusterConfig }}
 		clusterConfig: {{ ClusterConfigToGraphQL .ClusterConfig }}
