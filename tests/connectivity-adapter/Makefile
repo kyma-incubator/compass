@@ -7,12 +7,6 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 
 VERIFY_IGNORE := /vendor\|/automock\|/testdata
 
-clean-up:
-	@docker network rm gen-examples-network
-
-errcheck-local:
-	errcheck -blank -asserts -ignoregenerated ./...
-
 resolve-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
