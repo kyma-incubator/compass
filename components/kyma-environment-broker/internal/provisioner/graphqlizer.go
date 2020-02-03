@@ -52,6 +52,7 @@ func (g *graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 
 func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
+		projectName: "{{.ProjectName}}"
 		kubernetesVersion: "{{.KubernetesVersion}}"
 		nodeCount: {{.NodeCount}}
 		volumeSizeGB: {{.VolumeSizeGb }}
