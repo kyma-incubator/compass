@@ -6,7 +6,7 @@ ENV BASE_TEST_DIR /go/src/github.com/kyma-incubator/compass/tests/connectivity-a
 WORKDIR ${BASE_TEST_DIR}
 COPY . ${BASE_TEST_DIR}
 
-RUN CGO_ENABLED=0 go test -c ./api
+RUN CGO_ENABLED=0 go test -c ./test/api
 
 FROM alpine:3.10
 
