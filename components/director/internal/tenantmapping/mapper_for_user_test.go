@@ -34,7 +34,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 		staticUser := tenantmapping.StaticUser{
 			Username: username,
-			Tenants:  []uuid.UUID{expectedExternalTenantID},
+			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
 		tenantMappingModel := &model.BusinessTenantMapping{
@@ -71,7 +71,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 		staticUser := tenantmapping.StaticUser{
 			Username: username,
-			Tenants:  []uuid.UUID{expectedExternalTenantID},
+			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
 		tenantMappingModel := &model.BusinessTenantMapping{
@@ -110,7 +110,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 		staticUser := tenantmapping.StaticUser{
 			Username: username,
-			Tenants:  []uuid.UUID{expectedExternalTenantID},
+			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
 		tenantMappingModel := &model.BusinessTenantMapping{
@@ -149,7 +149,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 		staticUser := tenantmapping.StaticUser{
 			Username: username,
-			Tenants:  []uuid.UUID{expectedExternalTenantID},
+			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
 		tenantMappingModel := &model.BusinessTenantMapping{
@@ -185,7 +185,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 		staticUser := tenantmapping.StaticUser{
 			Username: username,
-			Tenants:  []uuid.UUID{expectedExternalTenantID},
+			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
 		tenantMappingModel := &model.BusinessTenantMapping{
@@ -222,7 +222,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 		staticUser := tenantmapping.StaticUser{
 			Username: username,
-			Tenants:  []uuid.UUID{expectedExternalTenantID},
+			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
 		tenantMappingModel := &model.BusinessTenantMapping{
@@ -254,7 +254,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 		staticUser := tenantmapping.StaticUser{
 			Username: username,
-			Tenants:  []uuid.UUID{expectedExternalTenantID},
+			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
 
@@ -279,7 +279,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 		staticUser := tenantmapping.StaticUser{
 			Username: username,
-			Tenants:  []uuid.UUID{expectedExternalTenantID},
+			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
 
