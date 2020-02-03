@@ -30,9 +30,9 @@ import (
 	"github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -154,8 +154,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	cmClientBuilder.On("CreateK8SConfigMapClient", mockedKubeconfig, compassSystemNamespace).Return(configMapClient, nil)
 	runtimeConfigurator := runtimeConfigrtr.NewRuntimeConfigurator(cmClientBuilder, directorServiceMock)
 
-	gardenerClient := newFakeGardenerClient(t, cfg)
-	shootInterface := gardenerClient.Shoots(namespace)
+	shootInterface := newFakeShootsInterface(t, cfg)
 	secretsInterface := setupSecretsClient(t, cfg)
 	dbsFactory := dbsession.NewFactory(connection)
 
@@ -209,12 +208,11 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			time.Sleep(syncPeriod)
 
 			list, err := shootInterface.List(metav1.ListOptions{})
+			require.NoError(t, err)
 
-			require.NotEmpty(t, list)
 			shoot := &list.Items[0]
 
 			//then
-			require.NoError(t, err)
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
 			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
 			assert.Equal(t, "provisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
@@ -235,7 +233,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, "installed", shoot.Annotations["compass.provisioner.kyma-project.io/kyma-installation"])
 
 			//when
-			shoot = ensureShootWontBeDeleted(t, shootInterface, shoot)
 			deprovisionRuntimeID, err := resolver.DeprovisionRuntime(ctx, config.runtimeID)
 
 			//then
@@ -256,7 +253,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, "uninstalling", shoot.Annotations["compass.provisioner.kyma-project.io/kyma-installation"])
 
 			//when
-			shoot = ensureShootWillBeDeleted(t, shootInterface, shoot)
+			shoot = removeFinalizers(t, shootInterface, shoot)
 			time.Sleep(syncPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
@@ -267,70 +264,11 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	}
 }
 
-func ensureShootWillBeDeleted(t *testing.T, shootInterface gardener_apis.ShootInterface, shoot *gardener_types.Shoot) *gardener_types.Shoot {
-	return setFinalizers(t, shootInterface, shoot, []string{})
-}
-
-func ensureShootWontBeDeleted(t *testing.T, shootInterface gardener_apis.ShootInterface, shoot *gardener_types.Shoot) *gardener_types.Shoot {
-	return setFinalizers(t, shootInterface, shoot, []string{"finalizer"})
-}
-
-func setFinalizers(t *testing.T, shootInterface gardener_apis.ShootInterface, shoot *gardener_types.Shoot, finalizers []string) *gardener_types.Shoot {
-	shoot.SetFinalizers(finalizers)
-
-	update, err := shootInterface.Update(shoot)
-	require.NoError(t, err)
-
-	return update
-}
-
-func newFakeGardenerClient(t *testing.T, config *rest.Config) gardener_apis.GardenV1beta1Interface {
+func newFakeShootsInterface(t *testing.T, config *rest.Config) gardener_apis.ShootInterface {
 	dynamicClient, err := dynamic.NewForConfig(config)
 	require.NoError(t, err)
 
-	return &fakeGardenerClient{
-		client: dynamicClient,
-	}
-}
-
-type fakeGardenerClient struct {
-	client     dynamic.Interface
-	restClient rest.Interface
-}
-
-func (f *fakeGardenerClient) CloudProfiles() gardener_apis.CloudProfileInterface {
-	return nil
-}
-
-func (f *fakeGardenerClient) Projects() gardener_apis.ProjectInterface {
-	return nil
-}
-
-func (f *fakeGardenerClient) Quotas(namespace string) gardener_apis.QuotaInterface {
-	return nil
-}
-
-func (f *fakeGardenerClient) SecretBindings(namespace string) gardener_apis.SecretBindingInterface {
-	return nil
-}
-
-func (f *fakeGardenerClient) Seeds() gardener_apis.SeedInterface {
-	return nil
-}
-
-func (f *fakeGardenerClient) Shoots(namespace string) gardener_apis.ShootInterface {
-	return newFakeShootsInterface(f.client)
-}
-
-func (f *fakeGardenerClient) RESTClient() rest.Interface {
-	if f == nil {
-		return nil
-	}
-	return f.restClient
-}
-
-func newFakeShootsInterface(resources dynamic.Interface) gardener_apis.ShootInterface {
-	resourceInterface := resources.Resource(gardener_types.SchemeGroupVersion.WithResource("shoots"))
+	resourceInterface := dynamicClient.Resource(gardener_types.SchemeGroupVersion.WithResource("shoots"))
 	return &fakeShootsInterface{
 		client: resourceInterface,
 	}
@@ -342,6 +280,8 @@ type fakeShootsInterface struct {
 
 func (f fakeShootsInterface) Create(shoot *gardener_types.Shoot) (*gardener_types.Shoot, error) {
 	addTypeMeta(shoot)
+
+	shoot.SetFinalizers([]string{"finalizer"})
 
 	unstructuredShoot, err := toUnstructured(shoot)
 
@@ -356,6 +296,14 @@ func (f fakeShootsInterface) Create(shoot *gardener_types.Shoot) (*gardener_type
 	}
 
 	return fromUnstructured(create)
+}
+
+func removeFinalizers(t *testing.T, shootInterface gardener_apis.ShootInterface, shoot *gardener_types.Shoot) *gardener_types.Shoot {
+	shoot.SetFinalizers([]string{})
+
+	update, err := shootInterface.Update(shoot)
+	require.NoError(t, err)
+	return update
 }
 
 func (f *fakeShootsInterface) Update(shoot *gardener_types.Shoot) (*gardener_types.Shoot, error) {
