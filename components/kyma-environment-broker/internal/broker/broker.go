@@ -49,7 +49,6 @@ type ProvisioningConfig struct {
 	GCPSecretName       string
 	AzureSecretName     string
 	AWSSecretName       string
-	GardenerProjectName string
 }
 
 var planIDsMapping = map[string]string{
