@@ -7,7 +7,7 @@ This tutorial shows how to check the Runtime status.
 
 ## Steps
 
-Make a call to the Runtime Provisioner to check the Runtime status. Pass the Runtime ID as `id`. 
+Make a call to the Runtime Provisioner with a **tenant** header to check the Runtime status. Pass the Runtime ID as `id`. 
 
 ```graphql
 query { runtimeStatus(id: "{RUNTIME_ID}") {
