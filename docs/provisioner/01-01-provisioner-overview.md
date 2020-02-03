@@ -5,7 +5,7 @@ type: Overview
 
 The Runtime Provisioner is a Compass component responsible for provisioning, installing, and deprovisioning clusters with Kyma (Kyma Runtimes). The relationship between clusters and Runtimes is 1:1. The Runtime Provisioner is registered in the Director as an integration system. 
 
-It is powered by [Hydroform](https://github.com/kyma-incubator/hydroform) and it allows you to provision the clusters in the following ways:
+It allows you to provision the clusters in the following ways:
 - [through Gardener](08-02-provisioning-gardener.md) on:
     * GCP
     * Microsoft Azure
