@@ -10,9 +10,9 @@ import (
 )
 
 type StaticUser struct {
-	Username string    `json:"username"`
-	Tenants  []string  `json:"tenants"`
-	Scopes   []string  `json:"scopes"`
+	Username string   `json:"username"`
+	Tenants  []string `json:"tenants"`
+	Scopes   []string `json:"scopes"`
 }
 
 //go:generate mockery -name=StaticUserRepository -output=automock -outpkg=automock -case=underscore
