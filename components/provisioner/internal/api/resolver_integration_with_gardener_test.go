@@ -3,14 +3,15 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
-	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
-	"k8s.io/client-go/kubernetes/fake"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
+	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
+	"k8s.io/client-go/kubernetes/fake"
 
 	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1alpha1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
@@ -208,6 +209,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			time.Sleep(syncPeriod)
 
 			list, err := shootInterface.List(metav1.ListOptions{})
+
+			require.NotEmpty(t, list)
 			shoot := &list.Items[0]
 
 			//then
