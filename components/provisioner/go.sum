@@ -696,6 +696,7 @@ github.com/kubernetes/client-go v11.0.0+incompatible/go.mod h1:kszVi2i+FeqECZHhj
 github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348/go.mod h1:B69LEHPfb2qLo0BaaOLcbitczOKLWTsrBG9LczfCD4k=
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
+github.com/kyma-incubator/compass v0.0.0-20200203074436-dc5e1435a3b7 h1:Z4e5/AQxqXKGgKWMMCSA5/Ag7SrVHg4HuCJvsOP82Yw=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200123101435-9cd00b2924b8 h1:NFIS20LPr7hmgaaaIBn+fT8RlWtKyKsY2FI7RGYniF8=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200123101435-9cd00b2924b8/go.mod h1:bENHuI5/ZTfg7wLSSfL7CIHKBUwRnDwzGTYKkY0H8R8=
 github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9 h1:YERsmPrrApdKkGuOOUwznIZxfIURticqgJpKjN5AYu0=

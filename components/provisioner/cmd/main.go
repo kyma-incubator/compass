@@ -121,7 +121,10 @@ func main() {
 
 	installationService := installation.NewInstallationService(cfg.Installation.Timeout, installationSDK.NewKymaInstaller, cfg.Installation.ErrorsCountFailureThreshold)
 
-	directorClient, err := newDirectorClient(cfg)
+	compassSecrets, err := newClusterSecretsInterface(cfg.CredentialsNamespace)
+	exitOnError(err, "Failed to create Compass secrets interface")
+
+	directorClient, err := newDirectorClient(cfg, compassSecrets)
 	exitOnError(err, "Failed to initialize Director client")
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(clientbuilder.NewConfigMapClientBuilder(), directorClient)
@@ -143,7 +146,10 @@ func main() {
 		log.Fatalf("Error: invalid provisioner provided: %s", cfg.Provisioner)
 	}
 
-	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseRepository, directorClient)
+	gardenerSecrets, err := newGardenerSecretsInterface(gardenerClusterConfig, gardenerNamespace)
+	exitOnError(err, "Failed to initialize Gardener cluster secret interface")
+
+	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseRepository, compassSecrets, gardenerSecrets, directorClient)
 	validator := api.NewValidator(dbsFactory.NewReadSession())
 
 	resolver := api.NewResolver(provisioningSVC, validator)

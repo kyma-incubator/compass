@@ -18,7 +18,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	"github.com/pkg/errors"
@@ -41,8 +40,8 @@ func newProvisioningService(
 	provisioner provisioning.Provisioner,
 	dbsFactory dbsession.Factory,
 	releaseRepo release.ReadRepository,
-	gardenerSecrets v1.SecretInterface,
 	compassSecrets v1.SecretInterface,
+	gardenerSecrets v1.SecretInterface,
 	directorService director.DirectorClient) provisioning.Service {
 	uuidGenerator := uuid.NewUUIDGenerator()
 
@@ -53,23 +52,16 @@ func newProvisioningService(
 	}
 
 	accountProvider := hyperscaler.NewAccountProvider(compassAccountPool, gardenerAccountPool)
-
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo, gardenerProject, accountProvider)
-
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
 	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator)
 }
 
-func newDirectorClient(config config) (director.DirectorClient, error) {
-	secretsRepo, err := newSecretsInterface(config.CredentialsNamespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to create secrets interface")
-	}
+func newDirectorClient(config config, compassSecrets v1.SecretInterface) (director.DirectorClient, error) {
 
 	gqlClient := graphql.NewGraphQLClient(config.DirectorURL, true, config.SkipDirectorCertVerification)
 	oauthClient := oauth.NewOauthClient(newHTTPClient(config.SkipDirectorCertVerification), compassSecrets, config.OauthCredentialsSecretName)
-	oauthClient := oauth.NewOauthClient(newHTTPClient(config.SkipDirectorCertVerification), secretsRepo, config.OauthCredentialsSecretName)
 
 	return director.NewDirectorClient(gqlClient, oauthClient), nil
 }
@@ -81,21 +73,27 @@ func newShootController(
 	gardenerClientSet *gardener_apis.GardenV1beta1Client,
 	dbsFactory dbsession.Factory,
 	installationSvc installation.Service,
-	direcotrClietnt director.DirectorClient,
+	directorClient director.DirectorClient,
 	runtimeConfigurator runtime.Configurator) (*gardener.ShootController, error) {
-	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
+
+	gardenerSecrets, err := newGardenerSecretsInterface(gardenerClusterCfg, gardenerNamespace)
 	if err != nil {
 		return nil, err
 	}
 
-	secretsInterface := gardenerClusterClient.CoreV1().Secrets(gardenerNamespace)
+	/*gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	secretsInterface := gardenerClusterClient.CoreV1().Secrets(gardenerNamespace)*/
 
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
-	return gardener.NewShootController(gardenerNamespace, gardenerClusterCfg, shootClient, secretsInterface, installationSvc, dbsFactory, cfg.Installation.Timeout, direcotrClietnt, runtimeConfigurator)
+	return gardener.NewShootController(gardenerNamespace, gardenerClusterCfg, shootClient, gardenerSecrets, installationSvc, dbsFactory, cfg.Installation.Timeout, directorClient, runtimeConfigurator)
 }
 
-func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
+func newClusterSecretsInterface(namespace string) (v1.SecretInterface, error) {
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {
 		logrus.Warnf("Failed to read in cluster config: %s", err.Error())
@@ -128,6 +126,16 @@ func newGardenerClusterConfig(cfg config) (*restclient.Config, error) {
 	}
 
 	return gardenerClusterConfig, nil
+}
+
+func newGardenerSecretsInterface(gardenerClusterCfg *restclient.Config, gardenerNamespace string) (v1.SecretInterface, error) {
+
+	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return gardenerClusterClient.CoreV1().Secrets(gardenerNamespace), nil
 }
 
 /*

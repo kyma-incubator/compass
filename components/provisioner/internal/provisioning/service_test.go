@@ -14,13 +14,13 @@ import (
 	sessionMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 
 	releaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
+	hyperscalerMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
-	persistenceMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -49,9 +49,11 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	releaseRepo := &releaseMocks.Repository{}
 	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject)
-	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, accountProvider)
+	accountProvider := &hyperscalerMocks.AccountProvider{}
+	accountProvider.On("GardenerSecretName", mock.AnythingOfType("*gqlschema.GardenerConfigInput"), tenant).Return("gardener-secret-tenant", nil)
+	accountProvider.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), tenant).Return("compass-secret-tenant", nil)
+
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject, accountProvider)
 	graphQLConverter := NewGraphQLConverter()
 	uuidGenerator := uuid.NewUUIDGenerator()
 
@@ -254,7 +256,8 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 func TestService_DeprovisionRuntime(t *testing.T) {
 
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), nil, gardenerProject, nil)
+	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), nil, gardenerProject, accountProvider)
 	graphQLConverter := NewGraphQLConverter()
 	lastOperation := model.Operation{State: model.Succeeded}
 
@@ -389,7 +392,8 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 func TestService_RuntimeOperationStatus(t *testing.T) {
 	uuidGenerator := &uuidMocks.UUIDGenerator{}
-	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject, nil)
+	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
+	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject, accountProvider)
 	graphQLConverter := NewGraphQLConverter()
 
 	operation := model.Operation{
@@ -445,7 +449,8 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 
 func TestService_RuntimeStatus(t *testing.T) {
 	uuidGenerator := &uuidMocks.UUIDGenerator{}
-	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject)
+	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
+	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject, accountProvider)
 	graphQLConverter := NewGraphQLConverter()
 
 	operation := model.Operation{
