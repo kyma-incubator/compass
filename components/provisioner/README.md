@@ -48,6 +48,6 @@ This table lists the environment variables, their descriptions, and default valu
 | **APP_SCHEMA_FILE_PATH** | Filepath for the database schema | `assets/database/provisioner.sql` |
 | **APP_INSTALLATION_TIMEOUT** | Kyma installation timeout | `30m`|
 | **APP_INSTALLATION_ERRORS_COUNT_FAILURE_THRESHOLD** | Number of installation errors that cause installation to fail  | `5`|
-| **APP_GARDENER_PROJECT** | Gardener project name  | `gardenerProject`|
+| **APP_GARDENER_PROJECT** | Name of the Gardener project connected to the service account  | `gardenerProject`|
 | **APP_GARDENER_KUBECONFIG_PATH** | Filepath for the Gardener kubeconfig  | `./dev/kubeconfig.yaml`|
 | **APP_PROVISIONER** | Provisioning mechanism used by the Runtime Provisioner (Gardener or Hydroform) | `gardener`|
