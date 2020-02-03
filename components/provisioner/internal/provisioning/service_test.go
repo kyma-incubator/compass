@@ -88,7 +88,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		Credentials: &gqlschema.CredentialsInput{
 			SecretName: "secretName",
 		},
-		KymaConfig:    fixKymaGraphQLConfigInput(),
+		KymaConfig: fixKymaGraphQLConfigInput(),
 	}
 
 	clusterMatcher := getClusterMatcher(expectedCluster)

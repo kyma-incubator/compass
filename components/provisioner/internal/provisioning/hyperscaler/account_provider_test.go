@@ -1,10 +1,11 @@
 package hyperscaler
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 var defaultTenant = "default-tenant"

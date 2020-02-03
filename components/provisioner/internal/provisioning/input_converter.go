@@ -24,17 +24,17 @@ func NewInputConverter(uuidGenerator uuid.UUIDGenerator,
 	gardenerProject string,
 	hyperscalerAccountProvider hyperscaler.AccountProvider) InputConverter {
 	return &converter{
-		uuidGenerator:   uuidGenerator,
-		releaseRepo:     releaseRepo,
-		gardenerProject: gardenerProject,
+		uuidGenerator:              uuidGenerator,
+		releaseRepo:                releaseRepo,
+		gardenerProject:            gardenerProject,
 		hyperscalerAccountProvider: hyperscalerAccountProvider,
 	}
 }
 
 type converter struct {
-	uuidGenerator   uuid.UUIDGenerator
-	releaseRepo     release.ReadRepository
-	gardenerProject string
+	uuidGenerator              uuid.UUIDGenerator
+	releaseRepo                release.ReadRepository
+	gardenerProject            string
 	hyperscalerAccountProvider hyperscaler.AccountProvider
 }
 
