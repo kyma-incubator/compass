@@ -9,15 +9,17 @@ WORKDIR ${BASE_APP_DIR}
 
 ENV GO111MODULES=on
 
+COPY ./go.mod ${BASE_APP_DIR}/go.mod
+COPY ./go.sum ${BASE_APP_DIR}/go.sum
+
+# Run go mod download first to take advantage of Docker caching
+RUN apk add git && go mod download
+
 COPY ./assets/ /assets/
 COPY ./internal/ ${BASE_APP_DIR}/internal/
 COPY ./pkg/ ${BASE_APP_DIR}/pkg/
 COPY ./cmd/ ${BASE_APP_DIR}/cmd
 COPY ./licenses ${BASE_APP_DIR}/licenses
-COPY ./go.mod ${BASE_APP_DIR}/go.mod
-COPY ./go.sum ${BASE_APP_DIR}/go.sum
-
-RUN apk add git && go mod download
 
 #
 # Add ca-certificates

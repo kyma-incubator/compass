@@ -1,7 +1,13 @@
 package model
 
 import (
+	"fmt"
 	"testing"
+
+	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
@@ -36,29 +42,21 @@ func TestGardenerConfig_ToHydroformConfiguration(t *testing.T) {
 		}
 	}
 
-	gcpGardenerInput := &gqlschema.GCPProviderConfigInput{Zone: "zone"}
-	gcpGardenerProvider, err := NewGCPGardenerConfig(gcpGardenerInput)
+	gcpGardenerProvider, err := NewGCPGardenerConfig(fixGCPGardenerInput())
 	require.NoError(t, err)
 	assert.Equal(t, `{"zone":"zone"}`, gcpGardenerProvider.RawJSON())
-	assert.Equal(t, gcpGardenerInput, gcpGardenerProvider.input)
+	assert.Equal(t, fixGCPGardenerInput(), gcpGardenerProvider.input)
 
-	azureGardenerInput := &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255"}
-	azureGardenerProvider, err := NewAzureGardenerConfig(azureGardenerInput)
+	azureGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput())
 	require.NoError(t, err)
 	assert.Equal(t, `{"vnetCidr":"10.10.11.11/255"}`, azureGardenerProvider.RawJSON())
-	assert.Equal(t, azureGardenerInput, azureGardenerProvider.input)
+	assert.Equal(t, fixAzureGardenerInput(), azureGardenerProvider.input)
 
-	awsGardenerInput := &gqlschema.AWSProviderConfigInput{
-		Zone:         "zone",
-		VpcCidr:      "10.10.11.11/255",
-		PublicCidr:   "10.10.11.12/255",
-		InternalCidr: "10.10.11.13/255",
-	}
-	awsGardenerProvider, err := NewAWSGardenerConfig(awsGardenerInput)
+	awsGardenerProvider, err := NewAWSGardenerConfig(fixAWSGardenerInput())
 	require.NoError(t, err)
 	expectedJSON := `{"zone":"zone","vpcCidr":"10.10.11.11/255","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255"}`
 	assert.Equal(t, expectedJSON, awsGardenerProvider.RawJSON())
-	assert.Equal(t, awsGardenerInput, awsGardenerProvider.input)
+	assert.Equal(t, fixAWSGardenerInput(), awsGardenerProvider.input)
 
 	for _, testCase := range []struct {
 		description                  string
@@ -235,6 +233,173 @@ func Test_AsMap_Error(t *testing.T) {
 	}
 }
 
+func TestGardenerConfig_ToShootTemplate(t *testing.T) {
+
+	gcpGardenerProvider, err := NewGCPGardenerConfig(fixGCPGardenerInput())
+	require.NoError(t, err)
+
+	azureGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput())
+	require.NoError(t, err)
+
+	awsGardenerProvider, err := NewAWSGardenerConfig(fixAWSGardenerInput())
+	require.NoError(t, err)
+
+	for _, testCase := range []struct {
+		description           string
+		provider              string
+		providerConfig        GardenerProviderConfig
+		expectedShootTemplate *gardener_types.Shoot
+	}{
+		{
+			description:    "should convert to Shoot template with GCP provider",
+			provider:       "gcp",
+			providerConfig: gcpGardenerProvider,
+			expectedShootTemplate: &gardener_types.Shoot{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "cluster",
+					Namespace: "gardener-namespace",
+				},
+				Spec: gardener_types.ShootSpec{
+					Cloud: gardener_types.Cloud{
+						Region: "eu",
+						SecretBindingRef: corev1.LocalObjectReference{
+							Name: "gardener-secret",
+						},
+						Seed:    util.StringPtr("eu"),
+						Profile: "gcp",
+						GCP: &gardener_types.GCPCloud{
+							Networks: gardener_types.GCPNetworks{
+								K8SNetworks: gardener_types.K8SNetworks{},
+								Workers:     []string{"10.10.10.10/255"},
+							},
+							Workers: []gardener_types.GCPWorker{
+								{
+									Worker:     fixWorker(0),
+									VolumeType: "SSD",
+									VolumeSize: "30Gi",
+								},
+								{
+									Worker:     fixWorker(1),
+									VolumeType: "SSD",
+									VolumeSize: "30Gi",
+								},
+							},
+							Zones: []string{"zone"},
+						},
+					},
+					Kubernetes: gardener_types.Kubernetes{
+						AllowPrivilegedContainers: util.BoolPtr(true),
+						Version:                   "1.15",
+					},
+				},
+			},
+		},
+		{
+			description:    "should convert to Shoot template with Azure provider",
+			provider:       "azure",
+			providerConfig: azureGardenerProvider,
+			expectedShootTemplate: &gardener_types.Shoot{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "cluster",
+					Namespace: "gardener-namespace",
+				},
+				Spec: gardener_types.ShootSpec{
+					Cloud: gardener_types.Cloud{
+						Region: "eu",
+						SecretBindingRef: corev1.LocalObjectReference{
+							Name: "gardener-secret",
+						},
+						Seed:    util.StringPtr("eu"),
+						Profile: "az",
+						Azure: &gardener_types.AzureCloud{
+							Networks: gardener_types.AzureNetworks{
+								K8SNetworks: gardener_types.K8SNetworks{},
+								Workers:     "10.10.10.10/255",
+								VNet:        gardener_types.AzureVNet{CIDR: util.StringPtr("10.10.11.11/255")},
+							},
+							Workers: []gardener_types.AzureWorker{
+								{
+									Worker:     fixWorker(0),
+									VolumeType: "SSD",
+									VolumeSize: "30Gi",
+								},
+								{
+									Worker:     fixWorker(1),
+									VolumeType: "SSD",
+									VolumeSize: "30Gi",
+								},
+							},
+						},
+					},
+					Kubernetes: gardener_types.Kubernetes{
+						AllowPrivilegedContainers: util.BoolPtr(true),
+						Version:                   "1.15",
+					},
+				},
+			},
+		},
+		{
+			description:    "should convert to Shoot template with AWS provider",
+			provider:       "aws",
+			providerConfig: awsGardenerProvider,
+			expectedShootTemplate: &gardener_types.Shoot{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "cluster",
+					Namespace: "gardener-namespace",
+				},
+				Spec: gardener_types.ShootSpec{
+					Cloud: gardener_types.Cloud{
+						Region: "eu",
+						SecretBindingRef: corev1.LocalObjectReference{
+							Name: "gardener-secret",
+						},
+						Seed:    util.StringPtr("eu"),
+						Profile: "aws",
+						AWS: &gardener_types.AWSCloud{
+							Networks: gardener_types.AWSNetworks{
+								K8SNetworks: gardener_types.K8SNetworks{},
+								Workers:     []string{"10.10.10.10/255"},
+								Internal:    []string{"10.10.11.13/255"},
+								Public:      []string{"10.10.11.12/255"},
+								VPC:         gardener_types.AWSVPC{CIDR: util.StringPtr("10.10.11.11/255")},
+							},
+							Workers: []gardener_types.AWSWorker{
+								{
+									Worker:     fixWorker(0),
+									VolumeType: "SSD",
+									VolumeSize: "30Gi",
+								},
+								{
+									Worker:     fixWorker(1),
+									VolumeType: "SSD",
+									VolumeSize: "30Gi",
+								},
+							},
+							Zones: []string{"zone"},
+						},
+					},
+					Kubernetes: gardener_types.Kubernetes{
+						AllowPrivilegedContainers: util.BoolPtr(true),
+						Version:                   "1.15",
+					},
+				},
+			},
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// given
+			gardenerProviderConfig := fixGardenerConfig(testCase.provider, testCase.providerConfig)
+
+			// when
+			template := gardenerProviderConfig.ToShootTemplate("gardener-namespace")
+
+			// then
+			assert.Equal(t, testCase.expectedShootTemplate, template)
+		})
+	}
+
+}
+
 func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) GardenerConfig {
 	return GardenerConfig{
 		ID:                     "",
@@ -256,5 +421,33 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		MaxSurge:               30,
 		MaxUnavailable:         1,
 		GardenerProviderConfig: providerCfg,
+	}
+}
+
+func fixAWSGardenerInput() *gqlschema.AWSProviderConfigInput {
+	return &gqlschema.AWSProviderConfigInput{
+		Zone:         "zone",
+		VpcCidr:      "10.10.11.11/255",
+		PublicCidr:   "10.10.11.12/255",
+		InternalCidr: "10.10.11.13/255",
+	}
+}
+
+func fixGCPGardenerInput() *gqlschema.GCPProviderConfigInput {
+	return &gqlschema.GCPProviderConfigInput{Zone: "zone"}
+}
+
+func fixAzureGardenerInput() *gqlschema.AzureProviderConfigInput {
+	return &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255"}
+}
+
+func fixWorker(index int) gardener_types.Worker {
+	return gardener_types.Worker{
+		Name:           fmt.Sprintf("cpu-worker-%d", index),
+		MachineType:    "machine",
+		AutoScalerMin:  1,
+		AutoScalerMax:  3,
+		MaxSurge:       util.IntOrStrPtr(intstr.FromInt(30)),
+		MaxUnavailable: util.IntOrStrPtr(intstr.FromInt(1)),
 	}
 }

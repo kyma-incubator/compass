@@ -7,10 +7,6 @@ global:
       id: 1eba80dd-8ff6-54ee-be4d-77944d17b10b
     - name: bar
       id: 9ca034f1-11ab-5b25-b76f-dc77106f571d
-    - name: test-janusz-tenant-fBvFKEa
-      id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
-    - name: test-damian-tenant-9RzdmQe
-      id: 2bf03de1-23b1-4063-9d3e-67096800accc
 
   images:
     containerRegistry:
@@ -20,10 +16,10 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-753"
+      version: "PR-776"
     director:
       dir:
-      version: "PR-747"
+      version: "PR-706"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -32,7 +28,7 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-712"
+      version: "PR-706"
     provisioner:
       dir:
       version: "PR-693"
@@ -47,7 +43,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-747"
+        version: "PR-770"
       connector:
         dir:
         version: "02e8358c"
@@ -61,6 +57,10 @@ global:
 
   director:
     port: 3000
+
+  tenantConfig:
+    useDefaultTenants: true
+    useExternalTenants: false
 
   connector:
     graphql:
@@ -188,3 +188,21 @@ global:
             retry:
               number_of_retries: 3
               delay_in_milliseconds: 2000
+
+  tenantFetcher:
+    enabled: false
+    providerName: "compass"
+    schedule: "*/5 * * * *"
+    oauth:
+      client: ""
+      secret: ""
+      tokenURL: ""
+    endpoints:
+      tenantCreated: "127.0.0.1/events?type=created"
+      tenantDeleted: "127.0.0.1/events?type=deleted"
+      tenantUpdated: "127.0.0.1/events?type=updated"
+    fieldMapping:
+      idField: "id"
+      nameField: "name"
+      discriminatorField: ""
+      discriminatorValue: ""

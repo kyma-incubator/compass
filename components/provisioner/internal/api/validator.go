@@ -2,7 +2,8 @@ package api
 
 import (
 	"errors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
@@ -15,12 +16,12 @@ type Validator interface {
 }
 
 type validator struct {
-	persistenceService persistence.Service
+	readSession dbsession.ReadSession
 }
 
-func NewValidator(persistenceService persistence.Service) Validator {
+func NewValidator(readSession dbsession.ReadSession) Validator {
 	return &validator{
-		persistenceService: persistenceService,
+		readSession: readSession,
 	}
 }
 
@@ -41,14 +42,10 @@ func (v *validator) ValidateInput(input gqlschema.ProvisionRuntimeInput) error {
 		return errors.New("cannot provision Runtime since runtime input is missing")
 	}
 
-	if input.Credentials == nil {
-		return errors.New("cannot provision Runtime since credentials are missing")
-	}
-
 	return nil
 }
 func (v *validator) ValidateTenant(runtimeID, tenant string) error {
-	dbTenant, err := v.persistenceService.GetTenant(runtimeID)
+	dbTenant, err := v.readSession.GetTenant(runtimeID)
 
 	if err != nil {
 		return err

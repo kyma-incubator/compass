@@ -957,9 +957,11 @@ func Test2(t *testing.T) {
 		},
 		"events": {
 			given: model.GraphQLServiceDetails{
-				Event: &graphql.EventDefinition{
-					Spec: &graphql.EventSpec{
-						Data: ptrClob(graphql.CLOB(`asyncapi: "1.2.0"`)),
+				Event: &graphql.EventAPIDefinitionExt{
+					Spec: &graphql.EventAPISpecExt{
+						EventSpec: graphql.EventSpec{
+							Data: ptrClob(`asyncapi: "1.2.0"`),
+						},
 					},
 				},
 			},
@@ -1041,6 +1043,31 @@ func TestConvertGraphQLToModel(t *testing.T) {
 		assert.Equal(t, expectedOut, actualOut)
 	})
 
+}
+
+func TestConverter_ServiceDetailsToService(t *testing.T) {
+	//GIVEN
+	input := model.ServiceDetails{
+		Provider:         "provider",
+		Name:             "name",
+		Description:      "description",
+		ShortDescription: "short description",
+		Identifier:       "identifie",
+		Labels:           &map[string]string{"blalb": "blalba"},
+	}
+	id := "id"
+
+	//WHEN
+	sut := NewConverter()
+	output, err := sut.ServiceDetailsToService(input, id)
+
+	//THEN
+	require.NoError(t, err)
+	assert.Equal(t, input.Provider, output.Provider)
+	assert.Equal(t, input.Name, output.Name)
+	assert.Equal(t, input.Description, output.Description)
+	assert.Equal(t, input.Identifier, output.Identifier)
+	assert.Equal(t, input.Labels, output.Labels)
 }
 
 func fixLabels() (graphql.Labels, error) {

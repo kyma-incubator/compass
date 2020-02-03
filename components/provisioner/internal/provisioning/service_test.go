@@ -2,26 +2,26 @@ package provisioning
 
 import (
 	"errors"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	runtimeConfigMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes/mocks"
 	"testing"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	uuidMocks "github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+
+	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/mocks"
+	sessionMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 
 	releaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
-	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
-	uuidMocks "github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
-
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	persistenceMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-incubator/hydroform/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -29,6 +29,9 @@ import (
 
 const (
 	kubeconfigFile = "kubeconfig data"
+	runtimeID      = "184ccdf2-59e4-44b7-b553-6cb296af5ea0"
+	operationID    = "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
+	runtimeName    = "test runtime"
 
 	tenant = "tenant"
 )
@@ -46,28 +49,33 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	releaseRepo := &releaseMocks.Repository{}
 	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject)
 	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
 	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, accountProvider)
 	graphQLConverter := NewGraphQLConverter()
+	uuidGenerator := uuid.NewUUIDGenerator()
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
-		GcpConfig: &gqlschema.GCPConfigInput{
-			Name:              "Something",
-			ProjectName:       "Project",
-			NumberOfNodes:     3,
-			BootDiskSizeGb:    256,
-			MachineType:       "machine",
-			Region:            "region",
-			Zone:              new(string),
-			KubernetesVersion: "version",
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			KubernetesVersion: "1.16",
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				GcpConfig: &gqlschema.GCPProviderConfigInput{},
+			},
 		},
 	}
 
-	kymaConfigInput := fixKymaGraphQLConfigInput()
-	expectedGlobalConfig := fixGlobalConfig()
+	expectedCluster := model.Cluster{
+		ID:         runtimeID,
+		KymaConfig: fixKymaConfig(),
+	}
+	expectedOperation := model.Operation{
+		ClusterID: runtimeID,
+		State:     model.InProgress,
+		Type:      model.Provision,
+	}
 
 	runtimeInput := &gqlschema.RuntimeInput{
-		Name:        "test runtime",
+		Name:        runtimeName,
 		Description: new(string),
 		Labels:      &gqlschema.Labels{},
 	}
@@ -78,327 +86,456 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		Credentials: &gqlschema.CredentialsInput{
 			SecretName: "secretName",
 		},
-		KymaConfig: kymaConfigInput,
+		KymaConfig:    fixKymaGraphQLConfigInput(),
 	}
 
-	t.Run("Should start runtime provisioning and return operation ID", func(t *testing.T) {
+	clusterMatcher := getClusterMatcher(expectedCluster)
+	operationMatcher := getOperationMatcher(expectedOperation)
+
+	t.Run("Should start runtime provisioning of Gardener cluster and return operation ID", func(t *testing.T) {
 		//given
-		hydroformMock := &mocks.Service{}
-		persistenceServiceMock := &persistenceMocks.Service{}
-		installationSvc := &installationMocks.Service{}
-		configProvider := &runtimeConfigMocks.ConfigProvider{}
-
-		token := graphql.OneTimeTokenForRuntimeExt{}
-		expRuntimeID := "184ccdf2-59e4-44b7-b553-6cb296af5ea0"
-		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
-		operation := model.Operation{ID: expOperationID}
-
+		sessionFactoryMock := &sessionMocks.Factory{}
+		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 		directorServiceMock := &directormock.DirectorClient{}
-		directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(expRuntimeID, nil)
-		directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(token, nil)
+		provisioner := &mocks2.Provisioner{}
 
-		persistenceServiceMock.On("SetProvisioningStarted", expRuntimeID, mock.Anything).Return(operation, nil)
-		persistenceServiceMock.On("UpdateClusterData", expRuntimeID, kubeconfigFile, []byte("")).Return(nil)
-		persistenceServiceMock.On("SetOperationAsSucceeded", expOperationID).Return(nil)
-		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
-		installationSvc.On("InstallKyma", expRuntimeID, kubeconfigFile, kymaRelease, expectedGlobalConfig, mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
-		configProvider.On("CreateConfigMapForRuntime", mock.Anything, mock.Anything).Return(nil, nil)
+		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
+		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
+		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertGardenerConfig", mock.AnythingOfType("model.GardenerConfig")).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+		writeSessionWithinTransactionMock.On("Commit").Return(nil)
+		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
+		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(nil)
 
-		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock, configProvider)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator)
 
 		//when
-		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
+		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
 		require.NoError(t, err)
 
-		waitUntilFinished(finished)
-
 		//then
-		assert.Equal(t, expRuntimeID, runtimeID)
-		assert.Equal(t, expOperationID, operationID)
-		hydroformMock.AssertExpectations(t)
-		persistenceServiceMock.AssertExpectations(t)
-		installationSvc.AssertExpectations(t)
+		assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
+		assert.NotEmpty(t, operationStatus.ID)
+		sessionFactoryMock.AssertExpectations(t)
+		writeSessionWithinTransactionMock.AssertExpectations(t)
+		directorServiceMock.AssertExpectations(t)
+		provisioner.AssertExpectations(t)
 		releaseRepo.AssertExpectations(t)
-		directorServiceMock.AssertExpectations(t)
-		configProvider.AssertExpectations(t)
 	})
 
-	t.Run("Should fail runtime provisioning after failing Registering Runtime in Director", func(t *testing.T) {
+	t.Run("Should start runtime provisioning of GCP cluster and return operation ID", func(t *testing.T) {
 		//given
-		directorServiceMock := &directormock.DirectorClient{}
-		directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return("", errors.New("Some error"))
+		provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
+			RuntimeInput: runtimeInput,
+			ClusterConfig: &gqlschema.ClusterConfigInput{
+				GcpConfig: &gqlschema.GCPConfigInput{
+					Name:        "cluster",
+					ProjectName: "project",
+				},
+			},
+			Credentials: &gqlschema.CredentialsInput{},
+			KymaConfig:  fixKymaGraphQLConfigInput(),
+		}
 
-		service := NewProvisioningService(nil, nil, nil, nil, nil, directorServiceMock, nil)
+		sessionFactoryMock := &sessionMocks.Factory{}
+		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
+		directorServiceMock := &directormock.DirectorClient{}
+		provisioner := &mocks2.Provisioner{}
+
+		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
+		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
+		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertGCPConfig", mock.AnythingOfType("model.GCPConfig")).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+		writeSessionWithinTransactionMock.On("Commit").Return(nil)
+		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
+		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(nil)
+
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator)
 
 		//when
-		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
-
-		// then
-		assert.Error(t, err)
-		assert.Nil(t, finished)
-		assert.Empty(t, operationID)
-		assert.Empty(t, runtimeID)
-		directorServiceMock.AssertExpectations(t)
-	})
-
-	t.Run("Should return error when Kyma installation failed", func(t *testing.T) {
-		//given
-		hydroformMock := &mocks.Service{}
-		persistenceServiceMock := &persistenceMocks.Service{}
-		installationSvc := &installationMocks.Service{}
-
-		expRuntimeID := "184ccdf2-59e4-44b7-b553-6cb296af5ea0"
-		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
-		operation := model.Operation{ID: expOperationID}
-
-		directorServiceMock := &directormock.DirectorClient{}
-		directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(expRuntimeID, nil)
-		persistenceServiceMock.On("SetProvisioningStarted", expRuntimeID, mock.Anything).Return(operation, nil)
-		persistenceServiceMock.On("UpdateClusterData", expRuntimeID, kubeconfigFile, []byte("")).Return(nil)
-		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
-		installationSvc.On("InstallKyma", expRuntimeID, kubeconfigFile, kymaRelease, expectedGlobalConfig, mock.AnythingOfType("[]model.KymaComponentConfig")).Return(errors.New("error"))
-		persistenceServiceMock.On("SetOperationAsFailed", expOperationID, mock.AnythingOfType("string")).Return(nil)
-
-		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock, nil)
-
-		//when
-		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
+		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
 		require.NoError(t, err)
 
-		waitUntilFinished(finished)
-
 		//then
-		assert.Equal(t, expOperationID, operationID)
-		assert.Equal(t, expRuntimeID, runtimeID)
-		hydroformMock.AssertExpectations(t)
-		persistenceServiceMock.AssertExpectations(t)
-		installationSvc.AssertExpectations(t)
-		releaseRepo.AssertExpectations(t)
+		assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
+		assert.NotEmpty(t, operationStatus.ID)
+		sessionFactoryMock.AssertExpectations(t)
+		writeSessionWithinTransactionMock.AssertExpectations(t)
 		directorServiceMock.AssertExpectations(t)
 	})
 
-	t.Run("Should return error when fails to get one time token from Director", func(t *testing.T) {
+	t.Run("Should return error and unregister Runtime when failed to commit transaction", func(t *testing.T) {
 		//given
-		hydroformMock := &mocks.Service{}
-		persistenceServiceMock := &persistenceMocks.Service{}
-		installationSvc := &installationMocks.Service{}
-		configProvider := &runtimeConfigMocks.ConfigProvider{}
-
-		expRuntimeID := "184ccdf2-59e4-44b7-b553-6cb296af5ea0"
-		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
-		operation := model.Operation{ID: expOperationID}
-
+		sessionFactoryMock := &sessionMocks.Factory{}
+		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 		directorServiceMock := &directormock.DirectorClient{}
-		directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(expRuntimeID, nil)
-		directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, errors.New("Token error"))
+		provisioner := &mocks2.Provisioner{}
 
-		persistenceServiceMock.On("SetProvisioningStarted", expRuntimeID, mock.Anything).Return(operation, nil)
-		persistenceServiceMock.On("UpdateClusterData", expRuntimeID, kubeconfigFile, []byte("")).Return(nil)
-		persistenceServiceMock.On("SetOperationAsFailed", expOperationID, mock.AnythingOfType("string")).Return(nil)
-		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
-		installationSvc.On("InstallKyma", expRuntimeID, kubeconfigFile, kymaRelease, expectedGlobalConfig, mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
+		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
+		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
+		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertGardenerConfig", mock.AnythingOfType("model.GardenerConfig")).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+		writeSessionWithinTransactionMock.On("Commit").Return(dberrors.Internal("error"))
+		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
+		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(nil)
+		directorServiceMock.On("DeleteRuntime", runtimeID, tenant).Return(nil)
 
-		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock, configProvider)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator)
 
 		//when
-		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
-		require.NoError(t, err)
-
-		waitUntilFinished(finished)
+		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
+		require.Error(t, err)
 
 		//then
-		assert.Equal(t, expRuntimeID, runtimeID)
-		assert.Equal(t, expOperationID, operationID)
-		hydroformMock.AssertExpectations(t)
-		persistenceServiceMock.AssertExpectations(t)
-		installationSvc.AssertExpectations(t)
-		releaseRepo.AssertExpectations(t)
+		assert.Contains(t, err.Error(), "Failed to commit transaction")
+		sessionFactoryMock.AssertExpectations(t)
+		writeSessionWithinTransactionMock.AssertExpectations(t)
 		directorServiceMock.AssertExpectations(t)
+		provisioner.AssertExpectations(t)
+		releaseRepo.AssertExpectations(t)
 	})
 
-	t.Run("Should return error when fails to create config map for Runtime", func(t *testing.T) {
+	t.Run("Should return error and unregister Runtime when failed to start provisioning", func(t *testing.T) {
 		//given
-		hydroformMock := &mocks.Service{}
-		persistenceServiceMock := &persistenceMocks.Service{}
-		installationSvc := &installationMocks.Service{}
-		configProvider := &runtimeConfigMocks.ConfigProvider{}
-
-		expRuntimeID := "184ccdf2-59e4-44b7-b553-6cb296af5ea0"
-		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
-		operation := model.Operation{ID: expOperationID}
-
+		sessionFactoryMock := &sessionMocks.Factory{}
+		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 		directorServiceMock := &directormock.DirectorClient{}
-		directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(expRuntimeID, nil)
-		directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
+		provisioner := &mocks2.Provisioner{}
 
-		persistenceServiceMock.On("SetProvisioningStarted", expRuntimeID, mock.Anything).Return(operation, nil)
-		persistenceServiceMock.On("UpdateClusterData", expRuntimeID, kubeconfigFile, []byte("")).Return(nil)
-		persistenceServiceMock.On("SetOperationAsFailed", expOperationID, mock.AnythingOfType("string")).Return(nil)
-		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
-		installationSvc.On("InstallKyma", expRuntimeID, kubeconfigFile, kymaRelease, expectedGlobalConfig, mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
+		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
+		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
+		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertGardenerConfig", mock.AnythingOfType("model.GardenerConfig")).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
+		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(errors.New("error"))
+		directorServiceMock.On("DeleteRuntime", runtimeID, tenant).Return(nil)
 
-		configProvider.On("CreateConfigMapForRuntime", mock.Anything, mock.Anything).Return(nil, errors.New("ConfigMap error"))
-
-		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock, configProvider)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator)
 
 		//when
-		operationID, runtimeID, finished, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
-		require.NoError(t, err)
-
-		waitUntilFinished(finished)
+		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
+		require.Error(t, err)
 
 		//then
-		assert.Equal(t, expRuntimeID, runtimeID)
-		assert.Equal(t, expOperationID, operationID)
-		hydroformMock.AssertExpectations(t)
-		persistenceServiceMock.AssertExpectations(t)
-		installationSvc.AssertExpectations(t)
-		releaseRepo.AssertExpectations(t)
+		assert.Contains(t, err.Error(), "Failed to start provisioning")
+		sessionFactoryMock.AssertExpectations(t)
+		writeSessionWithinTransactionMock.AssertExpectations(t)
 		directorServiceMock.AssertExpectations(t)
-		configProvider.AssertExpectations(t)
+		provisioner.AssertExpectations(t)
+		releaseRepo.AssertExpectations(t)
+	})
+
+	t.Run("Should return error when failed to register Runtime", func(t *testing.T) {
+		//given
+		directorServiceMock := &directormock.DirectorClient{}
+
+		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return("", errors.New("error"))
+
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, nil, nil, uuidGenerator)
+
+		//when
+		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
+		require.Error(t, err)
+
+		//then
+		assert.Contains(t, err.Error(), "Failed to register Runtime")
+		directorServiceMock.AssertExpectations(t)
 	})
 
 }
 
 func TestService_DeprovisionRuntime(t *testing.T) {
-	persistenceServiceMock := &persistenceMocks.Service{}
-	hydroformMock := &mocks.Service{}
 
-	releaseRepo := &releaseMocks.Repository{}
-	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
-
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, nil)
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), nil, gardenerProject, nil)
 	graphQLConverter := NewGraphQLConverter()
+	lastOperation := model.Operation{State: model.Succeeded}
+
+	operation := model.Operation{
+		ID:             operationID,
+		Type:           model.Deprovision,
+		State:          model.InProgress,
+		StartTimestamp: time.Now(),
+		Message:        "Deprovisioning started",
+		ClusterID:      runtimeID,
+	}
+
+	cluster := model.Cluster{
+		ID: runtimeID,
+	}
+
+	clusterMatcher := getClusterMatcher(cluster)
+	operationMatcher := getOperationMatcher(operation)
 
 	t.Run("Should start Runtime deprovisioning and return operation ID", func(t *testing.T) {
 		//given
-		lastOperation := model.Operation{State: model.Succeeded}
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readWriteSession := &sessionMocks.ReadWriteSession{}
+		provisioner := &mocks2.Provisioner{}
 
-		runtimeID := "92a1c394-639a-424e-8578-ba1ca7501dc1"
-		expOperationID := "c7241d2d-5ffd-434b-9a52-17ce9ee04578"
-		operation := model.Operation{ID: expOperationID}
+		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
+		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
+		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
+		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
-		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-		persistenceServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything, mock.Anything).Return(operation, nil)
-		persistenceServiceMock.On("GetClusterData", runtimeID).Return(model.Cluster{ID: runtimeID, TerraformState: []byte("{}"), ClusterConfig: model.GCPConfig{}}, nil)
-		persistenceServiceMock.On("SetOperationAsSucceeded", expOperationID).Return(nil)
-		hydroformMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		directorServiceMock := &directormock.DirectorClient{}
-		directorServiceMock.On("DeleteRuntime", runtimeID, mock.Anything).Return(nil)
-
-		resolver := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, nil, directorServiceMock, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator())
 
 		//when
-		opt, finished, err := resolver.DeprovisionRuntime(runtimeID, tenant)
+		opId, err := resolver.DeprovisionRuntime(runtimeID, tenant)
 		require.NoError(t, err)
 
-		waitUntilFinished(finished)
-
 		//then
-		assert.Equal(t, expOperationID, opt)
-		hydroformMock.AssertExpectations(t)
-		persistenceServiceMock.AssertExpectations(t)
-		directorServiceMock.AssertExpectations(t)
+		assert.Equal(t, operationID, opId)
+		sessionFactoryMock.AssertExpectations(t)
+		readWriteSession.AssertExpectations(t)
+		provisioner.AssertExpectations(t)
 	})
 
-	t.Run("Should not start deprovisioning when previous operation is in progress", func(t *testing.T) {
+	t.Run("Should return error when failed to start deprovisioning", func(t *testing.T) {
 		//given
-		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
-		persistenceServiceMock := &persistenceMocks.Service{}
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readWriteSession := &sessionMocks.ReadWriteSession{}
+		provisioner := &mocks2.Provisioner{}
 
-		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{State: model.InProgress}, nil)
+		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
+		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
+		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(model.Operation{}, errors.New("error"))
 
-		resolver := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator())
 
 		//when
-		_, _, err := resolver.DeprovisionRuntime(runtimeID, tenant)
-
-		//then
+		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
 		require.Error(t, err)
-		hydroformMock.AssertExpectations(t)
-		persistenceServiceMock.AssertExpectations(t)
-	})
-
-	t.Run("Deprovisioning should fail when Director fails to unregister Runtime", func(t *testing.T) {
-		//given
-		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
-		expOperationID := "c7241d2d-5ffd-434b-9a52-17ce9ee04578"
-		operation := model.Operation{ID: expOperationID}
-
-		persistenceServiceMock := &persistenceMocks.Service{}
-		directorServiceMock := &directormock.DirectorClient{}
-
-		lastOperation := model.Operation{State: model.Succeeded}
-
-		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-		persistenceServiceMock.On("GetClusterData", runtimeID).Return(model.Cluster{ID: runtimeID, TerraformState: []byte("{}"), ClusterConfig: model.GCPConfig{}}, nil)
-		persistenceServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything, mock.Anything).Return(operation, nil)
-		hydroformMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-		directorServiceMock.On("DeleteRuntime", runtimeID, mock.Anything).Return(errors.New("Some error!"))
-		persistenceServiceMock.On("SetOperationAsFailed", expOperationID, "Some error!").Return(nil)
-
-		service := NewProvisioningService(persistenceServiceMock, nil, nil, hydroformMock, nil, directorServiceMock, nil)
-
-		//when
-		_, doneChan, err := service.DeprovisionRuntime(runtimeID, tenant)
-		require.NoError(t, err)
-
-		_ = <-doneChan //
 
 		//then
-		hydroformMock.AssertExpectations(t)
-		persistenceServiceMock.AssertExpectations(t)
-		directorServiceMock.AssertExpectations(t)
+		assert.Contains(t, err.Error(), "Failed to start deprovisioning")
+		sessionFactoryMock.AssertExpectations(t)
+		readWriteSession.AssertExpectations(t)
+		provisioner.AssertExpectations(t)
+	})
+
+	t.Run("Should return error when failed to get cluster", func(t *testing.T) {
+		//given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readWriteSession := &sessionMocks.ReadWriteSession{}
+
+		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
+		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		readWriteSession.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("error"))
+
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator())
+
+		//when
+		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
+		require.Error(t, err)
+
+		//then
+		assert.Contains(t, err.Error(), "Failed to get cluster")
+		sessionFactoryMock.AssertExpectations(t)
+		readWriteSession.AssertExpectations(t)
+	})
+
+	t.Run("Should return error when last operation in progress", func(t *testing.T) {
+		//given
+		operation := model.Operation{State: model.InProgress}
+
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readWriteSession := &sessionMocks.ReadWriteSession{}
+
+		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
+		readWriteSession.On("GetLastOperation", runtimeID).Return(operation, nil)
+
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator())
+
+		//when
+		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
+		require.Error(t, err)
+
+		//then
+		assert.Contains(t, err.Error(), "previous one is in progress")
+		sessionFactoryMock.AssertExpectations(t)
+		readWriteSession.AssertExpectations(t)
+	})
+
+	t.Run("Should return error when failed to get last operation", func(t *testing.T) {
+		//given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readWriteSession := &sessionMocks.ReadWriteSession{}
+
+		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
+		readWriteSession.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("error"))
+
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator())
+
+		//when
+		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
+		require.Error(t, err)
+
+		//then
+		assert.Contains(t, err.Error(), "Failed to get last operation")
+		sessionFactoryMock.AssertExpectations(t)
+		readWriteSession.AssertExpectations(t)
 	})
 }
 
 func TestService_RuntimeOperationStatus(t *testing.T) {
-	persistenceServiceMock := &persistenceMocks.Service{}
-	hydroformMock := &mocks.Service{}
 	uuidGenerator := &uuidMocks.UUIDGenerator{}
-
-	releaseRepo := &releaseMocks.Repository{}
-	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
-
-	inputConverter := NewInputConverter(uuidGenerator, releaseRepo, nil)
+	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject, nil)
 	graphQLConverter := NewGraphQLConverter()
+
+	operation := model.Operation{
+		ID:        operationID,
+		Type:      model.Provision,
+		State:     model.InProgress,
+		Message:   "Message",
+		ClusterID: runtimeID,
+	}
 
 	t.Run("Should return operation status", func(t *testing.T) {
 		//given
-		operationID := "999f2260-8cae-4367-a38a-2355b71bf054"
-		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readSession := &sessionMocks.ReadSession{}
 
-		operation := model.Operation{
-			ID:        operationID,
-			Type:      model.Provision,
-			State:     model.InProgress,
-			ClusterID: runtimeID,
-			Message:   "some message",
-		}
+		sessionFactoryMock.On("NewReadSession").Return(readSession)
+		readSession.On("GetOperation", operationID).Return(operation, nil)
 
-		persistenceServiceMock.On("GetOperation", operationID).Return(operation, nil)
-		resolver := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator)
 
 		//when
 		status, err := resolver.RuntimeOperationStatus(operationID)
-
 		//then
 		require.NoError(t, err)
 		assert.Equal(t, gqlschema.OperationTypeProvision, status.Operation)
 		assert.Equal(t, gqlschema.OperationStateInProgress, status.State)
 		assert.Equal(t, operation.ClusterID, *status.RuntimeID)
-		hydroformMock.AssertExpectations(t)
-		persistenceServiceMock.AssertExpectations(t)
-		uuidGenerator.AssertExpectations(t)
+		assert.Equal(t, operation.ID, *status.ID)
+		assert.Equal(t, operation.Message, *status.Message)
+		sessionFactoryMock.AssertExpectations(t)
+		readSession.AssertExpectations(t)
+	})
+
+	t.Run("Should return error when failed to get operation status", func(t *testing.T) {
+		//given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readSession := &sessionMocks.ReadSession{}
+
+		sessionFactoryMock.On("NewReadSession").Return(readSession)
+		readSession.On("GetOperation", operationID).Return(model.Operation{}, dberrors.Internal("error"))
+
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator)
+
+		//when
+		_, err := resolver.RuntimeOperationStatus(operationID)
+
+		//then
+		require.Error(t, err)
+		sessionFactoryMock.AssertExpectations(t)
+		readSession.AssertExpectations(t)
 	})
 }
 
-func waitUntilFinished(finished <-chan struct{}) {
-	for {
-		_, ok := <-finished
-		if !ok {
-			break
-		}
+func TestService_RuntimeStatus(t *testing.T) {
+	uuidGenerator := &uuidMocks.UUIDGenerator{}
+	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject)
+	graphQLConverter := NewGraphQLConverter()
+
+	operation := model.Operation{
+		ID:        operationID,
+		Type:      model.Provision,
+		State:     model.Succeeded,
+		Message:   "Message",
+		ClusterID: runtimeID,
 	}
+
+	cluster := model.Cluster{
+		ID:         runtimeID,
+		Kubeconfig: util.StringPtr("kubeconfig"),
+	}
+
+	t.Run("Should return runtime status", func(t *testing.T) {
+		//given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readSession := &sessionMocks.ReadSession{}
+
+		sessionFactoryMock.On("NewReadSession").Return(readSession)
+		readSession.On("GetLastOperation", operationID).Return(operation, nil)
+		readSession.On("GetCluster", operationID).Return(cluster, nil)
+
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator)
+
+		//when
+		status, err := resolver.RuntimeStatus(operationID)
+
+		//then
+		require.NoError(t, err)
+		assert.Equal(t, cluster.ID, *status.LastOperationStatus.RuntimeID)
+		assert.Equal(t, cluster.Kubeconfig, status.RuntimeConfiguration.Kubeconfig)
+		sessionFactoryMock.AssertExpectations(t)
+		readSession.AssertExpectations(t)
+	})
+
+	t.Run("Should return error when failed to get cluster", func(t *testing.T) {
+		//given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readSession := &sessionMocks.ReadSession{}
+
+		sessionFactoryMock.On("NewReadSession").Return(readSession)
+		readSession.On("GetLastOperation", operationID).Return(operation, nil)
+		readSession.On("GetCluster", operationID).Return(model.Cluster{}, dberrors.Internal("error"))
+
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator)
+
+		//when
+		_, err := resolver.RuntimeStatus(operationID)
+
+		//then
+		require.Error(t, err)
+		sessionFactoryMock.AssertExpectations(t)
+		readSession.AssertExpectations(t)
+	})
+
+	t.Run("Should return error when failed to get operation status", func(t *testing.T) {
+		//given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readSession := &sessionMocks.ReadSession{}
+
+		sessionFactoryMock.On("NewReadSession").Return(readSession)
+		readSession.On("GetLastOperation", operationID).Return(model.Operation{}, dberrors.Internal("error"))
+
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator)
+
+		//when
+		_, err := resolver.RuntimeStatus(operationID)
+
+		//then
+		require.Error(t, err)
+		sessionFactoryMock.AssertExpectations(t)
+		readSession.AssertExpectations(t)
+	})
+}
+
+func getOperationMatcher(expected model.Operation) func(model.Operation) bool {
+	return func(op model.Operation) bool {
+		return op.Type == expected.Type && op.ClusterID == expected.ClusterID &&
+			op.State == expected.State
+	}
+}
+
+func getClusterMatcher(expected model.Cluster) func(model.Cluster) bool {
+	return func(cluster model.Cluster) bool {
+		return cluster.ID == expected.ID
+	}
+}
+
+func notEmptyUUIDMatcher(id string) bool {
+	return len(id) > 0
 }

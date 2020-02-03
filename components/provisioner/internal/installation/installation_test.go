@@ -54,6 +54,33 @@ users:
 	runtimeId = "abcd-efgh"
 )
 
+func TestInstallationService_TriggerInstallation(t *testing.T) {
+
+	kymaVersion := "1.7.0"
+	kymaRelease := model.Release{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
+
+	globalConfig := fixGlobalConfig()
+	componentsConfig := fixComponentsConfig()
+
+	expectedInstallation := installation.Installation{
+		TillerYaml:    tillerYAML,
+		InstallerYaml: installerYAML,
+		Configuration: fixInstallationConfig(),
+	}
+
+	t.Run("should trigger installation", func(t *testing.T) {
+		installationHandlerConstructor := newMockInstallerHandler(t, expectedInstallation, nil, nil)
+		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
+
+		// when
+		err := installationSvc.TriggerInstallation([]byte(kubeconfig), kymaRelease, globalConfig, componentsConfig)
+
+		// then
+		require.NoError(t, err)
+	})
+
+}
+
 func TestInstallationService_InstallKyma(t *testing.T) {
 
 	kymaVersion := "1.7.0"
@@ -92,7 +119,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 			expectedInstallation: installation.Installation{
 				TillerYaml:    tillerYAML,
 				InstallerYaml: installerYAML,
-				Configuration: expectedInstallationConfig(),
+				Configuration: fixInstallationConfig(),
 			},
 		},
 		{
@@ -231,7 +258,7 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 		installationCR := newInstallationCR()
 
 		// when
-		modificationFunc := getInstallationCRModificationFunc(componentsConfig)
+		modificationFunc := GetInstallationCRModificationFunc(componentsConfig)
 
 		modificationFunc(installationCR)
 
@@ -247,7 +274,7 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 		installationCR := newInstallationCR()
 
 		// when
-		modificationFunc := getInstallationCRModificationFunc(nil)
+		modificationFunc := GetInstallationCRModificationFunc(nil)
 
 		modificationFunc(installationCR)
 
@@ -314,7 +341,7 @@ func assertComponent(t *testing.T, expectedName, expectedNamespace string, compo
 	assert.Equal(t, expectedNamespace, component.Namespace)
 }
 
-func expectedInstallationConfig() installation.Configuration {
+func fixInstallationConfig() installation.Configuration {
 	return installation.Configuration{
 		Configuration: []installation.ConfigEntry{
 			fixInstallationConfigEntry("global.config.key", "globalValue", false),

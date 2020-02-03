@@ -2,6 +2,7 @@ package gql
 
 import (
 	"bytes"
+	"strconv"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -262,9 +263,10 @@ func (g *Graphqlizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput)
 }
 
 func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string, error) {
+	in.Data = quoteString(in.Data)
 	return g.genericToGQL(in, `{
 		{{- if .Data }}
-		data: "{{.Data}}",
+		data: {{.Data}},
 		{{- end }}
 		type: {{.Type}},
 		{{- if .FetchRequest }}
@@ -275,9 +277,10 @@ func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string,
 }
 
 func (g *Graphqlizer) ApiSpecInputToGQL(in graphql.APISpecInput) (string, error) {
+	in.Data = quoteString(in.Data)
 	return g.genericToGQL(in, `{
 		{{- if .Data}}
-		data: "{{.Data}}",
+		data: {{.Data}},
 		{{- end}}	
 		type: {{.Type}},
 		format: {{.Format}},
@@ -401,4 +404,12 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 		return "", errors.Wrap(err, "while executing template")
 	}
 	return b.String(), nil
+}
+
+func quoteString(in *graphql.CLOB) *graphql.CLOB {
+	if in != nil {
+		quotedData := strconv.Quote(string(*in))
+		return (*graphql.CLOB)(&quotedData)
+	}
+	return nil
 }

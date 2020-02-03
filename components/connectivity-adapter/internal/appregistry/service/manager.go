@@ -21,7 +21,8 @@ type AppLabeler interface {
 	WriteServiceReference(appDetails graphql.ApplicationExt, serviceReference LegacyServiceReference) (graphql.LabelInput, error)
 	DeleteServiceReference(appDetails graphql.ApplicationExt, serviceID string) (graphql.LabelInput, error)
 	ReadServiceReference(appDetails graphql.ApplicationExt, serviceID string) (LegacyServiceReference, error)
-	ReadService(appDetails graphql.ApplicationExt, serviceID string) (GraphQLServiceDetails, error)
+	ReadService(appDetails graphql.ApplicationExt, serviceID string) (model.GraphQLServiceDetails, error)
+	ListServices(appDetails graphql.ApplicationExt) ([]model.GraphQLServiceDetails, error)
 }
 
 type serviceManager struct {
@@ -41,54 +42,53 @@ func NewServiceManager(directorCli DirectorClient, appLabeler AppLabeler, appDet
 func (s *serviceManager) Create(serviceDetails model.GraphQLServiceDetailsInput) error {
 	appID := s.appDetails.ID
 
-	var apiID, eventID *string
-	if serviceDetails.API != nil {
-		id, err := s.directorClient.CreateAPIDefinition(appID, *serviceDetails.API)
-		if err != nil {
-			return errors.Wrap(err, "while creating API Definition")
-		}
-
-		apiID = &id
-	}
-
-	if serviceDetails.Event != nil {
-		id, err := s.directorClient.CreateEventDefinition(appID, *serviceDetails.Event)
-		if err != nil {
-			return errors.Wrap(err, "while creating Event API Definition")
-		}
-
-		eventID = &id
-	}
-
-	label, err := s.appLabeler.WriteServiceReference(s.appDetails, LegacyServiceReference{
-		ID:         serviceDetails.ID,
-		APIDefID:   apiID,
-		EventDefID: eventID,
-	})
+	serviceRef, err := s.createAPIandEventDefinitions(appID, serviceDetails)
 	if err != nil {
-		return errors.Wrap(err, "while writing Application label")
-		// TODO: revert creating API and EventAPI definitions
+		return err
 	}
 
-	err = s.directorClient.SetApplicationLabel(appID, label)
+	err = s.setAppLabelWithServiceRef(appID, serviceRef)
 	if err != nil {
-		return errors.Wrap(err, "while setting Application label")
 		// TODO: revert creating API and EventAPI definitions
+		return err
 	}
 
 	return nil
 }
 
 func (s *serviceManager) GetFromApplicationDetails(serviceID string) (model.GraphQLServiceDetails, error) {
-	panic("implement me")
+	return s.appLabeler.ReadService(s.appDetails, serviceID)
 }
 
 func (s *serviceManager) ListFromApplicationDetails() ([]model.GraphQLServiceDetails, error) {
-	panic("implement me")
+	return s.appLabeler.ListServices(s.appDetails)
 }
 
 func (s *serviceManager) Update(serviceDetails model.GraphQLServiceDetailsInput) error {
-	panic("implement me")
+	appID := s.appDetails.ID
+
+	serviceRef, err := s.appLabeler.ReadServiceReference(s.appDetails, serviceDetails.ID)
+	if err != nil {
+		return err
+	}
+
+	err = s.deleteAPIandEventDefinitions(serviceRef)
+	if err != nil {
+		return err
+	}
+
+	newServiceRef, err := s.createAPIandEventDefinitions(appID, serviceDetails)
+	if err != nil {
+		return err
+	}
+
+	err = s.setAppLabelWithServiceRef(appID, newServiceRef)
+	if err != nil {
+		// TODO: revert creating API and EventAPI definitions?
+		return err
+	}
+
+	return nil
 }
 
 func (s *serviceManager) Delete(serviceID string) error {
@@ -97,6 +97,55 @@ func (s *serviceManager) Delete(serviceID string) error {
 		return err
 	}
 
+	err = s.deleteAPIandEventDefinitions(serviceRef)
+	if err != nil {
+		return err
+	}
+
+	label, err := s.appLabeler.DeleteServiceReference(s.appDetails, serviceRef.ID)
+	if err != nil {
+		return errors.Wrap(err, "while writing Application label")
+
+		// TODO: Should we somehow restore deleted API and Event Definitions? ( ಠ_ಠ)
+	}
+
+	err = s.directorClient.SetApplicationLabel(s.appDetails.Application.ID, label)
+	if err != nil {
+		return errors.Wrap(err, "while setting Application label")
+		// TODO: revert creating API and EventAPI definitions
+	}
+
+	return nil
+}
+
+func (s *serviceManager) createAPIandEventDefinitions(appID string, serviceDetails model.GraphQLServiceDetailsInput) (LegacyServiceReference, error) {
+	var apiID, eventID *string
+	if serviceDetails.API != nil {
+		id, err := s.directorClient.CreateAPIDefinition(appID, *serviceDetails.API)
+		if err != nil {
+			return LegacyServiceReference{}, errors.Wrap(err, "while creating API Definition")
+		}
+
+		apiID = &id
+	}
+
+	if serviceDetails.Event != nil {
+		id, err := s.directorClient.CreateEventDefinition(appID, *serviceDetails.Event)
+		if err != nil {
+			return LegacyServiceReference{}, errors.Wrap(err, "while creating Event API Definition")
+		}
+
+		eventID = &id
+	}
+
+	return LegacyServiceReference{
+		ID:         serviceDetails.ID,
+		APIDefID:   apiID,
+		EventDefID: eventID,
+	}, nil
+}
+
+func (s *serviceManager) deleteAPIandEventDefinitions(serviceRef LegacyServiceReference) error {
 	if serviceRef.APIDefID != nil {
 		err := s.directorClient.DeleteAPIDefinition(*serviceRef.APIDefID)
 		if err != nil {
@@ -111,14 +160,17 @@ func (s *serviceManager) Delete(serviceID string) error {
 		}
 	}
 
-	label, err := s.appLabeler.DeleteServiceReference(s.appDetails, serviceRef.ID)
+	return nil
+}
+
+func (s *serviceManager) setAppLabelWithServiceRef(appID string, serviceRef LegacyServiceReference) error {
+	label, err := s.appLabeler.WriteServiceReference(s.appDetails, serviceRef)
 	if err != nil {
 		return errors.Wrap(err, "while writing Application label")
-
-		// TODO: Should we somehow restore deleted API and Event Definitions? ( ಠ_ಠ)
+		// TODO: revert creating API and EventAPI definitions
 	}
 
-	err = s.directorClient.SetApplicationLabel(s.appDetails.Application.ID, label)
+	err = s.directorClient.SetApplicationLabel(appID, label)
 	if err != nil {
 		return errors.Wrap(err, "while setting Application label")
 		// TODO: revert creating API and EventAPI definitions

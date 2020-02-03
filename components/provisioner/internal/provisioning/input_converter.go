@@ -19,21 +19,22 @@ type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant string) (model.Cluster, error)
 }
 
-func NewInputConverter(
-	uuidGenerator uuid.UUIDGenerator,
+func NewInputConverter(uuidGenerator uuid.UUIDGenerator,
 	releaseRepo release.ReadRepository,
+	gardenerProject string,
 	hyperscalerAccountProvider hyperscaler.AccountProvider) InputConverter {
-
 	return &converter{
-		uuidGenerator:              uuidGenerator,
-		releaseRepo:                releaseRepo,
+		uuidGenerator:   uuidGenerator,
+		releaseRepo:     releaseRepo,
+		gardenerProject: gardenerProject,
 		hyperscalerAccountProvider: hyperscalerAccountProvider,
 	}
 }
 
 type converter struct {
-	uuidGenerator              uuid.UUIDGenerator
-	releaseRepo                release.ReadRepository
+	uuidGenerator   uuid.UUIDGenerator
+	releaseRepo     release.ReadRepository
+	gardenerProject string
 	hyperscalerAccountProvider hyperscaler.AccountProvider
 }
 
@@ -64,7 +65,6 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 
 	return model.Cluster{
 		ID:                    runtimeID,
-		RuntimeName:           input.RuntimeInput.Name,
 		CredentialsSecretName: credSecretName,
 		KymaConfig:            kymaConfig,
 		ClusterConfig:         providerConfig,
@@ -94,23 +94,28 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		return model.GardenerConfig{}, err
 	}
 
+	var seed string
+	if input.Seed != nil {
+		seed = *input.Seed
+	}
+
 	targetSecret, err := c.hyperscalerAccountProvider.GardenerSecretName(&input, tenant)
 
 	if err != nil {
 		return model.GardenerConfig{}, err
 	}
 
-	gardenerConfig := model.GardenerConfig{
+	return model.GardenerConfig{
 		ID:                     id,
 		Name:                   name,
-		ProjectName:            input.ProjectName,
+		ProjectName:            c.gardenerProject,
 		KubernetesVersion:      input.KubernetesVersion,
 		NodeCount:              input.NodeCount,
 		VolumeSizeGB:           input.VolumeSizeGb,
 		DiskType:               input.DiskType,
 		MachineType:            input.MachineType,
 		Provider:               input.Provider,
-		Seed:                   input.Seed,
+		Seed:                   seed,
 		TargetSecret:           targetSecret,
 		WorkerCidr:             input.WorkerCidr,
 		Region:                 input.Region,
@@ -120,9 +125,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		MaxUnavailable:         input.MaxUnavailable,
 		ClusterID:              runtimeID,
 		GardenerProviderConfig: providerSpecificConfig,
-	}
-
-	return gardenerConfig, nil
+	}, nil
 }
 
 func (c converter) createGardenerClusterName(provider string) string {

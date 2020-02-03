@@ -10,6 +10,16 @@ type KymaConfig struct {
 	ClusterID           string
 }
 
+func (c KymaConfig) GetComponentConfig(name string) (KymaComponentConfig, bool) {
+	for _, c := range c.Components {
+		if string(c.Component) == name {
+			return c, true
+		}
+	}
+
+	return KymaComponentConfig{}, false
+}
+
 type Release struct {
 	Id            string
 	Version       string

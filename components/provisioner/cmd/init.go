@@ -2,29 +2,28 @@ package main
 
 import (
 	"crypto/tls"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/runtimes/clientbuilder"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
-	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/pkg/errors"
 
+	gardener_apis "github.com/gardener/gardener/pkg/client/garden/clientset/versioned/typed/garden/v1beta1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -37,13 +36,15 @@ const (
 	databaseConnectionRetries = 20
 )
 
-func newProvisioningService(config config, persistenceService persistence.Service, compassSecrets v1.SecretInterface,
-	gardenerSecrets v1.SecretInterface, releaseRepo release.ReadRepository) provisioning.Service {
-
-	hydroformClient := client.NewHydroformClient()
-	hydroformService := hydroform.NewHydroformService(hydroformClient, compassSecrets)
+func newProvisioningService(
+	gardenerProject string,
+	provisioner provisioning.Provisioner,
+	dbsFactory dbsession.Factory,
+	releaseRepo release.ReadRepository,
+	gardenerSecrets v1.SecretInterface,
+	compassSecrets v1.SecretInterface,
+	directorService director.DirectorClient) provisioning.Service {
 	uuidGenerator := uuid.NewUUIDGenerator()
-	installationService := installation.NewInstallationService(config.Installation.Timeout, installationSDK.NewKymaInstaller, config.Installation.ErrorsCountFailureThreshold)
 
 	compassAccountPool := hyperscaler.NewAccountPool(compassSecrets)
 	var gardenerAccountPool hyperscaler.AccountPool = nil
@@ -53,17 +54,45 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 
 	accountProvider := hyperscaler.NewAccountProvider(compassAccountPool, gardenerAccountPool)
 
-	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo, accountProvider)
+	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo, gardenerProject, accountProvider)
+
 	graphQLConverter := provisioning.NewGraphQLConverter()
+
+	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator)
+}
+
+func newDirectorClient(config config) (director.DirectorClient, error) {
+	secretsRepo, err := newSecretsInterface(config.CredentialsNamespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to create secrets interface")
+	}
 
 	gqlClient := graphql.NewGraphQLClient(config.DirectorURL, true, config.SkipDirectorCertVerification)
 	oauthClient := oauth.NewOauthClient(newHTTPClient(config.SkipDirectorCertVerification), compassSecrets, config.OauthCredentialsSecretName)
+	oauthClient := oauth.NewOauthClient(newHTTPClient(config.SkipDirectorCertVerification), secretsRepo, config.OauthCredentialsSecretName)
 
-	directorClient := director.NewDirectorClient(gqlClient, oauthClient)
+	return director.NewDirectorClient(gqlClient, oauthClient), nil
+}
 
-	configProvider := runtimes.NewRuntimeConfigProvider(config.CredentialsNamespace, clientbuilder.NewConfigMapClientBuilder())
+func newShootController(
+	cfg config,
+	gardenerNamespace string,
+	gardenerClusterCfg *restclient.Config,
+	gardenerClientSet *gardener_apis.GardenV1beta1Client,
+	dbsFactory dbsession.Factory,
+	installationSvc installation.Service,
+	direcotrClietnt director.DirectorClient,
+	runtimeConfigurator runtime.Configurator) (*gardener.ShootController, error) {
+	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
+	if err != nil {
+		return nil, err
+	}
 
-	return provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformService, installationService, directorClient, configProvider)
+	secretsInterface := gardenerClusterClient.CoreV1().Secrets(gardenerNamespace)
+
+	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
+
+	return gardener.NewShootController(gardenerNamespace, gardenerClusterCfg, shootClient, secretsInterface, installationSvc, dbsFactory, cfg.Installation.Timeout, direcotrClietnt, runtimeConfigurator)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
@@ -86,6 +115,23 @@ func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
 
 	return coreClientset.CoreV1().Secrets(namespace), nil
 }
+
+func newGardenerClusterConfig(cfg config) (*restclient.Config, error) {
+	rawKubeconfig, err := ioutil.ReadFile(cfg.Gardener.KubeconfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read Gardener Kubeconfig from path %s: %s", cfg.Gardener.KubeconfigPath, err.Error())
+	}
+
+	gardenerClusterConfig, err := gardener.Config(rawKubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("")
+	}
+
+	return gardenerClusterConfig, nil
+}
+
+/*
+old code
 
 func newGardenerSecretsInterface(config config) (v1.SecretInterface, error) {
 
@@ -124,19 +170,8 @@ func newResolver(config config, persistenceService persistence.Service, releaseR
 	), nil
 }
 
-func initRepositories(config config, connectionString string) (persistence.Service, release.Repository, error) {
-	connection, err := database.InitializeDatabase(connectionString, config.Database.SchemaFilePath, databaseConnectionRetries)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "Failed to initialize persistence")
-	}
-	dbSessionFactory := dbsession.NewFactory(connection)
 
-	persistenceService := persistence.NewService(dbSessionFactory, uuid.NewUUIDGenerator())
-
-	releaseRepo := release.NewReleaseRepository(connection, uuid.NewUUIDGenerator())
-
-	return persistenceService, releaseRepo, nil
-}
+*/
 
 func newHTTPClient(skipCertVeryfication bool) *http.Client {
 	return &http.Client{

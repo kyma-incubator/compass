@@ -45,8 +45,8 @@ func (t BusinessTenantMapping) WithStatus(status TenantStatus) BusinessTenantMap
 }
 
 type BusinessTenantMappingInput struct {
-	Name           string
-	ExternalTenant string
+	Name           string `json:"name"`
+	ExternalTenant string `json:"id"`
 	Provider       string
 }
 
