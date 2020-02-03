@@ -21,6 +21,11 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
       * Service Account User
       * Compute Admin
   - Key generated for your service account, downloaded in the JSON format
+  - Gardener service account configuration (`kubeconfig.yaml`) downloaded
+  - Compass with configured Runtime Provisioner and the following [overrides](05-01-app-entry-parameters.md) set up:
+      * Kubeconfig (`provisioner.gardener.kubeconfig`)
+      * Gardener project name (`provisioner.gardener.project`)
+  
   </details>
   
   <details>
@@ -34,6 +39,10 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     * Application ID (Client ID)
     * Directory ID (Tenant ID)
     * Client secret (application password)
+  - Gardener service account configuration (`kubeconfig.yaml`) downloaded
+  - Compass with configured Runtime Provisioner and the following [overrides](05-01-app-entry-parameters.md) set up:
+    * Kubeconfig (`provisioner.gardener.kubeconfig`)
+    * Gardener project name (`provisioner.gardener.project`)
 
   </details>
   
@@ -47,6 +56,10 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
   - Access key created for your AWS user with the following credentials:
     * Secrete Access Key
     * Access Key ID
+  - Gardener service account configuration (`kubeconfig.yaml`) downloaded
+  - Compass with configured Runtime Provisioner and the following [overrides](05-01-app-entry-parameters.md) set up:
+    * Kubeconfig (`provisioner.gardener.kubeconfig`)
+    * Gardener project name (`provisioner.gardener.project`)
   
   > **NOTE:** To get the AWS IAM policy, access your project on Gardener, navigate to the **Secrets** tab, click on the help icon on the AWS card, and copy the JSON policy. 
     
