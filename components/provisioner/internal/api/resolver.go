@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 
 	log "github.com/sirupsen/logrus"
@@ -59,21 +60,14 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 		return nil, err
 	}
 
-	operationID, runtimeID, _, err := r.provisioning.ProvisionRuntime(config, tenant)
+	operationStatus, err := r.provisioning.ProvisionRuntime(config, tenant)
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
 		return nil, err
 	}
-	log.Infof("Provisioning started for Runtime %s. Operation id %s", config.RuntimeInput.Name, operationID)
+	log.Infof("Provisioning started for Runtime %s. Operation id %s", config.RuntimeInput.Name, *operationStatus.ID)
 
-	messageProvisioningStarted := "Provisioning started"
-
-	return &gqlschema.OperationStatus{
-		ID:        &operationID,
-		Operation: gqlschema.OperationTypeProvision,
-		Message:   &messageProvisioningStarted,
-		RuntimeID: &runtimeID,
-	}, nil
+	return operationStatus, nil
 }
 
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
@@ -93,7 +87,7 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 		return "", err
 	}
 
-	operationID, _, err := r.provisioning.DeprovisionRuntime(id, tenant)
+	operationID, err := r.provisioning.DeprovisionRuntime(id, tenant)
 	if err != nil {
 		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
 		return "", err

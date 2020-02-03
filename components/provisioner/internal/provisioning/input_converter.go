@@ -18,16 +18,18 @@ type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant string) (model.Cluster, error)
 }
 
-func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository) InputConverter {
+func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository, gardenerProject string) InputConverter {
 	return &converter{
-		uuidGenerator: uuidGenerator,
-		releaseRepo:   releaseRepo,
+		uuidGenerator:   uuidGenerator,
+		releaseRepo:     releaseRepo,
+		gardenerProject: gardenerProject,
 	}
 }
 
 type converter struct {
-	uuidGenerator uuid.UUIDGenerator
-	releaseRepo   release.ReadRepository
+	uuidGenerator   uuid.UUIDGenerator
+	releaseRepo     release.ReadRepository
+	gardenerProject string
 }
 
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant string) (model.Cluster, error) {
@@ -56,7 +58,6 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 
 	return model.Cluster{
 		ID:                    runtimeID,
-		RuntimeName:           input.RuntimeInput.Name,
 		CredentialsSecretName: credSecretName,
 		KymaConfig:            kymaConfig,
 		ClusterConfig:         providerConfig,
@@ -86,17 +87,22 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		return model.GardenerConfig{}, err
 	}
 
+	var seed string
+	if input.Seed != nil {
+		seed = *input.Seed
+	}
+
 	return model.GardenerConfig{
 		ID:                     id,
 		Name:                   name,
-		ProjectName:            input.ProjectName,
+		ProjectName:            c.gardenerProject,
 		KubernetesVersion:      input.KubernetesVersion,
 		NodeCount:              input.NodeCount,
 		VolumeSizeGB:           input.VolumeSizeGb,
 		DiskType:               input.DiskType,
 		MachineType:            input.MachineType,
 		Provider:               input.Provider,
-		Seed:                   input.Seed,
+		Seed:                   seed,
 		TargetSecret:           input.TargetSecret,
 		WorkerCidr:             input.WorkerCidr,
 		Region:                 input.Region,

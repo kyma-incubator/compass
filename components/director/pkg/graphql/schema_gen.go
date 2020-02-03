@@ -383,8 +383,9 @@ type ComplexityRoot struct {
 	}
 
 	Tenant struct {
-		ID   func(childComplexity int) int
-		Name func(childComplexity int) int
+		ID         func(childComplexity int) int
+		InternalID func(childComplexity int) int
+		Name       func(childComplexity int) int
 	}
 
 	Version struct {
@@ -2306,6 +2307,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tenant.ID(childComplexity), true
 
+	case "Tenant.internalID":
+		if e.complexity.Tenant.InternalID == nil {
+			break
+		}
+
+		return e.complexity.Tenant.InternalID(childComplexity), true
+
 	case "Tenant.name":
 		if e.complexity.Tenant.Name == nil {
 			break
@@ -3038,6 +3046,7 @@ type SystemAuth {
 
 type Tenant {
 	id: ID!
+	internalID: ID!
 	name: String
 }
 
@@ -3138,6 +3147,10 @@ type Query {
 	"""
 	integrationSystem(id: ID!): IntegrationSystem @hasScopes(path: "graphql.query.integrationSystem")
 	viewer: Viewer! @hasScopes(path: "graphql.query.viewer")
+	"""
+	**Examples**
+	- [query tenants](examples/query-tenants/query-tenants.graphql)
+	"""
 	tenants: [Tenant!]! @hasScopes(path: "graphql.query.tenants")
 }
 
@@ -14033,6 +14046,43 @@ func (ec *executionContext) _Tenant_id(ctx context.Context, field graphql.Collec
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Tenant_internalID(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Tenant",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InternalID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Tenant_name(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -18623,6 +18673,11 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = graphql.MarshalString("Tenant")
 		case "id":
 			out.Values[i] = ec._Tenant_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "internalID":
+			out.Values[i] = ec._Tenant_internalID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

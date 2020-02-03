@@ -94,7 +94,6 @@ type ComplexityRoot struct {
 		MaxUnavailable         func(childComplexity int) int
 		Name                   func(childComplexity int) int
 		NodeCount              func(childComplexity int) int
-		ProjectName            func(childComplexity int) int
 		Provider               func(childComplexity int) int
 		ProviderSpecificConfig func(childComplexity int) int
 		Region                 func(childComplexity int) int
@@ -131,11 +130,9 @@ type ComplexityRoot struct {
 	}
 
 	RuntimeConfig struct {
-		ClusterConfig         func(childComplexity int) int
-		CredentialsSecretName func(childComplexity int) int
-		Kubeconfig            func(childComplexity int) int
-		KymaConfig            func(childComplexity int) int
-		Name                  func(childComplexity int) int
+		ClusterConfig func(childComplexity int) int
+		Kubeconfig    func(childComplexity int) int
+		KymaConfig    func(childComplexity int) int
 	}
 
 	RuntimeConnectionStatus struct {
@@ -386,13 +383,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.NodeCount(childComplexity), true
 
-	case "GardenerConfig.projectName":
-		if e.complexity.GardenerConfig.ProjectName == nil {
-			break
-		}
-
-		return e.complexity.GardenerConfig.ProjectName(childComplexity), true
-
 	case "GardenerConfig.provider":
 		if e.complexity.GardenerConfig.Provider == nil {
 			break
@@ -577,13 +567,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RuntimeConfig.ClusterConfig(childComplexity), true
 
-	case "RuntimeConfig.credentialsSecretName":
-		if e.complexity.RuntimeConfig.CredentialsSecretName == nil {
-			break
-		}
-
-		return e.complexity.RuntimeConfig.CredentialsSecretName(childComplexity), true
-
 	case "RuntimeConfig.kubeconfig":
 		if e.complexity.RuntimeConfig.Kubeconfig == nil {
 			break
@@ -597,13 +580,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RuntimeConfig.KymaConfig(childComplexity), true
-
-	case "RuntimeConfig.name":
-		if e.complexity.RuntimeConfig.Name == nil {
-			break
-		}
-
-		return e.complexity.RuntimeConfig.Name(childComplexity), true
 
 	case "RuntimeConnectionStatus.errors":
 		if e.complexity.RuntimeConnectionStatus.Errors == nil {
@@ -705,9 +681,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
-    name: String
     clusterConfig: ClusterConfig
-    credentialsSecretName: String
     kymaConfig: KymaConfig
     kubeconfig: String
 }
@@ -716,7 +690,6 @@ union ClusterConfig = GardenerConfig | GCPConfig
 
 type GardenerConfig {
     name: String
-    projectName: String
     kubernetesVersion: String
     nodeCount: Int
     volumeSizeGB: Int
@@ -837,8 +810,8 @@ input RuntimeInput {
 input ProvisionRuntimeInput {
     runtimeInput: RuntimeInput!         # Configuration of the Runtime to register in Director
     clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
-    credentials: CredentialsInput!      # Credentials
     kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
+    credentials: CredentialsInput       # Credentials # Field is ignored for now
 }
 
 input CredentialsInput {
@@ -850,15 +823,13 @@ input ClusterConfigInput {
     gcpConfig: GCPConfigInput               # GCP-specific configuration for the cluster to be provisioned
 }
 
-input GardenerConfigInput {
-    projectName: String!                            # Gardener project in which the cluster is created
+input GardenerConfigInput {                   # Gardener project in which the cluster is created
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     nodeCount: Int!                                 # Number of nodes to create
     volumeSizeGB: Int!                              # Size of the available disk, provided in GB
     machineType: String!                            # Type of node machines, varies depending on the target provider
     region: String!                                 # Region in which the cluster is created
     provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
-    seed: String!                                   # Name of the seed cluster that runs the control plane of the Shoot
     targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
     diskType: String!                               # Disk type, varies depending on the target provider
     workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
@@ -867,6 +838,7 @@ input GardenerConfigInput {
     maxSurge: Int!                                  # Maximum number of VMs created during an update
     maxUnavailable: Int!                            # Maximum number of VMs that can be unavailable during an update
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
+    seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
 }
 
 input ProviderSpecificInput {
@@ -1839,40 +1811,6 @@ func (ec *executionContext) _GardenerConfig_name(ctx context.Context, field grap
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GardenerConfig_projectName(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GardenerConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ProjectName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3005,40 +2943,6 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RuntimeConfig_name(ctx context.Context, field graphql.CollectedField, obj *RuntimeConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "RuntimeConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _RuntimeConfig_clusterConfig(ctx context.Context, field graphql.CollectedField, obj *RuntimeConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -3071,40 +2975,6 @@ func (ec *executionContext) _RuntimeConfig_clusterConfig(ctx context.Context, fi
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOClusterConfig2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfig(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _RuntimeConfig_credentialsSecretName(ctx context.Context, field graphql.CollectedField, obj *RuntimeConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "RuntimeConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CredentialsSecretName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeConfig_kymaConfig(ctx context.Context, field graphql.CollectedField, obj *RuntimeConfig) (ret graphql.Marshaler) {
@@ -4739,12 +4609,6 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 
 	for k, v := range asMap {
 		switch k {
-		case "projectName":
-			var err error
-			it.ProjectName, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "kubernetesVersion":
 			var err error
 			it.KubernetesVersion, err = ec.unmarshalNString2string(ctx, v)
@@ -4778,12 +4642,6 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 		case "provider":
 			var err error
 			it.Provider, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "seed":
-			var err error
-			it.Seed, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4832,6 +4690,12 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 		case "providerSpecificConfig":
 			var err error
 			it.ProviderSpecificConfig, err = ec.unmarshalNProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "seed":
+			var err error
+			it.Seed, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4919,15 +4783,15 @@ func (ec *executionContext) unmarshalInputProvisionRuntimeInput(ctx context.Cont
 			if err != nil {
 				return it, err
 			}
-		case "credentials":
-			var err error
-			it.Credentials, err = ec.unmarshalNCredentialsInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "kymaConfig":
 			var err error
 			it.KymaConfig, err = ec.unmarshalNKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "credentials":
+			var err error
+			it.Credentials, err = ec.unmarshalOCredentialsInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5276,8 +5140,6 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = graphql.MarshalString("GardenerConfig")
 		case "name":
 			out.Values[i] = ec._GardenerConfig_name(ctx, field, obj)
-		case "projectName":
-			out.Values[i] = ec._GardenerConfig_projectName(ctx, field, obj)
 		case "kubernetesVersion":
 			out.Values[i] = ec._GardenerConfig_kubernetesVersion(ctx, field, obj)
 		case "nodeCount":
@@ -5491,12 +5353,8 @@ func (ec *executionContext) _RuntimeConfig(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("RuntimeConfig")
-		case "name":
-			out.Values[i] = ec._RuntimeConfig_name(ctx, field, obj)
 		case "clusterConfig":
 			out.Values[i] = ec._RuntimeConfig_clusterConfig(ctx, field, obj)
-		case "credentialsSecretName":
-			out.Values[i] = ec._RuntimeConfig_credentialsSecretName(ctx, field, obj)
 		case "kymaConfig":
 			out.Values[i] = ec._RuntimeConfig_kymaConfig(ctx, field, obj)
 		case "kubeconfig":
@@ -5858,18 +5716,6 @@ func (ec *executionContext) unmarshalNComponentConfigurationInput2ᚕᚖgithub�
 		}
 	}
 	return res, nil
-}
-
-func (ec *executionContext) unmarshalNCredentialsInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx context.Context, v interface{}) (CredentialsInput, error) {
-	return ec.unmarshalInputCredentialsInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNCredentialsInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx context.Context, v interface{}) (*CredentialsInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNCredentialsInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalNError2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v Error) graphql.Marshaler {
@@ -6405,6 +6251,18 @@ func (ec *executionContext) unmarshalOConfigEntryInput2ᚖgithubᚗcomᚋkymaᚑ
 		return nil, nil
 	}
 	res, err := ec.unmarshalOConfigEntryInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOCredentialsInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx context.Context, v interface{}) (CredentialsInput, error) {
+	return ec.unmarshalInputCredentialsInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOCredentialsInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx context.Context, v interface{}) (*CredentialsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOCredentialsInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx, v)
 	return &res, err
 }
 

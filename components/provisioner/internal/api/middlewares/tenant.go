@@ -3,8 +3,9 @@ package middlewares
 import (
 	"context"
 	"errors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 )
 
 type Header string

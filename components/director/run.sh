@@ -72,7 +72,10 @@ set -e
 
 echo -e "${GREEN}Populate DB${NC}"
 
-PGPASSWORD=pwd psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/migrations/*.up.sql) ${DB_NAME}
+PGPASSWORD=pwd psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql) ${DB_NAME}
+
+PGPASSWORD=pwd psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql) ${DB_NAME}
+
 
 if [[  ${SKIP_APP_START} ]]; then
         echo -e "${GREEN}Skipping starting application${NC}"

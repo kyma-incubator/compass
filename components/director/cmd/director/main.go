@@ -5,13 +5,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
@@ -173,8 +175,11 @@ func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersS
 		return nil, errors.Wrap(err, "while creating StaticUser repository instance")
 	}
 
-	mapperForUser := tenantmapping.NewMapperForUser(staticUsersRepo)
-	mapperForSystemAuth := tenantmapping.NewMapperForSystemAuth(systemAuthSvc, scopeProvider)
+	tenantConverter := tenant.NewConverter()
+	tenantRepo := tenant.NewRepository(tenantConverter)
+
+	mapperForUser := tenantmapping.NewMapperForUser(staticUsersRepo, tenantRepo)
+	mapperForSystemAuth := tenantmapping.NewMapperForSystemAuth(systemAuthSvc, scopeProvider, tenantRepo)
 
 	reqDataParser := tenantmapping.NewReqDataParser()
 

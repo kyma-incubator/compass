@@ -53,11 +53,9 @@ func (c graphQLConverter) runtimeAgentConnectionStatusToGraphQLStatus(status mod
 
 func (c graphQLConverter) clusterToToGraphQLRuntimeConfiguration(config model.Cluster) *gqlschema.RuntimeConfig {
 	return &gqlschema.RuntimeConfig{
-		Name:                  &config.RuntimeName,
-		ClusterConfig:         c.clusterConfigToGraphQLConfig(config.ClusterConfig),
-		KymaConfig:            c.kymaConfigToGraphQLConfig(config.KymaConfig),
-		Kubeconfig:            config.Kubeconfig,
-		CredentialsSecretName: &config.CredentialsSecretName,
+		ClusterConfig: c.clusterConfigToGraphQLConfig(config.ClusterConfig),
+		KymaConfig:    c.kymaConfigToGraphQLConfig(config.KymaConfig),
+		Kubeconfig:    config.Kubeconfig,
 	}
 }
 
@@ -80,7 +78,6 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 
 	return gqlschema.GardenerConfig{
 		Name:                   &config.Name,
-		ProjectName:            &config.ProjectName,
 		KubernetesVersion:      &config.KubernetesVersion,
 		NodeCount:              &config.NodeCount,
 		DiskType:               &config.DiskType,

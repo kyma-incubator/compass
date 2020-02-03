@@ -51,7 +51,8 @@ func TestConversionDeprecatedServiceDetailsToGraphQLInput(t *testing.T) {
 				API: &graphql.APIDefinitionInput{
 					TargetURL: "http://target.url",
 					Spec: &graphql.APISpecInput{
-						Type: graphql.APISpecTypeOdata,
+						Type:   graphql.APISpecTypeOdata,
+						Format: graphql.SpecFormatYaml,
 					},
 				},
 			},
@@ -67,7 +68,8 @@ func TestConversionDeprecatedServiceDetailsToGraphQLInput(t *testing.T) {
 				ID: "id",
 				API: &graphql.APIDefinitionInput{
 					Spec: &graphql.APISpecInput{
-						Type: graphql.APISpecTypeOpenAPI,
+						Type:   graphql.APISpecTypeOpenAPI,
+						Format: graphql.SpecFormatYaml,
 					},
 				},
 			},
@@ -415,7 +417,9 @@ func TestConversionDeprecatedServiceDetailsToGraphQLInput(t *testing.T) {
 				Event: &graphql.EventDefinitionInput{
 					//TODO what about name
 					Spec: &graphql.EventSpecInput{
-						Data: ptrClob(graphql.CLOB(`asyncapi: "1.2.0"`)),
+						Data:   ptrClob(graphql.CLOB(`asyncapi: "1.2.0"`)),
+						Type:   graphql.EventSpecTypeAsyncAPI,
+						Format: graphql.SpecFormatYaml,
 					},
 				},
 			},
@@ -747,7 +751,7 @@ func TestConversionApplicationExtToServiceDetails2(t *testing.T) {
 
 }
 
-func Test2(t *testing.T) {
+func TestGraphQLToServiceDetails(t *testing.T) {
 
 	type testCase struct {
 		given    model.GraphQLServiceDetails
@@ -769,6 +773,7 @@ func Test2(t *testing.T) {
 				Api: &model.API{
 					TargetUrl: "http://target.url",
 				},
+				Labels: emptyLabels(),
 			},
 		},
 		"simple API with additional headers and query params": {
@@ -809,6 +814,7 @@ func Test2(t *testing.T) {
 						},
 					},
 				},
+				Labels: emptyLabels(),
 			},
 		},
 		"simple API with Basic Auth": {
@@ -837,6 +843,7 @@ func Test2(t *testing.T) {
 						},
 					},
 				},
+				Labels: emptyLabels(),
 			},
 		},
 		"simple API with Oauth": {
@@ -868,6 +875,7 @@ func Test2(t *testing.T) {
 						},
 					},
 				},
+				Labels: emptyLabels(),
 			},
 		},
 		"simple API with FetchRequest (query params and headers)": {
@@ -900,6 +908,7 @@ func Test2(t *testing.T) {
 						},
 					},
 				},
+				Labels: emptyLabels(),
 			},
 		},
 		"simple API with Fetch Request protected with Basic Auth": {
@@ -926,6 +935,7 @@ func Test2(t *testing.T) {
 						},
 					},
 				},
+				Labels: emptyLabels(),
 			},
 		},
 		"simple API with Fetch Request protected with Oauth": {
@@ -953,6 +963,7 @@ func Test2(t *testing.T) {
 						},
 					},
 				},
+				Labels: emptyLabels(),
 			},
 		},
 		"events": {
@@ -969,6 +980,7 @@ func Test2(t *testing.T) {
 				Events: &model.Events{
 					Spec: json.RawMessage(`asyncapi: "1.2.0"`),
 				},
+				Labels: emptyLabels(),
 			},
 		},
 	} {
@@ -1083,4 +1095,8 @@ func fixLabels() (graphql.Labels, error) {
 
 func fixPageWithTotalCountOne() graphql.APIDefinitionPage {
 	return graphql.APIDefinitionPage{TotalCount: 1}
+}
+
+func emptyLabels() *map[string]string {
+	return &map[string]string{}
 }

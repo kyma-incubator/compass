@@ -3,12 +3,12 @@
 CREATE TABLE cluster
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    runtime_name varchar(256) NOT NULL,
     kubeconfig text,
     terraform_state bytea,
     tenant varchar(256) NOT NULL,
     credentials_secret_name varchar(256) NOT NULL,
-    creation_timestamp timestamp without time zone NOT NULL
+    creation_timestamp timestamp without time zone NOT NULL,
+    deleted boolean default false
 );
 
 
@@ -18,7 +18,7 @@ CREATE TABLE gardener_config
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     cluster_id uuid NOT NULL,
-    name varchar(256) NOT NULL,
+    name varchar(256) NOT NULL UNIQUE,
     project_name varchar(256) NOT NULL,
     kubernetes_version varchar(256) NOT NULL,
     node_Count integer NOT NULL,

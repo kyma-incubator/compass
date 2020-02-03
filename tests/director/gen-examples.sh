@@ -51,6 +51,7 @@ docker run -d --name ${POSTGRES_CONTAINER} \
     -e POSTGRES_USER=${DB_USER} \
     -e POSTGRES_PASSWORD=${DB_PWD} \
     -e POSTGRES_DB=${DB_NAME} \
+    -p 5432:5432 \
     postgres:${POSTGRES_VERSION}
 
 echo -e "${GREEN}Building migration image...${NC}"
@@ -67,6 +68,10 @@ docker run --rm --network=${NETWORK} \
     -e DIRECTION="up" \
     -e MIGRATION_PATH="director" \
     ${MIGRATOR_IMG_NAME}
+
+
+echo -e "${GREEN}Seeding the db...${NC}"
+PGPASSWORD=${DB_PWD} psql -h ${POSTGRES_CONTAINER} -U ${DB_USER} -f <(cat seeds/director/*.sql) ${DB_NAME}
 
 echo -e "${GREEN}Building Director image...${NC}"
 
@@ -110,7 +115,7 @@ rm -r "${LOCAL_ROOT_PATH}"/components/director/examples/*
 
 echo -e "${GREEN}Running Director API tests with generating examples...${NC}"
 GO111MODULE=on go test -c "${SCRIPT_DIR}/api" -tags ignore_external_dependencies
-ALL_SCOPES="runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage" \
+ALL_SCOPES="runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage tenant:read" \
 ./api.test
 
 echo -e "${GREEN}Prettifying GraphQL examples...${NC}"

@@ -22,6 +22,7 @@ import (
 
 func TestHandler(t *testing.T) {
 	target := "http://example.com/foo"
+	externalTenantID := "external-" + uuid.New().String()
 	tenantID := uuid.New()
 	systemAuthID := uuid.New()
 	objID := uuid.New()
@@ -37,12 +38,15 @@ func TestHandler(t *testing.T) {
 			},
 		}
 		objCtxMock := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
 			Scopes:       scopes,
-			TenantID:     tenantID.String(),
 			ConsumerID:   username,
 			ConsumerType: "Static User",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -53,7 +57,7 @@ func TestHandler(t *testing.T) {
 		transactMock := getTransactMock()
 
 		mapperForUserMock := getMapperForUserMock()
-		mapperForUserMock.On("GetObjectContext", reqDataMock, username).Return(objCtxMock, nil).Once()
+		mapperForUserMock.On("GetObjectContext", mock.Anything, reqDataMock, username).Return(objCtxMock, nil).Once()
 
 		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, mapperForUserMock, nil)
 		handler.ServeHTTP(w, req)
@@ -78,12 +82,15 @@ func TestHandler(t *testing.T) {
 			},
 		}
 		objCtx := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
 			Scopes:       scopes,
-			TenantID:     tenantID.String(),
 			ConsumerID:   objID.String(),
 			ConsumerType: "Integration System",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","consumerID":"` + objID.String() + `","consumerType":"Integration System","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","consumerID":"` + objID.String() + `","consumerType":"Integration System","externalTenant":"` + externalTenantID + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -120,12 +127,15 @@ func TestHandler(t *testing.T) {
 			},
 		}
 		objCtx := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
 			Scopes:       scopes,
-			TenantID:     tenantID.String(),
 			ConsumerID:   objID.String(),
 			ConsumerType: "Integration System",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + objID.String() + `","consumerType":"Integration System","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":{"Client-Id-From-Certificate":["` + systemAuthID.String() + `"]}}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + objID.String() + `","consumerType":"Integration System","externalTenant":"` + externalTenantID + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":{"Client-Id-From-Certificate":["` + systemAuthID.String() + `"]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()

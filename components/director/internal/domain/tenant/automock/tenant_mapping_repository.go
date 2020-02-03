@@ -113,22 +113,22 @@ func (_m *TenantMappingRepository) GetByExternalTenant(ctx context.Context, exte
 	return r0, r1
 }
 
-// List provides a mock function with given fields: ctx, pageSize, cursor
-func (_m *TenantMappingRepository) List(ctx context.Context, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
-	ret := _m.Called(ctx, pageSize, cursor)
+// List provides a mock function with given fields: ctx
+func (_m *TenantMappingRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx)
 
-	var r0 *model.BusinessTenantMappingPage
-	if rf, ok := ret.Get(0).(func(context.Context, int, string) *model.BusinessTenantMappingPage); ok {
-		r0 = rf(ctx, pageSize, cursor)
+	var r0 []*model.BusinessTenantMapping
+	if rf, ok := ret.Get(0).(func(context.Context) []*model.BusinessTenantMapping); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.BusinessTenantMappingPage)
+			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
-		r1 = rf(ctx, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

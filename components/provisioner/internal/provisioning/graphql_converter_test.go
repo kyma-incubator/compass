@@ -57,7 +57,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 	t.Run("Should create proper runtime status struct for GCP config", func(t *testing.T) {
 		clusterName := "Something"
-		runtimeName := "RuntimeName"
 		project := "Project"
 		numberOfNodes := 3
 		bootDiskSize := 256
@@ -78,7 +77,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			},
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusConnected,
 			RuntimeConfiguration: model.Cluster{
-				RuntimeName: "RuntimeName",
 				ClusterConfig: model.GCPConfig{
 					ID:                "id",
 					Name:              "Something",
@@ -113,7 +111,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Status: gqlschema.RuntimeAgentConnectionStatusConnected,
 			},
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
-				Name: &runtimeName,
 				ClusterConfig: gqlschema.GCPConfig{
 					Name:              &clusterName,
 					ProjectName:       &project,
@@ -124,9 +121,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					BootDiskSizeGb:    &bootDiskSize,
 					KubernetesVersion: &kubeversion,
 				},
-				KymaConfig:            fixKymaGraphQLConfig(),
-				Kubeconfig:            &kubeconfig,
-				CredentialsSecretName: &secretName,
+				KymaConfig: fixKymaGraphQLConfig(),
+				Kubeconfig: &kubeconfig,
 			},
 		}
 
@@ -140,7 +136,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 	t.Run("Should create proper runtime status struct for gardener config", func(t *testing.T) {
 		//given
 		clusterName := "Something"
-		runtimeName := "runtimeName"
 		project := "Project"
 		nodes := 3
 		disk := "standard"
@@ -173,7 +168,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			},
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
 			RuntimeConfiguration: model.Cluster{
-				RuntimeName: runtimeName,
 				ClusterConfig: model.GardenerConfig{
 					Name:                   clusterName,
 					ProjectName:            project,
@@ -215,10 +209,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
 			},
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
-				Name: &runtimeName,
 				ClusterConfig: gqlschema.GardenerConfig{
 					Name:              &clusterName,
-					ProjectName:       &project,
 					NodeCount:         &nodes,
 					DiskType:          &disk,
 					MachineType:       &machine,
@@ -237,9 +229,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						Zone: &zone,
 					},
 				},
-				KymaConfig:            fixKymaGraphQLConfig(),
-				Kubeconfig:            &kubeconfig,
-				CredentialsSecretName: &secretName,
+				KymaConfig: fixKymaGraphQLConfig(),
+				Kubeconfig: &kubeconfig,
 			},
 		}
 

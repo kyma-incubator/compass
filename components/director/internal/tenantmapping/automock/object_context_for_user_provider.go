@@ -2,6 +2,7 @@
 
 package automock
 
+import context "context"
 import mock "github.com/stretchr/testify/mock"
 import tenantmapping "github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
@@ -10,20 +11,20 @@ type ObjectContextForUserProvider struct {
 	mock.Mock
 }
 
-// GetObjectContext provides a mock function with given fields: reqData, authID
-func (_m *ObjectContextForUserProvider) GetObjectContext(reqData tenantmapping.ReqData, authID string) (tenantmapping.ObjectContext, error) {
-	ret := _m.Called(reqData, authID)
+// GetObjectContext provides a mock function with given fields: ctx, reqData, authID
+func (_m *ObjectContextForUserProvider) GetObjectContext(ctx context.Context, reqData tenantmapping.ReqData, authID string) (tenantmapping.ObjectContext, error) {
+	ret := _m.Called(ctx, reqData, authID)
 
 	var r0 tenantmapping.ObjectContext
-	if rf, ok := ret.Get(0).(func(tenantmapping.ReqData, string) tenantmapping.ObjectContext); ok {
-		r0 = rf(reqData, authID)
+	if rf, ok := ret.Get(0).(func(context.Context, tenantmapping.ReqData, string) tenantmapping.ObjectContext); ok {
+		r0 = rf(ctx, reqData, authID)
 	} else {
 		r0 = ret.Get(0).(tenantmapping.ObjectContext)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(tenantmapping.ReqData, string) error); ok {
-		r1 = rf(reqData, authID)
+	if rf, ok := ret.Get(1).(func(context.Context, tenantmapping.ReqData, string) error); ok {
+		r1 = rf(ctx, reqData, authID)
 	} else {
 		r1 = ret.Error(1)
 	}
