@@ -14,8 +14,8 @@ RUN apk add --no-cache curl
 
 LABEL source=git@github.com:kyma-incubator/compass.git
 
-COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director/api.test .
-COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director/licenses ./licenses
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/connectivity-adapter/api.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/connectivity-adapter/licenses ./licenses
 
 ENTRYPOINT ./entrypoint.sh
 
