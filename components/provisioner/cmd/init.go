@@ -111,7 +111,7 @@ func newGardenerClusterConfig(cfg config) (*restclient.Config, error) {
 
 	gardenerClusterConfig, err := gardener.Config(rawKubeconfig)
 	if err != nil {
-		return nil, fmt.Errorf("")
+		return nil, fmt.Errorf("failed to create Gardener Config: %s", err.Error())
 	}
 
 	return gardenerClusterConfig, nil
