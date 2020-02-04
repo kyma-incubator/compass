@@ -1,29 +1,29 @@
 
-insert into business_tenant_mappings(id)
-select tenant_id from applications a2 union select tenant_id from runtimes r2;
-update business_tenant_mappings set external_tenant = id where external_tenant = null;
-update business_tenant_mappings set external_name = 'Tenant' where external_name = null;
-update business_tenant_mappings set provider_name = 'Compass' where provider_name = null;
+INSERT INTO business_tenant_mappings(id)
+select tenant_id FROM applications a2 UNION SELECT tenant_id FROM runtimes r2;
+UPDATE business_tenant_mappings SET external_tenant = id WHERE external_tenant = NULL;
+UPDATE business_tenant_mappings SET external_name = 'Tenant' WHERE external_name = NULL;
+UPDATE business_tenant_mappings SET provider_name = 'Compass' WHERE provider_name = NULL;
 
-alter table api_definitions
-add foreign key (tenant_id) references business_tenant_mappings(id);
-alter table api_runtime_auths
-add foreign key (tenant_id) references business_tenant_mappings(id);
-alter table applications
-add foreign key (tenant_id) references business_tenant_mappings(id);
-alter table documents
-add foreign key (tenant_id) references business_tenant_mappings(id);
-alter table event_api_definitions
-add foreign key (tenant_id) references business_tenant_mappings(id);
-alter table fetch_requests
-add foreign key (tenant_id) references business_tenant_mappings(id);
-alter table label_definitions
-add foreign key (tenant_id) references business_tenant_mappings(id);
-alter table labels
-add foreign key (tenant_id) references business_tenant_mappings(id);
-alter table runtimes
-add foreign key (tenant_id) references business_tenant_mappings(id);
-alter table system_auths
-add foreign key (tenant_id) references business_tenant_mappings(id);
-alter table webhooks
-add foreign key (tenant_id) references business_tenant_mappings(id);
+ALTER TABLE api_definitions
+ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ALTER TABLE api_runtime_auths
+ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ALTER TABLE applications
+ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ALTER TABLE documents
+ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ALTER TABLE event_api_definitions
+ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ALTER TABLE fetch_requests
+ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ALTER TABLE label_definitions
+ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ALTER TABLE labels
+ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ALTER TABLE runtimes
+ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ALTER TABLE system_auths
+ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ALTER TABLE webhooks
+ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
