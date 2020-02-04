@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/pkg/errors"
 
@@ -31,8 +29,6 @@ type client struct {
 }
 
 func (c client) GetApplication(systemAuthID string) (schema.ApplicationExt, apperrors.AppError) {
-
-	logrus.Info("System auth ID: " + systemAuthID)
 	appID, err := c.getApplicationID(systemAuthID)
 	if err != nil {
 		return schema.ApplicationExt{}, apperrors.Internal(err.Error())

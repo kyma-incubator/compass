@@ -3,9 +3,9 @@ package api
 import (
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
-
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
@@ -22,15 +22,17 @@ const (
 )
 
 type csrInfoHandler struct {
-	gqlClient                      connector.Client
+	connectorClient                connector.Client
+	directorClientProvider         director.ClientProvider
 	logger                         *log.Logger
 	connectivityAdapterBaseURL     string
 	connectivityAdapterMTLSBaseURL string
 }
 
-func NewSigningRequestInfoHandler(client connector.Client, logger *log.Logger, connectivityAdapterBaseURL string, connectivityAdapterMTLSBaseURL string) csrInfoHandler {
+func NewSigningRequestInfoHandler(connectorClient connector.Client, directorClientProvider director.ClientProvider, logger *log.Logger, connectivityAdapterBaseURL string, connectivityAdapterMTLSBaseURL string) csrInfoHandler {
 	return csrInfoHandler{
-		gqlClient:                      client,
+		connectorClient:                connectorClient,
+		directorClientProvider:         directorClientProvider,
 		logger:                         logger,
 		connectivityAdapterBaseURL:     connectivityAdapterBaseURL,
 		connectivityAdapterMTLSBaseURL: connectivityAdapterMTLSBaseURL,
@@ -51,24 +53,34 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 
 	contextLogger.Info("Getting Certificate Signing Request Info")
 
-	configuration, err := ci.gqlClient.Configuration(authorizationHeaders)
+	configuration, err := ci.connectorClient.Configuration(authorizationHeaders)
 	if err != nil {
-		err = errors.Wrap(err, "Failed to get configuration")
+		err = errors.Wrap(err, "Failed to get Configuration from Connector")
 		contextLogger.Error(err.Error())
 		reqerror.WriteError(w, err, apperrors.CodeInternal)
 
 		return
 	}
 
+	application, err := ci.directorClientProvider.Client(r).GetApplication(systemAuthID)
+	if err != nil {
+		err = errors.Wrap(err, "Failed to get Application from Director")
+		contextLogger.Error(err.Error())
+		reqerror.WriteError(w, err, apperrors.CodeInternal)
+
+		return
+	}
+	contextLogger.Info("ci.directorClientProvider.Client(r).GetApplication(systemAuthID):\nsystemAuthID: %v\napplication: %v\nerror: %v\n", systemAuthID, application, err) // TODO: Delete it after testing
+
 	certInfo := connector.ToCertInfo(configuration)
 
 	//TODO: handle case when configuration.Token is nil
 	csrInfoResponse := ci.makeCSRInfoResponse(
-		systemAuthID,
+		application.Name,
 		configuration.Token.Token,
 		ci.connectivityAdapterBaseURL,
 		ci.connectivityAdapterMTLSBaseURL,
-		"",
+		application.EventingConfiguration.DefaultURL,
 		certInfo)
 
 	respondWithBody(w, http.StatusOK, csrInfoResponse, contextLogger)
