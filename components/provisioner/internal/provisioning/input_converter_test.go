@@ -1,6 +1,8 @@
 package provisioning
 
 import (
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
+	"github.com/stretchr/testify/mock"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
@@ -10,7 +12,6 @@ import (
 	realeaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	hyperscalerMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
@@ -345,6 +346,304 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	}
 }
 
+func Test_ProvisioningInputToClusterWithTenantCredentials(t *testing.T) {
+
+	readSession := &realeaseMocks.Repository{}
+	readSession.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
+
+	gqlRuntimeInputGCPWithNoCredentials := gqlschema.ProvisionRuntimeInput {
+		RuntimeInput: &gqlschema.RuntimeInput{
+			Name:        "runtimeName",
+			Description: nil,
+			Labels:      &gqlschema.Labels{},
+		},
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GcpConfig: &gqlschema.GCPConfigInput{
+				Name:              "Something",
+				ProjectName:       "Project",
+				NumberOfNodes:     3,
+				BootDiskSizeGb:    256,
+				MachineType:       "n1-standard-1",
+				Region:            "region",
+				Zone:              util.StringPtr("zone"),
+				KubernetesVersion: "version",
+			},
+		},
+		KymaConfig: fixKymaGraphQLConfigInput(),
+	}
+
+	expectedRuntimeInputGCPWithTenantSecret := model.Cluster {
+		ID: "runtimeID",
+		ClusterConfig: model.GCPConfig{
+			ID:                "id",
+			Name:              "Something",
+			ProjectName:       "Project",
+			NumberOfNodes:     3,
+			BootDiskSizeGB:    256,
+			MachineType:       "n1-standard-1",
+			Region:            "region",
+			Zone:              "zone",
+			KubernetesVersion: "version",
+			ClusterID:         "runtimeID",
+		},
+		Kubeconfig:            nil,
+		KymaConfig:            fixKymaConfig(),
+		CredentialsSecretName: "compass-secret-tenant",
+		Tenant:                tenant,
+	}
+
+	gcpGardenerProvider := &gqlschema.GCPProviderConfigInput{Zone: "zone"}
+
+	gardenerGCPGQLInputNoCredentials := gqlschema.ProvisionRuntimeInput{
+		RuntimeInput: &gqlschema.RuntimeInput{
+			Name:        "runtimeName",
+			Description: nil,
+			Labels:      &gqlschema.Labels{},
+		},
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				KubernetesVersion: "version",
+				NodeCount:         3,
+				VolumeSizeGb:      1024,
+				MachineType:       "n1-standard-1",
+				Region:            "region",
+				Provider:          "GCP",
+				Seed:              util.StringPtr("gcp-eu1"),
+				TargetSecret:      "secret",
+				DiskType:          "ssd",
+				WorkerCidr:        "cidr",
+				AutoScalerMin:     1,
+				AutoScalerMax:     5,
+				MaxSurge:          1,
+				MaxUnavailable:    2,
+				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+					GcpConfig: gcpGardenerProvider,
+				},
+			},
+		},
+		KymaConfig: fixKymaGraphQLConfigInput(),
+	}
+
+	expectedGCPProviderCfg, err := model.NewGCPGardenerConfig(gcpGardenerProvider)
+	require.NoError(t, err)
+
+	expectedGardenerGCPRuntimeConfigWithTenantSecret := model.Cluster{
+		ID: "runtimeID",
+		ClusterConfig: model.GardenerConfig{
+			ID:                     "id",
+			Name:                   "gcp-verylon",
+			ProjectName:            gardenerProject,
+			MachineType:            "n1-standard-1",
+			Region:                 "region",
+			KubernetesVersion:      "version",
+			NodeCount:              3,
+			VolumeSizeGB:           1024,
+			DiskType:               "ssd",
+			Provider:               "GCP",
+			Seed:                   "gcp-eu1",
+			TargetSecret:           "gardener-secret-gcp-tenant",
+			WorkerCidr:             "cidr",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               1,
+			MaxUnavailable:         2,
+			ClusterID:              "runtimeID",
+			GardenerProviderConfig: expectedGCPProviderCfg,
+		},
+		Kubeconfig:            nil,
+		KymaConfig:            fixKymaConfig(),
+		CredentialsSecretName: "compass-secret-tenant",
+		Tenant:                tenant,
+	}
+
+	azureGardenerProvider := &gqlschema.AzureProviderConfigInput{VnetCidr: "cidr"}
+
+	gardenerAzureGQLInputWithNoCredentials := gqlschema.ProvisionRuntimeInput{
+		RuntimeInput: &gqlschema.RuntimeInput{
+			Name:        "runtimeName",
+			Description: nil,
+			Labels:      &gqlschema.Labels{},
+		},
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				KubernetesVersion: "version",
+				NodeCount:         3,
+				VolumeSizeGb:      1024,
+				MachineType:       "n1-standard-1",
+				Region:            "region",
+				Provider:          "Azure",
+				TargetSecret:      "secret",
+				DiskType:          "ssd",
+				WorkerCidr:        "cidr",
+				AutoScalerMin:     1,
+				AutoScalerMax:     5,
+				MaxSurge:          1,
+				MaxUnavailable:    2,
+				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+					AzureConfig: azureGardenerProvider,
+				},
+			},
+		},
+		KymaConfig: fixKymaGraphQLConfigInput(),
+	}
+
+	expectedAzureProviderCfg, err := model.NewAzureGardenerConfig(azureGardenerProvider)
+	require.NoError(t, err)
+
+	expectedGardenerAzureRuntimeConfigWithTenantSecret := model.Cluster{
+		ID: "runtimeID",
+		ClusterConfig: model.GardenerConfig{
+			ID:                     "id",
+			Name:                   "azu-verylon",
+			ProjectName:            gardenerProject,
+			MachineType:            "n1-standard-1",
+			Region:                 "region",
+			KubernetesVersion:      "version",
+			NodeCount:              3,
+			VolumeSizeGB:           1024,
+			DiskType:               "ssd",
+			Provider:               "Azure",
+			Seed:                   "",
+			TargetSecret:           "gardener-secret-azure-tenant",
+			WorkerCidr:             "cidr",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               1,
+			MaxUnavailable:         2,
+			ClusterID:              "runtimeID",
+			GardenerProviderConfig: expectedAzureProviderCfg,
+		},
+		Kubeconfig:            nil,
+		KymaConfig:            fixKymaConfig(),
+		CredentialsSecretName: "compass-secret-tenant",
+		Tenant:                tenant,
+	}
+
+	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
+		Zone:         "zone",
+		InternalCidr: "cidr",
+		VpcCidr:      "cidr",
+		PublicCidr:   "cidr",
+	}
+
+	gardenerAWSGQLInputWithNoCredentials := gqlschema.ProvisionRuntimeInput{
+		RuntimeInput: &gqlschema.RuntimeInput{
+			Name:        "runtimeName",
+			Description: nil,
+			Labels:      &gqlschema.Labels{},
+		},
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				KubernetesVersion: "version",
+				NodeCount:         3,
+				VolumeSizeGb:      1024,
+				MachineType:       "n1-standard-1",
+				Region:            "region",
+				Provider:          "AWS",
+				Seed:              util.StringPtr("aws-eu1"),
+				TargetSecret:      "secret",
+				DiskType:          "ssd",
+				WorkerCidr:        "cidr",
+				AutoScalerMin:     1,
+				AutoScalerMax:     5,
+				MaxSurge:          1,
+				MaxUnavailable:    2,
+				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+					AwsConfig: awsGardenerProvider,
+				},
+			},
+		},
+		KymaConfig: fixKymaGraphQLConfigInput(),
+	}
+
+	expectedAWSProviderCfg, err := model.NewAWSGardenerConfig(awsGardenerProvider)
+	require.NoError(t, err)
+
+	expectedGardenerAWSRuntimeConfigWithTenantSecret := model.Cluster{
+		ID: "runtimeID",
+		ClusterConfig: model.GardenerConfig{
+			ID:                     "id",
+			Name:                   "aws-verylon",
+			ProjectName:            gardenerProject,
+			MachineType:            "n1-standard-1",
+			Region:                 "region",
+			KubernetesVersion:      "version",
+			NodeCount:              3,
+			VolumeSizeGB:           1024,
+			DiskType:               "ssd",
+			Provider:               "AWS",
+			Seed:                   "aws-eu1",
+			TargetSecret:           "gardener-secret-aws-tenant",
+			WorkerCidr:             "cidr",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               1,
+			MaxUnavailable:         2,
+			ClusterID:              "runtimeID",
+			GardenerProviderConfig: expectedAWSProviderCfg,
+		},
+		Kubeconfig:            nil,
+		KymaConfig:            fixKymaConfig(),
+		CredentialsSecretName: "compass-secret-tenant",
+		Tenant:                tenant,
+	}
+
+
+	configurations := []struct {
+		input       gqlschema.ProvisionRuntimeInput
+		expected    model.Cluster
+		description string
+	}{
+		{
+			input: gqlRuntimeInputGCPWithNoCredentials,
+			expected: expectedRuntimeInputGCPWithTenantSecret,
+			description: "Should create proper runtime config struct with compass secret credentials for given tenant from Hypescaler Account Pool (HAP)",
+		},
+		{
+			input:       gardenerGCPGQLInputNoCredentials,
+			expected:    expectedGardenerGCPRuntimeConfigWithTenantSecret,
+			description: "Should create proper runtime config struct with Gardener input for GCP provider with compass secret credentials for given tenant from Hyperscaler Account Pool (HAP)",
+		},
+		{
+			input:       gardenerAzureGQLInputWithNoCredentials,
+			expected:    expectedGardenerAzureRuntimeConfigWithTenantSecret,
+			description: "Should create proper runtime config struct with Gardener input for Azure provider with compass secret credentials for given tenant from Hyperrscaler Account Pool (HAP)",
+		},
+		{
+			input:       gardenerAWSGQLInputWithNoCredentials,
+			expected:    expectedGardenerAWSRuntimeConfigWithTenantSecret,
+			description: "Should create proper runtime config struct with Gardener input for AWS provider with compass secret credentials for given tenant from Hyperscaler Account Pool (HAP)",
+		},
+	}
+
+	for _, testCase := range configurations {
+		t.Run(testCase.description, func(t *testing.T) {
+			//given
+			uuidGeneratorMock := &mocks.UUIDGenerator{}
+			uuidGeneratorMock.On("New").Return("id").Times(5)
+			uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hypens")
+
+			accountProviderMock := &hyperscalerMocks.AccountProvider{}
+
+			accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), tenant).Return("compass-secret-tenant", nil)
+
+			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getRuntimeInputMatcherForAWS()), tenant).Return("gardener-secret-aws-tenant", nil)
+			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getRuntimeInputMatcherForAzure()), tenant).Return("gardener-secret-azure-tenant", nil)
+			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getRuntimeInputMatcherForGCP()), tenant).Return("gardener-secret-gcp-tenant", nil)
+
+			inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject, accountProviderMock)
+
+			//when
+			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input, tenant)
+
+			//then
+			require.NoError(t, err)
+			assert.Equal(t, testCase.expected, runtimeConfig)
+			uuidGeneratorMock.AssertExpectations(t)
+		})
+	}
+}
+
 func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 
 	t.Run("should return error when failed to get kyma release", func(t *testing.T) {
@@ -527,5 +826,23 @@ func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntr
 		Key:    key,
 		Value:  val,
 		Secret: secret,
+	}
+}
+
+func getRuntimeInputMatcherForAWS() func(*gqlschema.GardenerConfigInput) bool {
+	return func(input *gqlschema.GardenerConfigInput) bool {
+		return input.ProviderSpecificConfig.AwsConfig != nil
+	}
+}
+
+func getRuntimeInputMatcherForAzure() func(*gqlschema.GardenerConfigInput) bool {
+	return func(input *gqlschema.GardenerConfigInput) bool {
+		return input.ProviderSpecificConfig.AzureConfig != nil
+	}
+}
+
+func getRuntimeInputMatcherForGCP() func(*gqlschema.GardenerConfigInput) bool {
+	return func(input *gqlschema.GardenerConfigInput) bool {
+		return input.ProviderSpecificConfig.GcpConfig != nil
 	}
 }
