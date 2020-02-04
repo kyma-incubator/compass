@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"reflect"
 	"strings"
@@ -27,6 +26,8 @@ const (
 
 var defaultTenant = "af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e"
 
+var tenants = make(map[string]string)
+
 var tc *testContext
 
 func init() {
@@ -46,21 +47,24 @@ func init() {
 
 func setDefaultTenant() {
 	request := gcli.NewRequest(
-		fmt.Sprintf(`query {
+		`query {
 				result: tenants {
-						%s
+				id
+				name
+				internalID
 					}
-				}`, tc.gqlFieldsProvider.ForTenant()))
+				}`)
 
 	output := []*graphql.Tenant{}
-	err := tc.RunOperation(context.TODO(), request, output)
+	err := tc.RunOperation(context.TODO(), request, &output)
 	if err != nil {
 		panic(errors.Wrap(err, "while getting default tenant"))
 	}
+
 	for _, v := range output {
+		tenants[*v.Name] = v.InternalID
 		if *v.Name == "default" {
 			defaultTenant = v.InternalID
-			break
 		}
 	}
 }
