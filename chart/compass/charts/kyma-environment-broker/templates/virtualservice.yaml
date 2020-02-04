@@ -8,7 +8,7 @@ spec:
   gateways:
   - {{ .Values.global.istio.gateway.name }}.{{ .Values.global.istio.gateway.namespace }}.svc.cluster.local
   hosts:
-  - 'kyma-env-broker.{{ .Values.global.ingress.domainName }}'
+  - '{{ .Values.host }}.{{ .Values.global.ingress.domainName }}'
   http:
   - match:
     - uri:
