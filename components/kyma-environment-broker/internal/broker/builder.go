@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/cluster_config"
+	cloudProvider "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -64,9 +64,9 @@ func (f *InputBuilderFactory) ForPlan(planID string) (ConcreteInputBuilder, bool
 	var provider HyperscalerInputProvider
 	switch planID {
 	case gcpPlanID:
-		provider = &cluster_config.GcpInputProvider{}
+		provider = &cloudProvider.GcpInput{}
 	case azurePlanID:
-		provider = &cluster_config.AzureInputProvider{}
+		provider = &cloudProvider.AzureInput{}
 	// insert cases for other providers like AWS or GCP
 	default:
 		return nil, false

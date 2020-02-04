@@ -1,4 +1,4 @@
-package cluster_config
+package provider
 
 func updateString(toUpdate *string, value *string) {
 	if value != nil {
