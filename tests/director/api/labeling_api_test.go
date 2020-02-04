@@ -767,7 +767,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 
 func TestListLabelDefinitions(t *testing.T) {
 	//GIVEN
-	tenantID := "9ca034f1-11ab-5b25-b76f-dc77106f571d"
+	tenantID := tenants["foobar"]
 	ctx := context.TODO()
 	firstSchema := map[string]interface{}{
 		"test": "test",
