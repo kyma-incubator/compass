@@ -228,7 +228,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		accountProviderMock.On("GardenerSecretName", mock.AnythingOfType("*gqlschema.GardenerConfigInput"), tenant).Return("gardener-secret-tenant", nil)
 		accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), tenant).Return("compass-secret-tenant", nil)
 
-
 		inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject, accountProviderMock)
 
 		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)

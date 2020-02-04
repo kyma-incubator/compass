@@ -1,9 +1,10 @@
 package provisioning
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	"github.com/stretchr/testify/mock"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
@@ -351,7 +352,7 @@ func Test_ProvisioningInputToClusterWithTenantCredentials(t *testing.T) {
 	readSession := &realeaseMocks.Repository{}
 	readSession.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
 
-	gqlRuntimeInputGCPWithNoCredentials := gqlschema.ProvisionRuntimeInput {
+	gqlRuntimeInputGCPWithNoCredentials := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "runtimeName",
 			Description: nil,
@@ -372,7 +373,7 @@ func Test_ProvisioningInputToClusterWithTenantCredentials(t *testing.T) {
 		KymaConfig: fixKymaGraphQLConfigInput(),
 	}
 
-	expectedRuntimeInputGCPWithTenantSecret := model.Cluster {
+	expectedRuntimeInputGCPWithTenantSecret := model.Cluster{
 		ID: "runtimeID",
 		ClusterConfig: model.GCPConfig{
 			ID:                "id",
@@ -426,6 +427,37 @@ func Test_ProvisioningInputToClusterWithTenantCredentials(t *testing.T) {
 
 	expectedGCPProviderCfg, err := model.NewGCPGardenerConfig(gcpGardenerProvider)
 	require.NoError(t, err)
+
+	//createExpectedRuntimeInputGCPWithTenantSecret := func(usedTenant string, gardenerSecret string, compassSecret string) model.Cluster {
+	//	return model.Cluster{
+	//		ID: "runtimeID",
+	//		ClusterConfig: model.GardenerConfig{
+	//			ID:                     "id",
+	//			Name:                   "gcp-verylon",
+	//			ProjectName:            gardenerProject,
+	//			MachineType:            "n1-standard-1",
+	//			Region:                 "region",
+	//			KubernetesVersion:      "version",
+	//			NodeCount:              3,
+	//			VolumeSizeGB:           1024,
+	//			DiskType:               "ssd",
+	//			Provider:               "GCP",
+	//			Seed:                   "gcp-eu1",
+	//			TargetSecret:           gardenerSecret,
+	//			WorkerCidr:             "cidr",
+	//			AutoScalerMin:          1,
+	//			AutoScalerMax:          5,
+	//			MaxSurge:               1,
+	//			MaxUnavailable:         2,
+	//			ClusterID:              "runtimeID",
+	//			GardenerProviderConfig: expectedGCPProviderCfg,
+	//		},
+	//		Kubeconfig:            nil,
+	//		KymaConfig:            fixKymaConfig(),
+	//		CredentialsSecretName: compassSecret,
+	//		Tenant:                usedTenant,
+	//	}
+	//}
 
 	expectedGardenerGCPRuntimeConfigWithTenantSecret := model.Cluster{
 		ID: "runtimeID",
@@ -588,15 +620,14 @@ func Test_ProvisioningInputToClusterWithTenantCredentials(t *testing.T) {
 		Tenant:                tenant,
 	}
 
-
 	configurations := []struct {
 		input       gqlschema.ProvisionRuntimeInput
 		expected    model.Cluster
 		description string
 	}{
 		{
-			input: gqlRuntimeInputGCPWithNoCredentials,
-			expected: expectedRuntimeInputGCPWithTenantSecret,
+			input:       gqlRuntimeInputGCPWithNoCredentials,
+			expected:    expectedRuntimeInputGCPWithTenantSecret,
 			description: "Should create proper runtime config struct with compass secret credentials for given tenant from Hypescaler Account Pool (HAP)",
 		},
 		{
@@ -604,6 +635,16 @@ func Test_ProvisioningInputToClusterWithTenantCredentials(t *testing.T) {
 			expected:    expectedGardenerGCPRuntimeConfigWithTenantSecret,
 			description: "Should create proper runtime config struct with Gardener input for GCP provider with compass secret credentials for given tenant from Hyperscaler Account Pool (HAP)",
 		},
+		//{
+		//	input:       gardenerGCPGQLInputNoCredentials,
+		//	expected: 	 createExpectedRuntimeInputGCPWithTenantSecret("Tenant A", "gardener-secret-gcp-tenant-A", "compass-secret-tenant-A"),
+		//	description: "Should create proper runtime config struct with Gardener input for GCP provider with compass secret credentials for tenant A from Hyperscaler Account Pool (HAP)",
+		//},
+		//{
+		//	input:       gardenerGCPGQLInputNoCredentials,
+		//	expected: 	 createExpectedRuntimeInputGCPWithTenantSecret("Tenant B", "gardener-secret-gcp-tenant-B", "compass-secret-tenant-B"),
+		//	description: "Should create proper runtime config struct with Gardener input for GCP provider with compass secret credentials for tenant B from Hyperscaler Account Pool (HAP)",
+		//},
 		{
 			input:       gardenerAzureGQLInputWithNoCredentials,
 			expected:    expectedGardenerAzureRuntimeConfigWithTenantSecret,
@@ -626,10 +667,14 @@ func Test_ProvisioningInputToClusterWithTenantCredentials(t *testing.T) {
 			accountProviderMock := &hyperscalerMocks.AccountProvider{}
 
 			accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), tenant).Return("compass-secret-tenant", nil)
+			accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), "tenant A").Return("compass-secret-tenant-A", nil)
+			accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), "tenant B").Return("compass-secret-tenant-B", nil)
 
 			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getRuntimeInputMatcherForAWS()), tenant).Return("gardener-secret-aws-tenant", nil)
 			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getRuntimeInputMatcherForAzure()), tenant).Return("gardener-secret-azure-tenant", nil)
 			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getRuntimeInputMatcherForGCP()), tenant).Return("gardener-secret-gcp-tenant", nil)
+			//accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getRuntimeInputMatcherForGCP()), "tenant A").Return("gardener-secret-gcp-tenant-A", nil)
+			//accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getRuntimeInputMatcherForGCP()), "tenant B").Return("gardener-secret-gcp-tenant-B", nil)
 
 			inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject, accountProviderMock)
 
