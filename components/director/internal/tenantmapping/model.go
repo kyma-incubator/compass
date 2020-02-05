@@ -3,6 +3,7 @@ package tenantmapping
 import (
 	"net/http"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -38,12 +39,13 @@ const (
 	JWTAuthFlow      AuthFlow = "JWT"
 
 	ClientIDKey       = "client_id"
+	EmailKey          = "email"
 	UsernameKey       = "name"
+	GroupsKey         = "groups"
 	ClientIDCertKey   = "client-id-from-certificate"
 	ClientIDTokenKey  = "client-id-from-token"
 	ExternalTenantKey = "tenant"
 	ScopesKey         = "scope"
-	GroupsKey         = "groups"
 
 	clientCredentialScopesPrefix = "clientCredentialsRegistrationScopes"
 )
@@ -64,6 +66,10 @@ type ReqData struct {
 func NewReqData(reqBody ReqBody, reqHeader http.Header) ReqData {
 	if reqBody.Extra == nil {
 		reqBody.Extra = make(map[string]interface{})
+	}
+
+	if reqBody.Header == nil {
+		reqBody.Header = make(http.Header)
 	}
 
 	return ReqData{
@@ -159,6 +165,18 @@ func (d *ReqData) GetUserGroups() []string {
 	}
 
 	return userGroups
+}
+
+// SetExternalTenantID sets the external tenant ID in the Header collection
+func (d *ReqData) SetExternalTenantID(id string) {
+	d.Body.Header.Add(ExternalTenantKey, id)
+}
+
+// SetExtraFromClaims sets the data based on the JWT claims
+func (d *ReqData) SetExtraFromClaims(claims jwt.MapClaims) {
+	d.Body.Extra[EmailKey] = claims[EmailKey]
+	d.Body.Extra[UsernameKey] = claims[UsernameKey]
+	d.Body.Extra[GroupsKey] = claims[GroupsKey]
 }
 
 type TenantContext struct {

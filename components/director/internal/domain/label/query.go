@@ -16,10 +16,11 @@ import (
 type SetCombination string
 
 const (
-	IntersectSet      SetCombination = "INTERSECT"
-	UnionSet          SetCombination = "UNION"
-	scenariosLabelKey string         = "SCENARIOS"
-	stmtPrefixFormat  string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND "tenant_id" = '%s'`
+	IntersectSet           SetCombination = "INTERSECT"
+	UnionSet               SetCombination = "UNION"
+	scenariosLabelKey      string         = "SCENARIOS"
+	stmtPrefixFormat       string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND "tenant_id" = '%s'`
+	stmtPrefixGlobalFormat string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL`
 )
 
 // FilterQuery builds select query for given filters
@@ -35,6 +36,25 @@ func FilterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 
 	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, objectField, tableName, objectField, tenant)
 
+	return buildFilterQuery(stmtPrefix, setCombination, filter)
+}
+
+// FilterQueryGlobal builds select query for given filters
+//
+// It supports quering defined by `queryFor` parameter. All queries are created
+// in the global context
+func FilterQueryGlobal(queryFor model.LabelableObject, setCombination SetCombination, filter []*labelfilter.LabelFilter) (string, error) {
+	if filter == nil {
+		return "", nil
+	}
+	objectField := labelableObjectField(queryFor)
+
+	stmtPrefix := fmt.Sprintf(stmtPrefixGlobalFormat, objectField, tableName, objectField)
+
+	return buildFilterQuery(stmtPrefix, setCombination, filter)
+}
+
+func buildFilterQuery(stmtPrefix string, setCombination SetCombination, filter []*labelfilter.LabelFilter) (string, error) {
 	var queryBuilder strings.Builder
 	for idx, lblFilter := range filter {
 		if idx > 0 {

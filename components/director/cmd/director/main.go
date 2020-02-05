@@ -7,6 +7,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
@@ -16,6 +19,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 
+	"github.com/kyma-incubator/compass/components/director/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
@@ -45,6 +49,7 @@ type config struct {
 	Database                      persistence.DatabaseConfig
 	APIEndpoint                   string `envconfig:"default=/graphql"`
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
+	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
 	ScopesConfigurationFile       string
 	ScopesConfigurationFileReload time.Duration `envconfig:"default=1m"`
@@ -119,6 +124,12 @@ func main() {
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
+
+	log.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
+	runtimeMappingHandlerFunc, err := getRuntimeMappingHanderFunc(transact, stopCh)
+	exitOnError(err, "Error while configuring runtime mapping handler")
+
+	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
 
 	log.Infof("Registering Healthz endpoint...")
 	mainRouter.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
@@ -221,4 +232,41 @@ func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersS
 	reqDataParser := tenantmapping.NewReqDataParser()
 
 	return tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
+}
+
+func getRuntimeMappingHanderFunc(transact persistence.Transactioner, stopCh <-chan struct{}) (func(writer http.ResponseWriter, request *http.Request), error) {
+	logger := log.WithField("component", "runtime-mapping-handler").Logger
+
+	uidSvc := uid.NewService()
+
+	labelConv := label.NewConverter()
+	labelRepo := label.NewRepository(labelConv)
+	labelDefConverter := labeldef.NewConverter()
+	labelDefRepo := labeldef.NewRepository(labelDefConverter)
+	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc)
+	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
+	runtimeRepo := runtime.NewRepository()
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc)
+
+	tenantConv := tenant.NewConverter()
+	tenantRepo := tenant.NewRepository(tenantConv)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+
+	reqDataParser := tenantmapping.NewReqDataParser()
+
+	jwksFetch := runtimemapping.NewJWKsFetch(logger)
+	jwksCahce := runtimemapping.NewJWKsCache(logger, jwksFetch)
+	tokenVerifier := runtimemapping.NewTokenVerifier(logger, jwksCahce)
+
+	executor.NewPeriodic(1*time.Minute, func(stopCh <-chan struct{}) {
+		jwksCahce.Cleanup()
+	}).Run(stopCh)
+
+	return runtimemapping.NewHandler(
+		logger,
+		reqDataParser,
+		transact,
+		tokenVerifier,
+		runtimeSvc,
+		tenantSvc).ServeHTTP, nil
 }
