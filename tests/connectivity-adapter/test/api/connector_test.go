@@ -15,10 +15,10 @@ func TestConnector(t *testing.T) {
 	_, err := testkit.ReadConfiguration()
 	require.NoError(t, err)
 
-	client := director.NewClient("3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", []string{"application:read", "application:write", "runtime:write", "runtime:read"})
+	client := director.NewClient("3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", []string{"application:read", "application:write", "runtime:write", "runtime:read", "eventing:manage"})
 
 	appInput := directorSchema.ApplicationRegisterInput{
-		Name:           "myapp22",
+		Name:           "myapp1",
 		ProviderName:   ptr.String("provider name"),
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
@@ -29,19 +29,22 @@ func TestConnector(t *testing.T) {
 
 	descr := "test"
 	runtimeInput := directorSchema.RuntimeInput{
-		Name:        "myrunt",
+		Name:        "myrunt1",
 		Description: &descr,
 		Labels: &directorSchema.Labels{
-			"scenarios":                 []interface{}{"DEFAULT"},
-			"runtime/event_service_url": []interface{}{"http://eventing.runtime2"},
+			"scenarios": []interface{}{"DEFAULT"},
 		},
 	}
 
 	runtime, err := client.CreateRuntime(runtimeInput)
-	require.Equal(t, runtime, "myrunt")
+	require.NotEmpty(t, runtime)
 
 	app, err := client.CreateApplication(appInput)
-	require.Equal(t, "myapp", app.Name)
-}
+	require.NotEmpty(t, app.ID)
 
-// bdf4e4b0-680f-463f-8fad-60bd03802068
+	err = client.SetDefaultEventing(runtime, app.ID, "www.events.com")
+	require.NoError(t, err)
+
+	tokenURL, err := client.GetOneTimeTokenUrl(app.ID)
+	require.NotEmpty(t, tokenURL)
+}

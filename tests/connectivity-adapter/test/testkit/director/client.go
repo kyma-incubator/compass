@@ -11,9 +11,10 @@ import (
 type Client interface {
 	CreateRuntime(in schema.RuntimeInput) (string, error)
 	DeleteRuntime(runtimeID string) error
-	CreateApplication(in schema.ApplicationRegisterInput) (schema.Application, error)
+	CreateApplication(in schema.ApplicationRegisterInput) (schema.ApplicationExt, error)
 	DeleteApplication(appID string) error
 	SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error
+	GetOneTimeTokenUrl(appID string) (string, error)
 }
 
 type client struct {
@@ -31,23 +32,35 @@ func NewClient(tenant string, scopes []string) Client {
 }
 
 type ApplicationResponse struct {
-	Result schema.Application `json:"result"`
+	Result schema.ApplicationExt `json:"result"`
 }
 
 type RuntimeResponse struct {
 	Result schema.Runtime `json:"result"`
 }
 
-func (c client) CreateApplication(in schema.ApplicationRegisterInput) (schema.Application, error) {
+type SetLabelResponse struct {
+	Result schema.Label `json:"result"`
+}
+
+type SetDefaultAppEventingResponse struct {
+	Result schema.ApplicationEventingConfiguration `json:"result"`
+}
+
+type OneTimeTokenResponse struct {
+	Result schema.OneTimeTokenForApplication `json:"result"`
+}
+
+func (c client) CreateApplication(in schema.ApplicationRegisterInput) (schema.ApplicationExt, error) {
 
 	client, err := c.getClient()
 	if err != nil {
-		return schema.Application{}, err
+		return schema.ApplicationExt{}, err
 	}
 
 	appGraphql, err := c.graphqulizer.ApplicationRegisterInputToGQL(in)
 	if err != nil {
-		return schema.Application{}, err
+		return schema.ApplicationExt{}, err
 	}
 
 	var result ApplicationResponse
@@ -55,7 +68,7 @@ func (c client) CreateApplication(in schema.ApplicationRegisterInput) (schema.Ap
 
 	err = c.execute(client, query, &result)
 	if err != nil {
-		return schema.Application{}, err
+		return schema.ApplicationExt{}, err
 	}
 
 	return result.Result, nil
@@ -111,7 +124,53 @@ func (c client) getToken() (string, error) {
 }
 
 func (c client) SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error {
+
+	client, err := c.getClient()
+	if err != nil {
+		return err
+	}
+
+	query := setEventBaseURLMutation(runtimeID, eventsBaseURL)
+
+	{
+		var response SetLabelResponse
+
+		err = c.execute(client, query, &response)
+		if err != nil {
+			return err
+		}
+	}
+
+	{
+		query := setDefaultEventingForApplication(runtimeID, appID)
+
+		var response SetDefaultAppEventingResponse
+
+		err = c.execute(client, query, &response)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+func (c client) GetOneTimeTokenUrl(appID string) (string, error) {
+	client, err := c.getClient()
+	if err != nil {
+		return "", err
+	}
+
+	query := getOneTimeTokenForApplication(appID)
+
+	var response OneTimeTokenResponse
+
+	err = c.execute(client, query, &response)
+	if err != nil {
+		return "", err
+	}
+
+	return response.Result.LegacyConnectorURL, nil
 }
 
 func (c client) execute(client *gcli.Client, query string, res interface{}) error {

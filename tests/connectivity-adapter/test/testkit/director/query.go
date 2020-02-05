@@ -24,11 +24,31 @@ func createRuntimeMutation(in string) string {
 	}`, in)
 }
 
-func setDefaultEventingMutation(runtimeID string, appID string) string {
-	return fmt.Sprintf(`setDefaultEventingForApplication(appID: $appID, runtimeID: $runtime2) {
-		defaultURL
-	}
-}`)
+func setEventBaseURLMutation(runtimeID string, url string) string {
+	return fmt.Sprintf(`mutation {
+  	result: setRuntimeLabel(runtimeID: "%s", key: "runtime/event_service_url", value: "%s") {
+    key
+    value
+  }
+}`, runtimeID, url)
+}
+
+func setDefaultEventingForApplication(runtimeID string, appID string) string {
+	return fmt.Sprintf(`mutation {
+  	result: setDefaultEventingForApplication(appID: "%s",runtimeID: "%s") {
+     defaultURL
+  }
+}`, appID, runtimeID)
+}
+
+func getOneTimeTokenForApplication(appID string) string {
+	return fmt.Sprintf(`mutation {
+  	result: requestOneTimeTokenForApplication(id: "%s") {
+      token
+      connectorURL
+	  legacyConnectorURL
+  }
+}`, appID)
 }
 
 func applicationQuery(appID string) string {
