@@ -12,7 +12,7 @@ import (
 
 func TestRuntimeConfig_UnmarshalJSON(t *testing.T) {
 
-	gcpCluster := GCPConfig{
+	gcpClusterConfig := GCPConfig{
 		Name:              util.StringPtr("name"),
 		ProjectName:       util.StringPtr("project"),
 		KubernetesVersion: util.StringPtr("1.17"),
@@ -80,7 +80,7 @@ func TestRuntimeConfig_UnmarshalJSON(t *testing.T) {
 		{
 			description: "GCP cluster",
 			runtimeCfg: RuntimeConfig{
-				ClusterConfig: &gcpCluster,
+				ClusterConfig: &gcpClusterConfig,
 				KymaConfig:    &KymaConfig{Version: util.StringPtr("my favourite")},
 				Kubeconfig:    util.StringPtr("kubeconfig"),
 			},
