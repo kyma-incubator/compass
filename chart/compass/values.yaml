@@ -54,7 +54,9 @@ global:
       provisioner:
         dir:
         version: "PR-552"
-
+      connectivity_adapter:
+        dir:
+        version: "PR-787"
   isLocalEnv: false
   oauth2:
     host: oauth2
