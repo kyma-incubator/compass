@@ -26,7 +26,6 @@ const (
 // TODO: Consider fetching logs from Provisioner on error (or from created Runtime)
 
 func Test_E2E_Gardener(t *testing.T) {
-
 	gardenerInputs := map[string]gqlschema.GardenerConfigInput{
 		GCP: {
 			MachineType:  "n1-standard-4",
@@ -59,6 +58,8 @@ func Test_E2E_Gardener(t *testing.T) {
 	for _, provider := range testSuite.gardenerProviders {
 		t.Run(provider, func() {
 			t.Parallel()
+
+			// TODO: refactor
 
 			// Provision runtime
 			runtimeName := fmt.Sprintf("%s%s", "runtime", uuid.New().String()[:4])
@@ -282,27 +283,25 @@ func ensureClusterIsDeprovisioned(runtimeId string) {
 func assertGCPRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntimeInput, status gqlschema.RuntimeStatus) {
 	assertRuntimeConfiguration(t, status)
 
-	ClusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(gqlschema.GCPConfig)
-
+	clusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(*gqlschema.GCPConfig)
 	if !ok {
 		t.Error("Cluster Config does not match GCPConfig type")
 		t.FailNow()
 	}
 
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GcpConfig.Name, ClusterConfig.Name)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GcpConfig.Region, ClusterConfig.Region)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GcpConfig.KubernetesVersion, ClusterConfig.KubernetesVersion)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GcpConfig.BootDiskSizeGb, ClusterConfig.BootDiskSizeGb)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GcpConfig.MachineType, ClusterConfig.MachineType)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GcpConfig.NumberOfNodes, ClusterConfig.NumberOfNodes)
-	assert.Equal(t, unwrapString(input.ClusterConfig.GcpConfig.Zone), unwrapString(ClusterConfig.Zone))
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GcpConfig.Name, clusterConfig.Name)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GcpConfig.Region, clusterConfig.Region)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GcpConfig.KubernetesVersion, clusterConfig.KubernetesVersion)
+	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GcpConfig.BootDiskSizeGb, clusterConfig.BootDiskSizeGb)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GcpConfig.MachineType, clusterConfig.MachineType)
+	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GcpConfig.NumberOfNodes, clusterConfig.NumberOfNodes)
+	assert.Equal(t, unwrapString(input.ClusterConfig.GcpConfig.Zone), unwrapString(clusterConfig.Zone))
 }
 
 func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntimeInput, status gqlschema.RuntimeStatus) {
 	assertRuntimeConfiguration(t, status)
 
-	clusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(gqlschema.GardenerConfig)
-
+	clusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(*gqlschema.GardenerConfig)
 	if !ok {
 		t.Error("Cluster Config does not match GardenerConfig type")
 		t.FailNow()
