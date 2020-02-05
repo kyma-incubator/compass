@@ -17,12 +17,12 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 
-	"github.com/gardener/gardener/pkg/client/garden/clientset/versioned/typed/garden/v1beta1"
+	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 
-	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1alpha1"
-	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -139,7 +139,7 @@ func (r *Reconciler) handleShootWithoutOperationId(log *logrus.Entry, shoot gard
 }
 
 func isShootFailed(shoot gardener_types.Shoot) bool {
-	return shoot.Status.LastOperation.State == gardencorev1alpha1.LastOperationStateFailed
+	return shoot.Status.LastOperation.State == gardencorev1beta1.LastOperationStateFailed
 }
 
 func isBeingDeleted(shoot gardener_types.Shoot) bool {
