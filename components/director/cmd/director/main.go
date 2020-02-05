@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -51,7 +53,8 @@ type config struct {
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone bool          `envconfig:"default=true"`
 
-	StaticUsersSrc string `envconfig:"default=/data/static-users.yaml"`
+	StaticUsersSrc    string `envconfig:"default=/data/static-users.yaml"`
+	PairingAdapterSrc string `envconfig:"optional"`
 
 	OneTimeToken onetimetoken.Config
 	OAuth20      oauth20.Config
@@ -76,8 +79,10 @@ func main() {
 	stopCh := signal.SetupChannel()
 	scopeCfgProvider := createAndRunScopeConfigProvider(stopCh, cfg)
 
+	pairingAdapters, err := getPairingAdaptersMapping(cfg.PairingAdapterSrc)
+	exitOnError(err, "Error while reading Pairing Adapters Configuration")
 	gqlCfg := graphql.Config{
-		Resolvers: domain.NewRootResolver(transact, scopeCfgProvider, cfg.OneTimeToken, cfg.OAuth20),
+		Resolvers: domain.NewRootResolver(transact, scopeCfgProvider, cfg.OneTimeToken, cfg.OAuth20, pairingAdapters),
 		Directives: graphql.DirectiveRoot{
 			HasScopes: scope.NewDirective(scopeCfgProvider).VerifyScopes,
 			Validate:  inputvalidation.NewDirective().Validate,
@@ -133,6 +138,32 @@ func main() {
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		log.Errorf("HTTP server ListenAndServe: %v", err)
 	}
+}
+
+func getPairingAdaptersMapping(filePath string) (map[string]string, error) {
+	if filePath == "" {
+		log.Infof("No configuration for pairing adapters")
+		return nil, nil
+	}
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "while opening pairing adapter configuration file")
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Warnf("Got error on closing file with pairing adapters configuration: %v", err)
+		}
+	}()
+
+	decoder := json.NewDecoder(file)
+	out := map[string]string{}
+	err = decoder.Decode(&out)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while decoding file [%s] to map[string]string", filePath)
+	}
+	log.Infof("Successfully read pairing adapters configuration")
+	return out, nil
 }
 
 func createAndRunScopeConfigProvider(stopCh <-chan struct{}, cfg config) *scope.Provider {

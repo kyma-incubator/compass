@@ -25,6 +25,7 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
+	github.com/kr/pretty v0.1.0
 	github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979
 	github.com/lestrrat-go/jwx v0.9.0
 	github.com/lib/pq v1.2.0
