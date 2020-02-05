@@ -2,6 +2,7 @@ package provisioner
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
 	"time"
@@ -15,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -23,10 +23,9 @@ const (
 	gcpClusterZone = "europe-west4-b"
 )
 
-// TODO: Consider fetching logs from Provisioner on error
+// TODO: Consider fetching logs from Provisioner on error (or from created Runtime)
 
 func Test_E2E_Gardener(t *testing.T) {
-	t.SkipNow()
 
 	gardenerInputs := map[string]gqlschema.GardenerConfigInput{
 		GCP: {
@@ -189,8 +188,8 @@ func Test_E2e(t *testing.T) {
 				Region:            gcpClusterZone,
 			},
 		},
-		KymaConfig: &gqlschema.KymaConfigInput{Version: "1.8.0", Components: []*gqlschema.ComponentConfigurationInput{
-			{Component: "core", Namespace: "kyma-system"},
+		KymaConfig: &gqlschema.KymaConfigInput{Version: testSuite.config.Kyma.Version, Components: []*gqlschema.ComponentConfigurationInput{
+			{Component: "core", Namespace: "kyma-system"}, // TODO: modules need to be adjusted
 		}},
 	}
 
@@ -280,13 +279,8 @@ func ensureClusterIsDeprovisioned(runtimeId string) {
 	}
 }
 
-func assertGCPRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntimeInput, status provisioner.RuntimeStatus) {
-	require.NotNil(t, status.RuntimeConfiguration)
-	require.NotNil(t, status.RuntimeConfiguration.ClusterConfig)
-	require.NotNil(t, status.RuntimeConfiguration.Kubeconfig)
-	require.NotNil(t, status.RuntimeConfiguration.KymaConfig)
-	require.NotNil(t, status.LastOperationStatus)
-	//require.NotNil(t, status.RuntimeConnectionStatus) // TODO - uncomment when implemented
+func assertGCPRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntimeInput, status gqlschema.RuntimeStatus) {
+	assertRuntimeConfiguration(t, status)
 
 	ClusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(gqlschema.GCPConfig)
 
@@ -304,13 +298,8 @@ func assertGCPRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntim
 	assert.Equal(t, unwrapString(input.ClusterConfig.GcpConfig.Zone), unwrapString(ClusterConfig.Zone))
 }
 
-func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntimeInput, status provisioner.RuntimeStatus) {
-	require.NotNil(t, status.RuntimeConfiguration)
-	require.NotNil(t, status.RuntimeConfiguration.ClusterConfig)
-	require.NotNil(t, status.RuntimeConfiguration.Kubeconfig)
-	require.NotNil(t, status.RuntimeConfiguration.KymaConfig)
-	require.NotNil(t, status.LastOperationStatus)
-	//require.NotNil(t, status.RuntimeConnectionStatus) // TODO - uncomment when implemented
+func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntimeInput, status gqlschema.RuntimeStatus) {
+	assertRuntimeConfiguration(t, status)
 
 	clusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(gqlschema.GardenerConfig)
 
@@ -336,6 +325,15 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.MaxSurge, clusterConfig.MaxSurge)
 
 	verifyProviderConfig(t, *input.ClusterConfig.GardenerConfig.ProviderSpecificConfig, status.RuntimeConfiguration.ClusterConfig)
+}
+
+func assertRuntimeConfiguration(t *testing.T, status gqlschema.RuntimeStatus) {
+	require.NotNil(t, status.RuntimeConfiguration)
+	require.NotNil(t, status.RuntimeConfiguration.ClusterConfig)
+	require.NotNil(t, status.RuntimeConfiguration.Kubeconfig)
+	require.NotNil(t, status.RuntimeConfiguration.KymaConfig)
+	require.NotNil(t, status.LastOperationStatus)
+	//require.NotNil(t, status.RuntimeConnectionStatus) // TODO - uncomment when implemented
 }
 
 func verifyProviderConfig(t *testing.T, input gqlschema.ProviderSpecificInput, config interface{}) {

@@ -5,8 +5,8 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  source = "github.com/rafalpotempa/compass"
-  branch = "gardener-azure"
+  source = "github.com/Szymongib/compass"
+  branch = "override-unmarshaling-for-cluster-config"
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"

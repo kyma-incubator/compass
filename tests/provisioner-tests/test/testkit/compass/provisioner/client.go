@@ -17,7 +17,7 @@ type Client interface {
 	UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(runtimeID string) (string, error)
 	ReconnectRuntimeAgent(runtimeID string) (string, error)
-	RuntimeStatus(runtimeID string) (RuntimeStatus, error)
+	RuntimeStatus(runtimeID string) (schema.RuntimeStatus, error)
 	RuntimeOperationStatus(operationID string) (schema.OperationStatus, error)
 }
 
@@ -98,27 +98,14 @@ func (c client) ReconnectRuntimeAgent(runtimeID string) (string, error) {
 	return operationId, nil
 }
 
-type RuntimeStatus struct {
-	LastOperationStatus     *schema.OperationStatus         `json:"lastOperationStatus"`
-	RuntimeConnectionStatus *schema.RuntimeConnectionStatus `json:"runtimeConnectionStatus"`
-	RuntimeConfiguration    RuntimeConfiguration            `json:"runtimeConfiguration"`
-}
-
-type RuntimeConfiguration struct {
-	ClusterConfig         interface{}        `json:"clusterConfig"`
-	KymaConfig            *schema.KymaConfig `json:"kymaConfig"`
-	Kubeconfig            *string            `json:"kubeconfig"`
-	CredentialsSecretName *string            `json:"credentialsSecretName"`
-}
-
-func (c client) RuntimeStatus(runtimeID string) (RuntimeStatus, error) {
+func (c client) RuntimeStatus(runtimeID string) (schema.RuntimeStatus, error) {
 	query := c.queryProvider.runtimeStatus(runtimeID)
 	req := c.newRequest(query)
 
-	var response RuntimeStatus
+	var response schema.RuntimeStatus
 	err := c.graphQLClient.ExecuteRequest(req, &response)
 	if err != nil {
-		return RuntimeStatus{}, errors.Wrap(err, "Failed to get Runtime status")
+		return schema.RuntimeStatus{}, errors.Wrap(err, "Failed to get Runtime status")
 	}
 	return response, nil
 }
