@@ -60,6 +60,7 @@ func (c *Client) ProvisionRuntime() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "while marshalling request body")
 	}
+	c.log.Infof("Provisioning parameters: %v", string(requestByte))
 
 	provisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.instanceID)
 	response := provisionResponse{}
@@ -183,8 +184,6 @@ func (c *Client) prepareProvisionDetails() ([]byte, error) {
 	if c.brokerConfig.ProvisionGCP {
 		requestBody.PlanID = gcpPlanID
 	}
-	c.log.Infof("Provisioning parameters: %v", requestBody)
-
 	requestByte, err := json.Marshal(requestBody)
 	if err != nil {
 		return nil, errors.Wrap(err, "while marshalling request body")
