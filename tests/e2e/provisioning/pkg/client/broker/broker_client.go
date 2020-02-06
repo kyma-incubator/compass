@@ -108,13 +108,14 @@ func (c *Client) AwaitProvisioningSucceeded(operationID string) error {
 	lastOperationURL := fmt.Sprintf("%s%s/%s/last_operation?operation=%s", c.brokerConfig.URL, instancesURL, c.instanceID, operationID)
 
 	response := lastOperationResponse{}
-	err := wait.Poll(time.Second*15, c.brokerConfig.ProvisionTimeout, func() (bool, error) {
+	err := wait.Poll(time.Minute, c.brokerConfig.ProvisionTimeout, func() (bool, error) {
 		err := c.executeRequest(http.MethodGet, lastOperationURL, nil, &response)
 		if err != nil {
-			return false, errors.Wrap(err, "while executing request")
+			c.log.Warn(errors.Wrap(err, "while executing request").Error())
+			return false, nil
 		}
 		if response.State != string(gqlschema.OperationStateSucceeded) {
-			c.log.Infof("Waiting 15s for provisioning succeeded...  state: %s", response.State)
+			c.log.Infof("Waiting 1min for provisioning succeeded...  state: %s", response.State)
 			return false, nil
 		}
 		return true, nil
