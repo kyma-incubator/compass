@@ -1,8 +1,8 @@
 package test
 
 import (
-	"fmt"
-	"strings"
+	"crypto/tls"
+	"net/http"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/runtime"
@@ -10,8 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
-	"github.com/thanhpk/randstr"
-
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/broker"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/kyma"
 	"github.com/sirupsen/logrus"
@@ -23,9 +21,10 @@ type Config struct {
 	Broker  broker.Config
 	Runtime runtime.Config
 
-	GlobalAccountID string `default:"3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
+	TenantID string `default:"3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
 }
 
+// Suite provides set of clients able to provision and test Kyma runtime
 type Suite struct {
 	t *testing.T
 
@@ -48,20 +47,29 @@ func newTestSuite(t *testing.T) *Suite {
 	err := envconfig.InitWithPrefix(cfg, "APP")
 	require.NoError(t, err)
 
-	runtimeID := uuid.New().String()
-	clusterName := fmt.Sprintf("%s-%s", "e2e-provisioning", strings.ToLower(randstr.String(10)))
+	client := newHTTPClient(true)
 
 	log := logrus.New()
-	kymaClient := kyma.NewClient(log)
-	brokerClient := broker.NewClient(cfg.Broker, clusterName, runtimeID, cfg.GlobalAccountID, log)
-	gardenerClient, err := runtime.NewClient(cfg.Runtime, cfg.GlobalAccountID, runtimeID, log)
-	require.NoError(t, err)
+	runtimeID := uuid.New().String()
+	kymaClient := kyma.NewClient(*client, log)
+	brokerClient := broker.NewClient(cfg.Broker, cfg.TenantID, runtimeID, *client, log)
+	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, runtimeID, *client, log)
 
 	return &Suite{
 		t:             t,
 		log:           log,
-		brokerClient:  brokerClient,
 		kymaClient:    kymaClient,
-		runtimeClient: gardenerClient,
+		brokerClient:  brokerClient,
+		runtimeClient: runtimeClient,
+	}
+}
+
+func newHTTPClient(insecureSkipVerify bool) *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: insecureSkipVerify,
+			},
+		},
 	}
 }

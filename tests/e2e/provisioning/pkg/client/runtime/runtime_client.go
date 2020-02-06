@@ -2,14 +2,12 @@ package runtime
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -25,12 +23,13 @@ import (
 const accountIDKey = "tenant"
 
 type Config struct {
-	ProvisionerURL string
+	ProvisionerURL string `default:"http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"`
 
-	UUAInstanceName      string
-	UUAInstanceNamespace string
+	UUAInstanceName      string `default:"uaa-issuer"`
+	UUAInstanceNamespace string `default:"kyma-system"`
 }
 
+// Client allows to fetch runtime's config and execute the logic against it
 type Client struct {
 	config Config
 	log    logrus.FieldLogger
@@ -38,19 +37,18 @@ type Client struct {
 	client     client.Client
 	httpClient http.Client
 
-	runtimeID       string
-	globalAccountID string
+	runtimeID string
+	tenantID  string
 }
 
-func NewClient(config Config, runtimeID, globalAccountID string, log logrus.FieldLogger) (*Client, error) {
+func NewClient(config Config, runtimeID, tenantID string, clientHttp http.Client, log logrus.FieldLogger) *Client {
 	return &Client{
-		globalAccountID: globalAccountID,
-		runtimeID:       runtimeID,
-		config:          config,
-		httpClient:      http.Client{},
-		client:          nil,
-		log:             log,
-	}, nil
+		tenantID:   tenantID,
+		runtimeID:  runtimeID,
+		config:     config,
+		httpClient: clientHttp,
+		log:        log,
+	}
 }
 
 func (c *Client) TearDown() error {
@@ -65,25 +63,11 @@ func (c *Client) TearDown() error {
 	return nil
 }
 
-type graphQLResponseWrapper struct {
-	Result schema.RuntimeStatus `json:"result"`
-}
-
 func (c *Client) setRuntimeConfig() error {
 	// setup graphql client
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	gCli := graphCli.NewClient(c.config.ProvisionerURL, graphCli.WithHTTPClient(httpClient))
-
-	// setup logging in graphql client
-	logger := logrus.WithField("Client", "GraphQL")
+	gCli := graphCli.NewClient(c.config.ProvisionerURL, graphCli.WithHTTPClient(&c.httpClient))
 	gCli.Log = func(s string) {
-		logger.Info(s)
+		c.log.Info(s)
 	}
 
 	// create query
@@ -96,18 +80,16 @@ func (c *Client) setRuntimeConfig() error {
 	}`, c.runtimeID)
 	// prepare and run request
 	req := graphCli.NewRequest(q)
-	req.Header.Add(accountIDKey, c.globalAccountID)
+	req.Header.Add(accountIDKey, c.tenantID)
 
-	res := &graphQLResponseWrapper{}
+	res := &runtimeStatusResponse{}
 	err := gCli.Run(context.Background(), req, res)
 	if err != nil {
 		return errors.Wrapf(err, "while getting runtime config")
 	}
 
 	runtimeConfig := *res.Result.RuntimeConfiguration.Kubeconfig
-	gCli.Log(runtimeConfig)
-
-	runtimeConfigFile := "/configs/runtime.yaml"
+	runtimeConfigFile := "/tmp/runtime.yaml"
 	err = ioutil.WriteFile(runtimeConfigFile, []byte(runtimeConfig), 0644)
 	if err != nil {
 		return errors.Wrap(err, "while creating runtime kubeconfig file")
@@ -152,6 +134,6 @@ func (c *Client) ensureInstanceRemoved() error {
 
 func (c *Client) warnOnError(err error) {
 	if err != nil {
-		c.log.Warn("couldn't close the response body")
+		c.log.Warn(err.Error())
 	}
 }

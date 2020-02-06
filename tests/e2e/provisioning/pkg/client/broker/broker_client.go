@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/thanhpk/randstr"
 
 	"github.com/google/uuid"
 
@@ -33,17 +36,17 @@ type Client struct {
 	runtimeID       string
 	globalAccountID string
 
-	client http.Client
+	client *http.Client
 	log    logrus.FieldLogger
 }
 
-func NewClient(config Config, clusterName, runtimeID, globalAccountID string, log logrus.FieldLogger) *Client {
+func NewClient(config Config, globalAccountID, runtimeID string, clientHttp http.Client, log logrus.FieldLogger) *Client {
 	return &Client{
 		brokerConfig:    config,
 		runtimeID:       runtimeID,
-		clusterName:     clusterName,
+		clusterName:     fmt.Sprintf("%s-%s", "e2e-provisioning", strings.ToLower(randstr.String(10))),
 		globalAccountID: globalAccountID,
-		client:          http.Client{},
+		client:          &clientHttp,
 		log:             log,
 	}
 }
@@ -116,16 +119,21 @@ func (c *Client) AwaitProvisioningSucceeded(operationID string) error {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil
 		}
-		if response.State != string(gqlschema.OperationStateSucceeded) {
+		switch gqlschema.OperationState(response.State) {
+		case gqlschema.OperationStateFailed:
+			c.log.Info("Provisioning failed")
+			return true, errors.New("provisioning failed")
+		case gqlschema.OperationStateSucceeded:
+			c.log.Infof("Runtime Provisioning succeeded!")
+			return true, nil
+		default:
 			c.log.Infof("Waiting 1min for provisioning succeeded...  state: %s", response.State)
 			return false, nil
 		}
-		return true, nil
 	})
 	if err != nil {
 		return errors.Wrap(err, "while waiting for succeeded last operation")
 	}
-	c.log.Infof("Runtime Provisioning completed")
 	return nil
 }
 
@@ -170,7 +178,7 @@ func (c *Client) prepareProvisionDetails() ([]byte, error) {
 	}
 	rawContext, err := json.Marshal(context)
 	if err != nil {
-		return nil, errors.Wrap(err, "while marshalling parameters body")
+		return nil, errors.Wrap(err, "while marshalling context body")
 	}
 	requestBody := domain.ProvisionDetails{
 		ServiceID:        kymaClassID,
@@ -217,6 +225,6 @@ func (c *Client) executeRequest(method, url string, body io.Reader, responseBody
 
 func (c *Client) warnOnError(err error) {
 	if err != nil {
-		c.log.Warn("couldn't close the response body")
+		c.log.Warn(err.Error())
 	}
 }
