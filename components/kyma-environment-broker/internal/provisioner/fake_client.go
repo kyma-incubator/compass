@@ -20,7 +20,8 @@ type fakeClient struct {
 
 func NewFakeClient() *fakeClient {
 	return &fakeClient{
-		runtimes: []runtime{},
+		runtimes:   []runtime{},
+		operations: make(map[string]schema.OperationStatus, 1),
 	}
 }
 
@@ -39,6 +40,13 @@ func (c *fakeClient) FinishProvisionerOperation(id string, state schema.Operatio
 	op := c.operations[id]
 	op.State = state
 	c.operations[id] = op
+}
+
+func (c *fakeClient) SetOperation(id string, operation schema.OperationStatus) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.operations[id] = operation
 }
 
 // Provisioner Client methods
