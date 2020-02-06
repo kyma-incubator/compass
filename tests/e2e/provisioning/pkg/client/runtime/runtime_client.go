@@ -25,7 +25,6 @@ import (
 const accountIDKey = "tenant"
 
 type Config struct {
-	SecretName     string
 	ProvisionerURL string
 
 	UUAInstanceName      string

@@ -60,14 +60,14 @@ spec:
               secretKeyRef:
                 name: {{ include "kyma-env-broker.fullname" . }}
                 key: broker-password
-          - name: APP_GARDENER_SECRET_NAME
-            value: {{ .Values.provisioner.gardener.secretName }}
-          - name: APP_GARDENER_UUA_INSTANCE_NAME
+          - name: APP_RUNTIME_PROVISIONER_URL
+            value: "{{ .Values.provisioner.URL }}"
+          - name: APP_RUNTIME_UUA_INSTANCE_NAME
             value: "uaa-issuer"
-          - name: APP_GARDENER_UUA_INSTANCE_NAMESPACE
+          - name: APP_RUNTIME_UUA_INSTANCE_NAMESPACE
             value: "kyma-system"
-          - name: APP_WORKING_NAMESPACE
-            value: "compass-system"
+          - name: APP_GLOBAL_ACCOUNT_ID
+            value: "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
           command:
           - "bash"
           args:
