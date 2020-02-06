@@ -57,109 +57,109 @@ func Test_E2E_Gardener(t *testing.T) {
 
 	log.Infof("Starting Compass Provisioner tests on Gardener")
 
-	// TODO: run in different Gorutines
 	for _, provider := range testSuite.gardenerProviders {
+		go func() {
+			// Provision runtime
+			runtimeName := fmt.Sprintf("%s%s", "runtime", uuid.New().String()[:4])
 
-		// Provision runtime
-		runtimeName := fmt.Sprintf("%s%s", "runtime", uuid.New().String()[:4])
+			// Get Kyma modules from Installation CR
+			log.Infof("Getting and parsing Kyma modules from Installation CR at: %s", testkit.InstallationCRURL)
+			componentConfigInput, err := testkit.GetAndParseInstallerCR()
+			assertions.RequireNoError(t, err)
 
-		// Get Kyma modules from Installation CR
-		log.Infof("Getting and parsing Kyma modules from Installation CR at: %s", testkit.InstallationCRURL)
-		componentConfigInput, err := testkit.GetAndParseInstallerCR()
-		assertions.RequireNoError(t, err)
-
-		provisioningInput := gqlschema.ProvisionRuntimeInput{
-			RuntimeInput: &gqlschema.RuntimeInput{
-				Name: runtimeName,
-			},
-			ClusterConfig: &gqlschema.ClusterConfigInput{
-				GardenerConfig: &gqlschema.GardenerConfigInput{
-					KubernetesVersion:      "1.15.4",
-					NodeCount:              3,
-					DiskType:               gardenerInputs[provider].DiskType,
-					VolumeSizeGb:           35,
-					MachineType:            gardenerInputs[provider].MachineType,
-					Region:                 gardenerInputs[provider].Region,
-					Provider:               toLowerCase(provider),
-					TargetSecret:           gardenerInputs[provider].TargetSecret,
-					WorkerCidr:             "10.250.0.0/19",
-					AutoScalerMin:          2,
-					AutoScalerMax:          4,
-					MaxSurge:               4,
-					MaxUnavailable:         1,
-					ProviderSpecificConfig: gardenerInputs[provider].ProviderSpecificConfig,
+			provisioningInput := gqlschema.ProvisionRuntimeInput{
+				RuntimeInput: &gqlschema.RuntimeInput{
+					Name: runtimeName,
 				},
-			},
-			KymaConfig: &gqlschema.KymaConfigInput{
-				Version:    config.Kyma.Version,
-				Components: componentConfigInput,
-			},
-		}
+				ClusterConfig: &gqlschema.ClusterConfigInput{
+					GardenerConfig: &gqlschema.GardenerConfigInput{
+						KubernetesVersion:      "1.15.4",
+						NodeCount:              3,
+						DiskType:               gardenerInputs[provider].DiskType,
+						VolumeSizeGb:           35,
+						MachineType:            gardenerInputs[provider].MachineType,
+						Region:                 gardenerInputs[provider].Region,
+						Provider:               toLowerCase(provider),
+						TargetSecret:           gardenerInputs[provider].TargetSecret,
+						WorkerCidr:             "10.250.0.0/19",
+						AutoScalerMin:          2,
+						AutoScalerMax:          4,
+						MaxSurge:               4,
+						MaxUnavailable:         1,
+						ProviderSpecificConfig: gardenerInputs[provider].ProviderSpecificConfig,
+					},
+				},
+				KymaConfig: &gqlschema.KymaConfigInput{
+					Version:    config.Kyma.Version,
+					Components: componentConfigInput,
+				},
+			}
 
-		log.Infof("Provisioning %s runtime on %s...", runtimeName, provider)
-		provisioningOperationID, runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
-		assertions.RequireNoError(t, err)
-		log.Infof("Provisioning operation id: %s, runtime id: %s", provisioningOperationID, runtimeID)
-		defer ensureClusterIsDeprovisioned(runtimeID)
+			log.Infof("Provisioning %s runtime on %s...", runtimeName, provider)
+			provisioningOperationID, runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
+			assertions.RequireNoError(t, err)
+			log.Infof("Provisioning operation id: %s, runtime id: %s", provisioningOperationID, runtimeID)
+			defer ensureClusterIsDeprovisioned(runtimeID)
 
-		var provisioningOperationStatus gqlschema.OperationStatus
+			var provisioningOperationStatus gqlschema.OperationStatus
 
-		//Check if another provisioning of the same cluster can start while previous one is in progress
-		err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
-			func() error {
-				log.Infof("Waiting for provisioning to finish...")
-				var waitErr error
-				provisioningOperationStatus, waitErr = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationID)
-				return waitErr
-			},
-			func() error {
-				log.Infof("Checking if operation will fail while other in progress...")
-				operationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(provisioningOperationID)
-				if err != nil {
-					return errors.WithMessagef(err, "Failed to get %s operation status", provisioningOperationID)
-				}
+			//Check if another provisioning of the same cluster can start while previous one is in progress
+			err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
+				func() error {
+					log.Infof("Waiting for provisioning to finish...")
+					var waitErr error
+					provisioningOperationStatus, waitErr = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationID)
+					return waitErr
+				},
+				func() error {
+					log.Infof("Checking if operation will fail while other in progress...")
+					operationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(provisioningOperationID)
+					if err != nil {
+						return errors.WithMessagef(err, "Failed to get %s operation status", provisioningOperationID)
+					}
 
-				if operationStatus.State != gqlschema.OperationStateInProgress {
-					return errors.New("Operation %s not in progress")
-				}
+					if operationStatus.State != gqlschema.OperationStateInProgress {
+						return errors.New("Operation %s not in progress")
+					}
 
-				_, _, err = testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
-				if err == nil {
-					return errors.New("Operation scheduled successfully while other operation in progress")
-				}
+					_, _, err = testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
+					if err == nil {
+						return errors.New("Operation scheduled successfully while other operation in progress")
+					}
 
-				return nil
-			},
-		)
-		assertions.RequireNoError(t, err, "Provisioning operation status: ", provisioningOperationStatus.State)
+					return nil
+				},
+			)
+			assertions.RequireNoError(t, err, "Provisioning operation status: ", provisioningOperationStatus.State)
 
-		assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
-		log.Infof("Runtime provisioned successfully on %s", provider)
+			assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
+			log.Infof("Runtime provisioned successfully on %s", provider)
 
-		log.Infof("Fetching %s runtime status...", provider)
-		runtimeStatus, err := testSuite.ProvisionerClient.RuntimeStatus(runtimeID)
-		assertions.RequireNoError(t, err)
+			log.Infof("Fetching %s runtime status...", provider)
+			runtimeStatus, err := testSuite.ProvisionerClient.RuntimeStatus(runtimeID)
+			assertions.RequireNoError(t, err)
 
-		assertGardenerRuntimeConfiguration(t, provisioningInput, runtimeStatus)
+			assertGardenerRuntimeConfiguration(t, provisioningInput, runtimeStatus)
 
-		log.Infof("Preparing K8s client...")
-		k8sClient := testSuite.KubernetesClientFromRawConfig(t, *runtimeStatus.RuntimeConfiguration.Kubeconfig)
+			log.Infof("Preparing K8s client...")
+			k8sClient := testSuite.KubernetesClientFromRawConfig(t, *runtimeStatus.RuntimeConfiguration.Kubeconfig)
 
-		logrus.Infof("Accessing API Server on provisioned cluster...")
-		_, err = k8sClient.ServerVersion()
-		assertions.RequireNoError(t, err)
+			logrus.Infof("Accessing API Server on provisioned cluster...")
+			_, err = k8sClient.ServerVersion()
+			assertions.RequireNoError(t, err)
 
-		// TODO: Run E2e Runtime tests
+			// TODO: Run E2e Runtime tests
 
-		log.Infof("Deprovisioning %s runtime on...", provider)
-		deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeID)
-		assertions.RequireNoError(t, err)
-		log.Infof("Deprovisioning operation id: %s", deprovisioningOperationId)
+			log.Infof("Deprovisioning %s runtime on...", provider)
+			deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeID)
+			assertions.RequireNoError(t, err)
+			log.Infof("Deprovisioning operation id: %s", deprovisioningOperationId)
 
-		deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationId)
-		assertions.RequireNoError(t, err)
-		assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
-		log.Infof("Runtime deprovisioned successfully")
+			deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationId)
+			assertions.RequireNoError(t, err)
+			assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
+			log.Infof("Runtime deprovisioned successfully")
+		}()
 	}
 }
 
