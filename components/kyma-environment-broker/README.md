@@ -38,7 +38,7 @@ KEB binary allows you to override some configuration parameters. You can specify
 
 This section presents how to add or remove the possibility to disable components, which makes them either optional or required during the Kyma installation.
 
-### Add option to disable components
+### Add the option to disable components
 
 If you want to add the possibility to disable components and make them optional during Kyma installation, you can do it in two ways.
 
@@ -75,6 +75,6 @@ optionalComponentsDisablers := runtime.ComponentsDisablers{
 }
 ```
 
-### Remove option to disable components
+### Remove the option to disable components
 
 If you want to remove the option to disable components and make them required during Kyma installation, remove a given entry from the **optionalComponentsDisablers** list in the [`cmd/broker/main.go`](./cmd/broker/main.go) file.
