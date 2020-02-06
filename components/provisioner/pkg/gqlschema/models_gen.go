@@ -141,7 +141,7 @@ type GardenerConfigInput struct {
 	MachineType            string                 `json:"machineType"`
 	Region                 string                 `json:"region"`
 	Provider               string                 `json:"provider"`
-	TargetSecret           *string                `json:"targetSecret"`
+	TargetSecret           string                 `json:"targetSecret"`
 	DiskType               string                 `json:"diskType"`
 	WorkerCidr             string                 `json:"workerCidr"`
 	AutoScalerMin          int                    `json:"autoScalerMin"`
