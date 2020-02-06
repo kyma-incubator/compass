@@ -28,21 +28,23 @@ type Config struct {
 }
 
 type Client struct {
-	brokerConfig Config
-	clusterName  string
-	instanceID   string
+	brokerConfig    Config
+	clusterName     string
+	runtimeID       string
+	globalAccountID string
 
 	client http.Client
 	log    logrus.FieldLogger
 }
 
-func NewClient(config Config, clusterName, instanceID string, log logrus.FieldLogger) *Client {
+func NewClient(config Config, clusterName, runtimeID, globalAccountID string, log logrus.FieldLogger) *Client {
 	return &Client{
-		brokerConfig: config,
-		instanceID:   instanceID,
-		clusterName:  clusterName,
-		client:       http.Client{},
-		log:          log,
+		brokerConfig:    config,
+		runtimeID:       runtimeID,
+		clusterName:     clusterName,
+		globalAccountID: globalAccountID,
+		client:          http.Client{},
+		log:             log,
 	}
 }
 
@@ -55,14 +57,14 @@ const (
 )
 
 func (c *Client) ProvisionRuntime() (string, error) {
-	c.log.Infof("Provisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
+	c.log.Infof("Provisioning Runtime [ID: %s, NAME: %s]", c.runtimeID, c.clusterName)
 	requestByte, err := c.prepareProvisionDetails()
 	if err != nil {
 		return "", errors.Wrap(err, "while marshalling request body")
 	}
 	c.log.Infof("Provisioning parameters: %v", string(requestByte))
 
-	provisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.instanceID)
+	provisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.runtimeID)
 	response := provisionResponse{}
 	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
 		err := c.executeRequest(http.MethodPut, provisionURL, bytes.NewReader(requestByte), &response)
@@ -85,10 +87,10 @@ func (c *Client) ProvisionRuntime() (string, error) {
 }
 
 func (c *Client) DeprovisionRuntime() error {
-	deprovisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.instanceID)
+	deprovisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.runtimeID)
 
 	response := provisionResponse{}
-	c.log.Infof("Deprovisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
+	c.log.Infof("Deprovisioning Runtime [ID: %s, NAME: %s]", c.runtimeID, c.clusterName)
 	err := wait.Poll(time.Second, time.Second*5, func() (bool, error) {
 		err := c.executeRequest(http.MethodDelete, deprovisionURL, nil, &response)
 		if err != nil {
@@ -105,7 +107,7 @@ func (c *Client) DeprovisionRuntime() error {
 }
 
 func (c *Client) AwaitProvisioningSucceeded(operationID string) error {
-	lastOperationURL := fmt.Sprintf("%s%s/%s/last_operation?operation=%s", c.brokerConfig.URL, instancesURL, c.instanceID, operationID)
+	lastOperationURL := fmt.Sprintf("%s%s/%s/last_operation?operation=%s", c.brokerConfig.URL, instancesURL, c.runtimeID, operationID)
 
 	response := lastOperationResponse{}
 	err := wait.Poll(time.Minute, c.brokerConfig.ProvisionTimeout, func() (bool, error) {
@@ -128,7 +130,7 @@ func (c *Client) AwaitProvisioningSucceeded(operationID string) error {
 }
 
 func (c *Client) FetchDashboardURL() (string, error) {
-	instanceDetailsURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.instanceID)
+	instanceDetailsURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.runtimeID)
 
 	c.log.Info("Fetching the Runtime's dashboard URL")
 	response := instanceDetailsResponse{}
@@ -160,7 +162,7 @@ func (c *Client) prepareProvisionDetails() ([]byte, error) {
 	context := ersContext{
 		TenantID:        "1eba80dd-8ff6-54ee-be4d-77944d17b10b",
 		SubAccountID:    "39ba9a66-2c1a-4fe4-a28e-6e5db434084e",
-		GlobalAccountID: "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae",
+		GlobalAccountID: c.globalAccountID,
 	}
 	rawParameters, err := json.Marshal(parameters)
 	if err != nil {

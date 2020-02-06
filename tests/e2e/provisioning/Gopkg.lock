@@ -219,6 +219,14 @@
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:7078327e83236f36a7b676f2ce704dc6ec46f47e52ba9fc2aa32f04be006ac96"
+  name = "github.com/thanhpk/randstr"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "6e89fe966579c5905054d46d61cf1621ef291e2c"
+  version = "v1.0.4"
+
+[[projects]]
   digest = "1:831b94be76a8fe3b3b882e52752423070f1b2d7940ecc381cdac66ac01492bfd"
   name = "github.com/vektah/gqlparser"
   packages = [
@@ -532,6 +540,7 @@
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
+    "github.com/thanhpk/randstr",
     "github.com/vrischmann/envconfig",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",

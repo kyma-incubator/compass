@@ -1,4 +1,4 @@
-package gardener
+package runtime
 
 import (
 	"context"
@@ -25,7 +25,8 @@ import (
 const accountIDKey = "tenant"
 
 type Config struct {
-	SecretName string
+	SecretName     string
+	ProvisionerURL string
 
 	UUAInstanceName      string
 	UUAInstanceNamespace string
@@ -34,24 +35,26 @@ type Config struct {
 type Client struct {
 	config Config
 	log    logrus.FieldLogger
+
 	client     client.Client
 	httpClient http.Client
-	runtimeID  string
-	provisionerURL string
+
+	runtimeID       string
+	globalAccountID string
 }
 
-func NewClient(config Config, provisionerURL, runtimeID string, log logrus.FieldLogger) (*Client, error) {
+func NewClient(config Config, runtimeID, globalAccountID string, log logrus.FieldLogger) (*Client, error) {
 	return &Client{
-		provisionerURL: provisionerURL,
-		runtimeID:  runtimeID,
-		config:     config,
-		httpClient: http.Client{},
-		client:     nil,
-		log:        log,
+		globalAccountID: globalAccountID,
+		runtimeID:       runtimeID,
+		config:          config,
+		httpClient:      http.Client{},
+		client:          nil,
+		log:             log,
 	}, nil
 }
 
-func (c *Client) RuntimeTearDown() error {
+func (c *Client) TearDown() error {
 	err := c.setRuntimeConfig()
 	if err != nil {
 		return errors.Wrap(err, "while setting runtime config")
@@ -67,7 +70,7 @@ type graphQLResponseWrapper struct {
 	Result schema.RuntimeStatus `json:"result"`
 }
 
-func (c *Client) getRuntimeConfig(globalAccountID string) error {
+func (c *Client) setRuntimeConfig() error {
 	// setup graphql client
 	httpClient := &http.Client{
 		Transport: &http.Transport{
@@ -76,7 +79,7 @@ func (c *Client) getRuntimeConfig(globalAccountID string) error {
 			},
 		},
 	}
-	gCli := graphCli.NewClient(c.provisionerURL, graphCli.WithHTTPClient(httpClient))
+	gCli := graphCli.NewClient(c.config.ProvisionerURL, graphCli.WithHTTPClient(httpClient))
 
 	// setup logging in graphql client
 	logger := logrus.WithField("Client", "GraphQL")
@@ -88,13 +91,13 @@ func (c *Client) getRuntimeConfig(globalAccountID string) error {
 	q := fmt.Sprintf(`query {
 	result: runtimeStatus(id: "%s") {
 		runtimeConfiguration {
-		kubeconfig
-}
-	}
-}`, c.runtimeID)
+			kubeconfig
+			}
+		}
+	}`, c.runtimeID)
 	// prepare and run request
 	req := graphCli.NewRequest(q)
-	req.Header.Add(accountIDKey, globalAccountID)
+	req.Header.Add(accountIDKey, c.globalAccountID)
 
 	res := &graphQLResponseWrapper{}
 	err := gCli.Run(context.Background(), req, res)
@@ -114,21 +117,6 @@ func (c *Client) getRuntimeConfig(globalAccountID string) error {
 	if err != nil {
 		return errors.Wrap(err, "while setting client config")
 	}
-	return nil
-}
-
-// fetch directly from provisioner runtime status endpoint
-func (c *Client) setRuntimeConfig() error {
-	//runtimeConfigFile := "/configs/runtime.yaml"
-	//err = ioutil.WriteFile(runtimeConfigFile, runtimeK8sConfig, 0644)
-	//if err != nil {
-	//	return errors.Wrap(err, "while creating runtime kubeconfig file")
-	//}
-	//err = c.setClientConfig(runtimeConfigFile)
-	//if err != nil {
-	//	return errors.Wrap(err, "while setting client config")
-	//}
-
 	return nil
 }
 
@@ -157,7 +145,7 @@ func (c *Client) ensureInstanceRemoved() error {
 			if apiErrors.IsNotFound(err) {
 				return true, nil
 			}
-			c.log.Warnf(errors.Wrap(err, "while getting instance").Error())
+			c.log.Warnf(errors.Wrap(err, "while removing instance").Error())
 		}
 		return false, nil
 	})
