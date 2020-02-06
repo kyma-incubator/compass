@@ -70,7 +70,6 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 
 		return
 	}
-	contextLogger.Info("ci.directorClientProvider.Client(r).GetApplication(systemAuthID):\nsystemAuthID: %v\napplication: %v\nerror: %v\n", systemAuthID, application, err) // TODO: Delete it after testing
 
 	certInfo := connector.ToCertInfo(configuration)
 

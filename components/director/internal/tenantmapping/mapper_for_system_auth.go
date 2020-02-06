@@ -117,6 +117,16 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx cont
 		scopes = strings.Join(declaredScopes, " ")
 	}
 
+	if authFlow.IsOneTimeTokenFlow() {
+		//TODO: Somehow get scopes. Currently it's just copied from the CertFlow
+		declaredScopes, err := m.scopesGetter.GetRequiredScopes(buildPath(refObjType))
+		if err != nil {
+			return TenantContext{}, scopes, errors.Wrap(err, "while fetching scopes")
+		}
+
+		scopes = strings.Join(declaredScopes, " ")
+	}
+
 	externalTenantID, err = reqData.GetExternalTenantID()
 	if err != nil {
 		if !apperrors.IsKeyDoesNotExist(err) {

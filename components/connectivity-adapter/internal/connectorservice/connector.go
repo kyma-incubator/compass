@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director"
-
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
