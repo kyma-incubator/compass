@@ -830,7 +830,7 @@ input GardenerConfigInput {                   # Gardener project in which the cl
     machineType: String!                            # Type of node machines, varies depending on the target provider
     region: String!                                 # Region in which the cluster is created
     provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
-    targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
+    targetSecret: String                           # Secret in Gardener containing credentials to the target provider
     diskType: String!                               # Disk type, varies depending on the target provider
     workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
     autoScalerMin: Int!                             # Minimum number of VMs to create
@@ -4647,7 +4647,7 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			}
 		case "targetSecret":
 			var err error
-			it.TargetSecret, err = ec.unmarshalNString2string(ctx, v)
+			it.TargetSecret, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
