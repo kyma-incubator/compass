@@ -42,6 +42,33 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
+type APIInstanceAuth struct {
+	ID string `json:"id"`
+	// Context of APIInstanceAuth - such as Runtime ID, namespace
+	Context *interface{} `json:"context"`
+	// It may be empty if status is PENDING.
+	// Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+	Auth   *Auth            `json:"auth"`
+	Status *APIInstanceAuth `json:"status"`
+}
+
+type APIInstanceAuthInput struct {
+	PackageID string `json:"packageID"`
+	// Context of APIInstanceAuth - such as Runtime ID, namespace
+	Context *interface{} `json:"context"`
+	// JSON validated against package.authRequestJSONSchema
+	InputParams *interface{} `json:"inputParams"`
+}
+
+type APIInstanceAuthStatus struct {
+	Condition *APIInstanceAuthStatusCondition `json:"condition"`
+	Timestamp Timestamp                       `json:"timestamp"`
+	Message   *string                         `json:"message"`
+	// PendingNotification
+	// NotificationSent
+	Reason *string `json:"reason"`
+}
+
 // Deprecated
 type APIRuntimeAuth struct {
 	RuntimeID string `json:"runtimeID"`
@@ -266,33 +293,6 @@ type HealthCheckPage struct {
 
 func (HealthCheckPage) IsPageable() {}
 
-type InstanceAPIAuth struct {
-	ID string `json:"id"`
-	// Context of InstanceAPIAuth - such as Runtime ID, namespace
-	Context *interface{} `json:"context"`
-	// It may be empty if status is PENDING.
-	// Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	Auth   *Auth            `json:"auth"`
-	Status *InstanceAPIAuth `json:"status"`
-}
-
-type InstanceAPIAuthInput struct {
-	PackageID string `json:"packageID"`
-	// Context of InstanceAPIAuth - such as Runtime ID, namespace
-	Context *interface{} `json:"context"`
-	// JSON validated against package.authRequestJSONSchema
-	InputParams *interface{} `json:"inputParams"`
-}
-
-type InstanceAPIAuthStatus struct {
-	Condition *InstanceAPIAuthStatusCondition `json:"condition"`
-	Timestamp Timestamp                       `json:"timestamp"`
-	Message   *string                         `json:"message"`
-	// PendingNotification
-	// NotificationSent
-	Reason *string `json:"reason"`
-}
-
 type IntegrationSystemInput struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
@@ -349,23 +349,6 @@ type OAuthCredentialDataInput struct {
 	URL          string `json:"url"`
 }
 
-type PackageDefinition struct {
-	ID                    string             `json:"id"`
-	Name                  string             `json:"name"`
-	Description           *string            `json:"description"`
-	AuthRequestJSONSchema *JSONSchema        `json:"authRequestJSONSchema"`
-	Auth                  *InstanceAPIAuth   `json:"auth"`
-	Auths                 []*InstanceAPIAuth `json:"auths"`
-	// When defined, all Auth requests fallback to defaultAuth.
-	DefaultAuth      *Auth                `json:"defaultAuth"`
-	APIDefinitions   *APIDefinitionPage   `json:"apiDefinitions"`
-	EventDefinitions *EventDefinitionPage `json:"eventDefinitions"`
-	Documents        *DocumentPage        `json:"documents"`
-	APIDefinition    *APIDefinition       `json:"apiDefinition"`
-	EventDefinition  *EventDefinition     `json:"eventDefinition"`
-	Document         *Document            `json:"document"`
-}
-
 type PackageDefinitionCreateInput struct {
 	Name                  string                  `json:"name"`
 	Description           string                  `json:"description"`
@@ -380,7 +363,7 @@ type PackageDefinitionUpdateInput struct {
 	Name                  string      `json:"name"`
 	Description           string      `json:"description"`
 	AuthRequestJSONSchema *JSONSchema `json:"authRequestJSONSchema"`
-	// While updating defaultAuth, existing InstanceApiAuths are NOT updated.
+	// While updating defaultAuth, existing APIInstanceAuths are NOT updated.
 	DefaultAuth *AuthInput `json:"defaultAuth"`
 }
 
@@ -477,6 +460,50 @@ type WebhookInput struct {
 	Type ApplicationWebhookType `json:"type"`
 	URL  string                 `json:"url"`
 	Auth *AuthInput             `json:"auth"`
+}
+
+type APIInstanceAuthStatusCondition string
+
+const (
+	// When creating or deleting new one
+	APIInstanceAuthStatusConditionPending   APIInstanceAuthStatusCondition = "PENDING"
+	APIInstanceAuthStatusConditionSucceeded APIInstanceAuthStatusCondition = "SUCCEEDED"
+	APIInstanceAuthStatusConditionFailed    APIInstanceAuthStatusCondition = "FAILED"
+)
+
+var AllAPIInstanceAuthStatusCondition = []APIInstanceAuthStatusCondition{
+	APIInstanceAuthStatusConditionPending,
+	APIInstanceAuthStatusConditionSucceeded,
+	APIInstanceAuthStatusConditionFailed,
+}
+
+func (e APIInstanceAuthStatusCondition) IsValid() bool {
+	switch e {
+	case APIInstanceAuthStatusConditionPending, APIInstanceAuthStatusConditionSucceeded, APIInstanceAuthStatusConditionFailed:
+		return true
+	}
+	return false
+}
+
+func (e APIInstanceAuthStatusCondition) String() string {
+	return string(e)
+}
+
+func (e *APIInstanceAuthStatusCondition) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = APIInstanceAuthStatusCondition(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid APIInstanceAuthStatusCondition", str)
+	}
+	return nil
+}
+
+func (e APIInstanceAuthStatusCondition) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type APISpecType string
@@ -884,50 +911,6 @@ func (e *HealthCheckType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e HealthCheckType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type InstanceAPIAuthStatusCondition string
-
-const (
-	// When creating or deleting new one
-	InstanceAPIAuthStatusConditionPending   InstanceAPIAuthStatusCondition = "PENDING"
-	InstanceAPIAuthStatusConditionSucceeded InstanceAPIAuthStatusCondition = "SUCCEEDED"
-	InstanceAPIAuthStatusConditionFailed    InstanceAPIAuthStatusCondition = "FAILED"
-)
-
-var AllInstanceAPIAuthStatusCondition = []InstanceAPIAuthStatusCondition{
-	InstanceAPIAuthStatusConditionPending,
-	InstanceAPIAuthStatusConditionSucceeded,
-	InstanceAPIAuthStatusConditionFailed,
-}
-
-func (e InstanceAPIAuthStatusCondition) IsValid() bool {
-	switch e {
-	case InstanceAPIAuthStatusConditionPending, InstanceAPIAuthStatusConditionSucceeded, InstanceAPIAuthStatusConditionFailed:
-		return true
-	}
-	return false
-}
-
-func (e InstanceAPIAuthStatusCondition) String() string {
-	return string(e)
-}
-
-func (e *InstanceAPIAuthStatusCondition) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = InstanceAPIAuthStatusCondition(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid InstanceAPIAuthStatusCondition", str)
-	}
-	return nil
-}
-
-func (e InstanceAPIAuthStatusCondition) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

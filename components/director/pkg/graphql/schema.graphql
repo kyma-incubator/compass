@@ -22,6 +22,15 @@ scalar QueryParams
 
 scalar Timestamp
 
+enum APIInstanceAuthStatusCondition {
+	"""
+	When creating or deleting new one
+	"""
+	PENDING
+	SUCCEEDED
+	FAILED
+}
+
 enum APISpecType {
 	ODATA
 	OPEN_API
@@ -71,15 +80,6 @@ enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
 }
 
-enum InstanceAPIAuthStatusCondition {
-	"""
-	When creating or deleting new one
-	"""
-	PENDING
-	SUCCEEDED
-	FAILED
-}
-
 enum RuntimeStatusCondition {
 	INITIAL
 	READY
@@ -127,6 +127,18 @@ input APIDefinitionInput {
 	spec: APISpecInput
 	version: VersionInput
 	defaultAuth: AuthInput @deprecated(reason: "Use package.defaultAuth")
+}
+
+input APIInstanceAuthInput {
+	packageID: ID!
+	"""
+	Context of APIInstanceAuth - such as Runtime ID, namespace
+	"""
+	context: Any
+	"""
+	JSON validated against package.authRequestJSONSchema
+	"""
+	inputParams: Any
 }
 
 input APISpecInput {
@@ -231,18 +243,6 @@ input FetchRequestInput {
 	filter: String
 }
 
-input InstanceAPIAuthInput {
-	packageID: ID!
-	"""
-	Context of InstanceAPIAuth - such as Runtime ID, namespace
-	"""
-	context: Any
-	"""
-	JSON validated against package.authRequestJSONSchema
-	"""
-	inputParams: Any
-}
-
 input IntegrationSystemInput {
 	name: String!
 	description: String
@@ -291,7 +291,7 @@ input PackageDefinitionUpdateInput {
 	description: String!
 	authRequestJSONSchema: JSONSchema
 	"""
-	While updating defaultAuth, existing InstanceApiAuths are NOT updated.
+	While updating defaultAuth, existing APIInstanceAuths are NOT updated.
 	"""
 	defaultAuth: AuthInput
 }
@@ -355,6 +355,31 @@ type APIDefinitionPage implements Pageable {
 	data: [APIDefinition!]!
 	pageInfo: PageInfo!
 	totalCount: Int!
+}
+
+type APIInstanceAuth {
+	id: ID!
+	"""
+	Context of APIInstanceAuth - such as Runtime ID, namespace
+	"""
+	context: Any
+	"""
+	It may be empty if status is PENDING.
+	Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+	"""
+	auth: Auth
+	status: APIInstanceAuth
+}
+
+type APIInstanceAuthStatus {
+	condition: APIInstanceAuthStatusCondition
+	timestamp: Timestamp!
+	message: String
+	"""
+	PendingNotification
+	NotificationSent
+	"""
+	reason: String
 }
 
 """
@@ -533,31 +558,6 @@ type HealthCheckPage implements Pageable {
 	totalCount: Int!
 }
 
-type InstanceAPIAuth {
-	id: ID!
-	"""
-	Context of InstanceAPIAuth - such as Runtime ID, namespace
-	"""
-	context: Any
-	"""
-	It may be empty if status is PENDING.
-	Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	"""
-	auth: Auth
-	status: InstanceAPIAuth
-}
-
-type InstanceAPIAuthStatus {
-	condition: InstanceAPIAuthStatusCondition
-	timestamp: Timestamp!
-	message: String
-	"""
-	PendingNotification
-	NotificationSent
-	"""
-	reason: String
-}
-
 type IntegrationSystem {
 	id: ID!
 	name: String!
@@ -610,8 +610,8 @@ type PackageDefinition {
 	name: String!
 	description: String
 	authRequestJSONSchema: JSONSchema
-	auth(id: ID!): InstanceAPIAuth
-	auths: [InstanceAPIAuth!]!
+	auth(id: ID!): APIInstanceAuth
+	auths: [APIInstanceAuth!]!
 	"""
 	When defined, all Auth requests fallback to defaultAuth.
 	"""
@@ -899,8 +899,8 @@ type Mutation {
 	"""
 	Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
 	"""
-	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth") @deprecated(reason: "Use setInstanceAPIAuthForPackage")
-	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth") @deprecated(reason: "Use deleteInstanceAPIAuthForPackage")
+	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth") @deprecated(reason: "Use setAPIInstanceAuthForPackage")
+	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth") @deprecated(reason: "Use deleteAPIInstanceAuthForPackage")
 	"""
 	**Examples**
 	- [add event definition](examples/add-event-definition/add-event-definition.graphql)
@@ -975,14 +975,14 @@ type Mutation {
 	setDefaultEventingForApplication(appID: String!, runtimeID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.setDefaultEventingForApplication")
 	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
 	"""
-	When InstanceAPIAuth is not in pending state, the operation returns error.
+	When APIInstanceAuth is not in pending state, the operation returns error.
 	
 	When used without error, the status of pending auth is set to success.
 	"""
-	setInstanceAPIAuthForPackage(packageID: ID!, authID: ID!, in: AuthInput! @validate): InstanceAPIAuth! @hasScopes(path: "graphql.mutation.setInstanceAPIAuthForPackage")
-	deleteInstanceAPIAuthForPackage(packageID: ID!, authID: ID!): InstanceAPIAuth! @hasScopes(path: "graphql.mutation.deleteInstanceAPIAuthForPackage")
-	requestInstanceAPIAuthForPackage(in: InstanceAPIAuthInput!): InstanceAPIAuth! @hasScopes(path: "graphql.mutation.requestInstanceAPIAuthForPackage")
-	deleteInstanceAPIAuthAuthForPackage(packageID: ID!, authID: ID!): InstanceAPIAuth! @hasScopes(path: "graphql.mutation.deleteInstanceAPIAuthAuthForPackage")
+	setAPIInstanceAuthForPackage(packageID: ID!, authID: ID!, in: AuthInput! @validate): APIInstanceAuth! @hasScopes(path: "graphql.mutation.setAPIInstanceAuthForPackage")
+	deleteAPIInstanceAuthForPackage(packageID: ID!, authID: ID!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.deleteAPIInstanceAuthForPackage")
+	requestAPIInstanceAuthForPackage(in: APIInstanceAuthInput!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.requestAPIInstanceAuthForPackage")
+	deleteAPIInstanceAuthAuthForPackage(packageID: ID!, authID: ID!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.deleteAPIInstanceAuthAuthForPackage")
 	addPackageDefinition(applicationID: ID!, in: PackageDefinitionCreateInput! @validate): PackageDefinition! @hasScopes(path: "graphql.mutation.addPackageDefinition")
 	updatePackageDefinition(id: ID!, in: PackageDefinitionUpdateInput! @validate): PackageDefinition! @hasScopes(path: "graphql.mutation.updatePackageDefinition")
 	deletePackageDefinition(id: ID!): PackageDefinition! @hasScopes(path: "graphql.mutation.deletePackageDefinition")
