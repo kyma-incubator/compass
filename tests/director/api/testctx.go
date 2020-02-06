@@ -22,6 +22,7 @@ import (
 
 const (
 	emptyTenant = ""
+	testTenant  = "test-default-tenant"
 )
 
 var defaultTenant = "af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e"
@@ -63,7 +64,7 @@ func setDefaultTenant() {
 
 	for _, v := range output {
 		tenants[*v.Name] = v.InternalID
-		if *v.Name == "bar" {
+		if *v.Name == testTenant {
 			defaultTenant = v.InternalID
 		}
 	}
