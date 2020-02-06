@@ -106,7 +106,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 }
 
 func (r *service) unregisterFailedRuntime(id, tenant string) {
-	log.Infof("Unregistering failed Runtime %s...", id)
+	log.Infof("Starting provisioning failed. Unregistering Runtime %s...", id)
 	err := r.directorService.DeleteRuntime(id, tenant)
 	if err != nil {
 		log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())

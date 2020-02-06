@@ -15,7 +15,7 @@ type TenantMappingRepository interface {
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 	Exists(ctx context.Context, id string) (bool, error)
-	List(ctx context.Context, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error)
+	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error)
 	Update(ctx context.Context, model *model.BusinessTenantMapping) error
 }
@@ -56,34 +56,17 @@ func (s *service) GetInternalTenant(ctx context.Context, externalTenant string) 
 	return mapping.ID, nil
 }
 
-func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
-	if pageSize < 1 || pageSize > 100 {
-		return nil, errors.New("page size must be between 1 and 100")
-	}
-
-	return s.tenantMappingRepo.List(ctx, pageSize, cursor)
+func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
+	return s.tenantMappingRepo.List(ctx)
 }
 
 func (s *service) Sync(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
 
 	tenants := s.multipleToTenantMapping(tenantInputs)
 
-	var tenantsFromDb []*model.BusinessTenantMapping
-	tenantPage, err := s.tenantMappingRepo.List(ctx, 100, "")
+	tenantsFromDb, err := s.tenantMappingRepo.List(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while listing tenants")
-	}
-	tenantsFromDb = append(tenantsFromDb, tenantPage.Data...)
-	for {
-		if !tenantPage.PageInfo.HasNextPage {
-			break
-		}
-		cursor := tenantPage.PageInfo.EndCursor
-		tenantPage, err = s.tenantMappingRepo.List(ctx, 100, cursor)
-		if err != nil {
-			return errors.Wrap(err, "while listing tenants")
-		}
-		tenantsFromDb = append(tenantsFromDb, tenantPage.Data...)
 	}
 
 	for _, tenantFromDb := range tenantsFromDb {

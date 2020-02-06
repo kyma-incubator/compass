@@ -9,10 +9,9 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/google/uuid v1.1.1
 	github.com/huandu/xstrings v1.3.0 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200121122803-b08d714a610c
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200129154738-ba6cbee1854a
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
-	github.com/matryer/is v1.2.0 // indirect
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0
 	github.com/vrischmann/envconfig v1.2.0
@@ -23,3 +22,5 @@ require (
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 	k8s.io/apimachinery v0.17.0 // indirect
 )
+
+replace github.com/kyma-incubator/compass/components/director v0.0.0-20200121122803-b08d714a610c => ../..

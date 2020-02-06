@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/director"
 
-	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
@@ -54,12 +55,14 @@ func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 
 		if len(apps.Result.Data) == 0 {
 			message := fmt.Sprintf("application with name %s not found", appName)
+			mw.logger.Warn(message)
 			reqerror.WriteErrorMessage(w, message, apperrors.CodeNotFound)
 			return
 		}
 
 		if len(apps.Result.Data) != 1 {
 			message := fmt.Sprintf("found more than 1 application with name %s", appName)
+			mw.logger.Warn(message)
 			reqerror.WriteErrorMessage(w, message, apperrors.CodeInternal)
 			return
 		}

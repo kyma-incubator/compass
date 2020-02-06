@@ -20,25 +20,25 @@ type Converter interface {
 }
 
 type pgRepository struct {
-	creator               repo.Creator
-	existQuerierGlobal    repo.ExistQuerierGlobal
-	singleGetterGlobal    repo.SingleGetterGlobal
-	pageableQuerierGlobal repo.PageableQuerierGlobal
-	updaterGlobal         repo.UpdaterGlobal
-	deleterGlobal         repo.DeleterGlobal
+	creator            repo.Creator
+	existQuerierGlobal repo.ExistQuerierGlobal
+	singleGetterGlobal repo.SingleGetterGlobal
+	listerGlobal       repo.ListerGlobal
+	updaterGlobal      repo.UpdaterGlobal
+	deleterGlobal      repo.DeleterGlobal
 
 	conv Converter
 }
 
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		creator:               repo.NewCreator(tableName, tableColumns),
-		existQuerierGlobal:    repo.NewExistQuerierGlobal(tableName),
-		singleGetterGlobal:    repo.NewSingleGetterGlobal(tableName, tableColumns),
-		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(tableName, tableColumns),
-		updaterGlobal:         repo.NewUpdaterGlobal(tableName, []string{"external_name", "external_tenant", "provider_name", "status"}, []string{"id"}),
-		deleterGlobal:         repo.NewDeleterGlobal(tableName),
-		conv:                  conv,
+		creator:            repo.NewCreator(tableName, tableColumns),
+		existQuerierGlobal: repo.NewExistQuerierGlobal(tableName),
+		singleGetterGlobal: repo.NewSingleGetterGlobal(tableName, tableColumns),
+		listerGlobal:       repo.NewListerGlobal(tableName, tableColumns),
+		updaterGlobal:      repo.NewUpdaterGlobal(tableName, []string{"external_name", "external_tenant", "provider_name", "status"}, []string{"id"}),
+		deleterGlobal:      repo.NewDeleterGlobal(tableName),
+		conv:               conv,
 	}
 }
 
@@ -48,17 +48,22 @@ func (r *pgRepository) Create(ctx context.Context, item model.BusinessTenantMapp
 
 func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	var entity Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id),
-		repo.NewNotEqualCondition("status", string(Inactive))}, repo.NoOrderBy, &entity); err != nil {
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("id", id),
+		repo.NewNotEqualCondition("status", string(Inactive))}
+	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
+
 	return r.conv.FromEntity(&entity), nil
 }
 
 func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
 	var entity Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("external_tenant", externalTenant),
-		repo.NewNotEqualCondition("status", string(Inactive))}, repo.NoOrderBy, &entity); err != nil {
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("external_tenant", externalTenant),
+		repo.NewNotEqualCondition("status", string(Inactive))}
+	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 	return r.conv.FromEntity(&entity), nil
@@ -72,11 +77,12 @@ func (r *pgRepository) ExistsByExternalTenant(ctx context.Context, externalTenan
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("external_tenant", externalTenant)})
 }
 
-func (r *pgRepository) List(ctx context.Context, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
+func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection EntityCollection
-	page, totalCount, err := r.pageableQuerierGlobal.ListGlobal(ctx, pageSize, cursor, "id", &entityCollection)
+
+	err := r.listerGlobal.ListGlobal(ctx, &entityCollection)
 	if err != nil {
-		return &model.BusinessTenantMappingPage{}, err
+		return nil, err
 	}
 
 	var items []*model.BusinessTenantMapping
@@ -85,11 +91,7 @@ func (r *pgRepository) List(ctx context.Context, pageSize int, cursor string) (*
 		tmModel := r.conv.FromEntity(&entity)
 		items = append(items, tmModel)
 	}
-	return &model.BusinessTenantMappingPage{
-		Data:       items,
-		TotalCount: totalCount,
-		PageInfo:   page,
-	}, nil
+	return items, nil
 }
 
 func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMapping) error {

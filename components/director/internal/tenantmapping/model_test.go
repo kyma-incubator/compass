@@ -130,11 +130,11 @@ func TestReqData_GetTenantID(t *testing.T) {
 		expectedTenant := "f640a8e6-2ce4-450c-bd1c-cba9397f9d79"
 		reqData := ReqData{
 			Header: http.Header{
-				textproto.CanonicalMIMEHeaderKey(TenantKey): []string{expectedTenant},
+				textproto.CanonicalMIMEHeaderKey(ExternalTenantKey): []string{expectedTenant},
 			},
 		}
 
-		tenant, err := reqData.GetTenantID()
+		tenant, err := reqData.GetExternalTenantID()
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenant, tenant)
@@ -145,12 +145,12 @@ func TestReqData_GetTenantID(t *testing.T) {
 		reqData := ReqData{
 			Body: ReqBody{
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(TenantKey): []string{expectedTenant},
+					textproto.CanonicalMIMEHeaderKey(ExternalTenantKey): []string{expectedTenant},
 				},
 			},
 		}
 
-		tenant, err := reqData.GetTenantID()
+		tenant, err := reqData.GetExternalTenantID()
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenant, tenant)
@@ -161,12 +161,12 @@ func TestReqData_GetTenantID(t *testing.T) {
 		reqData := ReqData{
 			Body: ReqBody{
 				Extra: map[string]interface{}{
-					TenantKey: expectedTenant,
+					ExternalTenantKey: expectedTenant,
 				},
 			},
 		}
 
-		tenant, err := reqData.GetTenantID()
+		tenant, err := reqData.GetExternalTenantID()
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenant, tenant)
@@ -176,12 +176,12 @@ func TestReqData_GetTenantID(t *testing.T) {
 		reqData := ReqData{
 			Body: ReqBody{
 				Extra: map[string]interface{}{
-					TenantKey: []byte{1, 2, 3},
+					ExternalTenantKey: []byte{1, 2, 3},
 				},
 			},
 		}
 
-		_, err := reqData.GetTenantID()
+		_, err := reqData.GetExternalTenantID()
 
 		require.EqualError(t, err, "while parsing the value for tenant: unable to cast the value to a string type")
 	})
@@ -189,7 +189,7 @@ func TestReqData_GetTenantID(t *testing.T) {
 	t.Run("returns error when tenant ID is not specified", func(t *testing.T) {
 		reqData := ReqData{}
 
-		_, err := reqData.GetTenantID()
+		_, err := reqData.GetExternalTenantID()
 
 		require.Error(t, err)
 		require.Implements(t, (*apperrors.KeyDoesNotExist)(nil), err)

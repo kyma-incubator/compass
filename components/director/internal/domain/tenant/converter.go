@@ -1,6 +1,10 @@
 package tenant
 
-import "github.com/kyma-incubator/compass/components/director/internal/model"
+import (
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+)
 
 type converter struct{}
 
@@ -32,4 +36,30 @@ func (c *converter) FromEntity(in *Entity) *model.BusinessTenantMapping {
 		Provider:       in.ProviderName,
 		Status:         model.TenantStatus(in.Status),
 	}
+}
+
+func (c *converter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
+	if in == nil {
+		return nil
+	}
+
+	return &graphql.Tenant{
+		ID:         in.ExternalTenant,
+		InternalID: in.ID,
+		Name:       str.Ptr(in.Name),
+	}
+
+}
+
+func (c *converter) MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant {
+	var tenants []*graphql.Tenant
+	for _, r := range in {
+		if r == nil {
+			continue
+		}
+
+		tenants = append(tenants, c.ToGraphQL(r))
+	}
+
+	return tenants
 }

@@ -22,7 +22,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	"github.com/pkg/errors"
 
-	gardener_apis "github.com/gardener/gardener/pkg/client/garden/clientset/versioned/typed/garden/v1beta1"
+	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -70,7 +70,7 @@ func newShootController(
 	cfg config,
 	gardenerNamespace string,
 	gardenerClusterCfg *restclient.Config,
-	gardenerClientSet *gardener_apis.GardenV1beta1Client,
+	gardenerClientSet *gardener_apis.CoreV1beta1Client,
 	dbsFactory dbsession.Factory,
 	installationSvc installation.Service,
 	directorClient director.DirectorClient,
