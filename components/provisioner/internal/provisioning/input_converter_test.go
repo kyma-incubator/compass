@@ -31,6 +31,8 @@ const (
 	applicationConnectorComponent = "application-connector"
 
 	gardenerProject = "gardener-project"
+	tenantA         = "tenant A"
+	tenantB         = "tenant B"
 )
 
 func Test_ProvisioningInputToCluster(t *testing.T) {
@@ -428,64 +430,35 @@ func Test_ProvisioningInputToClusterWithTenantCredentials(t *testing.T) {
 	expectedGCPProviderCfg, err := model.NewGCPGardenerConfig(gcpGardenerProvider)
 	require.NoError(t, err)
 
-	//createExpectedRuntimeInputGCPWithTenantSecret := func(usedTenant string, gardenerSecret string, compassSecret string) model.Cluster {
-	//	return model.Cluster{
-	//		ID: "runtimeID",
-	//		ClusterConfig: model.GardenerConfig{
-	//			ID:                     "id",
-	//			Name:                   "gcp-verylon",
-	//			ProjectName:            gardenerProject,
-	//			MachineType:            "n1-standard-1",
-	//			Region:                 "region",
-	//			KubernetesVersion:      "version",
-	//			NodeCount:              3,
-	//			VolumeSizeGB:           1024,
-	//			DiskType:               "ssd",
-	//			Provider:               "GCP",
-	//			Seed:                   "gcp-eu1",
-	//			TargetSecret:           gardenerSecret,
-	//			WorkerCidr:             "cidr",
-	//			AutoScalerMin:          1,
-	//			AutoScalerMax:          5,
-	//			MaxSurge:               1,
-	//			MaxUnavailable:         2,
-	//			ClusterID:              "runtimeID",
-	//			GardenerProviderConfig: expectedGCPProviderCfg,
-	//		},
-	//		Kubeconfig:            nil,
-	//		KymaConfig:            fixKymaConfig(),
-	//		CredentialsSecretName: compassSecret,
-	//		Tenant:                usedTenant,
-	//	}
-	//}
-
-	expectedGardenerGCPRuntimeConfigWithTenantSecret := model.Cluster{
-		ID: "runtimeID",
-		ClusterConfig: model.GardenerConfig{
-			ID:                     "id",
-			Name:                   "gcp-verylon",
-			ProjectName:            gardenerProject,
-			MachineType:            "n1-standard-1",
-			Region:                 "region",
-			KubernetesVersion:      "version",
-			NodeCount:              3,
-			VolumeSizeGB:           1024,
-			DiskType:               "ssd",
-			Provider:               "GCP",
-			Seed:                   "gcp-eu1",
-			TargetSecret:           "gardener-secret-gcp-tenant",
-			WorkerCidr:             "cidr",
-			AutoScalerMin:          1,
-			AutoScalerMax:          5,
-			MaxSurge:               1,
-			MaxUnavailable:         2,
-			ClusterID:              "runtimeID",
-			GardenerProviderConfig: expectedGCPProviderCfg,
-		},
-		Kubeconfig:            nil,
-		KymaConfig:            fixKymaConfig(),
-		CredentialsSecretName: "compass-secret-tenant",
-		Tenant:                tenant,
+	createExpectedRuntimeInputGCPWithTenantSecret := func(usedTenant string, gardenerSecret string, compassSecret string) model.Cluster {
+		return model.Cluster{
+			ID: "runtimeID",
+			ClusterConfig: model.GardenerConfig{
+				ID:                     "id",
+				Name:                   "gcp-verylon",
+				ProjectName:            gardenerProject,
+				MachineType:            "n1-standard-1",
+				Region:                 "region",
+				KubernetesVersion:      "version",
+				NodeCount:              3,
+				VolumeSizeGB:           1024,
+				DiskType:               "ssd",
+				Provider:               "GCP",
+				Seed:                   "gcp-eu1",
+				TargetSecret:           gardenerSecret,
+				WorkerCidr:             "cidr",
+				AutoScalerMin:          1,
+				AutoScalerMax:          5,
+				MaxSurge:               1,
+				MaxUnavailable:         2,
+				ClusterID:              "runtimeID",
+				GardenerProviderConfig: expectedGCPProviderCfg,
+			},
+			Kubeconfig:            nil,
+			KymaConfig:            fixKymaConfig(),
+			CredentialsSecretName: compassSecret,
+			Tenant:                usedTenant,
+		}
 	}
 
 	azureGardenerProvider := &gqlschema.AzureProviderConfigInput{VnetCidr: "cidr"}
@@ -522,33 +495,35 @@ func Test_ProvisioningInputToClusterWithTenantCredentials(t *testing.T) {
 	expectedAzureProviderCfg, err := model.NewAzureGardenerConfig(azureGardenerProvider)
 	require.NoError(t, err)
 
-	expectedGardenerAzureRuntimeConfigWithTenantSecret := model.Cluster{
-		ID: "runtimeID",
-		ClusterConfig: model.GardenerConfig{
-			ID:                     "id",
-			Name:                   "azu-verylon",
-			ProjectName:            gardenerProject,
-			MachineType:            "n1-standard-1",
-			Region:                 "region",
-			KubernetesVersion:      "version",
-			NodeCount:              3,
-			VolumeSizeGB:           1024,
-			DiskType:               "ssd",
-			Provider:               "Azure",
-			Seed:                   "",
-			TargetSecret:           "gardener-secret-azure-tenant",
-			WorkerCidr:             "cidr",
-			AutoScalerMin:          1,
-			AutoScalerMax:          5,
-			MaxSurge:               1,
-			MaxUnavailable:         2,
-			ClusterID:              "runtimeID",
-			GardenerProviderConfig: expectedAzureProviderCfg,
-		},
-		Kubeconfig:            nil,
-		KymaConfig:            fixKymaConfig(),
-		CredentialsSecretName: "compass-secret-tenant",
-		Tenant:                tenant,
+	createExpectedGardenerAzureRuntimeConfigWithTenantSecret := func(usedTenant string, gardenerSecret string, compassSecret string) model.Cluster {
+		return model.Cluster{
+			ID: "runtimeID",
+			ClusterConfig: model.GardenerConfig{
+				ID:                     "id",
+				Name:                   "azu-verylon",
+				ProjectName:            gardenerProject,
+				MachineType:            "n1-standard-1",
+				Region:                 "region",
+				KubernetesVersion:      "version",
+				NodeCount:              3,
+				VolumeSizeGB:           1024,
+				DiskType:               "ssd",
+				Provider:               "Azure",
+				Seed:                   "",
+				TargetSecret:           gardenerSecret,
+				WorkerCidr:             "cidr",
+				AutoScalerMin:          1,
+				AutoScalerMax:          5,
+				MaxSurge:               1,
+				MaxUnavailable:         2,
+				ClusterID:              "runtimeID",
+				GardenerProviderConfig: expectedAzureProviderCfg,
+			},
+			Kubeconfig:            nil,
+			KymaConfig:            fixKymaConfig(),
+			CredentialsSecretName: compassSecret,
+			Tenant:                usedTenant,
+		}
 	}
 
 	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
@@ -591,69 +566,84 @@ func Test_ProvisioningInputToClusterWithTenantCredentials(t *testing.T) {
 	expectedAWSProviderCfg, err := model.NewAWSGardenerConfig(awsGardenerProvider)
 	require.NoError(t, err)
 
-	expectedGardenerAWSRuntimeConfigWithTenantSecret := model.Cluster{
-		ID: "runtimeID",
-		ClusterConfig: model.GardenerConfig{
-			ID:                     "id",
-			Name:                   "aws-verylon",
-			ProjectName:            gardenerProject,
-			MachineType:            "n1-standard-1",
-			Region:                 "region",
-			KubernetesVersion:      "version",
-			NodeCount:              3,
-			VolumeSizeGB:           1024,
-			DiskType:               "ssd",
-			Provider:               "AWS",
-			Seed:                   "aws-eu1",
-			TargetSecret:           "gardener-secret-aws-tenant",
-			WorkerCidr:             "cidr",
-			AutoScalerMin:          1,
-			AutoScalerMax:          5,
-			MaxSurge:               1,
-			MaxUnavailable:         2,
-			ClusterID:              "runtimeID",
-			GardenerProviderConfig: expectedAWSProviderCfg,
-		},
-		Kubeconfig:            nil,
-		KymaConfig:            fixKymaConfig(),
-		CredentialsSecretName: "compass-secret-tenant",
-		Tenant:                tenant,
+	createExpectedGardenerAWSRuntimeConfigWithTenantSecret := func(usedTenant string, gardenerSecret string, compassSecret string) model.Cluster {
+		return model.Cluster{
+			ID: "runtimeID",
+			ClusterConfig: model.GardenerConfig{
+				ID:                     "id",
+				Name:                   "aws-verylon",
+				ProjectName:            gardenerProject,
+				MachineType:            "n1-standard-1",
+				Region:                 "region",
+				KubernetesVersion:      "version",
+				NodeCount:              3,
+				VolumeSizeGB:           1024,
+				DiskType:               "ssd",
+				Provider:               "AWS",
+				Seed:                   "aws-eu1",
+				TargetSecret:           gardenerSecret,
+				WorkerCidr:             "cidr",
+				AutoScalerMin:          1,
+				AutoScalerMax:          5,
+				MaxSurge:               1,
+				MaxUnavailable:         2,
+				ClusterID:              "runtimeID",
+				GardenerProviderConfig: expectedAWSProviderCfg,
+			},
+			Kubeconfig:            nil,
+			KymaConfig:            fixKymaConfig(),
+			CredentialsSecretName: compassSecret,
+			Tenant:                usedTenant,
+		}
 	}
 
 	configurations := []struct {
 		input       gqlschema.ProvisionRuntimeInput
 		expected    model.Cluster
 		description string
+		testTenant  string
 	}{
 		{
 			input:       gqlRuntimeInputGCPWithNoCredentials,
 			expected:    expectedRuntimeInputGCPWithTenantSecret,
 			description: "Should create proper runtime config struct with compass secret credentials for given tenant from Hypescaler Account Pool (HAP)",
+			testTenant:  tenant,
 		},
 		{
 			input:       gardenerGCPGQLInputNoCredentials,
-			expected:    expectedGardenerGCPRuntimeConfigWithTenantSecret,
-			description: "Should create proper runtime config struct with Gardener input for GCP provider with compass secret credentials for given tenant from Hyperscaler Account Pool (HAP)",
+			expected:    createExpectedRuntimeInputGCPWithTenantSecret(tenantA, "gardener-secret-gcp-tenant-A", "compass-secret-tenant-A"),
+			description: "Should create proper runtime config struct with Gardener input for GCP provider with compass secret credentials for tenant A from Hyperscaler Account Pool (HAP)",
+			testTenant:  tenantA,
 		},
-		//{
-		//	input:       gardenerGCPGQLInputNoCredentials,
-		//	expected: 	 createExpectedRuntimeInputGCPWithTenantSecret("Tenant A", "gardener-secret-gcp-tenant-A", "compass-secret-tenant-A"),
-		//	description: "Should create proper runtime config struct with Gardener input for GCP provider with compass secret credentials for tenant A from Hyperscaler Account Pool (HAP)",
-		//},
-		//{
-		//	input:       gardenerGCPGQLInputNoCredentials,
-		//	expected: 	 createExpectedRuntimeInputGCPWithTenantSecret("Tenant B", "gardener-secret-gcp-tenant-B", "compass-secret-tenant-B"),
-		//	description: "Should create proper runtime config struct with Gardener input for GCP provider with compass secret credentials for tenant B from Hyperscaler Account Pool (HAP)",
-		//},
+		{
+			input:       gardenerGCPGQLInputNoCredentials,
+			expected:    createExpectedRuntimeInputGCPWithTenantSecret(tenantB, "gardener-secret-gcp-tenant-B", "compass-secret-tenant-B"),
+			description: "Should create proper runtime config struct with Gardener input for GCP provider with compass secret credentials for tenant B from Hyperscaler Account Pool (HAP)",
+			testTenant:  tenantB,
+		},
 		{
 			input:       gardenerAzureGQLInputWithNoCredentials,
-			expected:    expectedGardenerAzureRuntimeConfigWithTenantSecret,
-			description: "Should create proper runtime config struct with Gardener input for Azure provider with compass secret credentials for given tenant from Hyperrscaler Account Pool (HAP)",
+			expected:    createExpectedGardenerAzureRuntimeConfigWithTenantSecret(tenantA, "gardener-secret-azure-tenant-A", "compass-secret-tenant-A"),
+			description: "Should create proper runtime config struct with Gardener input for Azure provider with compass secret credentials for tenant A from Hyperrscaler Account Pool (HAP)",
+			testTenant:  tenantA,
+		},
+		{
+			input:       gardenerAzureGQLInputWithNoCredentials,
+			expected:    createExpectedGardenerAzureRuntimeConfigWithTenantSecret(tenantB, "gardener-secret-azure-tenant-B", "compass-secret-tenant-B"),
+			description: "Should create proper runtime config struct with Gardener input for Azure provider with compass secret credentials for tenant B from Hyperrscaler Account Pool (HAP)",
+			testTenant:  tenantB,
 		},
 		{
 			input:       gardenerAWSGQLInputWithNoCredentials,
-			expected:    expectedGardenerAWSRuntimeConfigWithTenantSecret,
-			description: "Should create proper runtime config struct with Gardener input for AWS provider with compass secret credentials for given tenant from Hyperscaler Account Pool (HAP)",
+			expected:    createExpectedGardenerAWSRuntimeConfigWithTenantSecret(tenantA, "gardener-secret-aws-tenant-A", "compass-secret-tenant-A"),
+			description: "Should create proper runtime config struct with Gardener input for AWS provider with compass secret credentials for tenant A from Hyperscaler Account Pool (HAP)",
+			testTenant:  tenantA,
+		},
+		{
+			input:       gardenerAWSGQLInputWithNoCredentials,
+			expected:    createExpectedGardenerAWSRuntimeConfigWithTenantSecret(tenantB, "gardener-secret-aws-tenant-B", "compass-secret-tenant-B"),
+			description: "Should create proper runtime config struct with Gardener input for AWS provider with compass secret credentials for tenant B from Hyperscaler Account Pool (HAP)",
+			testTenant:  tenantB,
 		},
 	}
 
@@ -667,19 +657,22 @@ func Test_ProvisioningInputToClusterWithTenantCredentials(t *testing.T) {
 			accountProviderMock := &hyperscalerMocks.AccountProvider{}
 
 			accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), tenant).Return("compass-secret-tenant", nil)
-			accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), "tenant A").Return("compass-secret-tenant-A", nil)
-			accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), "tenant B").Return("compass-secret-tenant-B", nil)
+			accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), tenantA).Return("compass-secret-tenant-A", nil)
+			accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), tenantB).Return("compass-secret-tenant-B", nil)
 
-			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getRuntimeInputMatcherForAWS()), tenant).Return("gardener-secret-aws-tenant", nil)
-			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getRuntimeInputMatcherForAzure()), tenant).Return("gardener-secret-azure-tenant", nil)
-			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getRuntimeInputMatcherForGCP()), tenant).Return("gardener-secret-gcp-tenant", nil)
-			//accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getRuntimeInputMatcherForGCP()), "tenant A").Return("gardener-secret-gcp-tenant-A", nil)
-			//accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getRuntimeInputMatcherForGCP()), "tenant B").Return("gardener-secret-gcp-tenant-B", nil)
+			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getGardenerRuntimeInputMatcherForAWS()), tenantA).Return("gardener-secret-aws-tenant-A", nil)
+			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getGardenerRuntimeInputMatcherForAWS()), tenantB).Return("gardener-secret-aws-tenant-B", nil)
+
+			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getGardenerRuntimeInputMatcherForAzure()), tenantA).Return("gardener-secret-azure-tenant-A", nil)
+			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getGardenerRuntimeInputMatcherForAzure()), tenantB).Return("gardener-secret-azure-tenant-B", nil)
+
+			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getGardenerRuntimeInputMatcherForGCP()), tenantA).Return("gardener-secret-gcp-tenant-A", nil)
+			accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getGardenerRuntimeInputMatcherForGCP()), tenantB).Return("gardener-secret-gcp-tenant-B", nil)
 
 			inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject, accountProviderMock)
 
 			//when
-			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input, tenant)
+			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input, testCase.testTenant)
 
 			//then
 			require.NoError(t, err)
@@ -874,19 +867,19 @@ func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntr
 	}
 }
 
-func getRuntimeInputMatcherForAWS() func(*gqlschema.GardenerConfigInput) bool {
+func getGardenerRuntimeInputMatcherForAWS() func(*gqlschema.GardenerConfigInput) bool {
 	return func(input *gqlschema.GardenerConfigInput) bool {
 		return input.ProviderSpecificConfig.AwsConfig != nil
 	}
 }
 
-func getRuntimeInputMatcherForAzure() func(*gqlschema.GardenerConfigInput) bool {
+func getGardenerRuntimeInputMatcherForAzure() func(*gqlschema.GardenerConfigInput) bool {
 	return func(input *gqlschema.GardenerConfigInput) bool {
 		return input.ProviderSpecificConfig.AzureConfig != nil
 	}
 }
 
-func getRuntimeInputMatcherForGCP() func(*gqlschema.GardenerConfigInput) bool {
+func getGardenerRuntimeInputMatcherForGCP() func(*gqlschema.GardenerConfigInput) bool {
 	return func(input *gqlschema.GardenerConfigInput) bool {
 		return input.ProviderSpecificConfig.GcpConfig != nil
 	}
