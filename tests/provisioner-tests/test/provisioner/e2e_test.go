@@ -2,10 +2,11 @@ package provisioner
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -62,6 +63,11 @@ func Test_E2E_Gardener(t *testing.T) {
 		// Provision runtime
 		runtimeName := fmt.Sprintf("%s%s", "runtime", uuid.New().String()[:4])
 
+		// Get Kyma modules from Installation CR
+		log.Infof("Getting and parsing Kyma modules from Installation CR at: %s", testkit.InstallationCRURL)
+		componentConfigInput, err := testkit.GetAndParseInstallerCR()
+		assertions.RequireNoError(t, err)
+
 		provisioningInput := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput: &gqlschema.RuntimeInput{
 				Name: runtimeName,
@@ -84,144 +90,17 @@ func Test_E2E_Gardener(t *testing.T) {
 					ProviderSpecificConfig: gardenerInputs[provider].ProviderSpecificConfig,
 				},
 			},
-			KymaConfig: &gqlschema.KymaConfigInput{Version: config.Kyma.Version, Components: []*gqlschema.ComponentConfigurationInput{
-				// TODO: Parse installer CR
-				{
-					Component: "cluster-essentials",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "testing",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "istio-init",
-					Namespace: "istio-system",
-				},
-				{
-					Component: "istio",
-					Namespace: "istio-system",
-				},
-				{
-					Component: "xip-patch",
-					Namespace: "kyma-installer",
-				},
-				{
-					Component: "istio-kyma-patch",
-					Namespace: "istio-system",
-				},
-				{
-					Component: "knative-serving-init",
-					Namespace: "knative-serving",
-				},
-				{
-					Component: "knative-serving",
-					Namespace: "knative-serving",
-				},
-				{
-					Component: "knative-eventing",
-					Namespace: "knative-eventing",
-				},
-				{
-					Component: "prometheus-operator",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "dex",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "ory",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "api-gateway",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "service-catalog",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "service-catalog-addons",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "helm-broker",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "nats-streaming",
-					Namespace: "natss",
-				},
-				{
-					Component: "assetstore",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "cms",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "core",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "knative-provisioner-natss",
-					Namespace: "knative-eventing",
-				},
-				{
-					Component: "event-bus",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "application-connector-ingress",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "application-connector-helper",
-					Namespace: "kyma-integration",
-				},
-				{
-					Component: "application-connector",
-					Namespace: "kyma-integration",
-				},
-				{
-					Component: "backup-init",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "backup",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "logging",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "jaeger",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "monitoring",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "kiali",
-					Namespace: "kyma-system",
-				},
-				{
-					Component: "compass-runtime-agent",
-					Namespace: "compass-system",
-				},
-			}},
+			KymaConfig: &gqlschema.KymaConfigInput{
+				Version:    config.Kyma.Version,
+				Components: componentConfigInput,
+			},
 		}
 
 		log.Infof("Provisioning %s runtime on %s...", runtimeName, provider)
-		provisioningOperationId, runtimeId, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
+		provisioningOperationID, runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
 		assertions.RequireNoError(t, err)
-		log.Infof("Provisioning operation id: %s, runtime id: %s", provisioningOperationId, runtimeId)
-		defer ensureClusterIsDeprovisioned(runtimeId)
+		log.Infof("Provisioning operation id: %s, runtime id: %s", provisioningOperationID, runtimeID)
+		defer ensureClusterIsDeprovisioned(runtimeID)
 
 		var provisioningOperationStatus gqlschema.OperationStatus
 
@@ -230,14 +109,14 @@ func Test_E2E_Gardener(t *testing.T) {
 			func() error {
 				log.Infof("Waiting for provisioning to finish...")
 				var waitErr error
-				provisioningOperationStatus, waitErr = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationId)
+				provisioningOperationStatus, waitErr = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationID)
 				return waitErr
 			},
 			func() error {
 				log.Infof("Checking if operation will fail while other in progress...")
-				operationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(provisioningOperationId)
+				operationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(provisioningOperationID)
 				if err != nil {
-					return errors.WithMessagef(err, "Failed to get %s operation status", provisioningOperationId)
+					return errors.WithMessagef(err, "Failed to get %s operation status", provisioningOperationID)
 				}
 
 				if operationStatus.State != gqlschema.OperationStateInProgress {
@@ -254,11 +133,11 @@ func Test_E2E_Gardener(t *testing.T) {
 		)
 		assertions.RequireNoError(t, err, "Provisioning operation status: ", provisioningOperationStatus.State)
 
-		assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeId, provisioningOperationStatus)
+		assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
 		log.Infof("Runtime provisioned successfully on %s", provider)
 
 		log.Infof("Fetching %s runtime status...", provider)
-		runtimeStatus, err := testSuite.ProvisionerClient.RuntimeStatus(runtimeId)
+		runtimeStatus, err := testSuite.ProvisionerClient.RuntimeStatus(runtimeID)
 		assertions.RequireNoError(t, err)
 
 		assertGardenerRuntimeConfiguration(t, provisioningInput, runtimeStatus)
@@ -273,19 +152,19 @@ func Test_E2E_Gardener(t *testing.T) {
 		// TODO: Run E2e Runtime tests
 
 		log.Infof("Deprovisioning %s runtime on...", provider)
-		deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeId)
+		deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeID)
 		assertions.RequireNoError(t, err)
 		log.Infof("Deprovisioning operation id: %s", deprovisioningOperationId)
 
 		deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationId)
 		assertions.RequireNoError(t, err)
-		assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeId, deprovisioningOperationStatus)
+		assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 		log.Infof("Runtime deprovisioned successfully")
 	}
 }
 
 func Test_E2e(t *testing.T) {
-	// TODO: Support for GCP was dropped and for now the GCP tests are skipped
+	// Support for GCP was dropped and for now the GCP tests are skipped
 	t.SkipNow()
 
 	logrus.Infof("Starting provisioner tests concerning GCP. Test id: %s", testSuite.TestId)

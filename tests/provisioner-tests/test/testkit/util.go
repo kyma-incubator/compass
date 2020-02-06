@@ -1,11 +1,19 @@
 package testkit
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"time"
 
+	gqlschema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
+	yaml "gopkg.in/yaml.v3"
 )
+
+const InstallationCRURL = "https://raw.githubusercontent.com/kyma-project/kyma/master/installation/resources/installer-cr-cluster-with-compass.yaml.tpl"
 
 func WaitForFunction(interval, timeout time.Duration, isDone func() bool) error {
 	done := time.After(timeout)
@@ -57,6 +65,32 @@ func RunParallelToMainFunction(timeout time.Duration, mainFunction func() error,
 			return errors.Errorf("Timeout waiting for for parallel processes to finish. Functions finished %d. Errors: %v", len(funcErrors), processErrors(funcErrors))
 		}
 	}
+}
+
+func GetAndParseInstallerCR() ([]*gqlschema.ComponentConfigurationInput, error) {
+	resp, err := http.Get(InstallationCRURL)
+	if err != nil {
+		return nil, fmt.Errorf("Error fetching installation CR: %s", err.Error())
+	}
+	crContent, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("Error reading body of installation CR GET response: %s", err.Error())
+	}
+
+	installationCR := v1alpha1.Installation{}
+	err = yaml.NewDecoder(bytes.NewBuffer(crContent)).Decode(&installationCR)
+	if err != nil {
+		return nil, fmt.Errorf("Error decoding installer CR: %s", err.Error())
+	}
+	var components = make([]*gqlschema.ComponentConfigurationInput, 0, len(installationCR.Spec.Components))
+	for _, component := range installationCR.Spec.Components {
+		in := &gqlschema.ComponentConfigurationInput{
+			Component: component.Name,
+			Namespace: component.Namespace,
+		}
+		components = append(components, in)
+	}
+	return components, nil
 }
 
 func processErrors(errorsArray []error) error {

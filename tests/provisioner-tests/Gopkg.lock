@@ -157,6 +157,7 @@
   version = "v1.0.2"
 
 [[projects]]
+  branch = "gardener-azure"
   digest = "1:fac838305e332f0283de5aa98dcb02f39ab86dd7507b2b664f12898c28ba59fc"
   name = "github.com/kyma-incubator/compass"
   packages = [
@@ -164,7 +165,16 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "197b9f0c491038c7b8e938c500ce75cb4a349566"
+  revision = "b1df58ccfcbbd7d19b345ac46a00efd96fbe6e97"
+  source = "github.com/rafalpotempa/compass"
+
+[[projects]]
+  digest = "1:bde204c6c8dd5169cd05ed5aa9a1e027bc8d2cdd172c5e80b971cb4e14b55e3c"
+  name = "github.com/kyma-project/kyma"
+  packages = ["components/kyma-operator/pkg/apis/installer/v1alpha1"]
+  pruneopts = "UT"
+  revision = "119010d0810e5e1e23b78e1058f2b0fbea293ae9"
+  version = "1.9.0"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -416,6 +426,14 @@
   version = "v2.2.8"
 
 [[projects]]
+  branch = "v3"
+  digest = "1:5dd84ad9c8f79cb5380860f4197f1d68e2427aab6d899a11e975029e97d5c626"
+  name = "gopkg.in/yaml.v3"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a6ecf24a6d716d933bcbc255a2f5d492285b54f5"
+
+[[projects]]
   digest = "1:b2e959d92a38ffc25142da8e8bf4fefe0e5e687ecb871fabaac58db0497304df"
   name = "k8s.io/api"
   packages = [
@@ -606,6 +624,7 @@
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
+    "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
@@ -613,14 +632,12 @@
     "github.com/stretchr/testify/require",
     "github.com/vrischmann/envconfig",
     "golang.org/x/tools/cmd/goimports",
-    "k8s.io/api/core/v1",
+    "gopkg.in/yaml.v3",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/typed/core/v1",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
-    "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
-    "k8s.io/client-go/util/homedir",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
