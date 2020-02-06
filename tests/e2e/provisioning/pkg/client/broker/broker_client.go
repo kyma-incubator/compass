@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
@@ -37,8 +39,8 @@ type Client struct {
 func NewClient(config Config, clusterName, instanceID string, log logrus.FieldLogger) *Client {
 	return &Client{
 		brokerConfig: config,
-		clusterName:  clusterName,
 		instanceID:   instanceID,
+		clusterName:  clusterName,
 		client:       http.Client{},
 		log:          log,
 	}
@@ -53,16 +55,16 @@ const (
 )
 
 func (c *Client) ProvisionRuntime() (string, error) {
-	requestByte, err := c.prepareProvisionDetails(c.clusterName)
+	c.log.Infof("Provisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
+	requestByte, err := c.prepareProvisionDetails()
 	if err != nil {
 		return "", errors.Wrap(err, "while marshalling request body")
 	}
-	provisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.instanceID)
 
+	provisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.instanceID)
 	response := provisionResponse{}
-	c.log.Infof("Provisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
 	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
-		err := c.executeRequest(http.MethodPut, provisionURL, bytes.NewReader(requestByte), response)
+		err := c.executeRequest(http.MethodPut, provisionURL, bytes.NewReader(requestByte), &response)
 		if err != nil {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil
@@ -87,7 +89,7 @@ func (c *Client) DeprovisionRuntime() error {
 	response := provisionResponse{}
 	c.log.Infof("Deprovisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
 	err := wait.Poll(time.Second, time.Second*5, func() (bool, error) {
-		err := c.executeRequest(http.MethodDelete, deprovisionURL, nil, response)
+		err := c.executeRequest(http.MethodDelete, deprovisionURL, nil, &response)
 		if err != nil {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil
@@ -106,7 +108,7 @@ func (c *Client) AwaitProvisioningSucceeded(operationID string) error {
 
 	response := lastOperationResponse{}
 	err := wait.Poll(time.Second*15, c.brokerConfig.ProvisionTimeout, func() (bool, error) {
-		err := c.executeRequest(http.MethodGet, lastOperationURL, nil, response)
+		err := c.executeRequest(http.MethodGet, lastOperationURL, nil, &response)
 		if err != nil {
 			return false, errors.Wrap(err, "while executing request")
 		}
@@ -129,7 +131,7 @@ func (c *Client) FetchDashboardURL() (string, error) {
 	c.log.Info("Fetching the Runtime's dashboard URL")
 	response := instanceDetailsResponse{}
 	err := wait.Poll(time.Second, time.Second*5, func() (bool, error) {
-		err := c.executeRequest(http.MethodGet, instanceDetailsURL, nil, response)
+		err := c.executeRequest(http.MethodGet, instanceDetailsURL, nil, &response)
 		if err != nil {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil
@@ -148,15 +150,15 @@ func (c *Client) FetchDashboardURL() (string, error) {
 	return response.DashboardURL, nil
 }
 
-func (c *Client) prepareProvisionDetails(clusterName string) ([]byte, error) {
+func (c *Client) prepareProvisionDetails() ([]byte, error) {
 	parameters := provisionParameters{
-		Name:       clusterName,
+		Name:       c.clusterName,
 		Components: []string{""}, // fill with optional components
 	}
 	context := ersContext{
-		TenantID:        "e2e-provisioning",
-		SubAccountID:    "e2e-provisioning",
-		GlobalAccountID: "e2e-provisioning",
+		TenantID:        "1eba80dd-8ff6-54ee-be4d-77944d17b10b",
+		SubAccountID:    "39ba9a66-2c1a-4fe4-a28e-6e5db434084e",
+		GlobalAccountID: "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae",
 	}
 	rawParameters, err := json.Marshal(parameters)
 	if err != nil {
@@ -167,18 +169,22 @@ func (c *Client) prepareProvisionDetails(clusterName string) ([]byte, error) {
 		return nil, errors.Wrap(err, "while marshalling parameters body")
 	}
 	requestBody := domain.ProvisionDetails{
-		ServiceID: kymaClassID,
-		PlanID:    azurePlanID,
+		ServiceID:        kymaClassID,
+		PlanID:           azurePlanID,
+		OrganizationGUID: uuid.New().String(),
+		SpaceGUID:        uuid.New().String(),
+		RawContext:       rawContext,
+		RawParameters:    rawParameters,
 		MaintenanceInfo: &domain.MaintenanceInfo{
 			Version:     "0.1.0",
 			Description: "Kyma environment broker e2e-provisioning test",
 		},
-		RawParameters: rawParameters,
-		RawContext:    rawContext,
 	}
 	if c.brokerConfig.ProvisionGCP {
 		requestBody.PlanID = gcpPlanID
 	}
+	c.log.Infof("Provisioning parameters: %v", requestBody)
+
 	requestByte, err := json.Marshal(requestBody)
 	if err != nil {
 		return nil, errors.Wrap(err, "while marshalling request body")
@@ -199,7 +205,7 @@ func (c *Client) executeRequest(method, url string, body io.Reader, responseBody
 		return errors.Wrapf(err, "while executing request URL: %s", url)
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(&responseBody)
+	err = json.NewDecoder(resp.Body).Decode(responseBody)
 	if err != nil {
 		return errors.Wrapf(err, "while decoding body")
 	}

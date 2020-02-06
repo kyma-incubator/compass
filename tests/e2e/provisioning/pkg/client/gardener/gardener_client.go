@@ -2,11 +2,8 @@ package gardener
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
+	"net/http"
 	"time"
-
-	"k8s.io/client-go/rest"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -15,7 +12,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -31,26 +27,18 @@ type Client struct {
 	config Config
 	log    logrus.FieldLogger
 
-	client           client.Client
-	workingNamespace string
-	clusterName      string
+	client     client.Client
+	httpClient http.Client
+	runtimeID  string
 }
 
-func NewClient(config Config, clusterName, workingNamespace string, log logrus.FieldLogger) (*Client, error) {
-	k8sCfg, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot find Service Account in pod to build in-cluster kube config")
-	}
-	cli, err := client.New(k8sCfg, client.Options{})
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating a new client")
-	}
+func NewClient(config Config, runtimeID string, log logrus.FieldLogger) (*Client, error) {
 	return &Client{
-		workingNamespace: workingNamespace,
-		clusterName:      clusterName,
-		config:           config,
-		client:           cli,
-		log:              log,
+		runtimeID:  runtimeID,
+		config:     config,
+		httpClient: http.Client{},
+		client:     nil,
+		log:        log,
 	}, nil
 }
 
@@ -66,56 +54,17 @@ func (c *Client) RuntimeTearDown() error {
 	return nil
 }
 
+// fetch directly from provisioner runtime status endpoint
 func (c *Client) setRuntimeConfig() error {
-	// setting local cluster config
-	err := c.setClientConfig("")
-	if err != nil {
-		return errors.Wrap(err, "while setting client config")
-	}
-
-	secret := v1.Secret{}
-	if err = c.client.Get(context.Background(), client.ObjectKey{
-		Namespace: c.workingNamespace,
-		Name:      c.config.SecretName,
-	}, &secret); err != nil {
-		return errors.Wrapf(err, "while getting secret %s/%s", c.workingNamespace, c.config.SecretName)
-	}
-	gardenerK8sConfig, ok := secret.Data["credentials"]
-	if !ok {
-		return errors.New("credentials not exist inside secret")
-	}
-	gardenerConfigFile := "/configs/gardener.yaml"
-	err = ioutil.WriteFile(gardenerConfigFile, gardenerK8sConfig, 0644)
-	if err != nil {
-		return errors.Wrap(err, "while creating gardener kubeconfig file")
-	}
-	// setting gardener cluster config
-	err = c.setClientConfig(gardenerConfigFile)
-	if err != nil {
-		return errors.Wrap(err, "while setting client config")
-	}
-
-	runtimeSecretName := fmt.Sprintf("%s.kubeconfig", c.clusterName)
-	if err = c.client.Get(context.Background(), client.ObjectKey{
-		Namespace: "default",
-		Name:      runtimeSecretName,
-	}, &secret); err != nil {
-		return errors.Wrapf(err, "while getting secret %s/%s", c.workingNamespace, runtimeSecretName)
-	}
-	runtimeK8sConfig, ok := secret.Data["kubeconfig"]
-	if !ok {
-		return errors.New("kubeconfig not exist inside secret")
-	}
-	runtimeConfigFile := "/configs/runtime.yaml"
-	err = ioutil.WriteFile(runtimeConfigFile, runtimeK8sConfig, 0644)
-	if err != nil {
-		return errors.Wrap(err, "while creating runtime kubeconfig file")
-	}
-	// setting runtime cluster config
-	err = c.setClientConfig(runtimeConfigFile)
-	if err != nil {
-		return errors.Wrap(err, "while setting client config")
-	}
+	//runtimeConfigFile := "/configs/runtime.yaml"
+	//err = ioutil.WriteFile(runtimeConfigFile, runtimeK8sConfig, 0644)
+	//if err != nil {
+	//	return errors.Wrap(err, "while creating runtime kubeconfig file")
+	//}
+	//err = c.setClientConfig(runtimeConfigFile)
+	//if err != nil {
+	//	return errors.Wrap(err, "while setting client config")
+	//}
 
 	return nil
 }

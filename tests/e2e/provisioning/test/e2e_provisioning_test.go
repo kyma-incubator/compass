@@ -15,10 +15,10 @@ func Test_E2E_Provisioning(t *testing.T) {
 	defer ts.TearDown()
 
 	err = ts.brokerClient.AwaitProvisioningSucceeded(operationID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	dashboardURL, err := ts.brokerClient.FetchDashboardURL()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = ts.kymaClient.CallDashboardURL(dashboardURL)
 	assert.NoError(t, err)

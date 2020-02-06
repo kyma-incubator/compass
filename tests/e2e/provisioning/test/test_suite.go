@@ -47,15 +47,13 @@ func newTestSuite(t *testing.T) *Suite {
 	err := envconfig.InitWithPrefix(cfg, "APP")
 	require.NoError(t, err)
 
-	instanceUUID, err := uuid.NewRandom()
-	require.NoError(t, err)
-	instanceID := instanceUUID.String()
+	runtimeID := uuid.New().String()
 	clusterName := fmt.Sprintf("%s-%s", "e2e-provisioning", strings.ToLower(randstr.String(10)))
 
 	log := logrus.New()
 	kymaClient := kyma.NewClient(log)
-	brokerClient := broker.NewClient(cfg.Broker, clusterName, instanceID, log)
-	gardenerClient, err := gardener.NewClient(cfg.Gardener, clusterName, cfg.WorkingNamespace, log)
+	brokerClient := broker.NewClient(cfg.Broker, clusterName, runtimeID, log)
+	gardenerClient, err := gardener.NewClient(cfg.Gardener, runtimeID, log)
 	require.NoError(t, err)
 
 	return &Suite{
