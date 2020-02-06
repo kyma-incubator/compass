@@ -165,7 +165,7 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "b1df58ccfcbbd7d19b345ac46a00efd96fbe6e97"
+  revision = "9a693137d8d2ab78d265f0aede3fbaeec4ef2728"
   source = "github.com/rafalpotempa/compass"
 
 [[projects]]

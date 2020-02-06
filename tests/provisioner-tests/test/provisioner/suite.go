@@ -70,6 +70,8 @@ func (ts *TestSuite) Setup() error {
 }
 
 func (ts *TestSuite) Cleanup() {
+	provisionerLogs := "https://github.com/kubernetes/kubernetes/blob/c2e90cd1549dff87db7941544ce15f4c8ad0ba4c/pkg/kubectl/cmd/log.go#L188"
+	logrus.Infof(provisionerLogs)
 	logrus.Infof("Starting cleanup...")
 
 }
