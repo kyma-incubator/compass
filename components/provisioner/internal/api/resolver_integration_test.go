@@ -201,12 +201,14 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	defer containerCleanupFunc()
 
-	connection, err := database.InitializeDatabase(connString, testutils.SchemaFilePath, 5)
-
+	connection, err := database.InitializeDatabaseConnection(connString, 5)
 	require.NoError(t, err)
 	require.NotNil(t, connection)
 
 	defer testutils.CloseDatabase(t, connection)
+
+	err = database.SetupSchema(connection, testutils.SchemaFilePath)
+	require.NoError(t, err)
 
 	kymaConfig := fixKymaGraphQLConfigInput()
 

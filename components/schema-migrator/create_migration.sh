@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 COMPONENT=$1
 NAME=$2
 
@@ -11,7 +13,7 @@ for var in COMPONENT NAME; do
 done
 
 DATE="$(date +%Y%m%d%H%M)"
-MIGRATIONS_DIR="./migrations"
+MIGRATIONS_DIR="${DIR}/migrations"
 
 touch "${MIGRATIONS_DIR}/${COMPONENT}/${DATE}_${NAME}.up.sql"
 touch "${MIGRATIONS_DIR}/${COMPONENT}/${DATE}_${NAME}.down.sql"

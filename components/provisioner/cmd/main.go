@@ -110,7 +110,7 @@ func main() {
 
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
-	connection, err := database.InitializeDatabase(connString, cfg.Database.SchemaFilePath, databaseConnectionRetries)
+	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
 	exitOnError(err, "Failed to initialize persistence")
 
 	dbsFactory := dbsession.NewFactory(connection)

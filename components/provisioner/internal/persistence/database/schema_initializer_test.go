@@ -25,12 +25,14 @@ func TestSchemaInitializer(t *testing.T) {
 		defer containerCleanupFunc()
 
 		// when
-		connection, err := InitializeDatabase(connString, testutils.SchemaFilePath, 4)
-
+		connection, err := InitializeDatabaseConnection(connString, 4)
 		require.NoError(t, err)
 		require.NotNil(t, connection)
 
 		defer testutils.CloseDatabase(t, connection)
+
+		err = SetupSchema(connection, testutils.SchemaFilePath)
+		require.NoError(t, err)
 
 		// then
 		err = testutils.CheckIfAllDatabaseTablesArePresent(connection)
@@ -46,24 +48,20 @@ func TestSchemaInitializer(t *testing.T) {
 		defer containerCleanupFunc()
 
 		// when
-		connection, err := InitializeDatabase(connString, testutils.SchemaFilePath, 4)
-
+		connection, err := InitializeDatabaseConnection(connString, 4)
 		require.NoError(t, err)
 		require.NotNil(t, connection)
 
 		defer testutils.CloseDatabase(t, connection)
 
-		badSchemaFilePath := "../../../assets/database/notfound.sql"
+		err = SetupSchema(connection, testutils.SchemaFilePath)
+		require.NoError(t, err)
 
-		connection2, secondAttemptInitError := InitializeDatabase(connString, badSchemaFilePath, 4)
+		err = SetupSchema(connection, testutils.SchemaFilePath)
+		require.NoError(t, err)
 
 		// then
-		require.NoError(t, secondAttemptInitError)
-		require.NotNil(t, connection2)
-
-		defer testutils.CloseDatabase(t, connection2)
-
-		err = testutils.CheckIfAllDatabaseTablesArePresent(connection2)
+		err = testutils.CheckIfAllDatabaseTablesArePresent(connection)
 
 		assert.NoError(t, err)
 	})
@@ -79,7 +77,7 @@ func TestSchemaInitializer(t *testing.T) {
 		connString := "bad connection string"
 
 		// when
-		connection, err := InitializeDatabase(connString, testutils.SchemaFilePath, 4)
+		connection, err := InitializeDatabaseConnection(connString, 4)
 
 		// then
 		assert.Error(t, err)
@@ -96,10 +94,12 @@ func TestSchemaInitializer(t *testing.T) {
 		schemaFilePath := "../../../assets/database/notfound.sql"
 
 		//when
-		connection, err := InitializeDatabase(connString, schemaFilePath, 4)
+		connection, err := InitializeDatabaseConnection(connString, 4)
+		require.NoError(t, err)
+
+		err = SetupSchema(connection, schemaFilePath)
 
 		// then
 		assert.Error(t, err)
-		assert.Nil(t, connection)
 	})
 }
