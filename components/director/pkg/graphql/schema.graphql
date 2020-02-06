@@ -23,78 +23,78 @@ scalar QueryParams
 scalar Timestamp
 
 enum APISpecType {
-	ODATA
-	OPEN_API
+    ODATA
+    OPEN_API
 }
 
 enum ApplicationStatusCondition {
-	INITIAL
-	UNKNOWN
-	READY
-	FAILED
+    INITIAL
+    UNKNOWN
+    READY
+    FAILED
 }
 
 enum ApplicationTemplateAccessLevel {
-	GLOBAL
+    GLOBAL
 }
 
 enum ApplicationWebhookType {
-	CONFIGURATION_CHANGED
+    CONFIGURATION_CHANGED
 }
 
 enum DocumentFormat {
-	MARKDOWN
+    MARKDOWN
 }
 
 enum EventSpecType {
-	ASYNC_API
+    ASYNC_API
 }
 
 enum FetchMode {
-	SINGLE
-	PACKAGE
-	INDEX
+    SINGLE
+    PACKAGE
+    INDEX
 }
 
 enum FetchRequestStatusCondition {
-	INITIAL
-	SUCCEEDED
-	FAILED
+    INITIAL
+    SUCCEEDED
+    FAILED
 }
 
 enum HealthCheckStatusCondition {
-	SUCCEEDED
-	FAILED
+    SUCCEEDED
+    FAILED
 }
 
 enum HealthCheckType {
-	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
+    MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
 }
 
 enum RuntimeStatusCondition {
-	INITIAL
-	READY
-	FAILED
+    INITIAL
+    READY
+    FAILED
 }
 
 enum SpecFormat {
-	YAML
-	JSON
-	XML
+    YAML
+    JSON
+    XML
 }
 
 enum ViewerType {
-	RUNTIME
-	APPLICATION
-	INTEGRATION_SYSTEM
-	USER
+    RUNTIME
+    APPLICATION
+    INTEGRATION_SYSTEM
+    USER
 }
 
 interface OneTimeToken {
-	token: String!
-	connectorURL: String!
-	raw: String
-	rawEncoded: String
+    token: String!
+    connectorURL: String!
+    raw: String
+    rawEncoded: String
 }
 
 """
@@ -104,772 +104,857 @@ To specify page details, query specify two parameters: `first` and `after`.
 For requesting next page, set `after` to `pageInfo.endCursor` returned from previous query.
 """
 interface Pageable {
-	pageInfo: PageInfo!
-	totalCount: Int!
+    pageInfo: PageInfo!
+    totalCount: Int!
 }
 
 union CredentialData = BasicCredentialData | OAuthCredentialData
 
 input APIDefinitionInput {
-	name: String!
-	description: String
-	targetURL: String!
-	group: String
-	spec: APISpecInput
-	version: VersionInput
-	defaultAuth: AuthInput
+    name: String!
+    description: String
+    targetURL: String!
+    group: String
+    spec: APISpecInput
+    version: VersionInput
 }
 
 input APISpecInput {
-	data: CLOB
-	type: APISpecType!
-	format: SpecFormat!
-	fetchRequest: FetchRequestInput
+    data: CLOB
+    type: APISpecType!
+    format: SpecFormat!
+    fetchRequest: FetchRequestInput
 }
 
 input ApplicationFromTemplateInput {
-	templateName: String!
-	values: [TemplateValueInput!]
+    templateName: String!
+    values: [TemplateValueInput!]
 }
 
 input ApplicationRegisterInput {
-	name: String!
-	providerName: String
-	description: String
-	labels: Labels
-	webhooks: [WebhookInput!]
-	healthCheckURL: String
-	apiDefinitions: [APIDefinitionInput!]
-	eventDefinitions: [EventDefinitionInput!]
-	documents: [DocumentInput!]
-	integrationSystemID: ID
+    name: String!
+    providerName: String
+    description: String
+    labels: Labels
+    webhooks: [WebhookInput!]
+    healthCheckURL: String
+    packages: [PackageDefinitionCreateInput!]
+    integrationSystemID: ID
 }
 
 input ApplicationTemplateInput {
-	name: String!
-	description: String
-	applicationInput: ApplicationRegisterInput!
-	placeholders: [PlaceholderDefinitionInput!]
-	accessLevel: ApplicationTemplateAccessLevel!
+    name: String!
+    description: String
+    applicationInput: ApplicationRegisterInput!
+    placeholders: [PlaceholderDefinitionInput!]
+    accessLevel: ApplicationTemplateAccessLevel!
 }
 
 input ApplicationUpdateInput {
-	name: String!
-	providerName: String
-	description: String
-	healthCheckURL: String
-	integrationSystemID: ID
+    name: String!
+    providerName: String
+    description: String
+    healthCheckURL: String
+    integrationSystemID: ID
 }
 
 input AuthInput {
-	credential: CredentialDataInput!
-	additionalHeaders: HttpHeaders
-	additionalQueryParams: QueryParams
-	requestAuth: CredentialRequestAuthInput
+    credential: CredentialDataInput!
+    additionalHeaders: HttpHeaders
+    additionalQueryParams: QueryParams
+    requestAuth: CredentialRequestAuthInput
 }
 
 input BasicCredentialDataInput {
-	username: String!
-	password: String!
+    username: String!
+    password: String!
 }
 
 input CSRFTokenCredentialRequestAuthInput {
-	tokenEndpointURL: String!
-	credential: CredentialDataInput!
-	additionalHeaders: HttpHeaders
-	additionalQueryParams: QueryParams
+    tokenEndpointURL: String!
+    credential: CredentialDataInput!
+    additionalHeaders: HttpHeaders
+    additionalQueryParams: QueryParams
 }
 
 input CredentialDataInput {
-	basic: BasicCredentialDataInput
-	oauth: OAuthCredentialDataInput
+    basic: BasicCredentialDataInput
+    oauth: OAuthCredentialDataInput
 }
 
 input CredentialRequestAuthInput {
-	csrf: CSRFTokenCredentialRequestAuthInput
+    csrf: CSRFTokenCredentialRequestAuthInput
 }
 
 input DocumentInput {
-	title: String!
-	displayName: String!
-	description: String!
-	format: DocumentFormat!
-	kind: String
-	data: CLOB
-	fetchRequest: FetchRequestInput
+    title: String!
+    displayName: String!
+    description: String!
+    format: DocumentFormat!
+    kind: String
+    data: CLOB
+    fetchRequest: FetchRequestInput
 }
 
 input EventDefinitionInput {
-	name: String!
-	description: String
-	spec: EventSpecInput
-	group: String
-	version: VersionInput
+    name: String!
+    description: String
+    spec: EventSpecInput
+    group: String
+    version: VersionInput
 }
 
 input EventSpecInput {
-	data: CLOB
-	type: EventSpecType!
-	format: SpecFormat!
-	fetchRequest: FetchRequestInput
+    data: CLOB
+    type: EventSpecType!
+    format: SpecFormat!
+    fetchRequest: FetchRequestInput
 }
 
 input FetchRequestInput {
-	url: String!
-	auth: AuthInput
-	mode: FetchMode = SINGLE
-	filter: String
+    url: String!
+    auth: AuthInput
+    mode: FetchMode = SINGLE
+    filter: String
 }
 
 input IntegrationSystemInput {
-	name: String!
-	description: String
+    name: String!
+    description: String
 }
 
 input LabelDefinitionInput {
-	key: String!
-	schema: JSONSchema
+    key: String!
+    schema: JSONSchema
 }
 
 input LabelFilter {
-	"""
-	Label key. If query for the filter is not provided, returns every object with given label key regardless of its value.
-	"""
-	key: String!
-	"""
-	Optional SQL/JSON Path expression. If query is not provided, returns every object with given label key regardless of its value.
-	Currently only a limited subset of expressions is supported.
-	"""
-	query: String
+    """
+    Label key. If query for the filter is not provided, returns every object with given label key regardless of its value.
+    """
+    key: String!
+    """
+    Optional SQL/JSON Path expression. If query is not provided, returns every object with given label key regardless of its value.
+    Currently only a limited subset of expressions is supported.
+    """
+    query: String
 }
 
 input LabelInput {
-	key: String!
-	value: Any!
+    key: String!
+    value: Any!
 }
 
 input OAuthCredentialDataInput {
-	clientId: ID!
-	clientSecret: String!
-	url: String!
+    clientId: ID!
+    clientSecret: String!
+    url: String!
 }
 
 input PlaceholderDefinitionInput {
-	name: String!
-	description: String
+    name: String!
+    description: String
 }
 
 input RuntimeInput {
-	name: String!
-	description: String
-	labels: Labels
+    name: String!
+    description: String
+    labels: Labels
 }
 
 input TemplateValueInput {
-	placeholder: String!
-	value: String!
+    placeholder: String!
+    value: String!
 }
 
 input VersionInput {
-	value: String!
-	deprecated: Boolean = false
-	deprecatedSince: String
-	forRemoval: Boolean = false
+    value: String!
+    deprecated: Boolean = false
+    deprecatedSince: String
+    forRemoval: Boolean = false
 }
 
 input WebhookInput {
-	type: ApplicationWebhookType!
-	url: String!
-	auth: AuthInput
+    type: ApplicationWebhookType!
+    url: String!
+    auth: AuthInput
 }
 
 type APIDefinition {
-	id: ID!
-	applicationID: ID!
-	name: String!
-	description: String
-	spec: APISpec
-	targetURL: String!
-	"""
-	group allows you to find the same API but in different version
-	"""
-	group: String
-	"""
-	"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
-	"""
-	auth(runtimeID: ID!): APIRuntimeAuth
-	"""
-	Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
-	"""
-	auths: [APIRuntimeAuth!]
-	"""
-	If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
-	"""
-	defaultAuth: Auth
-	version: Version
+    id: ID!
+    applicationID: ID!
+    name: String!
+    description: String
+    spec: APISpec
+    targetURL: String!
+    """
+    group allows you to find the same API but in different version
+    """
+    group: String
+    version: Version
 }
 
 type APIDefinitionPage implements Pageable {
-	data: [APIDefinition!]!
-	pageInfo: PageInfo!
-	totalCount: Int!
-}
-
-type APIRuntimeAuth {
-	runtimeID: ID!
-	auth: Auth
+    data: [APIDefinition!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
 }
 
 type APISpec {
-	"""
-	when fetch request specified, data will be automatically populated
-	"""
-	data: CLOB
-	format: SpecFormat!
-	type: APISpecType!
-	fetchRequest: FetchRequest
+    """
+    when fetch request specified, data will be automatically populated
+    """
+    data: CLOB
+    format: SpecFormat!
+    type: APISpecType!
+    fetchRequest: FetchRequest
 }
 
 type Application {
-	id: ID!
-	name: String!
-	providerName: String
-	description: String
-	integrationSystemID: ID
-	labels(key: String): Labels
-	status: ApplicationStatus!
-	webhooks: [Webhook!]
-	healthCheckURL: String
-	"""
-	group allows to find different versions of the same API
-	Maximum `first` parameter value is 100
-	"""
-	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage
-	"""
-	group allows to find different versions of the same event Definitions
-	"""
-	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage
-	apiDefinition(id: ID!): APIDefinition
-	eventDefinition(id: ID!): EventDefinition
-	documents(first: Int = 100, after: PageCursor): DocumentPage
-	auths: [SystemAuth!]
-	eventingConfiguration: ApplicationEventingConfiguration
+    id: ID!
+    name: String!
+    providerName: String
+    description: String
+    integrationSystemID: ID
+    labels(key: String): Labels
+    status: ApplicationStatus!
+    webhooks: [Webhook!]
+    healthCheckURL: String
+    """
+    group allows to find different versions of the same API`
+    Maximum `first` parameter value is 100
+    """
+    apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage @deprecated(reason:"Use `packages.apiDefinitions` field")
+    """
+    group allows to find different versions of the same event Definitions
+    """
+    eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage @deprecated(reason:"Use `packages.eventDefinitions` field")
+    apiDefinition(id: ID!): APIDefinition @deprecated(reason:"Use `package.apiDefinition` field")
+    eventDefinition(id: ID!): EventDefinition @deprecated(reason:"Use `package.eventDefinition` field")
+    documents(first: Int = 100, after: PageCursor): DocumentPage @deprecated(reason: "Use `package.documents` field")
+
+	packages: [PackageDefinition!]!
+	package(id: ID!): PackageDefinition
+
+    auths: [SystemAuth!]
+    eventingConfiguration: ApplicationEventingConfiguration
 }
 
 type ApplicationEventingConfiguration {
-	defaultURL: String!
+    defaultURL: String!
 }
 
 type ApplicationPage implements Pageable {
-	data: [Application!]!
-	pageInfo: PageInfo!
-	totalCount: Int!
+    data: [Application!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
 }
 
 type ApplicationStatus {
-	condition: ApplicationStatusCondition!
-	timestamp: Timestamp!
+    condition: ApplicationStatusCondition!
+    timestamp: Timestamp!
 }
 
 type ApplicationTemplate {
-	id: ID!
-	name: String!
-	description: String
-	applicationInput: String!
-	placeholders: [PlaceholderDefinition!]!
-	accessLevel: ApplicationTemplateAccessLevel!
+    id: ID!
+    name: String!
+    description: String
+    applicationInput: String!
+    placeholders: [PlaceholderDefinition!]!
+    accessLevel: ApplicationTemplateAccessLevel!
 }
 
 type ApplicationTemplatePage implements Pageable {
-	data: [ApplicationTemplate!]!
-	pageInfo: PageInfo!
-	totalCount: Int!
+    data: [ApplicationTemplate!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
 }
 
 type Auth {
-	credential: CredentialData!
-	additionalHeaders: HttpHeaders
-	additionalQueryParams: QueryParams
-	requestAuth: CredentialRequestAuth
+    credential: CredentialData!
+    additionalHeaders: HttpHeaders
+    additionalQueryParams: QueryParams
+    requestAuth: CredentialRequestAuth
 }
 
 type BasicCredentialData {
-	username: String!
-	password: String!
+    username: String!
+    password: String!
 }
 
 type CSRFTokenCredentialRequestAuth {
-	tokenEndpointURL: String!
-	credential: CredentialData!
-	additionalHeaders: HttpHeaders
-	additionalQueryParams: QueryParams
+    tokenEndpointURL: String!
+    credential: CredentialData!
+    additionalHeaders: HttpHeaders
+    additionalQueryParams: QueryParams
 }
 
 type CredentialRequestAuth {
-	csrf: CSRFTokenCredentialRequestAuth
+    csrf: CSRFTokenCredentialRequestAuth
 }
 
 type Document {
-	id: ID!
-	applicationID: ID!
-	title: String!
-	displayName: String!
-	description: String!
-	format: DocumentFormat!
-	"""
-	for example Service Class, API etc
-	"""
-	kind: String
-	data: CLOB
-	fetchRequest: FetchRequest
+    id: ID!
+    applicationID: ID!
+    title: String!
+    displayName: String!
+    description: String!
+    format: DocumentFormat!
+    """
+    for example Service Class, API etc
+    """
+    kind: String
+    data: CLOB
+    fetchRequest: FetchRequest
 }
 
 type DocumentPage implements Pageable {
-	data: [Document!]!
-	pageInfo: PageInfo!
-	totalCount: Int!
+    data: [Document!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
 }
 
 type EventDefinition {
-	id: ID!
-	applicationID: ID!
-	name: String!
-	description: String
-	"""
-	group allows you to find the same API but in different version
-	"""
-	group: String
-	spec: EventSpec
-	version: Version
+    id: ID!
+    applicationID: ID!
+    name: String!
+    description: String
+    """
+    group allows you to find the same API but in different version
+    """
+    group: String
+    spec: EventSpec
+    version: Version
 }
 
 type EventDefinitionPage implements Pageable {
-	data: [EventDefinition!]!
-	pageInfo: PageInfo!
-	totalCount: Int!
+    data: [EventDefinition!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
 }
 
 type EventSpec {
-	data: CLOB
-	type: EventSpecType!
-	format: SpecFormat!
-	fetchRequest: FetchRequest
+    data: CLOB
+    type: EventSpecType!
+    format: SpecFormat!
+    fetchRequest: FetchRequest
 }
 
 """
 Compass performs fetch to validate if request is correct and stores a copy
 """
 type FetchRequest {
-	url: String!
-	auth: Auth
-	mode: FetchMode!
-	filter: String
-	status: FetchRequestStatus!
+    url: String!
+    auth: Auth
+    mode: FetchMode!
+    filter: String
+    status: FetchRequestStatus!
 }
 
 type FetchRequestStatus {
-	condition: FetchRequestStatusCondition!
-	timestamp: Timestamp!
+    condition: FetchRequestStatusCondition!
+    timestamp: Timestamp!
 }
 
 type HealthCheck {
-	type: HealthCheckType!
-	condition: HealthCheckStatusCondition!
-	origin: ID
-	message: String
-	timestamp: Timestamp!
+    type: HealthCheckType!
+    condition: HealthCheckStatusCondition!
+    origin: ID
+    message: String
+    timestamp: Timestamp!
 }
 
 type HealthCheckPage implements Pageable {
-	data: [HealthCheck!]!
-	pageInfo: PageInfo!
-	totalCount: Int!
+    data: [HealthCheck!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
 }
 
 type IntegrationSystem {
-	id: ID!
-	name: String!
-	description: String
-	auths: [SystemAuth!]
+    id: ID!
+    name: String!
+    description: String
+    auths: [SystemAuth!]
 }
 
 type IntegrationSystemPage implements Pageable {
-	data: [IntegrationSystem!]!
-	pageInfo: PageInfo!
-	totalCount: Int!
+    data: [IntegrationSystem!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
 }
 
 type Label {
-	key: String!
-	value: Any!
+    key: String!
+    value: Any!
 }
 
 type LabelDefinition {
-	key: String!
-	schema: JSONSchema
+    key: String!
+    schema: JSONSchema
 }
 
 type OAuthCredentialData {
-	clientId: ID!
-	clientSecret: String!
-	"""
-	URL for getting access token
-	"""
-	url: String!
+    clientId: ID!
+    clientSecret: String!
+    """
+    URL for getting access token
+    """
+    url: String!
 }
 
 type OneTimeTokenForApplication implements OneTimeToken {
-	token: String!
-	connectorURL: String!
-	legacyConnectorURL: String!
-	raw: String
-	rawEncoded: String
+    token: String!
+    connectorURL: String!
+    legacyConnectorURL: String!
+    raw: String
+    rawEncoded: String
 }
 
 type OneTimeTokenForRuntime implements OneTimeToken {
-	token: String!
-	connectorURL: String!
-	raw: String
-	rawEncoded: String
+    token: String!
+    connectorURL: String!
+    raw: String
+    rawEncoded: String
 }
 
 type PageInfo {
-	startCursor: PageCursor!
-	endCursor: PageCursor!
-	hasNextPage: Boolean!
+    startCursor: PageCursor!
+    endCursor: PageCursor!
+    hasNextPage: Boolean!
 }
 
 type PlaceholderDefinition {
-	name: String!
-	description: String
+    name: String!
+    description: String
 }
 
 type Runtime {
-	id: ID!
-	metadata: RuntimeMetadata!
-	name: String!
-	description: String
-	labels(key: String): Labels
-	status: RuntimeStatus!
-	"""
-	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
-	"""
-	auths: [SystemAuth!]
-	eventingConfiguration: RuntimeEventingConfiguration
+    id: ID!
+    metadata: RuntimeMetadata!
+    name: String!
+    description: String
+    labels(key: String): Labels
+    status: RuntimeStatus!
+    """
+    Returns array of authentication details for Runtime. For now at most one element in array will be returned.
+    """
+    auths: [SystemAuth!]
+    eventingConfiguration: RuntimeEventingConfiguration
 }
 
 type RuntimeEventingConfiguration {
-	defaultURL: String!
+    defaultURL: String!
 }
 
 type RuntimeMetadata {
-	creationTimestamp: Timestamp!
+    creationTimestamp: Timestamp!
 }
 
 type RuntimePage implements Pageable {
-	data: [Runtime!]!
-	pageInfo: PageInfo!
-	totalCount: Int!
+    data: [Runtime!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
 }
 
 type RuntimeStatus {
-	condition: RuntimeStatusCondition!
-	timestamp: Timestamp!
+    condition: RuntimeStatusCondition!
+    timestamp: Timestamp!
 }
 
 type SystemAuth {
-	id: ID!
-	auth: Auth
+    id: ID!
+    auth: Auth
 }
 
 type Tenant {
-	id: ID!
-	internalID: ID!
-	name: String
+    id: ID!
+    internalID: ID!
+    name: String
 }
 
 type Version {
-	"""
-	for example 4.6
-	"""
-	value: String!
-	deprecated: Boolean
-	"""
-	for example 4.5
-	"""
-	deprecatedSince: String
-	"""
-	if true, will be removed in the next version
-	"""
-	forRemoval: Boolean
+    """
+    for example 4.6
+    """
+    value: String!
+    deprecated: Boolean
+    """
+    for example 4.5
+    """
+    deprecatedSince: String
+    """
+    if true, will be removed in the next version
+    """
+    forRemoval: Boolean
 }
 
 type Viewer {
-	id: ID!
-	type: ViewerType!
+    id: ID!
+    type: ViewerType!
 }
 
 type Webhook {
-	id: ID!
-	applicationID: ID!
-	type: ApplicationWebhookType!
-	url: String!
-	auth: Auth
+    id: ID!
+    applicationID: ID!
+    type: ApplicationWebhookType!
+    url: String!
+    auth: Auth
 }
 
 type Query {
-	"""
-	Maximum `first` parameter value is 100
-	
-	**Examples**
-	- [query applications with label filter](examples/query-applications/query-applications-with-label-filter.graphql)
-	- [query applications](examples/query-applications/query-applications.graphql)
-	"""
-	applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applications")
-	"""
-	**Examples**
-	- [query api runtime auths](examples/query-application/query-api-runtime-auths.graphql)
-	- [query application](examples/query-application/query-application.graphql)
-	"""
-	application(id: ID!): Application @hasScopes(path: "graphql.query.application")
-	"""
-	Maximum `first` parameter value is 100
-	
-	**Examples**
-	- [query applications for runtime](examples/query-applications-for-runtime/query-applications-for-runtime.graphql)
-	"""
-	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
-	"""
-	Maximum `first` parameter value is 100
-	
-	**Examples**
-	- [query application templates](examples/query-application-templates/query-application-templates.graphql)
-	"""
-	applicationTemplates(first: Int = 100, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
-	"""
-	**Examples**
-	- [query application template](examples/query-application-template/query-application-template.graphql)
-	"""
-	applicationTemplate(id: ID!): ApplicationTemplate @hasScopes(path: "graphql.query.applicationTemplate")
-	"""
-	Maximum `first` parameter value is 100
-	
-	**Examples**
-	- [query runtimes with label filter](examples/query-runtimes/query-runtimes-with-label-filter.graphql)
-	- [query runtimes with pagination](examples/query-runtimes/query-runtimes-with-pagination.graphql)
-	- [query runtimes](examples/query-runtimes/query-runtimes.graphql)
-	"""
-	runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
-	"""
-	**Examples**
-	- [query runtime](examples/query-runtime/query-runtime.graphql)
-	"""
-	runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
-	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
-	"""
-	**Examples**
-	- [query label definition](examples/query-label-definition/query-label-definition.graphql)
-	"""
-	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
-	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
-	"""
-	Maximum `first` parameter value is 100
-	
-	**Examples**
-	- [query integration systems](examples/query-integration-systems/query-integration-systems.graphql)
-	"""
-	integrationSystems(first: Int = 100, after: PageCursor): IntegrationSystemPage! @hasScopes(path: "graphql.query.integrationSystems")
-	"""
-	**Examples**
-	- [query integration system](examples/query-integration-system/query-integration-system.graphql)
-	"""
-	integrationSystem(id: ID!): IntegrationSystem @hasScopes(path: "graphql.query.integrationSystem")
-	viewer: Viewer! @hasScopes(path: "graphql.query.viewer")
-	"""
-	**Examples**
-	- [query tenants](examples/query-tenants/query-tenants.graphql)
-	"""
-	tenants: [Tenant!]! @hasScopes(path: "graphql.query.tenants")
+    """
+    Maximum `first` parameter value is 100
+
+    **Examples**
+    - [query applications with label filter](examples/query-applications/query-applications-with-label-filter.graphql)
+    - [query applications](examples/query-applications/query-applications.graphql)
+    """
+    applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applications")
+    """
+    **Examples**
+    - [query api runtime auths](examples/query-application/query-api-runtime-auths.graphql)
+    - [query application](examples/query-application/query-application.graphql)
+    """
+    application(id: ID!): Application @hasScopes(path: "graphql.query.application")
+    """
+    Maximum `first` parameter value is 100
+
+    **Examples**
+    - [query applications for runtime](examples/query-applications-for-runtime/query-applications-for-runtime.graphql)
+    """
+    applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
+    """
+    Maximum `first` parameter value is 100
+
+    **Examples**
+    - [query application templates](examples/query-application-templates/query-application-templates.graphql)
+    """
+    applicationTemplates(first: Int = 100, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
+    """
+    **Examples**
+    - [query application template](examples/query-application-template/query-application-template.graphql)
+    """
+    applicationTemplate(id: ID!): ApplicationTemplate @hasScopes(path: "graphql.query.applicationTemplate")
+    """
+    Maximum `first` parameter value is 100
+
+    **Examples**
+    - [query runtimes with label filter](examples/query-runtimes/query-runtimes-with-label-filter.graphql)
+    - [query runtimes with pagination](examples/query-runtimes/query-runtimes-with-pagination.graphql)
+    - [query runtimes](examples/query-runtimes/query-runtimes.graphql)
+    """
+    runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
+    """
+    **Examples**
+    - [query runtime](examples/query-runtime/query-runtime.graphql)
+    """
+    runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
+    labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
+    """
+    **Examples**
+    - [query label definition](examples/query-label-definition/query-label-definition.graphql)
+    """
+    labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
+    healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
+    """
+    Maximum `first` parameter value is 100
+
+    **Examples**
+    - [query integration systems](examples/query-integration-systems/query-integration-systems.graphql)
+    """
+    integrationSystems(first: Int = 100, after: PageCursor): IntegrationSystemPage! @hasScopes(path: "graphql.query.integrationSystems")
+    """
+    **Examples**
+    - [query integration system](examples/query-integration-system/query-integration-system.graphql)
+    """
+    integrationSystem(id: ID!): IntegrationSystem @hasScopes(path: "graphql.query.integrationSystem")
+    viewer: Viewer! @hasScopes(path: "graphql.query.viewer")
+    """
+    **Examples**
+    - [query tenants](examples/query-tenants/query-tenants.graphql)
+    """
+    tenants: [Tenant!]! @hasScopes(path: "graphql.query.tenants")
 }
 
 type Mutation {
-	"""
-	**Examples**
-	- [register application with api definitions](examples/register-application/register-application-with-api-definitions.graphql)
-	- [register application with documents](examples/register-application/register-application-with-documents.graphql)
-	- [register application with event definitions](examples/register-application/register-application-with-event-definitions.graphql)
-	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
-	- [register application](examples/register-application/register-application.graphql)
-	"""
-	registerApplication(in: ApplicationRegisterInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplication")
-	"""
-	**Examples**
-	- [update application](examples/update-application/update-application.graphql)
-	"""
-	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication")
-	"""
-	**Examples**
-	- [unregister application](examples/unregister-application/unregister-application.graphql)
-	"""
-	unregisterApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.unregisterApplication")
-	"""
-	**Examples**
-	- [create application template](examples/create-application-template/create-application-template.graphql)
-	"""
-	createApplicationTemplate(in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
-	"""
-	**Examples**
-	- [register application from template](examples/register-application-from-template/register-application-from-template.graphql)
-	"""
-	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate")
-	"""
-	**Examples**
-	- [update application template](examples/update-application-template/update-application-template.graphql)
-	"""
-	updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
-	"""
-	**Examples**
-	- [delete application template](examples/delete-application-template/delete-application-template.graphql)
-	"""
-	deleteApplicationTemplate(id: ID!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.deleteApplicationTemplate")
-	"""
-	**Examples**
-	- [register runtime](examples/register-runtime/register-runtime.graphql)
-	"""
-	registerRuntime(in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.registerRuntime")
-	"""
-	**Examples**
-	- [update runtime](examples/update-runtime/update-runtime.graphql)
-	"""
-	updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
-	"""
-	**Examples**
-	- [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)
-	"""
-	unregisterRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.unregisterRuntime")
-	"""
-	**Examples**
-	- [register integration system](examples/register-integration-system/register-integration-system.graphql)
-	"""
-	registerIntegrationSystem(in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.registerIntegrationSystem")
-	"""
-	**Examples**
-	- [update integration system](examples/update-integration-system/update-integration-system.graphql)
-	"""
-	updateIntegrationSystem(id: ID!, in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.updateIntegrationSystem")
-	"""
-	**Examples**
-	- [unregister integration system](examples/unregister-integration-system/unregister-integration-system.graphql)
-	"""
-	unregisterIntegrationSystem(id: ID!): IntegrationSystem! @hasScopes(path: "graphql.mutation.unregisterIntegrationSystem")
-	"""
-	**Examples**
-	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
-	"""
-	addWebhook(applicationID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
-	"""
-	**Examples**
-	- [update application webhook](examples/update-webhook/update-application-webhook.graphql)
-	"""
-	updateWebhook(webhookID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.updateWebhook")
-	"""
-	**Examples**
-	- [delete application webhook](examples/delete-webhook/delete-application-webhook.graphql)
-	"""
-	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
-	"""
-	**Examples**
-	- [add api definition](examples/add-api-definition/add-api-definition.graphql)
-	"""
-	addAPIDefinition(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinition")
-	"""
-	**Examples**
-	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
-	"""
-	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition")
-	"""
-	**Examples**
-	- [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
-	"""
-	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition")
-	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
-	requestOneTimeTokenForRuntime(id: ID!): OneTimeTokenForRuntime! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
-	requestOneTimeTokenForApplication(id: ID!): OneTimeTokenForApplication! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForApplication")
-	requestClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForRuntime")
-	requestClientCredentialsForApplication(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForApplication")
-	requestClientCredentialsForIntegrationSystem(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForIntegrationSystem")
-	deleteSystemAuthForRuntime(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForRuntime")
-	deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForApplication")
-	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForIntegrationSystem")
-	"""
-	Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
-	"""
-	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth")
-	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth")
-	"""
-	**Examples**
-	- [add event definition](examples/add-event-definition/add-event-definition.graphql)
-	"""
-	addEventDefinition(applicationID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
-	"""
-	**Examples**
-	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
-	"""
-	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition")
-	"""
-	**Examples**
-	- [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)
-	"""
-	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
-	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
-	"""
-	**Examples**
-	- [add document](examples/add-document/add-document.graphql)
-	"""
-	addDocument(applicationID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
-	"""
-	**Examples**
-	- [delete document](examples/delete-document/delete-document.graphql)
-	"""
-	deleteDocument(id: ID!): Document! @hasScopes(path: "graphql.mutation.deleteDocument")
-	"""
-	**Examples**
-	- [create label definition](examples/create-label-definition/create-label-definition.graphql)
-	"""
-	createLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
-	"""
-	**Examples**
-	- [update label definition](examples/update-label-definition/update-label-definition.graphql)
-	"""
-	updateLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
-	"""
-	**Examples**
-	- [delete label definition](examples/delete-label-definition/delete-label-definition.graphql)
-	"""
-	deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean = false): LabelDefinition! @hasScopes(path: "graphql.mutation.deleteLabelDefinition")
-	"""
-	If a label with given key already exist, it will be replaced with provided value.
-	
-	**Examples**
-	- [set application label](examples/set-application-label/set-application-label.graphql)
-	"""
-	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
-	"""
-	If Application does not exist or the label key is not found, it returns an error.
-	
-	**Examples**
-	- [delete application label](examples/delete-application-label/delete-application-label.graphql)
-	"""
-	deleteApplicationLabel(applicationID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteApplicationLabel")
-	"""
-	If a label with given key already exist, it will be replaced with provided value.
-	"""
-	setRuntimeLabel(runtimeID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setRuntimeLabel")
-	"""
-	If Runtime does not exist or the label key is not found, it returns an error.
-	"""
-	deleteRuntimeLabel(runtimeID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteRuntimeLabel")
-	setDefaultEventingForApplication(appID: String!, runtimeID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.setDefaultEventingForApplication")
-	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
+    """
+    **Examples**
+    - [register application with api definitions](examples/register-application/register-application-with-api-definitions.graphql)
+    - [register application with documents](examples/register-application/register-application-with-documents.graphql)
+    - [register application with event definitions](examples/register-application/register-application-with-event-definitions.graphql)
+    - [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
+    - [register application](examples/register-application/register-application.graphql)
+    """
+    registerApplication(in: ApplicationRegisterInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplication")
+    """
+    **Examples**
+    - [update application](examples/update-application/update-application.graphql)
+    """
+    updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication")
+    """
+    **Examples**
+    - [unregister application](examples/unregister-application/unregister-application.graphql)
+    """
+    unregisterApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.unregisterApplication")
+    """
+    **Examples**
+    - [create application template](examples/create-application-template/create-application-template.graphql)
+    """
+    createApplicationTemplate(in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
+    """
+    **Examples**
+    - [register application from template](examples/register-application-from-template/register-application-from-template.graphql)
+    """
+    registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate")
+    """
+    **Examples**
+    - [update application template](examples/update-application-template/update-application-template.graphql)
+    """
+    updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+    """
+    **Examples**
+    - [delete application template](examples/delete-application-template/delete-application-template.graphql)
+    """
+    deleteApplicationTemplate(id: ID!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.deleteApplicationTemplate")
+    """
+    **Examples**
+    - [register runtime](examples/register-runtime/register-runtime.graphql)
+    """
+    registerRuntime(in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.registerRuntime")
+    """
+    **Examples**
+    - [update runtime](examples/update-runtime/update-runtime.graphql)
+    """
+    updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
+    """
+    **Examples**
+    - [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)
+    """
+    unregisterRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.unregisterRuntime")
+    """
+    **Examples**
+    - [register integration system](examples/register-integration-system/register-integration-system.graphql)
+    """
+    registerIntegrationSystem(in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.registerIntegrationSystem")
+    """
+    **Examples**
+    - [update integration system](examples/update-integration-system/update-integration-system.graphql)
+    """
+    updateIntegrationSystem(id: ID!, in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.updateIntegrationSystem")
+    """
+    **Examples**
+    - [unregister integration system](examples/unregister-integration-system/unregister-integration-system.graphql)
+    """
+    unregisterIntegrationSystem(id: ID!): IntegrationSystem! @hasScopes(path: "graphql.mutation.unregisterIntegrationSystem")
+    """
+    **Examples**
+    - [add application webhook](examples/add-webhook/add-application-webhook.graphql)
+    """
+    addWebhook(applicationID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
+    """
+    **Examples**
+    - [update application webhook](examples/update-webhook/update-application-webhook.graphql)
+    """
+    updateWebhook(webhookID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.updateWebhook")
+    """
+    **Examples**
+    - [delete application webhook](examples/delete-webhook/delete-application-webhook.graphql)
+    """
+    deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
+    """
+    **Examples**
+    - [add api definition](examples/add-api-definition/add-api-definition.graphql)
+    """
+    addAPIDefinition(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinition")
+    """
+    **Examples**
+    - [update api definition](examples/update-api-definition/update-api-definition.graphql)
+    """
+    updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition")
+    """
+    **Examples**
+    - [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
+    """
+    deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition")
+    refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
+    requestOneTimeTokenForRuntime(id: ID!): OneTimeTokenForRuntime! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
+    requestOneTimeTokenForApplication(id: ID!): OneTimeTokenForApplication! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForApplication")
+    requestClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForRuntime")
+    requestClientCredentialsForApplication(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForApplication")
+    requestClientCredentialsForIntegrationSystem(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForIntegrationSystem")
+    deleteSystemAuthForRuntime(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForRuntime")
+    deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForApplication")
+    deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForIntegrationSystem")
+    """
+    **Examples**
+    - [add event definition](examples/add-event-definition/add-event-definition.graphql)
+    """
+    addEventDefinition(packageID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
+    """
+    **Examples**
+    - [update event definition](examples/update-event-definition/update-event-definition.graphql)
+    """
+    updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition")
+    """
+    **Examples**
+    - [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)
+    """
+    deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
+    refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
+    """
+    **Examples**
+    - [add document](examples/add-document/add-document.graphql)
+    """
+    addDocument(packageID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
+    """
+    **Examples**
+    - [delete document](examples/delete-document/delete-document.graphql)
+    """
+    deleteDocument(id: ID!): Document! @hasScopes(path: "graphql.mutation.deleteDocument")
+    """
+    **Examples**
+    - [create label definition](examples/create-label-definition/create-label-definition.graphql)
+    """
+    createLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
+    """
+    **Examples**
+    - [update label definition](examples/update-label-definition/update-label-definition.graphql)
+    """
+    updateLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
+    """
+    **Examples**
+    - [delete label definition](examples/delete-label-definition/delete-label-definition.graphql)
+    """
+    deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean = false): LabelDefinition! @hasScopes(path: "graphql.mutation.deleteLabelDefinition")
+    """
+    If a label with given key already exist, it will be replaced with provided value.
+
+    **Examples**
+    - [set application label](examples/set-application-label/set-application-label.graphql)
+    """
+    setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
+    """
+    If Application does not exist or the label key is not found, it returns an error.
+
+    **Examples**
+    - [delete application label](examples/delete-application-label/delete-application-label.graphql)
+    """
+    deleteApplicationLabel(applicationID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteApplicationLabel")
+    """
+    If a label with given key already exist, it will be replaced with provided value.
+    """
+    setRuntimeLabel(runtimeID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setRuntimeLabel")
+    """
+    If Runtime does not exist or the label key is not found, it returns an error.
+    """
+    deleteRuntimeLabel(runtimeID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteRuntimeLabel")
+    setDefaultEventingForApplication(appID: String!, runtimeID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.setDefaultEventingForApplication")
+    deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
+
+    """
+    When InstanceAPIAuth is not in pending state, the operation returns error.
+
+    When used without error, the status of pending auth is set to success.
+    """
+    setInstanceAPIAuthForPackage(packageID: ID!, authID: ID!, in: AuthInput! @validate): InstanceAPIAuth!
+    deleteInstanceAPIAuthForPackage(packageID: ID!, authID: ID!): InstanceAPIAuth!
+    requestInstanceAPIAuthForPackage(in: InstanceAPIAuthInput!): InstanceAPIAuth!
+    deleteInstanceAPIAuthAuthForPackage(packageID: ID!, authID: ID!): InstanceAPIAuth!
+    addPackageDefinition(applicationID: ID!, in: PackageDefinitionCreateInput! @validate): PackageDefinition!
+    updatePackageDefinition(id: ID!, in: PackageDefinitionUpdateInput! @validate): PackageDefinition!
+    deletePackageDefinition(id: ID!): PackageDefinition!
+}
+
+
+type PackageDefinition {
+    id: ID!
+    name: String!
+    description: String
+    authRequestJSONSchema: JSONSchema
+
+    auth(id: ID!): InstanceAPIAuth
+    auths: [InstanceAPIAuth!]!
+
+    """
+    When defined, all Auth requests fallback to defaultAuth.
+    """
+    defaultAuth: Auth
+
+    apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage
+    eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage
+    documents(first: Int = 100, after: PageCursor): DocumentPage
+
+    apiDefinition(id: ID!): APIDefinition
+    eventDefinition(id: ID!): EventDefinition
+    document(id: ID!): Document
+}
+
+input PackageDefinitionCreateInput {
+    name: String!
+    description: String!
+    authRequestJSONSchema: JSONSchema
+    defaultAuth: AuthInput
+    apiDefinitions: [APIDefinitionInput!]
+    eventDefinitions: [EventDefinitionInput!]
+    documents: [DocumentInput!]
+}
+
+input PackageDefinitionUpdateInput {
+    name: String!
+    description: String!
+    authRequestJSONSchema: JSONSchema
+    """
+    While updating defaultAuth, existing InstanceApiAuths are NOT updated.
+    """
+    defaultAuth: AuthInput
+}
+
+enum InstanceAPIAuthStatusCondition {
+    """
+    When creating or deleting new one
+    """
+    PENDING
+
+    SUCCEEDED
+
+    FAILED
+}
+type InstanceAPIAuthStatus {
+    condition: InstanceAPIAuthStatusCondition
+    timestamp: Timestamp!
+    message: String
+
+    """
+
+    PendingNotification
+    NotificationSent
+    """
+    reason: String
+}
+
+input InstanceAPIAuthInput {
+    packageID: ID!
+    """
+    Context of InstanceAPIAuth - such as Runtime ID, namespace
+    """
+    context: Any
+    """
+    JSON validated against package.authRequestJSONSchema
+    """
+    inputParams: Any
+}
+
+type InstanceAPIAuth {
+    id: ID!
+    """
+    Context of InstanceAPIAuth - such as Runtime ID, namespace
+    """
+    context: Any
+    """
+    It may be empty if status is PENDING.
+    Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+    """
+    auth: Auth
+    status: InstanceAPIAuth
 }
 
