@@ -126,6 +126,7 @@ input APIDefinitionInput {
 	group: String
 	spec: APISpecInput
 	version: VersionInput
+	defaultAuth: AuthInput @deprecated(reason: "Use package.defaultAuth")
 }
 
 input APISpecInput {
@@ -147,6 +148,9 @@ input ApplicationRegisterInput {
 	labels: Labels
 	webhooks: [WebhookInput!]
 	healthCheckURL: String
+	apiDefinitions: [APIDefinitionInput!] @deprecated(reason: "Use package.packages.apiDefinitions")
+	eventDefinitions: [EventDefinitionInput!] @deprecated(reason: "Use package.packages.eventDefinitions")
+	documents: [DocumentInput!] @deprecated(reason: "Use package.packages.documents")
 	packages: [PackageDefinitionCreateInput!]
 	integrationSystemID: ID
 }
@@ -321,6 +325,14 @@ input WebhookInput {
 	auth: AuthInput
 }
 
+"""
+Deprecated
+"""
+type APIRuntimeAuth {
+	runtimeID: ID!
+	auth: Auth
+}
+
 type APIDefinition {
 	id: ID!
 	applicationID: ID!
@@ -332,6 +344,18 @@ type APIDefinition {
 	group allows you to find the same API but in different version
 	"""
 	group: String
+	"""
+	"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
+	"""
+	auth(runtimeID: ID!): APIRuntimeAuth @deprecated(reason: "Use package.auth")
+	"""
+	Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
+	"""
+	auths: [APIRuntimeAuth!] @deprecated(reason: "Use package.auths")
+	"""
+	If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
+	"""
+	defaultAuth: Auth @deprecated(reason: "Use package.defaultAuth")
 	version: Version
 }
 
@@ -850,6 +874,10 @@ type Mutation {
 	"""
 	addAPIDefinition(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinition")
 	"""
+	Temporary name before doing breaking change
+	"""
+	addAPIDefinitionToPackage(packageID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinition")
+	"""
 	**Examples**
 	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
 	"""
@@ -869,10 +897,20 @@ type Mutation {
 	deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForApplication")
 	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForIntegrationSystem")
 	"""
+	Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
+	"""
+	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth") @deprecated(reason: "Use setInstanceAPIAuthForPackage")
+	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth") @deprecated(reason: "Use deleteInstanceAPIAuthForPackage")
+	"""
 	**Examples**
 	- [add event definition](examples/add-event-definition/add-event-definition.graphql)
 	"""
-	addEventDefinition(packageID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
+	addEventDefinition(applicationID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
+
+	"""
+	Temporary name before doing breaking change
+	"""
+	addEventDefinitionToPackage(packageID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
 	"""
 	**Examples**
 	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
@@ -888,7 +926,12 @@ type Mutation {
 	**Examples**
 	- [add document](examples/add-document/add-document.graphql)
 	"""
-	addDocument(packageID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
+	addDocument(applicationID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
+
+	"""
+	Temporary name before doing breaking change
+	"""
+	addDocumentToPackage(packageID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
 	"""
 	**Examples**
 	- [delete document](examples/delete-document/delete-document.graphql)
