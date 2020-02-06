@@ -161,6 +161,10 @@ func (r *RootResolver) EventSpec() graphql.EventSpecResolver {
 	return &eventSpecResolver{r}
 }
 
+func (r *RootResolver) PackageDefinition() graphql.PackageDefinitionResolver {
+	return &packageDefinitionResolver{r}
+}
+
 func (r *RootResolver) IntegrationSystem() graphql.IntegrationSystemResolver {
 	return &integrationSystemResolver{r}
 }
@@ -367,6 +371,37 @@ func (r *mutationResolver) SetDefaultEventingForApplication(ctx context.Context,
 func (r *mutationResolver) DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*graphql.ApplicationEventingConfiguration, error) {
 	return r.eventing.UnsetEventingForApplication(ctx, appID)
 }
+func (r *mutationResolver) AddAPIDefinitionToPackage(ctx context.Context, packageID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+	panic("not implemented")
+}
+func (r *mutationResolver) AddEventDefinitionToPackage(ctx context.Context, packageID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
+	panic("not implemented")
+}
+func (r *mutationResolver) AddDocumentToPackage(ctx context.Context, packageID string, in graphql.DocumentInput) (*graphql.Document, error) {
+	panic("not implemented")
+}
+func (r *mutationResolver) SetAPIInstanceAuthForPackage(ctx context.Context, packageID string, authID string, in graphql.AuthInput) (*graphql.APIInstanceAuth, error) {
+	panic("not implemented")
+}
+func (r *mutationResolver) DeleteAPIInstanceAuthForPackage(ctx context.Context, packageID string, authID string) (*graphql.APIInstanceAuth, error) {
+	panic("not implemented")
+}
+func (r *mutationResolver) RequestAPIInstanceAuthForPackage(ctx context.Context, in graphql.APIInstanceAuthInput) (*graphql.APIInstanceAuth, error) {
+	panic("not implemented")
+}
+func (r *mutationResolver) DeleteAPIInstanceAuthAuthForPackage(ctx context.Context, packageID string, authID string) (*graphql.APIInstanceAuth, error) {
+	panic("not implemented")
+}
+func (r *mutationResolver) AddPackageDefinition(ctx context.Context, applicationID string, in graphql.PackageDefinitionCreateInput) (*graphql.PackageDefinition, error) {
+	panic("not implemented")
+}
+func (r *mutationResolver) UpdatePackageDefinition(ctx context.Context, id string, in graphql.PackageDefinitionUpdateInput) (*graphql.PackageDefinition, error) {
+	panic("not implemented")
+}
+func (r *mutationResolver) DeletePackageDefinition(ctx context.Context, id string) (*graphql.PackageDefinition, error) {
+	panic("not implemented")
+}
+
 
 type applicationResolver struct {
 	*RootResolver
@@ -397,9 +432,14 @@ func (r *applicationResolver) EventDefinition(ctx context.Context, obj *graphql.
 func (r *applicationResolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	return r.app.Documents(ctx, obj, first, after)
 }
-
 func (r *applicationResolver) EventingConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventingConfiguration, error) {
 	return r.app.EventingConfiguration(ctx, obj)
+}
+func (r *applicationResolver) Packages(ctx context.Context, obj *graphql.Application) ([]*graphql.PackageDefinition, error) {
+	panic("not implemented")
+}
+func (r *applicationResolver) Package(ctx context.Context, obj *graphql.Application, id string) (*graphql.PackageDefinition, error) {
+	panic("not implemented")
 }
 
 type runtimeResolver struct {
@@ -471,4 +511,31 @@ func (r *oneTimeTokenForRuntimeResolver) RawEncoded(ctx context.Context, obj *gr
 
 func (r *oneTimeTokenForRuntimeResolver) Raw(ctx context.Context, obj *graphql.OneTimeTokenForRuntime) (*string, error) {
 	return r.token.Raw(ctx, &obj.TokenWithURL)
+}
+
+type packageDefinitionResolver struct{ *RootResolver }
+
+func (r *packageDefinitionResolver) Auth(ctx context.Context, obj *graphql.PackageDefinition, id string) (*graphql.APIInstanceAuth, error) {
+	panic("not implemented")
+}
+func (r *packageDefinitionResolver) Auths(ctx context.Context, obj *graphql.PackageDefinition) ([]*graphql.APIInstanceAuth, error) {
+	panic("not implemented")
+}
+func (r *packageDefinitionResolver) APIDefinitions(ctx context.Context, obj *graphql.PackageDefinition, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
+	panic("not implemented")
+}
+func (r *packageDefinitionResolver) EventDefinitions(ctx context.Context, obj *graphql.PackageDefinition, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
+	panic("not implemented")
+}
+func (r *packageDefinitionResolver) Documents(ctx context.Context, obj *graphql.PackageDefinition, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
+	panic("not implemented")
+}
+func (r *packageDefinitionResolver) APIDefinition(ctx context.Context, obj *graphql.PackageDefinition, id string) (*graphql.APIDefinition, error) {
+	panic("not implemented")
+}
+func (r *packageDefinitionResolver) EventDefinition(ctx context.Context, obj *graphql.PackageDefinition, id string) (*graphql.EventDefinition, error) {
+	panic("not implemented")
+}
+func (r *packageDefinitionResolver) Document(ctx context.Context, obj *graphql.PackageDefinition, id string) (*graphql.Document, error) {
+	panic("not implemented")
 }
