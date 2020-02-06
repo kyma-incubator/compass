@@ -17,6 +17,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -435,7 +436,7 @@ func (r *applicationResolver) Documents(ctx context.Context, obj *graphql.Applic
 func (r *applicationResolver) EventingConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventingConfiguration, error) {
 	return r.app.EventingConfiguration(ctx, obj)
 }
-func (r *applicationResolver) Packages(ctx context.Context, obj *graphql.Application) ([]*graphql.PackageDefinition, error) {
+func (r *applicationResolver) Packages(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.PackageDefinitionPage, error) {
 	panic("not implemented")
 }
 func (r *applicationResolver) Package(ctx context.Context, obj *graphql.Application, id string) (*graphql.PackageDefinition, error) {

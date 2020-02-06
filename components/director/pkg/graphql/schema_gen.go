@@ -117,7 +117,7 @@ type ComplexityRoot struct {
 		Labels                func(childComplexity int, key *string) int
 		Name                  func(childComplexity int) int
 		Package               func(childComplexity int, id string) int
-		Packages              func(childComplexity int) int
+		Packages              func(childComplexity int, first *int, after *PageCursor) int
 		ProviderName          func(childComplexity int) int
 		Status                func(childComplexity int) int
 		Webhooks              func(childComplexity int) int
@@ -362,6 +362,12 @@ type ComplexityRoot struct {
 		Name                  func(childComplexity int) int
 	}
 
+	PackageDefinitionPage struct {
+		Data       func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
 	PageInfo struct {
 		EndCursor   func(childComplexity int) int
 		HasNextPage func(childComplexity int) int
@@ -469,7 +475,7 @@ type ApplicationResolver interface {
 	APIDefinition(ctx context.Context, obj *Application, id string) (*APIDefinition, error)
 	EventDefinition(ctx context.Context, obj *Application, id string) (*EventDefinition, error)
 	Documents(ctx context.Context, obj *Application, first *int, after *PageCursor) (*DocumentPage, error)
-	Packages(ctx context.Context, obj *Application) ([]*PackageDefinition, error)
+	Packages(ctx context.Context, obj *Application, first *int, after *PageCursor) (*PackageDefinitionPage, error)
 	Package(ctx context.Context, obj *Application, id string) (*PackageDefinition, error)
 	Auths(ctx context.Context, obj *Application) ([]*SystemAuth, error)
 	EventingConfiguration(ctx context.Context, obj *Application) (*ApplicationEventingConfiguration, error)
@@ -936,7 +942,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Application.Packages(childComplexity), true
+		args, err := ec.field_Application_packages_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Application.Packages(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
 
 	case "Application.providerName":
 		if e.complexity.Application.ProviderName == nil {
@@ -2375,6 +2386,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PackageDefinition.Name(childComplexity), true
 
+	case "PackageDefinitionPage.data":
+		if e.complexity.PackageDefinitionPage.Data == nil {
+			break
+		}
+
+		return e.complexity.PackageDefinitionPage.Data(childComplexity), true
+
+	case "PackageDefinitionPage.pageInfo":
+		if e.complexity.PackageDefinitionPage.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.PackageDefinitionPage.PageInfo(childComplexity), true
+
+	case "PackageDefinitionPage.totalCount":
+		if e.complexity.PackageDefinitionPage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.PackageDefinitionPage.TotalCount(childComplexity), true
+
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
 			break
@@ -3271,7 +3303,7 @@ type Application {
 	apiDefinition(id: ID!): APIDefinition @deprecated(reason: "Use ` + "`" + `package.apiDefinition` + "`" + ` field")
 	eventDefinition(id: ID!): EventDefinition @deprecated(reason: "Use ` + "`" + `package.eventDefinition` + "`" + ` field")
 	documents(first: Int = 100, after: PageCursor): DocumentPage @deprecated(reason: "Use ` + "`" + `package.documents` + "`" + ` field")
-	packages: [PackageDefinition!]!
+	packages(first: Int = 100, after: PageCursor): PackageDefinitionPage
 	package(id: ID!): PackageDefinition
 	auths: [SystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
@@ -3471,6 +3503,12 @@ type PackageDefinition {
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
 	document(id: ID!): Document
+}
+
+type PackageDefinitionPage implements Pageable {
+	data: [PackageDefinition!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 type PageInfo {
@@ -4007,6 +4045,28 @@ func (ec *executionContext) field_Application_package_args(ctx context.Context, 
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Application_packages_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
+	var arg1 *PageCursor
+	if tmp, ok := rawArgs["after"]; ok {
+		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
 	return args, nil
 }
 
@@ -7310,25 +7370,29 @@ func (ec *executionContext) _Application_packages(ctx context.Context, field gra
 		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Application_packages_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Application().Packages(rctx, obj)
+		return ec.resolvers.Application().Packages(rctx, obj, args["first"].(*int), args["after"].(*PageCursor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.([]*PackageDefinition)
+	res := resTmp.(*PackageDefinitionPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPackageDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinition(ctx, field.Selections, res)
+	return ec.marshalOPackageDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_package(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -14709,6 +14773,117 @@ func (ec *executionContext) _PackageDefinition_document(ctx context.Context, fie
 	return ec.marshalODocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PackageDefinitionPage_data(ctx context.Context, field graphql.CollectedField, obj *PackageDefinitionPage) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PackageDefinitionPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*PackageDefinition)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPackageDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PackageDefinitionPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *PackageDefinitionPage) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PackageDefinitionPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PageInfo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PackageDefinitionPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *PackageDefinitionPage) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PackageDefinitionPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -19139,6 +19314,10 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 		return ec._IntegrationSystemPage(ctx, sel, &obj)
 	case *IntegrationSystemPage:
 		return ec._IntegrationSystemPage(ctx, sel, obj)
+	case PackageDefinitionPage:
+		return ec._PackageDefinitionPage(ctx, sel, &obj)
+	case *PackageDefinitionPage:
+		return ec._PackageDefinitionPage(ctx, sel, obj)
 	case RuntimePage:
 		return ec._RuntimePage(ctx, sel, &obj)
 	case *RuntimePage:
@@ -19523,9 +19702,6 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._Application_packages(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "package":
@@ -20973,6 +21149,43 @@ func (ec *executionContext) _PackageDefinition(ctx context.Context, sel ast.Sele
 				res = ec._PackageDefinition_document(ctx, field, obj)
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var packageDefinitionPageImplementors = []string{"PackageDefinitionPage", "Pageable"}
+
+func (ec *executionContext) _PackageDefinitionPage(ctx context.Context, sel ast.SelectionSet, obj *PackageDefinitionPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, packageDefinitionPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PackageDefinitionPage")
+		case "data":
+			out.Values[i] = ec._PackageDefinitionPage_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._PackageDefinitionPage_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._PackageDefinitionPage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -24177,6 +24390,17 @@ func (ec *executionContext) unmarshalOPackageDefinitionCreateInput2ᚕᚖgithub�
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalOPackageDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionPage(ctx context.Context, sel ast.SelectionSet, v PackageDefinitionPage) graphql.Marshaler {
+	return ec._PackageDefinitionPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOPackageDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *PackageDefinitionPage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PackageDefinitionPage(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx context.Context, v interface{}) (PageCursor, error) {

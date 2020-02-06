@@ -422,7 +422,7 @@ type Application {
 	apiDefinition(id: ID!): APIDefinition @deprecated(reason: "Use `package.apiDefinition` field")
 	eventDefinition(id: ID!): EventDefinition @deprecated(reason: "Use `package.eventDefinition` field")
 	documents(first: Int = 100, after: PageCursor): DocumentPage @deprecated(reason: "Use `package.documents` field")
-	packages: [PackageDefinition!]!
+	packages(first: Int = 100, after: PageCursor): PackageDefinitionPage
 	package(id: ID!): PackageDefinition
 	auths: [SystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
@@ -622,6 +622,12 @@ type PackageDefinition {
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
 	document(id: ID!): Document
+}
+
+type PackageDefinitionPage implements Pageable {
+	data: [PackageDefinition!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 type PageInfo {

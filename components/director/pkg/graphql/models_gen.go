@@ -359,6 +359,14 @@ type PackageDefinitionCreateInput struct {
 	Documents             []*DocumentInput        `json:"documents"`
 }
 
+type PackageDefinitionPage struct {
+	Data       []*PackageDefinition `json:"data"`
+	PageInfo   *PageInfo            `json:"pageInfo"`
+	TotalCount int                  `json:"totalCount"`
+}
+
+func (PackageDefinitionPage) IsPageable() {}
+
 type PackageDefinitionUpdateInput struct {
 	Name                  string      `json:"name"`
 	Description           string      `json:"description"`
