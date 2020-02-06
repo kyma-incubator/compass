@@ -2,19 +2,27 @@ package gardener
 
 import (
 	"context"
+	"crypto/tls"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	graphCli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// accountIDKey is a header key name for request send by graphQL client
+const accountIDKey = "tenant"
 
 type Config struct {
 	SecretName string
@@ -26,14 +34,15 @@ type Config struct {
 type Client struct {
 	config Config
 	log    logrus.FieldLogger
-
 	client     client.Client
 	httpClient http.Client
 	runtimeID  string
+	provisionerURL string
 }
 
-func NewClient(config Config, runtimeID string, log logrus.FieldLogger) (*Client, error) {
+func NewClient(config Config, provisionerURL, runtimeID string, log logrus.FieldLogger) (*Client, error) {
 	return &Client{
+		provisionerURL: provisionerURL,
 		runtimeID:  runtimeID,
 		config:     config,
 		httpClient: http.Client{},
@@ -50,6 +59,60 @@ func (c *Client) RuntimeTearDown() error {
 	err = c.ensureInstanceRemoved()
 	if err != nil {
 		return errors.Wrap(err, "while removing UUA instance")
+	}
+	return nil
+}
+
+type graphQLResponseWrapper struct {
+	Result schema.RuntimeStatus `json:"result"`
+}
+
+func (c *Client) getRuntimeConfig(globalAccountID string) error {
+	// setup graphql client
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+	gCli := graphCli.NewClient(c.provisionerURL, graphCli.WithHTTPClient(httpClient))
+
+	// setup logging in graphql client
+	logger := logrus.WithField("Client", "GraphQL")
+	gCli.Log = func(s string) {
+		logger.Info(s)
+	}
+
+	// create query
+	q := fmt.Sprintf(`query {
+	result: runtimeStatus(id: "%s") {
+		runtimeConfiguration {
+		kubeconfig
+}
+	}
+}`, c.runtimeID)
+	// prepare and run request
+	req := graphCli.NewRequest(q)
+	req.Header.Add(accountIDKey, globalAccountID)
+
+	res := &graphQLResponseWrapper{}
+	err := gCli.Run(context.Background(), req, res)
+	if err != nil {
+		return errors.Wrapf(err, "while getting runtime config")
+	}
+
+	runtimeConfig := *res.Result.RuntimeConfiguration.Kubeconfig
+	gCli.Log(runtimeConfig)
+
+	runtimeConfigFile := "/configs/runtime.yaml"
+	err = ioutil.WriteFile(runtimeConfigFile, []byte(runtimeConfig), 0644)
+	if err != nil {
+		return errors.Wrap(err, "while creating runtime kubeconfig file")
+	}
+	err = c.setClientConfig(runtimeConfigFile)
+	if err != nil {
+		return errors.Wrap(err, "while setting client config")
 	}
 	return nil
 }
