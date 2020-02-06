@@ -63,7 +63,7 @@ func setDefaultTenant() {
 
 	for _, v := range output {
 		tenants[*v.Name] = v.InternalID
-		if *v.Name == "default" {
+		if *v.Name == "bar" {
 			defaultTenant = v.InternalID
 		}
 	}
