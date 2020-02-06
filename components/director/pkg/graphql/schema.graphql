@@ -325,14 +325,6 @@ input WebhookInput {
 	auth: AuthInput
 }
 
-"""
-Deprecated
-"""
-type APIRuntimeAuth {
-	runtimeID: ID!
-	auth: Auth
-}
-
 type APIDefinition {
 	id: ID!
 	applicationID: ID!
@@ -363,6 +355,14 @@ type APIDefinitionPage implements Pageable {
 	data: [APIDefinition!]!
 	pageInfo: PageInfo!
 	totalCount: Int!
+}
+
+"""
+Deprecated
+"""
+type APIRuntimeAuth {
+	runtimeID: ID!
+	auth: Auth
 }
 
 type APISpec {
@@ -876,7 +876,7 @@ type Mutation {
 	"""
 	Temporary name before doing breaking change
 	"""
-	addAPIDefinitionToPackage(packageID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinition")
+	addAPIDefinitionToPackage(packageID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToPackage")
 	"""
 	**Examples**
 	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
@@ -906,11 +906,10 @@ type Mutation {
 	- [add event definition](examples/add-event-definition/add-event-definition.graphql)
 	"""
 	addEventDefinition(applicationID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
-
 	"""
 	Temporary name before doing breaking change
 	"""
-	addEventDefinitionToPackage(packageID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
+	addEventDefinitionToPackage(packageID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToPackage")
 	"""
 	**Examples**
 	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
@@ -927,11 +926,10 @@ type Mutation {
 	- [add document](examples/add-document/add-document.graphql)
 	"""
 	addDocument(applicationID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
-
 	"""
 	Temporary name before doing breaking change
 	"""
-	addDocumentToPackage(packageID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
+	addDocumentToPackage(packageID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocumentToPackage")
 	"""
 	**Examples**
 	- [delete document](examples/delete-document/delete-document.graphql)

@@ -31,6 +31,7 @@ type APIDefinitionInput struct {
 	Group       *string       `json:"group"`
 	Spec        *APISpecInput `json:"spec"`
 	Version     *VersionInput `json:"version"`
+	DefaultAuth *AuthInput    `json:"defaultAuth"`
 }
 
 type APIDefinitionPage struct {
@@ -40,6 +41,12 @@ type APIDefinitionPage struct {
 }
 
 func (APIDefinitionPage) IsPageable() {}
+
+// Deprecated
+type APIRuntimeAuth struct {
+	RuntimeID string `json:"runtimeID"`
+	Auth      *Auth  `json:"auth"`
+}
 
 type APISpecInput struct {
 	Data         *CLOB              `json:"data"`
@@ -72,6 +79,9 @@ type ApplicationRegisterInput struct {
 	Labels              *Labels                         `json:"labels"`
 	Webhooks            []*WebhookInput                 `json:"webhooks"`
 	HealthCheckURL      *string                         `json:"healthCheckURL"`
+	APIDefinitions      []*APIDefinitionInput           `json:"apiDefinitions"`
+	EventDefinitions    []*EventDefinitionInput         `json:"eventDefinitions"`
+	Documents           []*DocumentInput                `json:"documents"`
 	Packages            []*PackageDefinitionCreateInput `json:"packages"`
 	IntegrationSystemID *string                         `json:"integrationSystemID"`
 }
