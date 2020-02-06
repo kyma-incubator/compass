@@ -58,7 +58,9 @@ func Test_E2E_Gardener(t *testing.T) {
 	log.Infof("Starting Compass Provisioner tests on Gardener")
 
 	for _, provider := range testSuite.gardenerProviders {
-		go func() {
+		t.Run(provider, func() {
+			t.Parallel()
+
 			// Provision runtime
 			runtimeName := fmt.Sprintf("%s%s", "runtime", uuid.New().String()[:4])
 
@@ -159,7 +161,7 @@ func Test_E2E_Gardener(t *testing.T) {
 			assertions.RequireNoError(t, err)
 			assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 			log.Infof("Runtime deprovisioned successfully")
-		}()
+		})
 	}
 }
 
