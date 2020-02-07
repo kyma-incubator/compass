@@ -302,7 +302,7 @@ type ComplexityRoot struct {
 		RegisterApplicationFromTemplate              func(childComplexity int, in ApplicationFromTemplateInput) int
 		RegisterIntegrationSystem                    func(childComplexity int, in IntegrationSystemInput) int
 		RegisterRuntime                              func(childComplexity int, in RuntimeInput) int
-		RequestAPIInstanceAuthForPackage             func(childComplexity int, in APIInstanceAuthRequestInput) int
+		RequestAPIInstanceAuthForPackage             func(childComplexity int, packageID string, in APIInstanceAuthRequestInput) int
 		RequestClientCredentialsForApplication       func(childComplexity int, id string) int
 		RequestClientCredentialsForIntegrationSystem func(childComplexity int, id string) int
 		RequestClientCredentialsForRuntime           func(childComplexity int, id string) int
@@ -542,7 +542,7 @@ type MutationResolver interface {
 	DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*ApplicationEventingConfiguration, error)
 	SetAPIInstanceAuthForPackage(ctx context.Context, packageID string, authID string, in AuthInput) (*APIInstanceAuth, error)
 	DeleteAPIInstanceAuthForPackage(ctx context.Context, packageID string, authID string) (*APIInstanceAuth, error)
-	RequestAPIInstanceAuthForPackage(ctx context.Context, in APIInstanceAuthRequestInput) (*APIInstanceAuth, error)
+	RequestAPIInstanceAuthForPackage(ctx context.Context, packageID string, in APIInstanceAuthRequestInput) (*APIInstanceAuth, error)
 	AddPackageDefinition(ctx context.Context, applicationID string, in PackageDefinitionCreateInput) (*PackageDefinition, error)
 	UpdatePackageDefinition(ctx context.Context, id string, in PackageDefinitionUpdateInput) (*PackageDefinition, error)
 	DeletePackageDefinition(ctx context.Context, id string) (*PackageDefinition, error)
@@ -1920,7 +1920,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RequestAPIInstanceAuthForPackage(childComplexity, args["in"].(APIInstanceAuthRequestInput)), true
+		return e.complexity.Mutation.RequestAPIInstanceAuthForPackage(childComplexity, args["packageID"].(string), args["in"].(APIInstanceAuthRequestInput)), true
 
 	case "Mutation.requestClientCredentialsForApplication":
 		if e.complexity.Mutation.RequestClientCredentialsForApplication == nil {
@@ -3021,7 +3021,6 @@ input APIDefinitionInput {
 }
 
 input APIInstanceAuthRequestInput {
-	packageID: ID!
 	"""
 	Context of APIInstanceAuth - such as Runtime ID, namespace
 	"""
@@ -3169,7 +3168,7 @@ input OAuthCredentialDataInput {
 
 input PackageDefinitionCreateInput {
 	name: String!
-	description: String!
+	description: String
 	authRequestJSONSchema: JSONSchema
 	defaultAuth: AuthInput
 	apiDefinitions: [APIDefinitionInput!]
@@ -3894,7 +3893,7 @@ type Mutation {
 	"""
 	setAPIInstanceAuthForPackage(packageID: ID!, authID: ID!, in: AuthInput! @validate): APIInstanceAuth! @hasScopes(path: "graphql.mutation.setAPIInstanceAuthForPackage")
 	deleteAPIInstanceAuthForPackage(packageID: ID!, authID: ID!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.deleteAPIInstanceAuthForPackage")
-	requestAPIInstanceAuthForPackage(in: APIInstanceAuthRequestInput!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.requestAPIInstanceAuthForPackage")
+	requestAPIInstanceAuthForPackage(packageID: ID!, in: APIInstanceAuthRequestInput!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.requestAPIInstanceAuthForPackage")
 	addPackageDefinition(applicationID: ID!, in: PackageDefinitionCreateInput! @validate): PackageDefinition! @hasScopes(path: "graphql.mutation.addPackageDefinition")
 	updatePackageDefinition(id: ID!, in: PackageDefinitionUpdateInput! @validate): PackageDefinition! @hasScopes(path: "graphql.mutation.updatePackageDefinition")
 	deletePackageDefinition(id: ID!): PackageDefinition! @hasScopes(path: "graphql.mutation.deletePackageDefinition")
@@ -4804,14 +4803,22 @@ func (ec *executionContext) field_Mutation_registerRuntime_args(ctx context.Cont
 func (ec *executionContext) field_Mutation_requestAPIInstanceAuthForPackage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 APIInstanceAuthRequestInput
-	if tmp, ok := rawArgs["in"]; ok {
-		arg0, err = ec.unmarshalNAPIInstanceAuthRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuthRequestInput(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["packageID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["in"] = arg0
+	args["packageID"] = arg0
+	var arg1 APIInstanceAuthRequestInput
+	if tmp, ok := rawArgs["in"]; ok {
+		arg1, err = ec.unmarshalNAPIInstanceAuthRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuthRequestInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["in"] = arg1
 	return args, nil
 }
 
@@ -13662,7 +13669,7 @@ func (ec *executionContext) _Mutation_requestAPIInstanceAuthForPackage(ctx conte
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().RequestAPIInstanceAuthForPackage(rctx, args["in"].(APIInstanceAuthRequestInput))
+			return ec.resolvers.Mutation().RequestAPIInstanceAuthForPackage(rctx, args["packageID"].(string), args["in"].(APIInstanceAuthRequestInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestAPIInstanceAuthForPackage")
@@ -18382,12 +18389,6 @@ func (ec *executionContext) unmarshalInputAPIInstanceAuthRequestInput(ctx contex
 
 	for k, v := range asMap {
 		switch k {
-		case "packageID":
-			var err error
-			it.PackageID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "context":
 			var err error
 			it.Context, err = ec.unmarshalOAny2ᚖinterface(ctx, v)
@@ -19078,7 +19079,7 @@ func (ec *executionContext) unmarshalInputPackageDefinitionCreateInput(ctx conte
 			}
 		case "description":
 			var err error
-			it.Description, err = ec.unmarshalNString2string(ctx, v)
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

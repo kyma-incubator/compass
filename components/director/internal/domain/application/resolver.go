@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apipackage/mock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -776,9 +778,9 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 // TODO: Replace with real implementation
 func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.PackageDefinitionPage, error) {
 	packages := []*graphql.PackageDefinition{
-		fixPackage("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "Foo"),
-		fixPackage("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "Bar"),
-		fixPackage("cccccccc-cccc-cccc-cccc-cccccccccccc", "Baz"),
+		mock.FixPackageWithIDAndName("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "Foo"),
+		mock.FixPackageWithIDAndName("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "Bar"),
+		mock.FixPackageWithIDAndName("cccccccc-cccc-cccc-cccc-cccccccccccc", "Baz"),
 	}
 
 	return &graphql.PackageDefinitionPage{
@@ -789,152 +791,5 @@ func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first
 
 // TODO: Replace with real implementation
 func (r *Resolver) Package(ctx context.Context, obj *graphql.Application, id string) (*graphql.PackageDefinition, error) {
-	return fixPackage(id, "Lorem ipsum"), nil
-}
-
-func fixPackage(id, name string) *graphql.PackageDefinition {
-	desc := "Lorem ipsum"
-	jsonSchema := `{
-  "definitions": {}, 
-  "$schema": "http://json-schema.org/draft-07/schema#", 
-  "$id": "http://example.com/root.json", 
-  "type": "object", 
-  "title": "The Root Schema", 
-  "description": "An explanation about the purpose of this instance.", 
-  "readOnly": true, 
-  "writeOnly": false, 
-  "required": [
-    "checked", 
-    "dimensions", 
-    "id", 
-    "name", 
-    "price", 
-    "tags"
-  ], 
-  "properties": {
-    "checked": {
-      "$id": "#/properties/checked", 
-      "type": "boolean", 
-      "title": "The Checked Schema", 
-      "description": "An explanation about the purpose of this instance.", 
-      "default": false, 
-      "examples": [
-        false
-      ], 
-      "readOnly": true, 
-      "writeOnly": false
-    }, 
-    "dimensions": {
-      "$id": "#/properties/dimensions", 
-      "type": "object", 
-      "title": "The Dimensions Schema", 
-      "description": "An explanation about the purpose of this instance.", 
-      "readOnly": true, 
-      "writeOnly": false, 
-      "required": [
-        "width", 
-        "height"
-      ], 
-      "properties": {
-        "width": {
-          "$id": "#/properties/dimensions/properties/width", 
-          "type": "integer", 
-          "title": "The Width Schema", 
-          "description": "An explanation about the purpose of this instance.", 
-          "default": 0, 
-          "examples": [
-            5
-          ], 
-          "readOnly": true, 
-          "writeOnly": false
-        }, 
-        "height": {
-          "$id": "#/properties/dimensions/properties/height", 
-          "type": "integer", 
-          "title": "The Height Schema", 
-          "description": "An explanation about the purpose of this instance.", 
-          "default": 0, 
-          "examples": [
-            10
-          ], 
-          "readOnly": true, 
-          "writeOnly": false
-        }
-      }
-    }, 
-    "id": {
-      "$id": "#/properties/id", 
-      "type": "integer", 
-      "title": "The Id Schema", 
-      "description": "An explanation about the purpose of this instance.", 
-      "default": 0, 
-      "examples": [
-        1
-      ], 
-      "readOnly": true, 
-      "writeOnly": false
-    }, 
-    "name": {
-      "$id": "#/properties/name", 
-      "type": "string", 
-      "title": "The Name Schema", 
-      "description": "An explanation about the purpose of this instance.", 
-      "default": "", 
-      "examples": [
-        "A green door"
-      ], 
-      "readOnly": true, 
-      "writeOnly": false, 
-      "pattern": "^(.*)$"
-    }, 
-    "price": {
-      "$id": "#/properties/price", 
-      "type": "number", 
-      "title": "The Price Schema", 
-      "description": "An explanation about the purpose of this instance.", 
-      "default": 0.0, 
-      "examples": [
-        12.5
-      ], 
-      "readOnly": true, 
-      "writeOnly": false
-    }, 
-    "tags": {
-      "$id": "#/properties/tags", 
-      "type": "array", 
-      "title": "The Tags Schema", 
-      "description": "An explanation about the purpose of this instance.", 
-      "readOnly": true, 
-      "writeOnly": false, 
-      "items": {
-        "$id": "#/properties/tags/items", 
-        "type": "string", 
-        "title": "The Items Schema", 
-        "description": "An explanation about the purpose of this instance.", 
-        "default": "", 
-        "examples": [
-          "home", 
-          "green"
-        ], 
-        "readOnly": true, 	
-        "writeOnly": false, 
-        "pattern": "^(.*)$"
-      }
-    }
-  }
-}`
-	gqlJSONSchema := graphql.JSONSchema(jsonSchema)
-
-	return &graphql.PackageDefinition{
-		ID:                    id,
-		Name:                  name,
-		Description:           &desc,
-		AuthRequestJSONSchema: &gqlJSONSchema,
-		DefaultAuth: &graphql.Auth{
-			Credential: graphql.BasicCredentialData{
-				Username: "foo",
-				Password: "bar",
-			},
-		},
-	}
+	return mock.FixPackageWithIDAndName(id, "Lorem ipsum"), nil
 }

@@ -130,7 +130,6 @@ input APIDefinitionInput {
 }
 
 input APIInstanceAuthRequestInput {
-	packageID: ID!
 	"""
 	Context of APIInstanceAuth - such as Runtime ID, namespace
 	"""
@@ -278,7 +277,7 @@ input OAuthCredentialDataInput {
 
 input PackageDefinitionCreateInput {
 	name: String!
-	description: String!
+	description: String
 	authRequestJSONSchema: JSONSchema
 	defaultAuth: AuthInput
 	apiDefinitions: [APIDefinitionInput!]
@@ -1003,7 +1002,7 @@ type Mutation {
 	"""
 	setAPIInstanceAuthForPackage(packageID: ID!, authID: ID!, in: AuthInput! @validate): APIInstanceAuth! @hasScopes(path: "graphql.mutation.setAPIInstanceAuthForPackage")
 	deleteAPIInstanceAuthForPackage(packageID: ID!, authID: ID!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.deleteAPIInstanceAuthForPackage")
-	requestAPIInstanceAuthForPackage(in: APIInstanceAuthRequestInput!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.requestAPIInstanceAuthForPackage")
+	requestAPIInstanceAuthForPackage(packageID: ID!, in: APIInstanceAuthRequestInput!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.requestAPIInstanceAuthForPackage")
 	addPackageDefinition(applicationID: ID!, in: PackageDefinitionCreateInput! @validate): PackageDefinition! @hasScopes(path: "graphql.mutation.addPackageDefinition")
 	updatePackageDefinition(id: ID!, in: PackageDefinitionUpdateInput! @validate): PackageDefinition! @hasScopes(path: "graphql.mutation.updatePackageDefinition")
 	deletePackageDefinition(id: ID!): PackageDefinition! @hasScopes(path: "graphql.mutation.deletePackageDefinition")

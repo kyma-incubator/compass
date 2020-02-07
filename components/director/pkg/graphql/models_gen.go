@@ -53,7 +53,6 @@ type APIInstanceAuth struct {
 }
 
 type APIInstanceAuthRequestInput struct {
-	PackageID string `json:"packageID"`
 	// Context of APIInstanceAuth - such as Runtime ID, namespace
 	Context *interface{} `json:"context"`
 	// JSON validated against package.authRequestJSONSchema
@@ -357,7 +356,7 @@ type OAuthCredentialDataInput struct {
 
 type PackageDefinitionCreateInput struct {
 	Name                  string                  `json:"name"`
-	Description           string                  `json:"description"`
+	Description           *string                 `json:"description"`
 	AuthRequestJSONSchema *JSONSchema             `json:"authRequestJSONSchema"`
 	DefaultAuth           *AuthInput              `json:"defaultAuth"`
 	APIDefinitions        []*APIDefinitionInput   `json:"apiDefinitions"`

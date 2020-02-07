@@ -394,8 +394,8 @@ func (r *mutationResolver) SetAPIInstanceAuthForPackage(ctx context.Context, pac
 func (r *mutationResolver) DeleteAPIInstanceAuthForPackage(ctx context.Context, packageID string, authID string) (*graphql.APIInstanceAuth, error) {
 	return r.apiInstanceAuth.DeleteAPIInstanceAuthForPackage(ctx, packageID, authID)
 }
-func (r *mutationResolver) RequestAPIInstanceAuthForPackage(ctx context.Context, in graphql.APIInstanceAuthRequestInput) (*graphql.APIInstanceAuth, error) {
-	return r.apiInstanceAuth.RequestAPIInstanceAuthForPackage(ctx, in)
+func (r *mutationResolver) RequestAPIInstanceAuthForPackage(ctx context.Context, packageID string, in graphql.APIInstanceAuthRequestInput) (*graphql.APIInstanceAuth, error) {
+	return r.apiInstanceAuth.RequestAPIInstanceAuthForPackage(ctx, packageID, in)
 }
 
 func (r *mutationResolver) AddPackageDefinition(ctx context.Context, applicationID string, in graphql.PackageDefinitionCreateInput) (*graphql.PackageDefinition, error) {

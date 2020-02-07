@@ -3,6 +3,10 @@ package mock
 import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 func FixPackage() *graphql.PackageDefinition {
+	return FixPackageWithIDAndName("a6a64619-aa28-4d5d-bbe8-86ab4b817abf", "Lorem ipsum dolores sit amet")
+}
+
+func FixPackageWithIDAndName(id, name string) *graphql.PackageDefinition {
 	desc := "Lorem ipsum"
 	jsonSchema := `{
   "definitions": {}, 
@@ -136,8 +140,8 @@ func FixPackage() *graphql.PackageDefinition {
 	gqlJSONSchema := graphql.JSONSchema(jsonSchema)
 
 	return &graphql.PackageDefinition{
-		ID:                    "a6a64619-aa28-4d5d-bbe8-86ab4b817abf",
-		Name:                  "Lorem ipsum dolores sit amet",
+		ID:                    id,
+		Name:                  name,
 		Description:           &desc,
 		AuthRequestJSONSchema: &gqlJSONSchema,
 		DefaultAuth: &graphql.Auth{
