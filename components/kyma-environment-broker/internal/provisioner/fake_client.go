@@ -94,9 +94,17 @@ func (c *fakeClient) RuntimeOperationStatus(accountID, operationID string) (sche
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	o, found := c.operations[operationID]
-	if !found {
-		return schema.OperationStatus{}, fmt.Errorf("operation not found")
-	}
-	return o, nil
+	//o, found := c.operations[operationID]
+	//if !found {
+	//	return schema.OperationStatus{}, fmt.Errorf("operation not found")
+	//}
+	//return o, nil
+	msg := "success"
+	return schema.OperationStatus{
+		ID:        &operationID,
+		Operation: schema.OperationTypeProvision,
+		State:     schema.OperationStateSucceeded,
+		Message:   &msg,
+		RuntimeID: &accountID,
+	}, nil
 }

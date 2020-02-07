@@ -63,7 +63,8 @@ func main() {
 		Password: cfg.Auth.Password,
 	}
 
-	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
+	provisionerClient := provisioner.NewFakeClient()
+	//provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 
 	// create kubernetes client
 	k8sCfg, err := config.GetConfig()
@@ -78,7 +79,8 @@ func main() {
 	graphQLClient.Log = func(s string) { log.Println(s) }
 	oauthClient := oauth.NewOauthClient(httpClient, cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
 	fatalOnError(oauthClient.WaitForCredentials())
-	directorClient := director.NewDirectorClient(oauthClient, graphQLClient)
+	directorClient := director.NewFakeDirectorClient()
+	//directorClient := director.NewDirectorClient(oauthClient, graphQLClient)
 
 	// create storage
 	db, err := storage.New(cfg.Database.ConnectionURL())

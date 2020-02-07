@@ -22,7 +22,7 @@ const (
 	runtimeID       = "b4491027-bdc1-4358-9098-a2f18c86e5c5"
 	globalAccountID = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
 	instID          = "c39d9b98-5ed9-4a68-b786-f26ce93a734f"
-	dashboardURL    = "http://example.com"
+	dashboardURL    = "https://console.e2e-provisioning.gophers.kyma.pro"
 )
 
 func TestLastOperation_LastOperation(t *testing.T) {

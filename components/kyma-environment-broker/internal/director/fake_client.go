@@ -25,11 +25,11 @@ func (dc *fakeClient) SetConsoleURL(runtimeID, URL string) {
 // Director Client methods
 
 func (dc *fakeClient) GetConsoleURL(accountID, runtimeID string) (string, error) {
-	for id, URL := range dc.URLs {
-		if runtimeID == id {
-			return URL, nil
-		}
-	}
+	//for id, URL := range dc.URLs {
+	//	if runtimeID == id {
+	//		return URL, nil
+	//	}
+	//}
 
-	return "", nil
+	return "https://console.e2e-provisioning.gophers.kyma.pro", nil
 }
