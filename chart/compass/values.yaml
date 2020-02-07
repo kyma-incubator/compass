@@ -20,10 +20,10 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-754"
+      version: "PR-801"
     director:
       dir:
-      version: "PR-788"
+      version: "PR-801"
     gateway:
       dir: pr/
       version: "PR-357"

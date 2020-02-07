@@ -32,7 +32,7 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 	}
 
 	application := graphql.ApplicationExt{
-		Application:           graphql.Application{Name: "myapp"},
+		Application:           graphql.Application{Name: "myappname"},
 		EventingConfiguration: graphql.ApplicationEventingConfiguration{DefaultURL: "https://default-events-url.com"},
 	}
 
@@ -41,7 +41,7 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 		connectorClientMock := &connectorMock.Client{}
 		directorClientProviderMock := &directorMock.ClientProvider{}
 		directorClientMock := &directorMock.Client{}
-		directorClientMock.On("GetApplication", mock.AnythingOfType("string")).Return(application, nil)
+		directorClientMock.On("GetApplication", "myapp").Return(application, nil)
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 
 		newToken := "new_token"
@@ -75,7 +75,7 @@ func TestHandler_SigningRequestInfo(t *testing.T) {
 				RuntimeURLs: &model.RuntimeURLs{
 					EventsURL:     "https://default-events-url.com",
 					EventsInfoURL: "https://default-events-url.com/subscribed",
-					MetadataURL:   "www.connectivity-adapter-mtls.com/myapp/v1/metadata/services",
+					MetadataURL:   "www.connectivity-adapter-mtls.com/myappname/v1/metadata/services",
 				},
 				InfoURL:         "www.connectivity-adapter-mtls.com/v1/applications/management/info",
 				CertificatesURL: "www.connectivity-adapter.com/v1/applications/certificates",
