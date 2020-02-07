@@ -31,7 +31,7 @@ func RegisterHandler(router *mux.Router, config Config, directorURL string) erro
 	directorClientProvider := director.NewClientProvider(directorURL)
 	connectorClient, err := connector.NewClient(config.ConnectorEndpoint, config.ConnectorInternalEndpoint, timeout)
 	if err != nil {
-		return errors.Wrap(err, "Failed to initialize compass connectorClient")
+		return errors.Wrap(err, "Failed to initialize Compass Connector client")
 	}
 
 	authorizationMiddleware := middlewares.NewAuthorizationMiddleware()
