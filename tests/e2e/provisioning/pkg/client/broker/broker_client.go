@@ -13,7 +13,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -119,11 +118,11 @@ func (c *Client) AwaitProvisioningSucceeded(operationID string) error {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil
 		}
-		switch gqlschema.OperationState(response.State) {
-		case gqlschema.OperationStateFailed:
+		switch domain.LastOperationState(response.State) {
+		case domain.Failed:
 			c.log.Info("Provisioning failed")
 			return true, errors.New("provisioning failed")
-		case gqlschema.OperationStateSucceeded:
+		case domain.Succeeded:
 			c.log.Infof("Runtime Provisioning succeeded!")
 			return true, nil
 		default:

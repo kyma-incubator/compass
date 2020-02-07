@@ -14,8 +14,6 @@ COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/e2e/provisio
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/e2e/provisioning/test.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/e2e/provisioning/licenses ./licenses
 
-VOLUME tmp
-
 LABEL source=git@github.com:kyma-incubator/e2e-provisioning.git
 
 ENTRYPOINT ./entrypoint.sh
