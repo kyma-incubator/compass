@@ -2,12 +2,11 @@ package provisioner
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
+	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -56,7 +55,7 @@ func Test_E2E_Gardener(t *testing.T) {
 	log.Infof("Starting Compass Provisioner tests on Gardener")
 
 	for _, provider := range testSuite.gardenerProviders {
-		t.Run(provider, func() {
+		t.Run(provider, func(t *testing.T) {
 			t.Parallel()
 
 			// TODO: refactor
