@@ -1,8 +1,32 @@
-# API Package
+# Packages API
 
 ## Introduction
 
-By default, in Kyma Runtime, single API or Event Definition of a given Application is represented as a single Service Class in Service Catalog. To have control over this behavior, we introduce API Packages. API Package is a way of grouping multiple API or Event Definitions, so that they are represented as single Service Class.
+On Kyma Runtime, every Application is represented as a single Service Class, and every Package of a given Application is represented as a single Service Plan. This document describes Packages API, which groups multiple API, Event Definitions and Documents.
+
+## Assumptions
+- A single API or Event Definition can be a part of a single Package.
+- Package belongs to a single Application entity.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## Solution
 
@@ -88,10 +112,6 @@ In a result, the `api-packages` label value is validated. Also, the API Package 
 
 This schema cannot be modified by user. We validate this JSON schema against internal JSON schema, similarly to `scenarios` LabelDefinition.
 
-### Assumptions
-
-- API or Event Definition can be a part of API Package only within the same Application entity.
-- API Package name doesn't have to be unique within tenant.
 
 ### Pros
 
@@ -149,22 +169,3 @@ In order to do so, Runtime Agent executes the following steps:
    - Read `api-packages` label and populate ServiceClasses for API Packages. Runtime Agent generates IDs for these Service Classes.
    - Read all API and Event Definitions, excluding items from all API Packages. Every API or Event Definition is a Separate Class with ID equal to API/Event Definition ID.
 
-### UI
-
-To display all API Packages, UI executes the following steps:
-
-1. Get all Applications
-1. Read `api-packages` label value from every Application (if it does exist)
-1. Display API Packages
-
-As API Package name doesn't have to be unique within tenant, UI displays Application name for every API Package, to distinguish API Packages with equal names.
-
-## Future
-
-Currently we support grouping API and Event Definitions as single Service Class with single Service Plan.
-In future we may introduce an ability to group API and Event Definitions as single Service Class with multiple Service Plans.
-
-Also, the following points may be considered in future:
-- API extension for returning processed list of Service Classes
-- dynamic validation for API and Event Definition list in API Packages
-- dynamic update of the API and Event Definition lists in API Packages, when an API or Event Definition is deleted 
