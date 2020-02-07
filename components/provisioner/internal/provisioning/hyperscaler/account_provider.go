@@ -5,9 +5,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// AccountProvider provides access to the Kubernetes instance used to provision a new cluster by
-// means of K8S secret containing credentials to the appropriate account. There are different pools of
-// credentials for different use-cases (Gardener, Compass).
 //go:generate mockery -name=AccountProvider
 type AccountProvider interface {
 	CompassCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
@@ -66,7 +63,6 @@ func (p *accountProvider) CompassSecretName(input *gqlschema.ProvisionRuntimeInp
 		return input.Credentials.SecretName, nil
 	}
 
-	// If no credentials given to connect to target cluster, try to get credentials from compassHyperscalerAccountPool
 	hyperscalerType, err := HyperscalerTypeFromProvisionInput(input)
 	if err != nil {
 		return "", err
@@ -83,7 +79,6 @@ func (p *accountProvider) CompassSecretName(input *gqlschema.ProvisionRuntimeInp
 
 func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error) {
 
-	// If Gardener config already has a TargetSecret, just return that
 	if len(input.TargetSecret) > 0 {
 		return input.TargetSecret, nil
 	}

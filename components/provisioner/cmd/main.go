@@ -47,9 +47,6 @@ type config struct {
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
 	OauthCredentialsSecretName   string `envconfig:"default=compass-provisioner-credentials"`
 
-	//TODO: what's the default GardenerKubeconfigPath value?
-	GardenerKubeconfigPath string `envconfig:"default=gardenerKubeconfigPath"`
-
 	Database struct {
 		User     string `envconfig:"default=postgres"`
 		Password string `envconfig:"default=password"`

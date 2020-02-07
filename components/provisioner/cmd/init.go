@@ -81,13 +81,6 @@ func newShootController(
 		return nil, err
 	}
 
-	/*gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
-	if err != nil {
-		return nil, err
-	}
-
-	secretsInterface := gardenerClusterClient.CoreV1().Secrets(gardenerNamespace)*/
-
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
 	return gardener.NewShootController(gardenerNamespace, gardenerClusterCfg, shootClient, gardenerSecrets, installationSvc, dbsFactory, cfg.Installation.Timeout, directorClient, runtimeConfigurator)
@@ -137,49 +130,6 @@ func newGardenerSecretsInterface(gardenerClusterCfg *restclient.Config, gardener
 
 	return gardenerClusterClient.CoreV1().Secrets(gardenerNamespace), nil
 }
-
-/*
-old code
-
-func newGardenerSecretsInterface(config config) (v1.SecretInterface, error) {
-
-	kubeconfig := config.GardenerKubeconfigPath
-	if len(kubeconfig) == 0 {
-		logrus.Warn("GardenerKubeconfigPath environment value missing")
-		return nil, nil
-	}
-	k8sConfig, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	if err != nil {
-		return nil, errors.Errorf("failed to build kubeconfig from GardenerKubeconfigPath: %s, error: %s", kubeconfig, err.Error())
-	}
-
-	coreClientset, err := kubernetes.NewForConfig(k8sConfig)
-	if err != nil {
-		return nil, errors.Errorf("failed to create k8s core client for Gardener, %s", err.Error())
-	}
-
-	//TODO: what is the Gardener credentials namespace?
-	return coreClientset.CoreV1().Secrets("default"), nil
-}
-
-func newResolver(config config, persistenceService persistence.Service, releaseRepo release.Repository) (*api.Resolver, error) {
-	compassSecrets, err := newSecretsInterface(config.CredentialsNamespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to create Compass secrets interface")
-	}
-	gardenerSecrets, err := newGardenerSecretsInterface(config)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to create Gardener secrets interface")
-	}
-
-	return api.NewResolver(
-		newProvisioningService(config, persistenceService, compassSecrets, gardenerSecrets, releaseRepo),
-		api.NewValidator(persistenceService),
-	), nil
-}
-
-
-*/
 
 func newHTTPClient(skipCertVeryfication bool) *http.Client {
 	return &http.Client{
