@@ -108,17 +108,7 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx cont
 		}
 	}
 
-	if authFlow.IsCertFlow() {
-		declaredScopes, err := m.scopesGetter.GetRequiredScopes(buildPath(refObjType))
-		if err != nil {
-			return TenantContext{}, scopes, errors.Wrap(err, "while fetching scopes")
-		}
-
-		scopes = strings.Join(declaredScopes, " ")
-	}
-
-	if authFlow.IsOneTimeTokenFlow() {
-		//TODO: Somehow get scopes. Currently it's just copied from the CertFlow
+	if authFlow.IsCertFlow() || authFlow.IsOneTimeTokenFlow() {
 		declaredScopes, err := m.scopesGetter.GetRequiredScopes(buildPath(refObjType))
 		if err != nil {
 			return TenantContext{}, scopes, errors.Wrap(err, "while fetching scopes")

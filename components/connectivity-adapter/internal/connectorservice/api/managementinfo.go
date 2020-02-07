@@ -14,23 +14,27 @@ import (
 )
 
 type managementInfoHandler struct {
-	gqlClient                      connector.Client
-	logger                         *log.Logger
-	connectivityAdapterMTLSBaseURL string
+	connectorClient                connector.Client
 	directorClientProvider         director.ClientProvider
+	connectivityAdapterMTLSBaseURL string
+	logger                         *log.Logger
 }
 
-func NewManagementInfoHandler(client connector.Client, logger *log.Logger, connectivityAdapterMTLSBaseURL string, directorClientProvider director.ClientProvider) managementInfoHandler {
+func NewManagementInfoHandler(
+	connectorClient connector.Client,
+	logger *log.Logger,
+	connectivityAdapterMTLSBaseURL string,
+	directorClientProvider director.ClientProvider) managementInfoHandler {
+
 	return managementInfoHandler{
-		gqlClient:                      client,
-		logger:                         logger,
-		connectivityAdapterMTLSBaseURL: connectivityAdapterMTLSBaseURL,
+		connectorClient:                connectorClient,
 		directorClientProvider:         directorClientProvider,
+		connectivityAdapterMTLSBaseURL: connectivityAdapterMTLSBaseURL,
+		logger:                         logger,
 	}
 }
 
 func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *http.Request) {
-
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
 		mh.logger.Errorf("Failed to read authorization context: %s.", err)
@@ -38,13 +42,12 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 
 		return
 	}
-
 	systemAuthID := authorizationHeaders.GetSystemAuthID()
+
 	contextLogger := contextLogger(mh.logger, systemAuthID)
+	contextLogger.Info("Getting Management Info")
 
-	directorClient := mh.directorClientProvider.Client(r)
-
-	application, err := directorClient.GetApplication(systemAuthID)
+	application, err := mh.directorClientProvider.Client(r).GetApplication(systemAuthID)
 	if err != nil {
 		err = errors.Wrap(err, "Failed to get application")
 		contextLogger.Error(err.Error())
@@ -53,9 +56,7 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 		return
 	}
 
-	contextLogger.Info("Getting Management Info")
-
-	configuration, err := mh.gqlClient.Configuration(authorizationHeaders)
+	configuration, err := mh.connectorClient.Configuration(authorizationHeaders)
 	if err != nil {
 		err = errors.Wrap(err, "Failed to get configuration")
 		contextLogger.Error(err.Error())
@@ -63,13 +64,10 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 
 		return
 	}
-
 	certInfo := connector.ToCertInfo(configuration)
 
-	//TODO: handle case when configuration.Token is nil
 	managementInfoResponse := mh.makeManagementInfoResponse(
 		application.Name,
-		configuration.Token.Token,
 		mh.connectivityAdapterMTLSBaseURL,
 		application.EventingConfiguration.DefaultURL,
 		certInfo)
@@ -78,15 +76,14 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 }
 
 func (mh *managementInfoHandler) makeManagementInfoResponse(
-	application,
-	newToken,
+	applicationName,
 	connectivityAdapterMTLSBaseURL,
 	eventServiceBaseURL string,
 	certInfo model.CertInfo) model.MgmtInfoReponse {
 
 	return model.MgmtInfoReponse{
-		ClientIdentity:  model.MakeClientIdentity(application, "", ""),
-		URLs:            model.MakeManagementURLs(application, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
+		ClientIdentity:  model.MakeClientIdentity(applicationName, "", ""),
+		URLs:            model.MakeManagementURLs(applicationName, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
 		CertificateInfo: certInfo,
 	}
 }

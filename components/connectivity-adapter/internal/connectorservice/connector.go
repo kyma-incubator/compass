@@ -35,10 +35,10 @@ func RegisterHandler(router *mux.Router, config Config, directorURL string) erro
 	}
 
 	authorizationMiddleware := middlewares.NewAuthorizationMiddleware()
-	router.Use(mux.MiddlewareFunc(authorizationMiddleware.GetAuthorizationHeaders))
+	router.Use(authorizationMiddleware.GetAuthorizationHeaders)
 
 	signingRequestInfoHandler := newSigningRequestInfoHandler(config, connectorClient, directorClientProvider, logger)
-	managementInfoHandler := newManagementInfoHandler(config, connectorClient, logger, directorClientProvider)
+	managementInfoHandler := newManagementInfoHandler(config, connectorClient, directorClientProvider, logger)
 	certificatesHandler := newCertificateHandler(connectorClient, logger)
 	revocationsHandler := newRevocationsHandler(connectorClient, logger)
 
@@ -58,7 +58,7 @@ func newSigningRequestInfoHandler(config Config, connectorClient connector.Clien
 	return signingRequestInfoHandler
 }
 
-func newManagementInfoHandler(config Config, client connector.Client, logger *logrus.Logger, directorClientProvider director.ClientProvider) http.Handler {
+func newManagementInfoHandler(config Config, client connector.Client, directorClientProvider director.ClientProvider, logger *logrus.Logger) http.Handler {
 	managementInfo := api.NewManagementInfoHandler(client, logger, config.AdapterMtlsBaseURL, directorClientProvider)
 	managementInfoHandler := http.HandlerFunc(managementInfo.GetManagementInfo)
 

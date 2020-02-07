@@ -29,7 +29,13 @@ type csrInfoHandler struct {
 	connectivityAdapterMTLSBaseURL string
 }
 
-func NewSigningRequestInfoHandler(connectorClient connector.Client, directorClientProvider director.ClientProvider, logger *log.Logger, connectivityAdapterBaseURL string, connectivityAdapterMTLSBaseURL string) csrInfoHandler {
+func NewSigningRequestInfoHandler(
+	connectorClient connector.Client,
+	directorClientProvider director.ClientProvider,
+	logger *log.Logger,
+	connectivityAdapterBaseURL string,
+	connectivityAdapterMTLSBaseURL string) csrInfoHandler {
+
 	return csrInfoHandler{
 		connectorClient:                connectorClient,
 		directorClientProvider:         directorClientProvider,
@@ -40,27 +46,17 @@ func NewSigningRequestInfoHandler(connectorClient connector.Client, directorClie
 }
 
 func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.Request) {
-
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
+		ci.logger.Errorf("Failed to read authorization context: %s.", err)
 		reqerror.WriteErrorMessage(w, "Client Id not provided.", apperrors.CodeForbidden)
 
 		return
 	}
-
 	systemAuthID := authorizationHeaders.GetSystemAuthID()
-	contextLogger := contextLogger(ci.logger, authorizationHeaders.GetSystemAuthID())
 
+	contextLogger := contextLogger(ci.logger, systemAuthID)
 	contextLogger.Info("Getting Certificate Signing Request Info")
-
-	configuration, err := ci.connectorClient.Configuration(authorizationHeaders)
-	if err != nil {
-		err = errors.Wrap(err, "Failed to get Configuration from Connector")
-		contextLogger.Error(err.Error())
-		reqerror.WriteError(w, err, apperrors.CodeInternal)
-
-		return
-	}
 
 	application, err := ci.directorClientProvider.Client(r).GetApplication(systemAuthID)
 	if err != nil {
@@ -71,6 +67,14 @@ func (ci *csrInfoHandler) GetSigningRequestInfo(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	configuration, err := ci.connectorClient.Configuration(authorizationHeaders)
+	if err != nil {
+		err = errors.Wrap(err, "Failed to get Configuration from Connector")
+		contextLogger.Error(err.Error())
+		reqerror.WriteError(w, err, apperrors.CodeInternal)
+
+		return
+	}
 	certInfo := connector.ToCertInfo(configuration)
 
 	//TODO: handle case when configuration.Token is nil
