@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -52,15 +53,15 @@ func RegisterHandler(router *mux.Router, config Config, directorURL string) erro
 }
 
 func newSigningRequestInfoHandler(config Config, connectorClient connector.Client, directorClientProvider director.ClientProvider, logger *logrus.Logger) http.Handler {
-	signingRequestInfo := api.NewSigningRequestInfoHandler(connectorClient, directorClientProvider, logger, config.AdapterBaseURL, config.AdapterMtlsBaseURL)
-	signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetSigningRequestInfo)
+	signingRequestInfo := api.NewInfoHandler(connectorClient, directorClientProvider, logger, config.AdapterBaseURL, config.AdapterMtlsBaseURL, model.MakeCSRInfoResponseWrapper)
+	signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetInfo)
 
 	return signingRequestInfoHandler
 }
 
-func newManagementInfoHandler(config Config, client connector.Client, directorClientProvider director.ClientProvider, logger *logrus.Logger) http.Handler {
-	managementInfo := api.NewManagementInfoHandler(client, logger, config.AdapterMtlsBaseURL, directorClientProvider)
-	managementInfoHandler := http.HandlerFunc(managementInfo.GetManagementInfo)
+func newManagementInfoHandler(config Config, connectorClient connector.Client, directorClientProvider director.ClientProvider, logger *logrus.Logger) http.Handler {
+	managementInfo := api.NewInfoHandler(connectorClient, directorClientProvider, logger, "", config.AdapterMtlsBaseURL, model.MakeManagementInfoResponseWrapper)
+	managementInfoHandler := http.HandlerFunc(managementInfo.GetInfo)
 
 	return managementInfoHandler
 }

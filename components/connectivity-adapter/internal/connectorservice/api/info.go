@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director"
@@ -9,56 +11,67 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
-	"net/http"
 )
 
-type managementInfoHandler struct {
+const (
+	HeaderContentType          = "Content-Type"
+	ContentTypeApplicationJson = "application/json;charset=UTF-8"
+)
+
+type makeResponseFunction func(string, string, string, string, string, model.CertInfo) interface{}
+
+type infoHandler struct {
 	connectorClient                connector.Client
 	directorClientProvider         director.ClientProvider
+	makeResponse                   makeResponseFunction
+	connectivityAdapterBaseURL     string
 	connectivityAdapterMTLSBaseURL string
 	logger                         *log.Logger
 }
 
-func NewManagementInfoHandler(
+func NewInfoHandler(
 	connectorClient connector.Client,
+	directorClientProvider director.ClientProvider,
 	logger *log.Logger,
+	connectivityAdapterBaseURL string,
 	connectivityAdapterMTLSBaseURL string,
-	directorClientProvider director.ClientProvider) managementInfoHandler {
+	makeResponse makeResponseFunction) infoHandler {
 
-	return managementInfoHandler{
+	return infoHandler{
 		connectorClient:                connectorClient,
 		directorClientProvider:         directorClientProvider,
+		makeResponse:                   makeResponse,
+		connectivityAdapterBaseURL:     connectivityAdapterBaseURL,
 		connectivityAdapterMTLSBaseURL: connectivityAdapterMTLSBaseURL,
 		logger:                         logger,
 	}
 }
 
-func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *http.Request) {
+func (ih *infoHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
-		mh.logger.Errorf("Failed to read authorization context: %s.", err)
-		reqerror.WriteErrorMessage(w, "Failed to read authorization context.", apperrors.CodeForbidden)
+		ih.logger.Errorf("Failed to read authorization context: %s.", err)
+		reqerror.WriteErrorMessage(w, "Client Id not provided.", apperrors.CodeForbidden)
 
 		return
 	}
 	systemAuthID := authorizationHeaders.GetSystemAuthID()
 
-	contextLogger := contextLogger(mh.logger, systemAuthID)
-	contextLogger.Info("Getting Management Info")
+	contextLogger := contextLogger(ih.logger, systemAuthID)
+	contextLogger.Info("Getting Info")
 
-	application, err := mh.directorClientProvider.Client(r).GetApplication(systemAuthID)
+	application, err := ih.directorClientProvider.Client(r).GetApplication(systemAuthID)
 	if err != nil {
-		err = errors.Wrap(err, "Failed to get application")
+		err = errors.Wrap(err, "Failed to get Application from Director")
 		contextLogger.Error(err.Error())
 		reqerror.WriteError(w, err, apperrors.CodeInternal)
 
 		return
 	}
 
-	configuration, err := mh.connectorClient.Configuration(authorizationHeaders)
+	configuration, err := ih.connectorClient.Configuration(authorizationHeaders)
 	if err != nil {
-		err = errors.Wrap(err, "Failed to get configuration")
+		err = errors.Wrap(err, "Failed to get Configuration from Connector")
 		contextLogger.Error(err.Error())
 		reqerror.WriteError(w, err, apperrors.CodeInternal)
 
@@ -66,24 +79,14 @@ func (mh *managementInfoHandler) GetManagementInfo(w http.ResponseWriter, r *htt
 	}
 	certInfo := connector.ToCertInfo(configuration)
 
-	managementInfoResponse := mh.makeManagementInfoResponse(
+	//TODO: handle case when configuration.Token is nil
+	infoResponse := ih.makeResponse(
 		application.Name,
-		mh.connectivityAdapterMTLSBaseURL,
+		configuration.Token.Token,
+		ih.connectivityAdapterBaseURL,
+		ih.connectivityAdapterMTLSBaseURL,
 		application.EventingConfiguration.DefaultURL,
 		certInfo)
 
-	respondWithBody(w, http.StatusOK, managementInfoResponse, contextLogger)
-}
-
-func (mh *managementInfoHandler) makeManagementInfoResponse(
-	applicationName,
-	connectivityAdapterMTLSBaseURL,
-	eventServiceBaseURL string,
-	certInfo model.CertInfo) model.MgmtInfoReponse {
-
-	return model.MgmtInfoReponse{
-		ClientIdentity:  model.MakeClientIdentity(applicationName, "", ""),
-		URLs:            model.MakeManagementURLs(applicationName, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
-		CertificateInfo: certInfo,
-	}
+	respondWithBody(w, http.StatusOK, infoResponse, contextLogger)
 }
