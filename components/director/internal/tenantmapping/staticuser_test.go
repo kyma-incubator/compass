@@ -84,7 +84,7 @@ func TestStaticUserRepository(t *testing.T) {
 	})
 
 	t.Run("returns StaticUser instance when exists", func(t *testing.T) {
-		tenantIDs := []uuid.UUID{uuid.New()}
+		tenantIDs := []string{uuid.New().String()}
 		repo := staticUserRepository{
 			data: map[string]StaticUser{
 				"admin@domain.local": StaticUser{

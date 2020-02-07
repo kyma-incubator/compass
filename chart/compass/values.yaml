@@ -23,7 +23,7 @@ global:
       version: "PR-754"
     director:
       dir:
-      version: "PR-745"
+      version: "PR-788"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -54,7 +54,9 @@ global:
       provisioner:
         dir:
         version: "PR-552"
-
+      connectivity_adapter:
+        dir:
+        version: "PR-787"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -176,22 +178,22 @@ global:
           api:
             url: http://compass-director.compass-system.svc.cluster.local:3000/tenant-mapping
             retry:
-              number_of_retries: 3
-              delay_in_milliseconds: 2000
+              give_up_after: 3s
+              max_delay: 2000ms
       certificateResolverService:
         config:
           api:
             url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/certificate/data/resolve
             retry:
-              number_of_retries: 3
-              delay_in_milliseconds: 2000
+              give_up_after: 3s
+              max_delay: 2000ms
       tokenResolverService:
         config:
           api:
             url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/tokens/resolve
             retry:
-              number_of_retries: 3
-              delay_in_milliseconds: 2000
+              give_up_after: 3s
+              max_delay: 2000ms
 
   tenantFetcher:
     enabled: false

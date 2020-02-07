@@ -3,7 +3,7 @@ package gardener
 import (
 	"time"
 
-	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 )
 
 const (

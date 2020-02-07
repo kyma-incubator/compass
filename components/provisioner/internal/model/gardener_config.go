@@ -7,8 +7,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
-	corev1 "k8s.io/api/core/v1"
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
@@ -16,6 +15,7 @@ import (
 	"github.com/kyma-incubator/hydroform/types"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 )
 
 type GardenerConfig struct {
@@ -40,7 +40,7 @@ type GardenerConfig struct {
 	GardenerProviderConfig GardenerProviderConfig
 }
 
-func (c GardenerConfig) ToShootTemplate(namespace string) *gardener_types.Shoot {
+func (c GardenerConfig) ToShootTemplate(namespace string) (*gardener_types.Shoot, error) {
 	allowPrivlagedContainers := true
 
 	var seed *string = nil
@@ -54,23 +54,27 @@ func (c GardenerConfig) ToShootTemplate(namespace string) *gardener_types.Shoot 
 			Namespace: namespace,
 		},
 		Spec: gardener_types.ShootSpec{
-			Cloud: gardener_types.Cloud{
-				Region: c.Region,
-				SecretBindingRef: corev1.LocalObjectReference{
-					Name: c.TargetSecret,
-				},
-				Seed: seed,
-			},
+			SecretBindingName: c.TargetSecret,
+			SeedName:          seed,
+			Region:            c.Region,
 			Kubernetes: gardener_types.Kubernetes{
 				AllowPrivilegedContainers: &allowPrivlagedContainers,
 				Version:                   c.KubernetesVersion,
 			},
+			Networking: gardener_types.Networking{
+				Type:  "calico",        // Default value - we may consider adding it to API (if Hydroform will support it)
+				Nodes: "10.250.0.0/19", // TODO: it is required - provide configuration in API (when Hydroform will support it)
+			},
+			Maintenance: &gardener_types.Maintenance{},
 		},
 	}
 
-	c.GardenerProviderConfig.ExtendShootConfig(c, shoot)
+	err := c.GardenerProviderConfig.ExtendShootConfig(c, shoot)
+	if err != nil {
+		return nil, fmt.Errorf("error extending shoot config with Provider: %s", err.Error())
+	}
 
-	return shoot
+	return shoot, nil
 }
 
 func (c GardenerConfig) ToHydroformConfiguration(credentialsFilePath string) (*types.Cluster, *types.Provider, error) {
@@ -118,7 +122,7 @@ type GardenerProviderConfig interface {
 	AsMap() (map[string]interface{}, error)
 	RawJSON() string
 	AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig
-	ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot)
+	ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error
 }
 
 func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig, error) {
@@ -177,28 +181,34 @@ func (c GCPGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 	return gqlschema.GCPProviderConfig{Zone: &c.input.Zone}
 }
 
-func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) {
-	shoot.Spec.Cloud.Profile = "gcp"
+func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+	shoot.Spec.CloudProfileName = "gcp"
 
-	workers := make([]gardener_types.GCPWorker, gardenerConfig.NodeCount)
+	workers := make([]gardener_types.Worker, gardenerConfig.NodeCount)
 	for i := 0; i < gardenerConfig.NodeCount; i++ {
-		workers[i] = gardener_types.GCPWorker{
-			Worker:     getWorkerConfig(gardenerConfig, i),
-			VolumeType: gardenerConfig.DiskType,
-			VolumeSize: fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB),
-		}
+		workers[i] = getWorkerConfig(gardenerConfig, []string{c.input.Zone}, i)
 	}
 
-	shoot.Spec.Cloud.GCP = &gardener_types.GCPCloud{
-		Networks: gardener_types.GCPNetworks{
-			K8SNetworks: gardener_types.K8SNetworks{},
-			VPC:         nil,
-			Workers:     []string{gardenerConfig.WorkerCidr},
-			Internal:    nil,
-		},
-		Workers: workers,
-		Zones:   []string{c.input.Zone},
+	gcpInfra := NewGCPInfrastructure(gardenerConfig.WorkerCidr)
+	jsonData, err := json.Marshal(gcpInfra)
+	if err != nil {
+		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
 	}
+
+	gcpControlPlane := NewGCPControlPlane(c.input.Zone)
+	jsonCPData, err := json.Marshal(gcpControlPlane)
+	if err != nil {
+		return fmt.Errorf("error encoding control plane config: %s", err.Error())
+	}
+
+	shoot.Spec.Provider = gardener_types.Provider{
+		Type:                 "gcp",
+		ControlPlaneConfig:   &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonCPData}},
+		InfrastructureConfig: &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonData}},
+		Workers:              workers,
+	}
+
+	return nil
 }
 
 type AzureGardenerConfig struct {
@@ -240,26 +250,34 @@ type AWSGardenerConfig struct {
 	input *gqlschema.AWSProviderConfigInput `db:"-"`
 }
 
-func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) {
-	shoot.Spec.Cloud.Profile = "az"
+func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+	shoot.Spec.CloudProfileName = "az"
 
-	workers := make([]gardener_types.AzureWorker, gardenerConfig.NodeCount)
+	workers := make([]gardener_types.Worker, gardenerConfig.NodeCount)
 	for i := 0; i < gardenerConfig.NodeCount; i++ {
-		workers[i] = gardener_types.AzureWorker{
-			Worker:     getWorkerConfig(gardenerConfig, i),
-			VolumeType: gardenerConfig.DiskType,
-			VolumeSize: fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB),
-		}
+		workers[i] = getWorkerConfig(gardenerConfig, nil, i)
 	}
 
-	shoot.Spec.Cloud.Azure = &gardener_types.AzureCloud{
-		Networks: gardener_types.AzureNetworks{
-			K8SNetworks: gardener_types.K8SNetworks{},
-			VNet:        gardener_types.AzureVNet{CIDR: &c.input.VnetCidr},
-			Workers:     gardenerConfig.WorkerCidr,
-		},
-		Workers: workers,
+	azInfra := NewAzureInfrastructure(gardenerConfig.WorkerCidr, c)
+	jsonData, err := json.Marshal(azInfra)
+	if err != nil {
+		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
 	}
+
+	azureControlPlane := NewAzureControlPlane()
+	jsonCPData, err := json.Marshal(azureControlPlane)
+	if err != nil {
+		return fmt.Errorf("error encoding control plane config: %s", err.Error())
+	}
+
+	shoot.Spec.Provider = gardener_types.Provider{
+		Type:                 "azure",
+		ControlPlaneConfig:   &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonCPData}},
+		InfrastructureConfig: &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonData}},
+		Workers:              workers,
+	}
+
+	return nil
 }
 
 func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (*AWSGardenerConfig, error) {
@@ -299,38 +317,50 @@ func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 	}
 }
 
-func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) {
-	shoot.Spec.Cloud.Profile = "aws"
+func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+	shoot.Spec.CloudProfileName = "aws"
 
-	workers := make([]gardener_types.AWSWorker, gardenerConfig.NodeCount)
+	workers := make([]gardener_types.Worker, gardenerConfig.NodeCount)
 	for i := 0; i < gardenerConfig.NodeCount; i++ {
-		workers[i] = gardener_types.AWSWorker{
-			Worker:     getWorkerConfig(gardenerConfig, i),
-			VolumeType: gardenerConfig.DiskType,
-			VolumeSize: fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB),
-		}
+		workers[i] = getWorkerConfig(gardenerConfig, []string{c.input.Zone}, i)
 	}
 
-	shoot.Spec.Cloud.AWS = &gardener_types.AWSCloud{
-		Networks: gardener_types.AWSNetworks{
-			K8SNetworks: gardener_types.K8SNetworks{},
-			VPC:         gardener_types.AWSVPC{CIDR: util.StringPtr(c.input.VpcCidr)},
-			Internal:    []string{c.input.InternalCidr},
-			Public:      []string{c.input.PublicCidr},
-			Workers:     []string{gardenerConfig.WorkerCidr},
-		},
-		Workers: workers,
-		Zones:   []string{c.input.Zone},
+	awsInfra := NewAWSInfrastructure(gardenerConfig.WorkerCidr, c)
+	jsonData, err := json.Marshal(awsInfra)
+	if err != nil {
+		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
 	}
+
+	awsControlPlane := NewAWSControlPlane()
+	jsonCPData, err := json.Marshal(awsControlPlane)
+	if err != nil {
+		return fmt.Errorf("error encoding control plane config: %s", err.Error())
+	}
+
+	shoot.Spec.Provider = gardener_types.Provider{
+		Type:                 "aws",
+		ControlPlaneConfig:   &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonCPData}},
+		InfrastructureConfig: &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonData}},
+		Workers:              workers,
+	}
+
+	return nil
 }
 
-func getWorkerConfig(gardenerConfig GardenerConfig, index int) gardener_types.Worker {
+func getWorkerConfig(gardenerConfig GardenerConfig, zones []string, index int) gardener_types.Worker {
 	return gardener_types.Worker{
 		Name:           fmt.Sprintf("cpu-worker-%d", index),
-		MachineType:    gardenerConfig.MachineType,
-		AutoScalerMin:  gardenerConfig.AutoScalerMin,
-		AutoScalerMax:  gardenerConfig.AutoScalerMax,
 		MaxSurge:       util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxSurge)),
 		MaxUnavailable: util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxUnavailable)),
+		Machine: gardener_types.Machine{
+			Type: gardenerConfig.MachineType,
+		},
+		Volume: &gardener_types.Volume{
+			Type: &gardenerConfig.DiskType,
+			Size: fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB),
+		},
+		Maximum: int32(gardenerConfig.AutoScalerMax),
+		Minimum: int32(gardenerConfig.AutoScalerMin),
+		Zones:   zones,
 	}
 }
