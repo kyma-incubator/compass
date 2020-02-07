@@ -132,7 +132,7 @@ global:
       host: adapter-gateway
     mtls:
       host: adapter-gateway-mtls
-  
+
   rewriteFilters:
     workloadLabel: oathkeeper
     tokenDataHeader: "Connector-Token"
@@ -149,6 +149,7 @@ global:
       namespace: compass-system
 
   database:
+    manageSecrets: true
     embedded:
       enabled: true
       directorDBName: "postgres"
@@ -197,6 +198,7 @@ global:
 
   tenantFetcher:
     enabled: false
+    manageSecrets: true
     providerName: "compass"
     schedule: "*/5 * * * *"
     oauth:
