@@ -48,11 +48,11 @@ type APIInstanceAuth struct {
 	Context *interface{} `json:"context"`
 	// It may be empty if status is PENDING.
 	// Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	Auth   *Auth            `json:"auth"`
-	Status *APIInstanceAuth `json:"status"`
+	Auth   *Auth                  `json:"auth"`
+	Status *APIInstanceAuthStatus `json:"status"`
 }
 
-type APIInstanceAuthInput struct {
+type APIInstanceAuthRequestInput struct {
 	PackageID string `json:"packageID"`
 	// Context of APIInstanceAuth - such as Runtime ID, namespace
 	Context *interface{} `json:"context"`
@@ -61,12 +61,16 @@ type APIInstanceAuthInput struct {
 }
 
 type APIInstanceAuthStatus struct {
-	Condition *APIInstanceAuthStatusCondition `json:"condition"`
-	Timestamp Timestamp                       `json:"timestamp"`
-	Message   *string                         `json:"message"`
-	// PendingNotification
-	// NotificationSent
-	Reason *string `json:"reason"`
+	Condition APIInstanceAuthStatusCondition `json:"condition"`
+	Timestamp Timestamp                      `json:"timestamp"`
+	Message   string                         `json:"message"`
+	// Possible reasons:
+	// - PendingNotification
+	// - NotificationSent
+	// - CredentialsProvided
+	// - CredentialsNotProvided
+	// - PendingDeletion
+	Reason string `json:"reason"`
 }
 
 // Deprecated
@@ -223,8 +227,10 @@ type DocumentPage struct {
 func (DocumentPage) IsPageable() {}
 
 type EventDefinition struct {
-	ID            string  `json:"id"`
+	ID string `json:"id"`
+	// TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
 	ApplicationID string  `json:"applicationID"`
+	PackageID     *string `json:"packageID"`
 	Name          string  `json:"name"`
 	Description   *string `json:"description"`
 	// group allows you to find the same API but in different version

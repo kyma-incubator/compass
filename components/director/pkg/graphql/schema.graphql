@@ -129,7 +129,7 @@ input APIDefinitionInput {
 	defaultAuth: AuthInput @deprecated(reason: "Use package.defaultAuth")
 }
 
-input APIInstanceAuthInput {
+input APIInstanceAuthRequestInput {
 	packageID: ID!
 	"""
 	Context of APIInstanceAuth - such as Runtime ID, namespace
@@ -327,7 +327,11 @@ input WebhookInput {
 
 type APIDefinition {
 	id: ID!
-	applicationID: ID!
+	"""
+	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
+	"""
+	applicationID: ID! @deprecated(reason: "Use packageID field")
+	packageID: ID
 	name: String!
 	description: String
 	spec: APISpec
@@ -368,18 +372,22 @@ type APIInstanceAuth {
 	Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
 	"""
 	auth: Auth
-	status: APIInstanceAuth
+	status: APIInstanceAuthStatus
 }
 
 type APIInstanceAuthStatus {
-	condition: APIInstanceAuthStatusCondition
+	condition: APIInstanceAuthStatusCondition!
 	timestamp: Timestamp!
-	message: String
+	message: String!
 	"""
-	PendingNotification
-	NotificationSent
+	Possible reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
 	"""
-	reason: String
+	reason: String!
 }
 
 """
@@ -483,7 +491,11 @@ type CredentialRequestAuth {
 
 type Document {
 	id: ID!
-	applicationID: ID!
+	"""
+	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
+	"""
+	applicationID: ID! @deprecated(reason: "Use packageID field")
+	packageID: ID
 	title: String!
 	displayName: String!
 	description: String!
@@ -504,7 +516,11 @@ type DocumentPage implements Pageable {
 
 type EventDefinition {
 	id: ID!
-	applicationID: ID!
+	"""
+	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
+	"""
+	applicationID: ID! @deprecated(reason: "Use packageID field")
+	packageID: ID
 	name: String!
 	description: String
 	"""
@@ -987,8 +1003,7 @@ type Mutation {
 	"""
 	setAPIInstanceAuthForPackage(packageID: ID!, authID: ID!, in: AuthInput! @validate): APIInstanceAuth! @hasScopes(path: "graphql.mutation.setAPIInstanceAuthForPackage")
 	deleteAPIInstanceAuthForPackage(packageID: ID!, authID: ID!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.deleteAPIInstanceAuthForPackage")
-	requestAPIInstanceAuthForPackage(in: APIInstanceAuthInput!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.requestAPIInstanceAuthForPackage")
-	deleteAPIInstanceAuthAuthForPackage(packageID: ID!, authID: ID!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.deleteAPIInstanceAuthAuthForPackage")
+	requestAPIInstanceAuthForPackage(in: APIInstanceAuthRequestInput!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.requestAPIInstanceAuthForPackage")
 	addPackageDefinition(applicationID: ID!, in: PackageDefinitionCreateInput! @validate): PackageDefinition! @hasScopes(path: "graphql.mutation.addPackageDefinition")
 	updatePackageDefinition(id: ID!, in: PackageDefinitionUpdateInput! @validate): PackageDefinition! @hasScopes(path: "graphql.mutation.updatePackageDefinition")
 	deletePackageDefinition(id: ID!): PackageDefinition! @hasScopes(path: "graphql.mutation.deletePackageDefinition")

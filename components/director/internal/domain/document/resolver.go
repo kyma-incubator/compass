@@ -3,6 +3,8 @@ package document
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apipackage/mock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
 	"github.com/pkg/errors"
@@ -153,4 +155,9 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*gr
 
 	frGQL := r.frConverter.ToGraphQL(fr)
 	return frGQL, nil
+}
+
+// TODO: Replace with real implementation
+func (r *Resolver) AddDocumentToPackage(ctx context.Context, packageID string, in graphql.DocumentInput) (*graphql.Document, error) {
+	return mock.FixDocument("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", packageID), nil
 }
