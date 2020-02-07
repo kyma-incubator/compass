@@ -1,6 +1,6 @@
-DROP TABLE package_definitions;
-DROP TABLE api_instance_auths;
 DROP TABLE api_instance_auth_statuses;
+DROP TABLE api_instance_auths;
+DROP TABLE package_definitions;
 
 ALTER TABLE api_definitions DROP COLUMN package_definition_id;
 ALTER TABLE api_definitions
