@@ -794,7 +794,7 @@ func TestListLabelDefinitions(t *testing.T) {
 func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	tenantID := tenants["default"]
+	tenantID := tenants["foobaz"]
 	name := "deleting-last-scenario-for-app-fail"
 	scenarios := []string{"DEFAULT", "Christmas", "New Year"}
 

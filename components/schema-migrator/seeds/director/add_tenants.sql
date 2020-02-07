@@ -3,4 +3,7 @@ INSERT INTO public.business_tenant_mappings (id, external_name, external_tenant,
 ('9ca034f1-11ab-5b25-b76f-dc77106f571d', 'test-default-tenant', '9ca034f1-11ab-5b25-b76f-dc77106f571d', 'Compass', 'Active'),
 ('1eba80dd-8ff6-54ee-be4d-77944d17b10b', 'foo', '1eba80dd-8ff6-54ee-be4d-77944d17b10b', 'Compass', 'Active'),
 ('af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e', 'bar', 'af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e', 'Compass', 'Active'),
-('2bf03de1-23b1-4063-9d3e-67096800accc', 'foobar' , '2bf03de1-23b1-4063-9d3e-67096800accc', 'Compass' , 'Active');
+('2bf03de1-23b1-4063-9d3e-67096800accc', 'foobar' , '2bf03de1-23b1-4063-9d3e-67096800accc', 'Compass' , 'Active'),
+('f739b36c-813f-4fc3-996e-dd03c7d13aa0', 'foobaz' , 'f739b36c-813f-4fc3-996e-dd03c7d13aa0', 'Compass' , 'Active');
+
+

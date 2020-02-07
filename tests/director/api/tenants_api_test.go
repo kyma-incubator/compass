@@ -27,7 +27,7 @@ func TestQueryTenants(t *testing.T) {
 
 	//THEN
 	t.Log("Check if tenants were received")
-	assert.Equal(t, 5, len(output))
+	assert.Equal(t, 6, len(output))
 	assert.Equal(t, defaultTenants, output)
 	saveExample(t, getTenantsRequest.Query(), "query tenants")
 }
@@ -46,5 +46,6 @@ func fixDefaultTenants() []*graphql.Tenant {
 		fixTenant("1eba80dd-8ff6-54ee-be4d-77944d17b10b", "foo"),
 		fixTenant("af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e", "bar"),
 		fixTenant("2bf03de1-23b1-4063-9d3e-67096800accc", "foobar"),
+		fixTenant("f739b36c-813f-4fc3-996e-dd03c7d13aa0", "foobaz"),
 	}
 }
