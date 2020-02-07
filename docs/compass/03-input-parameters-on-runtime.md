@@ -1,114 +1,95 @@
-# Input parameters for API, Event Definitions or API Packages in the Runtime
+# Input parameters for Packages in the Runtime
 
 ## Overview
 
-Previously, in Kyma Runtime, while provisioning Service Class created from API/Event Definition, there were no possibility to pass input parameters. The ability may be useful in some specific use cases. This document describes passing input parameters from Kyma Runtime to Application or Integration System.
+On Runtime, Application is represented as Service Class, and every Package within Application is represented as Service Plan. This document describes passing optional input parameters from Kyma Runtime to Application or Integration System during Service Class provisioning.
 
 ## Assumptions
-- Multiple Service Instances can be created from a given API, Event Definition or API Package
+
+- Multiple Service Instances can be created from a given Package within Application.
 - During Service Class provisioning, the provided input has to be sent back to Integration System or Application via Compass. The reason is that there is no trusted connection between Integration System and Runtime.
+- Passing input parameters is done during requesting credentials for a given Service Instance.
 
 ## Solution
 
-### Auths per Service Instance
+The Director GraphQL API is updated to store credentials per Service Instance. Credentials for every Instance across all Runtimes are stored on the Package level.
 
-Previously, for every API Definition there was a list of credentials per Runtime:
+### GraphQL Schema
 
 ```graphql
-type APIDefinition {
+
+type PackageDefinition {
+	id: ID!
     # (...)
-	auth(runtimeID: ID!): APIRuntimeAuth!
-	auths: [APIRuntimeAuth!]!
+
+    """
+    Optional JSON schema for validation user input while provisioning Service Class.
+    """
+	authRequestJSONSchema: JSONSchema
+	auth(id: ID!): APIInstanceAuth
+	auths: [APIInstanceAuth!]!
+	"""
+	When defined, all Auth requests via `requestAPIInstanceAuthForPackage` mutation fallback to defaultAuth.
+	"""
 	defaultAuth: Auth
 }
 
-type APIRuntimeAuth {
-	runtimeID: ID!
+type APIInstanceAuth {
+	id: ID!
+	"""
+	Context of APIInstanceAuth - such as Runtime ID, namespace, etc.
+	"""
+	context: Any
+	"""
+	It may be empty if status is PENDING.
+	Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+	"""
 	auth: Auth
+	status: APIInstanceAuthStatus
 }
 
-mutation {
-    setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): APIRuntimeAuth!
-    deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth!
+type APIInstanceAuthStatus {
+	condition: APIInstanceAuthStatusCondition!
+	timestamp: Timestamp!
+	message: String!
+	"""
+	Possible reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	"""
+	reason: String!
+}
+
+enum APIInstanceAuthStatusCondition {
+	"""
+	When creating or deleting new one
+	"""
+	PENDING
+	SUCCEEDED
+	FAILED
+}
+
+type Mutation {
+    """
+	When APIInstanceAuth is not in pending state, the operation returns error. If the APIInstanceAuth is in "Pending" status, it is set to success.
+	"""
+	setAPIInstanceAuthForPackage(packageID: ID!, authID: ID!, in: AuthInput! @validate): APIInstanceAuth! 
+	deleteAPIInstanceAuthForPackage(packageID: ID!, authID: ID!): APIInstanceAuth!
+	requestAPIInstanceAuthForPackage(packageID: ID!, in: APIInstanceAuthRequestInput!): APIInstanceAuth! 
 }
 ```
 
-As there could be multiple Service Instances on Runtime with different credentials, the API is modified to take into the account this fact:
+Application or Integration System can set optional `authRequestJSONSchema` field with a JSON schema with parameters needed during Service Class provisioning. The values provided by User are validated against the JSON schema.
 
-```graphql
-type APIDefinition {
-    # (...)
-	auth(runtimeID: ID!, usageID: ID!): APIUsageAuth!
-	auths(runtimeID: ID): [APIUsageAuth!]!
-	defaultAuth: Auth
-}
-
-type APIUsageAuth {
-    id: ID! # Usage ID, which equals to Service Instance ID on a given Runtime
-	runtimeID: ID!
-	auth: Auth
-}
-
-mutation {
-    setAPIUsageAuth(runtimeID: ID!, usageID: ID!, in: AuthInput!): APIUsageAuth!
-    deleteAPIUsageAuth(runtimeID: ID!, usageID: ID!): APIUsageAuth!
-}
-```
-
-### Instance Create Parameter Schema
-
-> **NOTE:** There is no final decision - we need to figure out the final approach.
-
-#### Option #1: Instance Create Parameter Schema in LabelDefinition
-
-The solution utilizes LabelDefinitions and labels on Application level. It requires implementation of LabelDefinition extension: an ability to create LabelDefinitions for a specific prefix. All labels starting with the specified prefix are validated against JSON schema provided in the LabelDefinition.
-
-1. Integration System or Application provides JSON schema for Service Class `instanceCreateParameterSchema` parameter by creating new Label Definition in the following format:
-
-    **Key**: 
-    - For API Definition: `input-params.{app-id}.apis.{api-def-id}/*`
-    - For Event Definition: `input-params.{app-id}.events.{event-def-id}/*`
-    - For API Package: `input-params.{app-id}.api-packages.{api-package-id}/*`
-        
-    **Value**: JSON schema for the `instanceCreateParameterSchema` for given Service Class
-
-1. On Kyma Runtime, Runtime Agent queries Applications for given Runtime. It reads all LabelDefinition with prefix `input-params.{app-id}` and updates `instanceCreateParameterSchema` properties in Service Classes.
-
-1. During Service Instance creation, instance parameters are set as label for Application. For example, for API Definition, a key `input-params.{app-id}.apis.{api-def-id}/{instance-id}` is used.
-
-1. To list all Service Instance params, Application or Extension Service can query Application labels with prefix `input-params.{app-id}.apis.{api-def-id}/{instance-id}`.
-
-**Pros:**
-
-- Generic approach; ability to reuse this feature in other use cases
-- Static validation of JSON Schema
-
-**Cons:**
-
-- Introduce new feature on Compass side
-    - Need to resolve LabelDefinition conflicts (for example, LabelDefinition `foo/*` and LabelDefinition `/foo/bar/*`: we can block it or enable overrides)
-- Runtime Agent has to read LabelDefinitions for specific prefixes
-    - This can be solved with an optional parameter with for `labelDefinitions` query, like `labelDefinitions(prefix: String)`
-
-#### Option #2: Instance Create Parameter Schema in Label
-
-1. Application or Integration System creates Application label with `instanceCreateParameterSchema` for given API, Event Definition or API Package. For example, in case of API Definition, it is `input-params.apis.{api-def-name}.schema`
-1. During Service Instance creation, instance parameters are set as label `input-params.apis/{api-def-name}.usages` for given Application. For example:
-
-    ```json
-    {
-        "{instance-1-uuid}": {"foo": "bar", "baz": 3},
-        "{instance-2-uuid}": {"foo": null, "baz": 10},
-    }
-    ```
-
-1. To list parameters for Service Instances of given API Definition, Application or Extension Service reads Application label with key `input-params.apis.{api-def-name}.usages`.
-
-**Pros:**
-
-- No changes in Compass API (apart from Auths)
-
-**Cons:**
-
-- No static validation for input parameters
-    - To validate Service Instance params, Integration System or Application can create upfront LabelDefinition for `input-params.apis.{api-def-name}.usages`.
+### Example request credentials flow
+1. User connects Application `foo` with single Package `bar` which contain few API and Event Definitions. The Package has `authRequestJSONSchema` defined.
+1. User selects Service Class `foo` and Service Plan `bar`.
+1. User provides required input (defined by `authRequestJSONSchema`) and provisions selected Service Plan.
+1. Runtime Agent calls Director with `requestAPIInstanceAuthForPackage`, passing user input.
+1. Director validates user input against `authRequestJSONSchema`. When the user input is valid, a new `APIInstanceAuth` within Package `foo` is created.
+    a. If `defaultAuth` for Package `foo` is defined, the newly created `APIInstanceAuth` is filled with credentials from `defaultAuth` value. The status is set to `SUCCEEDED`.
+    b. If `defaultAuth` for Package `foo` is not defined, the `APIInstanceAuth` waits in `PENDING` state until Application does `setAPIInstanceAuthForPackage`. Then the status is set to `SUCCEEDED`.
+1. After fetching valid credentials for Service Instance by Runtime, Service Instance is set to `READY` state.
