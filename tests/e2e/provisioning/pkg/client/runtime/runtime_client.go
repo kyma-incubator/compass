@@ -66,9 +66,6 @@ func (c *Client) TearDown() error {
 func (c *Client) fetchRuntimeConfig() (*runtimeStatusResponse, error) {
 	// setup graphql client
 	gCli := graphCli.NewClient(c.config.ProvisionerURL, graphCli.WithHTTPClient(&c.httpClient))
-	gCli.Log = func(s string) {
-		c.log.Info(s)
-	}
 
 	// create query
 	q := fmt.Sprintf(`query {
