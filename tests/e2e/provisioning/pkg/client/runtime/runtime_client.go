@@ -63,7 +63,7 @@ func (c *Client) TearDown() error {
 	return nil
 }
 
-func (c *Client) setRuntimeConfig() error {
+func (c *Client) fetchRuntimeConfig() (*runtimeStatusResponse, error) {
 	// setup graphql client
 	gCli := graphCli.NewClient(c.config.ProvisionerURL, graphCli.WithHTTPClient(&c.httpClient))
 	gCli.Log = func(s string) {
@@ -78,6 +78,7 @@ func (c *Client) setRuntimeConfig() error {
 			}
 		}
 	}`, c.runtimeID)
+
 	// prepare and run request
 	req := graphCli.NewRequest(q)
 	req.Header.Add(accountIDKey, c.tenantID)
@@ -85,12 +86,20 @@ func (c *Client) setRuntimeConfig() error {
 	res := &runtimeStatusResponse{}
 	err := gCli.Run(context.Background(), req, res)
 	if err != nil {
-		return errors.Wrapf(err, "while getting runtime config")
+		return nil, errors.Wrapf(err, "while getting runtime config")
+	}
+	return res, nil
+}
+
+func (c *Client) setRuntimeConfig() error {
+	response, err := c.fetchRuntimeConfig()
+	if err != nil {
+		return errors.Wrap(err, "while fetching runtime config")
 	}
 
-	runtimeConfig := *res.Result.RuntimeConfiguration.Kubeconfig
+	runtimeConfig := *response.Result.RuntimeConfiguration.Kubeconfig
 	runtimeConfigFile := "/tmp/runtime.yaml"
-	err = ioutil.WriteFile(runtimeConfigFile, []byte(runtimeConfig), 0644)
+	err = ioutil.WriteFile(runtimeConfigFile, []byte(runtimeConfig), 0200)
 	if err != nil {
 		return errors.Wrap(err, "while creating runtime kubeconfig file")
 	}
