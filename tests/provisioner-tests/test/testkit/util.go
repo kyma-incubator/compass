@@ -5,15 +5,25 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	gqlschema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+
 	yaml "gopkg.in/yaml.v3"
 )
 
-const InstallationCRURL = "https://raw.githubusercontent.com/kyma-project/kyma/master/installation/resources/installer-cr-cluster-with-compass.yaml.tpl"
+const (
+	installationCRURL = "https://raw.githubusercontent.com/kyma-project/kyma/master/installation/resources/installer-cr-cluster-with-compass.yaml.tpl"
+
+	Azure = "Azure"
+	GCP   = "GCP"
+	AWS   = "AWS"
+)
 
 func WaitForFunction(interval, timeout time.Duration, isDone func() bool) error {
 	done := time.After(timeout)
@@ -68,7 +78,7 @@ func RunParallelToMainFunction(timeout time.Duration, mainFunction func() error,
 }
 
 func GetAndParseInstallerCR() ([]*gqlschema.ComponentConfigurationInput, error) {
-	resp, err := http.Get(InstallationCRURL)
+	resp, err := http.Get(installationCRURL)
 	if err != nil {
 		return nil, fmt.Errorf("Error fetching installation CR: %s", err.Error())
 	}
@@ -93,6 +103,69 @@ func GetAndParseInstallerCR() ([]*gqlschema.ComponentConfigurationInput, error) 
 	return components, nil
 }
 
+func CreateGardenerProvisioningInput(config *TestConfig, provider string) (gqlschema.ProvisionRuntimeInput, error) {
+	gardenerInputs := map[string]gqlschema.GardenerConfigInput{
+		GCP: {
+			MachineType:  "n1-standard-4",
+			DiskType:     "pd-standard",
+			Region:       "europe-west4",
+			TargetSecret: config.Gardener.GCPSecret,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				GcpConfig: &gqlschema.GCPProviderConfigInput{
+					Zone: "europe-west4-a",
+				},
+			},
+		},
+		Azure: {
+			MachineType:  "Standard_D2_v3",
+			DiskType:     "Standard_LRS",
+			Region:       "westeurope",
+			TargetSecret: config.Gardener.AzureSecret,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AzureConfig: &gqlschema.AzureProviderConfigInput{
+					VnetCidr: "10.250.0.0/19",
+				},
+			},
+		},
+	}
+
+	logrus.Infof("Getting and parsing Kyma modules from Installation CR at: %s", installationCRURL)
+	componentConfigInput, err := GetAndParseInstallerCR()
+	if err != nil {
+		return gqlschema.ProvisionRuntimeInput{}, fmt.Errorf("Failed to create component config input: %s", err.Error())
+	}
+
+	runtimeName := fmt.Sprintf("%s%s", "runtime", uuid.New().String()[:4])
+
+	return gqlschema.ProvisionRuntimeInput{
+		RuntimeInput: &gqlschema.RuntimeInput{
+			Name: runtimeName,
+		},
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				KubernetesVersion:      "1.15.4",
+				NodeCount:              3,
+				DiskType:               gardenerInputs[provider].DiskType,
+				VolumeSizeGb:           35,
+				MachineType:            gardenerInputs[provider].MachineType,
+				Region:                 gardenerInputs[provider].Region,
+				Provider:               toLowerCase(provider),
+				TargetSecret:           gardenerInputs[provider].TargetSecret,
+				WorkerCidr:             "10.250.0.0/19",
+				AutoScalerMin:          2,
+				AutoScalerMax:          4,
+				MaxSurge:               4,
+				MaxUnavailable:         1,
+				ProviderSpecificConfig: gardenerInputs[provider].ProviderSpecificConfig,
+			},
+		},
+		KymaConfig: &gqlschema.KymaConfigInput{
+			Version:    config.Kyma.Version,
+			Components: componentConfigInput,
+		},
+	}, nil
+}
+
 func processErrors(errorsArray []error) error {
 	errorMsg := ""
 
@@ -107,4 +180,8 @@ func processErrors(errorsArray []error) error {
 	}
 
 	return nil
+}
+
+func toLowerCase(provider string) string {
+	return strings.ToLower(provider)
 }

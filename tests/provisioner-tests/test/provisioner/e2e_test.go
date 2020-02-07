@@ -2,7 +2,6 @@ package provisioner
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -25,31 +24,6 @@ const (
 // TODO: Consider fetching logs from Provisioner on error (or from created Runtime)
 
 func Test_E2E_Gardener(t *testing.T) {
-	gardenerInputs := map[string]gqlschema.GardenerConfigInput{
-		GCP: {
-			MachineType:  "n1-standard-4",
-			DiskType:     "pd-standard",
-			Region:       "europe-west4",
-			TargetSecret: config.Gardener.GCPSecret,
-			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				GcpConfig: &gqlschema.GCPProviderConfigInput{
-					Zone: "europe-west4-a",
-				},
-			},
-		},
-		Azure: {
-			MachineType:  "Standard_D2_v3",
-			DiskType:     "Standard_LRS",
-			Region:       "westeurope",
-			TargetSecret: config.Gardener.AzureSecret,
-			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr: "10.250.0.0/19",
-				},
-			},
-		},
-	}
-
 	log := logrus.WithField("TestId", testSuite.TestId)
 
 	log.Infof("Starting Compass Provisioner tests on Gardener")
@@ -58,43 +32,10 @@ func Test_E2E_Gardener(t *testing.T) {
 		t.Run(provider, func(t *testing.T) {
 			t.Parallel()
 
-			// TODO: refactor
-
 			// Provision runtime
-			runtimeName := fmt.Sprintf("%s%s", "runtime", uuid.New().String()[:4])
-
 			// Get Kyma modules from Installation CR
-			log.Infof("Getting and parsing Kyma modules from Installation CR at: %s", testkit.InstallationCRURL)
-			componentConfigInput, err := testkit.GetAndParseInstallerCR()
-			assertions.RequireNoError(t, err)
-
-			provisioningInput := gqlschema.ProvisionRuntimeInput{
-				RuntimeInput: &gqlschema.RuntimeInput{
-					Name: runtimeName,
-				},
-				ClusterConfig: &gqlschema.ClusterConfigInput{
-					GardenerConfig: &gqlschema.GardenerConfigInput{
-						KubernetesVersion:      "1.15.4",
-						NodeCount:              3,
-						DiskType:               gardenerInputs[provider].DiskType,
-						VolumeSizeGb:           35,
-						MachineType:            gardenerInputs[provider].MachineType,
-						Region:                 gardenerInputs[provider].Region,
-						Provider:               toLowerCase(provider),
-						TargetSecret:           gardenerInputs[provider].TargetSecret,
-						WorkerCidr:             "10.250.0.0/19",
-						AutoScalerMin:          2,
-						AutoScalerMax:          4,
-						MaxSurge:               4,
-						MaxUnavailable:         1,
-						ProviderSpecificConfig: gardenerInputs[provider].ProviderSpecificConfig,
-					},
-				},
-				KymaConfig: &gqlschema.KymaConfigInput{
-					Version:    config.Kyma.Version,
-					Components: componentConfigInput,
-				},
-			}
+			provisioningInput := testkit.CreateGardenerProvisioningInput()
+			runtimeName := provisioningInput.RuntimeInput.Name
 
 			log.Infof("Provisioning %s runtime on %s...", runtimeName, provider)
 			provisioningOperationID, runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
@@ -369,8 +310,4 @@ func unwrapString(str *string) string {
 	}
 
 	return ""
-}
-
-func toLowerCase(provider string) string {
-	return strings.ToLower(provider)
 }

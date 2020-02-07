@@ -28,9 +28,9 @@ const (
 
 	checkInterval = 10 * time.Second
 
-	Azure = "Azure"
-	GCP   = "GCP"
-	AWS   = "AWS"
+	Azure = testkit.Azure
+	GCP   = testkit.GCP
+	AWS   = testkit.AWS
 )
 
 type TestSuite struct {
