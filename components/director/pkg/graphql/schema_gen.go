@@ -3178,7 +3178,7 @@ input PackageDefinitionCreateInput {
 
 input PackageDefinitionUpdateInput {
 	name: String!
-	description: String!
+	description: String
 	authRequestJSONSchema: JSONSchema
 	"""
 	While updating defaultAuth, existing APIInstanceAuths are NOT updated.
@@ -19133,7 +19133,7 @@ func (ec *executionContext) unmarshalInputPackageDefinitionUpdateInput(ctx conte
 			}
 		case "description":
 			var err error
-			it.Description, err = ec.unmarshalNString2string(ctx, v)
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

@@ -374,7 +374,7 @@ func (PackageDefinitionPage) IsPageable() {}
 
 type PackageDefinitionUpdateInput struct {
 	Name                  string      `json:"name"`
-	Description           string      `json:"description"`
+	Description           *string     `json:"description"`
 	AuthRequestJSONSchema *JSONSchema `json:"authRequestJSONSchema"`
 	// While updating defaultAuth, existing APIInstanceAuths are NOT updated.
 	DefaultAuth *AuthInput `json:"defaultAuth"`
