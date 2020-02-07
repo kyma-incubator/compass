@@ -61,6 +61,8 @@ global:
   oauth2:
     host: oauth2
 
+  agentPreconfiguration: true
+
   director:
     port: 3000
 
