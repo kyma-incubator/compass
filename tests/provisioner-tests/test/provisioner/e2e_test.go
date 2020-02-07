@@ -34,7 +34,7 @@ func Test_E2E_Gardener(t *testing.T) {
 
 			// Provision runtime
 			// Get Kyma modules from Installation CR
-			provisioningInput := testkit.CreateGardenerProvisioningInput()
+			provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, provider)
 			runtimeName := provisioningInput.RuntimeInput.Name
 
 			log.Infof("Provisioning %s runtime on %s...", runtimeName, provider)
