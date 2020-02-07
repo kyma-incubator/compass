@@ -63,7 +63,6 @@ func clusterConfig() string {
 		... on GardenerConfig {
 			name 
 			kubernetesVersion
-			projectName
 			nodeCount 
 			volumeSizeGB
 			diskType

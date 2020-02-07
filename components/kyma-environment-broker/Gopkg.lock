@@ -337,7 +337,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:627fb96f1dcd2ed68845a8a3f57a4655a682e22cebb176a98b15ca1650259833"
+  digest = "1:7ac5e3b0541b473878fab1ff89ba035ed5b62ebe2e082e63cdf0be117de55f11"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -350,7 +350,7 @@
     "tests/provisioner-tests/test/testkit/graphql",
   ]
   pruneopts = "UT"
-  revision = "9aebb389a40600880243fb04efea85c2d1408a33"
+  revision = "dc5e1435a3b74406b75faf19a51347985e2c43ad"
 
 [[projects]]
   digest = "1:bde204c6c8dd5169cd05ed5aa9a1e027bc8d2cdd172c5e80b971cb4e14b55e3c"
