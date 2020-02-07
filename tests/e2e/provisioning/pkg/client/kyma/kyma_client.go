@@ -25,6 +25,10 @@ func NewClient(clientHttp http.Client, log logrus.FieldLogger) *Client {
 	}
 }
 
+// CallDashboardURL sends request to the dashboardURL and expects to be redirected to the logging page
+// There are 2 possibility locations where we can be redirected:
+// `/auth/xsuaa` - if uua-issuer exist on the cluster
+// `/auth/local` - if Kyma use a standard login page
 func (c *Client) CallDashboardURL(dashboardURL string) error {
 	targetURL := c.buildTargetURL(dashboardURL)
 
