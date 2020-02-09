@@ -24,9 +24,9 @@ metadata:
   name: {{ include "kyma-env-broker.fullname" . }}-e2e-provisioning
   namespace: {{ .Release.Namespace }}
 rules:
-  - apiGroups: [""]
-    resources: ["secret"]
-    verbs: ["get"]
+  - apiGroups: ["servicecatalog.k8s.io"]
+    resources: ["serviceinstances"]
+    verbs: ["get", "delete"]
 ---
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
@@ -48,7 +48,7 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
           - name: APP_BROKER_URL
-            value: 'https://kyma-env-broker.{{ .Values.global.ingress.domainName }}'
+            value: 'https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}'
           - name: APP_BROKER_PROVISION_TIMEOUT
             value: "3h"
           - name: APP_BROKER_PROVISION_GCP
@@ -66,7 +66,7 @@ spec:
             value: "uaa-issuer"
           - name: APP_RUNTIME_UUA_INSTANCE_NAMESPACE
             value: "kyma-system"
-          - name: APP_GLOBAL_ACCOUNT_ID
+          - name: APP_TENANT_ID
             value: "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
           command:
           - "bash"
