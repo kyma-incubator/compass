@@ -18,7 +18,7 @@ The Director GraphQL API is updated to store credentials per Service Instance. C
 
 This diagram illustrates the API credentials flow in details. The Application provides Webhook API where Management Plane requests for providing new credentials for given Package.
 
->**NOTE:** There is an option that Application does not support Webhook API. That means Application needs to monitor registered API Definitions and set API credentials when new Runtime assigned. The Administrator can exchange credentials for registered APIs at any time too.
+> **NOTE:** There is an option that Application does not support Webhook API. That means Application needs to monitor registered API Definitions and set API credentials when new Runtime assigned. The Administrator can exchange credentials for registered APIs at any time too.
 
 ![Application Webhook](./assets/api-credentials-flow.svg)
 
@@ -30,83 +30,91 @@ Assume we have Application which is already registered into Management Plane. No
 4. The Application sets Package credentials for the particular Service Instance of a given Runtime.
 5. The Runtime Agent enables Runtime to call Application APIs.
 
-
 ### GraphQL Schema
 
 ```graphql
+type Package {
+  id: ID!
+  # (...)
 
-type PackageDefinition {
-	id: ID!
-    # (...)
-
-    """
-    Optional JSON schema for validation user input while provisioning Service Class.
-    """
-	authRequestJSONSchema: JSONSchema
-	auth(id: ID!): APIInstanceAuth
-	auths: [APIInstanceAuth!]!
-	"""
-	When defined, all Auth requests via `requestAPIInstanceAuthForPackage` mutation fallback to defaultAuth.
-	"""
-	defaultAuth: Auth
+  """
+  Optional JSON schema for validation user input while provisioning Service Class.
+  """
+  instanceAuthRequestInputSchema: JSONSchema
+  instanceAuth(id: ID!): PackageInstanceAuth
+  instanceAuths: [PackageInstanceAuth!]!
+  """
+  When defined, all Auth requests via `requestPackageInstanceAuthForPackage` mutation fallback to defaultInstanceAuth.
+  """
+  defaultInstanceAuth: Auth
 }
 
-type APIInstanceAuth {
-	id: ID!
-	"""
-	Context of APIInstanceAuth - such as Runtime ID, namespace, etc.
-	"""
-	context: Any
-	"""
-	It may be empty if status is PENDING.
-	Populated with `package.defaultAuth` value if `package.defa	ultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	"""
-	auth: Auth
-	status: APIInstanceAuthStatus
+type PackageInstanceAuth {
+  id: ID!
+  """
+  Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
+  """
+  context: Any
+  """
+  It may be empty if status is PENDING.
+  Populated with `package.defaultInstanceAuth` value if `package.defa	ultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+  """
+  auth: Auth
+  status: PackageInstanceAuthStatus
 }
 
-type APIInstanceAuthStatus {
-	condition: APIInstanceAuthStatusCondition!
-	timestamp: Timestamp!
-	message: String!
-	"""
-	Possible reasons:
-	- PendingNotification
-	- NotificationSent
-	- CredentialsProvided
-	- CredentialsNotProvided
-	- PendingDeletion
-	"""
-	reason: String!
+type PackageInstanceAuthStatus {
+  condition: PackageInstanceAuthStatusCondition!
+  timestamp: Timestamp!
+  message: String!
+  """
+  Possible reasons:
+  - PendingNotification
+  - NotificationSent
+  - CredentialsProvided
+  - CredentialsNotProvided
+  - PendingDeletion
+  """
+  reason: String!
 }
 
-enum APIInstanceAuthStatusCondition {
-	"""
-	When creating or deleting new one
-	"""
-	PENDING
-	SUCCEEDED
-	FAILED
+enum PackageInstanceAuthStatusCondition {
+  """
+  When creating or deleting new one
+  """
+  PENDING
+  SUCCEEDED
+  FAILED
 }
 
 type Mutation {
-    """
-	When APIInstanceAuth is not in pending state, the operation returns error. If the APIInstanceAuth is in "Pending" status, it is set to success.
-	"""
-	setAPIInstanceAuthForPackage(packageID: ID!, authID: ID!, in: AuthInput! @validate): APIInstanceAuth! 
-	deleteAPIInstanceAuthForPackage(packageID: ID!, authID: ID!): APIInstanceAuth!
-	requestAPIInstanceAuthForPackage(packageID: ID!, in: APIInstanceAuthRequestInput!): APIInstanceAuth! 
+  """
+  When PackageInstanceAuth is not in pending state, the operation returns error.
+
+  When used without error, the status of pending auth is set to success.
+  """
+  setPackageInstanceAuth(
+    packageID: ID!
+    authID: ID!
+    in: AuthInput! @validate
+  ): PackageInstanceAuth!
+  deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth!
+  requestPackageInstanceAuth(
+    packageID: ID!
+    in: PackageInstanceAuthRequestInput!
+  ): PackageInstanceAuth!
 }
 ```
 
-Application or Integration System can set optional `authRequestJSONSchema` field with a JSON schema with parameters needed during Service Class provisioning. The values provided by User are validated against the JSON schema.
+Application or Integration System can set optional `instanceAuthRequestInputSchema` field with a JSON schema with parameters needed during Service Class provisioning. The values provided by User are validated against the JSON schema.
 
 ### Example request credentials flow
-1. User connects Application `foo` with single Package `bar` which contain few API and Event Definitions. The Package has `authRequestJSONSchema` defined.
+
+1. User connects Application `foo` with single Package `bar` which contain few API and Event Definitions. The Package has `instanceAuthRequestInputSchema` defined.
 1. User selects Service Class `foo` and Service Plan `bar`.
-1. User provides required input (defined by `authRequestJSONSchema`) and provisions selected Service Plan.
-1. Runtime Agent calls Director with `requestAPIInstanceAuthForPackage`, passing user input.
-1. Director validates user input against `authRequestJSONSchema`. When the user input is valid, a new `APIInstanceAuth` within Package `foo` is created.
-    a. If `defaultAuth` for Package `foo` is defined, the newly created `APIInstanceAuth` is filled with credentials from `defaultAuth` value. The status is set to `SUCCEEDED`.
-    b. If `defaultAuth` for Package `foo` is not defined, the `APIInstanceAuth` waits in `PENDING` state until Application does `setAPIInstanceAuthForPackage`. Then the status is set to `SUCCEEDED`.
+1. User provides required input (defined by `instanceAuthRequestInputSchema`) and provisions selected Service Plan.
+1. Runtime Agent calls Director with `requestPackageInstanceAuth`, passing user input.
+1. Director validates user input against `instanceAuthRequestInputSchema`. When the user input is valid, a new `PackageInstanceAuth` within Package `foo` is created.
+   a. If `defaultInstanceAuth` for Package `foo` is defined, the newly created `PackageInstanceAuth` is filled with credentials from `defaultInstanceAuth` value. The status is set to `SUCCEEDED`.
+   b. If `defaultInstanceAuth` for Package `foo` is not defined, the `PackageInstanceAuth` waits in `PENDING` state until Application does `setPackageInstanceAuth`. Then the status is set to `SUCCEEDED`.
 1. After fetching valid credentials for Service Instance by Runtime, Service Instance is set to `READY` state.
