@@ -15,9 +15,7 @@
 
 ## Optional components
 
-This section presents how to add or remove the possibility to disable components, which makes them either optional or required during the Kyma installation.
-
-The optional components are as follows:
+This section presents how to add or remove the possibility to disable components, which makes them either optional or required during the Kyma installation. Currently, the optional components are as follows:
 - Loki
 - Kiali
 - Jaeger
