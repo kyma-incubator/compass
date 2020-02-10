@@ -16,10 +16,11 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 
-	gardener_apis "github.com/gardener/gardener/pkg/client/garden/clientset/versioned/typed/garden/v1beta1"
+	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+
 	"github.com/sirupsen/logrus"
 
-	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 )

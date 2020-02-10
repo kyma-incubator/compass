@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
-	corev1 "k8s.io/api/core/v1"
+	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
+
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -260,43 +261,41 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Namespace: "gardener-namespace",
 				},
 				Spec: gardener_types.ShootSpec{
-					Cloud: gardener_types.Cloud{
-						Region: "eu",
-						SecretBindingRef: corev1.LocalObjectReference{
-							Name: "gardener-secret",
+					CloudProfileName: "gcp",
+					Networking: gardener_types.Networking{
+						Type:  "calico",
+						Nodes: "10.250.0.0/19",
+					},
+					SeedName:          util.StringPtr("eu"),
+					SecretBindingName: "gardener-secret",
+					Region:            "eu",
+					Provider: gardener_types.Provider{
+						Type: "gcp",
+						ControlPlaneConfig: &gardener_types.ProviderConfig{
+							RawExtension: apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","zone":"zone"}`)},
 						},
-						Seed:    util.StringPtr("eu"),
-						Profile: "gcp",
-						GCP: &gardener_types.GCPCloud{
-							Networks: gardener_types.GCPNetworks{
-								K8SNetworks: gardener_types.K8SNetworks{},
-								Workers:     []string{"10.10.10.10/255"},
+						InfrastructureConfig: &gardener_types.ProviderConfig{
+							RawExtension: apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","networks":{"worker":"10.10.10.10/255","workers":"10.10.10.10/255"}}`),
 							},
-							Workers: []gardener_types.GCPWorker{
-								{
-									Worker:     fixWorker(0),
-									VolumeType: "SSD",
-									VolumeSize: "30Gi",
-								},
-								{
-									Worker:     fixWorker(1),
-									VolumeType: "SSD",
-									VolumeSize: "30Gi",
-								},
-							},
-							Zones: []string{"zone"},
+						},
+						Workers: []gardener_types.Worker{
+							fixWorker(0, []string{"zone"}),
+							fixWorker(1, []string{"zone"}),
 						},
 					},
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(true),
 						Version:                   "1.15",
 					},
+					Maintenance: &gardener_types.Maintenance{},
 				},
 			},
 		},
 		{
 			description:    "should convert to Shoot template with Azure provider",
-			provider:       "azure",
+			provider:       "az",
 			providerConfig: azureGardenerProvider,
 			expectedShootTemplate: &gardener_types.Shoot{
 				ObjectMeta: v1.ObjectMeta{
@@ -304,37 +303,35 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Namespace: "gardener-namespace",
 				},
 				Spec: gardener_types.ShootSpec{
-					Cloud: gardener_types.Cloud{
-						Region: "eu",
-						SecretBindingRef: corev1.LocalObjectReference{
-							Name: "gardener-secret",
+					CloudProfileName: "az",
+					Networking: gardener_types.Networking{
+						Type:  "calico",
+						Nodes: "10.250.0.0/19",
+					},
+					SeedName:          util.StringPtr("eu"),
+					SecretBindingName: "gardener-secret",
+					Region:            "eu",
+					Provider: gardener_types.Provider{
+						Type: "azure",
+						ControlPlaneConfig: &gardener_types.ProviderConfig{
+							RawExtension: apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`)},
 						},
-						Seed:    util.StringPtr("eu"),
-						Profile: "az",
-						Azure: &gardener_types.AzureCloud{
-							Networks: gardener_types.AzureNetworks{
-								K8SNetworks: gardener_types.K8SNetworks{},
-								Workers:     "10.10.10.10/255",
-								VNet:        gardener_types.AzureVNet{CIDR: util.StringPtr("10.10.11.11/255")},
+						InfrastructureConfig: &gardener_types.ProviderConfig{
+							RawExtension: apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"workers":"10.10.10.10/255"},"zoned":false}`),
 							},
-							Workers: []gardener_types.AzureWorker{
-								{
-									Worker:     fixWorker(0),
-									VolumeType: "SSD",
-									VolumeSize: "30Gi",
-								},
-								{
-									Worker:     fixWorker(1),
-									VolumeType: "SSD",
-									VolumeSize: "30Gi",
-								},
-							},
+						},
+						Workers: []gardener_types.Worker{
+							fixWorker(0, nil),
+							fixWorker(1, nil),
 						},
 					},
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(true),
 						Version:                   "1.15",
 					},
+					Maintenance: &gardener_types.Maintenance{},
 				},
 			},
 		},
@@ -348,40 +345,35 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Namespace: "gardener-namespace",
 				},
 				Spec: gardener_types.ShootSpec{
-					Cloud: gardener_types.Cloud{
-						Region: "eu",
-						SecretBindingRef: corev1.LocalObjectReference{
-							Name: "gardener-secret",
+					CloudProfileName: "aws",
+					Networking: gardener_types.Networking{
+						Type:  "calico",
+						Nodes: "10.250.0.0/19",
+					},
+					SeedName:          util.StringPtr("eu"),
+					SecretBindingName: "gardener-secret",
+					Region:            "eu",
+					Provider: gardener_types.Provider{
+						Type: "aws",
+						ControlPlaneConfig: &gardener_types.ProviderConfig{
+							RawExtension: apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1"}`)},
 						},
-						Seed:    util.StringPtr("eu"),
-						Profile: "aws",
-						AWS: &gardener_types.AWSCloud{
-							Networks: gardener_types.AWSNetworks{
-								K8SNetworks: gardener_types.K8SNetworks{},
-								Workers:     []string{"10.10.10.10/255"},
-								Internal:    []string{"10.10.11.13/255"},
-								Public:      []string{"10.10.11.12/255"},
-								VPC:         gardener_types.AWSVPC{CIDR: util.StringPtr("10.10.11.11/255")},
+						InfrastructureConfig: &gardener_types.ProviderConfig{
+							RawExtension: apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1","networks":{"vpc":{"cidr":"10.10.11.11/255"},"zones":[{"name":"zone","internal":"10.10.11.13/255","public":"10.10.11.12/255","workers":"10.10.10.10/255"}]}}`),
 							},
-							Workers: []gardener_types.AWSWorker{
-								{
-									Worker:     fixWorker(0),
-									VolumeType: "SSD",
-									VolumeSize: "30Gi",
-								},
-								{
-									Worker:     fixWorker(1),
-									VolumeType: "SSD",
-									VolumeSize: "30Gi",
-								},
-							},
-							Zones: []string{"zone"},
+						},
+						Workers: []gardener_types.Worker{
+							fixWorker(0, []string{"zone"}),
+							fixWorker(1, []string{"zone"}),
 						},
 					},
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(true),
 						Version:                   "1.15",
 					},
+					Maintenance: &gardener_types.Maintenance{},
 				},
 			},
 		},
@@ -391,9 +383,13 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			gardenerProviderConfig := fixGardenerConfig(testCase.provider, testCase.providerConfig)
 
 			// when
-			template := gardenerProviderConfig.ToShootTemplate("gardener-namespace")
+			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace")
 
 			// then
+			fmt.Println(string(template.Spec.Provider.InfrastructureConfig.Raw))
+			fmt.Println(string(template.Spec.Provider.ControlPlaneConfig.Raw))
+
+			require.NoError(t, err)
 			assert.Equal(t, testCase.expectedShootTemplate, template)
 		})
 	}
@@ -441,13 +437,20 @@ func fixAzureGardenerInput() *gqlschema.AzureProviderConfigInput {
 	return &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255"}
 }
 
-func fixWorker(index int) gardener_types.Worker {
+func fixWorker(index int, zones []string) gardener_types.Worker {
 	return gardener_types.Worker{
 		Name:           fmt.Sprintf("cpu-worker-%d", index),
-		MachineType:    "machine",
-		AutoScalerMin:  1,
-		AutoScalerMax:  3,
 		MaxSurge:       util.IntOrStrPtr(intstr.FromInt(30)),
 		MaxUnavailable: util.IntOrStrPtr(intstr.FromInt(1)),
+		Machine: gardener_types.Machine{
+			Type: "machine",
+		},
+		Volume: &gardener_types.Volume{
+			Type: util.StringPtr("SSD"),
+			Size: "30Gi",
+		},
+		Maximum: 3,
+		Minimum: 1,
+		Zones:   zones,
 	}
 }

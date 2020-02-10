@@ -17,16 +17,13 @@ type graphqlizer struct{}
 func (g *graphqlizer) ProvisionRuntimeInputToGraphQL(in gqlschema.ProvisionRuntimeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
       runtimeInput: {
-        name: "{{ .ClusterConfig.GardenerConfig.Name }}"
+        name: "{{ .RuntimeInput.Name }}"
       }
 		{{- if .ClusterConfig }}
 		clusterConfig: {{ ClusterConfigToGraphQL .ClusterConfig }}
 		{{- end }}
 		{{- if .KymaConfig }}
 		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }}
-		{{- end }}
-		{{- if .Credentials }}
-		credentials: {{ CredentialsInputToGraphQL .Credentials }}
 		{{- end }}
 	}`)
 }
@@ -53,16 +50,8 @@ func (g *graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 	}`)
 }
 
-func (g *graphqlizer) CredentialsInputToGraphQL(in gqlschema.CredentialsInput) (string, error) {
-	return g.genericToGraphQL(in, `{
-		secretName: "{{.SecretName}}",
-	}`)
-}
-
 func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-		name: "{{.Name}}"
-        projectName: "{{.ProjectName}}"
 		kubernetesVersion: "{{.KubernetesVersion}}"
 		nodeCount: {{.NodeCount}}
 		volumeSizeGB: {{.VolumeSizeGb }}
@@ -166,7 +155,6 @@ func (g *graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["ClusterConfigToGraphQL"] = g.ClusterConfigToGraphQL
 	fm["KymaConfigToGraphQL"] = g.KymaConfigToGraphQL
 	fm["UpgradeClusterConfigToGraphQL"] = g.UpgradeClusterConfigToGraphQL
-	fm["CredentialsInputToGraphQL"] = g.CredentialsInputToGraphQL
 	fm["GardenerConfigInputToGraphQL"] = g.GardenerConfigInputToGraphQL
 	fm["GCPConfigInputToGraphQL"] = g.GCPConfigInputToGraphQL
 	fm["AzureProviderConfigInputToGraphQL"] = g.AzureProviderConfigInputToGraphQL
