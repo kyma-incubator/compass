@@ -1,10 +1,10 @@
 # Runtime components
 
-The diagram and steps describe the Kyma Environment Broker (KEB) workflow for calculating and processing runtime components:
+[Kyma Environment Broker](../../components/kyma-environment-broker) (KEB) serves the functionality of composing the list of components that are installed in a Runtime. The diagram and steps describe the KEB workflow in terms of calculating and processing Runtime components:
 
 ![runtime-components-architecture](assets/runtime-components.svg)
 
-1. During initialization, KEB reads two files that contain lists of components to be installed in a Runtime:  
+1. During KEB initialization, the broker reads two files that contain lists of components to be installed in a Runtime:  
 
    * `kyma-installer-cluster.yaml` file with the given Kyma version
    * `managed-offering-components.yaml` file with additional managed components that are added at the end of the base components list
@@ -15,7 +15,7 @@ The diagram and steps describe the Kyma Environment Broker (KEB) workflow for ca
 
 ## Optional components
 
-[Kyma Environment Broker](../../components/kyma-environment-broker) serves the functionality of disabling the optional components. This section presents how to add or remove the possibility to disable components, which makes them either optional or required during the Kyma installation.
+This section presents how to add or remove the possibility to disable components, which makes them either optional or required during the Kyma installation.
 
 The optional components are as follows:
 - Loki
@@ -27,7 +27,7 @@ The optional components are as follows:
 
 If you want to add the possibility to disable components and make them optional during Kyma installation, you can do it in two ways.
 
-* If disabling a given component only means to remove it from the installation component list, use the generic disabler:
+* If disabling a given component only means to remove it from the installation list, use the generic disabler:
 
 ```go
 runtime.NewGenericComponentDisabler("component-name", "component-namespace")
