@@ -3,7 +3,7 @@ package eventdef
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/apipackage/mock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 

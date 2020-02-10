@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/apipackage/mock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
@@ -776,20 +776,20 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 }
 
 // TODO: Replace with real implementation
-func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.PackageDefinitionPage, error) {
-	packages := []*graphql.PackageDefinition{
+func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.PackagePage, error) {
+	packages := []*graphql.Package{
 		mock.FixPackageWithIDAndName("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "Foo"),
 		mock.FixPackageWithIDAndName("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "Bar"),
 		mock.FixPackageWithIDAndName("cccccccc-cccc-cccc-cccc-cccccccccccc", "Baz"),
 	}
 
-	return &graphql.PackageDefinitionPage{
+	return &graphql.PackagePage{
 		Data:       packages,
 		TotalCount: 3,
 	}, nil
 }
 
 // TODO: Replace with real implementation
-func (r *Resolver) Package(ctx context.Context, obj *graphql.Application, id string) (*graphql.PackageDefinition, error) {
+func (r *Resolver) Package(ctx context.Context, obj *graphql.Application, id string) (*graphql.Package, error) {
 	return mock.FixPackageWithIDAndName(id, "Lorem ipsum"), nil
 }

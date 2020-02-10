@@ -2,11 +2,11 @@ package mock
 
 import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-func FixPackage() *graphql.PackageDefinition {
+func FixPackage() *graphql.Package {
 	return FixPackageWithIDAndName("a6a64619-aa28-4d5d-bbe8-86ab4b817abf", "Lorem ipsum dolores sit amet")
 }
 
-func FixPackageWithIDAndName(id, name string) *graphql.PackageDefinition {
+func FixPackageWithIDAndName(id, name string) *graphql.Package {
 	desc := "Lorem ipsum"
 	jsonSchema := `{
   "definitions": {}, 
@@ -139,12 +139,12 @@ func FixPackageWithIDAndName(id, name string) *graphql.PackageDefinition {
 }`
 	gqlJSONSchema := graphql.JSONSchema(jsonSchema)
 
-	return &graphql.PackageDefinition{
-		ID:                    id,
-		Name:                  name,
-		Description:           &desc,
-		AuthRequestJSONSchema: &gqlJSONSchema,
-		DefaultAuth: &graphql.Auth{
+	return &graphql.Package{
+		ID:                             id,
+		Name:                           name,
+		Description:                    &desc,
+		InstanceAuthRequestInputSchema: &gqlJSONSchema,
+		DefaultInstanceAuth: &graphql.Auth{
 			Credential: graphql.BasicCredentialData{
 				Username: "foo",
 				Password: "bar",

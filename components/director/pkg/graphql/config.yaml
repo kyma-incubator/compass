@@ -60,8 +60,8 @@ models:
         resolver: true
       package:
         resolver: true
-  PackageDefinition:
-    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageDefinition"
+  Package:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Package"
     fields:
       apiDefinitions:
         resolver: true
@@ -75,9 +75,9 @@ models:
         resolver: true
       eventDefinition:
         resolver: true
-      auth:
+      instanceAuth:
         resolver: true
-      auths:
+      instanceAuths:
         resolver: true
 
   APISpec:

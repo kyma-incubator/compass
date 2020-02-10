@@ -3,8 +3,8 @@ package domain
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/apiinstanceauth"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/apipackage"
+	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/viewer"
@@ -44,24 +44,24 @@ import (
 var _ graphql.ResolverRoot = &RootResolver{}
 
 type RootResolver struct {
-	app             *application.Resolver
-	appTemplate     *apptemplate.Resolver
-	api             *api.Resolver
-	eventAPI        *eventdef.Resolver
-	eventing        *eventing.Resolver
-	doc             *document.Resolver
-	runtime         *runtime.Resolver
-	healthCheck     *healthcheck.Resolver
-	webhook         *webhook.Resolver
-	labelDef        *labeldef.Resolver
-	token           *onetimetoken.Resolver
-	systemAuth      *systemauth.Resolver
-	oAuth20         *oauth20.Resolver
-	intSys          *integrationsystem.Resolver
-	viewer          *viewer.Resolver
-	tenant          *tenant.Resolver
-	apiPackage      *apipackage.Resolver
-	apiInstanceAuth *apiinstanceauth.Resolver
+	app                 *application.Resolver
+	appTemplate         *apptemplate.Resolver
+	api                 *api.Resolver
+	eventAPI            *eventdef.Resolver
+	eventing            *eventing.Resolver
+	doc                 *document.Resolver
+	runtime             *runtime.Resolver
+	healthCheck         *healthcheck.Resolver
+	webhook             *webhook.Resolver
+	labelDef            *labeldef.Resolver
+	token               *onetimetoken.Resolver
+	systemAuth          *systemauth.Resolver
+	oAuth20             *oauth20.Resolver
+	intSys              *integrationsystem.Resolver
+	viewer              *viewer.Resolver
+	tenant              *tenant.Resolver
+	mpPackage           *mp_package.Resolver
+	packageInstanceAuth *packageinstanceauth.Resolver
 }
 
 func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config) *RootResolver {
@@ -122,24 +122,24 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
 	return &RootResolver{
-		app:             application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc),
-		appTemplate:     apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
-		api:             api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
-		eventAPI:        eventdef.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
-		eventing:        eventing.NewResolver(transact, eventingSvc, appSvc),
-		doc:             document.NewResolver(transact, docSvc, appSvc, frConverter),
-		runtime:         runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
-		healthCheck:     healthcheck.NewResolver(healthCheckSvc),
-		webhook:         webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
-		labelDef:        labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
-		token:           onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter),
-		systemAuth:      systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
-		oAuth20:         oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
-		intSys:          integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
-		viewer:          viewer.NewViewerResolver(),
-		tenant:          tenant.NewResolver(transact, tenantSvc, tenantConverter),
-		apiPackage:      apipackage.NewResolver(),
-		apiInstanceAuth: apiinstanceauth.NewResolver(),
+		app:                 application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc),
+		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
+		api:                 api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
+		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
+		eventing:            eventing.NewResolver(transact, eventingSvc, appSvc),
+		doc:                 document.NewResolver(transact, docSvc, appSvc, frConverter),
+		runtime:             runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
+		healthCheck:         healthcheck.NewResolver(healthCheckSvc),
+		webhook:             webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
+		labelDef:            labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
+		token:               onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter),
+		systemAuth:          systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
+		oAuth20:             oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
+		intSys:              integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
+		viewer:              viewer.NewViewerResolver(),
+		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
+		mpPackage:           mp_package.NewResolver(),
+		packageInstanceAuth: packageinstanceauth.NewResolver(),
 	}
 }
 
@@ -168,8 +168,8 @@ func (r *RootResolver) EventSpec() graphql.EventSpecResolver {
 	return &eventSpecResolver{r}
 }
 
-func (r *RootResolver) PackageDefinition() graphql.PackageDefinitionResolver {
-	return &packageDefinitionResolver{r}
+func (r *RootResolver) Package() graphql.PackageResolver {
+	return &PackageResolver{r}
 }
 
 func (r *RootResolver) IntegrationSystem() graphql.IntegrationSystemResolver {
@@ -388,24 +388,24 @@ func (r *mutationResolver) AddEventDefinitionToPackage(ctx context.Context, pack
 func (r *mutationResolver) AddDocumentToPackage(ctx context.Context, packageID string, in graphql.DocumentInput) (*graphql.Document, error) {
 	return r.doc.AddDocumentToPackage(ctx, packageID, in)
 }
-func (r *mutationResolver) SetAPIInstanceAuthForPackage(ctx context.Context, packageID string, authID string, in graphql.AuthInput) (*graphql.APIInstanceAuth, error) {
-	return r.apiInstanceAuth.SetAPIInstanceAuthForPackage(ctx, packageID, authID, in)
+func (r *mutationResolver) SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in graphql.AuthInput) (*graphql.PackageInstanceAuth, error) {
+	return r.packageInstanceAuth.SetPackageInstanceAuth(ctx, packageID, authID, in)
 }
-func (r *mutationResolver) DeleteAPIInstanceAuthForPackage(ctx context.Context, packageID string, authID string) (*graphql.APIInstanceAuth, error) {
-	return r.apiInstanceAuth.DeleteAPIInstanceAuthForPackage(ctx, packageID, authID)
+func (r *mutationResolver) DeletePackageInstanceAuth(ctx context.Context, packageID string, authID string) (*graphql.PackageInstanceAuth, error) {
+	return r.packageInstanceAuth.DeletePackageInstanceAuth(ctx, packageID, authID)
 }
-func (r *mutationResolver) RequestAPIInstanceAuthForPackage(ctx context.Context, packageID string, in graphql.APIInstanceAuthRequestInput) (*graphql.APIInstanceAuth, error) {
-	return r.apiInstanceAuth.RequestAPIInstanceAuthForPackage(ctx, packageID, in)
+func (r *mutationResolver) RequestPackageInstanceAuth(ctx context.Context, packageID string, in graphql.PackageInstanceAuthRequestInput) (*graphql.PackageInstanceAuth, error) {
+	return r.packageInstanceAuth.RequestPackageInstanceAuth(ctx, packageID, in)
 }
 
-func (r *mutationResolver) AddPackageDefinition(ctx context.Context, applicationID string, in graphql.PackageDefinitionCreateInput) (*graphql.PackageDefinition, error) {
-	return r.apiPackage.AddPackageDefinition(ctx, applicationID, in)
+func (r *mutationResolver) AddPackage(ctx context.Context, applicationID string, in graphql.PackageCreateInput) (*graphql.Package, error) {
+	return r.mpPackage.AddPackage(ctx, applicationID, in)
 }
-func (r *mutationResolver) UpdatePackageDefinition(ctx context.Context, id string, in graphql.PackageDefinitionUpdateInput) (*graphql.PackageDefinition, error) {
-	return r.apiPackage.UpdatePackageDefinition(ctx, id, in)
+func (r *mutationResolver) UpdatePackage(ctx context.Context, id string, in graphql.PackageUpdateInput) (*graphql.Package, error) {
+	return r.mpPackage.UpdatePackage(ctx, id, in)
 }
-func (r *mutationResolver) DeletePackageDefinition(ctx context.Context, id string) (*graphql.PackageDefinition, error) {
-	return r.apiPackage.DeletePackageDefinition(ctx, id)
+func (r *mutationResolver) DeletePackage(ctx context.Context, id string) (*graphql.Package, error) {
+	return r.mpPackage.DeletePackage(ctx, id)
 }
 
 type applicationResolver struct {
@@ -440,10 +440,10 @@ func (r *applicationResolver) Documents(ctx context.Context, obj *graphql.Applic
 func (r *applicationResolver) EventingConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventingConfiguration, error) {
 	return r.app.EventingConfiguration(ctx, obj)
 }
-func (r *applicationResolver) Packages(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.PackageDefinitionPage, error) {
+func (r *applicationResolver) Packages(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.PackagePage, error) {
 	return r.app.Packages(ctx, obj, first, after)
 }
-func (r *applicationResolver) Package(ctx context.Context, obj *graphql.Application, id string) (*graphql.PackageDefinition, error) {
+func (r *applicationResolver) Package(ctx context.Context, obj *graphql.Application, id string) (*graphql.Package, error) {
 	return r.app.Package(ctx, obj, id)
 }
 
@@ -518,29 +518,29 @@ func (r *oneTimeTokenForRuntimeResolver) Raw(ctx context.Context, obj *graphql.O
 	return r.token.Raw(ctx, &obj.TokenWithURL)
 }
 
-type packageDefinitionResolver struct{ *RootResolver }
+type PackageResolver struct{ *RootResolver }
 
-func (r *packageDefinitionResolver) Auth(ctx context.Context, obj *graphql.PackageDefinition, id string) (*graphql.APIInstanceAuth, error) {
-	return r.apiPackage.Auth(ctx, obj, id)
+func (r *PackageResolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id string) (*graphql.PackageInstanceAuth, error) {
+	return r.mpPackage.InstanceAuth(ctx, obj, id)
 }
-func (r *packageDefinitionResolver) Auths(ctx context.Context, obj *graphql.PackageDefinition) ([]*graphql.APIInstanceAuth, error) {
-	return r.apiPackage.Auths(ctx, obj)
+func (r *PackageResolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*graphql.PackageInstanceAuth, error) {
+	return r.mpPackage.InstanceAuths(ctx, obj)
 }
-func (r *packageDefinitionResolver) APIDefinitions(ctx context.Context, obj *graphql.PackageDefinition, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
-	return r.apiPackage.APIDefinitions(ctx, obj, group, first, after)
+func (r *PackageResolver) APIDefinitions(ctx context.Context, obj *graphql.Package, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
+	return r.mpPackage.APIDefinitions(ctx, obj, group, first, after)
 }
-func (r *packageDefinitionResolver) EventDefinitions(ctx context.Context, obj *graphql.PackageDefinition, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
-	return r.apiPackage.EventDefinitions(ctx, obj, group, first, after)
+func (r *PackageResolver) EventDefinitions(ctx context.Context, obj *graphql.Package, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
+	return r.mpPackage.EventDefinitions(ctx, obj, group, first, after)
 }
-func (r *packageDefinitionResolver) Documents(ctx context.Context, obj *graphql.PackageDefinition, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
-	return r.apiPackage.Documents(ctx, obj, first, after)
+func (r *PackageResolver) Documents(ctx context.Context, obj *graphql.Package, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
+	return r.mpPackage.Documents(ctx, obj, first, after)
 }
-func (r *packageDefinitionResolver) APIDefinition(ctx context.Context, obj *graphql.PackageDefinition, id string) (*graphql.APIDefinition, error) {
-	return r.apiPackage.APIDefinition(ctx, obj, id)
+func (r *PackageResolver) APIDefinition(ctx context.Context, obj *graphql.Package, id string) (*graphql.APIDefinition, error) {
+	return r.mpPackage.APIDefinition(ctx, obj, id)
 }
-func (r *packageDefinitionResolver) EventDefinition(ctx context.Context, obj *graphql.PackageDefinition, id string) (*graphql.EventDefinition, error) {
-	return r.apiPackage.EventDefinition(ctx, obj, id)
+func (r *PackageResolver) EventDefinition(ctx context.Context, obj *graphql.Package, id string) (*graphql.EventDefinition, error) {
+	return r.mpPackage.EventDefinition(ctx, obj, id)
 }
-func (r *packageDefinitionResolver) Document(ctx context.Context, obj *graphql.PackageDefinition, id string) (*graphql.Document, error) {
-	return r.apiPackage.Document(ctx, obj, id)
+func (r *PackageResolver) Document(ctx context.Context, obj *graphql.Package, id string) (*graphql.Document, error) {
+	return r.mpPackage.Document(ctx, obj, id)
 }

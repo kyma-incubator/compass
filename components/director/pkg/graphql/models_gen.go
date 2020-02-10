@@ -324,23 +324,6 @@ type OAuthCredentialDataInput struct {
 	URL          string `json:"url"`
 }
 
-type Package struct {
-	ID                             string                 `json:"id"`
-	Name                           string                 `json:"name"`
-	Description                    *string                `json:"description"`
-	InstanceAuthRequestInputSchema *JSONSchema            `json:"instanceAuthRequestInputSchema"`
-	InstanceAuth                   *PackageInstanceAuth   `json:"instanceAuth"`
-	InstanceAuths                  []*PackageInstanceAuth `json:"instanceAuths"`
-	// When defined, all Auth requests fallback to defaultInstanceAuth.
-	DefaultInstanceAuth *Auth                `json:"defaultInstanceAuth"`
-	APIDefinitions      *APIDefinitionPage   `json:"apiDefinitions"`
-	EventDefinitions    *EventDefinitionPage `json:"eventDefinitions"`
-	Documents           *DocumentPage        `json:"documents"`
-	APIDefinition       *APIDefinition       `json:"apiDefinition"`
-	EventDefinition     *EventDefinition     `json:"eventDefinition"`
-	Document            *Document            `json:"document"`
-}
-
 type PackageCreateInput struct {
 	Name                           string                  `json:"name"`
 	Description                    *string                 `json:"description"`

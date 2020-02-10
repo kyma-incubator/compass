@@ -44,6 +44,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	OneTimeTokenForApplication() OneTimeTokenForApplicationResolver
 	OneTimeTokenForRuntime() OneTimeTokenForRuntimeResolver
+	Package() PackageResolver
 	Query() QueryResolver
 	Runtime() RuntimeResolver
 }
@@ -553,6 +554,17 @@ type OneTimeTokenForApplicationResolver interface {
 type OneTimeTokenForRuntimeResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForRuntime) (*string, error)
 	RawEncoded(ctx context.Context, obj *OneTimeTokenForRuntime) (*string, error)
+}
+type PackageResolver interface {
+	InstanceAuth(ctx context.Context, obj *Package, id string) (*PackageInstanceAuth, error)
+	InstanceAuths(ctx context.Context, obj *Package) ([]*PackageInstanceAuth, error)
+
+	APIDefinitions(ctx context.Context, obj *Package, group *string, first *int, after *PageCursor) (*APIDefinitionPage, error)
+	EventDefinitions(ctx context.Context, obj *Package, group *string, first *int, after *PageCursor) (*EventDefinitionPage, error)
+	Documents(ctx context.Context, obj *Package, first *int, after *PageCursor) (*DocumentPage, error)
+	APIDefinition(ctx context.Context, obj *Package, id string) (*APIDefinition, error)
+	EventDefinition(ctx context.Context, obj *Package, id string) (*EventDefinition, error)
+	Document(ctx context.Context, obj *Package, id string) (*Document, error)
 }
 type QueryResolver interface {
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
@@ -14186,7 +14198,7 @@ func (ec *executionContext) _Package_instanceAuth(ctx context.Context, field gra
 		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -14199,7 +14211,7 @@ func (ec *executionContext) _Package_instanceAuth(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.InstanceAuth, nil
+		return ec.resolvers.Package().InstanceAuth(rctx, obj, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14227,13 +14239,13 @@ func (ec *executionContext) _Package_instanceAuths(ctx context.Context, field gr
 		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.InstanceAuths, nil
+		return ec.resolvers.Package().InstanceAuths(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14298,7 +14310,7 @@ func (ec *executionContext) _Package_apiDefinitions(ctx context.Context, field g
 		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -14311,7 +14323,7 @@ func (ec *executionContext) _Package_apiDefinitions(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.APIDefinitions, nil
+		return ec.resolvers.Package().APIDefinitions(rctx, obj, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14339,7 +14351,7 @@ func (ec *executionContext) _Package_eventDefinitions(ctx context.Context, field
 		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -14352,7 +14364,7 @@ func (ec *executionContext) _Package_eventDefinitions(ctx context.Context, field
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EventDefinitions, nil
+		return ec.resolvers.Package().EventDefinitions(rctx, obj, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14380,7 +14392,7 @@ func (ec *executionContext) _Package_documents(ctx context.Context, field graphq
 		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -14393,7 +14405,7 @@ func (ec *executionContext) _Package_documents(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Documents, nil
+		return ec.resolvers.Package().Documents(rctx, obj, args["first"].(*int), args["after"].(*PageCursor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14421,7 +14433,7 @@ func (ec *executionContext) _Package_apiDefinition(ctx context.Context, field gr
 		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -14434,7 +14446,7 @@ func (ec *executionContext) _Package_apiDefinition(ctx context.Context, field gr
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.APIDefinition, nil
+		return ec.resolvers.Package().APIDefinition(rctx, obj, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14462,7 +14474,7 @@ func (ec *executionContext) _Package_eventDefinition(ctx context.Context, field 
 		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -14475,7 +14487,7 @@ func (ec *executionContext) _Package_eventDefinition(ctx context.Context, field 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EventDefinition, nil
+		return ec.resolvers.Package().EventDefinition(rctx, obj, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14503,7 +14515,7 @@ func (ec *executionContext) _Package_document(ctx context.Context, field graphql
 		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -14516,7 +14528,7 @@ func (ec *executionContext) _Package_document(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Document, nil
+		return ec.resolvers.Package().Document(rctx, obj, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -21019,38 +21031,110 @@ func (ec *executionContext) _Package(ctx context.Context, sel ast.SelectionSet, 
 		case "id":
 			out.Values[i] = ec._Package_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Package_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._Package_description(ctx, field, obj)
 		case "instanceAuthRequestInputSchema":
 			out.Values[i] = ec._Package_instanceAuthRequestInputSchema(ctx, field, obj)
 		case "instanceAuth":
-			out.Values[i] = ec._Package_instanceAuth(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Package_instanceAuth(ctx, field, obj)
+				return res
+			})
 		case "instanceAuths":
-			out.Values[i] = ec._Package_instanceAuths(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Package_instanceAuths(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "defaultInstanceAuth":
 			out.Values[i] = ec._Package_defaultInstanceAuth(ctx, field, obj)
 		case "apiDefinitions":
-			out.Values[i] = ec._Package_apiDefinitions(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Package_apiDefinitions(ctx, field, obj)
+				return res
+			})
 		case "eventDefinitions":
-			out.Values[i] = ec._Package_eventDefinitions(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Package_eventDefinitions(ctx, field, obj)
+				return res
+			})
 		case "documents":
-			out.Values[i] = ec._Package_documents(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Package_documents(ctx, field, obj)
+				return res
+			})
 		case "apiDefinition":
-			out.Values[i] = ec._Package_apiDefinition(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Package_apiDefinition(ctx, field, obj)
+				return res
+			})
 		case "eventDefinition":
-			out.Values[i] = ec._Package_eventDefinition(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Package_eventDefinition(ctx, field, obj)
+				return res
+			})
 		case "document":
-			out.Values[i] = ec._Package_document(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Package_document(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
