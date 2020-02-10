@@ -1,8 +1,8 @@
-# Input parameters for Packages in the Runtime
+# Credential requests for Packages
 
 ## Overview
 
-On Runtime, Application is represented as Service Class, and every Package within Application is represented as Service Plan. This document describes passing optional input parameters from Kyma Runtime to Application or Integration System during Service Class provisioning.
+On Runtime, Application is represented as Service Class, and every Package within Application is represented as Service Plan. This document describes credential requests for APIs during the Service Plan provisioning. It also mentions passing optional input parameters from Kyma Runtime to Application or Integration System during the provisioning process.
 
 ## Assumptions
 
@@ -10,9 +10,26 @@ On Runtime, Application is represented as Service Class, and every Package withi
 - During Service Class provisioning, the provided input has to be sent back to Integration System or Application via Compass. The reason is that there is no trusted connection between Integration System and Runtime.
 - Passing input parameters is done during requesting credentials for a given Service Instance.
 
-## Solution
+## Details
 
 The Director GraphQL API is updated to store credentials per Service Instance. Credentials for every Instance across all Runtimes are stored on the Package level.
+
+### API Credentials Flow
+
+This diagram illustrates the API credentials flow in details. The Application provides Webhook API where Management Plane requests for providing new credentials for given Package.
+
+>**NOTE:** There is an option that Application does not support Webhook API. That means Application needs to monitor registered API Definitions and set API credentials when new Runtime assigned. The Administrator can exchange credentials for registered APIs at any time too.
+
+![Application Webhook](./assets/api-credentials-flow.svg)
+
+Assume we have Application which is already registered into Management Plane. No Runtimes are assigned yet. Application has one Package which contains single API Definition.
+
+1. The Administrator requests new Runtime with Application via Cockpit.
+2. The Cockpit requests configuration for Runtime and the Director asks Application for new credentials.
+3. The Cockpit requests Runtime with configuration for Runtime Agent and Runtime Provisioner creates Runtime.
+4. The Application sets Package credentials for the particular Service Instance of a given Runtime.
+5. The Runtime Agent enables Runtime to call Application APIs.
+
 
 ### GraphQL Schema
 
@@ -42,7 +59,7 @@ type APIInstanceAuth {
 	context: Any
 	"""
 	It may be empty if status is PENDING.
-	Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+	Populated with `package.defaultAuth` value if `package.defa	ultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
 	"""
 	auth: Auth
 	status: APIInstanceAuthStatus
