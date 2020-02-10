@@ -44,7 +44,6 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	OneTimeTokenForApplication() OneTimeTokenForApplicationResolver
 	OneTimeTokenForRuntime() OneTimeTokenForRuntimeResolver
-	PackageDefinition() PackageDefinitionResolver
 	Query() QueryResolver
 	Runtime() RuntimeResolver
 }
@@ -75,20 +74,6 @@ type ComplexityRoot struct {
 		Data       func(childComplexity int) int
 		PageInfo   func(childComplexity int) int
 		TotalCount func(childComplexity int) int
-	}
-
-	APIInstanceAuth struct {
-		Auth    func(childComplexity int) int
-		Context func(childComplexity int) int
-		ID      func(childComplexity int) int
-		Status  func(childComplexity int) int
-	}
-
-	APIInstanceAuthStatus struct {
-		Condition func(childComplexity int) int
-		Message   func(childComplexity int) int
-		Reason    func(childComplexity int) int
-		Timestamp func(childComplexity int) int
 	}
 
 	APIRuntimeAuth struct {
@@ -277,20 +262,20 @@ type ComplexityRoot struct {
 		AddDocumentToPackage                         func(childComplexity int, packageID string, in DocumentInput) int
 		AddEventDefinition                           func(childComplexity int, applicationID string, in EventDefinitionInput) int
 		AddEventDefinitionToPackage                  func(childComplexity int, packageID string, in EventDefinitionInput) int
-		AddPackageDefinition                         func(childComplexity int, applicationID string, in PackageDefinitionCreateInput) int
+		AddPackage                                   func(childComplexity int, applicationID string, in PackageCreateInput) int
 		AddWebhook                                   func(childComplexity int, applicationID string, in WebhookInput) int
 		CreateApplicationTemplate                    func(childComplexity int, in ApplicationTemplateInput) int
 		CreateLabelDefinition                        func(childComplexity int, in LabelDefinitionInput) int
 		DeleteAPIAuth                                func(childComplexity int, apiID string, runtimeID string) int
 		DeleteAPIDefinition                          func(childComplexity int, id string) int
-		DeleteAPIInstanceAuthForPackage              func(childComplexity int, packageID string, authID string) int
 		DeleteApplicationLabel                       func(childComplexity int, applicationID string, key string) int
 		DeleteApplicationTemplate                    func(childComplexity int, id string) int
 		DeleteDefaultEventingForApplication          func(childComplexity int, appID string) int
 		DeleteDocument                               func(childComplexity int, id string) int
 		DeleteEventDefinition                        func(childComplexity int, id string) int
 		DeleteLabelDefinition                        func(childComplexity int, key string, deleteRelatedLabels *bool) int
-		DeletePackageDefinition                      func(childComplexity int, id string) int
+		DeletePackage                                func(childComplexity int, id string) int
+		DeletePackageInstanceAuth                    func(childComplexity int, packageID string, authID string) int
 		DeleteRuntimeLabel                           func(childComplexity int, runtimeID string, key string) int
 		DeleteSystemAuthForApplication               func(childComplexity int, authID string) int
 		DeleteSystemAuthForIntegrationSystem         func(childComplexity int, authID string) int
@@ -302,16 +287,16 @@ type ComplexityRoot struct {
 		RegisterApplicationFromTemplate              func(childComplexity int, in ApplicationFromTemplateInput) int
 		RegisterIntegrationSystem                    func(childComplexity int, in IntegrationSystemInput) int
 		RegisterRuntime                              func(childComplexity int, in RuntimeInput) int
-		RequestAPIInstanceAuthForPackage             func(childComplexity int, packageID string, in APIInstanceAuthRequestInput) int
 		RequestClientCredentialsForApplication       func(childComplexity int, id string) int
 		RequestClientCredentialsForIntegrationSystem func(childComplexity int, id string) int
 		RequestClientCredentialsForRuntime           func(childComplexity int, id string) int
 		RequestOneTimeTokenForApplication            func(childComplexity int, id string) int
 		RequestOneTimeTokenForRuntime                func(childComplexity int, id string) int
+		RequestPackageInstanceAuth                   func(childComplexity int, packageID string, in PackageInstanceAuthRequestInput) int
 		SetAPIAuth                                   func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
-		SetAPIInstanceAuthForPackage                 func(childComplexity int, packageID string, authID string, in AuthInput) int
 		SetApplicationLabel                          func(childComplexity int, applicationID string, key string, value interface{}) int
 		SetDefaultEventingForApplication             func(childComplexity int, appID string, runtimeID string) int
+		SetPackageInstanceAuth                       func(childComplexity int, packageID string, authID string, in AuthInput) int
 		SetRuntimeLabel                              func(childComplexity int, runtimeID string, key string, value interface{}) int
 		UnregisterApplication                        func(childComplexity int, id string) int
 		UnregisterIntegrationSystem                  func(childComplexity int, id string) int
@@ -322,7 +307,7 @@ type ComplexityRoot struct {
 		UpdateEventDefinition                        func(childComplexity int, id string, in EventDefinitionInput) int
 		UpdateIntegrationSystem                      func(childComplexity int, id string, in IntegrationSystemInput) int
 		UpdateLabelDefinition                        func(childComplexity int, in LabelDefinitionInput) int
-		UpdatePackageDefinition                      func(childComplexity int, id string, in PackageDefinitionUpdateInput) int
+		UpdatePackage                                func(childComplexity int, id string, in PackageUpdateInput) int
 		UpdateRuntime                                func(childComplexity int, id string, in RuntimeInput) int
 		UpdateWebhook                                func(childComplexity int, webhookID string, in WebhookInput) int
 	}
@@ -348,23 +333,37 @@ type ComplexityRoot struct {
 		Token        func(childComplexity int) int
 	}
 
-	PackageDefinition struct {
-		APIDefinition         func(childComplexity int, id string) int
-		APIDefinitions        func(childComplexity int, group *string, first *int, after *PageCursor) int
-		Auth                  func(childComplexity int, id string) int
-		AuthRequestJSONSchema func(childComplexity int) int
-		Auths                 func(childComplexity int) int
-		DefaultAuth           func(childComplexity int) int
-		Description           func(childComplexity int) int
-		Document              func(childComplexity int, id string) int
-		Documents             func(childComplexity int, first *int, after *PageCursor) int
-		EventDefinition       func(childComplexity int, id string) int
-		EventDefinitions      func(childComplexity int, group *string, first *int, after *PageCursor) int
-		ID                    func(childComplexity int) int
-		Name                  func(childComplexity int) int
+	Package struct {
+		APIDefinition                  func(childComplexity int, id string) int
+		APIDefinitions                 func(childComplexity int, group *string, first *int, after *PageCursor) int
+		DefaultInstanceAuth            func(childComplexity int) int
+		Description                    func(childComplexity int) int
+		Document                       func(childComplexity int, id string) int
+		Documents                      func(childComplexity int, first *int, after *PageCursor) int
+		EventDefinition                func(childComplexity int, id string) int
+		EventDefinitions               func(childComplexity int, group *string, first *int, after *PageCursor) int
+		ID                             func(childComplexity int) int
+		InstanceAuth                   func(childComplexity int, id string) int
+		InstanceAuthRequestInputSchema func(childComplexity int) int
+		InstanceAuths                  func(childComplexity int) int
+		Name                           func(childComplexity int) int
 	}
 
-	PackageDefinitionPage struct {
+	PackageInstanceAuth struct {
+		Auth    func(childComplexity int) int
+		Context func(childComplexity int) int
+		ID      func(childComplexity int) int
+		Status  func(childComplexity int) int
+	}
+
+	PackageInstanceAuthStatus struct {
+		Condition func(childComplexity int) int
+		Message   func(childComplexity int) int
+		Reason    func(childComplexity int) int
+		Timestamp func(childComplexity int) int
+	}
+
+	PackagePage struct {
 		Data       func(childComplexity int) int
 		PageInfo   func(childComplexity int) int
 		TotalCount func(childComplexity int) int
@@ -477,8 +476,8 @@ type ApplicationResolver interface {
 	APIDefinition(ctx context.Context, obj *Application, id string) (*APIDefinition, error)
 	EventDefinition(ctx context.Context, obj *Application, id string) (*EventDefinition, error)
 	Documents(ctx context.Context, obj *Application, first *int, after *PageCursor) (*DocumentPage, error)
-	Packages(ctx context.Context, obj *Application, first *int, after *PageCursor) (*PackageDefinitionPage, error)
-	Package(ctx context.Context, obj *Application, id string) (*PackageDefinition, error)
+	Packages(ctx context.Context, obj *Application, first *int, after *PageCursor) (*PackagePage, error)
+	Package(ctx context.Context, obj *Application, id string) (*Package, error)
 	Auths(ctx context.Context, obj *Application) ([]*SystemAuth, error)
 	EventingConfiguration(ctx context.Context, obj *Application) (*ApplicationEventingConfiguration, error)
 }
@@ -540,12 +539,12 @@ type MutationResolver interface {
 	DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*Label, error)
 	SetDefaultEventingForApplication(ctx context.Context, appID string, runtimeID string) (*ApplicationEventingConfiguration, error)
 	DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*ApplicationEventingConfiguration, error)
-	SetAPIInstanceAuthForPackage(ctx context.Context, packageID string, authID string, in AuthInput) (*APIInstanceAuth, error)
-	DeleteAPIInstanceAuthForPackage(ctx context.Context, packageID string, authID string) (*APIInstanceAuth, error)
-	RequestAPIInstanceAuthForPackage(ctx context.Context, packageID string, in APIInstanceAuthRequestInput) (*APIInstanceAuth, error)
-	AddPackageDefinition(ctx context.Context, applicationID string, in PackageDefinitionCreateInput) (*PackageDefinition, error)
-	UpdatePackageDefinition(ctx context.Context, id string, in PackageDefinitionUpdateInput) (*PackageDefinition, error)
-	DeletePackageDefinition(ctx context.Context, id string) (*PackageDefinition, error)
+	SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in AuthInput) (*PackageInstanceAuth, error)
+	DeletePackageInstanceAuth(ctx context.Context, packageID string, authID string) (*PackageInstanceAuth, error)
+	RequestPackageInstanceAuth(ctx context.Context, packageID string, in PackageInstanceAuthRequestInput) (*PackageInstanceAuth, error)
+	AddPackage(ctx context.Context, applicationID string, in PackageCreateInput) (*Package, error)
+	UpdatePackage(ctx context.Context, id string, in PackageUpdateInput) (*Package, error)
+	DeletePackage(ctx context.Context, id string) (*Package, error)
 }
 type OneTimeTokenForApplicationResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
@@ -554,17 +553,6 @@ type OneTimeTokenForApplicationResolver interface {
 type OneTimeTokenForRuntimeResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForRuntime) (*string, error)
 	RawEncoded(ctx context.Context, obj *OneTimeTokenForRuntime) (*string, error)
-}
-type PackageDefinitionResolver interface {
-	Auth(ctx context.Context, obj *PackageDefinition, id string) (*APIInstanceAuth, error)
-	Auths(ctx context.Context, obj *PackageDefinition) ([]*APIInstanceAuth, error)
-
-	APIDefinitions(ctx context.Context, obj *PackageDefinition, group *string, first *int, after *PageCursor) (*APIDefinitionPage, error)
-	EventDefinitions(ctx context.Context, obj *PackageDefinition, group *string, first *int, after *PageCursor) (*EventDefinitionPage, error)
-	Documents(ctx context.Context, obj *PackageDefinition, first *int, after *PageCursor) (*DocumentPage, error)
-	APIDefinition(ctx context.Context, obj *PackageDefinition, id string) (*APIDefinition, error)
-	EventDefinition(ctx context.Context, obj *PackageDefinition, id string) (*EventDefinition, error)
-	Document(ctx context.Context, obj *PackageDefinition, id string) (*Document, error)
 }
 type QueryResolver interface {
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
@@ -713,62 +701,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.APIDefinitionPage.TotalCount(childComplexity), true
-
-	case "APIInstanceAuth.auth":
-		if e.complexity.APIInstanceAuth.Auth == nil {
-			break
-		}
-
-		return e.complexity.APIInstanceAuth.Auth(childComplexity), true
-
-	case "APIInstanceAuth.context":
-		if e.complexity.APIInstanceAuth.Context == nil {
-			break
-		}
-
-		return e.complexity.APIInstanceAuth.Context(childComplexity), true
-
-	case "APIInstanceAuth.id":
-		if e.complexity.APIInstanceAuth.ID == nil {
-			break
-		}
-
-		return e.complexity.APIInstanceAuth.ID(childComplexity), true
-
-	case "APIInstanceAuth.status":
-		if e.complexity.APIInstanceAuth.Status == nil {
-			break
-		}
-
-		return e.complexity.APIInstanceAuth.Status(childComplexity), true
-
-	case "APIInstanceAuthStatus.condition":
-		if e.complexity.APIInstanceAuthStatus.Condition == nil {
-			break
-		}
-
-		return e.complexity.APIInstanceAuthStatus.Condition(childComplexity), true
-
-	case "APIInstanceAuthStatus.message":
-		if e.complexity.APIInstanceAuthStatus.Message == nil {
-			break
-		}
-
-		return e.complexity.APIInstanceAuthStatus.Message(childComplexity), true
-
-	case "APIInstanceAuthStatus.reason":
-		if e.complexity.APIInstanceAuthStatus.Reason == nil {
-			break
-		}
-
-		return e.complexity.APIInstanceAuthStatus.Reason(childComplexity), true
-
-	case "APIInstanceAuthStatus.timestamp":
-		if e.complexity.APIInstanceAuthStatus.Timestamp == nil {
-			break
-		}
-
-		return e.complexity.APIInstanceAuthStatus.Timestamp(childComplexity), true
 
 	case "APIRuntimeAuth.auth":
 		if e.complexity.APIRuntimeAuth.Auth == nil {
@@ -1610,17 +1542,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddEventDefinitionToPackage(childComplexity, args["packageID"].(string), args["in"].(EventDefinitionInput)), true
 
-	case "Mutation.addPackageDefinition":
-		if e.complexity.Mutation.AddPackageDefinition == nil {
+	case "Mutation.addPackage":
+		if e.complexity.Mutation.AddPackage == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_addPackageDefinition_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_addPackage_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddPackageDefinition(childComplexity, args["applicationID"].(string), args["in"].(PackageDefinitionCreateInput)), true
+		return e.complexity.Mutation.AddPackage(childComplexity, args["applicationID"].(string), args["in"].(PackageCreateInput)), true
 
 	case "Mutation.addWebhook":
 		if e.complexity.Mutation.AddWebhook == nil {
@@ -1681,18 +1613,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteAPIDefinition(childComplexity, args["id"].(string)), true
-
-	case "Mutation.deleteAPIInstanceAuthForPackage":
-		if e.complexity.Mutation.DeleteAPIInstanceAuthForPackage == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteAPIInstanceAuthForPackage_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteAPIInstanceAuthForPackage(childComplexity, args["packageID"].(string), args["authID"].(string)), true
 
 	case "Mutation.deleteApplicationLabel":
 		if e.complexity.Mutation.DeleteApplicationLabel == nil {
@@ -1766,17 +1686,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteLabelDefinition(childComplexity, args["key"].(string), args["deleteRelatedLabels"].(*bool)), true
 
-	case "Mutation.deletePackageDefinition":
-		if e.complexity.Mutation.DeletePackageDefinition == nil {
+	case "Mutation.deletePackage":
+		if e.complexity.Mutation.DeletePackage == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_deletePackageDefinition_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_deletePackage_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeletePackageDefinition(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.DeletePackage(childComplexity, args["id"].(string)), true
+
+	case "Mutation.deletePackageInstanceAuth":
+		if e.complexity.Mutation.DeletePackageInstanceAuth == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deletePackageInstanceAuth_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeletePackageInstanceAuth(childComplexity, args["packageID"].(string), args["authID"].(string)), true
 
 	case "Mutation.deleteRuntimeLabel":
 		if e.complexity.Mutation.DeleteRuntimeLabel == nil {
@@ -1910,18 +1842,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RegisterRuntime(childComplexity, args["in"].(RuntimeInput)), true
 
-	case "Mutation.requestAPIInstanceAuthForPackage":
-		if e.complexity.Mutation.RequestAPIInstanceAuthForPackage == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_requestAPIInstanceAuthForPackage_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.RequestAPIInstanceAuthForPackage(childComplexity, args["packageID"].(string), args["in"].(APIInstanceAuthRequestInput)), true
-
 	case "Mutation.requestClientCredentialsForApplication":
 		if e.complexity.Mutation.RequestClientCredentialsForApplication == nil {
 			break
@@ -1982,6 +1902,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RequestOneTimeTokenForRuntime(childComplexity, args["id"].(string)), true
 
+	case "Mutation.requestPackageInstanceAuth":
+		if e.complexity.Mutation.RequestPackageInstanceAuth == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestPackageInstanceAuth_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RequestPackageInstanceAuth(childComplexity, args["packageID"].(string), args["in"].(PackageInstanceAuthRequestInput)), true
+
 	case "Mutation.setAPIAuth":
 		if e.complexity.Mutation.SetAPIAuth == nil {
 			break
@@ -1993,18 +1925,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SetAPIAuth(childComplexity, args["apiID"].(string), args["runtimeID"].(string), args["in"].(AuthInput)), true
-
-	case "Mutation.setAPIInstanceAuthForPackage":
-		if e.complexity.Mutation.SetAPIInstanceAuthForPackage == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_setAPIInstanceAuthForPackage_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SetAPIInstanceAuthForPackage(childComplexity, args["packageID"].(string), args["authID"].(string), args["in"].(AuthInput)), true
 
 	case "Mutation.setApplicationLabel":
 		if e.complexity.Mutation.SetApplicationLabel == nil {
@@ -2029,6 +1949,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SetDefaultEventingForApplication(childComplexity, args["appID"].(string), args["runtimeID"].(string)), true
+
+	case "Mutation.setPackageInstanceAuth":
+		if e.complexity.Mutation.SetPackageInstanceAuth == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setPackageInstanceAuth_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetPackageInstanceAuth(childComplexity, args["packageID"].(string), args["authID"].(string), args["in"].(AuthInput)), true
 
 	case "Mutation.setRuntimeLabel":
 		if e.complexity.Mutation.SetRuntimeLabel == nil {
@@ -2150,17 +2082,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateLabelDefinition(childComplexity, args["in"].(LabelDefinitionInput)), true
 
-	case "Mutation.updatePackageDefinition":
-		if e.complexity.Mutation.UpdatePackageDefinition == nil {
+	case "Mutation.updatePackage":
+		if e.complexity.Mutation.UpdatePackage == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_updatePackageDefinition_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_updatePackage_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdatePackageDefinition(childComplexity, args["id"].(string), args["in"].(PackageDefinitionUpdateInput)), true
+		return e.complexity.Mutation.UpdatePackage(childComplexity, args["id"].(string), args["in"].(PackageUpdateInput)), true
 
 	case "Mutation.updateRuntime":
 		if e.complexity.Mutation.UpdateRuntime == nil {
@@ -2270,152 +2202,208 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OneTimeTokenForRuntime.Token(childComplexity), true
 
-	case "PackageDefinition.apiDefinition":
-		if e.complexity.PackageDefinition.APIDefinition == nil {
+	case "Package.apiDefinition":
+		if e.complexity.Package.APIDefinition == nil {
 			break
 		}
 
-		args, err := ec.field_PackageDefinition_apiDefinition_args(context.TODO(), rawArgs)
+		args, err := ec.field_Package_apiDefinition_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.PackageDefinition.APIDefinition(childComplexity, args["id"].(string)), true
+		return e.complexity.Package.APIDefinition(childComplexity, args["id"].(string)), true
 
-	case "PackageDefinition.apiDefinitions":
-		if e.complexity.PackageDefinition.APIDefinitions == nil {
+	case "Package.apiDefinitions":
+		if e.complexity.Package.APIDefinitions == nil {
 			break
 		}
 
-		args, err := ec.field_PackageDefinition_apiDefinitions_args(context.TODO(), rawArgs)
+		args, err := ec.field_Package_apiDefinitions_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.PackageDefinition.APIDefinitions(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
+		return e.complexity.Package.APIDefinitions(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
 
-	case "PackageDefinition.auth":
-		if e.complexity.PackageDefinition.Auth == nil {
+	case "Package.defaultInstanceAuth":
+		if e.complexity.Package.DefaultInstanceAuth == nil {
 			break
 		}
 
-		args, err := ec.field_PackageDefinition_auth_args(context.TODO(), rawArgs)
+		return e.complexity.Package.DefaultInstanceAuth(childComplexity), true
+
+	case "Package.description":
+		if e.complexity.Package.Description == nil {
+			break
+		}
+
+		return e.complexity.Package.Description(childComplexity), true
+
+	case "Package.document":
+		if e.complexity.Package.Document == nil {
+			break
+		}
+
+		args, err := ec.field_Package_document_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.PackageDefinition.Auth(childComplexity, args["id"].(string)), true
+		return e.complexity.Package.Document(childComplexity, args["id"].(string)), true
 
-	case "PackageDefinition.authRequestJSONSchema":
-		if e.complexity.PackageDefinition.AuthRequestJSONSchema == nil {
+	case "Package.documents":
+		if e.complexity.Package.Documents == nil {
 			break
 		}
 
-		return e.complexity.PackageDefinition.AuthRequestJSONSchema(childComplexity), true
-
-	case "PackageDefinition.auths":
-		if e.complexity.PackageDefinition.Auths == nil {
-			break
-		}
-
-		return e.complexity.PackageDefinition.Auths(childComplexity), true
-
-	case "PackageDefinition.defaultAuth":
-		if e.complexity.PackageDefinition.DefaultAuth == nil {
-			break
-		}
-
-		return e.complexity.PackageDefinition.DefaultAuth(childComplexity), true
-
-	case "PackageDefinition.description":
-		if e.complexity.PackageDefinition.Description == nil {
-			break
-		}
-
-		return e.complexity.PackageDefinition.Description(childComplexity), true
-
-	case "PackageDefinition.document":
-		if e.complexity.PackageDefinition.Document == nil {
-			break
-		}
-
-		args, err := ec.field_PackageDefinition_document_args(context.TODO(), rawArgs)
+		args, err := ec.field_Package_documents_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.PackageDefinition.Document(childComplexity, args["id"].(string)), true
+		return e.complexity.Package.Documents(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
 
-	case "PackageDefinition.documents":
-		if e.complexity.PackageDefinition.Documents == nil {
+	case "Package.eventDefinition":
+		if e.complexity.Package.EventDefinition == nil {
 			break
 		}
 
-		args, err := ec.field_PackageDefinition_documents_args(context.TODO(), rawArgs)
+		args, err := ec.field_Package_eventDefinition_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.PackageDefinition.Documents(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
+		return e.complexity.Package.EventDefinition(childComplexity, args["id"].(string)), true
 
-	case "PackageDefinition.eventDefinition":
-		if e.complexity.PackageDefinition.EventDefinition == nil {
+	case "Package.eventDefinitions":
+		if e.complexity.Package.EventDefinitions == nil {
 			break
 		}
 
-		args, err := ec.field_PackageDefinition_eventDefinition_args(context.TODO(), rawArgs)
+		args, err := ec.field_Package_eventDefinitions_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.PackageDefinition.EventDefinition(childComplexity, args["id"].(string)), true
+		return e.complexity.Package.EventDefinitions(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
 
-	case "PackageDefinition.eventDefinitions":
-		if e.complexity.PackageDefinition.EventDefinitions == nil {
+	case "Package.id":
+		if e.complexity.Package.ID == nil {
 			break
 		}
 
-		args, err := ec.field_PackageDefinition_eventDefinitions_args(context.TODO(), rawArgs)
+		return e.complexity.Package.ID(childComplexity), true
+
+	case "Package.instanceAuth":
+		if e.complexity.Package.InstanceAuth == nil {
+			break
+		}
+
+		args, err := ec.field_Package_instanceAuth_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.PackageDefinition.EventDefinitions(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
+		return e.complexity.Package.InstanceAuth(childComplexity, args["id"].(string)), true
 
-	case "PackageDefinition.id":
-		if e.complexity.PackageDefinition.ID == nil {
+	case "Package.instanceAuthRequestInputSchema":
+		if e.complexity.Package.InstanceAuthRequestInputSchema == nil {
 			break
 		}
 
-		return e.complexity.PackageDefinition.ID(childComplexity), true
+		return e.complexity.Package.InstanceAuthRequestInputSchema(childComplexity), true
 
-	case "PackageDefinition.name":
-		if e.complexity.PackageDefinition.Name == nil {
+	case "Package.instanceAuths":
+		if e.complexity.Package.InstanceAuths == nil {
 			break
 		}
 
-		return e.complexity.PackageDefinition.Name(childComplexity), true
+		return e.complexity.Package.InstanceAuths(childComplexity), true
 
-	case "PackageDefinitionPage.data":
-		if e.complexity.PackageDefinitionPage.Data == nil {
+	case "Package.name":
+		if e.complexity.Package.Name == nil {
 			break
 		}
 
-		return e.complexity.PackageDefinitionPage.Data(childComplexity), true
+		return e.complexity.Package.Name(childComplexity), true
 
-	case "PackageDefinitionPage.pageInfo":
-		if e.complexity.PackageDefinitionPage.PageInfo == nil {
+	case "PackageInstanceAuth.auth":
+		if e.complexity.PackageInstanceAuth.Auth == nil {
 			break
 		}
 
-		return e.complexity.PackageDefinitionPage.PageInfo(childComplexity), true
+		return e.complexity.PackageInstanceAuth.Auth(childComplexity), true
 
-	case "PackageDefinitionPage.totalCount":
-		if e.complexity.PackageDefinitionPage.TotalCount == nil {
+	case "PackageInstanceAuth.context":
+		if e.complexity.PackageInstanceAuth.Context == nil {
 			break
 		}
 
-		return e.complexity.PackageDefinitionPage.TotalCount(childComplexity), true
+		return e.complexity.PackageInstanceAuth.Context(childComplexity), true
+
+	case "PackageInstanceAuth.id":
+		if e.complexity.PackageInstanceAuth.ID == nil {
+			break
+		}
+
+		return e.complexity.PackageInstanceAuth.ID(childComplexity), true
+
+	case "PackageInstanceAuth.status":
+		if e.complexity.PackageInstanceAuth.Status == nil {
+			break
+		}
+
+		return e.complexity.PackageInstanceAuth.Status(childComplexity), true
+
+	case "PackageInstanceAuthStatus.condition":
+		if e.complexity.PackageInstanceAuthStatus.Condition == nil {
+			break
+		}
+
+		return e.complexity.PackageInstanceAuthStatus.Condition(childComplexity), true
+
+	case "PackageInstanceAuthStatus.message":
+		if e.complexity.PackageInstanceAuthStatus.Message == nil {
+			break
+		}
+
+		return e.complexity.PackageInstanceAuthStatus.Message(childComplexity), true
+
+	case "PackageInstanceAuthStatus.reason":
+		if e.complexity.PackageInstanceAuthStatus.Reason == nil {
+			break
+		}
+
+		return e.complexity.PackageInstanceAuthStatus.Reason(childComplexity), true
+
+	case "PackageInstanceAuthStatus.timestamp":
+		if e.complexity.PackageInstanceAuthStatus.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.PackageInstanceAuthStatus.Timestamp(childComplexity), true
+
+	case "PackagePage.data":
+		if e.complexity.PackagePage.Data == nil {
+			break
+		}
+
+		return e.complexity.PackagePage.Data(childComplexity), true
+
+	case "PackagePage.pageInfo":
+		if e.complexity.PackagePage.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.PackagePage.PageInfo(childComplexity), true
+
+	case "PackagePage.totalCount":
+		if e.complexity.PackagePage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.PackagePage.TotalCount(childComplexity), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -2913,15 +2901,6 @@ scalar QueryParams
 
 scalar Timestamp
 
-enum APIInstanceAuthStatusCondition {
-	"""
-	When creating or deleting new one
-	"""
-	PENDING
-	SUCCEEDED
-	FAILED
-}
-
 enum APISpecType {
 	ODATA
 	OPEN_API
@@ -2969,6 +2948,15 @@ enum HealthCheckStatusCondition {
 
 enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
+}
+
+enum PackageInstanceAuthStatusCondition {
+	"""
+	When creating or deleting new one
+	"""
+	PENDING
+	SUCCEEDED
+	FAILED
 }
 
 enum RuntimeStatusCondition {
@@ -3020,17 +3008,6 @@ input APIDefinitionInput {
 	defaultAuth: AuthInput @deprecated(reason: "Use package.defaultAuth")
 }
 
-input APIInstanceAuthRequestInput {
-	"""
-	Context of APIInstanceAuth - such as Runtime ID, namespace
-	"""
-	context: Any
-	"""
-	JSON validated against package.authRequestJSONSchema
-	"""
-	inputParams: Any
-}
-
 input APISpecInput {
 	data: CLOB
 	type: APISpecType!
@@ -3053,7 +3030,7 @@ input ApplicationRegisterInput {
 	apiDefinitions: [APIDefinitionInput!] @deprecated(reason: "Use package.packages.apiDefinitions")
 	eventDefinitions: [EventDefinitionInput!] @deprecated(reason: "Use package.packages.eventDefinitions")
 	documents: [DocumentInput!] @deprecated(reason: "Use package.packages.documents")
-	packages: [PackageDefinitionCreateInput!]
+	packages: [PackageCreateInput!]
 	integrationSystemID: ID
 }
 
@@ -3166,24 +3143,35 @@ input OAuthCredentialDataInput {
 	url: String!
 }
 
-input PackageDefinitionCreateInput {
+input PackageCreateInput {
 	name: String!
 	description: String
-	authRequestJSONSchema: JSONSchema
-	defaultAuth: AuthInput
+	instanceAuthRequestInputSchema: JSONSchema
+	defaultInstanceAuth: AuthInput
 	apiDefinitions: [APIDefinitionInput!]
 	eventDefinitions: [EventDefinitionInput!]
 	documents: [DocumentInput!]
 }
 
-input PackageDefinitionUpdateInput {
+input PackageInstanceAuthRequestInput {
+	"""
+	Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
+	"""
+	context: Any
+	"""
+	JSON validated against package.instanceAuthRequestInputSchema
+	"""
+	inputParams: Any
+}
+
+input PackageUpdateInput {
 	name: String!
 	description: String
-	authRequestJSONSchema: JSONSchema
+	instanceAuthRequestInputSchema: JSONSchema
 	"""
-	While updating defaultAuth, existing APIInstanceAuths are NOT updated.
+	While updating defaultInstanceAuth, existing PackageInstanceAuths are NOT updated.
 	"""
-	defaultAuth: AuthInput
+	defaultInstanceAuth: AuthInput
 }
 
 input PlaceholderDefinitionInput {
@@ -3251,35 +3239,6 @@ type APIDefinitionPage implements Pageable {
 	totalCount: Int!
 }
 
-type APIInstanceAuth {
-	id: ID!
-	"""
-	Context of APIInstanceAuth - such as Runtime ID, namespace
-	"""
-	context: Any
-	"""
-	It may be empty if status is PENDING.
-	Populated with ` + "`" + `package.defaultAuth` + "`" + ` value if ` + "`" + `package.defaultAuth` + "`" + ` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	"""
-	auth: Auth
-	status: APIInstanceAuthStatus
-}
-
-type APIInstanceAuthStatus {
-	condition: APIInstanceAuthStatusCondition!
-	timestamp: Timestamp!
-	message: String!
-	"""
-	Possible reasons:
-	- PendingNotification
-	- NotificationSent
-	- CredentialsProvided
-	- CredentialsNotProvided
-	- PendingDeletion
-	"""
-	reason: String!
-}
-
 """
 Deprecated
 """
@@ -3320,8 +3279,8 @@ type Application {
 	apiDefinition(id: ID!): APIDefinition @deprecated(reason: "Use ` + "`" + `package.apiDefinition` + "`" + ` field")
 	eventDefinition(id: ID!): EventDefinition @deprecated(reason: "Use ` + "`" + `package.eventDefinition` + "`" + ` field")
 	documents(first: Int = 100, after: PageCursor): DocumentPage @deprecated(reason: "Use ` + "`" + `package.documents` + "`" + ` field")
-	packages(first: Int = 100, after: PageCursor): PackageDefinitionPage
-	package(id: ID!): PackageDefinition
+	packages(first: Int = 100, after: PageCursor): PackagePage
+	package(id: ID!): Package
 	auths: [SystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
 }
@@ -3511,17 +3470,17 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 	rawEncoded: String
 }
 
-type PackageDefinition {
+type Package {
 	id: ID!
 	name: String!
 	description: String
-	authRequestJSONSchema: JSONSchema
-	auth(id: ID!): APIInstanceAuth
-	auths: [APIInstanceAuth!]!
+	instanceAuthRequestInputSchema: JSONSchema
+	instanceAuth(id: ID!): PackageInstanceAuth
+	instanceAuths: [PackageInstanceAuth!]!
 	"""
-	When defined, all Auth requests fallback to defaultAuth.
+	When defined, all Auth requests fallback to defaultInstanceAuth.
 	"""
-	defaultAuth: Auth
+	defaultInstanceAuth: Auth
 	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage
 	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage
 	documents(first: Int = 100, after: PageCursor): DocumentPage
@@ -3530,8 +3489,37 @@ type PackageDefinition {
 	document(id: ID!): Document
 }
 
-type PackageDefinitionPage implements Pageable {
-	data: [PackageDefinition!]!
+type PackageInstanceAuth {
+	id: ID!
+	"""
+	Context of PackageInstanceAuth - such as Runtime ID, namespace
+	"""
+	context: Any
+	"""
+	It may be empty if status is PENDING.
+	Populated with ` + "`" + `package.defaultAuth` + "`" + ` value if ` + "`" + `package.defaultAuth` + "`" + ` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+	"""
+	auth: Auth
+	status: PackageInstanceAuthStatus
+}
+
+type PackageInstanceAuthStatus {
+	condition: PackageInstanceAuthStatusCondition!
+	timestamp: Timestamp!
+	message: String!
+	"""
+	Possible reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	"""
+	reason: String!
+}
+
+type PackagePage implements Pageable {
+	data: [Package!]!
 	pageInfo: PageInfo!
 	totalCount: Int!
 }
@@ -3786,7 +3774,7 @@ type Mutation {
 	"""
 	addAPIDefinition(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinition")
 	"""
-	Temporary name before doing breaking change
+	Temporary name before doing breaking change. Eventually the ` + "`" + `addAPIDefinition` + "`" + ` mutation will be changed and there will be just one mutation: ` + "`" + `addAPIDefinitionToPackage` + "`" + `.
 	"""
 	addAPIDefinitionToPackage(packageID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToPackage")
 	"""
@@ -3811,15 +3799,15 @@ type Mutation {
 	"""
 	Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
 	"""
-	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth") @deprecated(reason: "Use setAPIInstanceAuthForPackage")
-	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth") @deprecated(reason: "Use deleteAPIInstanceAuthForPackage")
+	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth") @deprecated(reason: "Use setPackageInstanceAuthForPackage")
+	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth") @deprecated(reason: "Use deletePackageInstanceAuthForPackage")
 	"""
 	**Examples**
 	- [add event definition](examples/add-event-definition/add-event-definition.graphql)
 	"""
 	addEventDefinition(applicationID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
 	"""
-	Temporary name before doing breaking change
+	Temporary name before doing breaking change. Eventually the ` + "`" + `addEventDefinition` + "`" + ` mutation will be changed and there will be just one mutation: ` + "`" + `addEventDefinitionToPackage` + "`" + `.
 	"""
 	addEventDefinitionToPackage(packageID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToPackage")
 	"""
@@ -3887,16 +3875,16 @@ type Mutation {
 	setDefaultEventingForApplication(appID: String!, runtimeID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.setDefaultEventingForApplication")
 	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
 	"""
-	When APIInstanceAuth is not in pending state, the operation returns error.
+	When PackageInstanceAuth is not in pending state, the operation returns error.
 	
 	When used without error, the status of pending auth is set to success.
 	"""
-	setAPIInstanceAuthForPackage(packageID: ID!, authID: ID!, in: AuthInput! @validate): APIInstanceAuth! @hasScopes(path: "graphql.mutation.setAPIInstanceAuthForPackage")
-	deleteAPIInstanceAuthForPackage(packageID: ID!, authID: ID!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.deleteAPIInstanceAuthForPackage")
-	requestAPIInstanceAuthForPackage(packageID: ID!, in: APIInstanceAuthRequestInput!): APIInstanceAuth! @hasScopes(path: "graphql.mutation.requestAPIInstanceAuthForPackage")
-	addPackageDefinition(applicationID: ID!, in: PackageDefinitionCreateInput! @validate): PackageDefinition! @hasScopes(path: "graphql.mutation.addPackageDefinition")
-	updatePackageDefinition(id: ID!, in: PackageDefinitionUpdateInput! @validate): PackageDefinition! @hasScopes(path: "graphql.mutation.updatePackageDefinition")
-	deletePackageDefinition(id: ID!): PackageDefinition! @hasScopes(path: "graphql.mutation.deletePackageDefinition")
+	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: AuthInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
+	deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
+	requestPackageInstanceAuth(packageID: ID!, in: PackageInstanceAuthRequestInput!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuth")
+	addPackage(applicationID: ID!, in: PackageCreateInput! @validate): Package! @hasScopes(path: "graphql.mutation.addPackage")
+	updatePackage(id: ID!, in: PackageUpdateInput! @validate): Package! @hasScopes(path: "graphql.mutation.updatePackage")
+	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
 }
 
 `},
@@ -4298,7 +4286,7 @@ func (ec *executionContext) field_Mutation_addEventDefinition_args(ctx context.C
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_addPackageDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_addPackage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -4309,10 +4297,10 @@ func (ec *executionContext) field_Mutation_addPackageDefinition_args(ctx context
 		}
 	}
 	args["applicationID"] = arg0
-	var arg1 PackageDefinitionCreateInput
+	var arg1 PackageCreateInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNPackageDefinitionCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionCreateInput(ctx, tmp)
+			return ec.unmarshalNPackageCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageCreateInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -4322,10 +4310,10 @@ func (ec *executionContext) field_Mutation_addPackageDefinition_args(ctx context
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(PackageDefinitionCreateInput); ok {
+		if data, ok := tmp.(PackageCreateInput); ok {
 			arg1 = data
 		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageDefinitionCreateInput`, tmp)
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageCreateInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -4454,28 +4442,6 @@ func (ec *executionContext) field_Mutation_deleteAPIDefinition_args(ctx context.
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deleteAPIInstanceAuthForPackage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["packageID"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["packageID"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["authID"]; ok {
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["authID"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_deleteApplicationLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4576,7 +4542,29 @@ func (ec *executionContext) field_Mutation_deleteLabelDefinition_args(ctx contex
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deletePackageDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_deletePackageInstanceAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["packageID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["packageID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["authID"]; ok {
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["authID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deletePackage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -4800,28 +4788,6 @@ func (ec *executionContext) field_Mutation_registerRuntime_args(ctx context.Cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_requestAPIInstanceAuthForPackage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["packageID"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["packageID"] = arg0
-	var arg1 APIInstanceAuthRequestInput
-	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNAPIInstanceAuthRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuthRequestInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["in"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_requestClientCredentialsForApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4892,6 +4858,28 @@ func (ec *executionContext) field_Mutation_requestOneTimeTokenForRuntime_args(ct
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_requestPackageInstanceAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["packageID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["packageID"] = arg0
+	var arg1 PackageInstanceAuthRequestInput
+	if tmp, ok := rawArgs["in"]; ok {
+		arg1, err = ec.unmarshalNPackageInstanceAuthRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthRequestInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["in"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_setAPIAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4911,48 +4899,6 @@ func (ec *executionContext) field_Mutation_setAPIAuth_args(ctx context.Context, 
 		}
 	}
 	args["runtimeID"] = arg1
-	var arg2 AuthInput
-	if tmp, ok := rawArgs["in"]; ok {
-		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, tmp)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			return ec.directives.Validate(ctx, rawArgs, directive0)
-		}
-
-		tmp, err = directive1(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if data, ok := tmp.(AuthInput); ok {
-			arg2 = data
-		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.AuthInput`, tmp)
-		}
-	}
-	args["in"] = arg2
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_setAPIInstanceAuthForPackage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["packageID"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["packageID"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["authID"]; ok {
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["authID"] = arg1
 	var arg2 AuthInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
@@ -5025,6 +4971,48 @@ func (ec *executionContext) field_Mutation_setDefaultEventingForApplication_args
 		}
 	}
 	args["runtimeID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_setPackageInstanceAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["packageID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["packageID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["authID"]; ok {
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["authID"] = arg1
+	var arg2 AuthInput
+	if tmp, ok := rawArgs["in"]; ok {
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(AuthInput); ok {
+			arg2 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.AuthInput`, tmp)
+		}
+	}
+	args["in"] = arg2
 	return args, nil
 }
 
@@ -5296,7 +5284,7 @@ func (ec *executionContext) field_Mutation_updateLabelDefinition_args(ctx contex
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updatePackageDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_updatePackage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -5307,10 +5295,10 @@ func (ec *executionContext) field_Mutation_updatePackageDefinition_args(ctx cont
 		}
 	}
 	args["id"] = arg0
-	var arg1 PackageDefinitionUpdateInput
+	var arg1 PackageUpdateInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNPackageDefinitionUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionUpdateInput(ctx, tmp)
+			return ec.unmarshalNPackageUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageUpdateInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5320,10 +5308,10 @@ func (ec *executionContext) field_Mutation_updatePackageDefinition_args(ctx cont
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(PackageDefinitionUpdateInput); ok {
+		if data, ok := tmp.(PackageUpdateInput); ok {
 			arg1 = data
 		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageDefinitionUpdateInput`, tmp)
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageUpdateInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -5398,7 +5386,7 @@ func (ec *executionContext) field_Mutation_updateWebhook_args(ctx context.Contex
 	return args, nil
 }
 
-func (ec *executionContext) field_PackageDefinition_apiDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Package_apiDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -5412,7 +5400,7 @@ func (ec *executionContext) field_PackageDefinition_apiDefinition_args(ctx conte
 	return args, nil
 }
 
-func (ec *executionContext) field_PackageDefinition_apiDefinitions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Package_apiDefinitions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -5442,7 +5430,7 @@ func (ec *executionContext) field_PackageDefinition_apiDefinitions_args(ctx cont
 	return args, nil
 }
 
-func (ec *executionContext) field_PackageDefinition_auth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Package_document_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -5456,21 +5444,7 @@ func (ec *executionContext) field_PackageDefinition_auth_args(ctx context.Contex
 	return args, nil
 }
 
-func (ec *executionContext) field_PackageDefinition_document_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_PackageDefinition_documents_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Package_documents_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *int
@@ -5492,7 +5466,7 @@ func (ec *executionContext) field_PackageDefinition_documents_args(ctx context.C
 	return args, nil
 }
 
-func (ec *executionContext) field_PackageDefinition_eventDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Package_eventDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -5506,7 +5480,7 @@ func (ec *executionContext) field_PackageDefinition_eventDefinition_args(ctx con
 	return args, nil
 }
 
-func (ec *executionContext) field_PackageDefinition_eventDefinitions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Package_eventDefinitions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -5533,6 +5507,20 @@ func (ec *executionContext) field_PackageDefinition_eventDefinitions_args(ctx co
 		}
 	}
 	args["after"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Package_instanceAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -6380,293 +6368,6 @@ func (ec *executionContext) _APIDefinitionPage_totalCount(ctx context.Context, f
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _APIInstanceAuth_id(ctx context.Context, field graphql.CollectedField, obj *APIInstanceAuth) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "APIInstanceAuth",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _APIInstanceAuth_context(ctx context.Context, field graphql.CollectedField, obj *APIInstanceAuth) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "APIInstanceAuth",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Context, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*interface{})
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAny2ᚖinterface(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _APIInstanceAuth_auth(ctx context.Context, field graphql.CollectedField, obj *APIInstanceAuth) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "APIInstanceAuth",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Auth, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Auth)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _APIInstanceAuth_status(ctx context.Context, field graphql.CollectedField, obj *APIInstanceAuth) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "APIInstanceAuth",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Status, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*APIInstanceAuthStatus)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAPIInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuthStatus(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _APIInstanceAuthStatus_condition(ctx context.Context, field graphql.CollectedField, obj *APIInstanceAuthStatus) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "APIInstanceAuthStatus",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Condition, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(APIInstanceAuthStatusCondition)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPIInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuthStatusCondition(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _APIInstanceAuthStatus_timestamp(ctx context.Context, field graphql.CollectedField, obj *APIInstanceAuthStatus) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "APIInstanceAuthStatus",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Timestamp, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(Timestamp)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _APIInstanceAuthStatus_message(ctx context.Context, field graphql.CollectedField, obj *APIInstanceAuthStatus) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "APIInstanceAuthStatus",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Message, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _APIInstanceAuthStatus_reason(ctx context.Context, field graphql.CollectedField, obj *APIInstanceAuthStatus) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "APIInstanceAuthStatus",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Reason, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _APIRuntimeAuth_runtimeID(ctx context.Context, field graphql.CollectedField, obj *APIRuntimeAuth) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -7442,10 +7143,10 @@ func (ec *executionContext) _Application_packages(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*PackageDefinitionPage)
+	res := resTmp.(*PackagePage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOPackageDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionPage(ctx, field.Selections, res)
+	return ec.marshalOPackagePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackagePage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_package(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -7483,10 +7184,10 @@ func (ec *executionContext) _Application_package(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*PackageDefinition)
+	res := resTmp.(*Package)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOPackageDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinition(ctx, field.Selections, res)
+	return ec.marshalOPackage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_auths(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -13514,7 +13215,7 @@ func (ec *executionContext) _Mutation_deleteDefaultEventingForApplication(ctx co
 	return ec.marshalNApplicationEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationEventingConfiguration(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_setAPIInstanceAuthForPackage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_setPackageInstanceAuth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13531,7 +13232,7 @@ func (ec *executionContext) _Mutation_setAPIInstanceAuthForPackage(ctx context.C
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_setAPIInstanceAuthForPackage_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_setPackageInstanceAuth_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -13541,10 +13242,10 @@ func (ec *executionContext) _Mutation_setAPIInstanceAuthForPackage(ctx context.C
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SetAPIInstanceAuthForPackage(rctx, args["packageID"].(string), args["authID"].(string), args["in"].(AuthInput))
+			return ec.resolvers.Mutation().SetPackageInstanceAuth(rctx, args["packageID"].(string), args["authID"].(string), args["in"].(AuthInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.setAPIInstanceAuthForPackage")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.setPackageInstanceAuth")
 			if err != nil {
 				return nil, err
 			}
@@ -13555,12 +13256,12 @@ func (ec *executionContext) _Mutation_setAPIInstanceAuthForPackage(ctx context.C
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*APIInstanceAuth); ok {
+		if data, ok := tmp.(*PackageInstanceAuth); ok {
 			return data, nil
 		} else if tmp == nil {
 			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.APIInstanceAuth`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageInstanceAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13572,13 +13273,13 @@ func (ec *executionContext) _Mutation_setAPIInstanceAuthForPackage(ctx context.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*APIInstanceAuth)
+	res := resTmp.(*PackageInstanceAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPIInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuth(ctx, field.Selections, res)
+	return ec.marshalNPackageInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_deleteAPIInstanceAuthForPackage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_deletePackageInstanceAuth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13595,7 +13296,7 @@ func (ec *executionContext) _Mutation_deleteAPIInstanceAuthForPackage(ctx contex
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteAPIInstanceAuthForPackage_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_deletePackageInstanceAuth_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -13605,10 +13306,10 @@ func (ec *executionContext) _Mutation_deleteAPIInstanceAuthForPackage(ctx contex
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteAPIInstanceAuthForPackage(rctx, args["packageID"].(string), args["authID"].(string))
+			return ec.resolvers.Mutation().DeletePackageInstanceAuth(rctx, args["packageID"].(string), args["authID"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteAPIInstanceAuthForPackage")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deletePackageInstanceAuth")
 			if err != nil {
 				return nil, err
 			}
@@ -13619,12 +13320,12 @@ func (ec *executionContext) _Mutation_deleteAPIInstanceAuthForPackage(ctx contex
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*APIInstanceAuth); ok {
+		if data, ok := tmp.(*PackageInstanceAuth); ok {
 			return data, nil
 		} else if tmp == nil {
 			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.APIInstanceAuth`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageInstanceAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13636,13 +13337,13 @@ func (ec *executionContext) _Mutation_deleteAPIInstanceAuthForPackage(ctx contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*APIInstanceAuth)
+	res := resTmp.(*PackageInstanceAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPIInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuth(ctx, field.Selections, res)
+	return ec.marshalNPackageInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_requestAPIInstanceAuthForPackage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_requestPackageInstanceAuth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13659,7 +13360,7 @@ func (ec *executionContext) _Mutation_requestAPIInstanceAuthForPackage(ctx conte
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_requestAPIInstanceAuthForPackage_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_requestPackageInstanceAuth_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -13669,10 +13370,10 @@ func (ec *executionContext) _Mutation_requestAPIInstanceAuthForPackage(ctx conte
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().RequestAPIInstanceAuthForPackage(rctx, args["packageID"].(string), args["in"].(APIInstanceAuthRequestInput))
+			return ec.resolvers.Mutation().RequestPackageInstanceAuth(rctx, args["packageID"].(string), args["in"].(PackageInstanceAuthRequestInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestAPIInstanceAuthForPackage")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestPackageInstanceAuth")
 			if err != nil {
 				return nil, err
 			}
@@ -13683,12 +13384,12 @@ func (ec *executionContext) _Mutation_requestAPIInstanceAuthForPackage(ctx conte
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*APIInstanceAuth); ok {
+		if data, ok := tmp.(*PackageInstanceAuth); ok {
 			return data, nil
 		} else if tmp == nil {
 			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.APIInstanceAuth`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageInstanceAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13700,13 +13401,13 @@ func (ec *executionContext) _Mutation_requestAPIInstanceAuthForPackage(ctx conte
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*APIInstanceAuth)
+	res := resTmp.(*PackageInstanceAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPIInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuth(ctx, field.Selections, res)
+	return ec.marshalNPackageInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_addPackageDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_addPackage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13723,7 +13424,7 @@ func (ec *executionContext) _Mutation_addPackageDefinition(ctx context.Context, 
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_addPackageDefinition_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_addPackage_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -13733,10 +13434,10 @@ func (ec *executionContext) _Mutation_addPackageDefinition(ctx context.Context, 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().AddPackageDefinition(rctx, args["applicationID"].(string), args["in"].(PackageDefinitionCreateInput))
+			return ec.resolvers.Mutation().AddPackage(rctx, args["applicationID"].(string), args["in"].(PackageCreateInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addPackageDefinition")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addPackage")
 			if err != nil {
 				return nil, err
 			}
@@ -13747,12 +13448,12 @@ func (ec *executionContext) _Mutation_addPackageDefinition(ctx context.Context, 
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*PackageDefinition); ok {
+		if data, ok := tmp.(*Package); ok {
 			return data, nil
 		} else if tmp == nil {
 			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageDefinition`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Package`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13764,13 +13465,13 @@ func (ec *executionContext) _Mutation_addPackageDefinition(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*PackageDefinition)
+	res := resTmp.(*Package)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPackageDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinition(ctx, field.Selections, res)
+	return ec.marshalNPackage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_updatePackageDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_updatePackage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13787,7 +13488,7 @@ func (ec *executionContext) _Mutation_updatePackageDefinition(ctx context.Contex
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_updatePackageDefinition_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_updatePackage_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -13797,10 +13498,10 @@ func (ec *executionContext) _Mutation_updatePackageDefinition(ctx context.Contex
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdatePackageDefinition(rctx, args["id"].(string), args["in"].(PackageDefinitionUpdateInput))
+			return ec.resolvers.Mutation().UpdatePackage(rctx, args["id"].(string), args["in"].(PackageUpdateInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updatePackageDefinition")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updatePackage")
 			if err != nil {
 				return nil, err
 			}
@@ -13811,12 +13512,12 @@ func (ec *executionContext) _Mutation_updatePackageDefinition(ctx context.Contex
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*PackageDefinition); ok {
+		if data, ok := tmp.(*Package); ok {
 			return data, nil
 		} else if tmp == nil {
 			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageDefinition`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Package`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13828,13 +13529,13 @@ func (ec *executionContext) _Mutation_updatePackageDefinition(ctx context.Contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*PackageDefinition)
+	res := resTmp.(*Package)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPackageDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinition(ctx, field.Selections, res)
+	return ec.marshalNPackage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_deletePackageDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_deletePackage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13851,7 +13552,7 @@ func (ec *executionContext) _Mutation_deletePackageDefinition(ctx context.Contex
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deletePackageDefinition_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_deletePackage_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -13861,10 +13562,10 @@ func (ec *executionContext) _Mutation_deletePackageDefinition(ctx context.Contex
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeletePackageDefinition(rctx, args["id"].(string))
+			return ec.resolvers.Mutation().DeletePackage(rctx, args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deletePackageDefinition")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deletePackage")
 			if err != nil {
 				return nil, err
 			}
@@ -13875,12 +13576,12 @@ func (ec *executionContext) _Mutation_deletePackageDefinition(ctx context.Contex
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*PackageDefinition); ok {
+		if data, ok := tmp.(*Package); ok {
 			return data, nil
 		} else if tmp == nil {
 			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageDefinition`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Package`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13892,10 +13593,10 @@ func (ec *executionContext) _Mutation_deletePackageDefinition(ctx context.Contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*PackageDefinition)
+	res := resTmp.(*Package)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPackageDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinition(ctx, field.Selections, res)
+	return ec.marshalNPackage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OAuthCredentialData_clientId(ctx context.Context, field graphql.CollectedField, obj *OAuthCredentialData) (ret graphql.Marshaler) {
@@ -14330,7 +14031,7 @@ func (ec *executionContext) _OneTimeTokenForRuntime_rawEncoded(ctx context.Conte
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinition_id(ctx context.Context, field graphql.CollectedField, obj *PackageDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Package_id(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14340,7 +14041,7 @@ func (ec *executionContext) _PackageDefinition_id(ctx context.Context, field gra
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinition",
+		Object:   "Package",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -14367,7 +14068,7 @@ func (ec *executionContext) _PackageDefinition_id(ctx context.Context, field gra
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinition_name(ctx context.Context, field graphql.CollectedField, obj *PackageDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Package_name(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14377,7 +14078,7 @@ func (ec *executionContext) _PackageDefinition_name(ctx context.Context, field g
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinition",
+		Object:   "Package",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -14404,7 +14105,7 @@ func (ec *executionContext) _PackageDefinition_name(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinition_description(ctx context.Context, field graphql.CollectedField, obj *PackageDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Package_description(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14414,7 +14115,7 @@ func (ec *executionContext) _PackageDefinition_description(ctx context.Context, 
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinition",
+		Object:   "Package",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -14438,7 +14139,7 @@ func (ec *executionContext) _PackageDefinition_description(ctx context.Context, 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinition_authRequestJSONSchema(ctx context.Context, field graphql.CollectedField, obj *PackageDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Package_instanceAuthRequestInputSchema(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14448,7 +14149,7 @@ func (ec *executionContext) _PackageDefinition_authRequestJSONSchema(ctx context
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinition",
+		Object:   "Package",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -14457,7 +14158,7 @@ func (ec *executionContext) _PackageDefinition_authRequestJSONSchema(ctx context
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AuthRequestJSONSchema, nil
+		return obj.InstanceAuthRequestInputSchema, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14472,7 +14173,7 @@ func (ec *executionContext) _PackageDefinition_authRequestJSONSchema(ctx context
 	return ec.marshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinition_auth(ctx context.Context, field graphql.CollectedField, obj *PackageDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Package_instanceAuth(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14482,14 +14183,14 @@ func (ec *executionContext) _PackageDefinition_auth(ctx context.Context, field g
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinition",
+		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_PackageDefinition_auth_args(ctx, rawArgs)
+	args, err := ec.field_Package_instanceAuth_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -14498,7 +14199,7 @@ func (ec *executionContext) _PackageDefinition_auth(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PackageDefinition().Auth(rctx, obj, args["id"].(string))
+		return obj.InstanceAuth, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14507,13 +14208,13 @@ func (ec *executionContext) _PackageDefinition_auth(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*APIInstanceAuth)
+	res := resTmp.(*PackageInstanceAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAPIInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuth(ctx, field.Selections, res)
+	return ec.marshalOPackageInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinition_auths(ctx context.Context, field graphql.CollectedField, obj *PackageDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Package_instanceAuths(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14523,16 +14224,16 @@ func (ec *executionContext) _PackageDefinition_auths(ctx context.Context, field 
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinition",
+		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PackageDefinition().Auths(rctx, obj)
+		return obj.InstanceAuths, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14544,13 +14245,13 @@ func (ec *executionContext) _PackageDefinition_auths(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*APIInstanceAuth)
+	res := resTmp.([]*PackageInstanceAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPIInstanceAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuth(ctx, field.Selections, res)
+	return ec.marshalNPackageInstanceAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinition_defaultAuth(ctx context.Context, field graphql.CollectedField, obj *PackageDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Package_defaultInstanceAuth(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14560,7 +14261,7 @@ func (ec *executionContext) _PackageDefinition_defaultAuth(ctx context.Context, 
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinition",
+		Object:   "Package",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -14569,7 +14270,7 @@ func (ec *executionContext) _PackageDefinition_defaultAuth(ctx context.Context, 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DefaultAuth, nil
+		return obj.DefaultInstanceAuth, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14584,7 +14285,7 @@ func (ec *executionContext) _PackageDefinition_defaultAuth(ctx context.Context, 
 	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinition_apiDefinitions(ctx context.Context, field graphql.CollectedField, obj *PackageDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Package_apiDefinitions(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14594,14 +14295,14 @@ func (ec *executionContext) _PackageDefinition_apiDefinitions(ctx context.Contex
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinition",
+		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_PackageDefinition_apiDefinitions_args(ctx, rawArgs)
+	args, err := ec.field_Package_apiDefinitions_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -14610,7 +14311,7 @@ func (ec *executionContext) _PackageDefinition_apiDefinitions(ctx context.Contex
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PackageDefinition().APIDefinitions(rctx, obj, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor))
+		return obj.APIDefinitions, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14625,7 +14326,7 @@ func (ec *executionContext) _PackageDefinition_apiDefinitions(ctx context.Contex
 	return ec.marshalOAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionPage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinition_eventDefinitions(ctx context.Context, field graphql.CollectedField, obj *PackageDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Package_eventDefinitions(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14635,14 +14336,14 @@ func (ec *executionContext) _PackageDefinition_eventDefinitions(ctx context.Cont
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinition",
+		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_PackageDefinition_eventDefinitions_args(ctx, rawArgs)
+	args, err := ec.field_Package_eventDefinitions_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -14651,7 +14352,7 @@ func (ec *executionContext) _PackageDefinition_eventDefinitions(ctx context.Cont
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PackageDefinition().EventDefinitions(rctx, obj, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor))
+		return obj.EventDefinitions, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14666,7 +14367,7 @@ func (ec *executionContext) _PackageDefinition_eventDefinitions(ctx context.Cont
 	return ec.marshalOEventDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionPage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinition_documents(ctx context.Context, field graphql.CollectedField, obj *PackageDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Package_documents(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14676,14 +14377,14 @@ func (ec *executionContext) _PackageDefinition_documents(ctx context.Context, fi
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinition",
+		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_PackageDefinition_documents_args(ctx, rawArgs)
+	args, err := ec.field_Package_documents_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -14692,7 +14393,7 @@ func (ec *executionContext) _PackageDefinition_documents(ctx context.Context, fi
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PackageDefinition().Documents(rctx, obj, args["first"].(*int), args["after"].(*PageCursor))
+		return obj.Documents, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14707,7 +14408,7 @@ func (ec *executionContext) _PackageDefinition_documents(ctx context.Context, fi
 	return ec.marshalODocumentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentPage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinition_apiDefinition(ctx context.Context, field graphql.CollectedField, obj *PackageDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Package_apiDefinition(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14717,14 +14418,14 @@ func (ec *executionContext) _PackageDefinition_apiDefinition(ctx context.Context
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinition",
+		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_PackageDefinition_apiDefinition_args(ctx, rawArgs)
+	args, err := ec.field_Package_apiDefinition_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -14733,7 +14434,7 @@ func (ec *executionContext) _PackageDefinition_apiDefinition(ctx context.Context
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PackageDefinition().APIDefinition(rctx, obj, args["id"].(string))
+		return obj.APIDefinition, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14748,7 +14449,7 @@ func (ec *executionContext) _PackageDefinition_apiDefinition(ctx context.Context
 	return ec.marshalOAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinition_eventDefinition(ctx context.Context, field graphql.CollectedField, obj *PackageDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Package_eventDefinition(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14758,14 +14459,14 @@ func (ec *executionContext) _PackageDefinition_eventDefinition(ctx context.Conte
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinition",
+		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_PackageDefinition_eventDefinition_args(ctx, rawArgs)
+	args, err := ec.field_Package_eventDefinition_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -14774,7 +14475,7 @@ func (ec *executionContext) _PackageDefinition_eventDefinition(ctx context.Conte
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PackageDefinition().EventDefinition(rctx, obj, args["id"].(string))
+		return obj.EventDefinition, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14789,7 +14490,7 @@ func (ec *executionContext) _PackageDefinition_eventDefinition(ctx context.Conte
 	return ec.marshalOEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinition_document(ctx context.Context, field graphql.CollectedField, obj *PackageDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Package_document(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14799,14 +14500,14 @@ func (ec *executionContext) _PackageDefinition_document(ctx context.Context, fie
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinition",
+		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_PackageDefinition_document_args(ctx, rawArgs)
+	args, err := ec.field_Package_document_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -14815,7 +14516,7 @@ func (ec *executionContext) _PackageDefinition_document(ctx context.Context, fie
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PackageDefinition().Document(rctx, obj, args["id"].(string))
+		return obj.Document, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14830,7 +14531,7 @@ func (ec *executionContext) _PackageDefinition_document(ctx context.Context, fie
 	return ec.marshalODocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinitionPage_data(ctx context.Context, field graphql.CollectedField, obj *PackageDefinitionPage) (ret graphql.Marshaler) {
+func (ec *executionContext) _PackageInstanceAuth_id(ctx context.Context, field graphql.CollectedField, obj *PackageInstanceAuth) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14840,7 +14541,294 @@ func (ec *executionContext) _PackageDefinitionPage_data(ctx context.Context, fie
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinitionPage",
+		Object:   "PackageInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PackageInstanceAuth_context(ctx context.Context, field graphql.CollectedField, obj *PackageInstanceAuth) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PackageInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Context, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*interface{})
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAny2ᚖinterface(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PackageInstanceAuth_auth(ctx context.Context, field graphql.CollectedField, obj *PackageInstanceAuth) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PackageInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Auth, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Auth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PackageInstanceAuth_status(ctx context.Context, field graphql.CollectedField, obj *PackageInstanceAuth) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PackageInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*PackageInstanceAuthStatus)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOPackageInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PackageInstanceAuthStatus_condition(ctx context.Context, field graphql.CollectedField, obj *PackageInstanceAuthStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PackageInstanceAuthStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Condition, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(PackageInstanceAuthStatusCondition)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPackageInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusCondition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PackageInstanceAuthStatus_timestamp(ctx context.Context, field graphql.CollectedField, obj *PackageInstanceAuthStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PackageInstanceAuthStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Timestamp)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PackageInstanceAuthStatus_message(ctx context.Context, field graphql.CollectedField, obj *PackageInstanceAuthStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PackageInstanceAuthStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PackageInstanceAuthStatus_reason(ctx context.Context, field graphql.CollectedField, obj *PackageInstanceAuthStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PackageInstanceAuthStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PackagePage_data(ctx context.Context, field graphql.CollectedField, obj *PackagePage) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PackagePage",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -14861,13 +14849,13 @@ func (ec *executionContext) _PackageDefinitionPage_data(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*PackageDefinition)
+	res := resTmp.([]*Package)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPackageDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinition(ctx, field.Selections, res)
+	return ec.marshalNPackage2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinitionPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *PackageDefinitionPage) (ret graphql.Marshaler) {
+func (ec *executionContext) _PackagePage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *PackagePage) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14877,7 +14865,7 @@ func (ec *executionContext) _PackageDefinitionPage_pageInfo(ctx context.Context,
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinitionPage",
+		Object:   "PackagePage",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -14904,7 +14892,7 @@ func (ec *executionContext) _PackageDefinitionPage_pageInfo(ctx context.Context,
 	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PackageDefinitionPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *PackageDefinitionPage) (ret graphql.Marshaler) {
+func (ec *executionContext) _PackagePage_totalCount(ctx context.Context, field graphql.CollectedField, obj *PackagePage) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14914,7 +14902,7 @@ func (ec *executionContext) _PackageDefinitionPage_totalCount(ctx context.Contex
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "PackageDefinitionPage",
+		Object:   "PackagePage",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -18383,30 +18371,6 @@ func (ec *executionContext) unmarshalInputAPIDefinitionInput(ctx context.Context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputAPIInstanceAuthRequestInput(ctx context.Context, obj interface{}) (APIInstanceAuthRequestInput, error) {
-	var it APIInstanceAuthRequestInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "context":
-			var err error
-			it.Context, err = ec.unmarshalOAny2ᚖinterface(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "inputParams":
-			var err error
-			it.InputParams, err = ec.unmarshalOAny2ᚖinterface(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputAPISpecInput(ctx context.Context, obj interface{}) (APISpecInput, error) {
 	var it APISpecInput
 	var asMap = obj.(map[string]interface{})
@@ -18529,7 +18493,7 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			}
 		case "packages":
 			var err error
-			it.Packages, err = ec.unmarshalOPackageDefinitionCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionCreateInput(ctx, v)
+			it.Packages, err = ec.unmarshalOPackageCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageCreateInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19065,8 +19029,8 @@ func (ec *executionContext) unmarshalInputOAuthCredentialDataInput(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputPackageDefinitionCreateInput(ctx context.Context, obj interface{}) (PackageDefinitionCreateInput, error) {
-	var it PackageDefinitionCreateInput
+func (ec *executionContext) unmarshalInputPackageCreateInput(ctx context.Context, obj interface{}) (PackageCreateInput, error) {
+	var it PackageCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -19083,15 +19047,15 @@ func (ec *executionContext) unmarshalInputPackageDefinitionCreateInput(ctx conte
 			if err != nil {
 				return it, err
 			}
-		case "authRequestJSONSchema":
+		case "instanceAuthRequestInputSchema":
 			var err error
-			it.AuthRequestJSONSchema, err = ec.unmarshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx, v)
+			it.InstanceAuthRequestInputSchema, err = ec.unmarshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "defaultAuth":
+		case "defaultInstanceAuth":
 			var err error
-			it.DefaultAuth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
+			it.DefaultInstanceAuth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19119,8 +19083,32 @@ func (ec *executionContext) unmarshalInputPackageDefinitionCreateInput(ctx conte
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputPackageDefinitionUpdateInput(ctx context.Context, obj interface{}) (PackageDefinitionUpdateInput, error) {
-	var it PackageDefinitionUpdateInput
+func (ec *executionContext) unmarshalInputPackageInstanceAuthRequestInput(ctx context.Context, obj interface{}) (PackageInstanceAuthRequestInput, error) {
+	var it PackageInstanceAuthRequestInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "context":
+			var err error
+			it.Context, err = ec.unmarshalOAny2ᚖinterface(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "inputParams":
+			var err error
+			it.InputParams, err = ec.unmarshalOAny2ᚖinterface(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPackageUpdateInput(ctx context.Context, obj interface{}) (PackageUpdateInput, error) {
+	var it PackageUpdateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -19137,15 +19125,15 @@ func (ec *executionContext) unmarshalInputPackageDefinitionUpdateInput(ctx conte
 			if err != nil {
 				return it, err
 			}
-		case "authRequestJSONSchema":
+		case "instanceAuthRequestInputSchema":
 			var err error
-			it.AuthRequestJSONSchema, err = ec.unmarshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx, v)
+			it.InstanceAuthRequestInputSchema, err = ec.unmarshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "defaultAuth":
+		case "defaultInstanceAuth":
 			var err error
-			it.DefaultAuth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
+			it.DefaultInstanceAuth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19365,10 +19353,10 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 		return ec._IntegrationSystemPage(ctx, sel, &obj)
 	case *IntegrationSystemPage:
 		return ec._IntegrationSystemPage(ctx, sel, obj)
-	case PackageDefinitionPage:
-		return ec._PackageDefinitionPage(ctx, sel, &obj)
-	case *PackageDefinitionPage:
-		return ec._PackageDefinitionPage(ctx, sel, obj)
+	case PackagePage:
+		return ec._PackagePage(ctx, sel, &obj)
+	case *PackagePage:
+		return ec._PackagePage(ctx, sel, obj)
 	case RuntimePage:
 		return ec._RuntimePage(ctx, sel, &obj)
 	case *RuntimePage:
@@ -19481,81 +19469,6 @@ func (ec *executionContext) _APIDefinitionPage(ctx context.Context, sel ast.Sele
 			}
 		case "totalCount":
 			out.Values[i] = ec._APIDefinitionPage_totalCount(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var aPIInstanceAuthImplementors = []string{"APIInstanceAuth"}
-
-func (ec *executionContext) _APIInstanceAuth(ctx context.Context, sel ast.SelectionSet, obj *APIInstanceAuth) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, aPIInstanceAuthImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("APIInstanceAuth")
-		case "id":
-			out.Values[i] = ec._APIInstanceAuth_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "context":
-			out.Values[i] = ec._APIInstanceAuth_context(ctx, field, obj)
-		case "auth":
-			out.Values[i] = ec._APIInstanceAuth_auth(ctx, field, obj)
-		case "status":
-			out.Values[i] = ec._APIInstanceAuth_status(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var aPIInstanceAuthStatusImplementors = []string{"APIInstanceAuthStatus"}
-
-func (ec *executionContext) _APIInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, obj *APIInstanceAuthStatus) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, aPIInstanceAuthStatusImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("APIInstanceAuthStatus")
-		case "condition":
-			out.Values[i] = ec._APIInstanceAuthStatus_condition(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "timestamp":
-			out.Values[i] = ec._APIInstanceAuthStatus_timestamp(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "message":
-			out.Values[i] = ec._APIInstanceAuthStatus_message(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "reason":
-			out.Values[i] = ec._APIInstanceAuthStatus_reason(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -20901,33 +20814,33 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "setAPIInstanceAuthForPackage":
-			out.Values[i] = ec._Mutation_setAPIInstanceAuthForPackage(ctx, field)
+		case "setPackageInstanceAuth":
+			out.Values[i] = ec._Mutation_setPackageInstanceAuth(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleteAPIInstanceAuthForPackage":
-			out.Values[i] = ec._Mutation_deleteAPIInstanceAuthForPackage(ctx, field)
+		case "deletePackageInstanceAuth":
+			out.Values[i] = ec._Mutation_deletePackageInstanceAuth(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "requestAPIInstanceAuthForPackage":
-			out.Values[i] = ec._Mutation_requestAPIInstanceAuthForPackage(ctx, field)
+		case "requestPackageInstanceAuth":
+			out.Values[i] = ec._Mutation_requestPackageInstanceAuth(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "addPackageDefinition":
-			out.Values[i] = ec._Mutation_addPackageDefinition(ctx, field)
+		case "addPackage":
+			out.Values[i] = ec._Mutation_addPackage(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "updatePackageDefinition":
-			out.Values[i] = ec._Mutation_updatePackageDefinition(ctx, field)
+		case "updatePackage":
+			out.Values[i] = ec._Mutation_updatePackage(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deletePackageDefinition":
-			out.Values[i] = ec._Mutation_deletePackageDefinition(ctx, field)
+		case "deletePackage":
+			out.Values[i] = ec._Mutation_deletePackage(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -21092,124 +21005,52 @@ func (ec *executionContext) _OneTimeTokenForRuntime(ctx context.Context, sel ast
 	return out
 }
 
-var packageDefinitionImplementors = []string{"PackageDefinition"}
+var packageImplementors = []string{"Package"}
 
-func (ec *executionContext) _PackageDefinition(ctx context.Context, sel ast.SelectionSet, obj *PackageDefinition) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, packageDefinitionImplementors)
+func (ec *executionContext) _Package(ctx context.Context, sel ast.SelectionSet, obj *Package) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, packageImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("PackageDefinition")
+			out.Values[i] = graphql.MarshalString("Package")
 		case "id":
-			out.Values[i] = ec._PackageDefinition_id(ctx, field, obj)
+			out.Values[i] = ec._Package_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "name":
-			out.Values[i] = ec._PackageDefinition_name(ctx, field, obj)
+			out.Values[i] = ec._Package_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "description":
-			out.Values[i] = ec._PackageDefinition_description(ctx, field, obj)
-		case "authRequestJSONSchema":
-			out.Values[i] = ec._PackageDefinition_authRequestJSONSchema(ctx, field, obj)
-		case "auth":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PackageDefinition_auth(ctx, field, obj)
-				return res
-			})
-		case "auths":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PackageDefinition_auths(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "defaultAuth":
-			out.Values[i] = ec._PackageDefinition_defaultAuth(ctx, field, obj)
+			out.Values[i] = ec._Package_description(ctx, field, obj)
+		case "instanceAuthRequestInputSchema":
+			out.Values[i] = ec._Package_instanceAuthRequestInputSchema(ctx, field, obj)
+		case "instanceAuth":
+			out.Values[i] = ec._Package_instanceAuth(ctx, field, obj)
+		case "instanceAuths":
+			out.Values[i] = ec._Package_instanceAuths(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "defaultInstanceAuth":
+			out.Values[i] = ec._Package_defaultInstanceAuth(ctx, field, obj)
 		case "apiDefinitions":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PackageDefinition_apiDefinitions(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Package_apiDefinitions(ctx, field, obj)
 		case "eventDefinitions":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PackageDefinition_eventDefinitions(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Package_eventDefinitions(ctx, field, obj)
 		case "documents":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PackageDefinition_documents(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Package_documents(ctx, field, obj)
 		case "apiDefinition":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PackageDefinition_apiDefinition(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Package_apiDefinition(ctx, field, obj)
 		case "eventDefinition":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PackageDefinition_eventDefinition(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Package_eventDefinition(ctx, field, obj)
 		case "document":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PackageDefinition_document(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Package_document(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -21221,29 +21062,104 @@ func (ec *executionContext) _PackageDefinition(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var packageDefinitionPageImplementors = []string{"PackageDefinitionPage", "Pageable"}
+var packageInstanceAuthImplementors = []string{"PackageInstanceAuth"}
 
-func (ec *executionContext) _PackageDefinitionPage(ctx context.Context, sel ast.SelectionSet, obj *PackageDefinitionPage) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, packageDefinitionPageImplementors)
+func (ec *executionContext) _PackageInstanceAuth(ctx context.Context, sel ast.SelectionSet, obj *PackageInstanceAuth) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, packageInstanceAuthImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("PackageDefinitionPage")
+			out.Values[i] = graphql.MarshalString("PackageInstanceAuth")
+		case "id":
+			out.Values[i] = ec._PackageInstanceAuth_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "context":
+			out.Values[i] = ec._PackageInstanceAuth_context(ctx, field, obj)
+		case "auth":
+			out.Values[i] = ec._PackageInstanceAuth_auth(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._PackageInstanceAuth_status(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var packageInstanceAuthStatusImplementors = []string{"PackageInstanceAuthStatus"}
+
+func (ec *executionContext) _PackageInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, obj *PackageInstanceAuthStatus) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, packageInstanceAuthStatusImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PackageInstanceAuthStatus")
+		case "condition":
+			out.Values[i] = ec._PackageInstanceAuthStatus_condition(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "timestamp":
+			out.Values[i] = ec._PackageInstanceAuthStatus_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "message":
+			out.Values[i] = ec._PackageInstanceAuthStatus_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "reason":
+			out.Values[i] = ec._PackageInstanceAuthStatus_reason(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var packagePageImplementors = []string{"PackagePage", "Pageable"}
+
+func (ec *executionContext) _PackagePage(ctx context.Context, sel ast.SelectionSet, obj *PackagePage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, packagePageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PackagePage")
 		case "data":
-			out.Values[i] = ec._PackageDefinitionPage_data(ctx, field, obj)
+			out.Values[i] = ec._PackagePage_data(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "pageInfo":
-			out.Values[i] = ec._PackageDefinitionPage_pageInfo(ctx, field, obj)
+			out.Values[i] = ec._PackagePage_pageInfo(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "totalCount":
-			out.Values[i] = ec._PackageDefinitionPage_totalCount(ctx, field, obj)
+			out.Values[i] = ec._PackagePage_totalCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -22215,70 +22131,6 @@ func (ec *executionContext) unmarshalNAPIDefinitionInput2ᚖgithubᚗcomᚋkyma�
 	return &res, err
 }
 
-func (ec *executionContext) marshalNAPIInstanceAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuth(ctx context.Context, sel ast.SelectionSet, v APIInstanceAuth) graphql.Marshaler {
-	return ec._APIInstanceAuth(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNAPIInstanceAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuth(ctx context.Context, sel ast.SelectionSet, v []*APIInstanceAuth) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNAPIInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuth(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNAPIInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuth(ctx context.Context, sel ast.SelectionSet, v *APIInstanceAuth) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._APIInstanceAuth(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNAPIInstanceAuthRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuthRequestInput(ctx context.Context, v interface{}) (APIInstanceAuthRequestInput, error) {
-	return ec.unmarshalInputAPIInstanceAuthRequestInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNAPIInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuthStatusCondition(ctx context.Context, v interface{}) (APIInstanceAuthStatusCondition, error) {
-	var res APIInstanceAuthStatusCondition
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNAPIInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuthStatusCondition(ctx context.Context, sel ast.SelectionSet, v APIInstanceAuthStatusCondition) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) marshalNAPIRuntimeAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v APIRuntimeAuth) graphql.Marshaler {
 	return ec._APIRuntimeAuth(ctx, sel, &v)
 }
@@ -23061,11 +22913,11 @@ func (ec *executionContext) marshalNOneTimeTokenForRuntime2ᚖgithubᚗcomᚋkym
 	return ec._OneTimeTokenForRuntime(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPackageDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinition(ctx context.Context, sel ast.SelectionSet, v PackageDefinition) graphql.Marshaler {
-	return ec._PackageDefinition(ctx, sel, &v)
+func (ec *executionContext) marshalNPackage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackage(ctx context.Context, sel ast.SelectionSet, v Package) graphql.Marshaler {
+	return ec._Package(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPackageDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinition(ctx context.Context, sel ast.SelectionSet, v []*PackageDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNPackage2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackage(ctx context.Context, sel ast.SelectionSet, v []*Package) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -23089,7 +22941,7 @@ func (ec *executionContext) marshalNPackageDefinition2ᚕᚖgithubᚗcomᚋkyma�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPackageDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinition(ctx, sel, v[i])
+			ret[i] = ec.marshalNPackage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackage(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -23102,30 +22954,94 @@ func (ec *executionContext) marshalNPackageDefinition2ᚕᚖgithubᚗcomᚋkyma�
 	return ret
 }
 
-func (ec *executionContext) marshalNPackageDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinition(ctx context.Context, sel ast.SelectionSet, v *PackageDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNPackage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackage(ctx context.Context, sel ast.SelectionSet, v *Package) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._PackageDefinition(ctx, sel, v)
+	return ec._Package(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNPackageDefinitionCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionCreateInput(ctx context.Context, v interface{}) (PackageDefinitionCreateInput, error) {
-	return ec.unmarshalInputPackageDefinitionCreateInput(ctx, v)
+func (ec *executionContext) unmarshalNPackageCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageCreateInput(ctx context.Context, v interface{}) (PackageCreateInput, error) {
+	return ec.unmarshalInputPackageCreateInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNPackageDefinitionCreateInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionCreateInput(ctx context.Context, v interface{}) (*PackageDefinitionCreateInput, error) {
+func (ec *executionContext) unmarshalNPackageCreateInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageCreateInput(ctx context.Context, v interface{}) (*PackageCreateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNPackageDefinitionCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionCreateInput(ctx, v)
+	res, err := ec.unmarshalNPackageCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageCreateInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNPackageDefinitionUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionUpdateInput(ctx context.Context, v interface{}) (PackageDefinitionUpdateInput, error) {
-	return ec.unmarshalInputPackageDefinitionUpdateInput(ctx, v)
+func (ec *executionContext) marshalNPackageInstanceAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx context.Context, sel ast.SelectionSet, v PackageInstanceAuth) graphql.Marshaler {
+	return ec._PackageInstanceAuth(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPackageInstanceAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx context.Context, sel ast.SelectionSet, v []*PackageInstanceAuth) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPackageInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNPackageInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx context.Context, sel ast.SelectionSet, v *PackageInstanceAuth) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PackageInstanceAuth(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPackageInstanceAuthRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthRequestInput(ctx context.Context, v interface{}) (PackageInstanceAuthRequestInput, error) {
+	return ec.unmarshalInputPackageInstanceAuthRequestInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNPackageInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusCondition(ctx context.Context, v interface{}) (PackageInstanceAuthStatusCondition, error) {
+	var res PackageInstanceAuthStatusCondition
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNPackageInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusCondition(ctx context.Context, sel ast.SelectionSet, v PackageInstanceAuthStatusCondition) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNPackageUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageUpdateInput(ctx context.Context, v interface{}) (PackageUpdateInput, error) {
+	return ec.unmarshalInputPackageUpdateInput(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx context.Context, v interface{}) (PageCursor, error) {
@@ -23744,28 +23660,6 @@ func (ec *executionContext) marshalOAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑi
 		return graphql.Null
 	}
 	return ec._APIDefinitionPage(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOAPIInstanceAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuth(ctx context.Context, sel ast.SelectionSet, v APIInstanceAuth) graphql.Marshaler {
-	return ec._APIInstanceAuth(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOAPIInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuth(ctx context.Context, sel ast.SelectionSet, v *APIInstanceAuth) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._APIInstanceAuth(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOAPIInstanceAuthStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, v APIInstanceAuthStatus) graphql.Marshaler {
-	return ec._APIInstanceAuthStatus(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOAPIInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, v *APIInstanceAuthStatus) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._APIInstanceAuthStatus(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOAPIRuntimeAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v APIRuntimeAuth) graphql.Marshaler {
@@ -24418,18 +24312,18 @@ func (ec *executionContext) unmarshalOOAuthCredentialDataInput2ᚖgithubᚗcom�
 	return &res, err
 }
 
-func (ec *executionContext) marshalOPackageDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinition(ctx context.Context, sel ast.SelectionSet, v PackageDefinition) graphql.Marshaler {
-	return ec._PackageDefinition(ctx, sel, &v)
+func (ec *executionContext) marshalOPackage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackage(ctx context.Context, sel ast.SelectionSet, v Package) graphql.Marshaler {
+	return ec._Package(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOPackageDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinition(ctx context.Context, sel ast.SelectionSet, v *PackageDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalOPackage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackage(ctx context.Context, sel ast.SelectionSet, v *Package) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._PackageDefinition(ctx, sel, v)
+	return ec._Package(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOPackageDefinitionCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionCreateInput(ctx context.Context, v interface{}) ([]*PackageDefinitionCreateInput, error) {
+func (ec *executionContext) unmarshalOPackageCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageCreateInput(ctx context.Context, v interface{}) ([]*PackageCreateInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -24439,9 +24333,9 @@ func (ec *executionContext) unmarshalOPackageDefinitionCreateInput2ᚕᚖgithub�
 		}
 	}
 	var err error
-	res := make([]*PackageDefinitionCreateInput, len(vSlice))
+	res := make([]*PackageCreateInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalNPackageDefinitionCreateInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionCreateInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNPackageCreateInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageCreateInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -24449,15 +24343,37 @@ func (ec *executionContext) unmarshalOPackageDefinitionCreateInput2ᚕᚖgithub�
 	return res, nil
 }
 
-func (ec *executionContext) marshalOPackageDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionPage(ctx context.Context, sel ast.SelectionSet, v PackageDefinitionPage) graphql.Marshaler {
-	return ec._PackageDefinitionPage(ctx, sel, &v)
+func (ec *executionContext) marshalOPackageInstanceAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx context.Context, sel ast.SelectionSet, v PackageInstanceAuth) graphql.Marshaler {
+	return ec._PackageInstanceAuth(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOPackageDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *PackageDefinitionPage) graphql.Marshaler {
+func (ec *executionContext) marshalOPackageInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx context.Context, sel ast.SelectionSet, v *PackageInstanceAuth) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._PackageDefinitionPage(ctx, sel, v)
+	return ec._PackageInstanceAuth(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOPackageInstanceAuthStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, v PackageInstanceAuthStatus) graphql.Marshaler {
+	return ec._PackageInstanceAuthStatus(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOPackageInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, v *PackageInstanceAuthStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PackageInstanceAuthStatus(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOPackagePage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackagePage(ctx context.Context, sel ast.SelectionSet, v PackagePage) graphql.Marshaler {
+	return ec._PackagePage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOPackagePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackagePage(ctx context.Context, sel ast.SelectionSet, v *PackagePage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PackagePage(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx context.Context, v interface{}) (PageCursor, error) {

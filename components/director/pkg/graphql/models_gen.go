@@ -42,36 +42,6 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
-type APIInstanceAuth struct {
-	ID string `json:"id"`
-	// Context of APIInstanceAuth - such as Runtime ID, namespace
-	Context *interface{} `json:"context"`
-	// It may be empty if status is PENDING.
-	// Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	Auth   *Auth                  `json:"auth"`
-	Status *APIInstanceAuthStatus `json:"status"`
-}
-
-type APIInstanceAuthRequestInput struct {
-	// Context of APIInstanceAuth - such as Runtime ID, namespace
-	Context *interface{} `json:"context"`
-	// JSON validated against package.authRequestJSONSchema
-	InputParams *interface{} `json:"inputParams"`
-}
-
-type APIInstanceAuthStatus struct {
-	Condition APIInstanceAuthStatusCondition `json:"condition"`
-	Timestamp Timestamp                      `json:"timestamp"`
-	Message   string                         `json:"message"`
-	// Possible reasons:
-	// - PendingNotification
-	// - NotificationSent
-	// - CredentialsProvided
-	// - CredentialsNotProvided
-	// - PendingDeletion
-	Reason string `json:"reason"`
-}
-
 // Deprecated
 type APIRuntimeAuth struct {
 	RuntimeID string `json:"runtimeID"`
@@ -103,17 +73,17 @@ type ApplicationPage struct {
 func (ApplicationPage) IsPageable() {}
 
 type ApplicationRegisterInput struct {
-	Name                string                          `json:"name"`
-	ProviderName        *string                         `json:"providerName"`
-	Description         *string                         `json:"description"`
-	Labels              *Labels                         `json:"labels"`
-	Webhooks            []*WebhookInput                 `json:"webhooks"`
-	HealthCheckURL      *string                         `json:"healthCheckURL"`
-	APIDefinitions      []*APIDefinitionInput           `json:"apiDefinitions"`
-	EventDefinitions    []*EventDefinitionInput         `json:"eventDefinitions"`
-	Documents           []*DocumentInput                `json:"documents"`
-	Packages            []*PackageDefinitionCreateInput `json:"packages"`
-	IntegrationSystemID *string                         `json:"integrationSystemID"`
+	Name                string                  `json:"name"`
+	ProviderName        *string                 `json:"providerName"`
+	Description         *string                 `json:"description"`
+	Labels              *Labels                 `json:"labels"`
+	Webhooks            []*WebhookInput         `json:"webhooks"`
+	HealthCheckURL      *string                 `json:"healthCheckURL"`
+	APIDefinitions      []*APIDefinitionInput   `json:"apiDefinitions"`
+	EventDefinitions    []*EventDefinitionInput `json:"eventDefinitions"`
+	Documents           []*DocumentInput        `json:"documents"`
+	Packages            []*PackageCreateInput   `json:"packages"`
+	IntegrationSystemID *string                 `json:"integrationSystemID"`
 }
 
 type ApplicationStatus struct {
@@ -354,30 +324,77 @@ type OAuthCredentialDataInput struct {
 	URL          string `json:"url"`
 }
 
-type PackageDefinitionCreateInput struct {
-	Name                  string                  `json:"name"`
-	Description           *string                 `json:"description"`
-	AuthRequestJSONSchema *JSONSchema             `json:"authRequestJSONSchema"`
-	DefaultAuth           *AuthInput              `json:"defaultAuth"`
-	APIDefinitions        []*APIDefinitionInput   `json:"apiDefinitions"`
-	EventDefinitions      []*EventDefinitionInput `json:"eventDefinitions"`
-	Documents             []*DocumentInput        `json:"documents"`
+type Package struct {
+	ID                             string                 `json:"id"`
+	Name                           string                 `json:"name"`
+	Description                    *string                `json:"description"`
+	InstanceAuthRequestInputSchema *JSONSchema            `json:"instanceAuthRequestInputSchema"`
+	InstanceAuth                   *PackageInstanceAuth   `json:"instanceAuth"`
+	InstanceAuths                  []*PackageInstanceAuth `json:"instanceAuths"`
+	// When defined, all Auth requests fallback to defaultInstanceAuth.
+	DefaultInstanceAuth *Auth                `json:"defaultInstanceAuth"`
+	APIDefinitions      *APIDefinitionPage   `json:"apiDefinitions"`
+	EventDefinitions    *EventDefinitionPage `json:"eventDefinitions"`
+	Documents           *DocumentPage        `json:"documents"`
+	APIDefinition       *APIDefinition       `json:"apiDefinition"`
+	EventDefinition     *EventDefinition     `json:"eventDefinition"`
+	Document            *Document            `json:"document"`
 }
 
-type PackageDefinitionPage struct {
-	Data       []*PackageDefinition `json:"data"`
-	PageInfo   *PageInfo            `json:"pageInfo"`
-	TotalCount int                  `json:"totalCount"`
+type PackageCreateInput struct {
+	Name                           string                  `json:"name"`
+	Description                    *string                 `json:"description"`
+	InstanceAuthRequestInputSchema *JSONSchema             `json:"instanceAuthRequestInputSchema"`
+	DefaultInstanceAuth            *AuthInput              `json:"defaultInstanceAuth"`
+	APIDefinitions                 []*APIDefinitionInput   `json:"apiDefinitions"`
+	EventDefinitions               []*EventDefinitionInput `json:"eventDefinitions"`
+	Documents                      []*DocumentInput        `json:"documents"`
 }
 
-func (PackageDefinitionPage) IsPageable() {}
+type PackageInstanceAuth struct {
+	ID string `json:"id"`
+	// Context of PackageInstanceAuth - such as Runtime ID, namespace
+	Context *interface{} `json:"context"`
+	// It may be empty if status is PENDING.
+	// Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+	Auth   *Auth                      `json:"auth"`
+	Status *PackageInstanceAuthStatus `json:"status"`
+}
 
-type PackageDefinitionUpdateInput struct {
-	Name                  string      `json:"name"`
-	Description           *string     `json:"description"`
-	AuthRequestJSONSchema *JSONSchema `json:"authRequestJSONSchema"`
-	// While updating defaultAuth, existing APIInstanceAuths are NOT updated.
-	DefaultAuth *AuthInput `json:"defaultAuth"`
+type PackageInstanceAuthRequestInput struct {
+	// Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
+	Context *interface{} `json:"context"`
+	// JSON validated against package.instanceAuthRequestInputSchema
+	InputParams *interface{} `json:"inputParams"`
+}
+
+type PackageInstanceAuthStatus struct {
+	Condition PackageInstanceAuthStatusCondition `json:"condition"`
+	Timestamp Timestamp                          `json:"timestamp"`
+	Message   string                             `json:"message"`
+	// Possible reasons:
+	// - PendingNotification
+	// - NotificationSent
+	// - CredentialsProvided
+	// - CredentialsNotProvided
+	// - PendingDeletion
+	Reason string `json:"reason"`
+}
+
+type PackagePage struct {
+	Data       []*Package `json:"data"`
+	PageInfo   *PageInfo  `json:"pageInfo"`
+	TotalCount int        `json:"totalCount"`
+}
+
+func (PackagePage) IsPageable() {}
+
+type PackageUpdateInput struct {
+	Name                           string      `json:"name"`
+	Description                    *string     `json:"description"`
+	InstanceAuthRequestInputSchema *JSONSchema `json:"instanceAuthRequestInputSchema"`
+	// While updating defaultInstanceAuth, existing PackageInstanceAuths are NOT updated.
+	DefaultInstanceAuth *AuthInput `json:"defaultInstanceAuth"`
 }
 
 type PageInfo struct {
@@ -473,50 +490,6 @@ type WebhookInput struct {
 	Type ApplicationWebhookType `json:"type"`
 	URL  string                 `json:"url"`
 	Auth *AuthInput             `json:"auth"`
-}
-
-type APIInstanceAuthStatusCondition string
-
-const (
-	// When creating or deleting new one
-	APIInstanceAuthStatusConditionPending   APIInstanceAuthStatusCondition = "PENDING"
-	APIInstanceAuthStatusConditionSucceeded APIInstanceAuthStatusCondition = "SUCCEEDED"
-	APIInstanceAuthStatusConditionFailed    APIInstanceAuthStatusCondition = "FAILED"
-)
-
-var AllAPIInstanceAuthStatusCondition = []APIInstanceAuthStatusCondition{
-	APIInstanceAuthStatusConditionPending,
-	APIInstanceAuthStatusConditionSucceeded,
-	APIInstanceAuthStatusConditionFailed,
-}
-
-func (e APIInstanceAuthStatusCondition) IsValid() bool {
-	switch e {
-	case APIInstanceAuthStatusConditionPending, APIInstanceAuthStatusConditionSucceeded, APIInstanceAuthStatusConditionFailed:
-		return true
-	}
-	return false
-}
-
-func (e APIInstanceAuthStatusCondition) String() string {
-	return string(e)
-}
-
-func (e *APIInstanceAuthStatusCondition) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = APIInstanceAuthStatusCondition(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid APIInstanceAuthStatusCondition", str)
-	}
-	return nil
-}
-
-func (e APIInstanceAuthStatusCondition) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type APISpecType string
@@ -924,6 +897,50 @@ func (e *HealthCheckType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e HealthCheckType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type PackageInstanceAuthStatusCondition string
+
+const (
+	// When creating or deleting new one
+	PackageInstanceAuthStatusConditionPending   PackageInstanceAuthStatusCondition = "PENDING"
+	PackageInstanceAuthStatusConditionSucceeded PackageInstanceAuthStatusCondition = "SUCCEEDED"
+	PackageInstanceAuthStatusConditionFailed    PackageInstanceAuthStatusCondition = "FAILED"
+)
+
+var AllPackageInstanceAuthStatusCondition = []PackageInstanceAuthStatusCondition{
+	PackageInstanceAuthStatusConditionPending,
+	PackageInstanceAuthStatusConditionSucceeded,
+	PackageInstanceAuthStatusConditionFailed,
+}
+
+func (e PackageInstanceAuthStatusCondition) IsValid() bool {
+	switch e {
+	case PackageInstanceAuthStatusConditionPending, PackageInstanceAuthStatusConditionSucceeded, PackageInstanceAuthStatusConditionFailed:
+		return true
+	}
+	return false
+}
+
+func (e PackageInstanceAuthStatusCondition) String() string {
+	return string(e)
+}
+
+func (e *PackageInstanceAuthStatusCondition) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PackageInstanceAuthStatusCondition(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PackageInstanceAuthStatusCondition", str)
+	}
+	return nil
+}
+
+func (e PackageInstanceAuthStatusCondition) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
