@@ -39,6 +39,10 @@ func HyperscalerTypeFromProvisionInput(input *gqlschema.ProvisionRuntimeInput) (
 		return GCP, nil
 	}
 
+	if input.ClusterConfig.GardenerConfig != nil {
+		return HyperscalerTypeFromProviderString(input.ClusterConfig.GardenerConfig.Provider)
+	}
+
 	return HyperscalerType(""), errors.New("Can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig hyperscaler config not specified")
 }
 

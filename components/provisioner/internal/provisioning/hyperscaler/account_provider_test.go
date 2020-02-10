@@ -129,6 +129,69 @@ func TestHyperscalerTypeFromProvisionInput(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestHyperscalerTypeFromProvisionInputGardenerGCP(t *testing.T) {
+
+	input := &gqlschema.ProvisionRuntimeInput{
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				Provider: "GCP",
+			},
+		},
+	}
+
+	hyperscalerType, err := HyperscalerTypeFromProvisionInput(input)
+	assert.Equal(t, hyperscalerType, GCP)
+	assert.Nil(t, err)
+}
+
+func TestHyperscalerTypeFromProvisionInputGardenerAWS(t *testing.T) {
+
+	input := &gqlschema.ProvisionRuntimeInput{
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				Provider: "AWS",
+			},
+		},
+	}
+
+	hyperscalerType, err := HyperscalerTypeFromProvisionInput(input)
+	assert.Equal(t, hyperscalerType, AWS)
+	assert.Nil(t, err)
+}
+
+func TestHyperscalerTypeFromProvisionInputGardenerAZURE(t *testing.T) {
+
+	input := &gqlschema.ProvisionRuntimeInput{
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				Provider: "AZURE",
+			},
+		},
+	}
+
+	hyperscalerType, err := HyperscalerTypeFromProvisionInput(input)
+	assert.Equal(t, hyperscalerType, Azure)
+	assert.Nil(t, err)
+}
+
+func TestHyperscalerTypeFromProvisionInputGardenerError(t *testing.T) {
+
+	input := &gqlschema.ProvisionRuntimeInput{
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				Provider: "bogus",
+			},
+		},
+	}
+
+	hyperscalerType, err := HyperscalerTypeFromProvisionInput(input)
+
+	require.Error(t, err)
+	assert.Empty(t, hyperscalerType)
+	assert.Equal(t, "Unknown Hyperscaler provider type: bogus", err.Error())
+}
+
+
 func TestHyperscalerTypeFromProvisionInputError(t *testing.T) {
 
 	_, err := HyperscalerTypeFromProvisionInput(nil)
