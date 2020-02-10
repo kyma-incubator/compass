@@ -160,10 +160,12 @@ func main() {
 
 	log.Infof("Registering endpoint on %s...", cfg.APIEndpoint)
 	router := mux.NewRouter()
-	router.Use(middlewares.ExtractTenant)
 
 	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
+
+	gqlRouter := router.Path(cfg.APIEndpoint).Subrouter()
+	gqlRouter.Use(middlewares.ExtractTenant)
+	gqlRouter.HandleFunc("", handler.GraphQL(executableSchema))
 
 	http.Handle("/", router)
 
