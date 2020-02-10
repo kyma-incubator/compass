@@ -1,5 +1,3 @@
-// +build integration
-
 package broker_test
 
 import (
@@ -10,11 +8,10 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
@@ -33,9 +30,12 @@ import (
 func TestBrokerProvisioningScenario(t *testing.T) {
 	// given
 	const (
-		clusterName = "cluster-testing"
-		instID      = "inst-id"
-		kymaVersion = "1.9.0"
+		clusterName     = "cluster-testing"
+		instID          = "inst-id"
+		kymaVersion     = "1.9.0"
+		serviceID       = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+		planID          = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+		globalAccountID = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
 	)
 
 	var (
@@ -44,10 +44,8 @@ func TestBrokerProvisioningScenario(t *testing.T) {
 		memStorage       = storage.NewMemoryStorage()
 		graphqlizer      = provisioner.Graphqlizer{}
 
-		provisioningConfig = broker.ProvisioningConfig{
-			SecretName: "gardener",
-		}
-		sm = internal.ServiceManagerOverride{
+		provisioningConfig = broker.ProvisioningConfig{}
+		sm                 = internal.ServiceManagerOverride{
 			CredentialsOverride: true,
 			URL:                 "sm-url",
 			Password:            "sm-pass",
@@ -72,8 +70,20 @@ func TestBrokerProvisioningScenario(t *testing.T) {
 
 	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, kymaVersion, sm)
 
-	kymaEnvBroker, err := broker.New(broker.Config{EnablePlans: []string{"gcp", "azure"}}, fakeProvisionCli, fakeDirectorCli, provisioningConfig, memStorage.Instances(), optComponentsSvc, inputFactory, &broker.DumyDumper{})
-	require.NoError(t, err)
+	brokerCfg := broker.Config{EnablePlans: []string{"gcp", "azure"}}
+	dumper := &broker.DumyDumper{}
+	kymaEnvBroker := &broker.KymaEnvironmentBroker{
+		ServicesEndpoint:             broker.NewServices(brokerCfg, optComponentsSvc, dumper),
+		ProvisionEndpoint:            broker.NewProvision(brokerCfg, memStorage.Instances(), inputFactory, provisioningConfig, fakeProvisionCli, dumper),
+		DeprovisionEndpoint:          broker.NewDeprovision(memStorage.Instances(), fakeProvisionCli, dumper),
+		UpdateEndpoint:               broker.NewUpdate(dumper),
+		GetInstanceEndpoint:          broker.NewGetInstance(memStorage.Instances(), dumper),
+		LastOperationEndpoint:        broker.NewLastOperation(memStorage.Instances(), fakeProvisionCli, fakeDirectorCli, dumper),
+		BindEndpoint:                 broker.NewBind(dumper),
+		UnbindEndpoint:               broker.NewUnbind(dumper),
+		GetBindingEndpoint:           broker.NewGetBinding(dumper),
+		LastBindingOperationEndpoint: broker.NewLastBindingOperation(dumper),
+	}
 
 	// when
 	_, err = kymaEnvBroker.Provision(context.TODO(), instID, domain.ProvisionDetails{

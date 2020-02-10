@@ -4,8 +4,6 @@
       }
 		clusterConfig: {
 		gardenerConfig: {
-		name: "cluster-testing"
-        projectName: ""
 		kubernetesVersion: "1.15.4"
 		nodeCount: 3
 		volumeSizeGB: 50
@@ -175,8 +173,5 @@
             namespace: "compass-system" 
           } 
         ]         
-	}
-		credentials: {
-		secretName: "gardener",
 	}
 }
