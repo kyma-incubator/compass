@@ -1,8 +1,8 @@
 package tenantmapping
 
 import (
-	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -133,20 +133,20 @@ func (d *ReqData) GetScopes() (string, error) {
 // GetGroup returns group name
 func (d *ReqData) GetGroup() (string, error) {
 	if groupsVal, ok := d.Body.Extra[GroupsKey]; ok {
-		log.Infof("groupsVal = %+v, typeof %T\n", groupsVal, groupsVal)
+		log.Infof("groupsVal = %+v, typeof %s\n", groupsVal, reflect.TypeOf(groupsVal))
 		switch v := groupsVal.(type) {
 		case int:
 			// v is an int here, so e.g. v + 1 is possible.
-			fmt.Printf("Integer: %v", v)
+			log.Infof("Integer: %v", v)
 		case float64:
 			// v is a float64 here, so e.g. v + 1.0 is possible.
-			fmt.Printf("Float64: %v", v)
+			log.Infof("Float64: %v", v)
 		case string:
 			// v is a string here, so e.g. v + " Yeah!" is possible.
-			fmt.Printf("String: %v", v)
+			log.Infof("String: %v", v)
 		default:
 			// And here I'm feeling dumb. ;)
-			fmt.Printf("I don't know, ask stackoverflow.")
+			log.Infof("I don't know, ask stackoverflow.")
 		}
 		groupsRaw, convertedOk := groupsVal.([]string)
 		groupsFiltered := []string{}
