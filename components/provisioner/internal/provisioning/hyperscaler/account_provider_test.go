@@ -191,7 +191,6 @@ func TestHyperscalerTypeFromProvisionInputGardenerError(t *testing.T) {
 	assert.Equal(t, "Unknown Hyperscaler provider type: bogus", err.Error())
 }
 
-
 func TestHyperscalerTypeFromProvisionInputError(t *testing.T) {
 
 	_, err := HyperscalerTypeFromProvisionInput(nil)
