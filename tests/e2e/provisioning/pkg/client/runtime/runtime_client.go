@@ -42,7 +42,7 @@ type Client struct {
 	tenantID  string
 }
 
-func NewClient(config Config, runtimeID, tenantID string, clientHttp http.Client, log logrus.FieldLogger) *Client {
+func NewClient(config Config, tenantID, runtimeID string, clientHttp http.Client, log logrus.FieldLogger) *Client {
 	return &Client{
 		tenantID:   tenantID,
 		runtimeID:  runtimeID,
