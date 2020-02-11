@@ -9,6 +9,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // AuthFlow wraps possible flows of auth like OAuth2, JWT and certificate
@@ -130,10 +131,17 @@ func (d *ReqData) GetScopes() (string, error) {
 // GetGroup returns group name
 func (d *ReqData) GetGroup() (string, error) {
 	if groupsVal, ok := d.Body.Extra[GroupsKey]; ok {
-		groups, err := str.Cast(groupsVal)
-		if err != nil {
-			return "", errors.Wrapf(err, "while parsing the value for %s", GroupsKey)
-		}
+		// groups, err := strings.fields(groupsVal)
+		groups := ""
+		log.Infof("Groups RAW = %s\n", groupsVal)
+		// if err != nil {
+		// 	return "", errors.Wrapf(err, "while parsing the value for %s", GroupsKey)
+		// }
+		// log.Info("Groups:\n")
+		// for index, element := range groups {
+		// 	log.Infof("%v => %s\n", index, element)
+		// }
+		// log.Infof("Groups: %+v\n", reqData.Body.Extra)
 
 		return groups, nil
 	}
