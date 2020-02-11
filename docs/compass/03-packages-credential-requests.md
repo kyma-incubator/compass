@@ -1,14 +1,15 @@
 # Credential requests for Packages
 
-## Overview
+## Introduction
 
 On Runtime, Application is represented as Service Class, and every Package within Application is represented as Service Plan. This document describes credential requests for APIs during the Service Plan provisioning. It also mentions passing optional input parameters from Kyma Runtime to Application or Integration System during the provisioning process.
 
 ## Assumptions
 
-- Multiple Service Instances can be created from a given Package within Application.
-- During Service Class provisioning, the provided input has to be sent back to Integration System or Application via Compass. The reason is that there is no trusted connection between Integration System and Runtime.
-- Passing input parameters is done during requesting credentials for a given Service Instance.
+- Multiple instances of a Package can be created in a single Runtime. For example, on Kyma Runtime, Package Instance is represented by Service Instance and it can be created for every namespace.
+- Runtime requests credentials for API, while provisioning new Service Instance from a Package (Service Plan). During this step, additional input parameters can be passed. They are validated against input JSON schema provided by Application or Integration System. The parameters, as well the input JSON schema are completely optional.
+- There is no trusted connection between Integration System and Runtime. In a result, the additional input parameters has to be passed to Application or Integration System via Compass Director.
+- API credentials are defined on Package level. Multiple APIs under the same Package share the same credentials.
 
 ## Details
 
@@ -63,7 +64,7 @@ type PackageInstanceAuth {
   
   """
   It may be empty if status is PENDING.
-  Populated with `package.defaultInstanceAuth` value if `package.defa	ultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+  Populated with `package.defaultInstanceAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
   """
   auth: Auth
   status: PackageInstanceAuthStatus

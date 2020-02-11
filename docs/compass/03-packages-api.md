@@ -2,15 +2,15 @@
 
 ## Introduction
 
-On Kyma Runtime, every Application is represented as a single Service Class, and every Package of a given Application is represented as a single Service Plan.
+This document describes API for Packages. Package is an entity, which groups multiple API Definitions, Event Definitions and Documents. It also stores shared credentials for all APIs defined under the particular Package.
 
 ![API Packages Diagram](./assets/packages-api.svg)
 
-This document describes API for Packages, which groups multiple API Definitions, Event Definitions and Documents.
+On Kyma Runtime, every Application is represented as a single Service Class, and every Package of a given Application is represented as a single Service Plan in Service Catalog. It allows user to consume multiple APIs and Events with a single Service Instance.
 
 ## Assumptions
 
-- A single API or Event Definition can be a part of a single Package.
+- A single API, Event Definition and Document can be a part of a single Package. A single Package can contain multiple API, Event Definitions and Documents.
 - Package belongs to a single Application entity.
 
 ## GraphQL API
@@ -23,7 +23,7 @@ type Package {
   name: String!
   description: String
 
-  # (...) Auth-related fields
+  # (...) Auth-related fields, described in Credentials Request for Packages document
 
   apiDefinitions(
     group: String
@@ -78,4 +78,4 @@ type Mutation {
 
 ## Package credentials
 
-To read about Package credentials flow, API, how to provide optional input parameters during Service Instance creation, see the [Credential requests for Packages](./03-packages-credential-requests.md) document.
+To read about Package credentials flow, how to provide optional input parameters during Service Instance creation, see the [Credential requests for Packages](./03-packages-credential-requests.md) document.
