@@ -29,6 +29,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 	log.Infof("Body: %+v\n", reqData.Body.Extra)
 
 	userGroup, err := reqData.GetGroup()
+	log.Infof("GetGroup returned %s\n", userGroup)
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while getting group for a static user with username %s", username))
 	}

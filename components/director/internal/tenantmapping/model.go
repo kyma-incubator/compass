@@ -2,10 +2,13 @@ package tenantmapping
 
 import (
 	"net/http"
+	"regexp"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
@@ -131,19 +134,29 @@ func (d *ReqData) GetScopes() (string, error) {
 // GetGroup returns group name
 func (d *ReqData) GetGroup() (string, error) {
 	if groupsVal, ok := d.Body.Extra[GroupsKey]; ok {
-		// groups, err := strings.fields(groupsVal)
-		groups := ""
 		log.Infof("Groups RAW = %s\n", groupsVal)
-		// if err != nil {
-		// 	return "", errors.Wrapf(err, "while parsing the value for %s", GroupsKey)
-		// }
+		groupsStr, err := str.Cast(groupsVal)
+		groupsTrimmed := strings.ReplaceAll(groupsStr, "[", "")
+		groupsTrimmed = strings.ReplaceAll(groupsTrimmed, "]", "")
+
+		re := regexp.MustCompile("tenantID=*")
+
+		groups := re.Split(groupsTrimmed, -1)
+
+		if err != nil {
+			return "", errors.Wrapf(err, "while parsing the value for %s", GroupsKey)
+		}
+		if len(groups) <= 0 {
+			log.Info("No groups found; proceeding with individual scopes\n")
+			return "", nil
+		}
 		// log.Info("Groups:\n")
 		// for index, element := range groups {
 		// 	log.Infof("%v => %s\n", index, element)
 		// }
 		// log.Infof("Groups: %+v\n", reqData.Body.Extra)
 
-		return groups, nil
+		return groups[0], nil
 	}
 	return "", nil
 
