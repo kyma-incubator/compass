@@ -51,7 +51,7 @@ func (db *db) Begin() (PersistenceTx, error) {
 func (db *db) RollbackUnlessCommited(tx PersistenceTx) {
 	err := tx.Rollback()
 	if err == nil {
-		db.logger.Warn("transaction rolled back")
+		// db.logger.Warn("transaction rolled back")
 	} else if err != sql.ErrTxDone {
 		db.logger.Warn(err)
 	}

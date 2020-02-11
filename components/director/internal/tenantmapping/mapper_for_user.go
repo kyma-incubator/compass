@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-project/kyma/components/service-binding-usage-controller/internal/platform/logger"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -25,7 +27,9 @@ type mapperForUser struct {
 
 func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
 	var externalTenantID, scopes string
-	fmt.Printf("Username: %s\n", username)
+	// fmt.Printf("Username: %s\n", username)
+	errors.Wrapf("Username: %s\n", username)
+	// db.logger("transaction rolled back")
 	staticUser, err := m.staticUserRepo.Get(username)
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))
