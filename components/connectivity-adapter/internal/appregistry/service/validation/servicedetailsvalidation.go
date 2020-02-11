@@ -4,8 +4,6 @@ Copied from https://github.com/kyma-project/kyma/tree/master/components/applicat
 package validation
 
 import (
-	"encoding/json"
-
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 
@@ -37,11 +35,6 @@ func NewServiceDetailsValidator() ServiceDetailsValidator {
 		var apperr apperrors.AppError
 
 		if details.Api != nil {
-			apperr := validateApiSpec(details.Api.Spec)
-			if apperr != nil {
-				return apperr
-			}
-
 			apperr = validateApiCredentials(details.Api.Credentials)
 			if apperr != nil {
 				return apperr
@@ -53,35 +46,8 @@ func NewServiceDetailsValidator() ServiceDetailsValidator {
 			}
 		}
 
-		apperr = validateEventsSpec(details.Events)
-		if apperr != nil {
-			return apperr
-		}
-
 		return nil
 	})
-}
-
-func validateApiSpec(spec json.RawMessage) apperrors.AppError {
-	if spec != nil {
-		err := validateSpec(spec)
-		if err != nil {
-			return apperrors.WrongInput("api.Spec is not a proper json object, %s", err.Error())
-		}
-	}
-
-	return nil
-}
-
-func validateEventsSpec(events *model.Events) apperrors.AppError {
-	if events != nil && events.Spec != nil {
-		err := validateSpec(events.Spec)
-		if err != nil {
-			return apperrors.WrongInput("events.Spec is not a proper json object, %s", err.Error())
-		}
-	}
-
-	return nil
 }
 
 func validateApiCredentials(credentials *model.CredentialsWithCSRF) apperrors.AppError {
@@ -121,11 +87,6 @@ func validateSpecificationCredentials(credentials *model.Credentials) apperrors.
 	}
 
 	return nil
-}
-
-func validateSpec(rawMessage json.RawMessage) error {
-	var m map[string]*json.RawMessage
-	return json.Unmarshal(rawMessage, &m)
 }
 
 func validateCredentials(basic *model.BasicAuth, oauth *model.Oauth, cert *model.CertificateGen) bool {

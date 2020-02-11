@@ -58,7 +58,7 @@ global:
         version: "PR-552"
       connectivity_adapter:
         dir:
-        version: "PR-787"
+        version: "PR-822"
   isLocalEnv: false
   oauth2:
     host: oauth2

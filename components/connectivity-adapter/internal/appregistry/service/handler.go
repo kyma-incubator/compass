@@ -89,6 +89,7 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		h.logger.Error(err)
 		reqerror.WriteAppError(writer, err)
+		return
 	}
 
 	serviceID := h.uidService.Generate()
