@@ -1,6 +1,8 @@
 CREATE TABLE packages (
     id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id UUID NOT NULL,
+    app_id uuid NOT NULL,
+    FOREIGN KEY (tenant_id, app_id) REFERENCES applications (tenant_id, id) ON DELETE CASCADE,
     FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id),
     name VARCHAR(256) NOT NULL,
     description TEXT,
@@ -36,20 +38,20 @@ CREATE INDEX ON package_instance_auths (tenant_id);
 CREATE UNIQUE INDEX ON package_instance_auths (tenant_id, id);
 CREATE UNIQUE INDEX ON package_instance_auths (tenant_id, package_id, id);
 
-ALTER TABLE api_definitions ADD COLUMN package_definition_id uuid;
+ALTER TABLE api_definitions ADD COLUMN package_id uuid; -- TODO: Make it NOT NULL
 ALTER TABLE api_definitions ALTER COLUMN app_id DROP NOT NULL;
 ALTER TABLE api_definitions
-    ADD CONSTRAINT api_definitions_package_definition_id_fk
-        FOREIGN KEY (package_definition_id) REFERENCES packages (id) ON DELETE CASCADE;
+    ADD CONSTRAINT api_definitions_package_id_fk
+        FOREIGN KEY (tenant_id, package_id) REFERENCES packages (tenant_id, id) ON DELETE CASCADE;
 
-ALTER TABLE event_api_definitions ADD COLUMN package_definition_id uuid;
+ALTER TABLE event_api_definitions ADD COLUMN package_id uuid; -- TODO: Make it NOT NULL
 ALTER TABLE event_api_definitions ALTER COLUMN app_id DROP NOT NULL;
 ALTER TABLE event_api_definitions
-    ADD CONSTRAINT event_api_definitions_package_definition_id_fk
-        FOREIGN KEY (package_definition_id) REFERENCES packages (id) ON DELETE CASCADE;
+    ADD CONSTRAINT event_api_definitions_package_id_fk
+        FOREIGN KEY (tenant_id, package_id) REFERENCES packages (tenant_id, id) ON DELETE CASCADE;
 
-ALTER TABLE documents ADD COLUMN package_definition_id uuid;
+ALTER TABLE documents ADD COLUMN package_id uuid; -- TODO: Make it NOT NULL
 ALTER TABLE documents ALTER COLUMN app_id DROP NOT NULL;
 ALTER TABLE documents
-    ADD CONSTRAINT documents_package_definition_id_fk
-        FOREIGN KEY (package_definition_id) REFERENCES packages (id) ON DELETE CASCADE;
+    ADD CONSTRAINT documents_package_id_fk
+        FOREIGN KEY (tenant_id, package_id) REFERENCES packages (tenant_id, id) ON DELETE CASCADE;
