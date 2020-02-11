@@ -1,6 +1,7 @@
 package tenantmapping
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -132,8 +133,22 @@ func (d *ReqData) GetScopes() (string, error) {
 // GetGroup returns group name
 func (d *ReqData) GetGroup() (string, error) {
 	if groupsVal, ok := d.Body.Extra[GroupsKey]; ok {
-
-		groupsRaw, ok := groupsVal.([]string)
+		log.Infof("groupsVal = %+v, typeof %T\n", groupsVal, groupsVal)
+		switch v := groupsVal.(type) {
+		case int:
+			// v is an int here, so e.g. v + 1 is possible.
+			fmt.Printf("Integer: %v", v)
+		case float64:
+			// v is a float64 here, so e.g. v + 1.0 is possible.
+			fmt.Printf("Float64: %v", v)
+		case string:
+			// v is a string here, so e.g. v + " Yeah!" is possible.
+			fmt.Printf("String: %v", v)
+		default:
+			// And here I'm feeling dumb. ;)
+			fmt.Printf("I don't know, ask stackoverflow.")
+		}
+		groupsRaw, convertedOk := groupsVal.([]string)
 		groupsFiltered := []string{}
 
 		for i := range groupsRaw {
@@ -142,8 +157,8 @@ func (d *ReqData) GetGroup() (string, error) {
 			}
 		}
 
-		if !ok || len(groupsFiltered) <= 0 {
-			log.Infof("No groups found; proceeding with individual scopes (ok=%t)\n", ok)
+		if !convertedOk || len(groupsFiltered) <= 0 {
+			log.Infof("No groups found; proceeding with individual scopes (ok=%t)\n", convertedOk)
 			return "", nil
 		}
 
