@@ -2,7 +2,7 @@ package director
 
 import "fmt"
 
-func createApplicationMutation(in string) string {
+func createApplicationQuery(in string) string {
 	return fmt.Sprintf(`mutation{
  		result: registerApplication(in: %s)
         {
@@ -15,7 +15,7 @@ func createApplicationMutation(in string) string {
    }`, in)
 }
 
-func createRuntimeMutation(in string) string {
+func createRuntimeQuery(in string) string {
 	return fmt.Sprintf(`mutation{
     result: registerRuntime(in: %s)
 	{
@@ -24,7 +24,7 @@ func createRuntimeMutation(in string) string {
 	}`, in)
 }
 
-func setEventBaseURLMutation(runtimeID string, url string) string {
+func setEventBaseURLQuery(runtimeID string, url string) string {
 	return fmt.Sprintf(`mutation {
   	result: setRuntimeLabel(runtimeID: "%s", key: "runtime/event_service_url", value: "%s") {
     key
@@ -33,15 +33,15 @@ func setEventBaseURLMutation(runtimeID string, url string) string {
 }`, runtimeID, url)
 }
 
-func setDefaultEventingForApplication(runtimeID string, appID string) string {
+func setDefaultEventingQuery(runtimeID string, appID string) string {
 	return fmt.Sprintf(`mutation {
-  	result: setDefaultEventingForApplication(appID: "%s",runtimeID: "%s") {
+  	result: setDefaultEventingQuery(appID: "%s",runtimeID: "%s") {
      defaultURL
   }
 }`, appID, runtimeID)
 }
 
-func getOneTimeTokenForApplication(appID string) string {
+func getOneTimeTokenQuery(appID string) string {
 	return fmt.Sprintf(`mutation {
   	result: requestOneTimeTokenForApplication(id: "%s") {
       token
@@ -49,16 +49,4 @@ func getOneTimeTokenForApplication(appID string) string {
 	  legacyConnectorURL
   }
 }`, appID)
-}
-
-func applicationQuery(appID string) string {
-	return fmt.Sprintf(`query{
- 		result: application(id: "%s")
-        {
- 			 name
-			 eventingConfiguration {
-  				defaultURL
-			}
-		}
-   }`, appID)
 }
