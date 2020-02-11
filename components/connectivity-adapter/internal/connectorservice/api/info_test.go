@@ -9,24 +9,22 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/stretchr/testify/mock"
-
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	connectorMock "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector/automock"
 	directorMock "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director/automock"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	connectorSchema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-func TestHandler_SigningRequestInfo(t *testing.T) {
+func TestHandler_Info(t *testing.T) {
 
 	headersFromToken := map[string]string{
 		oathkeeper.ClientIdFromTokenHeader: "myapp",

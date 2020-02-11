@@ -5,10 +5,9 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
-	"github.com/pkg/errors"
-
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore

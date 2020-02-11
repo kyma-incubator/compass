@@ -51,7 +51,7 @@ func (ih *infoHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
 		ih.logger.Errorf("Failed to read authorization context: %s.", err)
-		reqerror.WriteErrorMessage(w, "Client Id not provided.", apperrors.CodeForbidden)
+		reqerror.WriteErrorMessage(w, "Client ID not provided.", apperrors.CodeForbidden)
 
 		return
 	}
