@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 func NewMapperForUser(staticUserRepo StaticUserRepository, tenantRepo TenantRepository) *mapperForUser {
@@ -27,7 +27,8 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 	var externalTenantID, scopes string
 	// fmt.Printf("Username: %s\n", username)
 	// errors.Wrapf(nil, "Username: %s\n", username)
-	errors.Wrap(nil, fmt.Sprintf("Username: %s\n", username))
+	// errors.Wrap(nil, fmt.Sprintf("Username: %s\n", username))
+	log.Infof("Username: %s\n", username)
 	// db.logger("transaction rolled back")
 	staticUser, err := m.staticUserRepo.Get(username)
 	if err != nil {
