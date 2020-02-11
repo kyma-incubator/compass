@@ -351,10 +351,11 @@ type ComplexityRoot struct {
 	}
 
 	PackageInstanceAuth struct {
-		Auth    func(childComplexity int) int
-		Context func(childComplexity int) int
-		ID      func(childComplexity int) int
-		Status  func(childComplexity int) int
+		Auth        func(childComplexity int) int
+		Context     func(childComplexity int) int
+		ID          func(childComplexity int) int
+		InputParams func(childComplexity int) int
+		Status      func(childComplexity int) int
 	}
 
 	PackageInstanceAuthStatus struct {
@@ -2361,6 +2362,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PackageInstanceAuth.ID(childComplexity), true
 
+	case "PackageInstanceAuth.inputParams":
+		if e.complexity.PackageInstanceAuth.InputParams == nil {
+			break
+		}
+
+		return e.complexity.PackageInstanceAuth.InputParams(childComplexity), true
+
 	case "PackageInstanceAuth.status":
 		if e.complexity.PackageInstanceAuth.Status == nil {
 			break
@@ -3507,6 +3515,10 @@ type PackageInstanceAuth {
 	Context of PackageInstanceAuth - such as Runtime ID, namespace
 	"""
 	context: Any
+	"""
+	User input while requesting Package Instance Auth
+	"""
+	inputParams: Any
 	"""
 	It may be empty if status is PENDING.
 	Populated with ` + "`" + `package.defaultAuth` + "`" + ` value if ` + "`" + `package.defaultAuth` + "`" + ` is defined. If not, Compass notifies Application/Integration System about the Auth request.
@@ -14614,6 +14626,40 @@ func (ec *executionContext) _PackageInstanceAuth_context(ctx context.Context, fi
 	return ec.marshalOAny2ᚖinterface(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PackageInstanceAuth_inputParams(ctx context.Context, field graphql.CollectedField, obj *PackageInstanceAuth) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PackageInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InputParams, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*interface{})
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAny2ᚖinterface(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PackageInstanceAuth_auth(ctx context.Context, field graphql.CollectedField, obj *PackageInstanceAuth) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -21164,6 +21210,8 @@ func (ec *executionContext) _PackageInstanceAuth(ctx context.Context, sel ast.Se
 			}
 		case "context":
 			out.Values[i] = ec._PackageInstanceAuth_context(ctx, field, obj)
+		case "inputParams":
+			out.Values[i] = ec._PackageInstanceAuth_inputParams(ctx, field, obj)
 		case "auth":
 			out.Values[i] = ec._PackageInstanceAuth_auth(ctx, field, obj)
 		case "status":

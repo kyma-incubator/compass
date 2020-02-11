@@ -338,6 +338,8 @@ type PackageInstanceAuth struct {
 	ID string `json:"id"`
 	// Context of PackageInstanceAuth - such as Runtime ID, namespace
 	Context *interface{} `json:"context"`
+	// User input while requesting Package Instance Auth
+	InputParams *interface{} `json:"inputParams"`
 	// It may be empty if status is PENDING.
 	// Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
 	Auth   *Auth                      `json:"auth"`
