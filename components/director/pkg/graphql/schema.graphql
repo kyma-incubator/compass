@@ -329,8 +329,7 @@ type APIDefinition {
 	"""
 	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
 	"""
-	applicationID: ID! @deprecated(reason: "Use packageID field")
-	packageID: ID
+	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
 	name: String!
 	description: String
 	spec: APISpec
@@ -464,8 +463,7 @@ type Document {
 	"""
 	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
 	"""
-	applicationID: ID! @deprecated(reason: "Use packageID field")
-	packageID: ID
+	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
 	title: String!
 	displayName: String!
 	description: String!
@@ -489,8 +487,7 @@ type EventDefinition {
 	"""
 	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
 	"""
-	applicationID: ID! @deprecated(reason: "Use packageID field")
-	packageID: ID
+	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
 	name: String!
 	description: String
 	"""
@@ -727,7 +724,7 @@ type Viewer {
 
 type Webhook {
 	id: ID!
-	applicationID: ID!
+	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
 	type: ApplicationWebhookType!
 	url: String!
 	auth: Auth
