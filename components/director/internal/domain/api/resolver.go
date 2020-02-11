@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -351,4 +353,9 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*gra
 
 	frGQL := r.frConverter.ToGraphQL(fr)
 	return frGQL, nil
+}
+
+// TODO: Replace with real implementation
+func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+	return mock.FixAPIDefinition("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", packageID), nil
 }
