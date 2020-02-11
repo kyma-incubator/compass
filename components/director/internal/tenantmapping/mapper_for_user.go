@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-project/kyma/components/service-binding-usage-controller/internal/platform/logger"
-
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
