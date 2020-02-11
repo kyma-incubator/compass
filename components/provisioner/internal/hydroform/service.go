@@ -11,6 +11,8 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/avast/retry-go"
+
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/pkg/errors"
 )
@@ -54,7 +56,13 @@ func (s service) ProvisionCluster(clusterData model.Cluster) (ClusterInfo, error
 	}
 
 	log.Infof("Starting %s Runtime provisioning", clusterData.ID)
-	cluster, err = s.hydroformClient.Provision(cluster, provider, types.WithTimeouts(&types.Timeouts{Create: clusterCreationTimeout}))
+	err = retry.Do(
+		func() error {
+			cluster, err = s.hydroformClient.Provision(cluster, provider, types.WithTimeouts(&types.Timeouts{Create: clusterCreationTimeout}))
+			return err
+		},
+		retry.Attempts(3))
+
 	if err != nil {
 		return ClusterInfo{}, errors.WithMessagef(err, "Cluster %s provisioning failed", clusterData.ID)
 	}

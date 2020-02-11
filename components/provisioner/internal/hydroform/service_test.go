@@ -148,7 +148,7 @@ func TestService_ProvisionCluster_Errors(t *testing.T) {
 		{
 			description: "failed to provision cluster",
 			mockFunc: func(hydroformClient *mocks.Client) {
-				hydroformClient.On("Provision", hydroformCluster, hydroformProvider, mock.AnythingOfType("types.Option")).Return(nil, errors.New("error"))
+				hydroformClient.On("Provision", hydroformCluster, hydroformProvider, mock.AnythingOfType("types.Option")).Return(&types.Cluster{}, errors.New("error"))
 			},
 		},
 	} {
