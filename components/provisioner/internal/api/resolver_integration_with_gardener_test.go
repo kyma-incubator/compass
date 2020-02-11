@@ -13,9 +13,8 @@ import (
 	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
 	"k8s.io/client-go/kubernetes/fake"
 
-	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1alpha1"
-	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
-	gardener_apis "github.com/gardener/gardener/pkg/client/garden/clientset/versioned/typed/garden/v1beta1"
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
@@ -54,6 +53,7 @@ const (
 	namespace  = "default"
 	timeout    = 10 * time.Second
 	syncPeriod = 5 * time.Second
+	waitPeriod = syncPeriod + 3*time.Second
 
 	mockedKubeconfig = `apiVersion: v1
 clusters:
@@ -205,7 +205,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			//when
 			//wait for Shoot to update
-			time.Sleep(syncPeriod)
+			time.Sleep(waitPeriod)
 
 			list, err := shootInterface.List(metav1.ListOptions{})
 			require.NoError(t, err)
@@ -222,7 +222,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			//when
 			//wait for Shoot to update
-			time.Sleep(syncPeriod)
+			time.Sleep(waitPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
 			//then
@@ -241,7 +241,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			//when
 			//wait for Shoot to update
-			time.Sleep(syncPeriod)
+			time.Sleep(waitPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
 			//then
@@ -254,7 +254,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			//when
 			shoot = removeFinalizers(t, shootInterface, shoot)
-			time.Sleep(syncPeriod)
+			time.Sleep(waitPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
 			//then
@@ -365,7 +365,7 @@ func simmulateSuccessfullClusterProvisioning(t *testing.T, f gardener_apis.Shoot
 }
 
 func setShootStatusToSuccessfull(t *testing.T, f gardener_apis.ShootInterface, shoot *gardener_types.Shoot) {
-	shoot.Status.LastOperation = &gardencorev1alpha1.LastOperation{State: gardencorev1alpha1.LastOperationStateSucceeded}
+	shoot.Status.LastOperation = &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded}
 
 	_, err := f.Update(shoot)
 
@@ -388,7 +388,7 @@ func createKubeconfigSecret(t *testing.T, s v1core.SecretInterface, shootName st
 func addTypeMeta(shoot *gardener_types.Shoot) {
 	shoot.TypeMeta = metav1.TypeMeta{
 		Kind:       "Shoot",
-		APIVersion: "garden.sapcloud.io/v1beta1",
+		APIVersion: "core.gardener.cloud/v1beta1",
 	}
 }
 

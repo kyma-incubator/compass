@@ -3,9 +3,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     helm.sh/hook: crd-install
-  name: shoots.garden.sapcloud.io
+  name: shoots.core.gardener.cloud
 spec:
-  group: garden.sapcloud.io
+  group: core.gardener.cloud
   version: v1beta1
   names:
     kind: Shoot
