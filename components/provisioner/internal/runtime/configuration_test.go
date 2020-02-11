@@ -59,7 +59,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 
 		//then
 		require.NoError(t, err)
-		configMap, err := configMapClient.Get(configMapName, v1.GetOptions{})
+		configMap, err := configMapClient.Get(ConfigMapName, v1.GetOptions{})
 		require.NoError(t, err)
 
 		assert.Equal(t, connectorURL, configMap.Data["CONNECTOR_URL"])
