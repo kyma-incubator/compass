@@ -13,5 +13,5 @@ ALTER TABLE documents
     DROP CONSTRAINT documents_package_definition_id_fk;
 ALTER TABLE documents DROP COLUMN package_definition_id;
 
-DROP TABLE api_instance_auths;
-DROP TABLE package_definitions;
+DROP TABLE package_instance_auths;
+DROP TABLE packages;
