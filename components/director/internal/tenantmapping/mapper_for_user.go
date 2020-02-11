@@ -25,7 +25,7 @@ type mapperForUser struct {
 
 func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
 	var externalTenantID, scopes string
-
+	fmt.Printf("Username: %s\n", username)
 	staticUser, err := m.staticUserRepo.Get(username)
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))
