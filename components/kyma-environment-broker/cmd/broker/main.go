@@ -101,7 +101,7 @@ func main() {
 	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
 	fatalOnError(err)
 
-	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager)
+	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager, cfg.Director.URL)
 
 	dumper, err := broker.NewDumper()
 	fatalOnError(err)

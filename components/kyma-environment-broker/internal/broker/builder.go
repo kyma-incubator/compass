@@ -49,14 +49,16 @@ type InputBuilderFactory struct {
 	optComponentsSvc   OptionalComponentService
 	serviceManager     internal.ServiceManagerOverride
 	fullComponentsList internal.ComponentConfigurationInputList
+	directorURL        string
 }
 
-func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullComponentsList []v1alpha1.KymaComponent, kymaVersion string, smOverride internal.ServiceManagerOverride) InputBuilderForPlan {
+func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullComponentsList []v1alpha1.KymaComponent, kymaVersion string, smOverride internal.ServiceManagerOverride, directorURL string) InputBuilderForPlan {
 	return &InputBuilderFactory{
 		kymaVersion:        kymaVersion,
 		serviceManager:     smOverride,
 		optComponentsSvc:   optComponentsSvc,
 		fullComponentsList: mapToGQLComponentConfigurationInput(fullComponentsList),
+		directorURL:        directorURL,
 	}
 }
 
@@ -79,6 +81,7 @@ func (f *InputBuilderFactory) ForPlan(planID string) (ConcreteInputBuilder, bool
 		hyperscalerInputProvider:  provider,
 		optionalComponentsService: f.optComponentsSvc,
 		fullRuntimeComponentList:  f.fullComponentsList,
+		directorURL:               f.directorURL,
 	}, true
 }
 
@@ -89,6 +92,7 @@ type InputBuilder struct {
 	hyperscalerInputProvider  HyperscalerInputProvider
 	optionalComponentsService OptionalComponentService
 	fullRuntimeComponentList  internal.ComponentConfigurationInputList
+	directorURL               string
 
 	ersCtx                 internal.ERSContext
 	provisioningConfig     ProvisioningConfig
@@ -185,6 +189,19 @@ func (b *InputBuilder) applyServiceManagerOverrides(in *gqlschema.ProvisionRunti
 	return nil
 }
 
+func (b *InputBuilder) applyGlobalOverrides(in *gqlschema.ProvisionRuntimeInput) error {
+	var globalOverrides = []*gqlschema.ConfigEntryInput{
+		{
+			Key:   "managementPlane.url",
+			Value: b.directorURL,
+		},
+	}
+
+	in.KymaConfig.Configuration = append(in.KymaConfig.Configuration, globalOverrides...)
+
+	return nil
+}
+
 // applyTemporaryCustomization applies some additional information. This is only a temporary solution for MVP scenario.
 // Will be removed and refactored in near future.
 func (b *InputBuilder) applyTemporaryCustomization(in *gqlschema.ProvisionRuntimeInput) error {
@@ -230,6 +247,10 @@ func (b *InputBuilder) Build() (gqlschema.ProvisionRuntimeInput, error) {
 		{
 			name:    "applying service manager overrides",
 			execute: b.applyServiceManagerOverrides,
+		},
+		{
+			name:    "applying global overrides",
+			execute: b.applyGlobalOverrides,
 		},
 		{
 			name:    "applying temporary customization",
