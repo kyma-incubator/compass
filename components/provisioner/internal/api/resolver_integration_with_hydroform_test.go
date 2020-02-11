@@ -11,6 +11,10 @@ import (
 	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
 	"k8s.io/client-go/kubernetes/fake"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
+	hydroformmocks "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
+	"github.com/kyma-incubator/hydroform/types"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -22,11 +26,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
-	"github.com/kyma-incubator/hydroform/types"
-
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
-	hydroformmocks "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
@@ -74,9 +74,10 @@ func waitForOperationCompleted(provisioningService provisioning.Service, operati
 }
 
 type provisionerTestConfig struct {
-	runtimeID   string
-	config      *gqlschema.ClusterConfigInput
-	description string
+	runtimeID    string
+	config       *gqlschema.ClusterConfigInput
+	description  string
+	runtimeInput *gqlschema.RuntimeInput
 }
 
 func getTestClusterConfigurations() []provisionerTestConfig {
@@ -157,14 +158,28 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 	}
 
 	testConfig := []provisionerTestConfig{
-		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bbb", config: clusterConfigForGardenerWithGCP, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with GCP configuration 1"},
-		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb4", config: clusterConfigForGardenerWithAzure, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with Azure configuration"},
-		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb5", config: clusterConfigForGardenerWithAWS, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with AWS configuration"},
+		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bbb", config: clusterConfigForGardenerWithGCP, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with GCP configuration 1",
+			runtimeInput: &gqlschema.RuntimeInput{
+				Name:        "test runtime1",
+				Description: new(string),
+			}},
+		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb4", config: clusterConfigForGardenerWithAzure, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with Azure configuration",
+			runtimeInput: &gqlschema.RuntimeInput{
+				Name:        "test runtime2",
+				Description: new(string),
+			}},
+		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb5", config: clusterConfigForGardenerWithAWS, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with AWS configuration",
+			runtimeInput: &gqlschema.RuntimeInput{
+				Name:        "test runtime3",
+				Description: new(string),
+			}},
 	}
 	return testConfig
 }
 
-func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
+var providerCredentials = &gqlschema.CredentialsInput{SecretName: "secret_1"}
+
+func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 
 	mockedKubeConfigValue := "test config value"
 	mockedTerraformState := []byte(`{"test_key": "test_value"}`)
@@ -210,16 +225,8 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 	defer testutils.CloseDatabase(t, connection)
 
 	kymaConfig := fixKymaGraphQLConfigInput()
-
-	providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
-	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
-
-	runtimeInput := &gqlschema.RuntimeInput{
-		Name:        "test runtime",
-		Description: new(string),
-	}
-
 	clusterConfigurations := getTestClusterConfigurations()
+	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
 
 	for _, cfg := range clusterConfigurations {
 		t.Run(cfg.description, func(t *testing.T) {
@@ -234,7 +241,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			cmClientBuilder.On("CreateK8SConfigMapClient", mockedKubeConfigValue, compassSystemNamespace).Return(configMapClient, nil)
 			runtimeConfigurator := runtime.NewRuntimeConfigurator(cmClientBuilder, directorServiceMock)
 
-			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
+			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: cfg.runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
 			dbSessionFactory := dbsession.NewFactory(connection)
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)

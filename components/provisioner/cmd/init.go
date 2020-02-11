@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	"github.com/pkg/errors"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/sirupsen/logrus"
@@ -33,6 +34,7 @@ import (
 
 const (
 	databaseConnectionRetries = 20
+	defaultSyncPeriod         = 3 * time.Minute
 )
 
 func newProvisioningService(
@@ -83,7 +85,14 @@ func newShootController(
 
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
-	return gardener.NewShootController(gardenerNamespace, gardenerClusterCfg, shootClient, gardenerSecrets, installationSvc, dbsFactory, cfg.Installation.Timeout, directorClient, runtimeConfigurator)
+	syncPeriod := defaultSyncPeriod
+
+	mgr, err := ctrl.NewManager(gardenerClusterCfg, ctrl.Options{SyncPeriod: &syncPeriod, Namespace: gardenerNamespace})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create shoot controller manager: %w", err)
+	}
+
+	return gardener.NewShootController(gardenerNamespace, mgr, shootClient, gardenerSecrets, installationSvc, dbsFactory, cfg.Installation.Timeout, directorClient, runtimeConfigurator)
 }
 
 func newClusterSecretsInterface(namespace string) (v1.SecretInterface, error) {

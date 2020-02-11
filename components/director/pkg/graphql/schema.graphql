@@ -71,6 +71,15 @@ enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
 }
 
+enum PackageInstanceAuthStatusCondition {
+	"""
+	When creating or deleting new one
+	"""
+	PENDING
+	SUCCEEDED
+	FAILED
+}
+
 enum RuntimeStatusCondition {
 	INITIAL
 	READY
@@ -117,7 +126,7 @@ input APIDefinitionInput {
 	group: String
 	spec: APISpecInput
 	version: VersionInput
-	defaultAuth: AuthInput
+	defaultAuth: AuthInput @deprecated(reason: "Use package.defaultAuth")
 }
 
 input APISpecInput {
@@ -139,9 +148,10 @@ input ApplicationRegisterInput {
 	labels: Labels
 	webhooks: [WebhookInput!]
 	healthCheckURL: String
-	apiDefinitions: [APIDefinitionInput!]
-	eventDefinitions: [EventDefinitionInput!]
-	documents: [DocumentInput!]
+	apiDefinitions: [APIDefinitionInput!] @deprecated(reason: "Use package.packages.apiDefinitions")
+	eventDefinitions: [EventDefinitionInput!] @deprecated(reason: "Use package.packages.eventDefinitions")
+	documents: [DocumentInput!] @deprecated(reason: "Use package.packages.documents")
+	packages: [PackageCreateInput!]
 	integrationSystemID: ID
 }
 
@@ -254,6 +264,37 @@ input OAuthCredentialDataInput {
 	url: String!
 }
 
+input PackageCreateInput {
+	name: String!
+	description: String
+	instanceAuthRequestInputSchema: JSONSchema
+	defaultInstanceAuth: AuthInput
+	apiDefinitions: [APIDefinitionInput!]
+	eventDefinitions: [EventDefinitionInput!]
+	documents: [DocumentInput!]
+}
+
+input PackageInstanceAuthRequestInput {
+	"""
+	Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
+	"""
+	context: Any
+	"""
+	JSON validated against package.instanceAuthRequestInputSchema
+	"""
+	inputParams: Any
+}
+
+input PackageUpdateInput {
+	name: String!
+	description: String
+	instanceAuthRequestInputSchema: JSONSchema
+	"""
+	While updating defaultInstanceAuth, existing PackageInstanceAuths are NOT updated.
+	"""
+	defaultInstanceAuth: AuthInput
+}
+
 input PlaceholderDefinitionInput {
 	name: String!
 	description: String
@@ -285,7 +326,11 @@ input WebhookInput {
 
 type APIDefinition {
 	id: ID!
-	applicationID: ID!
+	"""
+	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
+	"""
+	applicationID: ID! @deprecated(reason: "Use packageID field")
+	packageID: ID
 	name: String!
 	description: String
 	spec: APISpec
@@ -297,15 +342,15 @@ type APIDefinition {
 	"""
 	"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
 	"""
-	auth(runtimeID: ID!): APIRuntimeAuth
+	auth(runtimeID: ID!): APIRuntimeAuth @deprecated(reason: "Use package.auth")
 	"""
 	Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
 	"""
-	auths: [APIRuntimeAuth!]
+	auths: [APIRuntimeAuth!] @deprecated(reason: "Use package.auths")
 	"""
 	If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
 	"""
-	defaultAuth: Auth
+	defaultAuth: Auth @deprecated(reason: "Use package.defaultAuth")
 	version: Version
 }
 
@@ -315,6 +360,9 @@ type APIDefinitionPage implements Pageable {
 	totalCount: Int!
 }
 
+"""
+Deprecated
+"""
 type APIRuntimeAuth {
 	runtimeID: ID!
 	auth: Auth
@@ -341,17 +389,19 @@ type Application {
 	webhooks: [Webhook!]
 	healthCheckURL: String
 	"""
-	group allows to find different versions of the same API
+	group allows to find different versions of the same API`
 	Maximum `first` parameter value is 100
 	"""
-	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage
+	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage @deprecated(reason: "Use `packages.apiDefinitions` field")
 	"""
 	group allows to find different versions of the same event Definitions
 	"""
-	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage
-	apiDefinition(id: ID!): APIDefinition
-	eventDefinition(id: ID!): EventDefinition
-	documents(first: Int = 100, after: PageCursor): DocumentPage
+	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage @deprecated(reason: "Use `packages.eventDefinitions` field")
+	apiDefinition(id: ID!): APIDefinition @deprecated(reason: "Use `package.apiDefinition` field")
+	eventDefinition(id: ID!): EventDefinition @deprecated(reason: "Use `package.eventDefinition` field")
+	documents(first: Int = 100, after: PageCursor): DocumentPage @deprecated(reason: "Use `package.documents` field")
+	packages(first: Int = 100, after: PageCursor): PackagePage
+	package(id: ID!): Package
 	auths: [SystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
 }
@@ -411,7 +461,11 @@ type CredentialRequestAuth {
 
 type Document {
 	id: ID!
-	applicationID: ID!
+	"""
+	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
+	"""
+	applicationID: ID! @deprecated(reason: "Use packageID field")
+	packageID: ID
 	title: String!
 	displayName: String!
 	description: String!
@@ -432,7 +486,11 @@ type DocumentPage implements Pageable {
 
 type EventDefinition {
 	id: ID!
-	applicationID: ID!
+	"""
+	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
+	"""
+	applicationID: ID! @deprecated(reason: "Use packageID field")
+	packageID: ID
 	name: String!
 	description: String
 	"""
@@ -531,6 +589,64 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 	connectorURL: String!
 	raw: String
 	rawEncoded: String
+}
+
+type Package {
+	id: ID!
+	name: String!
+	description: String
+	instanceAuthRequestInputSchema: JSONSchema
+	instanceAuth(id: ID!): PackageInstanceAuth
+	instanceAuths: [PackageInstanceAuth!]!
+	"""
+	When defined, all Auth requests fallback to defaultInstanceAuth.
+	"""
+	defaultInstanceAuth: Auth
+	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage
+	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage
+	documents(first: Int = 100, after: PageCursor): DocumentPage
+	apiDefinition(id: ID!): APIDefinition
+	eventDefinition(id: ID!): EventDefinition
+	document(id: ID!): Document
+}
+
+type PackageInstanceAuth {
+	id: ID!
+	"""
+	Context of PackageInstanceAuth - such as Runtime ID, namespace
+	"""
+	context: Any
+	"""
+	User input while requesting Package Instance Auth
+	"""
+	inputParams: Any
+	"""
+	It may be empty if status is PENDING.
+	Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+	"""
+	auth: Auth
+	status: PackageInstanceAuthStatus
+}
+
+type PackageInstanceAuthStatus {
+	condition: PackageInstanceAuthStatusCondition!
+	timestamp: Timestamp!
+	message: String!
+	"""
+	Possible reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	"""
+	reason: String!
+}
+
+type PackagePage implements Pageable {
+	data: [Package!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 type PageInfo {
@@ -783,6 +899,10 @@ type Mutation {
 	"""
 	addAPIDefinition(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinition")
 	"""
+	Temporary name before doing breaking change. Eventually the `addAPIDefinition` mutation will be changed and there will be just one mutation: `addAPIDefinitionToPackage`.
+	"""
+	addAPIDefinitionToPackage(packageID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToPackage")
+	"""
 	**Examples**
 	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
 	"""
@@ -804,13 +924,17 @@ type Mutation {
 	"""
 	Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
 	"""
-	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth")
-	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth")
+	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth") @deprecated(reason: "Use setPackageInstanceAuthForPackage")
+	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth") @deprecated(reason: "Use deletePackageInstanceAuthForPackage")
 	"""
 	**Examples**
 	- [add event definition](examples/add-event-definition/add-event-definition.graphql)
 	"""
 	addEventDefinition(applicationID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
+	"""
+	Temporary name before doing breaking change. Eventually the `addEventDefinition` mutation will be changed and there will be just one mutation: `addEventDefinitionToPackage`.
+	"""
+	addEventDefinitionToPackage(packageID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToPackage")
 	"""
 	**Examples**
 	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
@@ -827,6 +951,10 @@ type Mutation {
 	- [add document](examples/add-document/add-document.graphql)
 	"""
 	addDocument(applicationID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
+	"""
+	Temporary name before doing breaking change
+	"""
+	addDocumentToPackage(packageID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocumentToPackage")
 	"""
 	**Examples**
 	- [delete document](examples/delete-document/delete-document.graphql)
@@ -871,5 +999,16 @@ type Mutation {
 	deleteRuntimeLabel(runtimeID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteRuntimeLabel")
 	setDefaultEventingForApplication(appID: String!, runtimeID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.setDefaultEventingForApplication")
 	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
+	"""
+	When PackageInstanceAuth is not in pending state, the operation returns error.
+	
+	When used without error, the status of pending auth is set to success.
+	"""
+	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: AuthInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
+	deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
+	requestPackageInstanceAuth(packageID: ID!, in: PackageInstanceAuthRequestInput!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuth")
+	addPackage(applicationID: ID!, in: PackageCreateInput! @validate): Package! @hasScopes(path: "graphql.mutation.addPackage")
+	updatePackage(id: ID!, in: PackageUpdateInput! @validate): Package! @hasScopes(path: "graphql.mutation.updatePackage")
+	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
 }
 

@@ -6,6 +6,10 @@ func StringPtr(str string) *string {
 	return &str
 }
 
+func IntPtr(val int) *int {
+	return &val
+}
+
 func BoolPtr(b bool) *bool {
 	return &b
 }

@@ -75,7 +75,7 @@ func (r *ProvisioningOperator) InstallationInProgress(log *logrus.Entry, shoot g
 		return ctrl.Result{}, err
 	}
 
-	installationState, err := installationSDK.CheckInstallationState(kubeconfig)
+	installationState, err := r.installationService.CheckInstallationState(kubeconfig)
 	if err != nil {
 		var installationErr installationSDK.InstallationError
 		if !errors.As(err, &installationErr) {

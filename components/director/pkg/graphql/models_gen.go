@@ -42,6 +42,7 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
+// Deprecated
 type APIRuntimeAuth struct {
 	RuntimeID string `json:"runtimeID"`
 	Auth      *Auth  `json:"auth"`
@@ -81,6 +82,7 @@ type ApplicationRegisterInput struct {
 	APIDefinitions      []*APIDefinitionInput   `json:"apiDefinitions"`
 	EventDefinitions    []*EventDefinitionInput `json:"eventDefinitions"`
 	Documents           []*DocumentInput        `json:"documents"`
+	Packages            []*PackageCreateInput   `json:"packages"`
 	IntegrationSystemID *string                 `json:"integrationSystemID"`
 }
 
@@ -194,8 +196,10 @@ type DocumentPage struct {
 func (DocumentPage) IsPageable() {}
 
 type EventDefinition struct {
-	ID            string  `json:"id"`
+	ID string `json:"id"`
+	// TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
 	ApplicationID string  `json:"applicationID"`
+	PackageID     *string `json:"packageID"`
 	Name          string  `json:"name"`
 	Description   *string `json:"description"`
 	// group allows you to find the same API but in different version
@@ -318,6 +322,64 @@ type OAuthCredentialDataInput struct {
 	ClientID     string `json:"clientId"`
 	ClientSecret string `json:"clientSecret"`
 	URL          string `json:"url"`
+}
+
+type PackageCreateInput struct {
+	Name                           string                  `json:"name"`
+	Description                    *string                 `json:"description"`
+	InstanceAuthRequestInputSchema *JSONSchema             `json:"instanceAuthRequestInputSchema"`
+	DefaultInstanceAuth            *AuthInput              `json:"defaultInstanceAuth"`
+	APIDefinitions                 []*APIDefinitionInput   `json:"apiDefinitions"`
+	EventDefinitions               []*EventDefinitionInput `json:"eventDefinitions"`
+	Documents                      []*DocumentInput        `json:"documents"`
+}
+
+type PackageInstanceAuth struct {
+	ID string `json:"id"`
+	// Context of PackageInstanceAuth - such as Runtime ID, namespace
+	Context *interface{} `json:"context"`
+	// User input while requesting Package Instance Auth
+	InputParams *interface{} `json:"inputParams"`
+	// It may be empty if status is PENDING.
+	// Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+	Auth   *Auth                      `json:"auth"`
+	Status *PackageInstanceAuthStatus `json:"status"`
+}
+
+type PackageInstanceAuthRequestInput struct {
+	// Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
+	Context *interface{} `json:"context"`
+	// JSON validated against package.instanceAuthRequestInputSchema
+	InputParams *interface{} `json:"inputParams"`
+}
+
+type PackageInstanceAuthStatus struct {
+	Condition PackageInstanceAuthStatusCondition `json:"condition"`
+	Timestamp Timestamp                          `json:"timestamp"`
+	Message   string                             `json:"message"`
+	// Possible reasons:
+	// - PendingNotification
+	// - NotificationSent
+	// - CredentialsProvided
+	// - CredentialsNotProvided
+	// - PendingDeletion
+	Reason string `json:"reason"`
+}
+
+type PackagePage struct {
+	Data       []*Package `json:"data"`
+	PageInfo   *PageInfo  `json:"pageInfo"`
+	TotalCount int        `json:"totalCount"`
+}
+
+func (PackagePage) IsPageable() {}
+
+type PackageUpdateInput struct {
+	Name                           string      `json:"name"`
+	Description                    *string     `json:"description"`
+	InstanceAuthRequestInputSchema *JSONSchema `json:"instanceAuthRequestInputSchema"`
+	// While updating defaultInstanceAuth, existing PackageInstanceAuths are NOT updated.
+	DefaultInstanceAuth *AuthInput `json:"defaultInstanceAuth"`
 }
 
 type PageInfo struct {
@@ -820,6 +882,50 @@ func (e *HealthCheckType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e HealthCheckType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type PackageInstanceAuthStatusCondition string
+
+const (
+	// When creating or deleting new one
+	PackageInstanceAuthStatusConditionPending   PackageInstanceAuthStatusCondition = "PENDING"
+	PackageInstanceAuthStatusConditionSucceeded PackageInstanceAuthStatusCondition = "SUCCEEDED"
+	PackageInstanceAuthStatusConditionFailed    PackageInstanceAuthStatusCondition = "FAILED"
+)
+
+var AllPackageInstanceAuthStatusCondition = []PackageInstanceAuthStatusCondition{
+	PackageInstanceAuthStatusConditionPending,
+	PackageInstanceAuthStatusConditionSucceeded,
+	PackageInstanceAuthStatusConditionFailed,
+}
+
+func (e PackageInstanceAuthStatusCondition) IsValid() bool {
+	switch e {
+	case PackageInstanceAuthStatusConditionPending, PackageInstanceAuthStatusConditionSucceeded, PackageInstanceAuthStatusConditionFailed:
+		return true
+	}
+	return false
+}
+
+func (e PackageInstanceAuthStatusCondition) String() string {
+	return string(e)
+}
+
+func (e *PackageInstanceAuthStatusCondition) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PackageInstanceAuthStatusCondition(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PackageInstanceAuthStatusCondition", str)
+	}
+	return nil
+}
+
+func (e PackageInstanceAuthStatusCondition) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

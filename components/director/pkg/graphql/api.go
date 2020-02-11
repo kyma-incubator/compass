@@ -3,6 +3,7 @@ package graphql
 type APIDefinition struct {
 	ID            string   `json:"id"`
 	ApplicationID string   `json:"applicationID"`
+	PackageID     *string  `json:"packageID"`
 	Name          string   `json:"name"`
 	Description   *string  `json:"description"`
 	Spec          *APISpec `json:"spec"`

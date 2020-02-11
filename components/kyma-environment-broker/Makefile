@@ -10,7 +10,7 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 
 .DEFAULT_GOAL := custom-verify
 
-custom-verify: testing-with-database-network check-imports check-fmt
+custom-verify: testing-with-database-network test-integration check-imports check-fmt
 
 verify:: custom-verify build-image push-image
 
@@ -26,6 +26,15 @@ errcheck-local: ;
 # 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
 # 		$(DOCKER_CREATE_OPTS) errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
 
+test-integration-local:
+	go test ./... -tags=integration
+
+test-integration:
+	@echo make test-integration-local
+	@docker run $(DOCKER_INTERACTIVE) \
+		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
+		$(DOCKER_CREATE_OPTS) make test-integration-local
+
 testing-with-database-network:
 	@echo testing-with-database-network
 	@docker network inspect $(TESTING_DB_NETWORK) >/dev/null 2>&1 || \
@@ -36,7 +45,7 @@ testing-with-database-network:
 		--network=$(TESTING_DB_NETWORK) \
 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
 		--env PIPELINE_BUILD=1 \
-		$(DOCKER_CREATE_OPTS) go test  -tags=integration ./...
+		$(DOCKER_CREATE_OPTS) go test  -tags=database-integration ./...
 	@docker network rm $(TESTING_DB_NETWORK) || true
 
 clean-up:

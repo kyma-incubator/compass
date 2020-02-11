@@ -56,6 +56,29 @@ models:
         resolver: true
       eventingConfiguration:
         resolver: true
+      packages:
+        resolver: true
+      package:
+        resolver: true
+  Package:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Package"
+    fields:
+      apiDefinitions:
+        resolver: true
+      apiDefinition:
+        resolver: true
+      documents:
+        resolver: true
+      document:
+        resolver: true
+      eventDefinitions:
+        resolver: true
+      eventDefinition:
+        resolver: true
+      instanceAuth:
+        resolver: true
+      instanceAuths:
+        resolver: true
 
   APISpec:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.APISpec"

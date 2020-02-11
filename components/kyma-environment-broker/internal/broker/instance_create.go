@@ -26,12 +26,10 @@ type ProvisionEndpoint struct {
 
 // ProvisioningConfig holds all configurations connected with Provisioner API
 type ProvisioningConfig struct {
-	URL                 string
-	SecretName          string
-	GCPSecretName       string
-	AzureSecretName     string
-	AWSSecretName       string
-	GardenerProjectName string
+	URL             string
+	GCPSecretName   string
+	AzureSecretName string
+	AWSSecretName   string
 }
 
 func NewProvision(cfg Config, instancesStorage storage.Instances, builderFactory InputBuilderForPlan, provisioningCfg ProvisioningConfig, provisionerClient provisioner.Client, dumper StructDumper) *ProvisionEndpoint {

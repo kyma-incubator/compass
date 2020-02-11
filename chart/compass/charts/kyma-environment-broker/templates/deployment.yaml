@@ -44,10 +44,6 @@ spec:
               value: "{{ .Values.enablePlans }}"
             - name: APP_PROVISIONING_URL
               value: "{{ .Values.provisioner.URL }}"
-            - name: APP_PROVISIONING_SECRET_NAME
-              value: "{{ .Values.provisioner.gardener.secretName }}"
-            - name: APP_PROVISIONING_GARDENER_PROJECT_NAME
-              value: "{{ .Values.provisioner.gardener.projectName }}"
             - name: APP_PROVISIONING_GCP_SECRET_NAME
               value: "{{ .Values.provisioner.gcp.secretName }}"
             - name: APP_PROVISIONING_AWS_SECRET_NAME
@@ -63,8 +59,6 @@ spec:
                 secretKeyRef:
                   name: {{ include "kyma-env-broker.fullname" . }}
                   key: broker-password
-            - name: APP_PROCESS_RUNTIME_ID
-              value: "{{ .Values.provisioner.processRuntimeID }}"
             - name: APP_DIRECTOR_NAMESPACE
               value: "{{ .Release.Namespace }}"
             - name: APP_DIRECTOR_DEFAULT_TENANT
