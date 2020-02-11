@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -37,6 +36,7 @@ const (
 	ClientIDCertKey   = "client-id-from-certificate"
 	ExternalTenantKey = "tenant"
 	ScopesKey         = "scope"
+	GroupsKey         = "groups"
 
 	clientCredentialScopesPrefix = "clientCredentialsRegistrationScopes"
 )
@@ -115,9 +115,6 @@ func (d *ReqData) GetExternalTenantID() (string, error) {
 
 // GetScopes returns scopes from the parsed request input if defined
 func (d *ReqData) GetScopes() (string, error) {
-	// fmt.Printf("Body: %+v\n", d.Body.Extra)
-	// errors.Wrap(nil, fmt.Sprintf("Body: %+v\n", d.Body.Extra))
-	log.Infof("Body: %+v\n", d.Body.Extra)
 	if scopesVal, ok := d.Body.Extra[ScopesKey]; ok {
 		scopes, err := str.Cast(scopesVal)
 		if err != nil {
@@ -128,6 +125,21 @@ func (d *ReqData) GetScopes() (string, error) {
 	}
 
 	return "", apperrors.NewKeyDoesNotExistError(ScopesKey)
+}
+
+// GetGroup returns group name
+func (d *ReqData) GetGroup() (string, error) {
+	if groupsVal, ok := d.Body.Extra[GroupsKey]; ok {
+		groups, err := str.Cast(groupsVal)
+		if err != nil {
+			return "", errors.Wrapf(err, "while parsing the value for %s", GroupsKey)
+		}
+
+		return groups, nil
+	}
+	return "", nil
+
+	// return "", apperrors.NewKeyDoesNotExistError(ScopesKey)
 }
 
 type TenantContext struct {
