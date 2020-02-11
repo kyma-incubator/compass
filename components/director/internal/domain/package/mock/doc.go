@@ -2,7 +2,7 @@ package mock
 
 import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-func FixDocument(id string, packageID string) *graphql.Document {
+func FixDocument(id string) *graphql.Document {
 	desc := "Lorem ipsum"
 	kind := "Kind"
 	data := graphql.CLOB(`
@@ -30,7 +30,6 @@ Kyma comes equipped with these out-of-the-box functionalities:
 	return &graphql.Document{
 		ID:            id,
 		ApplicationID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-		PackageID:     &packageID,
 		Title:         "Document Title",
 		DisplayName:   "Document Display Name",
 		Description:   desc,

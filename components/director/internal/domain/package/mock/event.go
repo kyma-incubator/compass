@@ -2,7 +2,7 @@ package mock
 
 import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-func FixEventDefinition(id string, packageID string) *graphql.EventDefinition {
+func FixEventDefinition(id string) *graphql.EventDefinition {
 	desc := "Lorem ipsum"
 	data := graphql.CLOB(`asyncapi: '2.0.0'
 info:
@@ -216,7 +216,6 @@ components:
 	return &graphql.EventDefinition{
 		ID:            id,
 		ApplicationID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-		PackageID:     &packageID,
 		Name:          "Bar",
 		Description:   &desc,
 		Group:         nil,
