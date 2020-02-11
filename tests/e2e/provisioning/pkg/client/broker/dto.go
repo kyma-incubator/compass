@@ -1,6 +1,6 @@
 package broker
 
-type ersContext struct {
+type inputContext struct {
 	TenantID        string `json:"tenant_id"`
 	SubAccountID    string `json:"subaccount_id"`
 	GlobalAccountID string `json:"globalaccount_id"`

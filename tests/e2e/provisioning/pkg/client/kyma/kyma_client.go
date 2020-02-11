@@ -2,6 +2,8 @@ package kyma
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -25,11 +27,11 @@ func NewClient(clientHttp http.Client, log logrus.FieldLogger) *Client {
 	}
 }
 
-// CallDashboardURL sends request to the dashboardURL and expects to be redirected to the logging page
-// There are 2 possibility locations where we can be redirected:
+// AssertRedirectedToUAA sends request to the dashboardURL and expects to be redirected to the logging page
+// There are 2 possible locations where we can be redirected:
 // `/auth/xsuaa` - if uua-issuer exist on the cluster
 // `/auth/local` - if Kyma use a standard login page
-func (c *Client) CallDashboardURL(dashboardURL string) error {
+func (c *Client) AssertRedirectedToUAA(dashboardURL string) error {
 	targetURL := c.buildTargetURL(dashboardURL)
 
 	c.log.Infof("Calling the dashboard URL: %s", targetURL)
@@ -39,8 +41,8 @@ func (c *Client) CallDashboardURL(dashboardURL string) error {
 	}
 	defer c.warnOnError(resp.Body.Close())
 
-	if resp.StatusCode != http.StatusFound {
-		return errors.Errorf("expected status code: %d, got %d", http.StatusFound, resp.StatusCode)
+	if err = checkStatusCode(resp, http.StatusFound); err != nil {
+		return err
 	}
 	if location, err := resp.Location(); err != nil {
 		return errors.Wrap(err, "while getting response location")
@@ -60,6 +62,19 @@ func (c *Client) buildTargetURL(dashboardURL string) string {
 		"Aserver%3Aclient_id%3Aconsole%20openid%20profile%20email%20groups&state=5a4f3d15&nonce=79bf9c29"
 
 	return fmt.Sprintf("https://dex.%s/auth?client_id=console&redirect_uri=%s%s", domain, dashboardURL, params)
+}
+
+func checkStatusCode(resp *http.Response, expectedStatusCode int) error {
+	if resp.StatusCode != expectedStatusCode {
+		// limited buff to ready only ~4kb, so big response will not blowup our component
+		body, err := ioutil.ReadAll(io.LimitReader(resp.Body, 4096))
+		if err != nil {
+			body = []byte(fmt.Sprintf("cannot read body, got error: %s", err))
+		}
+		return errors.Errorf("got unexpected status code, want %d, got %d, url: %s, body: %s",
+			expectedStatusCode, resp.StatusCode, resp.Request.URL.String(), body)
+	}
+	return nil
 }
 
 func (c *Client) warnOnError(err error) {

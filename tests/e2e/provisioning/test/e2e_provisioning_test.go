@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,6 +19,6 @@ func Test_E2E_Provisioning(t *testing.T) {
 	dashboardURL, err := ts.brokerClient.FetchDashboardURL()
 	require.NoError(t, err)
 
-	err = ts.kymaClient.CallDashboardURL(dashboardURL)
+	err = ts.kymaClient.AssertRedirectedToUAA(dashboardURL)
 	assert.NoError(t, err)
 }

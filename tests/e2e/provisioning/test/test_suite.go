@@ -36,7 +36,7 @@ type Suite struct {
 
 func (ts *Suite) TearDown() {
 	ts.log.Info("Cleaning up...")
-	err := ts.runtimeClient.TearDown()
+	err := ts.runtimeClient.EnsureUAAInstanceRemoved()
 	assert.NoError(ts.t, err)
 	err = ts.brokerClient.DeprovisionRuntime()
 	require.NoError(ts.t, err)
@@ -51,9 +51,9 @@ func newTestSuite(t *testing.T) *Suite {
 
 	log := logrus.New()
 	runtimeID := uuid.New().String()
-	kymaClient := kyma.NewClient(*client, log)
-	brokerClient := broker.NewClient(cfg.Broker, cfg.TenantID, runtimeID, *client, log)
-	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, runtimeID, *client, log)
+	kymaClient := kyma.NewClient(*client, log.WithField("service", "kymaClient"))
+	brokerClient := broker.NewClient(cfg.Broker, cfg.TenantID, runtimeID, *client, log.WithField("service", "brokerClient"))
+	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, runtimeID, *client, log.WithField("service", "runtimeClient"))
 
 	return &Suite{
 		t:             t,

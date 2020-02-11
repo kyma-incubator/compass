@@ -9,13 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/thanhpk/randstr"
-
 	"github.com/google/uuid"
-
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/thanhpk/randstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -62,7 +60,7 @@ func (c *Client) ProvisionRuntime() (string, error) {
 	c.log.Infof("Provisioning Runtime [ID: %s, NAME: %s]", c.runtimeID, c.clusterName)
 	requestByte, err := c.prepareProvisionDetails()
 	if err != nil {
-		return "", errors.Wrap(err, "while marshalling request body")
+		return "", errors.Wrap(err, "while preparing provision details")
 	}
 	c.log.Infof("Provisioning parameters: %v", string(requestByte))
 
@@ -112,7 +110,7 @@ func (c *Client) AwaitProvisioningSucceeded(operationID string) error {
 	lastOperationURL := fmt.Sprintf("%s%s/%s/last_operation?operation=%s", c.brokerConfig.URL, instancesURL, c.runtimeID, operationID)
 
 	response := lastOperationResponse{}
-	err := wait.Poll(time.Minute, c.brokerConfig.ProvisionTimeout, func() (bool, error) {
+	err := wait.Poll(5*time.Minute, c.brokerConfig.ProvisionTimeout, func() (bool, error) {
 		err := c.executeRequest(http.MethodGet, lastOperationURL, nil, &response)
 		if err != nil {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
@@ -125,8 +123,13 @@ func (c *Client) AwaitProvisioningSucceeded(operationID string) error {
 		case domain.Succeeded:
 			c.log.Infof("Runtime Provisioning succeeded!")
 			return true, nil
+		case domain.InProgress:
+			return false, nil
 		default:
-			c.log.Infof("Waiting 1min for provisioning succeeded...  state: %s", response.State)
+			if response.State == "" {
+				c.log.Infof("Got empty provisioning response")
+				return false, nil
+			}
 			return false, nil
 		}
 	})
@@ -166,7 +169,7 @@ func (c *Client) prepareProvisionDetails() ([]byte, error) {
 		Name:       c.clusterName,
 		Components: []string{""}, // fill with optional components
 	}
-	context := ersContext{
+	context := inputContext{
 		TenantID:        "1eba80dd-8ff6-54ee-be4d-77944d17b10b",
 		SubAccountID:    "39ba9a66-2c1a-4fe4-a28e-6e5db434084e",
 		GlobalAccountID: c.globalAccountID,

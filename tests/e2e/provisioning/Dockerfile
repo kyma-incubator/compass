@@ -5,7 +5,7 @@ ENV SRC_DIR=/go/src/github.com/kyma-incubator/compass/tests/e2e/provisioning
 WORKDIR $SRC_DIR
 COPY . $SRC_DIR
 
-RUN CGO_ENABLED=0 GOOS=linux go test -c ./test
+RUN CGO_ENABLED=0 GOOS=linux go test -ldflags="-s -w" -c ./test
 
 # contains bash and kubectl
 FROM linkyard/kubectl:1.14.2

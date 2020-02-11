@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -19,8 +20,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// accountIDKey is a header key name for request send by graphQL client
-const accountIDKey = "tenant"
+// tenantHeaderName is a header key name for request send by graphQL client
+const tenantHeaderName = "tenant"
 
 type Config struct {
 	ProvisionerURL string `default:"http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"`
@@ -51,8 +52,8 @@ func NewClient(config Config, runtimeID, tenantID string, clientHttp http.Client
 	}
 }
 
-func (c *Client) TearDown() error {
-	err := c.setRuntimeConfig()
+func (c *Client) EnsureUAAInstanceRemoved() error {
+	err := c.setRuntimeConfig() //TODO: get client and inject it later
 	if err != nil {
 		return errors.Wrap(err, "while setting runtime config")
 	}
@@ -78,7 +79,7 @@ func (c *Client) fetchRuntimeConfig() (*runtimeStatusResponse, error) {
 
 	// prepare and run request
 	req := graphCli.NewRequest(q)
-	req.Header.Add(accountIDKey, c.tenantID)
+	req.Header.Add(tenantHeaderName, c.tenantID)
 
 	res := &runtimeStatusResponse{}
 	err := gCli.Run(context.Background(), req, res)
@@ -95,12 +96,25 @@ func (c *Client) setRuntimeConfig() error {
 	}
 
 	runtimeConfig := *response.Result.RuntimeConfiguration.Kubeconfig
-	runtimeConfigFile := "/tmp/runtime.yaml"
-	err = ioutil.WriteFile(runtimeConfigFile, []byte(runtimeConfig), 0200)
+	content := []byte(runtimeConfig)
+	runtimeConfigTmpFile, err := ioutil.TempFile("", "runtime.*.yaml")
 	if err != nil {
-		return errors.Wrap(err, "while creating runtime kubeconfig file")
+		return errors.Wrap(err, "while creating runtime config temp file")
 	}
-	err = c.setClientConfig(runtimeConfigFile)
+
+	defer func() {
+		err = os.Remove(runtimeConfigTmpFile.Name())
+		c.log.Fatal(err)
+	}()
+
+	if _, err := runtimeConfigTmpFile.Write(content); err != nil {
+		return errors.Wrap(err, "while writing runtime config temp file")
+	}
+	if err := runtimeConfigTmpFile.Close(); err != nil {
+		return errors.Wrap(err, "while closing runtime config temp file")
+	}
+
+	err = c.setClientConfig(runtimeConfigTmpFile.Name())
 	if err != nil {
 		return errors.Wrap(err, "while setting client config")
 	}
