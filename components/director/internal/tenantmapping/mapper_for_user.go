@@ -26,7 +26,8 @@ type mapperForUser struct {
 func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
 	var externalTenantID, scopes string
 	// fmt.Printf("Username: %s\n", username)
-	errors.Wrapf("Username: %s\n", username)
+	// errors.Wrapf(nil, "Username: %s\n", username)
+	errors.Wrap(nil, fmt.Sprintf("Username: %s\n", username))
 	// db.logger("transaction rolled back")
 	staticUser, err := m.staticUserRepo.Get(username)
 	if err != nil {

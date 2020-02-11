@@ -1,6 +1,7 @@
 package tenantmapping
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -115,7 +116,7 @@ func (d *ReqData) GetExternalTenantID() (string, error) {
 // GetScopes returns scopes from the parsed request input if defined
 func (d *ReqData) GetScopes() (string, error) {
 	// fmt.Printf("Body: %+v\n", d.Body.Extra)
-	errors.Wrapf("Body: %+v\n", d.Body.Extra)
+	errors.Wrap(nil, fmt.Sprintf("Body: %+v\n", d.Body.Extra))
 	if scopesVal, ok := d.Body.Extra[ScopesKey]; ok {
 		scopes, err := str.Cast(scopesVal)
 		if err != nil {
