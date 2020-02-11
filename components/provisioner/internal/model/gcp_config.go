@@ -1,7 +1,7 @@
 package model
 
 import (
-	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-incubator/hydroform/types"
 )
 
@@ -39,6 +39,6 @@ func (c GCPConfig) ToHydroformConfiguration(credentialsFileName string) (*types.
 	return cluster, provider, nil
 }
 
-func (c GCPConfig) ToShootTemplate(namespace string) *gardener_types.Shoot {
+func (c GCPConfig) ToShootTemplate(namespace string) (*gardener_types.Shoot, error) {
 	panic("Method not supported for GCP Config")
 }

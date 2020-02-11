@@ -7,3 +7,4 @@ deployment:
 
 gateway:
   enabled: true
+  manageCerts: true

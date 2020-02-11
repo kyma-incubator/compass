@@ -9,6 +9,10 @@ import (
 	"github.com/sanity-io/litter"
 )
 
+type StructDumper interface {
+	Dump(value ...interface{})
+}
+
 // Dumper is the simplest implementation just for dumping also RawContext and RawParameters
 // as strings instead of byte array.
 type Dumper struct {

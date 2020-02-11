@@ -35,12 +35,19 @@ This table lists the environment variables, their descriptions, and default valu
 | **APP_ADDRESS** | Provisioner address with the port | `127.0.0.1:3000` |
 | **APP_API_ENDPOINT** | Endpoint for the GraphQL API | `/graphql` |
 | **APP_PLAYGROUND_API_ENDPOINT** | Endpoint for the API playground | `/graphql` |
-| **APP_SCHEMA_FILE_PATH** | Filepath for the database schema | `assets/database/provisioner.sql` |
+| **APP_CREDENTIALS_NAMESPACE** | Namespace where Director credentials are stored | `compass-system` |
+| **APP_DIRECTOR_URL** | Director URL | `https://compass-gateway-auth-oauth.kyma.local/director/graphql` |
+| **APP_SKIP_DIRECTOR_CERT_VERIFICATION** | Flag to skip certificate verification for Director | `false` |
+| **APP_OAUTH_CREDENTIALS_SECRET_NAME** | Runtime Provisioner credentials | `compass-provisioner-credentials` |
 | **APP_DATABASE_USER** | Database username | `postgres` |
 | **APP_DATABASE_PASSWORD** | Database user password | `password` |
 | **APP_DATABASE_HOST** | Database host | `localhost` |
 | **APP_DATABASE_PORT** | Database port | `5432` |
 | **APP_DATABASE_NAME** | Database name | `provisioner` |
 | **APP_DATABASE_SSL_MODE** | SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html)  | `disable`|
+| **APP_SCHEMA_FILE_PATH** | Filepath for the database schema | `assets/database/provisioner.sql` |
 | **APP_INSTALLATION_TIMEOUT** | Kyma installation timeout | `30m`|
 | **APP_INSTALLATION_ERRORS_COUNT_FAILURE_THRESHOLD** | Number of installation errors that cause installation to fail  | `5`|
+| **APP_GARDENER_PROJECT** | Name of the Gardener project connected to the service account  | `gardenerProject`|
+| **APP_GARDENER_KUBECONFIG_PATH** | Filepath for the Gardener kubeconfig  | `./dev/kubeconfig.yaml`|
+| **APP_PROVISIONER** | Provisioning mechanism used by the Runtime Provisioner (Gardener or Hydroform) | `gardener`|

@@ -7,8 +7,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
-	"github.com/google/uuid"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 )
@@ -63,9 +61,9 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 	return NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, staticUser.Username, consumer.User), nil
 }
 
-func hasValidTenant(assignedTenants []uuid.UUID, tenant string) bool {
+func hasValidTenant(assignedTenants []string, tenant string) bool {
 	for _, assignedTenant := range assignedTenants {
-		if assignedTenant.String() == tenant {
+		if assignedTenant == tenant {
 			return true
 		}
 	}
