@@ -55,6 +55,12 @@ type PackageInstanceAuth {
   Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
   """
   context: Any
+
+  """
+  User input
+  """
+  inputParams: Any
+  
   """
   It may be empty if status is PENDING.
   Populated with `package.defaultInstanceAuth` value if `package.defa	ultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
@@ -85,6 +91,17 @@ enum PackageInstanceAuthStatusCondition {
   PENDING
   SUCCEEDED
   FAILED
+}
+
+input PackageInstanceAuthRequestInput {
+	"""
+	Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
+	"""
+	context: Any
+	"""
+	JSON validated against package.instanceAuthRequestInputSchema
+	"""
+	inputParams: Any
 }
 
 type Mutation {
