@@ -120,8 +120,6 @@ spec:
         secret:
           secretName: cloudsql-instance-credentials
       {{end}}
-      {{ if eq .Values.provisioner "gardener" }}
       - name: gardener-kubeconfig
         secret:
           secretName: {{ .Values.gardener.secretName }}
-      {{end}}

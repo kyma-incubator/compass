@@ -57,15 +57,9 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		}
 	}
 
-	credSecretName, err := c.hyperscalerAccountProvider.CompassSecretName(&input, tenant)
-
-	if err != nil {
-		return model.Cluster{}, err
-	}
-
 	return model.Cluster{
 		ID:                    runtimeID,
-		CredentialsSecretName: credSecretName,
+		CredentialsSecretName: "",
 		KymaConfig:            kymaConfig,
 		ClusterConfig:         providerConfig,
 		Tenant:                tenant,

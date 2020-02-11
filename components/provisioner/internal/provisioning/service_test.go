@@ -98,7 +98,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		accountProviderMock := &hyperscalerMocks.AccountProvider{}
 		accountProviderMock.On("GardenerSecretName", mock.AnythingOfType("*gqlschema.GardenerConfigInput"), tenant).Return("gardener-secret-tenant", nil)
-		accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), tenant).Return("compass-secret-tenant", nil)
 
 		inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject, accountProviderMock)
 
@@ -148,9 +147,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		directorServiceMock := &directormock.DirectorClient{}
 		provisioner := &mocks2.Provisioner{}
 
-		accountProviderMock := &hyperscalerMocks.AccountProvider{}
-		accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), tenant).Return("compass-secret-tenant", nil)
-		inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject, accountProviderMock)
+		inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject, nil)
 
 		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
@@ -172,7 +169,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
 		assert.NotEmpty(t, operationStatus.ID)
 		sessionFactoryMock.AssertExpectations(t)
-		accountProviderMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)
 		directorServiceMock.AssertExpectations(t)
 	})
@@ -186,7 +182,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		accountProviderMock := &hyperscalerMocks.AccountProvider{}
 		accountProviderMock.On("GardenerSecretName", mock.AnythingOfType("*gqlschema.GardenerConfigInput"), tenant).Return("gardener-secret-tenant", nil)
-		accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), tenant).Return("compass-secret-tenant", nil)
 
 		inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject, accountProviderMock)
 
@@ -226,7 +221,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		accountProviderMock := &hyperscalerMocks.AccountProvider{}
 		accountProviderMock.On("GardenerSecretName", mock.AnythingOfType("*gqlschema.GardenerConfigInput"), tenant).Return("gardener-secret-tenant", nil)
-		accountProviderMock.On("CompassSecretName", mock.AnythingOfType("*gqlschema.ProvisionRuntimeInput"), tenant).Return("compass-secret-tenant", nil)
 
 		inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject, accountProviderMock)
 
