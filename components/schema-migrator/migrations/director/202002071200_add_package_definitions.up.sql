@@ -1,6 +1,7 @@
 CREATE TABLE packages (
     id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id UUID NOT NULL,
+    FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id),
     name VARCHAR(256) NOT NULL,
     description TEXT,
     instance_auth_request_json_schema JSONB,
@@ -19,9 +20,11 @@ CREATE TYPE package_instance_auth_status_condition AS ENUM (
 CREATE TABLE package_instance_auths (
     id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     package_id UUID NOT NULL CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    FOREIGN KEY (package_id) REFERENCES packages (id) ON DELETE CASCADE,
     tenant_id UUID NOT NULL,
-    FOREIGN KEY (tenant_id, package_id) REFERENCES packages (tenant_id, id) ON DELETE CASCADE,
+    FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id),
     context JSONB,
+    input_params JSONB,
     auth_value JSONB,
     status_condition package_instance_auth_status_condition NOT NULL,
     status_timestamp TIMESTAMP NOT NULL,
