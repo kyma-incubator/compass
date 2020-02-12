@@ -15,7 +15,7 @@ On Runtime, Application is represented as Service Class, and every Package withi
 
 The Director GraphQL API is updated to store credentials per Service Instance. Credentials for every Instance across all Runtimes are stored on the Package level.
 
-### API Credentials Flow
+### Request Package Credentials Flow
 
 ![API Credentials Flow](./assets/api-credentials-flow.svg)
 
@@ -30,6 +30,22 @@ Assume we have Application which is already registered into Compass. Application
 1. Director asynchronously notifies Application about the credentials request via Webhook API.
 1. Application sets credentials for a given Service Instance.
 1. Runtime Agent fetches configuration with credentials for a given Service Instance.
+
+When User deletes Service Instance, Runtime Agent calls Director with credentials deletion request. Director sets credentials status to `UNUSED`, notifies Application and waits for credentials deletion.
+
+### Example request credentials flow
+
+1. User connects Application `foo` with single Package `bar` which contain few API and Event Definitions. The Package has `instanceAuthRequestInputSchema` defined.
+1. User selects Service Class `foo` and Service Plan `bar`.
+1. User provides required input (defined by `instanceAuthRequestInputSchema`) and provisions selected Service Plan. The Service Instance is in `PROVISIONING` state.
+1. Runtime Agent calls Director with `requestPackageInstanceAuthCreation`, passing user input.
+1. Director validates user input against `instanceAuthRequestInputSchema`. When the user input is valid, a new `PackageInstanceAuth` within Package `foo` is created.
+   
+   a. If `defaultInstanceAuth` for Package `foo` is defined, the newly created `PackageInstanceAuth` is filled with credentials from `defaultInstanceAuth` value. The status is set to `SUCCEEDED`.
+   
+   b. If `defaultInstanceAuth` for Package `foo` is not defined, the `PackageInstanceAuth` waits in `PENDING` state until Application does `setPackageInstanceAuth`. Then the status is set to `SUCCEEDED`.
+   
+1. After fetching valid credentials for Service Instance by Runtime, Service Instance is set to `READY` state.
 
 ### GraphQL Schema
 
@@ -123,14 +139,3 @@ type Mutation {
 ```
 
 Application or Integration System can set optional `instanceAuthRequestInputSchema` field with a JSON schema with parameters needed during Service Class provisioning. The values provided by User are validated against the JSON schema.
-
-### Example request credentials flow
-
-1. User connects Application `foo` with single Package `bar` which contain few API and Event Definitions. The Package has `instanceAuthRequestInputSchema` defined.
-1. User selects Service Class `foo` and Service Plan `bar`.
-1. User provides required input (defined by `instanceAuthRequestInputSchema`) and provisions selected Service Plan.
-1. Runtime Agent calls Director with `requestPackageInstanceAuth`, passing user input.
-1. Director validates user input against `instanceAuthRequestInputSchema`. When the user input is valid, a new `PackageInstanceAuth` within Package `foo` is created.
-   a. If `defaultInstanceAuth` for Package `foo` is defined, the newly created `PackageInstanceAuth` is filled with credentials from `defaultInstanceAuth` value. The status is set to `SUCCEEDED`.
-   b. If `defaultInstanceAuth` for Package `foo` is not defined, the `PackageInstanceAuth` waits in `PENDING` state until Application does `setPackageInstanceAuth`. Then the status is set to `SUCCEEDED`.
-1. After fetching valid credentials for Service Instance by Runtime, Service Instance is set to `READY` state.
