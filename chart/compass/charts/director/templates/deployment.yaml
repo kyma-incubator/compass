@@ -84,10 +84,12 @@ spec:
           volumeMounts:
             - mountPath: /config
               name: director-config
-            - mountPath: /data
+            - mountPath: /data/static-users.yaml
               name: static-users
-            - mountPath: /data
+              subPath: static-users.yaml
+            - mountPath: /data/static-groups.yaml
               name: static-groups
+              subPath: static-groups.yaml
 
         {{if eq .Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials

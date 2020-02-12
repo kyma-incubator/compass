@@ -51,7 +51,7 @@ type config struct {
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone bool          `envconfig:"default=true"`
 
-	StaticUsersSrc string `envconfig:"default=/data/static-users.yaml"`
+	StaticUsersSrc  string `envconfig:"default=/data/static-users.yaml"`
 	StaticGroupsSrc string `envconfig:"default=/data/static-groups.yaml"`
 
 	OneTimeToken onetimetoken.Config
@@ -110,7 +110,7 @@ func main() {
 	gqlAPIRouter.HandleFunc("", handler.GraphQL(executableSchema))
 
 	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHanderFunc(transact, cfg.StaticUsersSrc,cfg.StaticGroupsSrc, scopeCfgProvider)
+	tenantMappingHandlerFunc, err := getTenantMappingHanderFunc(transact, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, scopeCfgProvider)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
@@ -165,14 +165,14 @@ func configureLogger() {
 	log.SetReportCaller(true)
 }
 
-func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersSrc string, staticGroupsSrc string,,scopeProvider *scope.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersSrc string, staticGroupsSrc string, scopeProvider *scope.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	staticUsersRepo, errUsers := tenantmapping.NewStaticUserRepository(staticUsersSrc)
-	staticGroupsRepo, errGroups :=tenantmapping.NewStaticGroupRepository(staticGroupsSrc)
+	staticGroupsRepo, errGroups := tenantmapping.NewStaticGroupRepository(staticGroupsSrc)
 	if errUsers != nil {
 		return nil, errors.Wrap(errUsers, "while creating StaticUser repository instance")
 	}
@@ -183,7 +183,7 @@ func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersS
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
-	mapperForUser := tenantmapping.NewMapperForUser(staticUsersRepo, tenantRepo)
+	mapperForUser := tenantmapping.NewMapperForUser(staticUsersRepo, staticGroupsRepo, tenantRepo)
 	mapperForSystemAuth := tenantmapping.NewMapperForSystemAuth(systemAuthSvc, scopeProvider, tenantRepo)
 
 	reqDataParser := tenantmapping.NewReqDataParser()
