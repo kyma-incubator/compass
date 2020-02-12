@@ -88,7 +88,7 @@ func (ts *TestSuite) WaitUntilOperationIsFinished(timeout time.Duration, operati
 		}
 
 		if operationStatus.State == gqlschema.OperationStateInProgress {
-			logrus.Infof("Operation %s in progress", operationID)
+			logrus.Infof("Operation \"%s\": %s in progress", operationStatus.Operation, operationID)
 			return false
 		}
 
