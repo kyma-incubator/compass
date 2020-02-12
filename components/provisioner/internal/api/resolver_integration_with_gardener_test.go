@@ -133,16 +133,19 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	require.NoError(t, err)
 	defer cleanupNetwork()
 
-	containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx, "postgres_database")
+	containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx, "postgres_database_2")
 	require.NoError(t, err)
 
 	defer containerCleanupFunc()
 
-	connection, err := database.InitializeDatabase(connString, testutils.SchemaFilePath, 5)
+	connection, err := database.InitializeDatabaseConnection(connString, 5)
 	require.NoError(t, err)
 	require.NotNil(t, connection)
 
 	defer testutils.CloseDatabase(t, connection)
+
+	err = database.SetupSchema(connection, testutils.SchemaFilePath)
+	require.NoError(t, err)
 
 	kymaConfig := fixKymaGraphQLConfigInput()
 
