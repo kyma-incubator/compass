@@ -133,8 +133,9 @@ func (d *ReqData) GetScopes() (string, error) {
 func (d *ReqData) GetGroup() (string, error) {
 	if groupsVal, ok := d.Body.Extra[GroupsKey]; ok {
 		// log.Infof("groupsVal = %+v, typeof %s\n", groupsVal, reflect.TypeOf(groupsVal))
-		groupsStr, err := str.Cast(groupsVal)
-		log.Info("GroupsStr=", groupsStr, ", err=", err)
+		// [aaa gfdgfg]
+		// groupsStr, err := str.Cast(groupsVal)
+		log.Info("groupsVal=", groupsVal)
 		groupsRaw, convertedOk := groupsVal.([]string)
 		groupsFiltered := []string{}
 
