@@ -16,7 +16,8 @@ CREATE UNIQUE INDEX ON packages (tenant_id, id);
 CREATE TYPE package_instance_auth_status_condition AS ENUM (
     'PENDING',
     'SUCCEEDED',
-    'FAILED'
+    'FAILED',
+    'UNUSED'
 );
 
 CREATE TABLE package_instance_auths (
