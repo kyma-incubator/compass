@@ -46,6 +46,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:            in.ID,
 		ApplicationID: in.ApplicationID,
+		PackageID:     in.PackageID,
 		Name:          in.Name,
 		Description:   in.Description,
 		Spec:          c.apiSpecToGraphQL(in.ID, in.Spec),
@@ -135,7 +136,7 @@ func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
 	return model.APIDefinition{
 		ID:            entity.ID,
 		ApplicationID: &entity.AppID.String,
-		PackageID:     entity.PkgID,
+		PackageID:     &entity.PkgID.String,
 		Name:          entity.Name,
 		TargetURL:     entity.TargetURL,
 		Tenant:        entity.TenantID,
@@ -157,7 +158,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) (Entity, error) {
 		ID:          apiModel.ID,
 		TenantID:    apiModel.Tenant,
 		AppID:       repo.NewNullableString(apiModel.ApplicationID),
-		PkgID:       apiModel.PackageID,
+		PkgID:       repo.NewNullableString(apiModel.PackageID),
 		Name:        apiModel.Name,
 		Description: repo.NewNullableString(apiModel.Description),
 		Group:       repo.NewNullableString(apiModel.Group),

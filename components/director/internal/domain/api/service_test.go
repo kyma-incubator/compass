@@ -33,7 +33,7 @@ func TestService_Get(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	apiDefinition := fixAPIDefinitionModel(id, appID, packageID, name, desc)
+	apiDefinition := fixAPIDefinitionModel(id, appID, &packageID, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID)
@@ -110,7 +110,7 @@ func TestService_GetForApplication(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	apiDefinition := fixAPIDefinitionModel(id, &appID, pkgID, name, desc)
+	apiDefinition := fixAPIDefinitionModel(id, &appID, &pkgID, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID)
@@ -191,9 +191,9 @@ func TestService_List(t *testing.T) {
 	desc := "bar"
 
 	apiDefinitions := []*model.APIDefinition{
-		fixAPIDefinitionModel(id, &applicationID, pkgID, name, desc),
-		fixAPIDefinitionModel(id, &applicationID, pkgID, name, desc),
-		fixAPIDefinitionModel(id, &applicationID, pkgID, name, desc),
+		fixAPIDefinitionModel(id, &applicationID, &pkgID, name, desc),
+		fixAPIDefinitionModel(id, &applicationID, &pkgID, name, desc),
+		fixAPIDefinitionModel(id, &applicationID, &pkgID, name, desc),
 	}
 	apiDefinitionPage := &model.APIDefinitionPage{
 		Data:       apiDefinitions,

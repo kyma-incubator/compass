@@ -9,7 +9,7 @@ import (
 type APIDefinition struct {
 	ID            string
 	ApplicationID *string
-	PackageID     string
+	PackageID     *string
 	Tenant        string
 	Name          string
 	Description   *string
@@ -85,7 +85,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, appID *string, tenant st
 	}
 }
 
-func (a *APIDefinitionInput) ToAPIDefinitionWithPackage(id string, packageID string, tenant string) *APIDefinition {
+func (a *APIDefinitionInput) ToAPIDefinitionWithPackage(id string, packageID *string, tenant string) *APIDefinition {
 	if a == nil {
 		return nil
 	}

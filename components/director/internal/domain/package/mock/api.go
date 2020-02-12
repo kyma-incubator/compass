@@ -123,7 +123,7 @@ components:
 	return &graphql.APIDefinition{
 		ID:            id,
 		ApplicationID: str.Ptr("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-		PackageID:     packageID,
+		PackageID:     str.Ptr("pppppppp-pppp-pppp-pppp-pppppppppppp"),
 		Name:          "foo",
 		Description:   &desc,
 		Spec: &graphql.APISpec{

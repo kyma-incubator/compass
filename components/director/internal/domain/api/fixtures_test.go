@@ -23,7 +23,7 @@ const (
 	packageID = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 )
 
-func fixAPIDefinitionModel(id string, appId *string, pkgID, name, targetURL string) *model.APIDefinition {
+func fixAPIDefinitionModel(id string, appId, pkgID *string, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ID:            id,
 		ApplicationID: appId,
@@ -72,7 +72,7 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 		ID:            apiDefID,
 		ApplicationID: str.Ptr(appID),
 		Tenant:        tenantID,
-		PackageID:     packageID,
+		PackageID:     str.Ptr(packageID),
 		Name:          placeholder,
 		Description:   str.Ptr("desc_" + placeholder),
 		Spec:          spec,
@@ -83,7 +83,7 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 	}
 }
 
-func fixGQLAPIDefinition(id string, appId *string, pkgId, name, targetURL string) *graphql.APIDefinition {
+func fixGQLAPIDefinition(id string, appId, pkgId *string, name, targetURL string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:            id,
 		ApplicationID: appId,
@@ -123,6 +123,7 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:            apiDefID,
 		ApplicationID: str.Ptr(appID),
+		PackageID:     str.Ptr(packageID),
 		Name:          placeholder,
 		Description:   str.Ptr("desc_" + placeholder),
 		Spec:          spec,
@@ -294,11 +295,11 @@ func fixGQLAPIRtmAuth(id string, auth *graphql.Auth) *graphql.APIRuntimeAuth {
 	}
 }
 
-func fixEntityAPIDefinition(id string, appId *string, pkgID, name, targetUrl string) api.Entity {
+func fixEntityAPIDefinition(id string, appId, pkgID *string, name, targetUrl string) api.Entity {
 	return api.Entity{
 		ID:        id,
 		AppID:     repo.NewNullableString(appId),
-		PkgID:     pkgID,
+		PkgID:     repo.NewNullableString(pkgID),
 		Name:      name,
 		TargetURL: targetUrl,
 	}
@@ -311,7 +312,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 		ID:          apiDefID,
 		TenantID:    tenantID,
 		AppID:       repo.NewNullableString(str.Ptr(appID)),
-		PkgID:       packageID,
+		PkgID:       repo.NewNullableString(str.Ptr(packageID)),
 		Name:        placeholder,
 		Description: repo.NewValidNullableString("desc_" + placeholder),
 		Group:       repo.NewValidNullableString("group_" + placeholder),

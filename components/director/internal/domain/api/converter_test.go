@@ -112,15 +112,15 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.APIDefinition{
-		fixAPIDefinitionModel("foo", str.Ptr("1"), "1", "Foo", "Lorem ipsum"),
-		fixAPIDefinitionModel("bar", str.Ptr("1"), "1", "Bar", "Dolor sit amet"),
+		fixAPIDefinitionModel("foo", str.Ptr("1"), nil, "Foo", "Lorem ipsum"),
+		fixAPIDefinitionModel("bar", str.Ptr("1"), nil, "Bar", "Dolor sit amet"),
 		{},
 		nil,
 	}
 
 	expected := []*graphql.APIDefinition{
-		fixGQLAPIDefinition("foo", str.Ptr("1"), "", "Foo", "Lorem ipsum"),
-		fixGQLAPIDefinition("bar", str.Ptr("1"), "", "Bar", "Dolor sit amet"),
+		fixGQLAPIDefinition("foo", str.Ptr("1"), nil, "Foo", "Lorem ipsum"),
+		fixGQLAPIDefinition("bar", str.Ptr("1"), nil, "Bar", "Dolor sit amet"),
 		{},
 	}
 
@@ -375,7 +375,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		apiModel := fixAPIDefinitionModel("id", str.Ptr("app_id"), "pkg_id", "name", "target_url")
+		apiModel := fixAPIDefinitionModel("id", str.Ptr("app_id"), str.Ptr("pkg_id"), "name", "target_url")
 		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
@@ -383,7 +383,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		entity, err := conv.ToEntity(*apiModel)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, fixEntityAPIDefinition("id", str.Ptr("app_id"), "pkg_id", "name", "target_url"), entity)
+		assert.Equal(t, fixEntityAPIDefinition("id", str.Ptr("app_id"), str.Ptr("pkg_id"), "name", "target_url"), entity)
 	})
 }
 
@@ -401,14 +401,14 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		entity := fixEntityAPIDefinition("id", str.Ptr("app_id"), "pkg_id", "name", "target_url")
+		entity := fixEntityAPIDefinition("id", str.Ptr("app_id"), str.Ptr("pkg_id"), "name", "target_url")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
 		apiModel, err := conv.FromEntity(entity)
 		//THEN
 		require.NoError(t, err)
-		expectedModel := fixAPIDefinitionModel("id", str.Ptr("app_id"), "pkg_id", "name", "target_url")
+		expectedModel := fixAPIDefinitionModel("id", str.Ptr("app_id"), str.Ptr("pkg_id"), "name", "target_url")
 		require.NotNil(t, expectedModel)
 		assert.Equal(t, *expectedModel, apiModel)
 	})

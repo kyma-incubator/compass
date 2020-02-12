@@ -28,9 +28,10 @@ func TestResolver_AddAPI(t *testing.T) {
 
 	id := "bar"
 	appId := str.Ptr("1")
+	pkgID := str.Ptr("pkg_id")
 
-	modelAPI := fixAPIDefinitionModel(id, appId, "pkg_id", "name", "bar")
-	gqlAPI := fixGQLAPIDefinition(id, appId, "pkg_id", "name", "bar")
+	modelAPI := fixAPIDefinitionModel(id, appId, pkgID, "name", "bar")
+	gqlAPI := fixGQLAPIDefinition(id, appId, pkgID, "name", "bar")
 	gqlAPIInput := fixGQLAPIDefinitionInput("name", "foo", "bar")
 	modelAPIInput := fixModelAPIDefinitionInput("name", "foo", "bar")
 
@@ -229,8 +230,8 @@ func TestResolver_DeleteAPI(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	modelAPIDefinition := fixAPIDefinitionModel(id, str.Ptr("1"), "1", "foo", "bar")
-	gqlAPIDefinition := fixGQLAPIDefinition(id, str.Ptr("1"), "1", "foo", "bar")
+	modelAPIDefinition := fixAPIDefinitionModel(id, str.Ptr("1"), str.Ptr("1"), "foo", "bar")
+	gqlAPIDefinition := fixGQLAPIDefinition(id, str.Ptr("1"), str.Ptr("1"), "foo", "bar")
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -353,8 +354,8 @@ func TestResolver_UpdateAPI(t *testing.T) {
 	id := "bar"
 	gqlAPIDefinitionInput := fixGQLAPIDefinitionInput(id, "foo", "bar")
 	modelAPIDefinitionInput := fixModelAPIDefinitionInput(id, "foo", "bar")
-	gqlAPIDefinition := fixGQLAPIDefinition(id, str.Ptr("1"), "1", "foo", "bar")
-	modelAPIDefinition := fixAPIDefinitionModel(id, str.Ptr("1"), "1", "foo", "bar")
+	gqlAPIDefinition := fixGQLAPIDefinition(id, str.Ptr("1"), str.Ptr("1"), "foo", "bar")
+	modelAPIDefinition := fixAPIDefinitionModel(id, str.Ptr("1"), str.Ptr("1"), "foo", "bar")
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -495,7 +496,7 @@ func TestResolver_Auth(t *testing.T) {
 	rtmID := "foo"
 	apiID := "bar"
 
-	parentAPI := fixGQLAPIDefinition(apiID, str.Ptr("baz"), "1", "Test API", "API used by tests")
+	parentAPI := fixGQLAPIDefinition(apiID, str.Ptr("baz"), str.Ptr("1"), "Test API", "API used by tests")
 
 	modelAPIRtmAuth := fixModelAPIRtmAuth(rtmID, fixModelAuth())
 	gqlAPIRtmAuth := fixGQLAPIRtmAuth(rtmID, fixGQLAuth())
@@ -651,7 +652,7 @@ func TestResolver_Auths(t *testing.T) {
 
 	apiID := "bar"
 
-	parentAPI := fixGQLAPIDefinition(apiID, str.Ptr("baz"), "1", "Test API", "API used by tests")
+	parentAPI := fixGQLAPIDefinition(apiID, str.Ptr("baz"), str.Ptr("1"), "Test API", "API used by tests")
 
 	modelAPIRtmAuths := []model.APIRuntimeAuth{
 		*fixModelAPIRtmAuth("r1", fixModelAuth()),
