@@ -129,32 +129,35 @@ func (d *ReqData) GetScopes() (string, error) {
 	return "", apperrors.NewKeyDoesNotExistError(ScopesKey)
 }
 
-// GetGroup returns group name
+// GetGroup returns group name or empty string if there's no group
 func (d *ReqData) GetGroup() (string, error) {
 	if groupsVal, ok := d.Body.Extra[GroupsKey]; ok {
-		// log.Infof("groupsVal = %+v, typeof %s\n", groupsVal, reflect.TypeOf(groupsVal))
-		// [aaa gfdgfg]
-		// groupsStr, err := str.Cast(groupsVal)
-		log.Info("groupsVal=", groupsVal)
-		groupsRaw, convertedOk := groupsVal.([]string)
+
+		groupsArray, arrayConvertedOk := groupsVal.([]interface{})
 		groupsFiltered := []string{}
 
-		for i := range groupsRaw {
-			if !strings.HasPrefix(groupsRaw[i], "tenantID=") {
-				groupsFiltered = append(groupsFiltered, groupsRaw[i])
+		for i := range groupsArray {
+
+			groupString, stringConversionErr := str.Cast(groupsArray[i])
+			if stringConversionErr != nil {
+				log.Infof("%s skipped because string conversion failed", groupsArray[i])
+				continue
+			}
+
+			// filter out group named "tenantID=xxxx"
+			if !strings.HasPrefix(groupString, "tenantID=") {
+				groupsFiltered = append(groupsFiltered, groupString)
 			}
 		}
 
-		if !convertedOk || len(groupsFiltered) <= 0 {
-			log.Infof("No groups found; proceeding with individual scopes (ok=%t)\n", convertedOk)
+		if !arrayConvertedOk || len(groupsFiltered) <= 0 {
+			log.Infof("No groups found; proceeding with individual scopes (ok=%t)\n", arrayConvertedOk)
 			return "", nil
 		}
 
 		return groupsFiltered[0], nil
 	}
 	return "", nil
-
-	// return "", apperrors.NewKeyDoesNotExistError(ScopesKey)
 }
 
 type TenantContext struct {
