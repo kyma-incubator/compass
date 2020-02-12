@@ -25,22 +25,46 @@ type mapperForUser struct {
 	tenantRepo      TenantRepository
 }
 
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
+// GetScopesFromGroups get all scopes from group array, without duplicates
+func GetScopesFromGroups(groups []StaticGroup) string {
+	filteredScopesArray := []string{}
+	for _, group := range groups {
+		for _, scope := range group.Scopes {
+			if !stringInSlice(scope, filteredScopesArray) {
+				filteredScopesArray = append(filteredScopesArray, scope)
+			}
+		}
+
+	}
+
+	return strings.Join(filteredScopesArray, " ")
+}
+
 func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
 	var externalTenantID, scopes string
 	var staticUser StaticUser
 
-	userGroup, err := reqData.GetGroup()
-	log.Infof("GetGroup returned %s\n", userGroup)
+	userGroups, err := reqData.GetGroups()
+	log.Infof("GetGroups returned %s\n", userGroups)
 
 	if err != nil {
-		return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while getting group for a static user with username %s", username))
+		return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while getting groups for a static user with username %s", username))
 	}
 
-	staticGroup, groupExistsError := m.staticGroupRepo.Get(userGroup)
+	staticGroups := m.staticGroupRepo.Get(userGroups)
 
-	if groupExistsError == nil {
+	if len(staticGroups) > 0 {
 		// proceed with group scopes flow
-		scopes = strings.Join(staticGroup.Scopes, " ")
+		scopes = GetScopesFromGroups(staticGroups)
 		log.Infof("Decided to use groups copes %s\n", scopes)
 	} else {
 		// proceed with staticUser (and his scopes) flow
@@ -74,7 +98,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
 
-	if userGroup == "" && !hasValidTenant(staticUser.Tenants, tenantMapping.ExternalTenant) {
+	if len(userGroups) <= 0 && !hasValidTenant(staticUser.Tenants, tenantMapping.ExternalTenant) {
 		return ObjectContext{}, errors.New("tenant mismatch")
 	}
 

@@ -129,18 +129,18 @@ func (d *ReqData) GetScopes() (string, error) {
 	return "", apperrors.NewKeyDoesNotExistError(ScopesKey)
 }
 
-// GetGroup returns group name or empty string if there's no group
-func (d *ReqData) GetGroup() (string, error) {
+// GetGroups returns group name or empty string if there's no group
+func (d *ReqData) GetGroups() ([]string, error) {
 	if groupsVal, ok := d.Body.Extra[GroupsKey]; ok {
 
 		groupsArray, arrayConvertedOk := groupsVal.([]interface{})
 		groupsFiltered := []string{}
 
-		for i := range groupsArray {
+		for _, group := range groupsArray {
 
-			groupString, stringConversionErr := str.Cast(groupsArray[i])
+			groupString, stringConversionErr := str.Cast(group)
 			if stringConversionErr != nil {
-				log.Infof("%s skipped because string conversion failed", groupsArray[i])
+				log.Infof("%s skipped because string conversion failed", group)
 				continue
 			}
 
@@ -152,12 +152,12 @@ func (d *ReqData) GetGroup() (string, error) {
 
 		if !arrayConvertedOk || len(groupsFiltered) <= 0 {
 			log.Infof("No groups found; proceeding with individual scopes (ok=%t)\n", arrayConvertedOk)
-			return "", nil
+			return []string{}, nil
 		}
 
-		return groupsFiltered[0], nil
+		return groupsFiltered, nil
 	}
-	return "", nil
+	return []string{}, nil
 }
 
 type TenantContext struct {

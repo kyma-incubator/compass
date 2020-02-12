@@ -1,12 +1,12 @@
 package tenantmapping
 
 import (
-	"fmt"
 	"io/ioutil"
 
 	"github.com/ghodss/yaml"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 type StaticGroup struct {
@@ -17,7 +17,7 @@ type StaticGroup struct {
 
 //go:generate mockery -name=StaticUserRepository -output=automock -outpkg=automock -case=underscore
 type StaticGroupRepository interface {
-	Get(groupname string) (StaticGroup, error)
+	Get(groupnames []string) []StaticGroup
 }
 
 type staticGroupRepository struct {
@@ -46,10 +46,17 @@ func NewStaticGroupRepository(srcPath string) (*staticGroupRepository, error) {
 	}, nil
 }
 
-func (r *staticGroupRepository) Get(groupname string) (StaticGroup, error) {
-	if staticGroup, ok := r.data[groupname]; ok {
-		return staticGroup, nil
+func (r *staticGroupRepository) Get(groupnames []string) []StaticGroup {
+	result := []StaticGroup{}
+
+	for _, groupname := range groupnames {
+		if staticGroup, ok := r.data[groupname]; ok {
+			result = append(result, staticGroup)
+		} else {
+			// todo check if it works
+			log.Warnf("static group with name %s not found", groupname)
+		}
 	}
 
-	return StaticGroup{}, fmt.Errorf("static group with name %s not found", groupname)
+	return result
 }
