@@ -14,7 +14,7 @@ errcheck-local:
 	errcheck -blank -asserts -ignoregenerated ./...
 
 test-local:
-	@echo notest
+	go test ./...
 
 resolve-local:
 	@echo ${SKIP_STEP_MESSAGE}
