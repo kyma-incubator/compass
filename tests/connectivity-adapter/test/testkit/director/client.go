@@ -12,7 +12,7 @@ import (
 type Client interface {
 	CreateRuntime(in schema.RuntimeInput) (string, error)
 	DeleteRuntime(runtimeID string) error
-	CreateApplication(in schema.ApplicationRegisterInput) (schema.ApplicationExt, error)
+	CreateApplication(in schema.ApplicationRegisterInput) (string, error)
 	DeleteApplication(appID string) error
 	SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error
 	GetOneTimeTokenUrl(appID string) (string, error)
@@ -59,11 +59,11 @@ func NewClient(tenant string, scopes []string) (Client, error) {
 	}, nil
 }
 
-func (c client) CreateApplication(in schema.ApplicationRegisterInput) (schema.ApplicationExt, error) {
+func (c client) CreateApplication(in schema.ApplicationRegisterInput) (string, error) {
 
 	appGraphql, err := c.graphqulizer.ApplicationRegisterInputToGQL(in)
 	if err != nil {
-		return schema.ApplicationExt{}, err
+		return "", err
 	}
 
 	var result ApplicationResponse
@@ -71,13 +71,21 @@ func (c client) CreateApplication(in schema.ApplicationRegisterInput) (schema.Ap
 
 	err = c.execute(query, &result)
 	if err != nil {
-		return schema.ApplicationExt{}, err
+		return "", err
 	}
 
-	return result.Result, nil
+	return result.Result.ID, nil
 }
 
 func (c client) DeleteApplication(appID string) error {
+
+	var result ApplicationResponse
+	query := deleteApplicationQuery(appID)
+
+	err := c.execute(query, &result)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -99,6 +107,15 @@ func (c client) CreateRuntime(in schema.RuntimeInput) (string, error) {
 }
 
 func (c client) DeleteRuntime(runtimeID string) error {
+
+	var result RuntimeResponse
+	query := deleteRuntimeQuery(runtimeID)
+
+	err := c.execute(query, &result)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -144,6 +161,7 @@ func (c client) GetOneTimeTokenUrl(appID string) (string, error) {
 func (c client) execute(query string, res interface{}) error {
 
 	req := gcli.NewRequest(query)
+	req.Header.Set("Tenant", c.tenant)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

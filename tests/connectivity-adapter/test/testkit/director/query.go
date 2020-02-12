@@ -35,7 +35,7 @@ func setEventBaseURLQuery(runtimeID string, url string) string {
 
 func setDefaultEventingQuery(runtimeID string, appID string) string {
 	return fmt.Sprintf(`mutation {
-  	result: setDefaultEventingQuery(appID: "%s",runtimeID: "%s") {
+  	result: setDefaultEventingForApplication(appID: "%s",runtimeID: "%s") {
      defaultURL
   }
 }`, appID, runtimeID)
@@ -49,4 +49,22 @@ func getOneTimeTokenQuery(appID string) string {
 	  legacyConnectorURL
   }
 }`, appID)
+}
+
+func deleteApplicationQuery(appID string) string {
+	return fmt.Sprintf(`mutation{
+ 		result: unregisterApplication(id: "%s")
+        {
+			id
+		}
+   }`, appID)
+}
+
+func deleteRuntimeQuery(runtimeID string) string {
+	return fmt.Sprintf(`mutation{
+ 		result: unregisterRuntime(id: "%s")
+        {
+			id
+		}
+   }`, runtimeID)
 }
