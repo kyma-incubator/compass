@@ -53,7 +53,6 @@ func (r *staticGroupRepository) Get(groupnames []string) []StaticGroup {
 		if staticGroup, ok := r.data[groupname]; ok {
 			result = append(result, staticGroup)
 		} else {
-			// todo check if it works
 			log.Warnf("static group with name %s not found", groupname)
 		}
 	}
