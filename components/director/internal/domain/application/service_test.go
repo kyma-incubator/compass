@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/sirupsen/logrus"
 
@@ -109,8 +111,8 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", ApplicationID: str.Ptr("foo"), Tenant: tnt, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", ApplicationID: str.Ptr("foo"), Tenant: tnt, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -1712,7 +1714,7 @@ func modelFromInput(in model.ApplicationRegisterInput, tenant, applicationID str
 
 	var apisModel []*model.APIDefinition
 	for _, item := range in.APIDefinitions {
-		apisModel = append(apisModel, item.ToAPIDefinition(uuid.New().String(), applicationID, tenant))
+		apisModel = append(apisModel, item.ToAPIDefinition(uuid.New().String(), &applicationID, tenant))
 	}
 
 	var eventAPIsModel []*model.EventDefinition

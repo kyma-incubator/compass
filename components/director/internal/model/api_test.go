@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -11,7 +13,7 @@ import (
 func TestAPIDefinitionInput_ToAPIDefinition(t *testing.T) {
 	// given
 	id := "foo"
-	appID := "bar"
+	appID := str.Ptr("bar")
 	desc := "Sample"
 	name := "sample"
 	targetUrl := "https://foo.bar"
@@ -34,6 +36,7 @@ func TestAPIDefinitionInput_ToAPIDefinition(t *testing.T) {
 			Expected: &model.APIDefinition{
 				ID:            id,
 				ApplicationID: appID,
+				PackageID:     "",
 				Name:          name,
 				Description:   &desc,
 				TargetURL:     targetUrl,

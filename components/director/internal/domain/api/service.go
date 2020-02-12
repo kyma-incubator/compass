@@ -101,7 +101,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.API
 
 	id := s.uidService.Generate()
 
-	api := in.ToAPIDefinition(id, applicationID, tnt)
+	api := in.ToAPIDefinition(id, &applicationID, tnt)
 	err = s.repo.Create(ctx, api)
 	if err != nil {
 		return "", err
@@ -117,6 +117,29 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.API
 	return id, nil
 }
 
+func (s *service) CreateToPackage(ctx context.Context, packageID string, in model.APIDefinitionInput) (string, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	id := s.uidService.Generate()
+
+	api := in.ToAPIDefinitionWithPackage(id, packageID, tnt)
+	err = s.repo.Create(ctx, api)
+	if err != nil {
+		return "", err
+	}
+
+	if in.Spec != nil && in.Spec.FetchRequest != nil {
+		_, err = s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
+		if err != nil {
+			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
+		}
+	}
+
+	return id, nil
+}
 func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

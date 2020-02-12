@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api/automock"
@@ -88,7 +90,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{ID: apiDefID, Tenant: tenantID, ApplicationID: appID}, nil).Once()
+		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{ID: apiDefID, Tenant: tenantID, ApplicationID: str.Ptr(appID)}, nil).Once()
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
 		modelApiDef, err := pgRepository.GetForApplication(ctx, tenantID, apiDefID, appID)
@@ -96,7 +98,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, apiDefID, modelApiDef.ID)
 		assert.Equal(t, tenantID, modelApiDef.Tenant)
-		assert.Equal(t, appID, modelApiDef.ApplicationID)
+		assert.Equal(t, appID, *modelApiDef.ApplicationID)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
 	})

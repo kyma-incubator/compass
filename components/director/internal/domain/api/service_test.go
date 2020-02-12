@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -26,11 +28,12 @@ func TestService_Get(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	appID := "bar"
+	appID := str.Ptr("bar")
+	packageID := "foobar"
 	name := "foo"
 	desc := "bar"
 
-	apiDefinition := fixAPIDefinitionModel(id, appID, name, desc)
+	apiDefinition := fixAPIDefinitionModel(id, appID, packageID, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID)
@@ -103,10 +106,11 @@ func TestService_GetForApplication(t *testing.T) {
 
 	id := "foo"
 	appID := "bar"
+	pkgID := "foobar"
 	name := "foo"
 	desc := "bar"
 
-	apiDefinition := fixAPIDefinitionModel(id, appID, name, desc)
+	apiDefinition := fixAPIDefinitionModel(id, &appID, pkgID, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID)
@@ -182,13 +186,14 @@ func TestService_List(t *testing.T) {
 
 	id := "foo"
 	applicationID := "bar"
+	pkgID := "foobar"
 	name := "foo"
 	desc := "bar"
 
 	apiDefinitions := []*model.APIDefinition{
-		fixAPIDefinitionModel(id, applicationID, name, desc),
-		fixAPIDefinitionModel(id, applicationID, name, desc),
-		fixAPIDefinitionModel(id, applicationID, name, desc),
+		fixAPIDefinitionModel(id, &applicationID, pkgID, name, desc),
+		fixAPIDefinitionModel(id, &applicationID, pkgID, name, desc),
+		fixAPIDefinitionModel(id, &applicationID, pkgID, name, desc),
 	}
 	apiDefinitionPage := &model.APIDefinitionPage{
 		Data:       apiDefinitions,
@@ -292,7 +297,7 @@ func TestService_Create(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	applicationID := "appid"
+	applicationID := str.Ptr("appid")
 	name := "Foo"
 	targetUrl := "https://test-url.com"
 
@@ -406,7 +411,7 @@ func TestService_Create(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			result, err := svc.Create(ctx, applicationID, testCase.Input)
+			result, err := svc.Create(ctx, *applicationID, testCase.Input)
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -458,7 +463,7 @@ func TestService_Update(t *testing.T) {
 
 	apiDefinitionModel := &model.APIDefinition{
 		Name:          "Bar",
-		ApplicationID: "id",
+		ApplicationID: str.Ptr("id"),
 		TargetURL:     "https://test-url-updated.com",
 		Spec:          &model.APISpec{},
 		DefaultAuth:   &model.Auth{},

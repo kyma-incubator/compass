@@ -17,15 +17,17 @@ import (
 )
 
 const (
-	apiDefID = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
-	appID    = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	tenantID = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
+	apiDefID  = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	appID     = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	tenantID  = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
+	packageID = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 )
 
-func fixAPIDefinitionModel(id, appId, name, targetURL string) *model.APIDefinition {
+func fixAPIDefinitionModel(id string, appId *string, pkgID, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ID:            id,
 		ApplicationID: appId,
+		PackageID:     pkgID,
 		Name:          name,
 		TargetURL:     targetURL,
 	}
@@ -68,8 +70,9 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 
 	return model.APIDefinition{
 		ID:            apiDefID,
-		ApplicationID: appID,
+		ApplicationID: str.Ptr(appID),
 		Tenant:        tenantID,
+		PackageID:     packageID,
 		Name:          placeholder,
 		Description:   str.Ptr("desc_" + placeholder),
 		Spec:          spec,
@@ -80,10 +83,11 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 	}
 }
 
-func fixGQLAPIDefinition(id, appId, name, targetURL string) *graphql.APIDefinition {
+func fixGQLAPIDefinition(id string, appId *string, pkgId, name, targetURL string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:            id,
 		ApplicationID: appId,
+		PackageID:     pkgId,
 		Name:          name,
 		TargetURL:     targetURL,
 	}
@@ -118,7 +122,7 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 
 	return &graphql.APIDefinition{
 		ID:            apiDefID,
-		ApplicationID: appID,
+		ApplicationID: str.Ptr(appID),
 		Name:          placeholder,
 		Description:   str.Ptr("desc_" + placeholder),
 		Spec:          spec,
@@ -290,10 +294,11 @@ func fixGQLAPIRtmAuth(id string, auth *graphql.Auth) *graphql.APIRuntimeAuth {
 	}
 }
 
-func fixEntityAPIDefinition(id, appId, name, targetUrl string) api.Entity {
+func fixEntityAPIDefinition(id string, appId *string, pkgID, name, targetUrl string) api.Entity {
 	return api.Entity{
 		ID:        id,
-		AppID:     appId,
+		AppID:     repo.NewNullableString(appId),
+		PkgID:     pkgID,
 		Name:      name,
 		TargetURL: targetUrl,
 	}
@@ -305,7 +310,8 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	return api.Entity{
 		ID:          apiDefID,
 		TenantID:    tenantID,
-		AppID:       appID,
+		AppID:       repo.NewNullableString(str.Ptr(appID)),
+		PkgID:       packageID,
 		Name:        placeholder,
 		Description: repo.NewValidNullableString("desc_" + placeholder),
 		Group:       repo.NewValidNullableString("group_" + placeholder),
@@ -326,19 +332,19 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 }
 
 func fixAPIDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "app_id", "name", "description", "group_name", "target_url", "spec_data",
+	return []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "target_url", "spec_data",
 		"spec_format", "spec_type", "default_auth", "version_value", "version_deprecated",
 		"version_deprecated_since", "version_for_removal"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
-	return []driver.Value{id, tenantID, appID, placeholder, "desc_" + placeholder, "group_" + placeholder,
+	return []driver.Value{id, tenantID, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
 		fmt.Sprintf("https://%s.com", placeholder), "spec_data_" + placeholder, "YAML", "OPEN_API",
 		fixDefaultAuth(), "v1.1", false, "v1.0", false}
 }
 
 func fixAPICreateArgs(id, defAuth string, api *model.APIDefinition) []driver.Value {
-	return []driver.Value{id, tenantID, appID, api.Name, api.Description, api.Group,
+	return []driver.Value{id, tenantID, appID, packageID, api.Name, api.Description, api.Group,
 		api.TargetURL, api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type),
 		defAuth, api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
 		api.Version.ForRemoval}

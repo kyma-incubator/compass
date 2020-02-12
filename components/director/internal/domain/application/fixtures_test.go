@@ -316,7 +316,7 @@ func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.A
 	}
 }
 
-func fixModelAPIDefinition(id, appId, name, description string, group string) *model.APIDefinition {
+func fixModelAPIDefinition(id string, appId *string, name, description string, group string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ID:            id,
 		ApplicationID: appId,
@@ -326,7 +326,7 @@ func fixModelAPIDefinition(id, appId, name, description string, group string) *m
 	}
 }
 
-func fixGQLAPIDefinition(id, appId, name, description string, group string) *graphql.APIDefinition {
+func fixGQLAPIDefinition(id string, appId *string, name, description string, group string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:            id,
 		ApplicationID: appId,

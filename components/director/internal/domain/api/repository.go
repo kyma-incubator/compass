@@ -13,7 +13,7 @@ const apiDefTable string = `"public"."api_definitions"`
 
 var (
 	tenantColumn  = "tenant_id"
-	apiDefColumns = []string{"id", "tenant_id", "app_id", "name", "description", "group_name", "target_url", "spec_data",
+	apiDefColumns = []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "target_url", "spec_data",
 		"spec_format", "spec_type", "default_auth",
 		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 	idColumns        = []string{"id"}

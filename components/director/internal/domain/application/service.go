@@ -459,7 +459,7 @@ func (s *service) createAPIs(ctx context.Context, appID, tenant string, apis []*
 	var err error
 	for _, item := range apis {
 		apiDefID := s.uidService.Generate()
-		err = s.apiRepo.Create(ctx, item.ToAPIDefinition(apiDefID, appID, tenant))
+		err = s.apiRepo.Create(ctx, item.ToAPIDefinition(apiDefID, &appID, tenant))
 		if err != nil {
 			return errors.Wrap(err, "while creating API for application")
 		}

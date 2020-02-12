@@ -3,8 +3,6 @@ package api
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -15,6 +13,7 @@ import (
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
 	Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error)
+	CreateToPackage(ctx context.Context, packageID string, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
@@ -51,6 +50,11 @@ type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
+//go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
+type PackageService interface {
+	Exist(ctx context.Context, id string) (bool, error)
+}
+
 //go:generate mockery -name=APIRuntimeAuthService -output=automock -outpkg=automock -case=underscore
 type APIRuntimeAuthService interface {
 	Get(ctx context.Context, apiID string, runtimeID string) (*model.APIRuntimeAuth, error)
@@ -64,6 +68,7 @@ type Resolver struct {
 	transact            persistence.Transactioner
 	svc                 APIService
 	appSvc              ApplicationService
+	pkgSvc              PackageService
 	rtmSvc              RuntimeService
 	apiRtmAuthSvc       APIRuntimeAuthService
 	converter           APIConverter
@@ -72,13 +77,14 @@ type Resolver struct {
 	apiRtmAuthConverter APIRuntimeAuthConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc APIService, appSvc ApplicationService, rtmSvc RuntimeService, apiRtmAuthSvc APIRuntimeAuthService, converter APIConverter, authConverter AuthConverter, frConverter FetchRequestConverter, apiRtmAuthConverter APIRuntimeAuthConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc APIService, appSvc ApplicationService, rtmSvc RuntimeService, apiRtmAuthSvc APIRuntimeAuthService, pkgSvc PackageService, converter APIConverter, authConverter AuthConverter, frConverter FetchRequestConverter, apiRtmAuthConverter APIRuntimeAuthConverter) *Resolver {
 	return &Resolver{
 		transact:            transact,
 		svc:                 svc,
 		appSvc:              appSvc,
 		rtmSvc:              rtmSvc,
 		apiRtmAuthSvc:       apiRtmAuthSvc,
+		pkgSvc:              pkgSvc,
 		converter:           converter,
 		frConverter:         frConverter,
 		authConverter:       authConverter,
@@ -355,7 +361,42 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*gra
 	return frGQL, nil
 }
 
-// TODO: Replace with real implementation
 func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
-	return mock.FixAPIDefinition("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), nil
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	convertedIn := r.converter.InputFromGraphQL(&in)
+
+	found, err := r.pkgSvc.Exist(ctx, packageID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while checking existence of package")
+	}
+
+	if !found {
+		return nil, errors.New("Cannot add API to not existing package")
+	}
+
+	id, err := r.svc.CreateToPackage(ctx, packageID, *convertedIn)
+	if err != nil {
+		return nil, err
+	}
+
+	api, err := r.svc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlAPI := r.converter.ToGraphQL(api)
+
+	return gqlAPI, nil
 }

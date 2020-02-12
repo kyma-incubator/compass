@@ -1331,13 +1331,13 @@ func TestResolver_Apis(t *testing.T) {
 	app := fixGQLApplication(applicationID, "foo", "bar")
 	modelAPIDefinitions := []*model.APIDefinition{
 
-		fixModelAPIDefinition("foo", applicationID, "Foo", "Lorem Ipsum", group),
-		fixModelAPIDefinition("bar", applicationID, "Bar", "Lorem Ipsum", group),
+		fixModelAPIDefinition("foo", &applicationID, "Foo", "Lorem Ipsum", group),
+		fixModelAPIDefinition("bar", &applicationID, "Bar", "Lorem Ipsum", group),
 	}
 
 	gqlAPIDefinitions := []*graphql.APIDefinition{
-		fixGQLAPIDefinition("foo", applicationID, "Foo", "Lorem Ipsum", group),
-		fixGQLAPIDefinition("bar", applicationID, "Bar", "Lorem Ipsum", group),
+		fixGQLAPIDefinition("foo", &applicationID, "Foo", "Lorem Ipsum", group),
+		fixGQLAPIDefinition("bar", &applicationID, "Bar", "Lorem Ipsum", group),
 	}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -1670,7 +1670,7 @@ func TestResolver_API(t *testing.T) {
 	{
 		// given
 		id := "bar"
-		appId := "1"
+		appId := str.Ptr("1")
 		modelAPI := fixModelAPIDefinition(id, appId, "name", "bar", "test")
 		gqlAPI := fixGQLAPIDefinition(id, appId, "name", "bar", "test")
 		app := fixGQLApplication("foo", "foo", "foo")

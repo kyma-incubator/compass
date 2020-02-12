@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
 
 	"github.com/stretchr/testify/require"
@@ -25,10 +27,10 @@ func TestResolver_AddAPI(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	appId := "1"
+	appId := str.Ptr("1")
 
-	modelAPI := fixAPIDefinitionModel(id, appId, "name", "bar")
-	gqlAPI := fixGQLAPIDefinition(id, appId, "name", "bar")
+	modelAPI := fixAPIDefinitionModel(id, appId, "pkg_id", "name", "bar")
+	gqlAPI := fixGQLAPIDefinition(id, appId, "pkg_id", "name", "bar")
 	gqlAPIInput := fixGQLAPIDefinitionInput("name", "foo", "bar")
 	modelAPIInput := fixModelAPIDefinitionInput("name", "foo", "bar")
 
@@ -48,13 +50,13 @@ func TestResolver_AddAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), appId, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), *appId, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelAPI, nil).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), appId).Return(true, nil)
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *appId).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -93,7 +95,7 @@ func TestResolver_AddAPI(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), appId).Return(false, nil)
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *appId).Return(false, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -113,7 +115,7 @@ func TestResolver_AddAPI(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), appId).Return(false, testErr)
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *appId).Return(false, testErr)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -129,12 +131,12 @@ func TestResolver_AddAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), appId, *modelAPIInput).Return("", testErr).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), *appId, *modelAPIInput).Return("", testErr).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), appId).Return(true, nil)
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *appId).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -150,13 +152,13 @@ func TestResolver_AddAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), appId, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), *appId, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), appId).Return(true, nil)
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *appId).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -172,13 +174,13 @@ func TestResolver_AddAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), appId, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), *appId, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelAPI, nil).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), appId).Return(true, nil)
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *appId).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -199,10 +201,10 @@ func TestResolver_AddAPI(t *testing.T) {
 			converter := testCase.ConverterFn()
 			appSvc := testCase.AppServiceFn()
 
-			resolver := api.NewResolver(transact, svc, appSvc, nil, nil, converter, nil, nil, nil)
+			resolver := api.NewResolver(transact, svc, appSvc, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
-			result, err := resolver.AddAPIDefinition(context.TODO(), appId, *gqlAPIInput)
+			result, err := resolver.AddAPIDefinition(context.TODO(), *appId, *gqlAPIInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPI, result)
@@ -227,8 +229,8 @@ func TestResolver_DeleteAPI(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	modelAPIDefinition := fixAPIDefinitionModel(id, "1", "foo", "bar")
-	gqlAPIDefinition := fixGQLAPIDefinition(id, "1", "foo", "bar")
+	modelAPIDefinition := fixAPIDefinitionModel(id, str.Ptr("1"), "1", "foo", "bar")
+	gqlAPIDefinition := fixGQLAPIDefinition(id, str.Ptr("1"), "1", "foo", "bar")
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -327,7 +329,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.DeleteAPIDefinition(context.TODO(), id)
@@ -351,8 +353,8 @@ func TestResolver_UpdateAPI(t *testing.T) {
 	id := "bar"
 	gqlAPIDefinitionInput := fixGQLAPIDefinitionInput(id, "foo", "bar")
 	modelAPIDefinitionInput := fixModelAPIDefinitionInput(id, "foo", "bar")
-	gqlAPIDefinition := fixGQLAPIDefinition(id, "1", "foo", "bar")
-	modelAPIDefinition := fixAPIDefinitionModel(id, "1", "foo", "bar")
+	gqlAPIDefinition := fixGQLAPIDefinition(id, str.Ptr("1"), "1", "foo", "bar")
+	modelAPIDefinition := fixAPIDefinitionModel(id, str.Ptr("1"), "1", "foo", "bar")
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -467,7 +469,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.UpdateAPIDefinition(context.TODO(), id, *gqlAPIDefinitionInput)
@@ -493,7 +495,7 @@ func TestResolver_Auth(t *testing.T) {
 	rtmID := "foo"
 	apiID := "bar"
 
-	parentAPI := fixGQLAPIDefinition(apiID, "baz", "Test API", "API used by tests")
+	parentAPI := fixGQLAPIDefinition(apiID, str.Ptr("baz"), "1", "Test API", "API used by tests")
 
 	modelAPIRtmAuth := fixModelAPIRtmAuth(rtmID, fixModelAuth())
 	gqlAPIRtmAuth := fixGQLAPIRtmAuth(rtmID, fixGQLAuth())
@@ -618,7 +620,7 @@ func TestResolver_Auth(t *testing.T) {
 			apiRtmAuthConv := testCase.APIRtmAuthConvFn()
 			persist, transact := testCase.TransactionerFn()
 
-			resolver := api.NewResolver(transact, nil, nil, rtmSvc, apiRtmAuthSvc, nil, nil, nil, apiRtmAuthConv)
+			resolver := api.NewResolver(transact, nil, nil, rtmSvc, apiRtmAuthSvc, nil, nil, nil, nil, apiRtmAuthConv)
 
 			// WHEN
 			ra, err := resolver.Auth(ctx, parentAPI, rtmID)
@@ -649,7 +651,7 @@ func TestResolver_Auths(t *testing.T) {
 
 	apiID := "bar"
 
-	parentAPI := fixGQLAPIDefinition(apiID, "baz", "Test API", "API used by tests")
+	parentAPI := fixGQLAPIDefinition(apiID, str.Ptr("baz"), "1", "Test API", "API used by tests")
 
 	modelAPIRtmAuths := []model.APIRuntimeAuth{
 		*fixModelAPIRtmAuth("r1", fixModelAuth()),
@@ -744,7 +746,7 @@ func TestResolver_Auths(t *testing.T) {
 			apiRtmAuthConv := testCase.APIRtmAuthConvFn()
 			persist, transact := testCase.TransactionerFn()
 
-			resolver := api.NewResolver(transact, nil, nil, nil, apiRtmAuthSvc, nil, nil, nil, apiRtmAuthConv)
+			resolver := api.NewResolver(transact, nil, nil, nil, apiRtmAuthSvc, nil, nil, nil, nil, apiRtmAuthConv)
 
 			// WHEN
 			ra, err := resolver.Auths(ctx, parentAPI)
@@ -904,7 +906,7 @@ func TestResolver_SetAPIAuth(t *testing.T) {
 			conv := testCase.AuthConvFn()
 			persist, transact := testCase.TransactionerFn()
 
-			resolver := api.NewResolver(transact, nil, nil, nil, apiRtmAuthSvc, nil, conv, nil, nil)
+			resolver := api.NewResolver(transact, nil, nil, nil, apiRtmAuthSvc, nil, nil, conv, nil, nil)
 
 			// when
 			result, err := resolver.SetAPIAuth(ctx, apiID, runtimeID, *gqlAuthInput)
@@ -1043,7 +1045,7 @@ func TestResolver_DeleteAPIAuth(t *testing.T) {
 			apiRtmAuthSvc := testCase.APIRtmAuthSvcFn()
 			authConv := testCase.AuthConvFn()
 			persist, transact := testCase.TransactionerFn()
-			resolver := api.NewResolver(transact, nil, nil, nil, apiRtmAuthSvc, nil, authConv, nil, nil)
+			resolver := api.NewResolver(transact, nil, nil, nil, apiRtmAuthSvc, nil, nil, authConv, nil, nil)
 
 			// when
 			result, err := resolver.DeleteAPIAuth(ctx, apiID, runtimeID)
@@ -1167,7 +1169,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
 			persist, transact := testCase.TransactionerFn()
-			resolver := api.NewResolver(transact, svc, nil, nil, nil, conv, nil, nil, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, conv, nil, nil, nil)
 
 			// when
 			result, err := resolver.RefetchAPISpec(context.TODO(), apiID)
@@ -1303,7 +1305,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, nil, converter, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, converter, nil)
 
 			// when
 			result, err := resolver.FetchRequest(context.TODO(), &graphql.APISpec{DefinitionID: id})
