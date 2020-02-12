@@ -37,9 +37,11 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 	}
 
 	staticGroup, groupExistsError := m.staticGroupRepo.Get(userGroup)
-	if groupExistsError != nil {
+
+	if groupExistsError == nil {
 		// proceed with group scopes flow
 		scopes = strings.Join(staticGroup.Scopes, " ")
+		log.Infof("Decided to use groups copes %s\n", scopes)
 	} else {
 		// proceed with staticUser (and his scopes) flow
 		staticUser, err = m.staticUserRepo.Get(username)
@@ -54,6 +56,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 			}
 
 			scopes = strings.Join(staticUser.Scopes, " ")
+			log.Infof("Decided to use staticUser copes %s\n", scopes)
 		}
 	}
 
