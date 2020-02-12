@@ -62,6 +62,15 @@ graphql:
     deleteSystemAuthForIntegrationSystem: ["integration_system:write"]
     setDefaultEventingForApplication: ["eventing:manage"]
     deleteDefaultEventingForApplication: ["eventing:manage"]
+    addAPIDefinitionToPackage: ["application:write"]
+    addEventDefinitionToPackage: ["application:write"]
+    addDocumentToPackage: ["application:write"]
+    requestPackageInstanceAuth: ["runtime:write"]
+    setPackageInstanceAuth: ["application:write"]
+    deletePackageInstanceAuth: ["package_instance_auth:delete"]
+    addPackage: ["application:write"]
+    updatePackage: ["application:write"]
+    deletePackage: ["application:write"]
 
 # Scopes assigned for every new Client Credentials by given object type (Runtime / Application / Integration System)
 clientCredentialsRegistrationScopes:
@@ -69,9 +78,11 @@ clientCredentialsRegistrationScopes:
     - "runtime:read"
     - "runtime:write"
     - "application:read"
+    - "package_instance_auth:delete"
   application:
     - "application:read"
     - "application:write"
+    - "package_instance_auth:delete"
   integration_system:
     - "application:read"
     - "application:write"
@@ -80,3 +91,4 @@ clientCredentialsRegistrationScopes:
     - "runtime:read"
     - "runtime:write"
     - "integration_system:read"
+    - "package_instance_auth:delete"

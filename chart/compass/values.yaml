@@ -3,14 +3,16 @@ global:
   tenants:
     - name: default
       id: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
+    - name: test-default-tenant
+      id: 9ca034f1-11ab-5b25-b76f-dc77106f571d
     - name: foo
       id: 1eba80dd-8ff6-54ee-be4d-77944d17b10b
     - name: bar
-      id: 9ca034f1-11ab-5b25-b76f-dc77106f571d
-    - name: foobar
       id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
-    - name: foobaz
+    - name: foobar
       id: 2bf03de1-23b1-4063-9d3e-67096800accc
+    - name: foobaz
+      id: f739b36c-813f-4fc3-996e-dd03c7d13aa0
 
   images:
     containerRegistry:
@@ -23,7 +25,7 @@ global:
       version: "PR-754"
     director:
       dir:
-      version: "PR-788"
+      version: "PR-827"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -47,14 +49,16 @@ global:
     tests:
       director:
         dir:
-        version: "PR-771"
+        version: "PR-792"
       connector:
         dir:
         version: "02e8358c"
       provisioner:
         dir:
         version: "PR-552"
-
+      connectivity_adapter:
+        dir:
+        version: "PR-822"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -130,7 +134,7 @@ global:
       host: adapter-gateway
     mtls:
       host: adapter-gateway-mtls
-  
+
   rewriteFilters:
     workloadLabel: oathkeeper
     tokenDataHeader: "Connector-Token"
@@ -147,6 +151,7 @@ global:
       namespace: compass-system
 
   database:
+    manageSecrets: true
     embedded:
       enabled: true
       directorDBName: "postgres"
@@ -176,25 +181,26 @@ global:
           api:
             url: http://compass-director.compass-system.svc.cluster.local:3000/tenant-mapping
             retry:
-              number_of_retries: 3
-              delay_in_milliseconds: 2000
+              give_up_after: 3s
+              max_delay: 2000ms
       certificateResolverService:
         config:
           api:
             url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/certificate/data/resolve
             retry:
-              number_of_retries: 3
-              delay_in_milliseconds: 2000
+              give_up_after: 3s
+              max_delay: 2000ms
       tokenResolverService:
         config:
           api:
             url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/tokens/resolve
             retry:
-              number_of_retries: 3
-              delay_in_milliseconds: 2000
+              give_up_after: 3s
+              max_delay: 2000ms
 
   tenantFetcher:
     enabled: false
+    manageSecrets: true
     providerName: "compass"
     schedule: "*/5 * * * *"
     oauth:

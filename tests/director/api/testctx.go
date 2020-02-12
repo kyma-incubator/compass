@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
 
 	"github.com/sirupsen/logrus"
@@ -19,9 +21,13 @@ import (
 )
 
 const (
-	defaultTenant = "af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e"
-	emptyTenant   = ""
+	emptyTenant = ""
+	testTenant  = "test-default-tenant"
 )
+
+var defaultTenant = "af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e"
+
+var tenants = make(map[string]string)
 
 var tc *testContext
 
@@ -30,6 +36,37 @@ func init() {
 	tc, err = newTestContext()
 	if err != nil {
 		panic(errors.Wrap(err, "while test context setup"))
+	}
+
+	setDefaultTenant()
+
+	tc, err = newTestContext()
+	if err != nil {
+		panic(errors.Wrap(err, "while test context with internal tenant setup"))
+	}
+}
+
+func setDefaultTenant() {
+	request := gcli.NewRequest(
+		`query {
+				result: tenants {
+				id
+				name
+				internalID
+					}
+				}`)
+
+	output := []*graphql.Tenant{}
+	err := tc.RunOperation(context.TODO(), request, &output)
+	if err != nil {
+		panic(errors.Wrap(err, "while getting default tenant"))
+	}
+
+	for _, v := range output {
+		tenants[*v.Name] = v.InternalID
+		if *v.Name == testTenant {
+			defaultTenant = v.InternalID
+		}
 	}
 }
 

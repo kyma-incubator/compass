@@ -3,6 +3,8 @@ package eventdef
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
 	"github.com/pkg/errors"
@@ -216,4 +218,9 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 
 	frGQL := r.frConverter.ToGraphQL(fr)
 	return frGQL, nil
+}
+
+// TODO: Replace with real implementation
+func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
+	return mock.FixEventDefinition("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), nil
 }

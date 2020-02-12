@@ -84,6 +84,10 @@ func main() {
 	db, err := storage.New(cfg.Database.ConnectionURL())
 	fatalOnError(err)
 
+	// Register disabler. Convention:
+	// {component-name} : {component-disabler-service}
+	//
+	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
 		"Loki":       runtime.NewLokiDisabler(),
 		"Kiali":      runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
@@ -102,8 +106,18 @@ func main() {
 	dumper, err := broker.NewDumper()
 	fatalOnError(err)
 
-	kymaEnvBroker, err := broker.New(cfg.Broker, provisionerClient, directorClient, cfg.Provisioning, db.Instances(), optComponentsSvc, inputFactory, dumper)
-	fatalOnError(err)
+	kymaEnvBroker := &broker.KymaEnvironmentBroker{
+		broker.NewServices(cfg.Broker, optComponentsSvc, dumper),
+		broker.NewProvision(cfg.Broker, db.Instances(), inputFactory, cfg.Provisioning, provisionerClient, dumper),
+		broker.NewDeprovision(db.Instances(), provisionerClient, dumper),
+		broker.NewUpdate(dumper),
+		broker.NewGetInstance(db.Instances(), dumper),
+		broker.NewLastOperation(db.Instances(), provisionerClient, directorClient, dumper),
+		broker.NewBind(dumper),
+		broker.NewUnbind(dumper),
+		broker.NewGetBinding(dumper),
+		broker.NewLastBindingOperation(dumper),
+	}
 
 	// create and run broker OSB API
 	brokerAPI := brokerapi.New(kymaEnvBroker, logger, brokerCredentials)

@@ -1,4 +1,4 @@
-// +build integration
+// +build database-integration
 
 package storage
 

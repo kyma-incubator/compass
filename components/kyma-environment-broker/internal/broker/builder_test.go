@@ -3,11 +3,10 @@ package broker
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker/automock"
 
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -52,8 +51,8 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
+	assert.Equal(t, "azure-cluster", input.RuntimeInput.Name)
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
-	assert.Equal(t, "azure-cluster", input.ClusterConfig.GardenerConfig.Name)
 	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 

@@ -2,7 +2,6 @@ package gardener
 
 import (
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/sirupsen/logrus"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -25,7 +24,7 @@ func (r *ProvisioningOperator) DeprovisioningInProgress(log *logrus.Entry, shoot
 		return ctrl.Result{}, err
 	}
 
-	err = installationSDK.TriggerUninstall(k8sConfig)
+	err = r.installationService.TriggerUninstall(k8sConfig)
 	if err != nil {
 		log.Errorf("error triggering uninstalling: %s", err.Error())
 		return ctrl.Result{}, err
