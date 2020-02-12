@@ -6,6 +6,7 @@ const (
 	CodeInternal      = 1
 	CodeNotFound      = 2
 	CodeAlreadyExists = 3
+	CodeConflict      = 4
 )
 
 type Error interface {
@@ -33,6 +34,10 @@ func NotFound(format string, a ...interface{}) Error {
 
 func AlreadyExists(format string, a ...interface{}) Error {
 	return errorf(CodeAlreadyExists, format, a...)
+}
+
+func Conflict(format string, a ...interface{}) Error {
+	return errorf(CodeConflict, format, a...)
 }
 
 func (e dbError) Append(additionalFormat string, a ...interface{}) Error {
