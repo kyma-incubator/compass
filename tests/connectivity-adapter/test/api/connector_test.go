@@ -31,11 +31,11 @@ func TestConnector(t *testing.T) {
 		},
 	}
 
-	_, err := testkit.ReadConfiguration()
+	config, err := testkit.ReadConfiguration()
 	require.NoError(t, err)
 
 	// TODO: what tenant to use
-	client, err := director.NewClient("3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", []string{"application:read", "application:write", "runtime:write", "runtime:read", "eventing:manage"})
+	client, err := director.NewClient(config.DirectorUrl, "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", []string{"application:read", "application:write", "runtime:write", "runtime:read", "eventing:manage"})
 	require.NoError(t, err)
 
 	appID, err := client.CreateApplication(appInput)

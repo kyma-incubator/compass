@@ -68,3 +68,13 @@ func deleteRuntimeQuery(runtimeID string) string {
 		}
    }`, runtimeID)
 }
+
+func getTenantsQuery() string {
+	return `query {
+		result: tenants {
+			id
+			name
+			internalID
+		}
+	}`
+}

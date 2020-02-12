@@ -6,9 +6,7 @@ import (
 )
 
 type Configuration struct {
-	ConnectivityAdapterUrl string
-	DirectorUrl            string
-	SkipSslVerify          bool
+	DirectorUrl string `envconfig:"default=http://127.0.0.1:3000/graphql"`
 }
 
 func ReadConfiguration() (Configuration, error) {
@@ -16,7 +14,7 @@ func ReadConfiguration() (Configuration, error) {
 
 	err := envconfig.InitWithPrefix(&cfg, "")
 	if err != nil {
-		return Configuration{}, nil
+		return Configuration{}, err
 	}
 
 	logrus.Infof("Configuration: %v", cfg)

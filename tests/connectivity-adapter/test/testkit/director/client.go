@@ -6,6 +6,7 @@ import (
 	gqlTools "github.com/kyma-incubator/compass/tests/director/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/director/pkg/jwtbuilder"
 	gcli "github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -45,8 +46,17 @@ type OneTimeTokenResponse struct {
 	Result schema.OneTimeTokenForApplication `json:"result"`
 }
 
-func NewClient(tenant string, scopes []string) (Client, error) {
-	gqlClient, err := getClient(tenant, scopes)
+type TenantsResponse struct {
+	Result []*schema.Tenant
+}
+
+func NewClient(directorURL, tenant string, scopes []string) (Client, error) {
+	internalTenantID, err := getInternalTenantID(directorURL, tenant)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlClient, err := getClient(internalTenantID, scopes)
 	if err != nil {
 		return nil, err
 	}
@@ -156,6 +166,37 @@ func (c client) GetOneTimeTokenUrl(appID string) (string, error) {
 	}
 
 	return response.Result.LegacyConnectorURL, nil
+}
+
+func getInternalTenantID(url string, externalTenantID string) (string, error) {
+
+	query := getTenantsQuery()
+
+	req := gcli.NewRequest(query)
+
+	token, err := getToken(externalTenantID, []string{"tenant:read"})
+	if err != nil {
+		return "", err
+	}
+
+	client := gqlTools.NewAuthorizedGraphQLClient(token)
+
+	var response TenantsResponse
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err = client.Run(ctx, req, &response)
+	if err != nil {
+		return "", err
+	}
+
+	for _, tenant := range response.Result {
+		if tenant.ID == externalTenantID {
+			return tenant.InternalID, nil
+		}
+	}
+
+	return "", errors.New("Cannot find test tenant.")
 }
 
 func (c client) execute(query string, res interface{}) error {
