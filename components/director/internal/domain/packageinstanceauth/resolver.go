@@ -24,11 +24,11 @@ func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, packageID string,
 
 // TODO: Replace with real implementation
 func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, packageID string, authID string) (*graphql.PackageInstanceAuth, error) {
-	return mock.FixPackageInstanceAuth(packageID, graphql.PackageInstanceAuthStatusConditionPending), nil
+	return mock.FixPackageInstanceAuth(packageID, graphql.PackageInstanceAuthStatusConditionUnused), nil
 }
 
 // TODO: Replace with real implementation
-func (r *Resolver) RequestPackageInstanceAuth(ctx context.Context, packageID string, in graphql.PackageInstanceAuthRequestInput) (*graphql.PackageInstanceAuth, error) {
+func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packageID string, in graphql.PackageInstanceAuthRequestInput) (*graphql.PackageInstanceAuth, error) {
 	id := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	if in.Context == nil {
 		return mock.FixPackageInstanceAuth(id, graphql.PackageInstanceAuthStatusConditionPending), nil
@@ -56,4 +56,9 @@ func (r *Resolver) RequestPackageInstanceAuth(ctx context.Context, packageID str
 	}
 
 	return mock.FixPackageInstanceAuth(id, graphql.PackageInstanceAuthStatusConditionPending), nil
+}
+
+// TODO: Replace with real implementation
+func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, packageID string, authID string) (*graphql.PackageInstanceAuth, error) {
+	return mock.FixPackageInstanceAuth(packageID, graphql.PackageInstanceAuthStatusConditionUnused), nil
 }

@@ -60,6 +60,7 @@ enum FetchRequestStatusCondition {
 	INITIAL
 	SUCCEEDED
 	FAILED
+	UNUSED
 }
 
 enum HealthCheckStatusCondition {
@@ -73,11 +74,15 @@ enum HealthCheckType {
 
 enum PackageInstanceAuthStatusCondition {
 	"""
-	When creating or deleting new one
+	When creating, before Application sets the credentials
 	"""
 	PENDING
 	SUCCEEDED
 	FAILED
+	"""
+	When Runtime requests deletion and Application has to revoke the credentials
+	"""
+	UNUSED
 }
 
 enum RuntimeStatusCondition {
@@ -1003,7 +1008,14 @@ type Mutation {
 	"""
 	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: AuthInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
 	deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
-	requestPackageInstanceAuth(packageID: ID!, in: PackageInstanceAuthRequestInput!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuth")
+	"""
+	When defaultInstanceAuth is set, it fires "createPackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to PENDING.
+	"""
+	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
+	"""
+	When defaultInstanceAuth is set, it fires "deletePackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to UNUSED.
+	"""
+	requestPackageInstanceAuthDeletion(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
 	addPackage(applicationID: ID!, in: PackageCreateInput! @validate): Package! @hasScopes(path: "graphql.mutation.addPackage")
 	updatePackage(id: ID!, in: PackageUpdateInput! @validate): Package! @hasScopes(path: "graphql.mutation.updatePackage")
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")

@@ -45,7 +45,7 @@ type Package {
   instanceAuth(id: ID!): PackageInstanceAuth
   instanceAuths: [PackageInstanceAuth!]!
   """
-  When defined, all Auth requests via `requestPackageInstanceAuthForPackage` mutation fallback to defaultInstanceAuth.
+  When defined, all requests via `requestPackageInstanceAuthCreation` mutation fallback to defaultInstanceAuth.
   """
   defaultInstanceAuth: Auth
 }
@@ -87,11 +87,15 @@ type PackageInstanceAuthStatus {
 
 enum PackageInstanceAuthStatusCondition {
   """
-  When creating or deleting new one
+  When creating, before Application sets the credentials
   """
   PENDING
   SUCCEEDED
   FAILED
+  """
+  When Runtime requests deletion and Application has to revoke the credentials
+  """
+  UNUSED
 }
 
 input PackageInstanceAuthRequestInput {
@@ -111,16 +115,10 @@ type Mutation {
 
   When used without error, the status of pending auth is set to success.
   """
-  setPackageInstanceAuth(
-    packageID: ID!
-    authID: ID!
-    in: AuthInput! @validate
-  ): PackageInstanceAuth!
+  setPackageInstanceAuth(packageID: ID!, authID: ID!, in: AuthInput! @validate): PackageInstanceAuth!
   deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth!
-  requestPackageInstanceAuth(
-    packageID: ID!
-    in: PackageInstanceAuthRequestInput!
-  ): PackageInstanceAuth!
+  requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput!): PackageInstanceAuth!
+  requestPackageInstanceAuthDeletion(packageID: ID!, authID: ID!): PackageInstanceAuth!
 }
 ```
 

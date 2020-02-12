@@ -767,17 +767,19 @@ const (
 	FetchRequestStatusConditionInitial   FetchRequestStatusCondition = "INITIAL"
 	FetchRequestStatusConditionSucceeded FetchRequestStatusCondition = "SUCCEEDED"
 	FetchRequestStatusConditionFailed    FetchRequestStatusCondition = "FAILED"
+	FetchRequestStatusConditionUnused    FetchRequestStatusCondition = "UNUSED"
 )
 
 var AllFetchRequestStatusCondition = []FetchRequestStatusCondition{
 	FetchRequestStatusConditionInitial,
 	FetchRequestStatusConditionSucceeded,
 	FetchRequestStatusConditionFailed,
+	FetchRequestStatusConditionUnused,
 }
 
 func (e FetchRequestStatusCondition) IsValid() bool {
 	switch e {
-	case FetchRequestStatusConditionInitial, FetchRequestStatusConditionSucceeded, FetchRequestStatusConditionFailed:
+	case FetchRequestStatusConditionInitial, FetchRequestStatusConditionSucceeded, FetchRequestStatusConditionFailed, FetchRequestStatusConditionUnused:
 		return true
 	}
 	return false
@@ -887,21 +889,24 @@ func (e HealthCheckType) MarshalGQL(w io.Writer) {
 type PackageInstanceAuthStatusCondition string
 
 const (
-	// When creating or deleting new one
+	// When creating, before Application sets the credentials
 	PackageInstanceAuthStatusConditionPending   PackageInstanceAuthStatusCondition = "PENDING"
 	PackageInstanceAuthStatusConditionSucceeded PackageInstanceAuthStatusCondition = "SUCCEEDED"
 	PackageInstanceAuthStatusConditionFailed    PackageInstanceAuthStatusCondition = "FAILED"
+	// When Runtime requests deletion and Application has to revoke the credentials
+	PackageInstanceAuthStatusConditionUnused PackageInstanceAuthStatusCondition = "UNUSED"
 )
 
 var AllPackageInstanceAuthStatusCondition = []PackageInstanceAuthStatusCondition{
 	PackageInstanceAuthStatusConditionPending,
 	PackageInstanceAuthStatusConditionSucceeded,
 	PackageInstanceAuthStatusConditionFailed,
+	PackageInstanceAuthStatusConditionUnused,
 }
 
 func (e PackageInstanceAuthStatusCondition) IsValid() bool {
 	switch e {
-	case PackageInstanceAuthStatusConditionPending, PackageInstanceAuthStatusConditionSucceeded, PackageInstanceAuthStatusConditionFailed:
+	case PackageInstanceAuthStatusConditionPending, PackageInstanceAuthStatusConditionSucceeded, PackageInstanceAuthStatusConditionFailed, PackageInstanceAuthStatusConditionUnused:
 		return true
 	}
 	return false
