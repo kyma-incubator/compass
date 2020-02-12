@@ -86,6 +86,8 @@ spec:
               name: director-config
             - mountPath: /data
               name: static-users
+            - mountPath: /data
+              name: static-groups
 
         {{if eq .Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials
@@ -117,3 +119,6 @@ spec:
         - name: static-users
           configMap:
             name: {{ template "fullname" . }}-static-users
+        - name: static-groups
+          configMap:
+            name: {{ template "fullname" . }}-static-groups

@@ -46,10 +46,10 @@ func NewStaticGroupRepository(srcPath string) (*staticGroupRepository, error) {
 	}, nil
 }
 
-func (r *staticUserRepository) Get(username string) (StaticUser, error) {
-	if staticUser, ok := r.data[username]; ok {
-		return staticUser, nil
+func (r *staticGroupRepository) Get(groupname string) (StaticGroup, error) {
+	if staticGroup, ok := r.data[groupname]; ok {
+		return staticGroup, nil
 	}
 
-	return StaticUser{}, fmt.Errorf("static user with name %s not found", username)
+	return StaticGroup{}, fmt.Errorf("static group with name %s not found", groupname)
 }
