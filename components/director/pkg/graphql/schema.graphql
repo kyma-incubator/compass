@@ -12,6 +12,14 @@ scalar CLOB
 
 scalar HttpHeaders
 
+"""
+Stringified JSON
+"""
+scalar JSON
+
+"""
+Stringified JSON
+"""
 scalar JSONSchema
 
 scalar Labels
@@ -288,11 +296,11 @@ input PackageInstanceAuthRequestInput {
 	"""
 	Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
 	"""
-	context: Any
+	context: JSON
 	"""
 	JSON validated against package.instanceAuthRequestInputSchema
 	"""
-	inputParams: Any
+	inputParams: JSON
 }
 
 input PackageInstanceAuthSetInput {
@@ -653,17 +661,17 @@ type PackageInstanceAuth {
 	"""
 	Context of PackageInstanceAuth - such as Runtime ID, namespace
 	"""
-	context: Any
+	context: JSON
 	"""
 	User input while requesting Package Instance Auth
 	"""
-	inputParams: Any
+	inputParams: JSON
 	"""
 	It may be empty if status is PENDING.
 	Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
 	"""
 	auth: Auth
-	status: PackageInstanceAuthStatus
+	status: PackageInstanceAuthStatus!
 }
 
 type PackageInstanceAuthStatus {

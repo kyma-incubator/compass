@@ -2,6 +2,7 @@ package packageinstanceauth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -56,9 +57,10 @@ func (r *Resolver) RequestPackageInstanceAuthCreationMock(ctx context.Context, p
 		return mock.FixPackageInstanceAuth(id, graphql.PackageInstanceAuthStatusConditionPending), nil
 	}
 
-	data, ok := (*in.Context).(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("invalid context type: expected map[string]interface{}, actual %T", *in.Context)
+	var data map[string]interface{}
+	err := json.Unmarshal([]byte(*in.Context), &data)
+	if err != nil {
+		return nil, fmt.Errorf("invalid context type: expected JSON object, actual %+v", *in.Context)
 	}
 
 	if _, exists := data[mockRequestTypeKey]; !exists {
@@ -77,7 +79,12 @@ func (r *Resolver) RequestPackageInstanceAuthCreationMock(ctx context.Context, p
 		id = "cccccccc-cccc-cccc-cccc-cccccccccccc"
 	}
 
-	return mock.FixPackageInstanceAuth(id, graphql.PackageInstanceAuthStatusConditionPending), nil
+	out := mock.FixPackageInstanceAuth(id, graphql.PackageInstanceAuthStatusConditionPending)
+
+	out.Context = in.Context
+	out.InputParams = in.InputParams
+
+	return out, nil
 }
 
 // TODO: Remove mock

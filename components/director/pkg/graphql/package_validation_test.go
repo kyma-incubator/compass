@@ -497,7 +497,7 @@ func TestPackageUpdateInput_Validate_InstanceAuthRequestInputSchema(t *testing.T
 
 func TestPackageInstanceAuthRequestInput_Validate(t *testing.T) {
 	//GIVEN
-	var val interface{} = map[string]interface{}{"foo": "bar"}
+	val := graphql.JSON("{\"foo\": \"bar\"}")
 	testCases := []struct {
 		Name          string
 		Value         graphql.PackageInstanceAuthRequestInput
