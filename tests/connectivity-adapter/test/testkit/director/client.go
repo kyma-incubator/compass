@@ -16,7 +16,7 @@ type Client interface {
 	CreateApplication(in schema.ApplicationRegisterInput) (string, error)
 	DeleteApplication(appID string) error
 	SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error
-	GetOneTimeTokenUrl(appID string) (string, error)
+	GetOneTimeTokenUrl(appID string) (string, string, error)
 }
 
 type client struct {
@@ -154,7 +154,7 @@ func (c client) SetDefaultEventing(runtimeID string, appID string, eventsBaseURL
 	return nil
 }
 
-func (c client) GetOneTimeTokenUrl(appID string) (string, error) {
+func (c client) GetOneTimeTokenUrl(appID string) (string, string, error) {
 
 	query := getOneTimeTokenQuery(appID)
 
@@ -162,10 +162,10 @@ func (c client) GetOneTimeTokenUrl(appID string) (string, error) {
 
 	err := c.execute(query, &response)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return response.Result.LegacyConnectorURL, nil
+	return response.Result.LegacyConnectorURL, response.Result.Token, nil
 }
 
 func getInternalTenantID(url string, externalTenantID string) (string, error) {

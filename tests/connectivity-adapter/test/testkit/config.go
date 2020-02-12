@@ -6,7 +6,10 @@ import (
 )
 
 type Configuration struct {
-	DirectorUrl string `envconfig:"default=http://127.0.0.1:3000/graphql"`
+	ConnectivityAdapterUrl     string `envconfig:"default=https://adapter-gateway.kyma.local"`
+	ConnectivityAdapterMtlsUrl string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
+	DirectorUrl                string `envconfig:"default=http://127.0.0.1:3000/graphql"`
+	SkipSslVerify              bool   `envconfig:"default=true"`
 }
 
 func ReadConfiguration() (Configuration, error) {
