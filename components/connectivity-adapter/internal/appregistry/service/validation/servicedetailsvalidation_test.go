@@ -190,28 +190,6 @@ func TestServiceDetailsValidator_API(t *testing.T) {
 		assert.Equal(t, apperrors.CodeWrongInput, err.Code())
 	})
 
-	t.Run("should not accept API spec other than json object", func(t *testing.T) {
-		// given
-		serviceDetails := model.ServiceDetails{
-			Name:        "name",
-			Provider:    "provider",
-			Description: "description",
-			Api: &model.API{
-				TargetUrl: "http://target.com",
-				Spec:      []byte("\"{\\\"wrong_string_json_object\\\":true}\""),
-			},
-		}
-
-		validator := NewServiceDetailsValidator()
-
-		// when
-		err := validator.Validate(serviceDetails)
-
-		// then
-		assert.Error(t, err)
-		assert.Equal(t, apperrors.CodeWrongInput, err.Code())
-	})
-
 	t.Run("should not accept API spec with more than 1 type of auth", func(t *testing.T) {
 		// given
 		serviceDetails := model.ServiceDetails{
@@ -642,29 +620,6 @@ func TestServiceDetailsValidator_Specification_Basic(t *testing.T) {
 						Username: "username",
 					},
 				},
-			},
-		}
-
-		validator := NewServiceDetailsValidator()
-
-		// when
-		err := validator.Validate(serviceDetails)
-
-		// then
-		assert.Error(t, err)
-		assert.Equal(t, apperrors.CodeWrongInput, err.Code())
-	})
-}
-
-func TestServiceDetailsValidator_Events(t *testing.T) {
-	t.Run("should not accept events spec other than json object", func(t *testing.T) {
-		// given
-		serviceDetails := model.ServiceDetails{
-			Name:        "name",
-			Provider:    "provider",
-			Description: "description",
-			Events: &model.Events{
-				Spec: []byte("\"{\\\"wrong_string_json_object\\\":true}\""),
 			},
 		}
 

@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 
 	"github.com/hashicorp/terraform/states"
 
@@ -39,8 +39,8 @@ func (c mockProviderConfiguration) ToHydroformConfiguration(credentialsFileName 
 	return c.cluster, c.provider, c.err
 }
 
-func (c mockProviderConfiguration) ToShootTemplate(namespace string) *gardener_types.Shoot {
-	return nil
+func (c mockProviderConfiguration) ToShootTemplate(namespace string) (*gardener_types.Shoot, error) {
+	return nil, nil
 }
 
 const (

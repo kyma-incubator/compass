@@ -24,11 +24,17 @@ const (
 type ComponentsListProvider struct {
 	kymaVersion                      string
 	managedRuntimeComponentsYAMLPath string
+	httpClient                       HTTPDoer
+}
+
+type HTTPDoer interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // NewComponentsListProvider returns new instance of the ComponentsListProvider
 func NewComponentsListProvider(kymaVersion string, managedRuntimeComponentsYAMLPath string) *ComponentsListProvider {
 	return &ComponentsListProvider{
+		httpClient:                       http.DefaultClient,
 		kymaVersion:                      kymaVersion,
 		managedRuntimeComponentsYAMLPath: managedRuntimeComponentsYAMLPath,
 	}
@@ -37,7 +43,7 @@ func NewComponentsListProvider(kymaVersion string, managedRuntimeComponentsYAMLP
 // AllComponents returns all components for Kyma Runtime. It fetches always the
 // Kyma open-source components from the given url and management components from
 // the file system and merge them together.
-func (r ComponentsListProvider) AllComponents() ([]v1alpha1.KymaComponent, error) {
+func (r *ComponentsListProvider) AllComponents() ([]v1alpha1.KymaComponent, error) {
 	// Read Kyma installer yaml (url)
 	openSourceKymaComponents, err := r.getOpenSourceKymaComponents()
 	if err != nil {
@@ -58,14 +64,18 @@ func (r ComponentsListProvider) AllComponents() ([]v1alpha1.KymaComponent, error
 
 // DownloadFile will download a url to a local file. It's efficient because it will
 // write as it downloads and not load the whole file into memory.
-func (r ComponentsListProvider) getOpenSourceKymaComponents() (comp []v1alpha1.KymaComponent, err error) {
+func (r *ComponentsListProvider) getOpenSourceKymaComponents() (comp []v1alpha1.KymaComponent, err error) {
 	installerYamlURL := r.getInstallerYamlURL()
 
-	resp, err := http.Get(installerYamlURL)
+	req, err := http.NewRequest(http.MethodGet, installerYamlURL, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating http request")
+	}
+
+	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
-
 	defer func() {
 		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
 			err = multierror.Append(err, errors.Wrap(drainErr, "while trying to drain body reader"))
@@ -92,10 +102,10 @@ func (r ComponentsListProvider) getOpenSourceKymaComponents() (comp []v1alpha1.K
 
 }
 
-func (r ComponentsListProvider) getManagedRuntimeComponents() ([]v1alpha1.KymaComponent, error) {
+func (r *ComponentsListProvider) getManagedRuntimeComponents() ([]v1alpha1.KymaComponent, error) {
 	yamlFile, err := ioutil.ReadFile(r.managedRuntimeComponentsYAMLPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "while reading YAML file with managed components managedList")
+		return nil, errors.Wrap(err, "while reading YAML file with managed components list")
 	}
 
 	var managedList struct {
@@ -103,7 +113,7 @@ func (r ComponentsListProvider) getManagedRuntimeComponents() ([]v1alpha1.KymaCo
 	}
 	err = yaml.Unmarshal(yamlFile, &managedList)
 	if err != nil {
-		return nil, errors.Wrap(err, "while unmarshaling YAML file with managed components managedList")
+		return nil, errors.Wrap(err, "while unmarshaling YAML file with managed components list")
 	}
 	return managedList.Components, nil
 }
@@ -123,7 +133,7 @@ type Installation struct {
 	Spec v1alpha1.InstallationSpec `json:"spec"`
 }
 
-func (r ComponentsListProvider) checkStatusCode(resp *http.Response) error {
+func (r *ComponentsListProvider) checkStatusCode(resp *http.Response) error {
 	if resp.StatusCode != http.StatusOK {
 		// limited buff to ready only ~4kb, so big response will not blowup our component
 		body, err := ioutil.ReadAll(io.LimitReader(resp.Body, 4096))
@@ -136,7 +146,7 @@ func (r ComponentsListProvider) checkStatusCode(resp *http.Response) error {
 	return nil
 }
 
-func (r ComponentsListProvider) getInstallerYamlURL() string {
+func (r *ComponentsListProvider) getInstallerYamlURL() string {
 	if r.isOnDemandRelease(r.kymaVersion) {
 		return fmt.Sprintf(onDemandInstallerURLFormat, r.kymaVersion)
 	}
@@ -152,7 +162,7 @@ func (r ComponentsListProvider) getInstallerYamlURL() string {
 //   For the latest changes in the master branch: master
 //
 // source: https://github.com/kyma-project/test-infra/blob/master/docs/prow/prow-architecture.md#generate-development-artifacts
-func (r ComponentsListProvider) isOnDemandRelease(version string) bool {
+func (r *ComponentsListProvider) isOnDemandRelease(version string) bool {
 	isOnDemandVersion := strings.HasPrefix(version, "PR-") ||
 		strings.HasPrefix(version, "master-") ||
 		strings.EqualFold(version, "master")

@@ -2,14 +2,14 @@
 
 ## Overview
 
-Kyma Environment Broker is a component that allows you to provision Kyma as a Runtime on clusters provided by third-party providers. It uses Provisioner's API to install Kyma on a given cluster.
+Kyma Environment Broker (KEB) is a component that allows you to provision Kyma as a Runtime on clusters provided by third-party providers. It uses Provisioner's API to install Kyma on a given cluster.
 
 For more information, read the [documentation](../../docs/kyma-environment-broker).
 
 
-## Development
+## Configuration
 
-This table lists the environment variables, their descriptions, and default values:
+KEB binary allows you to override some configuration parameters. You can specify the following environment variables:
 
 | Name | Description | Default value |
 |-----|---------|:--------:|

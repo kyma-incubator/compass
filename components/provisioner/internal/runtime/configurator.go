@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	configMapName             = "compass-agent-configuration"
+	ConfigMapName             = "compass-agent-configuration"
 	runtimeAgentComponentName = "compass-runtime-agent"
 )
 
@@ -57,7 +57,7 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 
 	configMap := &core.ConfigMap{
 		ObjectMeta: meta.ObjectMeta{
-			Name:      configMapName,
+			Name:      ConfigMapName,
 			Namespace: namespace,
 		},
 		Data: map[string]string{

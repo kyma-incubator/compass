@@ -4,17 +4,15 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/google/uuid"
-
 	"github.com/ghodss/yaml"
 
 	"github.com/pkg/errors"
 )
 
 type StaticUser struct {
-	Username string      `json:"username"`
-	Tenants  []uuid.UUID `json:"tenants"`
-	Scopes   []string    `json:"scopes"`
+	Username string   `json:"username"`
+	Tenants  []string `json:"tenants"`
+	Scopes   []string `json:"scopes"`
 }
 
 //go:generate mockery -name=StaticUserRepository -output=automock -outpkg=automock -case=underscore

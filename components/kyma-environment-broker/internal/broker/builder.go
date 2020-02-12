@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	cloudProvider "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -14,6 +15,7 @@ import (
 const serviceManagerComponentName = "service-manager-proxy"
 
 //go:generate mockery -name=OptionalComponentService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery -name=InputBuilderForPlan -output=automock -outpkg=automock -case=underscore
 
 // Defines dependency
 type (
@@ -22,7 +24,7 @@ type (
 		ComputeComponentsToDisable(optComponentsToKeep []string) []string
 	}
 
-	hyperscalerInputProvider interface {
+	HyperscalerInputProvider interface {
 		Defaults() *gqlschema.ClusterConfigInput
 		ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO)
 	}
@@ -59,12 +61,12 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullCompo
 }
 
 func (f *InputBuilderFactory) ForPlan(planID string) (ConcreteInputBuilder, bool) {
-	var provider hyperscalerInputProvider
+	var provider HyperscalerInputProvider
 	switch planID {
 	case gcpPlanID:
-		provider = &gcpInputProvider{}
+		provider = &cloudProvider.GcpInput{}
 	case azurePlanID:
-		provider = &azureInputProvider{}
+		provider = &cloudProvider.AzureInput{}
 	// insert cases for other providers like AWS or GCP
 	default:
 		return nil, false
@@ -84,7 +86,7 @@ type InputBuilder struct {
 	planID                    string
 	kymaVersion               string
 	serviceManager            internal.ServiceManagerOverride
-	hyperscalerInputProvider  hyperscalerInputProvider
+	hyperscalerInputProvider  HyperscalerInputProvider
 	optionalComponentsService OptionalComponentService
 	fullRuntimeComponentList  internal.ComponentConfigurationInputList
 
@@ -109,7 +111,8 @@ func (b *InputBuilder) SetProvisioningConfig(brokerConfig ProvisioningConfig) Co
 }
 
 func (b *InputBuilder) applyProvisioningParameters(in *gqlschema.ProvisionRuntimeInput) error {
-	in.ClusterConfig.GardenerConfig.Name = b.provisioningParameters.Name
+	updateString(&in.RuntimeInput.Name, &b.provisioningParameters.Name)
+
 	updateInt(&in.ClusterConfig.GardenerConfig.NodeCount, b.provisioningParameters.NodeCount)
 	updateInt(&in.ClusterConfig.GardenerConfig.MaxUnavailable, b.provisioningParameters.MaxUnavailable)
 	updateInt(&in.ClusterConfig.GardenerConfig.MaxSurge, b.provisioningParameters.MaxSurge)
@@ -194,16 +197,12 @@ func (b *InputBuilder) applyTemporaryCustomization(in *gqlschema.ProvisionRuntim
 		return fmt.Errorf("unknown Plan ID %s", b.planID)
 	}
 
-	in.ClusterConfig.GardenerConfig.ProjectName = b.provisioningConfig.GardenerProjectName
-	in.Credentials = &gqlschema.CredentialsInput{
-		SecretName: b.provisioningConfig.SecretName,
-	}
-
 	return nil
 }
 
 func (b *InputBuilder) initInput() gqlschema.ProvisionRuntimeInput {
 	return gqlschema.ProvisionRuntimeInput{
+		RuntimeInput:  &gqlschema.RuntimeInput{},
 		ClusterConfig: b.hyperscalerInputProvider.Defaults(),
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version:    b.kymaVersion,

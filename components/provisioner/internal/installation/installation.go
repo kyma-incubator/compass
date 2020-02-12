@@ -29,9 +29,10 @@ type InstallationHandler func(*rest.Config, ...installation.InstallationOption) 
 //go:generate mockery -name=Service
 type Service interface {
 	InstallKyma(runtimeId, kubeconfigRaw string, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
-
+	CheckInstallationState(kubeconfig *rest.Config) (installation.InstallationState, error)
 	// TODO: this will block for quite a while, consider running it in gorutine or split it to more steps (install tillert -> check periodicaly -> deploy installer -> trigger installation)
 	TriggerInstallation(kubeconfigRaw []byte, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
+	TriggerUninstall(kubeconfig *rest.Config) error
 }
 
 func NewInstallationService(installationTimeout time.Duration, installationHandler InstallationHandler, installErrFailureThreshold int) Service {
@@ -120,6 +121,14 @@ func (s *installationService) InstallKyma(runtimeId, kubeconfigRaw string, relea
 	}
 
 	return nil
+}
+
+func (s *installationService) CheckInstallationState(kubeconfig *rest.Config) (installation.InstallationState, error) {
+	return installation.CheckInstallationState(kubeconfig)
+}
+
+func (s *installationService) TriggerUninstall(kubeconfig *rest.Config) error {
+	return installation.TriggerUninstall(kubeconfig)
 }
 
 func (s *installationService) waitForInstallation(runtimeId string, stateChannel <-chan installation.InstallationState, errorChannel <-chan error) error {

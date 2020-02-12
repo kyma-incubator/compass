@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	gardener_types "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/sirupsen/logrus"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -75,7 +75,7 @@ func (r *ProvisioningOperator) InstallationInProgress(log *logrus.Entry, shoot g
 		return ctrl.Result{}, err
 	}
 
-	installationState, err := installationSDK.CheckInstallationState(kubeconfig)
+	installationState, err := r.installationService.CheckInstallationState(kubeconfig)
 	if err != nil {
 		var installationErr installationSDK.InstallationError
 		if !errors.As(err, &installationErr) {
