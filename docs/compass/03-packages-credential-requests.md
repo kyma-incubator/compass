@@ -17,19 +17,19 @@ The Director GraphQL API is updated to store credentials per Service Instance. C
 
 ### API Credentials Flow
 
+![API Credentials Flow](./assets/api-credentials-flow.svg)
+
 This diagram illustrates the API credentials flow in details. The Application provides Webhook API where Management Plane requests for providing new credentials for given Package.
 
-> **NOTE:** There is an option that Application does not support Webhook API. That means Application needs to monitor registered API Definitions and set API credentials when new Runtime assigned. The Administrator can exchange credentials for registered APIs at any time too.
+> **NOTE:** There is an option that Application does not support Webhook API. That means Application needs to monitor registered Packages and set Package credentials when new Package Instance is created.
 
-![Application Webhook](./assets/api-credentials-flow.svg)
+Assume we have Application which is already registered into Compass. Application has one Package which contains single API Definition.
 
-Assume we have Application which is already registered into Management Plane. No Runtimes are assigned yet. Application has one Package which contains single API Definition.
-
-1. The Administrator requests new Runtime with Application via Cockpit.
-2. The Cockpit requests configuration for Runtime and the Director asks Application for new credentials.
-3. The Cockpit requests Runtime with configuration for Runtime Agent and Runtime Provisioner creates Runtime.
-4. The Application sets Package credentials for the particular Service Instance of a given Runtime.
-5. The Runtime Agent enables Runtime to call Application APIs.
+1. On Kyma Runtime, User creates a Service Instance from the Application's Package.
+1. Runtime Agent calls Director to request credentials for a given Service Instance.
+1. Director asynchronously notifies Application about the credentials request via Webhook API.
+1. Application sets credentials for a given Service Instance.
+1. Runtime Agent fetches configuration with credentials for a given Service Instance.
 
 ### GraphQL Schema
 
