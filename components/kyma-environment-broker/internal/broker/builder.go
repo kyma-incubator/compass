@@ -189,15 +189,22 @@ func (b *InputBuilder) applyServiceManagerOverrides(in *gqlschema.ProvisionRunti
 	return nil
 }
 
-func (b *InputBuilder) applyGlobalOverrides(in *gqlschema.ProvisionRuntimeInput) error {
-	var globalOverrides = []*gqlschema.ConfigEntryInput{
+func (b *InputBuilder) applyManagementPlaneOverrides(in *gqlschema.ProvisionRuntimeInput) error {
+	const coreComponentName = "core"
+	const compassComponentName = "compass"
+
+	var mpOverrides = []*gqlschema.ConfigEntryInput{
 		{
 			Key:   "managementPlane.url",
 			Value: b.directorURL,
 		},
 	}
 
-	in.KymaConfig.Configuration = append(in.KymaConfig.Configuration, globalOverrides...)
+	for i := range in.KymaConfig.Components {
+		if in.KymaConfig.Components[i].Component == coreComponentName || in.KymaConfig.Components[i].Component == compassComponentName {
+			in.KymaConfig.Components[i].Configuration = append(in.KymaConfig.Components[i].Configuration, mpOverrides...)
+		}
+	}
 
 	return nil
 }
@@ -249,8 +256,8 @@ func (b *InputBuilder) Build() (gqlschema.ProvisionRuntimeInput, error) {
 			execute: b.applyServiceManagerOverrides,
 		},
 		{
-			name:    "applying global overrides",
-			execute: b.applyGlobalOverrides,
+			name:    "applying management plane overrides",
+			execute: b.applyManagementPlaneOverrides,
 		},
 		{
 			name:    "applying temporary customization",

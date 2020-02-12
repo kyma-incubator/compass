@@ -146,18 +146,7 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
           }
 		  {{- end }} 
         ]
-      	{{- end }}
-		configuration: [
-		  {{- range .Configuration }}
-              {
-                key: "{{ .Key }}"
-                value: "{{ .Value }}"
-				{{- if .Secret }}
-                secret: true
-				{{- end }}
-              }
-		  	{{- end }} 
-		]
+      	{{- end }}         
 	}`)
 }
 
