@@ -32,6 +32,8 @@ func Test_E2E_Gardener(t *testing.T) {
 		t.Run(provider, func(t *testing.T) {
 			t.Parallel()
 
+			log.Info(provider)
+
 			// Provisioning runtime
 			// Get Kyma modules from Installation CR
 			provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, provider)
