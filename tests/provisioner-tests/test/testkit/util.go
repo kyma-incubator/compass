@@ -75,8 +75,7 @@ func RunParallelToMainFunction(timeout time.Duration, mainFunction func() error,
 	}
 }
 
-func GetAndParseInstallerCR(kymaVersion string) ([]*gqlschema.ComponentConfigurationInput, error) {
-	installationCRURL := createInstallationCRURL(kymaVersion)
+func GetAndParseInstallerCR(installationCRURL string) ([]*gqlschema.ComponentConfigurationInput, error) {
 	resp, err := http.Get(installationCRURL)
 	if err != nil {
 		return nil, fmt.Errorf("Error fetching installation CR: %s", err.Error())
@@ -128,8 +127,9 @@ func CreateGardenerProvisioningInput(config *TestConfig, provider string) (gqlsc
 		},
 	}
 
+	installationCRURL := createInstallationCRURL(config.Kyma.Version)
 	logrus.Infof("Getting and parsing Kyma modules from Installation CR at: %s", installationCRURL)
-	componentConfigInput, err := GetAndParseInstallerCR(config.Kyma.Version)
+	componentConfigInput, err := GetAndParseInstallerCR(installationCRURL)
 	if err != nil {
 		return gqlschema.ProvisionRuntimeInput{}, fmt.Errorf("Failed to create component config input: %s", err.Error())
 	}
