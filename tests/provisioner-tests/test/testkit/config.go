@@ -23,7 +23,7 @@ type TestConfig struct {
 }
 
 type KymaConfig struct {
-	Version string `envconfig:"default=1.8.0"`
+	Version string `envconfig:"default=1.9.0"`
 }
 
 type GardenerConfig struct {

@@ -18,8 +18,6 @@ import (
 )
 
 const (
-	installationCRURL = "https://raw.githubusercontent.com/kyma-project/kyma/master/installation/resources/installer-cr-cluster-with-compass.yaml.tpl"
-
 	Azure = "Azure"
 	GCP   = "GCP"
 	AWS   = "AWS"
@@ -77,7 +75,8 @@ func RunParallelToMainFunction(timeout time.Duration, mainFunction func() error,
 	}
 }
 
-func GetAndParseInstallerCR() ([]*gqlschema.ComponentConfigurationInput, error) {
+func GetAndParseInstallerCR(kymaVersion string) ([]*gqlschema.ComponentConfigurationInput, error) {
+	installationCRURL := createInstallationCRURL(kymaVersion)
 	resp, err := http.Get(installationCRURL)
 	if err != nil {
 		return nil, fmt.Errorf("Error fetching installation CR: %s", err.Error())
@@ -130,7 +129,7 @@ func CreateGardenerProvisioningInput(config *TestConfig, provider string) (gqlsc
 	}
 
 	logrus.Infof("Getting and parsing Kyma modules from Installation CR at: %s", installationCRURL)
-	componentConfigInput, err := GetAndParseInstallerCR()
+	componentConfigInput, err := GetAndParseInstallerCR(config.Kyma.Version)
 	if err != nil {
 		return gqlschema.ProvisionRuntimeInput{}, fmt.Errorf("Failed to create component config input: %s", err.Error())
 	}
@@ -164,6 +163,10 @@ func CreateGardenerProvisioningInput(config *TestConfig, provider string) (gqlsc
 			Components: componentConfigInput,
 		},
 	}, nil
+}
+
+func createInstallationCRURL(kymaVersion string) string {
+	return fmt.Sprintf("https://raw.githubusercontent.com/kyma-project/kyma/release-%s/installation/resources/installer-cr-cluster-with-compass.yaml.tpl", strings.TrimSuffix(kymaVersion, ".0"))
 }
 
 func processErrors(errorsArray []error) error {
