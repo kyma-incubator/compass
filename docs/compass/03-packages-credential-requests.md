@@ -1,22 +1,19 @@
 # Request credentials for Packages
 
-
 In Kyma Runtime, a single Application is represented as a ServiceClass, and a single Package of a given Application is represented as a ServicePlan in the Service Catalog. This document describes the flow of requesting API credentials during the ServicePlan provisioning. It also mentions passing optional input parameters from Kyma Runtime to Application or Integration System during the provisioning process.
-
 
 You can create many instances of a Package in a single Runtime. For example, in the Kyma Runtime, an instance of a Package is represented by a ServiceInstance that can be created for every Namespace.
 When provisioning a new ServiceInstance from a Package (represented by a ServicePlan), Runtime requests credentials for API. During this step, you can pass additional input parameters. They are validated against input JSON schema provided by the Application or Integration System. The parameters, as well as the input JSON schema, are completely optional.
 As there is no trusted connection between an Integration System and Runtime, additional input parameters have to be passed to the Application or Integration System through the Director.
 API credentials for every ServiceInstance are defined and stored on the Package level. Multiple APIs under the same Package share the same credentials.
 
-
-The Director GraphQL API is updated to store credentials per Service Instance. Credentials for every Instance across all Runtimes are stored on the Package level.
+Director stores credentials per ServiceInstance across all Runtimes on the Package level.
 
 ### Requesting API credentials
 
-![API Credentials Flow](./assets/api-credentials-flow.svg)
-
 This diagram illustrates the detailed flow of requesting API credentials. The Application provides Webhook API where Compass requests new credentials for the given Package.
+
+![API Credentials Flow](./assets/api-credentials-flow.svg)
 
 > **NOTE:** There is an option that the Application does not support Webhook API. That means the Application must monitor registered Packages and set Package credentials when a new instance of a Package is created.
 
@@ -45,6 +42,8 @@ When the user deletes a ServiceInstance, Runtime Agent requests the Director to 
 1. After the Runtime fetches valid credentials for the ServiceInstance, the status of the ServiceInstance is set to `READY`.
 
 ### GraphQL schema
+
+The following snippet describes GraphQL API for Packages credential requests.
 
 ```graphql
 type Package {
