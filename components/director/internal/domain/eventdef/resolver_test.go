@@ -201,7 +201,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			converter := testCase.ConverterFn()
 			appSvc := testCase.AppServiceFn()
 
-			resolver := eventdef.NewResolver(tx, svc, appSvc, converter, nil)
+			resolver := eventdef.NewResolver(tx, svc, appSvc, nil, converter, nil)
 
 			// when
 			result, err := resolver.AddEventDefinition(context.TODO(), appId, *gqlAPIInput)
@@ -330,7 +330,7 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := eventdef.NewResolver(tx, svc, nil, converter, nil)
+			resolver := eventdef.NewResolver(tx, svc, nil, nil, converter, nil)
 
 			// when
 			result, err := resolver.DeleteEventDefinition(context.TODO(), id)
@@ -467,7 +467,7 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := eventdef.NewResolver(tx, svc, nil, converter, nil)
+			resolver := eventdef.NewResolver(tx, svc, nil, nil, converter, nil)
 
 			// when
 			result, err := resolver.UpdateEventDefinition(context.TODO(), id, *gqlAPIDefinitionInput)
@@ -585,7 +585,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
-			resolver := eventdef.NewResolver(transact, svc, nil, conv, nil)
+			resolver := eventdef.NewResolver(transact, svc, nil, nil, conv, nil)
 
 			// when
 			result, err := resolver.RefetchEventDefinitionSpec(context.TODO(), apiID)
@@ -727,7 +727,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := eventdef.NewResolver(transact, svc, nil, nil, converter)
+			resolver := eventdef.NewResolver(transact, svc, nil, nil, nil, converter)
 
 			// when
 			result, err := resolver.FetchRequest(context.TODO(), testCase.EventApiSpec)

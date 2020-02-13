@@ -214,7 +214,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			appSvc := testCase.AppServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := document.NewResolver(transact, svc, appSvc, nil)
+			resolver := document.NewResolver(transact, svc, appSvc, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -346,7 +346,7 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := document.NewResolver(transact, svc, nil, nil)
+			resolver := document.NewResolver(transact, svc, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -466,7 +466,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := document.NewResolver(transact, svc, nil, converter)
+			resolver := document.NewResolver(transact, svc, nil, nil, converter)
 
 			// when
 			result, err := resolver.FetchRequest(context.TODO(), &graphql.Document{ID: id})

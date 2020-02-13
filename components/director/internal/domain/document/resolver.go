@@ -3,8 +3,6 @@ package document
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
-
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
 	"github.com/pkg/errors"
@@ -16,6 +14,7 @@ import (
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
 type DocumentService interface {
 	Create(ctx context.Context, applicationID string, in model.DocumentInput) (string, error)
+	CreateToPackage(ctx context.Context, packageID string, in model.DocumentInput) (string, error)
 	Get(ctx context.Context, id string) (*model.Document, error)
 	Delete(ctx context.Context, id string) error
 	GetFetchRequest(ctx context.Context, documentID string) (*model.FetchRequest, error)
@@ -39,19 +38,26 @@ type FetchRequestConverter interface {
 type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
+
+//go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
+type PackageService interface {
+	Exist(ctx context.Context, id string) (bool, error)
+}
 type Resolver struct {
 	transact    persistence.Transactioner
 	svc         DocumentService
 	appSvc      ApplicationService
+	pkgSvc      PackageService
 	converter   DocumentConverter
 	frConverter FetchRequestConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc DocumentService, appSvc ApplicationService, frConverter FetchRequestConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc DocumentService, appSvc ApplicationService, pkgSvc PackageService, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		svc:         svc,
 		appSvc:      appSvc,
+		pkgSvc:      pkgSvc,
 		frConverter: frConverter,
 		converter:   &converter{frConverter: frConverter},
 	}
@@ -157,7 +163,42 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*gr
 	return frGQL, nil
 }
 
-// TODO: Replace with real implementation
 func (r *Resolver) AddDocumentToPackage(ctx context.Context, packageID string, in graphql.DocumentInput) (*graphql.Document, error) {
-	return mock.FixDocument("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), nil
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	convertedIn := r.converter.InputFromGraphQL(&in)
+
+	found, err := r.pkgSvc.Exist(ctx, packageID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while checking existence of Package")
+	}
+
+	if !found {
+		return nil, errors.New("Cannot add Document to not existing Package")
+	}
+
+	id, err := r.svc.CreateToPackage(ctx, packageID, *convertedIn)
+	if err != nil {
+		return nil, err
+	}
+
+	document, err := r.svc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlDocument := r.converter.ToGraphQL(document)
+
+	return gqlDocument, nil
 }

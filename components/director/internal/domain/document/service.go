@@ -100,6 +100,33 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Doc
 	return document.ID, nil
 }
 
+func (s *service) CreateToPackage(ctx context.Context, packageID string, in model.DocumentInput) (string, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	id := s.uidService.Generate()
+
+	document := in.ToDocumentWithPackage(id, tnt, &packageID)
+	err = s.repo.Create(ctx, document)
+	if err != nil {
+		return "", errors.Wrap(err, "while creating Document")
+	}
+
+	if in.FetchRequest != nil {
+		generatedID := s.uidService.Generate()
+		fetchRequestID := &generatedID
+		fetchRequestModel := in.FetchRequest.ToFetchRequest(s.timestampGen(), *fetchRequestID, tnt, model.DocumentFetchRequestReference, id)
+		err := s.fetchRequestRepo.Create(ctx, fetchRequestModel)
+		if err != nil {
+			return "", errors.Wrapf(err, "while creating FetchRequest for Document %s", id)
+		}
+	}
+
+	return document.ID, nil
+}
+
 func (s *service) Delete(ctx context.Context, id string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

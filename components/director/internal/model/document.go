@@ -57,3 +57,21 @@ func (d *DocumentInput) ToDocument(id, tenant string, applicationID *string) *Do
 		Data:          d.Data,
 	}
 }
+
+func (d *DocumentInput) ToDocumentWithPackage(id, tenant string, packageID *string) *Document {
+	if d == nil {
+		return nil
+	}
+
+	return &Document{
+		PackageID:   packageID,
+		ID:          id,
+		Tenant:      tenant,
+		Title:       d.Title,
+		DisplayName: d.DisplayName,
+		Description: d.Description,
+		Format:      d.Format,
+		Kind:        d.Kind,
+		Data:        d.Data,
+	}
+}

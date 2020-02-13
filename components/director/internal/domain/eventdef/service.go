@@ -119,6 +119,31 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Eve
 	return id, nil
 }
 
+func (s *service) CreateToPackage(ctx context.Context, packageID string, in model.EventDefinitionInput) (string, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return "", errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	id := s.uidService.Generate()
+
+	eventAPI := in.ToEventDefinitionWithPackageID(id, &packageID, tnt)
+
+	err = s.eventAPIRepo.Create(ctx, eventAPI)
+	if err != nil {
+		return "", err
+	}
+
+	if in.Spec != nil && in.Spec.FetchRequest != nil {
+		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+		if err != nil {
+			return "", errors.Wrapf(err, "while creating FetchRequest for EventDefinition %s", id)
+		}
+	}
+
+	return id, nil
+}
+
 func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
