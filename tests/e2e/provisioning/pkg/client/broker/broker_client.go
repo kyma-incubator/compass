@@ -109,7 +109,7 @@ func (c *Client) ProvisionRuntime() (string, error) {
 	return response.Operation, nil
 }
 
-func (c *Client) DeprovisionRuntime() error {
+func (c *Client) DeprovisionRuntime() (string, error) {
 	deprovisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.runtimeID)
 
 	response := provisionResponse{}
@@ -123,15 +123,15 @@ func (c *Client) DeprovisionRuntime() error {
 		return true, nil
 	})
 	if err != nil {
-		return errors.Wrap(err, "while waiting for successful deprovision call")
+		return "", errors.Wrap(err, "while waiting for successful deprovision call")
 	}
 	c.log.Infof("Successfully send deprovision request, got operation ID %s", response.Operation)
-	return nil
+	return response.Operation, nil
 }
 
-func (c *Client) AwaitProvisioningSucceeded(operationID string) error {
+func (c *Client) AwaitOperationSucceeded(operationID string) error {
 	lastOperationURL := fmt.Sprintf("%s%s/%s/last_operation?operation=%s", c.brokerConfig.URL, instancesURL, c.runtimeID, operationID)
-	c.log.Infof("Waiting for provisioning at most %s", c.brokerConfig.ProvisionTimeout.String())
+	c.log.Infof("Waiting for operation at most %s", c.brokerConfig.ProvisionTimeout.String())
 
 	response := lastOperationResponse{}
 	err := wait.Poll(5*time.Minute, c.brokerConfig.ProvisionTimeout, func() (bool, error) {
@@ -142,16 +142,16 @@ func (c *Client) AwaitProvisioningSucceeded(operationID string) error {
 		}
 		switch domain.LastOperationState(response.State) {
 		case domain.Failed:
-			c.log.Info("Provisioning failed")
-			return true, errors.New("provisioning failed")
+			c.log.Info("Operation failed")
+			return true, errors.New("operation failed")
 		case domain.Succeeded:
-			c.log.Infof("Runtime Provisioning succeeded!")
+			c.log.Infof("Operation succeeded!")
 			return true, nil
 		case domain.InProgress:
 			return false, nil
 		default:
 			if response.State == "" {
-				c.log.Infof("Got empty provisioning response")
+				c.log.Infof("Got empty last operation response")
 				return false, nil
 			}
 			return false, nil
