@@ -205,7 +205,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil,tenantRepoMock)
+		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, tenantRepoMock)
 		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
 		require.NoError(t, err)
@@ -267,7 +267,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil,nil)
+		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, nil)
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
 		require.EqualError(t, err, "while fetching external tenant: while parsing the value for tenant: unable to cast the value to a string type")
