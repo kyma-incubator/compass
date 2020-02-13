@@ -22,7 +22,7 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-754"
+      version: "PR-829"
     director:
       dir:
       version: "PR-797"
@@ -34,7 +34,7 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-792"
+      version: "PR-834"
     provisioner:
       dir:
       version: "PR-743"

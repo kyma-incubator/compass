@@ -58,9 +58,9 @@ var packageID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Package, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	return &graphql.APIDefinitionPage{
 		Data: []*graphql.APIDefinition{
-			mock.FixAPIDefinition("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", obj.ID),
-			mock.FixAPIDefinition("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", obj.ID),
-			mock.FixAPIDefinition("cccccccc-cccc-cccc-cccc-cccccccccccc", obj.ID),
+			mock.FixAPIDefinition("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+			mock.FixAPIDefinition("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+			mock.FixAPIDefinition("cccccccc-cccc-cccc-cccc-cccccccccccc"),
 		},
 		TotalCount: 3,
 	}, nil
@@ -70,9 +70,9 @@ func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Package, gro
 func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Package, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
 	return &graphql.EventDefinitionPage{
 		Data: []*graphql.EventDefinition{
-			mock.FixEventDefinition("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", obj.ID),
-			mock.FixEventDefinition("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", obj.ID),
-			mock.FixEventDefinition("cccccccc-cccc-cccc-cccc-cccccccccccc", obj.ID),
+			mock.FixEventDefinition("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+			mock.FixEventDefinition("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+			mock.FixEventDefinition("cccccccc-cccc-cccc-cccc-cccccccccccc"),
 		},
 		TotalCount: 3,
 	}, nil
@@ -82,9 +82,9 @@ func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Package, g
 func (r *Resolver) Documents(ctx context.Context, obj *graphql.Package, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	return &graphql.DocumentPage{
 		Data: []*graphql.Document{
-			mock.FixDocument("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", obj.ID),
-			mock.FixDocument("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", obj.ID),
-			mock.FixDocument("cccccccc-cccc-cccc-cccc-cccccccccccc", obj.ID),
+			mock.FixDocument("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+			mock.FixDocument("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+			mock.FixDocument("cccccccc-cccc-cccc-cccc-cccccccccccc"),
 		},
 		TotalCount: 3,
 	}, nil
@@ -92,15 +92,15 @@ func (r *Resolver) Documents(ctx context.Context, obj *graphql.Package, first *i
 
 // TODO: Replace with real implementation
 func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Package, id string) (*graphql.APIDefinition, error) {
-	return mock.FixAPIDefinition(id, packageID), nil
+	return mock.FixAPIDefinition(id), nil
 }
 
 // TODO: Replace with real implementation
 func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Package, id string) (*graphql.EventDefinition, error) {
-	return mock.FixEventDefinition(id, packageID), nil
+	return mock.FixEventDefinition(id), nil
 }
 
 // TODO: Replace with real implementation
 func (r *Resolver) Document(ctx context.Context, obj *graphql.Package, id string) (*graphql.Document, error) {
-	return mock.FixDocument(id, packageID), nil
+	return mock.FixDocument(id), nil
 }
