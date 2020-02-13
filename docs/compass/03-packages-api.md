@@ -1,16 +1,14 @@
-# Packages API
+# API for Packages
 
-## Introduction
 
-This document describes API for Packages. Package is an entity, which groups multiple API Definitions, Event Definitions and Documents. It also stores shared credentials for all APIs defined under the particular Package.
+Package is an entity that groups multiple API Definitions, Event Definitions, and Documents. It also stores shared credentials for all APIs defined under the particular Package.
 
 ![API Packages Diagram](./assets/packages-api.svg)
 
-On Kyma Runtime, every Application is represented as a single Service Class, and every Package of a given Application is represented as a single Service Plan in Service Catalog. It allows user to consume multiple APIs and Events with a single Service Instance.
+In Kyma Runtime, every Application is represented as a single ServiceClass, and every Package of a given Application is represented as a single ServicePlan in the Service Catalog. It allows users to consume multiple APIs and Events with a single ServiceInstance.
 
-## Assumptions
 
-- A single API, Event Definition and Document can be a part of a single Package. A single Package can contain multiple API, Event Definitions and Documents.
+A single Package can contain many different API Definitions/Event Definitions/Documents but the same API Definition/Event Definition/Document cannot belong to two different Packages. One Packages can belong only to one Application.
 - Package belongs to a single Application entity.
 
 ## GraphQL API
@@ -23,7 +21,7 @@ type Package {
   name: String!
   description: String
 
-  # (...) Auth-related fields, described in Credentials Request for Packages document
+  # (...) Auth-related fields described in the `Credentials Request for Packages` document
 
   apiDefinitions(
     group: String
@@ -51,21 +49,21 @@ type Mutation {
   # (...)
 
   """
-  Temporary name before doing breaking change. Eventually the `addAPIDefinition` mutation will be changed and there will be just one mutation: `addAPIDefinitionToPackage`.
+  Temporary name before doing a breaking change. Eventually, the `addAPIDefinition` mutation will be changed and there will be just one mutation: `addAPIDefinitionToPackage`.
   """
   addAPIDefinitionToPackage(
     packageID: ID!
     in: APIDefinitionInput! @validate
   ): APIDefinition!
   """
-  Temporary name before doing breaking change. Eventually the `addEventDefinition` mutation will be changed and there will be just one mutation: `addEventDefinitionToPackage`.
+  Temporary name before doing a breaking change. Eventually, the `addEventDefinition` mutation will be changed and there will be just one mutation: `addEventDefinitionToPackage`.
   """
   addEventDefinitionToPackage(
     packageID: ID!
     in: EventDefinitionInput! @validate
   ): EventDefinition!
   """
-  Temporary name before doing breaking change. Eventually the `addDocument` mutation will be changed and there will be just one mutation: `addDocumentToPackage`.
+  Temporary name before doing a breaking change. Eventually, the `addDocument` mutation will be changed and there will be just one mutation: `addDocumentToPackage`.
   """
   addDocumentToPackage(packageID: ID!, in: DocumentInput! @validate): Document!
     @hasScopes(path: "graphql.mutation.addDocumentToPackage")
@@ -78,4 +76,4 @@ type Mutation {
 
 ## Package credentials
 
-To read about Package credentials flow, how to provide optional input parameters during Service Instance creation, see the [Credential requests for Packages](./03-packages-credential-requests.md) document.
+To learn about credentials flow for Packages and how to provide optional input parameters when provisioning a ServiceInstance, read [this](./03-packages-credential-requests.md) document.
