@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/textproto"
+
 	"strings"
 	"testing"
 
@@ -37,6 +38,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
+
 		tenantMappingModel := &model.BusinessTenantMapping{
 			ID:             expectedTenantID.String(),
 			ExternalTenant: expectedExternalTenantID.String(),
@@ -45,10 +47,14 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
+		//staticGroup := []tenantmapping.StaticGroup{}
+		//staticGroupRepoMock := getStaticGroupRepoMock()
+		//staticGroupRepoMock.On("Get", []string{}).Return(staticGroup, nil).Once()
+
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, tenantRepoMock)
+		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, tenantRepoMock)
 		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
 		require.NoError(t, err)
@@ -85,7 +91,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, tenantRepoMock)
+		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, tenantRepoMock)
 		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
 		require.NoError(t, err)
@@ -124,7 +130,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, tenantRepoMock)
+		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, tenantRepoMock)
 		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
 		require.NoError(t, err)
@@ -163,7 +169,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, tenantRepoMock)
+		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, tenantRepoMock)
 		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
 		require.NoError(t, err)
@@ -199,7 +205,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, tenantRepoMock)
+		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil,tenantRepoMock)
 		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
 		require.NoError(t, err)
@@ -236,7 +242,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, nonExistingExternalTenantID).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, tenantRepoMock)
+		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, tenantRepoMock)
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
 		require.EqualError(t, err, "tenant mismatch")
@@ -261,7 +267,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil)
+		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil,nil)
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
 		require.EqualError(t, err, "while fetching external tenant: while parsing the value for tenant: unable to cast the value to a string type")
@@ -286,7 +292,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil)
+		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, nil)
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
 		require.EqualError(t, err, "while fetching scopes: while parsing the value for scope: unable to cast the value to a string type")
@@ -301,7 +307,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(tenantmapping.StaticUser{}, errors.New("some-error")).Once()
 
-		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil)
+		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, nil)
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
 		require.EqualError(t, err, "while searching for a static user with username non-existing: some-error")
@@ -312,5 +318,10 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 
 func getStaticUserRepoMock() *automock.StaticUserRepository {
 	repo := &automock.StaticUserRepository{}
+	return repo
+}
+
+func getStaticGroupRepoMock() *automock.StaticGroupRepository {
+	repo := &automock.StaticGroupRepository{}
 	return repo
 }

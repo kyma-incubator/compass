@@ -15,7 +15,7 @@ type StaticGroup struct {
 	Scopes    []string `json:"scopes"`
 }
 
-//go:generate mockery -name=StaticUserRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery -name=StaticGroupRepository -output=automock -outpkg=automock -case=underscore
 type StaticGroupRepository interface {
 	Get(groupnames []string) []StaticGroup
 }

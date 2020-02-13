@@ -52,6 +52,7 @@ func GetScopesFromGroups(groups []StaticGroup) string {
 func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
 	var externalTenantID, scopes string
 	var staticUser StaticUser
+	var staticGroups []StaticGroup
 
 	userGroups, err := reqData.GetGroups()
 	log.Infof("GetGroups returned %s\n", userGroups)
@@ -60,12 +61,14 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 		return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while getting groups for a static user with username %s", username))
 	}
 
-	staticGroups := m.staticGroupRepo.Get(userGroups)
+	if len(userGroups) > 0 {
+		staticGroups = m.staticGroupRepo.Get(userGroups)
+	}
 
 	if len(staticGroups) > 0 {
 		// proceed with group scopes flow
 		scopes = GetScopesFromGroups(staticGroups)
-		log.Infof("Decided to use groups copes %s\n", scopes)
+		log.Infof("Decided to use groups scopes %s\n", scopes)
 	} else {
 		// proceed with staticUser (and his scopes) flow
 		staticUser, err = m.staticUserRepo.Get(username)
@@ -80,7 +83,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 			}
 
 			scopes = strings.Join(staticUser.Scopes, " ")
-			log.Infof("Decided to use staticUser copes %s\n", scopes)
+			log.Infof("Decided to use staticUser scopes %s\n", scopes)
 		}
 	}
 
