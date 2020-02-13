@@ -238,3 +238,46 @@ func TestReqData_GetScopes(t *testing.T) {
 		require.EqualError(t, err, "the key (scope) does not exist in source object")
 	})
 }
+
+func TestReqData_GetGroups(t *testing.T) {
+	t.Run("returns groups when it is specified in the Extra map", func(t *testing.T) {
+		expectedGroups := []string{
+			"developers",
+			"admin",
+			"tenantID=123",
+		}
+
+		reqData := ReqData{
+			Body: ReqBody{
+				Extra: map[string]interface{}{
+					GroupsKey: []interface{}{
+						"developers",
+						"admin",
+						"tenantID=123",
+					},
+				},
+			},
+		}
+
+		groups, err := reqData.GetGroups()
+
+		require.NoError(t, err)
+		require.Equal(t, expectedGroups, groups)
+	})
+
+	t.Run("returns empty array when groups value is specified in Extra map in a non-string format", func(t *testing.T) {
+		reqData := ReqData{
+			Body: ReqBody{
+				Extra: map[string]interface{}{
+					ScopesKey: []byte{1, 2, 3},
+				},
+			},
+		}
+
+		groups, err := reqData.GetGroups()
+
+		require.NoError(t, err)
+		require.Equal(t, []string{}, groups)
+	})
+
+}

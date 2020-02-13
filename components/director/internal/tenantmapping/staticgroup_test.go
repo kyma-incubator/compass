@@ -84,7 +84,7 @@ func TestStaticGroupRepository(t *testing.T) {
 		require.Equal(t, "while unmarshalling static groups YAML: error unmarshaling JSON: while decoding JSON: json: unknown field \"notascope\"", err.Error())
 	})
 
-	t.Run("returns staticGroup instance when exists", func(t *testing.T) {
+	t.Run("returns single matching staticGroup", func(t *testing.T) {
 		tenantIDs := []string{uuid.New().String()}
 		repo := staticGroupRepository{
 			data: map[string]StaticGroup{
@@ -102,6 +102,36 @@ func TestStaticGroupRepository(t *testing.T) {
 		require.Equal(t, "developer", staticGroup[0].GroupName)
 		require.Equal(t, tenantIDs, staticGroup[0].Tenants)
 		require.Equal(t, []string{"application:read"}, staticGroup[0].Scopes)
+	})
+
+	t.Run("returns multiple matching staticGroup", func(t *testing.T) {
+		tenantIDs := []string{uuid.New().String()}
+		repo := staticGroupRepository{
+			data: map[string]StaticGroup{
+				"developer": StaticGroup{
+					GroupName: "developer",
+					Scopes:    []string{"application:read"},
+					Tenants:   tenantIDs,
+				},
+				"admin": StaticGroup{
+					GroupName: "admin",
+					Scopes:    []string{"application:read","application:write"},
+					Tenants:   tenantIDs,
+				},
+			},
+		}
+		groupnames := []string{"developer", "admin"}
+		staticGroup := repo.Get(groupnames)
+
+		require.Equal(t, int(2), len(staticGroup))
+
+		require.Equal(t, "developer", staticGroup[0].GroupName)
+		require.Equal(t, tenantIDs, staticGroup[0].Tenants)
+		require.Equal(t, []string{"application:read"}, staticGroup[0].Scopes)
+
+		require.Equal(t, "admin", staticGroup[1].GroupName)
+		require.Equal(t, tenantIDs, staticGroup[1].Tenants)
+		require.Equal(t, []string{"application:read","application:write"}, staticGroup[1].Scopes)
 	})
 
 	t.Run("returns empty array when staticGroup does not exist", func(t *testing.T) {
