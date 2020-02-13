@@ -18,7 +18,6 @@ const (
 	GroupHeader       = "Group"
 	TenantHeader      = "Tenant"
 	Tenant            = "testkit-tenant"
-	Group             = "testkit-group"
 	Extensions        = ""
 	KeyAlgorithm      = "rsa2048"
 )
