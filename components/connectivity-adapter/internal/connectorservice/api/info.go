@@ -18,12 +18,12 @@ const (
 	ContentTypeApplicationJson = "application/json;charset=UTF-8"
 )
 
-type makeResponseFunction func(string, string, string, string, string, model.CertInfo) interface{}
+type newResponseFunction func(string, string, string, string, string, model.CertInfo) interface{}
 
 type infoHandler struct {
 	connectorClient                connector.Client
 	directorClientProvider         director.ClientProvider
-	makeResponse                   makeResponseFunction
+	newResponse                    newResponseFunction
 	connectivityAdapterBaseURL     string
 	connectivityAdapterMTLSBaseURL string
 	logger                         *log.Logger
@@ -35,12 +35,12 @@ func NewInfoHandler(
 	logger *log.Logger,
 	connectivityAdapterBaseURL string,
 	connectivityAdapterMTLSBaseURL string,
-	makeResponse makeResponseFunction) infoHandler {
+	newResponse newResponseFunction) infoHandler {
 
 	return infoHandler{
 		connectorClient:                connectorClient,
 		directorClientProvider:         directorClientProvider,
-		makeResponse:                   makeResponse,
+		newResponse:                    newResponse,
 		connectivityAdapterBaseURL:     connectivityAdapterBaseURL,
 		connectivityAdapterMTLSBaseURL: connectivityAdapterMTLSBaseURL,
 		logger:                         logger,
@@ -80,7 +80,7 @@ func (ih *infoHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 	certInfo := connector.ToCertInfo(configuration)
 
 	//TODO: handle case when configuration.Token is nil
-	infoResponse := ih.makeResponse(
+	infoResponse := ih.newResponse(
 		application.Name,
 		configuration.Token.Token,
 		ih.connectivityAdapterBaseURL,

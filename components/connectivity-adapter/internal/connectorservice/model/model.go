@@ -71,7 +71,7 @@ type TokenResponse struct {
 	Token string `json:"token"`
 }
 
-func MakeCSRInfoResponseWrapper(
+func NewCSRInfoResponse(
 	applicationName,
 	newToken,
 	connectivityAdapterBaseURL,
@@ -79,26 +79,9 @@ func MakeCSRInfoResponseWrapper(
 	eventServiceBaseURL string,
 	certInfo CertInfo) interface{} {
 
-	return makeCSRInfoResponse(
-		applicationName,
-		newToken,
-		connectivityAdapterBaseURL,
-		connectivityAdapterMTLSBaseURL,
-		eventServiceBaseURL,
-		certInfo)
-}
-
-func makeCSRInfoResponse(
-	application,
-	newToken,
-	connectivityAdapterBaseURL,
-	connectivityAdapterMTLSBaseURL,
-	eventServiceBaseURL string,
-	certInfo CertInfo) CSRInfoResponse {
-
 	return CSRInfoResponse{
 		CsrURL:          makeCSRURL(newToken, connectivityAdapterBaseURL),
-		API:             makeApiURLs(application, connectivityAdapterBaseURL, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
+		API:             makeApiURLs(applicationName, connectivityAdapterBaseURL, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
 		CertificateInfo: certInfo,
 	}
 }
@@ -126,26 +109,13 @@ func makeRuntimeURLs(application, connectivityAdapterBaseURL string, eventServic
 	}
 }
 
-func MakeManagementInfoResponseWrapper(
+func NewManagementInfoResponse(
 	applicationName,
 	newToken,
 	connectivityAdapterBaseURL,
 	connectivityAdapterMTLSBaseURL,
 	eventServiceBaseURL string,
 	certInfo CertInfo) interface{} {
-
-	return makeManagementInfoResponse(
-		applicationName,
-		connectivityAdapterMTLSBaseURL,
-		eventServiceBaseURL,
-		certInfo)
-}
-
-func makeManagementInfoResponse(
-	applicationName,
-	connectivityAdapterMTLSBaseURL,
-	eventServiceBaseURL string,
-	certInfo CertInfo) MgmtInfoReponse {
 
 	return MgmtInfoReponse{
 		ClientIdentity:  makeClientIdentity(applicationName, "", ""),
