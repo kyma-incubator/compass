@@ -192,7 +192,7 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotNil(t, err)
 		require.Equal(t, http.StatusForbidden, err.StatusCode)
 		require.Equal(t, http.StatusForbidden, err.ErrorResponse.Code)
-		require.Equal(t, "Invalid token.", err.ErrorResponse.Error)
+		require.Equal(t, "Invalid token or certificate", err.ErrorResponse.Error)
 	})
 
 	t.Run("should return error for wrong token on client-certs", func(t *testing.T) {
@@ -224,7 +224,7 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotNil(t, err)
 		require.Equal(t, http.StatusForbidden, err.StatusCode)
 		require.Equal(t, http.StatusForbidden, err.ErrorResponse.Code)
-		require.Equal(t, "Invalid token.", err.ErrorResponse.Error)
+		require.Equal(t, "Invalid token or certificate", err.ErrorResponse.Error)
 	})
 
 	t.Run("should return error on wrong CSR on client-certs", func(t *testing.T) {
@@ -436,44 +436,6 @@ func certificateRevocationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotNil(t, errorResponse)
 		require.Equal(t, http.StatusForbidden, errorResponse.StatusCode)
 	})
-
-	t.Run("should revoke client certificate with internal API", func(t *testing.T) {
-		// when
-		crtResponse, infoResponse := createCertificateChain(t, client, clientKey)
-
-		// then
-		require.NotEmpty(t, crtResponse.CRTChain)
-		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
-
-		// when
-		certificates := testkit.DecodeAndParseCerts(t, crtResponse)
-		securedClient := testkit.NewSecuredConnectorClient(skipVerify, clientKey, certificates.ClientCRT.Raw, tenant)
-
-		mgmInfoResponse, errorResponse := securedClient.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
-
-		// then
-		require.Nil(t, errorResponse)
-		require.NotEmpty(t, mgmInfoResponse.URLs.RevokeCertURL)
-
-		// when
-		sha256Fingerprint := testkit.CertificateSHA256Fingerprint(t, certificates.ClientCRT)
-
-		errorResponse = client.RevokeCertificate(t, internalRevocationUrl, sha256Fingerprint)
-
-		// then
-		require.Nil(t, errorResponse)
-
-		// when
-		csr := testkit.CreateCsr(t, infoResponse.Certificate.Subject, clientKey)
-		csrBase64 := testkit.EncodeBase64(csr)
-
-		_, errorResponse = securedClient.RenewCertificate(t, mgmInfoResponse.URLs.RenewCertUrl, csrBase64)
-
-		// then
-		require.NotNil(t, errorResponse)
-		require.Equal(t, http.StatusForbidden, errorResponse.StatusCode)
-	})
-
 }
 
 func createCertificateChain(t *testing.T, connectorClient testkit.ConnectorClient, key *rsa.PrivateKey) (*testkit.CrtResponse, *testkit.InfoResponse) {
