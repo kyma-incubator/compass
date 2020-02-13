@@ -191,7 +191,6 @@ func (b *InputBuilder) applyServiceManagerOverrides(in *gqlschema.ProvisionRunti
 
 func (b *InputBuilder) applyManagementPlaneOverrides(in *gqlschema.ProvisionRuntimeInput) error {
 	const coreComponentName = "core"
-	const compassComponentName = "compass"
 
 	var mpOverrides = []*gqlschema.ConfigEntryInput{
 		{
@@ -201,7 +200,7 @@ func (b *InputBuilder) applyManagementPlaneOverrides(in *gqlschema.ProvisionRunt
 	}
 
 	for i := range in.KymaConfig.Components {
-		if in.KymaConfig.Components[i].Component == coreComponentName || in.KymaConfig.Components[i].Component == compassComponentName {
+		if in.KymaConfig.Components[i].Component == coreComponentName {
 			in.KymaConfig.Components[i].Configuration = append(in.KymaConfig.Components[i].Configuration, mpOverrides...)
 		}
 	}
