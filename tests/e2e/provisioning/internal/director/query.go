@@ -2,7 +2,7 @@ package director
 
 import "fmt"
 
-const instanceIDLabelKey = "broker/instance_id"
+const instanceIDLabelKey = "broker_instance_id"
 
 type queryProvider struct{}
 

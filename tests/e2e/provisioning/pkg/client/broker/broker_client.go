@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io"
 	"net/http"
 	"strings"
@@ -240,6 +241,7 @@ func (c *Client) executeRequest(method, url string, body io.Reader, responseBody
 	if err != nil {
 		return errors.Wrapf(err, "while executing request URL: %s", url)
 	}
+	spew.Dump(resp.Body)
 
 	err = json.NewDecoder(resp.Body).Decode(responseBody)
 	if err != nil {
