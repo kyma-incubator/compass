@@ -22,14 +22,14 @@ type Client interface {
 type client struct {
 	graphQLClient *graphql.Client
 	queryProvider queryProvider
-	graphqlizer   graphqlizer
+	graphqlizer   Graphqlizer
 }
 
 func NewProvisionerClient(endpoint string, queryLogging bool) Client {
 	return &client{
 		graphQLClient: graphql.NewGraphQLClient(endpoint, true, queryLogging),
 		queryProvider: queryProvider{},
-		graphqlizer:   graphqlizer{},
+		graphqlizer:   Graphqlizer{},
 	}
 }
 

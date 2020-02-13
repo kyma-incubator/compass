@@ -111,7 +111,8 @@ func (b *InputBuilder) SetProvisioningConfig(brokerConfig ProvisioningConfig) Co
 }
 
 func (b *InputBuilder) applyProvisioningParameters(in *gqlschema.ProvisionRuntimeInput) error {
-	in.ClusterConfig.GardenerConfig.Name = b.provisioningParameters.Name
+	updateString(&in.RuntimeInput.Name, &b.provisioningParameters.Name)
+
 	updateInt(&in.ClusterConfig.GardenerConfig.NodeCount, b.provisioningParameters.NodeCount)
 	updateInt(&in.ClusterConfig.GardenerConfig.MaxUnavailable, b.provisioningParameters.MaxUnavailable)
 	updateInt(&in.ClusterConfig.GardenerConfig.MaxSurge, b.provisioningParameters.MaxSurge)
@@ -196,16 +197,12 @@ func (b *InputBuilder) applyTemporaryCustomization(in *gqlschema.ProvisionRuntim
 		return fmt.Errorf("unknown Plan ID %s", b.planID)
 	}
 
-	in.ClusterConfig.GardenerConfig.ProjectName = b.provisioningConfig.GardenerProjectName
-	in.Credentials = &gqlschema.CredentialsInput{
-		SecretName: b.provisioningConfig.SecretName,
-	}
-
 	return nil
 }
 
 func (b *InputBuilder) initInput() gqlschema.ProvisionRuntimeInput {
 	return gqlschema.ProvisionRuntimeInput{
+		RuntimeInput:  &gqlschema.RuntimeInput{},
 		ClusterConfig: b.hyperscalerInputProvider.Defaults(),
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version:    b.kymaVersion,

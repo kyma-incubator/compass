@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -771,4 +773,23 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 	}
 
 	return eventing.ApplicationEventingConfigurationToGraphQL(eventingCfg), nil
+}
+
+// TODO: Replace with real implementation
+func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.PackagePage, error) {
+	packages := []*graphql.Package{
+		mock.FixPackageWithIDAndName("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "Foo"),
+		mock.FixPackageWithIDAndName("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "Bar"),
+		mock.FixPackageWithIDAndName("cccccccc-cccc-cccc-cccc-cccccccccccc", "Baz"),
+	}
+
+	return &graphql.PackagePage{
+		Data:       packages,
+		TotalCount: 3,
+	}, nil
+}
+
+// TODO: Replace with real implementation
+func (r *Resolver) Package(ctx context.Context, obj *graphql.Application, id string) (*graphql.Package, error) {
+	return mock.FixPackageWithIDAndName(id, "Lorem ipsum"), nil
 }
