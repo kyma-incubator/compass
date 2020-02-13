@@ -34,11 +34,9 @@ type Config struct {
 
 // Client allows to fetch runtime's config and execute the logic against it
 type Client struct {
-	config Config
-	log    logrus.FieldLogger
-
-	client     client.Client
+	config     Config
 	httpClient http.Client
+	log        logrus.FieldLogger
 
 	runtimeID string
 	tenantID  string
@@ -59,11 +57,11 @@ type runtimeStatusResponse struct {
 }
 
 func (c *Client) EnsureUAAInstanceRemoved() error {
-	err := c.setRuntimeConfig() //TODO: get client and inject it later
+	cli, err := c.newRuntimeClient()
 	if err != nil {
 		return errors.Wrap(err, "while setting runtime config")
 	}
-	err = c.ensureInstanceRemoved()
+	err = c.ensureInstanceRemoved(cli)
 	if err != nil {
 		return errors.Wrap(err, "while removing UUA instance")
 	}
@@ -95,17 +93,17 @@ func (c *Client) fetchRuntimeConfig() (*runtimeStatusResponse, error) {
 	return res, nil
 }
 
-func (c *Client) setRuntimeConfig() error {
+func (c *Client) newRuntimeClient() (client.Client, error) {
 	response, err := c.fetchRuntimeConfig()
 	if err != nil {
-		return errors.Wrap(err, "while fetching runtime config")
+		return nil, errors.Wrap(err, "while fetching runtime config")
 	}
 
 	runtimeConfig := *response.Result.RuntimeConfiguration.Kubeconfig
 	content := []byte(runtimeConfig)
 	runtimeConfigTmpFile, err := ioutil.TempFile("", "runtime.*.yaml")
 	if err != nil {
-		return errors.Wrap(err, "while creating runtime config temp file")
+		return nil, errors.Wrap(err, "while creating runtime config temp file")
 	}
 	defer func() {
 		err = os.Remove(runtimeConfigTmpFile.Name())
@@ -113,36 +111,35 @@ func (c *Client) setRuntimeConfig() error {
 	}()
 
 	if _, err := runtimeConfigTmpFile.Write(content); err != nil {
-		return errors.Wrap(err, "while writing runtime config temp file")
+		return nil, errors.Wrap(err, "while writing runtime config temp file")
 	}
 	if err := runtimeConfigTmpFile.Close(); err != nil {
-		return errors.Wrap(err, "while closing runtime config temp file")
+		return nil, errors.Wrap(err, "while closing runtime config temp file")
 	}
 
-	err = c.createClient(runtimeConfigTmpFile.Name())
+	cli, err := c.newClient(runtimeConfigTmpFile.Name())
 	if err != nil {
-		return errors.Wrap(err, "while setting client config")
+		return nil, errors.Wrap(err, "while setting client config")
 	}
-	return nil
+	return cli, nil
 }
 
-func (c *Client) createClient(configPath string) error {
+func (c *Client) newClient(configPath string) (client.Client, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", configPath)
 	if err != nil {
-		return errors.Wrapf(err, "while getting kubeconfig under path %s", configPath)
+		return nil, errors.Wrapf(err, "while getting kubeconfig under path %s", configPath)
 	}
 	cli, err := client.New(config, client.Options{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	c.client = cli
-	return nil
+	return cli, nil
 }
 
-func (c *Client) ensureInstanceRemoved() error {
+func (c *Client) ensureInstanceRemoved(cli client.Client) error {
 	c.log.Infof("Waiting for %s instance to be removed", c.config.UUAInstanceName)
 	return wait.Poll(time.Second, 3*time.Minute, func() (bool, error) {
-		if err := c.client.Delete(context.Background(), &v1beta1.ServiceInstance{
+		if err := cli.Delete(context.Background(), &v1beta1.ServiceInstance{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      c.config.UUAInstanceName,
 				Namespace: c.config.UUAInstanceNamespace,

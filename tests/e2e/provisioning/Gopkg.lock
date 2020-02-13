@@ -2,6 +2,25 @@
 
 
 [[projects]]
+  digest = "1:f84da532ef028ec1a939c4086e44cae3a2463a6679c31614fc23c325565b813f"
+  name = "github.com/99designs/gqlgen"
+  packages = [
+    "graphql",
+    "graphql/introspection",
+  ]
+  pruneopts = "UT"
+  revision = "f276a4e6773992c572119b22821d375ad008c53d"
+  version = "v0.10.2"
+
+[[projects]]
+  digest = "1:35a3c0cb74b67330a1593e1ca2bca87d914c372eb60ebccc0902743d8466e3d6"
+  name = "github.com/agnivade/levenshtein"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "5f1ee18e3efadffd18ef076ac4181cc92d87188c"
+  version = "v1.0.3"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -114,6 +133,17 @@
   version = "v0.2.2"
 
 [[projects]]
+  branch = "master"
+  digest = "1:d49d6a22b2e920f5090c2553e276fd6644d767ab6171d231f150605dd4935349"
+  name = "github.com/kyma-incubator/compass"
+  packages = [
+    "components/director/pkg/scalar",
+    "components/provisioner/pkg/gqlschema",
+  ]
+  pruneopts = "UT"
+  revision = "ad250cc742673ef5b628cc806841182bafe9750a"
+
+[[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
   name = "github.com/machinebox/graphql"
   packages = ["."]
@@ -195,6 +225,22 @@
   pruneopts = "UT"
   revision = "6e89fe966579c5905054d46d61cf1621ef291e2c"
   version = "v1.0.4"
+
+[[projects]]
+  digest = "1:577ba317098f1236922fd428023d14de9e22c1d48f178267c709887c74c4abf6"
+  name = "github.com/vektah/gqlparser"
+  packages = [
+    ".",
+    "ast",
+    "gqlerror",
+    "lexer",
+    "parser",
+    "validator",
+    "validator/rules",
+  ]
+  pruneopts = "UT"
+  revision = "c06d8e0d135f285e37e7f1ff397f10e049733eb3"
+  version = "v1.3.1"
 
 [[projects]]
   digest = "1:bb32a7e267540d9f2d26753426d5e360c5bd858b9b78e26b9f0c99219024d8f5"
@@ -487,6 +533,7 @@
   input-imports = [
     "github.com/google/uuid",
     "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1",
+    "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
     "github.com/machinebox/graphql",
     "github.com/pivotal-cf/brokerapi/v7/domain",
     "github.com/pkg/errors",
