@@ -2,12 +2,13 @@ package director
 
 import (
 	"context"
+	"time"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gqlTools "github.com/kyma-incubator/compass/tests/director/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/director/pkg/jwtbuilder"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	"time"
 )
 
 type Client interface {

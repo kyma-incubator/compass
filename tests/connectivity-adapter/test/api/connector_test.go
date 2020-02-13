@@ -2,11 +2,12 @@ package api
 
 import (
 	"crypto/rsa"
-	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/url"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/tests/connectivity-adapter/test/testkit/director"
 
