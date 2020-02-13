@@ -135,22 +135,14 @@ type RuntimeService interface {
 
 //go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
 type PackageService interface {
-	//Get(ctx context.Context, id string) (*model.Package, error)
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Package, error)
 	ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.PackagePage, error)
-	//List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
-	//ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error)
-	//SetLabel(ctx context.Context, label *model.LabelInput) error
-	//GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
-	//ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
-	//DeleteLabel(ctx context.Context, applicationID string, key string) error
 }
 
 //go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
 type PackageConverter interface {
 	ToGraphQL(in *model.Package) (*graphql.Package, error)
 	MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, error)
-	//GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
 }
 
 type Resolver struct {
@@ -801,7 +793,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 
 func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.PackagePage, error) {
 	if obj == nil {
-		return nil, errors.New("Package cannot be empty")
+		return nil, errors.New("Application cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
