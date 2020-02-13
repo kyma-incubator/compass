@@ -72,10 +72,9 @@ func (c *Client) EnsureUAAInstanceRemoved() error {
 }
 
 func (c *Client) fetchRuntimeConfig() (*runtimeStatusResponse, error) {
-
 	runtimeID, err := c.directorClient.GetRuntimeID(c.tenantID, c.instanceID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting runtime id from director: %v")
+		return nil, errors.Wrapf(err, "while getting runtime id from director for instance ID %s", c.instanceID)
 	}
 	// setup graphql client
 	gCli := graphCli.NewClient(c.config.ProvisionerURL, graphCli.WithHTTPClient(&c.httpClient))

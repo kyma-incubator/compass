@@ -30,17 +30,17 @@ type Config struct {
 type Client struct {
 	brokerConfig    Config
 	clusterName     string
-	runtimeID       string
+	instanceID      string
 	globalAccountID string
 
 	client *http.Client
 	log    logrus.FieldLogger
 }
 
-func NewClient(config Config, globalAccountID, runtimeID string, clientHttp http.Client, log logrus.FieldLogger) *Client {
+func NewClient(config Config, globalAccountID, instanceID string, clientHttp http.Client, log logrus.FieldLogger) *Client {
 	return &Client{
 		brokerConfig:    config,
-		runtimeID:       runtimeID,
+		instanceID:      instanceID,
 		clusterName:     fmt.Sprintf("%s-%s", "e2e-provisioning", strings.ToLower(randstr.String(10))),
 		globalAccountID: globalAccountID,
 		client:          &clientHttp,
@@ -80,14 +80,14 @@ type provisionParameters struct {
 }
 
 func (c *Client) ProvisionRuntime() (string, error) {
-	c.log.Infof("Provisioning Runtime [ID: %s, NAME: %s]", c.runtimeID, c.clusterName)
+	c.log.Infof("Provisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
 	requestByte, err := c.prepareProvisionDetails()
 	if err != nil {
 		return "", errors.Wrap(err, "while preparing provision details")
 	}
 	c.log.Infof("Provisioning parameters: %v", string(requestByte))
 
-	provisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.runtimeID)
+	provisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.instanceID)
 	response := provisionResponse{}
 	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
 		err := c.executeRequest(http.MethodPut, provisionURL, bytes.NewReader(requestByte), &response)
@@ -110,10 +110,10 @@ func (c *Client) ProvisionRuntime() (string, error) {
 }
 
 func (c *Client) DeprovisionRuntime() (string, error) {
-	deprovisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.runtimeID)
+	deprovisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.instanceID)
 
 	response := provisionResponse{}
-	c.log.Infof("Deprovisioning Runtime [ID: %s, NAME: %s]", c.runtimeID, c.clusterName)
+	c.log.Infof("Deprovisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
 	err := wait.Poll(time.Second, time.Second*5, func() (bool, error) {
 		err := c.executeRequest(http.MethodDelete, deprovisionURL, nil, &response)
 		if err != nil {
@@ -130,7 +130,7 @@ func (c *Client) DeprovisionRuntime() (string, error) {
 }
 
 func (c *Client) AwaitOperationSucceeded(operationID string) error {
-	lastOperationURL := fmt.Sprintf("%s%s/%s/last_operation?operation=%s", c.brokerConfig.URL, instancesURL, c.runtimeID, operationID)
+	lastOperationURL := fmt.Sprintf("%s%s/%s/last_operation?operation=%s", c.brokerConfig.URL, instancesURL, c.instanceID, operationID)
 	c.log.Infof("Waiting for operation at most %s", c.brokerConfig.ProvisionTimeout.String())
 
 	response := lastOperationResponse{}
@@ -164,7 +164,7 @@ func (c *Client) AwaitOperationSucceeded(operationID string) error {
 }
 
 func (c *Client) FetchDashboardURL() (string, error) {
-	instanceDetailsURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.runtimeID)
+	instanceDetailsURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.instanceID)
 
 	c.log.Info("Fetching the Runtime's dashboard URL")
 	response := instanceDetailsResponse{}
