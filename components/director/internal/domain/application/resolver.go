@@ -176,7 +176,6 @@ func NewResolver(transact persistence.Transactioner,
 	webhookSvc WebhookService,
 	oAuth20Svc OAuth20Service,
 	sysAuthSvc SystemAuthService,
-	pkgSvc PackageService,
 	appConverter ApplicationConverter,
 	documentConverter DocumentConverter,
 	webhookConverter WebhookConverter,
@@ -184,6 +183,7 @@ func NewResolver(transact persistence.Transactioner,
 	eventAPIConverter EventAPIConverter,
 	sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService,
+	pkgSvc PackageService,
 	pkgConverter PackageConverter) *Resolver {
 	return &Resolver{
 		transact:          transact,
@@ -194,7 +194,6 @@ func NewResolver(transact persistence.Transactioner,
 		webhookSvc:        webhookSvc,
 		oAuth20Svc:        oAuth20Svc,
 		sysAuthSvc:        sysAuthSvc,
-		pkgSvc:            pkgSvc,
 		appConverter:      appConverter,
 		documentConverter: documentConverter,
 		webhookConverter:  webhookConverter,
@@ -202,6 +201,7 @@ func NewResolver(transact persistence.Transactioner,
 		eventApiConverter: eventAPIConverter,
 		sysAuthConv:       sysAuthConv,
 		eventingSvc:       eventingSvc,
+		pkgSvc:            pkgSvc,
 		pkgConv:           pkgConverter,
 	}
 }
@@ -827,6 +827,7 @@ func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first
 	if err != nil {
 		return nil, err
 	}
+
 	totalCount := len(gqlPkgs)
 
 	return &graphql.PackagePage{
