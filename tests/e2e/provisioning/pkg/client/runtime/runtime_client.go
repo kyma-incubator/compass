@@ -9,6 +9,7 @@ import (
 	"time"
 
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -34,21 +35,23 @@ type Config struct {
 
 // Client allows to fetch runtime's config and execute the logic against it
 type Client struct {
-	config     Config
-	httpClient http.Client
-	log        logrus.FieldLogger
+	config         Config
+	httpClient     http.Client
+	directorClient director.Client
+	log            logrus.FieldLogger
 
-	runtimeID string
-	tenantID  string
+	instanceID string
+	tenantID   string
 }
 
-func NewClient(config Config, tenantID, runtimeID string, clientHttp http.Client, log logrus.FieldLogger) *Client {
+func NewClient(config Config, tenantID, instanceID string, clientHttp http.Client, directorClient director.Client, log logrus.FieldLogger) *Client {
 	return &Client{
-		tenantID:   tenantID,
-		runtimeID:  runtimeID,
-		config:     config,
-		httpClient: clientHttp,
-		log:        log,
+		tenantID:       tenantID,
+		instanceID:     instanceID,
+		config:         config,
+		httpClient:     clientHttp,
+		directorClient: directorClient,
+		log:            log,
 	}
 }
 
@@ -69,6 +72,11 @@ func (c *Client) EnsureUAAInstanceRemoved() error {
 }
 
 func (c *Client) fetchRuntimeConfig() (*runtimeStatusResponse, error) {
+
+	runtimeID, err := c.directorClient.GetRuntimeID(c.tenantID, c.instanceID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting runtime id from director: %v")
+	}
 	// setup graphql client
 	gCli := graphCli.NewClient(c.config.ProvisionerURL, graphCli.WithHTTPClient(&c.httpClient))
 
@@ -79,14 +87,14 @@ func (c *Client) fetchRuntimeConfig() (*runtimeStatusResponse, error) {
 			kubeconfig
 			}
 		}
-	}`, c.runtimeID)
+	}`, runtimeID)
 
 	// prepare and run request
 	req := graphCli.NewRequest(q)
 	req.Header.Add(tenantHeaderName, c.tenantID)
 
 	res := &runtimeStatusResponse{}
-	err := gCli.Run(context.Background(), req, res)
+	err = gCli.Run(context.Background(), req, res)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting runtime config")
 	}

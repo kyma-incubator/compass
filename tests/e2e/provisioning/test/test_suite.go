@@ -3,9 +3,16 @@ package test
 import (
 	"crypto/tls"
 	"net/http"
+	"path/filepath"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"
+	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director/oauth"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/runtime"
+	gcli "github.com/machinebox/graphql"
+	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 
 	"github.com/stretchr/testify/assert"
 
@@ -14,13 +21,16 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/vrischmann/envconfig"
+	k8sClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Config struct {
-	Broker  broker.Config
-	Runtime runtime.Config
+	Broker   broker.Config
+	Runtime  runtime.Config
+	Director director.Config
 
-	TenantID string `default:"3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
+	TenantID             string `default:"3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
+	SkipCertVerification bool   `envconfig:"default=true"`
 }
 
 // Suite provides set of clients able to provision and test Kyma runtime
@@ -46,13 +56,33 @@ func newTestSuite(t *testing.T) *Suite {
 	err := envconfig.InitWithPrefix(cfg, "APP")
 	require.NoError(t, err)
 
-	client := newHTTPClient(true)
+	httpClient := newHTTPClient(cfg.SkipCertVerification)
 
 	log := logrus.New()
-	runtimeID := uuid.New().String()
-	brokerClient := broker.NewClient(cfg.Broker, cfg.TenantID, runtimeID, *client, log.WithField("service", "broker_client"))
-	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, runtimeID, *client, log.WithField("service", "runtime_client"))
-	dashboardChecker := runtime.NewDashboardChecker(*client, log.WithField("service", "dashboard_checker"))
+	instanceID := uuid.New().String()
+	brokerClient := broker.NewClient(cfg.Broker, cfg.TenantID, instanceID, *httpClient, log.WithField("service", "broker_client"))
+
+	// create director client on the base of graphQL client and OAuth client
+	graphQLClient := gcli.NewClient(cfg.Director.URL, gcli.WithHTTPClient(httpClient))
+	graphQLClient.Log = func(s string) { log.Println(s) }
+
+	k8sConfig, err := getK8sConfig()
+	if err != nil {
+		panic(err)
+	}
+	cli, err := k8sClient.New(k8sConfig, k8sClient.Options{})
+
+	oauthClient := oauth.NewOauthClient(httpClient, cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
+	err = oauthClient.WaitForCredentials()
+	if err != nil {
+		panic(err)
+	}
+
+	directorClient := director.NewDirectorClient(oauthClient, graphQLClient)
+
+	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, instanceID, *httpClient, *directorClient, log.WithField("service", "runtime_client"))
+
+	dashboardChecker := runtime.NewDashboardChecker(*httpClient, log.WithField("service", "dashboard_checker"))
 
 	return &Suite{
 		t:                t,
@@ -71,4 +101,19 @@ func newHTTPClient(insecureSkipVerify bool) *http.Client {
 			},
 		},
 	}
+}
+
+func getK8sConfig() (*restclient.Config, error) {
+	k8sConfig, err := restclient.InClusterConfig()
+	if err != nil {
+		logrus.Info("Failed to read in cluster config, trying with local config")
+		home := homedir.HomeDir()
+		k8sConfPath := filepath.Join(home, ".kube", "config")
+		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return k8sConfig, nil
 }
