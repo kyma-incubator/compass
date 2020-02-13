@@ -62,14 +62,16 @@ func TestConnector(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Connector Service flow for Application", func(t *testing.T) {
-		//appName := "test-app"
+		appName := "mytestapp5"
 		certificateGenerationSuite(t, client, appID, "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", config.SkipSslVerify)
 		// TODO Set expected path
-		/*appMgmInfoEndpointSuite(t, client, appID, config.SkipSslVerify, false, "", appName)
-		appCsrInfoEndpointSuite(t, client, appID, config, appName)
-		certificateRotationSuite(t, client, appID, config.SkipSslVerify)
+		appMgmInfoEndpointSuite(t, client, appID, "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", config.SkipSslVerify, false, "", appName)
+		appCsrInfoEndpointSuite(t, client, appID, "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", config, appName)
+		certificateRotationSuite(t, client, appID, "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", config.SkipSslVerify)
 
-		subjectGenerationSuite(t, client, appID, config, appName)*/
+		subjectGenerationSuite(t, client, appID, "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", config, appName)
+
+		certificateRevocationSuite(t, client, appID, "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", config.SkipSslVerify, createApplicationRevocationUrl(config))
 	})
 }
 
@@ -510,4 +512,8 @@ func replaceToken(originalUrl string, newToken string) string {
 	parsedUrl.RawQuery = queryParams.Encode()
 
 	return parsedUrl.String()
+}
+
+func createApplicationRevocationUrl(config testkit.Configuration) string {
+	return config.ConnectivityAdapterMtlsUrl + "/v1/applications/certificates/revocations"
 }
