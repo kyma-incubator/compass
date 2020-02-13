@@ -16,65 +16,88 @@ type Graphqlizer struct{}
 
 func (g *Graphqlizer) ProvisionRuntimeInputToGraphQL(in gqlschema.ProvisionRuntimeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-      runtimeInput: {
-        name: "{{ .RuntimeInput.Name }}"
-      }
+		{{- if .RuntimeInput }}
+      	runtimeInput: {{ RuntimeInputToGraphQL .RuntimeInput }},
+		{{- end }}
 		{{- if .ClusterConfig }}
-		clusterConfig: {{ ClusterConfigToGraphQL .ClusterConfig }}
+		clusterConfig: {{ ClusterConfigToGraphQL .ClusterConfig }},
 		{{- end }}
 		{{- if .KymaConfig }}
-		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }}
+		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }},
 		{{- end }}
-}`)
+	}`)
 }
 
 func (g *Graphqlizer) UpgradeRuntimeInputToGraphQL(in gqlschema.UpgradeRuntimeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		{{- if .ClusterConfig }}
-		clusterConfig: {{ UpgradeClusterConfigToGraphQL .ClusterConfig }}
+		clusterConfig: {{ UpgradeClusterConfigToGraphQL .ClusterConfig }},
 		{{- end }}
 		{{- if .KymaConfig }}
-		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }}
+		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }},
 		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) RuntimeInputToGraphQL(in gqlschema.RuntimeInput) (string, error) {
+	return g.genericToGraphQL(in, `{
+		name: "{{.Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+		{{- if .Labels }}
+		labels: {{ LabelsToGQL .Labels}},
+		{{- end }}
+	}`)
+}
+
+func (g Graphqlizer) LabelsToGQL(in gqlschema.Labels) (string, error) {
+	return g.genericToGraphQL(in, `{
+		{{- range $k,$v := . }}
+			{{$k}}: [
+				{{- range $i,$j := $v }}
+					{{- if $i}},{{- end}}"{{$j}}"
+				{{- end }}],
+		{{- end}}
 	}`)
 }
 
 func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		{{- if .GardenerConfig }}
-		gardenerConfig: {{ GardenerConfigInputToGraphQL .GardenerConfig }}
+		gardenerConfig: {{ GardenerConfigInputToGraphQL .GardenerConfig }},
 		{{- end }}
 		{{- if .GcpConfig }}
-		gcpConfig: {{ GCPConfigInputToGraphQL .GcpConfig }}
+		gcpConfig: {{ GCPConfigInputToGraphQL .GcpConfig }},
 		{{- end }}
 	}`)
 }
 
 func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-		kubernetesVersion: "{{.KubernetesVersion}}"
-		nodeCount: {{.NodeCount}}
-		volumeSizeGB: {{.VolumeSizeGb }}
-		machineType: "{{.MachineType}}"
-		region: "{{.Region}}"
-		provider: "{{ .Provider }}"
-		diskType: "{{.DiskType}}"
-		seed: "az-eu3"
-		targetSecret: "{{ .TargetSecret }}"
-		workerCidr: "{{ .WorkerCidr }}"
-        autoScalerMin: {{ .AutoScalerMin }}
-        autoScalerMax: {{ .AutoScalerMax }}
-        maxSurge: {{ .MaxSurge }}
-		maxUnavailable: {{ .MaxUnavailable }}
+		kubernetesVersion: "{{.KubernetesVersion}}",
+		nodeCount: {{.NodeCount}},
+		volumeSizeGB: {{.VolumeSizeGb }},
+		machineType: "{{.MachineType}}",
+		region: "{{.Region}}",
+		provider: "{{ .Provider }}",
+		diskType: "{{.DiskType}}",
+		seed: "az-eu3",
+		targetSecret: "{{ .TargetSecret }}",
+		workerCidr: "{{ .WorkerCidr }}",
+        autoScalerMin: {{ .AutoScalerMin }},
+        autoScalerMax: {{ .AutoScalerMax }},
+        maxSurge: {{ .MaxSurge }},
+		maxUnavailable: {{ .MaxUnavailable }},
 		providerSpecificConfig: {
 		{{- if .ProviderSpecificConfig.AzureConfig }}
-			azureConfig: {{ AzureProviderConfigInputToGraphQL .ProviderSpecificConfig.AzureConfig }}
+			azureConfig: {{ AzureProviderConfigInputToGraphQL .ProviderSpecificConfig.AzureConfig }},
 		{{- end}}
 		{{- if .ProviderSpecificConfig.GcpConfig }}
-			gcpConfig: {{ GCPProviderConfigInputToGraphQL .ProviderSpecificConfig.GcpConfig }}
+			gcpConfig: {{ GCPProviderConfigInputToGraphQL .ProviderSpecificConfig.GcpConfig }},
 		{{- end}}
 		{{- if .ProviderSpecificConfig.AwsConfig }}
-			awsConfig: {{ AWSProviderConfigInputToGraphQL .ProviderSpecificConfig.AwsConfig }}
+			awsConfig: {{ AWSProviderConfigInputToGraphQL .ProviderSpecificConfig.AwsConfig }},
 		{{- end}}
 
         }
@@ -91,24 +114,24 @@ func (g *Graphqlizer) GCPProviderConfigInputToGraphQL(in gqlschema.GCPProviderCo
 
 func (g *Graphqlizer) AWSProviderConfigInputToGraphQL(in gqlschema.AWSProviderConfigInput) (string, error) {
 	return fmt.Sprintf(`{ 
-		zone: "%s" 
-		publicCidr: "%s"
-		vpcCidr: "%s"
-        internalCidr: "%s"
+		zone: "%s" ,
+		publicCidr: "%s",
+		vpcCidr: "%s",
+        internalCidr: "%s",
 }`, in.Zone, in.PublicCidr, in.VpcCidr, in.InternalCidr), nil
 }
 
 func (g *Graphqlizer) GCPConfigInputToGraphQL(in gqlschema.GCPConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-		name: "{{.Name}}"
-		kubernetesVersion: "{{.KubernetesVersion}}"
-        projectName: "{{.ProjectName}}"
-		numberOfNodes: {{.NumberOfNodes}}
-		bootDiskSizeGB: {{ .BootDiskSizeGb }}
-		machineType: "{{.MachineType}}"
-		region: "{{.Region}}"
+		name: "{{.Name}}",
+		kubernetesVersion: "{{.KubernetesVersion}}",
+        projectName: "{{.ProjectName}}",
+		numberOfNodes: {{.NumberOfNodes}},
+		bootDiskSizeGB: {{ .BootDiskSizeGb }},
+		machineType: "{{.MachineType}}",
+		region: "{{.Region}}",
 		{{- if .Zone }}
-		zone: "{{.Zone}}"
+		zone: "{{.Zone}}",
 		{{- end }}
 	}`)
 }
@@ -116,28 +139,28 @@ func (g *Graphqlizer) GCPConfigInputToGraphQL(in gqlschema.GCPConfigInput) (stri
 func (g *Graphqlizer) UpgradeClusterConfigToGraphQL(in gqlschema.UpgradeClusterInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		{{- if .Version }}
-		version: "{{.Version}}"
+		version: "{{.Version}}",
 		{{- end }}
 	}`)
 }
 
 func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-		version: "{{ .Version }}"
+		version: "{{ .Version }}",
       	{{- with .Components }}
         components: [
 		  {{- range . }}
           {
-            component: "{{ .Component }}"
-            namespace: "{{ .Namespace }}"
+            component: "{{ .Component }}",
+            namespace: "{{ .Namespace }}",
       	    {{- with .Configuration }}
             configuration: [
 			  {{- range . }}
               {
-                key: "{{ .Key }}"
-                value: "{{ .Value }}"
+                key: "{{ .Key }}",
+                value: "{{ .Value }}",
 				{{- if .Secret }}
-                secret: true
+                secret: true,
 				{{- end }}
               }
 		      {{- end }} 
@@ -152,6 +175,7 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
 
 func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
+	fm["RuntimeInputToGraphQL"] = g.RuntimeInputToGraphQL
 	fm["ClusterConfigToGraphQL"] = g.ClusterConfigToGraphQL
 	fm["KymaConfigToGraphQL"] = g.KymaConfigToGraphQL
 	fm["UpgradeClusterConfigToGraphQL"] = g.UpgradeClusterConfigToGraphQL
@@ -160,6 +184,7 @@ func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["AzureProviderConfigInputToGraphQL"] = g.AzureProviderConfigInputToGraphQL
 	fm["GCPProviderConfigInputToGraphQL"] = g.GCPProviderConfigInputToGraphQL
 	fm["AWSProviderConfigInputToGraphQL"] = g.AWSProviderConfigInputToGraphQL
+	fm["LabelsToGQL"] = g.LabelsToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {
