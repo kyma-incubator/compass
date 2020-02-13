@@ -19,6 +19,6 @@ func Test_E2E_Provisioning(t *testing.T) {
 	dashboardURL, err := ts.brokerClient.FetchDashboardURL()
 	require.NoError(t, err)
 
-	err = ts.kymaClient.AssertRedirectedToUAA(dashboardURL)
+	err = ts.dashboardChecker.AssertRedirectedToUAA(dashboardURL)
 	assert.NoError(t, err)
 }

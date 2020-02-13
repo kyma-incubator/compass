@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/broker"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/kyma"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/vrischmann/envconfig"
@@ -28,10 +27,10 @@ type Config struct {
 type Suite struct {
 	t *testing.T
 
-	log           logrus.FieldLogger
-	brokerClient  *broker.Client
-	kymaClient    *kyma.Client
-	runtimeClient *runtime.Client
+	log              logrus.FieldLogger
+	brokerClient     *broker.Client
+	runtimeClient    *runtime.Client
+	dashboardChecker *runtime.DashboardChecker
 }
 
 func (ts *Suite) TearDown() {
@@ -51,16 +50,16 @@ func newTestSuite(t *testing.T) *Suite {
 
 	log := logrus.New()
 	runtimeID := uuid.New().String()
-	kymaClient := kyma.NewClient(*client, log.WithField("service", "kymaClient"))
-	brokerClient := broker.NewClient(cfg.Broker, cfg.TenantID, runtimeID, *client, log.WithField("service", "brokerClient"))
-	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, runtimeID, *client, log.WithField("service", "runtimeClient"))
+	brokerClient := broker.NewClient(cfg.Broker, cfg.TenantID, runtimeID, *client, log.WithField("service", "broker_client"))
+	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, runtimeID, *client, log.WithField("service", "runtime_client"))
+	dashboardChecker := runtime.NewDashboardChecker(*client, log.WithField("service", "dashboard_checker"))
 
 	return &Suite{
-		t:             t,
-		log:           log,
-		kymaClient:    kymaClient,
-		brokerClient:  brokerClient,
-		runtimeClient: runtimeClient,
+		t:                t,
+		log:              log,
+		dashboardChecker: dashboardChecker,
+		brokerClient:     brokerClient,
+		runtimeClient:    runtimeClient,
 	}
 }
 

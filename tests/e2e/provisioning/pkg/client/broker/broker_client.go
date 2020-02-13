@@ -56,6 +56,29 @@ const (
 	instancesURL = "/v2/service_instances"
 )
 
+type inputContext struct {
+	TenantID        string `json:"tenant_id"`
+	SubAccountID    string `json:"subaccount_id"`
+	GlobalAccountID string `json:"globalaccount_id"`
+}
+
+type provisionResponse struct {
+	Operation string `json:"operation"`
+}
+
+type lastOperationResponse struct {
+	State string `json:"state"`
+}
+
+type instanceDetailsResponse struct {
+	DashboardURL string `json:"dashboard_url"`
+}
+
+type provisionParameters struct {
+	Name       string   `json:"name"`
+	Components []string `json:"components"`
+}
+
 func (c *Client) ProvisionRuntime() (string, error) {
 	c.log.Infof("Provisioning Runtime [ID: %s, NAME: %s]", c.runtimeID, c.clusterName)
 	requestByte, err := c.prepareProvisionDetails()
@@ -108,6 +131,7 @@ func (c *Client) DeprovisionRuntime() error {
 
 func (c *Client) AwaitProvisioningSucceeded(operationID string) error {
 	lastOperationURL := fmt.Sprintf("%s%s/%s/last_operation?operation=%s", c.brokerConfig.URL, instancesURL, c.runtimeID, operationID)
+	c.log.Infof("Waiting for provisioning at most %s", c.brokerConfig.ProvisionTimeout.String())
 
 	response := lastOperationResponse{}
 	err := wait.Poll(5*time.Minute, c.brokerConfig.ProvisionTimeout, func() (bool, error) {

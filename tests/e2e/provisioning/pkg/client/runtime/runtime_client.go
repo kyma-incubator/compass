@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,6 +52,10 @@ func NewClient(config Config, tenantID, runtimeID string, clientHttp http.Client
 		httpClient: clientHttp,
 		log:        log,
 	}
+}
+
+type runtimeStatusResponse struct {
+	Result schema.RuntimeStatus `json:"result"`
 }
 
 func (c *Client) EnsureUAAInstanceRemoved() error {
@@ -101,7 +107,6 @@ func (c *Client) setRuntimeConfig() error {
 	if err != nil {
 		return errors.Wrap(err, "while creating runtime config temp file")
 	}
-
 	defer func() {
 		err = os.Remove(runtimeConfigTmpFile.Name())
 		c.log.Fatal(err)
@@ -114,14 +119,14 @@ func (c *Client) setRuntimeConfig() error {
 		return errors.Wrap(err, "while closing runtime config temp file")
 	}
 
-	err = c.setClientConfig(runtimeConfigTmpFile.Name())
+	err = c.createClient(runtimeConfigTmpFile.Name())
 	if err != nil {
 		return errors.Wrap(err, "while setting client config")
 	}
 	return nil
 }
 
-func (c *Client) setClientConfig(configPath string) error {
+func (c *Client) createClient(configPath string) error {
 	config, err := clientcmd.BuildConfigFromFlags("", configPath)
 	if err != nil {
 		return errors.Wrapf(err, "while getting kubeconfig under path %s", configPath)

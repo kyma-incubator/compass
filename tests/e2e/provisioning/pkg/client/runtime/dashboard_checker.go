@@ -1,27 +1,28 @@
-package kyma
+package runtime
 
 import (
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
-// Client contains logic allowing to check if Kyma instance is accessible
-type Client struct {
+// DashboardChecker contains logic allowing to check if Kyma instance is accessible
+type DashboardChecker struct {
 	client http.Client
 	log    logrus.FieldLogger
 }
 
-func NewClient(clientHttp http.Client, log logrus.FieldLogger) *Client {
+func NewDashboardChecker(clientHttp http.Client, log logrus.FieldLogger) *DashboardChecker {
 	clientHttp.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
-	return &Client{
+	return &DashboardChecker{
 		client: clientHttp,
 		log:    log,
 	}
@@ -31,7 +32,7 @@ func NewClient(clientHttp http.Client, log logrus.FieldLogger) *Client {
 // There are 2 possible locations where we can be redirected:
 // `/auth/xsuaa` - if uua-issuer exist on the cluster
 // `/auth/local` - if Kyma use a standard login page
-func (c *Client) AssertRedirectedToUAA(dashboardURL string) error {
+func (c *DashboardChecker) AssertRedirectedToUAA(dashboardURL string) error {
 	targetURL := c.buildTargetURL(dashboardURL)
 
 	c.log.Infof("Calling the dashboard URL: %s", targetURL)
@@ -56,12 +57,27 @@ func (c *Client) AssertRedirectedToUAA(dashboardURL string) error {
 
 // Kyma console URL won't redirect us to the UUA logging page, to achieve that we must call dex with a set of parameters
 // state and nonce params are faked
-func (c *Client) buildTargetURL(dashboardURL string) string {
+func (c *DashboardChecker) buildTargetURL(dashboardURL string) string {
 	domain := strings.Split(strings.Split(dashboardURL, "console.")[1], "/")[0]
-	params := "&response_type=id_token%20token&scope=audience%3Aserver%3Aclient_id%3Akyma-client%20audience%3" +
-		"Aserver%3Aclient_id%3Aconsole%20openid%20profile%20email%20groups&state=5a4f3d15&nonce=79bf9c29"
 
-	return fmt.Sprintf("https://dex.%s/auth?client_id=console&redirect_uri=%s%s", domain, dashboardURL, params)
+	u := url.URL{
+		Scheme: "https",
+		Host:   fmt.Sprintf("dex.%s/auth", domain),
+	}
+	q := u.Query()
+
+	// Static params
+	q.Set("client_id", "console")
+	q.Set("redirect_uri", dashboardURL)
+	q.Set("response_type", "id_token")
+	q.Set("scope", "audience:server:client_id:kyma-client:audience:server:client_id:console:openid:profile:email:groups")
+
+	// These params are faked because its value must be non-empty
+	q.Set("state", "5a4f3d15")
+	q.Set("nonce", "79bf9c29")
+	u.RawQuery = q.Encode()
+
+	return u.String()
 }
 
 func checkStatusCode(resp *http.Response, expectedStatusCode int) error {
@@ -77,7 +93,7 @@ func checkStatusCode(resp *http.Response, expectedStatusCode int) error {
 	return nil
 }
 
-func (c *Client) warnOnError(err error) {
+func (c *DashboardChecker) warnOnError(err error) {
 	if err != nil {
 		c.log.Warn(err.Error())
 	}

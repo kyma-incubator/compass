@@ -35,43 +35,5 @@ spec:
             value: "kyma-system"
           - name: APP_TENANT_ID
             value: "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
-          command:
-          - "bash"
-          args:
-            - "-c"
-            - |
-              MAX_RETRIES=60
-
-              # copied from registration-job
-              function wait_for_access_to_api_server() {
-                local cnt=0
-                set +o errexit
-                while :
-                do
-                  kubectl version > /dev/null 2>&1
-                  if [[ $? -eq 0 ]]; then
-                    echo "Successfully accessed API Server"
-                    break
-                  else
-                    ((cnt++))
-                    if (( cnt > $MAX_RETRIES )); then
-                      echo "Max retries has been reached (retries $MAX_RETRIES). Exit."
-                      exit 1
-                    fi
-
-                    echo "Cannot access API Server waiting 5s..."
-                    sleep 5
-                  fi
-                done
-                set -o errexit
-              }
-              echo 'KEB e2e provisioning test start'
-              wait_for_access_to_api_server
-              echo "Run Kyma environment broker tests"
-              ./test.test -test.v
-              exit_code=$?
-              echo "code is $exit_code"
-              echo 'killing pilot-agent...'
-              curl -XPOST http://127.0.0.1:15020/quitquitquit
-              sleep 4
-              exit $exit_code
+          command: ["/bin/bash"]
+          args: ["-c", "sleep 20; ./test.test; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
