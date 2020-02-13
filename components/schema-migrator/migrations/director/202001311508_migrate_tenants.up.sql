@@ -1,9 +1,9 @@
 
 INSERT INTO business_tenant_mappings(id)
-SELECT tenant_id FROM applications a2 UNION SELECT tenant_id FROM runtimes r2;
-UPDATE business_tenant_mappings SET external_tenant = id WHERE external_tenant = NULL;
-UPDATE business_tenant_mappings SET external_name = 'Tenant' WHERE external_name = NULL;
-UPDATE business_tenant_mappings SET provider_name = 'Compass' WHERE provider_name = NULL;
+SELECT tenant_id FROM applications a2 UNION SELECT tenant_id FROM runtimes r2 ON CONFLICT DO NOTHING;
+UPDATE business_tenant_mappings SET external_tenant = id WHERE external_tenant IS NULL;
+UPDATE business_tenant_mappings SET external_name = 'Tenant' WHERE external_name IS NULL;
+UPDATE business_tenant_mappings SET provider_name = 'Compass' WHERE provider_name IS NULL;
 
 ALTER TABLE api_definitions
 ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);

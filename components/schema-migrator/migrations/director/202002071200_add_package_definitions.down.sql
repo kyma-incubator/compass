@@ -15,3 +15,5 @@ ALTER TABLE documents DROP COLUMN package_id;
 
 DROP TABLE package_instance_auths;
 DROP TABLE packages;
+
+DROP TYPE package_instance_auth_status_condition;
