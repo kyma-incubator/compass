@@ -4,8 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -135,6 +133,26 @@ type RuntimeService interface {
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 }
 
+//go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
+type PackageService interface {
+	//Get(ctx context.Context, id string) (*model.Package, error)
+	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Package, error)
+	ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.PackagePage, error)
+	//List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+	//ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error)
+	//SetLabel(ctx context.Context, label *model.LabelInput) error
+	//GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
+	//ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
+	//DeleteLabel(ctx context.Context, applicationID string, key string) error
+}
+
+//go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
+type PackageConverter interface {
+	ToGraphQL(in *model.Package) (*graphql.Package, error)
+	MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, error)
+	//GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -147,6 +165,7 @@ type Resolver struct {
 	documentSvc DocumentService
 	oAuth20Svc  OAuth20Service
 	sysAuthSvc  SystemAuthService
+	pkgSvc      PackageService
 
 	documentConverter DocumentConverter
 	webhookConverter  WebhookConverter
@@ -154,6 +173,7 @@ type Resolver struct {
 	eventApiConverter EventAPIConverter
 	sysAuthConv       SystemAuthConverter
 	eventingSvc       EventingService
+	pkgConv           PackageConverter
 }
 
 func NewResolver(transact persistence.Transactioner,
@@ -164,13 +184,15 @@ func NewResolver(transact persistence.Transactioner,
 	webhookSvc WebhookService,
 	oAuth20Svc OAuth20Service,
 	sysAuthSvc SystemAuthService,
+	pkgSvc PackageService,
 	appConverter ApplicationConverter,
 	documentConverter DocumentConverter,
 	webhookConverter WebhookConverter,
 	apiConverter APIConverter,
 	eventAPIConverter EventAPIConverter,
 	sysAuthConv SystemAuthConverter,
-	eventingSvc EventingService) *Resolver {
+	eventingSvc EventingService,
+	pkgConverter PackageConverter) *Resolver {
 	return &Resolver{
 		transact:          transact,
 		appSvc:            svc,
@@ -180,6 +202,7 @@ func NewResolver(transact persistence.Transactioner,
 		webhookSvc:        webhookSvc,
 		oAuth20Svc:        oAuth20Svc,
 		sysAuthSvc:        sysAuthSvc,
+		pkgSvc:            pkgSvc,
 		appConverter:      appConverter,
 		documentConverter: documentConverter,
 		webhookConverter:  webhookConverter,
@@ -187,6 +210,7 @@ func NewResolver(transact persistence.Transactioner,
 		eventApiConverter: eventAPIConverter,
 		sysAuthConv:       sysAuthConv,
 		eventingSvc:       eventingSvc,
+		pkgConv:           pkgConverter,
 	}
 }
 
@@ -775,21 +799,80 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 	return eventing.ApplicationEventingConfigurationToGraphQL(eventingCfg), nil
 }
 
-// TODO: Replace with real implementation
 func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.PackagePage, error) {
-	packages := []*graphql.Package{
-		mock.FixPackageWithIDAndName("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "Foo"),
-		mock.FixPackageWithIDAndName("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "Bar"),
-		mock.FixPackageWithIDAndName("cccccccc-cccc-cccc-cccc-cccccccccccc", "Baz"),
+	if obj == nil {
+		return nil, errors.New("Package cannot be empty")
 	}
 
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	if first == nil {
+		return nil, errors.New("missing required parameter 'first'")
+	}
+
+	pkgsPage, err := r.pkgSvc.ListByApplicationID(ctx, obj.ID, *first, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlPkgs, err := r.pkgConv.MultipleToGraphQL(pkgsPage.Data)
+	if err != nil {
+		return nil, err
+	}
+	totalCount := len(gqlPkgs)
+
 	return &graphql.PackagePage{
-		Data:       packages,
-		TotalCount: 3,
+		Data:       gqlPkgs,
+		TotalCount: totalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(pkgsPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(pkgsPage.PageInfo.EndCursor),
+			HasNextPage: pkgsPage.PageInfo.HasNextPage,
+		},
 	}, nil
 }
 
-// TODO: Replace with real implementation
 func (r *Resolver) Package(ctx context.Context, obj *graphql.Application, id string) (*graphql.Package, error) {
-	return mock.FixPackageWithIDAndName(id, "Lorem ipsum"), nil
+	if obj == nil {
+		return nil, errors.New("Application cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	pkg, err := r.pkgSvc.GetForApplication(ctx, id, obj.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.pkgConv.ToGraphQL(pkg)
 }
