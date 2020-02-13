@@ -35,5 +35,5 @@ spec:
             value: "kyma-system"
           - name: APP_TENANT_ID
             value: "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
-          command: ["/bin/bash"]
-          args: ["-c", "sleep 20; ./test.test; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          command: ["/bin/sh"]
+          args: ["-c", "echo 'Starting e2e-provisioning test. Waiting 20s for api server...'; sleep 20; ./test.test; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
