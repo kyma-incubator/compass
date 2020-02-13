@@ -9,6 +9,8 @@ RUN CGO_ENABLED=0 GOOS=linux go test -ldflags="-s -w" -c ./test
 
 FROM alpine:3.10
 
+RUN apk --no-cache add ca-certificates curl
+
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/e2e/provisioning/test.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/e2e/provisioning/licenses ./licenses
 

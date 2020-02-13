@@ -29,7 +29,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 rules:
   - apiGroups: ["*"]
-    resources: ["secret"]
+    resources: ["secrets"]
     verbs: ["get"]
 
 ---
