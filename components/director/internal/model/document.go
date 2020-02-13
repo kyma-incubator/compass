@@ -5,7 +5,8 @@ import (
 )
 
 type Document struct {
-	ApplicationID string
+	ApplicationID *string
+	PackageID     *string
 	ID            string
 	Tenant        string
 	Title         string
@@ -39,7 +40,7 @@ type DocumentPage struct {
 	TotalCount int
 }
 
-func (d *DocumentInput) ToDocument(id, tenant, applicationID string) *Document {
+func (d *DocumentInput) ToDocument(id, tenant string, applicationID *string) *Document {
 	if d == nil {
 		return nil
 	}

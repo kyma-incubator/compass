@@ -1123,9 +1123,10 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 func TestResolver_Documents(t *testing.T) {
 	// given
 	applicationID := "fooid"
+	packageID := "barid"
 	modelDocuments := []*model.Document{
-		fixModelDocument(applicationID, "foo"),
-		fixModelDocument(applicationID, "bar"),
+		fixModelDocument(applicationID, packageID, "foo"),
+		fixModelDocument(applicationID, packageID, "bar"),
 	}
 	gqlDocuments := []*graphql.Document{
 		fixGQLDocument("foo"),

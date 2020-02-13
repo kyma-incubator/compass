@@ -29,6 +29,7 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 	return &graphql.Document{
 		ID:            in.ID,
 		ApplicationID: in.ApplicationID,
+		PackageID:     in.PackageID,
 		Title:         in.Title,
 		DisplayName:   in.DisplayName,
 		Description:   in.Description,
@@ -92,7 +93,8 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 
 	out := Entity{
 		ID:          in.ID,
-		AppID:       in.ApplicationID,
+		AppID:       repo.NewNullableString(in.ApplicationID),
+		PkgID:       repo.NewNullableString(in.PackageID),
 		TenantID:    in.Tenant,
 		Title:       in.Title,
 		DisplayName: in.DisplayName,
@@ -111,7 +113,8 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 
 	out := model.Document{
 		ID:            in.ID,
-		ApplicationID: in.AppID,
+		ApplicationID: &in.AppID.String,
+		PackageID:     &in.PkgID.String,
 		Tenant:        in.TenantID,
 		Title:         in.Title,
 		DisplayName:   in.DisplayName,

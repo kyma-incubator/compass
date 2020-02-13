@@ -23,7 +23,7 @@ func TestService_Get(t *testing.T) {
 
 	id := "foo"
 
-	documentModel := fixModelDocument("1", id)
+	documentModel := fixModelDocument("1", id, id)
 	tnt := documentModel.Tenant
 
 	ctx := context.TODO()
@@ -89,11 +89,11 @@ func TestService_List(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
-
+	packageID := "bar"
 	modelDocuments := []*model.Document{
-		fixModelDocument(applicationID, "foo"),
-		fixModelDocument(applicationID, "bar"),
-		fixModelDocument("baz", "bar"),
+		fixModelDocument(applicationID, "foo", packageID),
+		fixModelDocument(applicationID, "bar", packageID),
+		fixModelDocument("baz", "bar", packageID),
 	}
 	documentPage := &model.DocumentPage{
 		Data:       modelDocuments,
@@ -178,7 +178,7 @@ func TestService_Create(t *testing.T) {
 	frID := "fr-id"
 	timestamp := time.Now()
 	modelInput := fixModelDocumentInputWithFetchRequest(frURL)
-	modelDoc := modelInput.ToDocument(id, tnt, applicationID)
+	modelDoc := modelInput.ToDocument(id, tnt, &applicationID)
 
 	testCases := []struct {
 		Name               string
@@ -291,7 +291,8 @@ func TestService_Delete(t *testing.T) {
 
 	applicationID := "foo"
 	id := "bar"
-	documentModel := fixModelDocument(applicationID, id)
+	packageID := "foobar"
+	documentModel := fixModelDocument(applicationID, id, packageID)
 
 	tnt := documentModel.Tenant
 

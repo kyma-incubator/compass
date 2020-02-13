@@ -497,7 +497,7 @@ func (s *service) createDocuments(ctx context.Context, appID, tenant string, eve
 	var err error
 	for _, item := range events {
 		documentID := s.uidService.Generate()
-		err = s.documentRepo.Create(ctx, item.ToDocument(documentID, tenant, appID))
+		err = s.documentRepo.Create(ctx, item.ToDocument(documentID, tenant, &appID))
 		if err != nil {
 			return errors.Wrapf(err, "while creating Document for application")
 		}

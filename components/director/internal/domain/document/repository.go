@@ -16,7 +16,7 @@ import (
 const documentTable = "public.documents"
 
 var (
-	documentColumns = []string{"id", "tenant_id", "app_id", "title", "display_name", "description", "format", "kind", "data"}
+	documentColumns = []string{"id", "tenant_id", "app_id", "package_id", "title", "display_name", "description", "format", "kind", "data"}
 	tenantColumn    = "tenant_id"
 )
 

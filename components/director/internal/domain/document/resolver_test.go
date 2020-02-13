@@ -28,9 +28,10 @@ func TestResolver_AddDocument(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
+	packageID := "bar"
 	id := "bar"
-	modelDocument := fixModelDocument(id, applicationID)
-	gqlDocument := fixGQLDocument(id, applicationID)
+	modelDocument := fixModelDocument(id, applicationID, packageID)
+	gqlDocument := fixGQLDocument(id, applicationID, packageID)
 	gqlInput := fixGQLDocumentInput(id)
 	modelInput := fixModelDocumentInput(id)
 
@@ -243,8 +244,9 @@ func TestResolver_DeleteDocument(t *testing.T) {
 
 	applicationID := "foo"
 	id := "bar"
-	modelDocument := fixModelDocument(id, applicationID)
-	gqlDocument := fixGQLDocument(id, applicationID)
+	packageID := "bar"
+	modelDocument := fixModelDocument(id, applicationID, packageID)
+	gqlDocument := fixGQLDocument(id, applicationID, packageID)
 
 	testCases := []struct {
 		Name             string

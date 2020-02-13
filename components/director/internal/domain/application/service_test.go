@@ -1724,7 +1724,7 @@ func modelFromInput(in model.ApplicationRegisterInput, tenant, applicationID str
 
 	var documentsModel []*model.Document
 	for _, item := range in.Documents {
-		documentsModel = append(documentsModel, item.ToDocument(uuid.New().String(), tenant, applicationID))
+		documentsModel = append(documentsModel, item.ToDocument(uuid.New().String(), tenant, &applicationID))
 	}
 
 	return testModel{

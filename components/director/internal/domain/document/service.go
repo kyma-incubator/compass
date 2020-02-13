@@ -81,7 +81,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Doc
 
 	id := s.uidService.Generate()
 
-	document := in.ToDocument(id, tnt, applicationID)
+	document := in.ToDocument(id, tnt, &applicationID)
 	err = s.repo.Create(ctx, document)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating Document")

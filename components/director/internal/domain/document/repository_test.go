@@ -17,16 +17,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const insertQuery = "INSERT INTO public.documents ( id, tenant_id, app_id, title, display_name, description, format, kind, data ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )"
+const insertQuery = "INSERT INTO public.documents ( id, tenant_id, app_id, package_id, title, display_name, description, format, kind, data ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"
 
-var columns = []string{"id", "tenant_id", "app_id", "title", "display_name", "description", "format", "kind", "data"}
+var columns = []string{"id", "tenant_id", "app_id", "package_id", "title", "display_name", "description", "format", "kind", "data"}
 
 func TestRepository_Create(t *testing.T) {
 	refID := appID()
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		docModel := fixModelDocument(givenID(), refID)
-		docEntity := fixEntityDocument(givenID(), refID)
+		docModel := fixModelDocument(givenID(), refID, pkgID())
+		docEntity := fixEntityDocument(givenID(), refID, pkgID())
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("ToEntity", *docModel).Return(*docEntity, nil).Once()
@@ -36,7 +36,7 @@ func TestRepository_Create(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).
-			WithArgs(givenID(), givenTenant(), refID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data).
+			WithArgs(givenID(), givenTenant(), refID, pkgID(), docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -49,8 +49,8 @@ func TestRepository_Create(t *testing.T) {
 
 	t.Run("DB Error", func(t *testing.T) {
 		// GIVEN
-		docModel := fixModelDocument(givenID(), refID)
-		docEntity := fixEntityDocument(givenID(), refID)
+		docModel := fixModelDocument(givenID(), refID, pkgID())
+		docEntity := fixEntityDocument(givenID(), refID, pkgID())
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", *docModel).Return(*docEntity, nil)
@@ -70,7 +70,7 @@ func TestRepository_Create(t *testing.T) {
 
 	t.Run("Converter Error", func(t *testing.T) {
 		// GIVEN
-		docModel := fixModelDocument(givenID(), refID)
+		docModel := fixModelDocument(givenID(), refID, pkgID())
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", *docModel).Return(document.Entity{}, givenError())
@@ -90,14 +90,14 @@ func TestRepository_CreateMany(t *testing.T) {
 		defer conv.AssertExpectations(t)
 
 		given := []*model.Document{
-			fixModelDocument("1", appID()),
-			fixModelDocument("2", appID()),
-			fixModelDocument("3", appID()),
+			fixModelDocument("1", appID(), pkgID()),
+			fixModelDocument("2", appID(), pkgID()),
+			fixModelDocument("3", appID(), pkgID()),
 		}
 		expected := []*document.Entity{
-			fixEntityDocument("1", appID()),
-			fixEntityDocument("2", appID()),
-			fixEntityDocument("3", appID()),
+			fixEntityDocument("1", appID(), pkgID()),
+			fixEntityDocument("2", appID(), pkgID()),
+			fixEntityDocument("3", appID(), pkgID()),
 		}
 
 		db, dbMock := testdb.MockDatabase(t)
@@ -107,7 +107,7 @@ func TestRepository_CreateMany(t *testing.T) {
 			expectedEntity := expected[i]
 			conv.On("ToEntity", *givenModel).Return(*expectedEntity, nil).Once()
 			dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).WithArgs(
-				expectedEntity.ID, expectedEntity.TenantID, expectedEntity.AppID, expectedEntity.Title, expectedEntity.DisplayName, expectedEntity.Description, expectedEntity.Format, expectedEntity.Kind, expectedEntity.Data).WillReturnResult(sqlmock.NewResult(-1, 1))
+				expectedEntity.ID, expectedEntity.TenantID, expectedEntity.AppID, expectedEntity.PkgID, expectedEntity.Title, expectedEntity.DisplayName, expectedEntity.Description, expectedEntity.Format, expectedEntity.Kind, expectedEntity.Data).WillReturnResult(sqlmock.NewResult(-1, 1))
 		}
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -124,13 +124,13 @@ func TestRepository_CreateMany(t *testing.T) {
 		defer conv.AssertExpectations(t)
 
 		given := []*model.Document{
-			fixModelDocument("1", appID()),
-			fixModelDocument("2", appID()),
-			fixModelDocument("3", appID()),
+			fixModelDocument("1", appID(), pkgID()),
+			fixModelDocument("2", appID(), pkgID()),
+			fixModelDocument("3", appID(), pkgID()),
 		}
 		expected := []*document.Entity{
-			fixEntityDocument("1", appID()),
-			fixEntityDocument("2", appID()),
+			fixEntityDocument("1", appID(), pkgID()),
+			fixEntityDocument("2", appID(), pkgID()),
 		}
 
 		db, dbMock := testdb.MockDatabase(t)
@@ -139,9 +139,9 @@ func TestRepository_CreateMany(t *testing.T) {
 		conv.On("ToEntity", *given[0]).Return(*expected[0], nil).Once()
 		conv.On("ToEntity", *given[1]).Return(*expected[1], nil).Once()
 		dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).WithArgs(
-			expected[0].ID, expected[0].TenantID, expected[0].AppID, expected[0].Title, expected[0].DisplayName, expected[0].Description, expected[0].Format, expected[0].Kind, expected[0].Data).WillReturnResult(sqlmock.NewResult(-1, 1))
+			expected[0].ID, expected[0].TenantID, expected[0].AppID, expected[0].PkgID, expected[0].Title, expected[0].DisplayName, expected[0].Description, expected[0].Format, expected[0].Kind, expected[0].Data).WillReturnResult(sqlmock.NewResult(-1, 1))
 		dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).WithArgs(
-			expected[1].ID, expected[1].TenantID, expected[1].AppID, expected[1].Title, expected[1].DisplayName, expected[1].Description, expected[1].Format, expected[1].Kind, expected[1].Data).WillReturnError(givenError())
+			expected[1].ID, expected[1].TenantID, expected[1].AppID, expected[1].PkgID, expected[1].Title, expected[1].DisplayName, expected[1].Description, expected[1].Format, expected[1].Kind, expected[1].Data).WillReturnError(givenError())
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := document.NewRepository(conv)
@@ -158,13 +158,13 @@ func TestRepository_CreateMany(t *testing.T) {
 		defer conv.AssertExpectations(t)
 
 		given := []*model.Document{
-			fixModelDocument("1", appID()),
-			fixModelDocument("2", appID()),
-			fixModelDocument("3", appID()),
+			fixModelDocument("1", appID(), pkgID()),
+			fixModelDocument("2", appID(), pkgID()),
+			fixModelDocument("3", appID(), pkgID()),
 		}
 		expected := []*document.Entity{
-			fixEntityDocument("1", appID()),
-			fixEntityDocument("2", appID()),
+			fixEntityDocument("1", appID(), pkgID()),
+			fixEntityDocument("2", appID(), pkgID()),
 		}
 
 		db, dbMock := testdb.MockDatabase(t)
@@ -173,7 +173,7 @@ func TestRepository_CreateMany(t *testing.T) {
 		conv.On("ToEntity", *given[0]).Return(*expected[0], nil).Once()
 		conv.On("ToEntity", *given[1]).Return(document.Entity{}, givenError()).Once()
 		dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).WithArgs(
-			expected[0].ID, expected[0].TenantID, expected[0].AppID, expected[0].Title, expected[0].DisplayName, expected[0].Description, expected[0].Format, expected[0].Kind, expected[0].Data).WillReturnResult(sqlmock.NewResult(-1, 1))
+			expected[0].ID, expected[0].TenantID, expected[0].AppID, expected[0].PkgID, expected[0].Title, expected[0].DisplayName, expected[0].Description, expected[0].Format, expected[0].Kind, expected[0].Data).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := document.NewRepository(conv)
@@ -195,10 +195,10 @@ func TestRepository_ListByApplicationID(t *testing.T) {
 	inputPageSize := 3
 	inputCursor := ""
 	totalCount := 2
-	docEntity1 := fixEntityDocument("1", appID())
-	docEntity2 := fixEntityDocument("2", appID())
+	docEntity1 := fixEntityDocument("1", appID(), pkgID())
+	docEntity2 := fixEntityDocument("2", appID(), pkgID())
 
-	selectQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT id, tenant_id, app_id, title, display_name, description, format, kind, data
+	selectQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT id, tenant_id, app_id, package_id, title, display_name, description, format, kind, data
 		FROM public.documents WHERE tenant_id=$1 AND app_id = '%s' ORDER BY id LIMIT %d OFFSET %d`, appID(), ExpectedLimit, ExpectedOffset))
 
 	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM public.documents WHERE tenant_id=$1 AND app_id = '%s'`, appID())
@@ -206,8 +206,8 @@ func TestRepository_ListByApplicationID(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		rows := sqlmock.NewRows(columns).
-			AddRow(docEntity1.ID, docEntity1.TenantID, docEntity1.AppID, docEntity1.Title, docEntity1.DisplayName, docEntity1.Description, docEntity1.Format, docEntity1.Kind, docEntity1.Data).
-			AddRow(docEntity2.ID, docEntity2.TenantID, docEntity2.AppID, docEntity2.Title, docEntity2.DisplayName, docEntity2.Description, docEntity2.Format, docEntity2.Kind, docEntity2.Data)
+			AddRow(docEntity1.ID, docEntity1.TenantID, docEntity1.AppID, docEntity1.PkgID, docEntity1.Title, docEntity1.DisplayName, docEntity1.Description, docEntity1.Format, docEntity1.Kind, docEntity1.Data).
+			AddRow(docEntity2.ID, docEntity2.TenantID, docEntity2.AppID, docEntity2.PkgID, docEntity2.Title, docEntity2.DisplayName, docEntity2.Description, docEntity2.Format, docEntity2.Kind, docEntity2.Data)
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)
@@ -260,8 +260,8 @@ func TestRepository_ListByApplicationID(t *testing.T) {
 	t.Run("Converter Error", func(t *testing.T) {
 		testErr := errors.New("test error")
 		rows := sqlmock.NewRows(columns).
-			AddRow(docEntity1.ID, docEntity1.TenantID, docEntity1.AppID, docEntity1.Title, docEntity1.DisplayName, docEntity1.Description, docEntity1.Format, docEntity1.Kind, docEntity1.Data).
-			AddRow(docEntity2.ID, docEntity2.TenantID, docEntity2.AppID, docEntity2.Title, docEntity2.DisplayName, docEntity2.Description, docEntity2.Format, docEntity2.Kind, docEntity2.Data)
+			AddRow(docEntity1.ID, docEntity1.TenantID, docEntity1.AppID, docEntity1.PkgID, docEntity1.Title, docEntity1.DisplayName, docEntity1.Description, docEntity1.Format, docEntity1.Kind, docEntity1.Data).
+			AddRow(docEntity2.ID, docEntity2.TenantID, docEntity2.AppID, docEntity2.PkgID, docEntity2.Title, docEntity2.DisplayName, docEntity2.Description, docEntity2.Format, docEntity2.Kind, docEntity2.Data)
 
 		conv := &automock.Converter{}
 		conv.On("FromEntity", *docEntity1).Return(model.Document{}, testErr).Once()
@@ -313,8 +313,8 @@ func TestRepository_GetByID(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		docModel := fixModelDocument(givenID(), refID)
-		docEntity := fixEntityDocument(givenID(), refID)
+		docModel := fixModelDocument(givenID(), refID, pkgID())
+		docEntity := fixEntityDocument(givenID(), refID, pkgID())
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("FromEntity", *docEntity).Return(*docModel, nil).Once()
@@ -323,9 +323,9 @@ func TestRepository_GetByID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 
 		rows := sqlmock.NewRows(columns).
-			AddRow(givenID(), givenTenant(), refID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data)
+			AddRow(givenID(), givenTenant(), refID, pkgID(), docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data)
 
-		query := "SELECT id, tenant_id, app_id, title, display_name, description, format, kind, data FROM public.documents WHERE tenant_id = $1 AND id = $2"
+		query := "SELECT id, tenant_id, app_id, package_id, title, display_name, description, format, kind, data FROM public.documents WHERE tenant_id = $1 AND id = $2"
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(givenTenant(), givenID()).WillReturnRows(rows)
 
@@ -343,7 +343,7 @@ func TestRepository_GetByID(t *testing.T) {
 
 	t.Run("Converter Error", func(t *testing.T) {
 		// GIVEN
-		docEntity := fixEntityDocument(givenID(), refID)
+		docEntity := fixEntityDocument(givenID(), refID, pkgID())
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
@@ -354,7 +354,7 @@ func TestRepository_GetByID(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rows := sqlmock.NewRows(columns).
-			AddRow(givenID(), givenTenant(), refID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data)
+			AddRow(givenID(), givenTenant(), refID, pkgID(), docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data)
 
 		dbMock.ExpectQuery("SELECT .*").
 			WithArgs(givenTenant(), givenID()).WillReturnRows(rows)
@@ -457,6 +457,10 @@ func givenID() string {
 
 func appID() string {
 	return "cccccccc-cccc-cccc-cccc-cccccccccccc"
+}
+
+func pkgID() string {
+	return "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 }
 
 func givenTenant() string {

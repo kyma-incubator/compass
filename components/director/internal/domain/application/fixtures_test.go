@@ -228,9 +228,10 @@ var (
 	docCLOB  = graphql.CLOB(docData)
 )
 
-func fixModelDocument(applicationID, id string) *model.Document {
+func fixModelDocument(applicationID, packageID, id string) *model.Document {
 	return &model.Document{
-		ApplicationID: applicationID,
+		ApplicationID: &applicationID,
+		PackageID:     &packageID,
 		ID:            id,
 		Title:         docTitle,
 		Format:        model.DocumentFormatMarkdown,
