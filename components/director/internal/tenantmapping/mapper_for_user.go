@@ -34,19 +34,29 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
-// GetScopesFromGroups get all scopes from group array, without duplicates
-func GetScopesFromGroups(groups []StaticGroup) string {
-	filteredScopesArray := []string{}
+const tenantGroupPrefix = "tenantID="
+
+// GetGroupScopesAndTenant get all scopes from group array, without duplicates
+func GetGroupScopesAndTenant(groups []StaticGroup) (string, string) {
+	var filteredScopesArray []string
+	var tenantID string
+
 	for _, group := range groups {
-		for _, scope := range group.Scopes {
-			if !stringInSlice(scope, filteredScopesArray) {
-				filteredScopesArray = append(filteredScopesArray, scope)
+		if strings.HasPrefix(group.GroupName, tenantGroupPrefix) {
+			// group name is tenantID
+			tenantID = strings.Replace(group.GroupName, tenantGroupPrefix, "", 1)
+		} else {
+			// group name is
+			for _, scope := range group.Scopes {
+
+				if !stringInSlice(scope, filteredScopesArray) {
+					filteredScopesArray = append(filteredScopesArray, scope)
+				}
 			}
 		}
-
 	}
 
-	return strings.Join(filteredScopesArray, " ")
+	return strings.Join(filteredScopesArray, " "), tenantID
 }
 
 func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
@@ -64,7 +74,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 
 	if len(staticGroups) > 0 {
 		// proceed with group scopes flow
-		scopes = GetScopesFromGroups(staticGroups)
+		scopes, externalTenantID = GetGroupScopesAndTenant(staticGroups)
 		log.Infof("Decided to use groups copes %s\n", scopes)
 	} else {
 		// proceed with staticUser (and his scopes) flow
@@ -82,15 +92,13 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 			scopes = strings.Join(staticUser.Scopes, " ")
 			log.Infof("Decided to use staticUser copes %s\n", scopes)
 		}
-	}
-
-	externalTenantID, err = reqData.GetExternalTenantID()
-	if err != nil {
-		if !apperrors.IsKeyDoesNotExist(err) {
-			return ObjectContext{}, errors.Wrap(err, "while fetching external tenant")
+		externalTenantID, err = reqData.GetExternalTenantID()
+		if err != nil {
+			if !apperrors.IsKeyDoesNotExist(err) {
+				return ObjectContext{}, errors.Wrap(err, "while fetching external tenant")
+			}
+			return NewObjectContext(TenantContext{}, scopes, staticUser.Username, consumer.User), nil
 		}
-		// TODO: co tu zrobic
-		return NewObjectContext(TenantContext{}, scopes, staticUser.Username, consumer.User), nil
 	}
 
 	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)

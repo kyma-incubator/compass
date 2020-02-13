@@ -2,7 +2,6 @@ package tenantmapping
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
@@ -144,10 +143,7 @@ func (d *ReqData) GetGroups() ([]string, error) {
 				continue
 			}
 
-			// filter out group named "tenantID=xxxx"
-			if !strings.HasPrefix(groupString, "tenantID=") {
-				groupsFiltered = append(groupsFiltered, groupString)
-			}
+			groupsFiltered = append(groupsFiltered, groupString)
 		}
 
 		if !arrayConvertedOk || len(groupsFiltered) <= 0 {
