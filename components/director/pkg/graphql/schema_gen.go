@@ -295,7 +295,7 @@ type ComplexityRoot struct {
 		SetAPIAuth                                   func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
 		SetApplicationLabel                          func(childComplexity int, applicationID string, key string, value interface{}) int
 		SetDefaultEventingForApplication             func(childComplexity int, appID string, runtimeID string) int
-		SetPackageInstanceAuth                       func(childComplexity int, packageID string, authID string, in AuthInput) int
+		SetPackageInstanceAuth                       func(childComplexity int, packageID string, authID string, in PackageInstanceAuthSetInput) int
 		SetRuntimeLabel                              func(childComplexity int, runtimeID string, key string, value interface{}) int
 		UnregisterApplication                        func(childComplexity int, id string) int
 		UnregisterIntegrationSystem                  func(childComplexity int, id string) int
@@ -539,7 +539,7 @@ type MutationResolver interface {
 	DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*Label, error)
 	SetDefaultEventingForApplication(ctx context.Context, appID string, runtimeID string) (*ApplicationEventingConfiguration, error)
 	DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*ApplicationEventingConfiguration, error)
-	SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in AuthInput) (*PackageInstanceAuth, error)
+	SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in PackageInstanceAuthSetInput) (*PackageInstanceAuth, error)
 	DeletePackageInstanceAuth(ctx context.Context, packageID string, authID string) (*PackageInstanceAuth, error)
 	RequestPackageInstanceAuthCreation(ctx context.Context, packageID string, in PackageInstanceAuthRequestInput) (*PackageInstanceAuth, error)
 	RequestPackageInstanceAuthDeletion(ctx context.Context, packageID string, authID string) (*PackageInstanceAuth, error)
@@ -1963,7 +1963,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SetPackageInstanceAuth(childComplexity, args["packageID"].(string), args["authID"].(string), args["in"].(AuthInput)), true
+		return e.complexity.Mutation.SetPackageInstanceAuth(childComplexity, args["packageID"].(string), args["authID"].(string), args["in"].(PackageInstanceAuthSetInput)), true
 
 	case "Mutation.setRuntimeLabel":
 		if e.complexity.Mutation.SetRuntimeLabel == nil {
@@ -2961,6 +2961,11 @@ enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
 }
 
+enum PackageInstanceAuthSetStatusConditionInput {
+	SUCCEEDED
+	FAILED
+}
+
 enum PackageInstanceAuthStatusCondition {
 	"""
 	When creating, before Application sets the credentials
@@ -3177,6 +3182,37 @@ input PackageInstanceAuthRequestInput {
 	JSON validated against package.instanceAuthRequestInputSchema
 	"""
 	inputParams: Any
+}
+
+input PackageInstanceAuthSetInput {
+	"""
+	If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
+	"""
+	auth: AuthInput
+	"""
+	Optional if the auth is provided.
+	If the status condition is "FAILED", auth must be empty.
+	"""
+	status: PackageInstanceAuthStatusInput
+}
+
+input PackageInstanceAuthStatusInput {
+	condition: PackageInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	"""
+	Required, if condition is "FAILED". If empty for SUCCEEDED status, default message is set.
+	"""
+	message: String
+	"""
+	Required, if condition is "FAILED". If empty for SUCCEEDED status, "CredentialsProvided" reason is set.
+	
+	Example reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	"""
+	reason: String
 }
 
 input PackageUpdateInput {
@@ -3895,7 +3931,7 @@ type Mutation {
 	
 	When used without error, the status of pending auth is set to success.
 	"""
-	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: AuthInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
+	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: PackageInstanceAuthSetInput!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
 	deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
 	"""
 	When defaultInstanceAuth is set, it fires "createPackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to PENDING.
@@ -5038,23 +5074,11 @@ func (ec *executionContext) field_Mutation_setPackageInstanceAuth_args(ctx conte
 		}
 	}
 	args["authID"] = arg1
-	var arg2 AuthInput
+	var arg2 PackageInstanceAuthSetInput
 	if tmp, ok := rawArgs["in"]; ok {
-		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, tmp)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			return ec.directives.Validate(ctx, rawArgs, directive0)
-		}
-
-		tmp, err = directive1(ctx)
+		arg2, err = ec.unmarshalNPackageInstanceAuthSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthSetInput(ctx, tmp)
 		if err != nil {
 			return nil, err
-		}
-		if data, ok := tmp.(AuthInput); ok {
-			arg2 = data
-		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.AuthInput`, tmp)
 		}
 	}
 	args["in"] = arg2
@@ -13185,7 +13209,7 @@ func (ec *executionContext) _Mutation_setPackageInstanceAuth(ctx context.Context
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SetPackageInstanceAuth(rctx, args["packageID"].(string), args["authID"].(string), args["in"].(AuthInput))
+			return ec.resolvers.Mutation().SetPackageInstanceAuth(rctx, args["packageID"].(string), args["authID"].(string), args["in"].(PackageInstanceAuthSetInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.setPackageInstanceAuth")
@@ -19148,6 +19172,64 @@ func (ec *executionContext) unmarshalInputPackageInstanceAuthRequestInput(ctx co
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPackageInstanceAuthSetInput(ctx context.Context, obj interface{}) (PackageInstanceAuthSetInput, error) {
+	var it PackageInstanceAuthSetInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "auth":
+			var err error
+			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "status":
+			var err error
+			it.Status, err = ec.unmarshalOPackageInstanceAuthStatusInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPackageInstanceAuthStatusInput(ctx context.Context, obj interface{}) (PackageInstanceAuthStatusInput, error) {
+	var it PackageInstanceAuthStatusInput
+	var asMap = obj.(map[string]interface{})
+
+	if _, present := asMap["condition"]; !present {
+		asMap["condition"] = "SUCCEEDED"
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "condition":
+			var err error
+			it.Condition, err = ec.unmarshalNPackageInstanceAuthSetStatusConditionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthSetStatusConditionInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "message":
+			var err error
+			it.Message, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "reason":
+			var err error
+			it.Reason, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputPackageUpdateInput(ctx context.Context, obj interface{}) (PackageUpdateInput, error) {
 	var it PackageUpdateInput
 	var asMap = obj.(map[string]interface{})
@@ -23145,6 +23227,19 @@ func (ec *executionContext) unmarshalNPackageInstanceAuthRequestInput2githubᚗc
 	return ec.unmarshalInputPackageInstanceAuthRequestInput(ctx, v)
 }
 
+func (ec *executionContext) unmarshalNPackageInstanceAuthSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthSetInput(ctx context.Context, v interface{}) (PackageInstanceAuthSetInput, error) {
+	return ec.unmarshalInputPackageInstanceAuthSetInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNPackageInstanceAuthSetStatusConditionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthSetStatusConditionInput(ctx context.Context, v interface{}) (PackageInstanceAuthSetStatusConditionInput, error) {
+	var res PackageInstanceAuthSetStatusConditionInput
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNPackageInstanceAuthSetStatusConditionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthSetStatusConditionInput(ctx context.Context, sel ast.SelectionSet, v PackageInstanceAuthSetStatusConditionInput) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNPackageInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusCondition(ctx context.Context, v interface{}) (PackageInstanceAuthStatusCondition, error) {
 	var res PackageInstanceAuthStatusCondition
 	return res, res.UnmarshalGQL(v)
@@ -24477,6 +24572,18 @@ func (ec *executionContext) marshalOPackageInstanceAuthStatus2ᚖgithubᚗcomᚋ
 		return graphql.Null
 	}
 	return ec._PackageInstanceAuthStatus(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPackageInstanceAuthStatusInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusInput(ctx context.Context, v interface{}) (PackageInstanceAuthStatusInput, error) {
+	return ec.unmarshalInputPackageInstanceAuthStatusInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOPackageInstanceAuthStatusInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusInput(ctx context.Context, v interface{}) (*PackageInstanceAuthStatusInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOPackageInstanceAuthStatusInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalOPackagePage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackagePage(ctx context.Context, sel ast.SelectionSet, v PackagePage) graphql.Marshaler {

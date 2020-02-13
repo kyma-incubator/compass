@@ -388,7 +388,7 @@ func (r *mutationResolver) AddEventDefinitionToPackage(ctx context.Context, pack
 func (r *mutationResolver) AddDocumentToPackage(ctx context.Context, packageID string, in graphql.DocumentInput) (*graphql.Document, error) {
 	return r.doc.AddDocumentToPackage(ctx, packageID, in)
 }
-func (r *mutationResolver) SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in graphql.AuthInput) (*graphql.PackageInstanceAuth, error) {
+func (r *mutationResolver) SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
 	return r.packageInstanceAuth.SetPackageInstanceAuth(ctx, packageID, authID, in)
 }
 func (r *mutationResolver) DeletePackageInstanceAuth(ctx context.Context, packageID string, authID string) (*graphql.PackageInstanceAuth, error) {

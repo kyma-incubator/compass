@@ -352,6 +352,14 @@ type PackageInstanceAuthRequestInput struct {
 	InputParams *interface{} `json:"inputParams"`
 }
 
+type PackageInstanceAuthSetInput struct {
+	// If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
+	Auth *AuthInput `json:"auth"`
+	// Optional if the auth is provided.
+	// If the status condition is "FAILED", auth must be empty.
+	Status *PackageInstanceAuthStatusInput `json:"status"`
+}
+
 type PackageInstanceAuthStatus struct {
 	Condition PackageInstanceAuthStatusCondition `json:"condition"`
 	Timestamp Timestamp                          `json:"timestamp"`
@@ -363,6 +371,21 @@ type PackageInstanceAuthStatus struct {
 	// - CredentialsNotProvided
 	// - PendingDeletion
 	Reason string `json:"reason"`
+}
+
+type PackageInstanceAuthStatusInput struct {
+	Condition PackageInstanceAuthSetStatusConditionInput `json:"condition"`
+	// Required, if condition is "FAILED". If empty for SUCCEEDED status, default message is set.
+	Message *string `json:"message"`
+	// Required, if condition is "FAILED". If empty for SUCCEEDED status, "CredentialsProvided" reason is set.
+	//
+	// Example reasons:
+	// - PendingNotification
+	// - NotificationSent
+	// - CredentialsProvided
+	// - CredentialsNotProvided
+	// - PendingDeletion
+	Reason *string `json:"reason"`
 }
 
 type PackagePage struct {
@@ -883,6 +906,47 @@ func (e *HealthCheckType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e HealthCheckType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type PackageInstanceAuthSetStatusConditionInput string
+
+const (
+	PackageInstanceAuthSetStatusConditionInputSucceeded PackageInstanceAuthSetStatusConditionInput = "SUCCEEDED"
+	PackageInstanceAuthSetStatusConditionInputFailed    PackageInstanceAuthSetStatusConditionInput = "FAILED"
+)
+
+var AllPackageInstanceAuthSetStatusConditionInput = []PackageInstanceAuthSetStatusConditionInput{
+	PackageInstanceAuthSetStatusConditionInputSucceeded,
+	PackageInstanceAuthSetStatusConditionInputFailed,
+}
+
+func (e PackageInstanceAuthSetStatusConditionInput) IsValid() bool {
+	switch e {
+	case PackageInstanceAuthSetStatusConditionInputSucceeded, PackageInstanceAuthSetStatusConditionInputFailed:
+		return true
+	}
+	return false
+}
+
+func (e PackageInstanceAuthSetStatusConditionInput) String() string {
+	return string(e)
+}
+
+func (e *PackageInstanceAuthSetStatusConditionInput) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PackageInstanceAuthSetStatusConditionInput(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PackageInstanceAuthSetStatusConditionInput", str)
+	}
+	return nil
+}
+
+func (e PackageInstanceAuthSetStatusConditionInput) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

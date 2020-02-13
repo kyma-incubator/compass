@@ -72,6 +72,11 @@ enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
 }
 
+enum PackageInstanceAuthSetStatusConditionInput {
+	SUCCEEDED
+	FAILED
+}
+
 enum PackageInstanceAuthStatusCondition {
 	"""
 	When creating, before Application sets the credentials
@@ -288,6 +293,37 @@ input PackageInstanceAuthRequestInput {
 	JSON validated against package.instanceAuthRequestInputSchema
 	"""
 	inputParams: Any
+}
+
+input PackageInstanceAuthSetInput {
+	"""
+	If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
+	"""
+	auth: AuthInput
+	"""
+	Optional if the auth is provided.
+	If the status condition is "FAILED", auth must be empty.
+	"""
+	status: PackageInstanceAuthStatusInput
+}
+
+input PackageInstanceAuthStatusInput {
+	condition: PackageInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	"""
+	Required, if condition is "FAILED". If empty for SUCCEEDED status, default message is set.
+	"""
+	message: String
+	"""
+	Required, if condition is "FAILED". If empty for SUCCEEDED status, "CredentialsProvided" reason is set.
+	
+	Example reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	"""
+	reason: String
 }
 
 input PackageUpdateInput {
@@ -1006,7 +1042,7 @@ type Mutation {
 	
 	When used without error, the status of pending auth is set to success.
 	"""
-	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: AuthInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
+	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: PackageInstanceAuthSetInput!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
 	deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
 	"""
 	When defaultInstanceAuth is set, it fires "createPackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to PENDING.

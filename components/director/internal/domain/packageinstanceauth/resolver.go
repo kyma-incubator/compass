@@ -18,7 +18,7 @@ func NewResolver() *Resolver {
 var mockRequestTypeKey = "type"
 
 // TODO: Replace with real implementation
-func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in graphql.AuthInput) (*graphql.PackageInstanceAuth, error) {
+func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
 	return mock.FixPackageInstanceAuth(packageID, graphql.PackageInstanceAuthStatusConditionSucceeded), nil
 }
 

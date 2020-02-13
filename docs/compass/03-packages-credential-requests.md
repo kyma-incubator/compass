@@ -114,6 +114,37 @@ enum PackageInstanceAuthStatusCondition {
   UNUSED
 }
 
+input PackageInstanceAuthSetInput {
+	"""
+	If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
+	"""
+	auth: AuthInput
+	"""
+	Optional if the auth is provided.
+	If the status condition is "FAILED", auth must be empty.
+	"""
+	status: PackageInstanceAuthStatusInput
+}
+
+input PackageInstanceAuthStatusInput {
+	condition: PackageInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	"""
+	Required, if condition is "FAILED". If empty for SUCCEEDED status, default message is set.
+	"""
+	message: String
+	"""
+	Required, if condition is "FAILED". If empty for SUCCEEDED status, "CredentialsProvided" reason is set.
+	
+	Example reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	"""
+	reason: String
+}
+
 input PackageInstanceAuthRequestInput {
 	"""
 	Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
@@ -131,7 +162,7 @@ type Mutation {
 
   When used without error, the status of pending auth is set to success.
   """
-  setPackageInstanceAuth(packageID: ID!, authID: ID!, in: AuthInput! @validate): PackageInstanceAuth!
+  setPackageInstanceAuth(packageID: ID!, authID: ID!, in: PackageInstanceAuthSetInput!): PackageInstanceAuth!
   deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth!
   requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput!): PackageInstanceAuth!
   requestPackageInstanceAuthDeletion(packageID: ID!, authID: ID!): PackageInstanceAuth!
