@@ -65,6 +65,7 @@ type ComplexityRoot struct {
 		Group         func(childComplexity int) int
 		ID            func(childComplexity int) int
 		Name          func(childComplexity int) int
+		PackageID     func(childComplexity int) int
 		Spec          func(childComplexity int) int
 		TargetURL     func(childComplexity int) int
 		Version       func(childComplexity int) int
@@ -171,6 +172,7 @@ type ComplexityRoot struct {
 		Format        func(childComplexity int) int
 		ID            func(childComplexity int) int
 		Kind          func(childComplexity int) int
+		PackageID     func(childComplexity int) int
 		Title         func(childComplexity int) int
 	}
 
@@ -186,6 +188,7 @@ type ComplexityRoot struct {
 		Group         func(childComplexity int) int
 		ID            func(childComplexity int) int
 		Name          func(childComplexity int) int
+		PackageID     func(childComplexity int) int
 		Spec          func(childComplexity int) int
 		Version       func(childComplexity int) int
 	}
@@ -664,6 +667,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.APIDefinition.Name(childComplexity), true
+
+	case "APIDefinition.packageID":
+		if e.complexity.APIDefinition.PackageID == nil {
+			break
+		}
+
+		return e.complexity.APIDefinition.PackageID(childComplexity), true
 
 	case "APIDefinition.spec":
 		if e.complexity.APIDefinition.Spec == nil {
@@ -1153,6 +1163,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Document.Kind(childComplexity), true
 
+	case "Document.packageID":
+		if e.complexity.Document.PackageID == nil {
+			break
+		}
+
+		return e.complexity.Document.PackageID(childComplexity), true
+
 	case "Document.title":
 		if e.complexity.Document.Title == nil {
 			break
@@ -1215,6 +1232,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EventDefinition.Name(childComplexity), true
+
+	case "EventDefinition.packageID":
+		if e.complexity.EventDefinition.PackageID == nil {
+			break
+		}
+
+		return e.complexity.EventDefinition.PackageID(childComplexity), true
 
 	case "EventDefinition.spec":
 		if e.complexity.EventDefinition.Spec == nil {
@@ -3267,7 +3291,8 @@ type APIDefinition {
 	"""
 	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
 	"""
-	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
+	applicationID: ID @deprecated(reason: "Use ID field from parent object")
+	packageID: ID
 	name: String!
 	description: String
 	spec: APISpec
@@ -3401,7 +3426,8 @@ type Document {
 	"""
 	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
 	"""
-	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
+	applicationID: ID @deprecated(reason: "Use ID field from parent object")
+	packageID: ID
 	title: String!
 	displayName: String!
 	description: String!
@@ -3425,7 +3451,8 @@ type EventDefinition {
 	"""
 	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
 	"""
-	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
+	applicationID: ID @deprecated(reason: "Use ID field from parent object")
+	packageID: ID
 	name: String!
 	description: String
 	"""
@@ -3673,7 +3700,6 @@ type Query {
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	
 	**Examples**
-	- [query applications with label filter](examples/query-applications/query-applications-with-label-filter.graphql)
 	- [query applications](examples/query-applications/query-applications.graphql)
 	"""
 	applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applications")
@@ -3685,9 +3711,6 @@ type Query {
 	application(id: ID!): Application @hasScopes(path: "graphql.query.application")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-	
-	**Examples**
-	- [query applications for runtime](examples/query-applications-for-runtime/query-applications-for-runtime.graphql)
 	"""
 	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
 	"""
@@ -3717,10 +3740,6 @@ type Query {
 	"""
 	runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
 	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
-	"""
-	**Examples**
-	- [query label definition](examples/query-label-definition/query-label-definition.graphql)
-	"""
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 	"""
@@ -3753,10 +3772,6 @@ type Mutation {
 	- [register application](examples/register-application/register-application.graphql)
 	"""
 	registerApplication(in: ApplicationRegisterInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplication")
-	"""
-	**Examples**
-	- [update application](examples/update-application/update-application.graphql)
-	"""
 	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication")
 	"""
 	**Examples**
@@ -3788,15 +3803,7 @@ type Mutation {
 	- [register runtime](examples/register-runtime/register-runtime.graphql)
 	"""
 	registerRuntime(in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.registerRuntime")
-	"""
-	**Examples**
-	- [update runtime](examples/update-runtime/update-runtime.graphql)
-	"""
 	updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
-	"""
-	**Examples**
-	- [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)
-	"""
 	unregisterRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.unregisterRuntime")
 	"""
 	**Examples**
@@ -3818,15 +3825,7 @@ type Mutation {
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
 	"""
 	addWebhook(applicationID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
-	"""
-	**Examples**
-	- [update application webhook](examples/update-webhook/update-application-webhook.graphql)
-	"""
 	updateWebhook(webhookID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.updateWebhook")
-	"""
-	**Examples**
-	- [delete application webhook](examples/delete-webhook/delete-application-webhook.graphql)
-	"""
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
 	"""
 	**Examples**
@@ -3837,15 +3836,7 @@ type Mutation {
 	Temporary name before doing breaking change. Eventually the ` + "`" + `addAPIDefinition` + "`" + ` mutation will be changed and there will be just one mutation: ` + "`" + `addAPIDefinitionToPackage` + "`" + `.
 	"""
 	addAPIDefinitionToPackage(packageID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToPackage")
-	"""
-	**Examples**
-	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
-	"""
 	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition")
-	"""
-	**Examples**
-	- [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
-	"""
 	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition")
 	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
 	requestOneTimeTokenForRuntime(id: ID!): OneTimeTokenForRuntime! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
@@ -3870,15 +3861,7 @@ type Mutation {
 	Temporary name before doing breaking change. Eventually the ` + "`" + `addEventDefinition` + "`" + ` mutation will be changed and there will be just one mutation: ` + "`" + `addEventDefinitionToPackage` + "`" + `.
 	"""
 	addEventDefinitionToPackage(packageID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToPackage")
-	"""
-	**Examples**
-	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
-	"""
 	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition")
-	"""
-	**Examples**
-	- [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)
-	"""
 	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
 	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
 	"""
@@ -3890,25 +3873,9 @@ type Mutation {
 	Temporary name before doing breaking change
 	"""
 	addDocumentToPackage(packageID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocumentToPackage")
-	"""
-	**Examples**
-	- [delete document](examples/delete-document/delete-document.graphql)
-	"""
 	deleteDocument(id: ID!): Document! @hasScopes(path: "graphql.mutation.deleteDocument")
-	"""
-	**Examples**
-	- [create label definition](examples/create-label-definition/create-label-definition.graphql)
-	"""
 	createLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
-	"""
-	**Examples**
-	- [update label definition](examples/update-label-definition/update-label-definition.graphql)
-	"""
 	updateLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
-	"""
-	**Examples**
-	- [delete label definition](examples/delete-label-definition/delete-label-definition.graphql)
-	"""
 	deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean = false): LabelDefinition! @hasScopes(path: "graphql.mutation.deleteLabelDefinition")
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
@@ -3919,9 +3886,6 @@ type Mutation {
 	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
-	
-	**Examples**
-	- [delete application label](examples/delete-application-label/delete-application-label.graphql)
 	"""
 	deleteApplicationLabel(applicationID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteApplicationLabel")
 	"""
@@ -5970,15 +5934,46 @@ func (ec *executionContext) _APIDefinition_applicationID(ctx context.Context, fi
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _APIDefinition_packageID(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "APIDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PackageID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_name(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
@@ -8305,15 +8300,46 @@ func (ec *executionContext) _Document_applicationID(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalOID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Document_packageID(ctx context.Context, field graphql.CollectedField, obj *Document) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Document",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PackageID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Document_title(ctx context.Context, field graphql.CollectedField, obj *Document) (ret graphql.Marshaler) {
@@ -8740,15 +8766,46 @@ func (ec *executionContext) _EventDefinition_applicationID(ctx context.Context, 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EventDefinition_packageID(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "EventDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PackageID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventDefinition_name(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
@@ -19522,9 +19579,8 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			}
 		case "applicationID":
 			out.Values[i] = ec._APIDefinition_applicationID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+		case "packageID":
+			out.Values[i] = ec._APIDefinition_packageID(ctx, field, obj)
 		case "name":
 			out.Values[i] = ec._APIDefinition_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -20180,9 +20236,8 @@ func (ec *executionContext) _Document(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "applicationID":
 			out.Values[i] = ec._Document_applicationID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+		case "packageID":
+			out.Values[i] = ec._Document_packageID(ctx, field, obj)
 		case "title":
 			out.Values[i] = ec._Document_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -20284,9 +20339,8 @@ func (ec *executionContext) _EventDefinition(ctx context.Context, sel ast.Select
 			}
 		case "applicationID":
 			out.Values[i] = ec._EventDefinition_applicationID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+		case "packageID":
+			out.Values[i] = ec._EventDefinition_packageID(ctx, field, obj)
 		case "name":
 			out.Values[i] = ec._EventDefinition_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -22929,24 +22983,6 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) unmarshalNID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNID2string(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalNID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec.marshalNID2string(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {

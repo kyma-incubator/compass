@@ -1,6 +1,9 @@
 package mock
 
-import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+)
 
 func FixEventDefinition(id string) *graphql.EventDefinition {
 	desc := "Lorem ipsum"
@@ -215,7 +218,8 @@ components:
           clientId: my-app-id`)
 	return &graphql.EventDefinition{
 		ID:            id,
-		ApplicationID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+		ApplicationID: str.Ptr("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+		PackageID:     str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"),
 		Name:          "Bar",
 		Description:   &desc,
 		Group:         nil,

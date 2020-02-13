@@ -1444,17 +1444,18 @@ func TestResolver_EventAPIs(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	applicationID := "1"
+	packageID := "1"
 	group := "group"
 	app := fixGQLApplication(applicationID, "foo", "bar")
 	modelEventAPIDefinitions := []*model.EventDefinition{
 
-		fixModelEventAPIDefinition("foo", applicationID, "Foo", "Lorem Ipsum", group),
-		fixModelEventAPIDefinition("bar", applicationID, "Bar", "Lorem Ipsum", group),
+		fixModelEventAPIDefinition("foo", &applicationID, &packageID, "Foo", "Lorem Ipsum", group),
+		fixModelEventAPIDefinition("bar", &applicationID, &packageID, "Bar", "Lorem Ipsum", group),
 	}
 
 	gqlEventAPIDefinitions := []*graphql.EventDefinition{
-		fixGQLEventDefinition("foo", applicationID, "Foo", "Lorem Ipsum", group),
-		fixGQLEventDefinition("bar", applicationID, "Bar", "Lorem Ipsum", group),
+		fixGQLEventDefinition("foo", &applicationID, &packageID, "Foo", "Lorem Ipsum", group),
+		fixGQLEventDefinition("bar", &applicationID, &packageID, "Bar", "Lorem Ipsum", group),
 	}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -1538,7 +1539,7 @@ func TestResolver_EventAPI(t *testing.T) {
 	id := "bar"
 
 	modelAPI := fixMinModelEventAPIDefinition(id, "placeholder")
-	gqlAPI := fixGQLEventDefinition(id, "placeholder", "placeholder", "placeholder", "placeholder")
+	gqlAPI := fixGQLEventDefinition(id, str.Ptr("placeholder"), str.Ptr("placeholder"), "placeholder", "placeholder", "placeholder")
 	app := fixGQLApplication("foo", "foo", "foo")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)

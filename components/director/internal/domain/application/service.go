@@ -478,7 +478,7 @@ func (s *service) createEvents(ctx context.Context, appID, tenant string, events
 	var err error
 	for _, item := range events {
 		eventID := s.uidService.Generate()
-		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinition(eventID, appID, tenant))
+		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinition(eventID, &appID, tenant))
 		if err != nil {
 			return errors.Wrap(err, "while creating EventDefinitions for application")
 		}

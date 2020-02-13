@@ -102,7 +102,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Eve
 
 	id := s.uidService.Generate()
 
-	eventAPI := in.ToEventDefinition(id, applicationID, tnt)
+	eventAPI := in.ToEventDefinition(id, &applicationID, tnt)
 
 	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {

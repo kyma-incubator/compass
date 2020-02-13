@@ -117,8 +117,8 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", ApplicationID: str.Ptr("foo"), Tenant: tnt, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", ApplicationID: str.Ptr("foo"), Tenant: tnt, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -1719,7 +1719,7 @@ func modelFromInput(in model.ApplicationRegisterInput, tenant, applicationID str
 
 	var eventAPIsModel []*model.EventDefinition
 	for _, item := range in.EventDefinitions {
-		eventAPIsModel = append(eventAPIsModel, item.ToEventDefinition(uuid.New().String(), tenant, applicationID))
+		eventAPIsModel = append(eventAPIsModel, item.ToEventDefinition(uuid.New().String(), &applicationID, tenant))
 	}
 
 	var documentsModel []*model.Document

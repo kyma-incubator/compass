@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef/automock"
@@ -102,7 +104,8 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("FromEntity", eventAPIDefEntity).Return(model.EventDefinition{ID: eventAPIID, Tenant: tenantID, ApplicationID: appID}, nil).Once()
+		convMock.On("FromEntity", eventAPIDefEntity).Return(model.EventDefinition{ID: eventAPIID,
+			Tenant: tenantID, ApplicationID: str.Ptr(appID), PackageID: str.Ptr(packageID)}, nil).Once()
 		pgRepository := eventdef.NewRepository(convMock)
 		// WHEN
 		modelEventAPIDef, err := pgRepository.GetForApplication(ctx, tenantID, eventAPIID, appID)
@@ -110,7 +113,8 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, eventAPIID, modelEventAPIDef.ID)
 		assert.Equal(t, tenantID, modelEventAPIDef.Tenant)
-		assert.Equal(t, appID, modelEventAPIDef.ApplicationID)
+		assert.Equal(t, str.Ptr(appID), modelEventAPIDef.ApplicationID)
+		assert.Equal(t, str.Ptr(packageID), modelEventAPIDef.PackageID)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
 	})
