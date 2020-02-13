@@ -17,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//go:generate mockery -name=Client
 type Client interface {
 	GetAuthorizationToken() (Token, error)
 	WaitForCredentials() error

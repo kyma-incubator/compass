@@ -45,6 +45,14 @@
   version = "v4.6.0"
 
 [[projects]]
+  digest = "1:edd2fa4578eb086265db78a9201d15e76b298dfd0d5c379da83e9c61712cf6df"
+  name = "github.com/go-logr/logr"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "9fb12b3b21c5415d16ac18dc5cd42c1cfdd40c4e"
+  version = "v0.1.0"
+
+[[projects]]
   digest = "1:5f7b0c5ddd7f129e3a95b534b624b96aefd0487305af5828620a63a9dc94286f"
   name = "github.com/go-ozzo/ozzo-validation"
   packages = [
@@ -588,13 +596,16 @@
   revision = "861946025e3491219eaccb1bf693e23df70c2fa8"
 
 [[projects]]
-  digest = "1:e72f079f2b5340369aa34945d6bf4ef59bf1810f4796c9b0039806a221c0d5fc"
+  digest = "1:6b41fd5562bac43f021d440591d881fc6f53c78ba756fe2ec545a50b0dc9d69f"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/client",
     "pkg/client/apiutil",
+    "pkg/client/config",
     "pkg/client/fake",
+    "pkg/internal/log",
     "pkg/internal/objectutil",
+    "pkg/log",
   ]
   pruneopts = "UT"
   revision = "198197fe0fd7553cadd8afcd3338f8ee4b8a7e3f"
@@ -629,10 +640,9 @@
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/util/wait",
-    "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
-    "k8s.io/client-go/util/homedir",
     "sigs.k8s.io/controller-runtime/pkg/client",
+    "sigs.k8s.io/controller-runtime/pkg/client/config",
     "sigs.k8s.io/controller-runtime/pkg/client/fake",
   ]
   solver-name = "gps-cdcl"

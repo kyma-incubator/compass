@@ -3,16 +3,12 @@ package test
 import (
 	"crypto/tls"
 	"net/http"
-	"path/filepath"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director/oauth"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/runtime"
 	gcli "github.com/machinebox/graphql"
-	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 
 	"github.com/stretchr/testify/assert"
 
@@ -22,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/vrischmann/envconfig"
 	k8sClient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type Config struct {
@@ -68,7 +65,7 @@ func newTestSuite(t *testing.T) *Suite {
 	graphQLClient := gcli.NewClient(cfg.Director.URL, gcli.WithHTTPClient(httpClient))
 	graphQLClient.Log = func(s string) { log.Println(s) }
 
-	k8sConfig, err := getK8sConfig()
+	k8sConfig, err := config.GetConfig()
 	if err != nil {
 		panic(err)
 	}
@@ -103,19 +100,4 @@ func newHTTPClient(insecureSkipVerify bool) *http.Client {
 			},
 		},
 	}
-}
-
-func getK8sConfig() (*restclient.Config, error) {
-	k8sConfig, err := restclient.InClusterConfig()
-	if err != nil {
-		logrus.Info("Failed to read in cluster config, trying with local config")
-		home := homedir.HomeDir()
-		k8sConfPath := filepath.Join(home, ".kube", "config")
-		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return k8sConfig, nil
 }
