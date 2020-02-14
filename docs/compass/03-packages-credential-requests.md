@@ -1,15 +1,11 @@
 # Request credentials for Packages
 
-In Kyma Runtime, a single Application is represented as a ServiceClass, and a single Package of a given Application is represented as a ServicePlan in the Service Catalog. This document describes the flow of requesting API credentials during the ServicePlan provisioning. It also mentions passing optional input parameters from Kyma Runtime to Application or Integration System during the provisioning process.
+In Kyma Runtime, a single Application is represented as a ServiceClass, and a single Package of a given Application is represented as a ServicePlan in the Service Catalog. You can create many instances of a Package in a single Runtime. For example, in the Kyma Runtime, an instance of a Package is represented by a ServiceInstance that can be created for every Namespace.
 
-You can create many instances of a Package in a single Runtime. For example, in the Kyma Runtime, an instance of a Package is represented by a ServiceInstance that can be created for every Namespace.
-When provisioning a new ServiceInstance from a Package (represented by a ServicePlan), Runtime requests credentials for API. During this step, you can pass additional input parameters. They are validated against input JSON schema provided by the Application or Integration System. The parameters, as well as the input JSON schema, are completely optional.
-As there is no trusted connection between an Integration System and Runtime, additional input parameters have to be passed to the Application or Integration System through the Director.
-API credentials for every ServiceInstance are defined and stored on the Package level. Multiple APIs under the same Package share the same credentials.
+When provisioning a new ServiceInstance from a Package, a Runtime requests API credentials. API credentials for every ServiceInstance are defined on the Package level and stored in the Director component. Multiple APIs under the same Package share the same credentials.
 
-Director stores credentials per ServiceInstance across all Runtimes on the Package level.
 
-### Requesting API credentials
+## Requesting API credentials flow
 
 This diagram illustrates the detailed flow of requesting API credentials. The Application provides Webhook API where Compass requests new credentials for the given Package.
 
@@ -43,7 +39,7 @@ When the user deletes a ServiceInstance, Runtime Agent requests the Director to 
 
 ### GraphQL schema
 
-The following snippet describes GraphQL API for Packages credential requests.
+The following snippet describes GraphQL API for Packages credential requests:
 
 ```graphql
 type Package {
@@ -165,4 +161,6 @@ type Mutation {
 }
 ```
 
-Application or Integration System can set the optional `instanceAuthRequestInputSchema` field with a JSON schema that contains parameters needed during ServiceClass provisioning. The values provided by the user are validated against the JSON schema.
+## Passing additional input parameters
+
+You can pass additional input parameters when provisioning a new ServiceInstance from a Package. Input parameters are validated against input JSON schema provided in the **instanceAuthRequestInputSchema** field by the Application or Integration System. The parameters, as well as the input JSON schema, are completely optional. As there is no trusted connection between an Integration System and Runtime, additional input parameters have to be passed to the Application or Integration System through the Director.
