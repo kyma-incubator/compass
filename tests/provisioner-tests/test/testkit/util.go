@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	gqlschema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
@@ -134,11 +133,9 @@ func CreateGardenerProvisioningInput(config *TestConfig, provider string) (gqlsc
 		return gqlschema.ProvisionRuntimeInput{}, fmt.Errorf("Failed to create component config input: %s", err.Error())
 	}
 
-	runtimeName := fmt.Sprintf("%s%s", "runtime", uuid.New().String()[:4])
-
 	return gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
-			Name: runtimeName,
+			Name: "",
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{

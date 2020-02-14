@@ -37,7 +37,8 @@ func Test_E2E_Gardener(t *testing.T) {
 			// Provisioning runtime
 			// Get Kyma modules from Installation CR
 			provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, provider)
-			runtimeName := provisioningInput.RuntimeInput.Name
+			runtimeName := fmt.Sprintf("runtime-%s", uuid.New().String()[:4])
+			provisioningInput.RuntimeInput.Name = runtimeName
 
 			log.Infof("Provisioning '%s' runtime on %s...", runtimeName, provider)
 			provisioningOperationID, runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
@@ -68,6 +69,7 @@ func Test_E2E_Gardener(t *testing.T) {
 					}
 
 					_, _, err = testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
+					defer ensureClusterIsDeprovisioned(runtimeID)
 					if err == nil {
 						return errors.New("Operation scheduled successfully while other operation in progress")
 					}
