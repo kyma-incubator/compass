@@ -47,7 +47,7 @@ func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperati
 
 	oldOp, exists := s.provisioningOperations[op.ID]
 	if !exists {
-		return nil, dberr.AlreadyExists("instance operation with id %s not found", op.ID)
+		return nil, dberr.NotFound("instance operation with id %s not found", op.ID)
 	}
 	if oldOp.Version != op.Version {
 		return nil, dberr.Conflict("unable to update provisioning operation with id %s (for instance id %s) - conflict", op.ID, op.InstanceID)
