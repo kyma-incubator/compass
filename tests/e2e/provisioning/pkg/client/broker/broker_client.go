@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
 
 	"github.com/google/uuid"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
