@@ -1,6 +1,10 @@
 package connector
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+	"unicode"
+)
 
 type queryProvider struct{}
 
@@ -23,7 +27,7 @@ func (qp queryProvider) signCSR(csr string) string {
 		caCertificate
 		clientCertificate
 	}
-    }`, csr)
+    }`, removeWhiteChars(csr))
 }
 
 func (qp queryProvider) token(application string) string {
@@ -39,5 +43,14 @@ func (qp queryProvider) revoke() string {
 	return `mutation {
     result: revokeCertificate 
 	}`
-	//
+}
+
+func removeWhiteChars(s string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) {
+			return -1
+		}
+
+		return r
+	}, s)
 }

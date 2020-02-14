@@ -22,10 +22,10 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-754"
+      version: "PR-801"
     director:
       dir:
-      version: "PR-788"
+      version: "PR-801"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -34,10 +34,10 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-792"
+      version: "PR-802"
     provisioner:
       dir:
-      version: "PR-743"
+      version: "PR-802"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -58,7 +58,7 @@ global:
         version: "PR-552"
       connectivity_adapter:
         dir:
-        version: "PR-787"
+        version: "PR-822"
   isLocalEnv: false
   oauth2:
     host: oauth2

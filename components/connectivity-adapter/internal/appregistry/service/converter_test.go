@@ -1,8 +1,10 @@
-package service
+package service_test
 
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/service"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -16,13 +18,23 @@ func TestConversionDeprecatedServiceDetailsToGraphQLInput(t *testing.T) {
 		given    model.ServiceDetails
 		expected model.GraphQLServiceDetailsInput
 	}
-	sut := NewConverter()
+	sut := service.NewConverter()
 
 	for name, tc := range map[string]testCase{
 		"input ID propagated to output": {
 			given: model.ServiceDetails{},
 			expected: model.GraphQLServiceDetailsInput{
 				ID: "id",
+			},
+		},
+		"name and description propagated to api": {
+			given: model.ServiceDetails{Name: "name", Description: "description", Api: &model.API{}},
+			expected: model.GraphQLServiceDetailsInput{
+				ID: "id",
+				API: &graphql.APIDefinitionInput{
+					Name:        "name",
+					Description: ptrString("description"),
+				},
 			},
 		},
 		"API with only URL provided": {
@@ -436,331 +448,31 @@ func TestConversionDeprecatedServiceDetailsToGraphQLInput(t *testing.T) {
 	}
 }
 
-func TestConversionApplicationExtToServiceDetails2(t *testing.T) {
-
-	type testCase struct {
-		given    graphql.ApplicationExt
-		expected model.ServiceDetails
-	}
-	sut := NewConverter()
-
-	for name, tc := range map[string]testCase{
-		"simple attributes": {
-			given: graphql.ApplicationExt{
-				Application: graphql.Application{
-					ID:           "id",
-					Name:         "name",
-					Description:  ptrStringOrNilForEmpty("description"),
-					ProviderName: ptrStringOrNilForEmpty("providerName"),
-				},
-			},
-			expected: model.ServiceDetails{
-				Name:        "name",
-				Description: "description",
-				Provider:    "providerName",
-			},
-		},
-		"custom labels": {
-			given: graphql.ApplicationExt{
-				Labels: graphql.Labels{
-					unmappedFieldIdentifier:       "identifier",
-					unmappedFieldShortDescription: "short description",
-				},
-			},
-			expected: model.ServiceDetails{
-				Identifier:       "identifier",
-				ShortDescription: "short description",
-			},
-		},
-		"labels": {
-			given: graphql.ApplicationExt{
-				Labels: graphql.Labels{
-					"label-a": "a",
-					"label-b": "b",
-				},
-			},
-			expected: model.ServiceDetails{
-				Labels: &map[string]string{
-					"label-a": "a",
-					"label-b": "b",
-				},
-			},
-		},
-		"simple API": {
-			given: graphql.ApplicationExt{
-				APIDefinitions: graphql.APIDefinitionPageExt{
-					APIDefinitionPage: fixPageWithTotalCountOne(),
-					Data: []*graphql.APIDefinitionExt{
-						{
-							APIDefinition: graphql.APIDefinition{
-								TargetURL: "http://target.url",
-							},
-						},
-					},
-				},
-			},
-			expected: model.ServiceDetails{
-				Api: &model.API{
-					TargetUrl: "http://target.url",
-				},
-			},
-		},
-		"simple API with additional headers and query params": {
-			given: graphql.ApplicationExt{
-				APIDefinitions: graphql.APIDefinitionPageExt{
-					APIDefinitionPage: fixPageWithTotalCountOne(),
-					Data: []*graphql.APIDefinitionExt{
-						{
-							APIDefinition: graphql.APIDefinition{
-								TargetURL: "http://target.url",
-								DefaultAuth: &graphql.Auth{
-									AdditionalQueryParams: &graphql.QueryParams{
-										"q1": []string{"a", "b"},
-										"q2": []string{"c", "d"},
-									},
-									AdditionalHeaders: &graphql.HttpHeaders{
-										"h1": []string{"e", "f"},
-										"h2": []string{"g", "h"},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: model.ServiceDetails{
-				Api: &model.API{
-					TargetUrl: "http://target.url",
-					Headers: &map[string][]string{
-						"h1": {"e", "f"},
-						"h2": {"g", "h"}},
-					QueryParameters: &map[string][]string{
-						"q1": {"a", "b"},
-						"q2": {"c", "d"},
-					},
-					RequestParameters: &model.RequestParameters{
-						Headers: &map[string][]string{
-							"h1": {"e", "f"},
-							"h2": {"g", "h"}},
-						QueryParameters: &map[string][]string{
-							"q1": {"a", "b"},
-							"q2": {"c", "d"},
-						},
-					},
-				},
-			},
-		},
-		"simple API with Basic Auth": {
-			given: graphql.ApplicationExt{
-				APIDefinitions: graphql.APIDefinitionPageExt{
-					APIDefinitionPage: fixPageWithTotalCountOne(),
-					Data: []*graphql.APIDefinitionExt{
-						{
-							APIDefinition: graphql.APIDefinition{
-								TargetURL: "http://target.url",
-								DefaultAuth: &graphql.Auth{
-									Credential: graphql.BasicCredentialData{
-										Username: "username",
-										Password: "password",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: model.ServiceDetails{
-				Api: &model.API{
-					TargetUrl: "http://target.url",
-					Credentials: &model.CredentialsWithCSRF{
-						BasicWithCSRF: &model.BasicAuthWithCSRF{
-							BasicAuth: model.BasicAuth{
-								Username: "username",
-								Password: "password",
-							},
-						},
-					},
-				},
-			},
-		},
-		"simple API with Oauth": {
-			given: graphql.ApplicationExt{
-				APIDefinitions: graphql.APIDefinitionPageExt{
-					APIDefinitionPage: fixPageWithTotalCountOne(),
-					Data: []*graphql.APIDefinitionExt{
-						{
-							APIDefinition: graphql.APIDefinition{
-								TargetURL: "http://target.url",
-								DefaultAuth: &graphql.Auth{
-									Credential: graphql.OAuthCredentialData{
-										URL:          "http://oauth.url",
-										ClientID:     "client_id",
-										ClientSecret: "client_secret",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: model.ServiceDetails{
-				Api: &model.API{
-					TargetUrl: "http://target.url",
-					Credentials: &model.CredentialsWithCSRF{
-						OauthWithCSRF: &model.OauthWithCSRF{
-							Oauth: model.Oauth{
-								URL:          "http://oauth.url",
-								ClientID:     "client_id",
-								ClientSecret: "client_secret",
-							},
-						},
-					},
-				},
-			},
-		},
-		"simple API with FetchRequest (query params and headers)": {
-			given: graphql.ApplicationExt{
-				APIDefinitions: graphql.APIDefinitionPageExt{
-					APIDefinitionPage: fixPageWithTotalCountOne(),
-					Data: []*graphql.APIDefinitionExt{
-						{
-							Spec: &graphql.APISpecExt{
-								FetchRequest: &graphql.FetchRequest{
-									URL: "http://apispec.url",
-									Auth: &graphql.Auth{
-										AdditionalQueryParams: &graphql.QueryParams{
-											"q1": {"a", "b"},
-											"q2": {"c", "d"},
-										},
-										AdditionalHeaders: &graphql.HttpHeaders{
-											"h1": {"e", "f"},
-											"h2": {"g", "h"},
-										},
-									},
-								},
-							},
-						}}}},
-			expected: model.ServiceDetails{
-				Api: &model.API{
-					SpecificationUrl: "http://apispec.url",
-					SpecificationRequestParameters: &model.RequestParameters{
-						Headers: &map[string][]string{
-							"h1": {"e", "f"},
-							"h2": {"g", "h"}},
-						QueryParameters: &map[string][]string{
-							"q1": {"a", "b"},
-							"q2": {"c", "d"},
-						},
-					},
-				},
-			}},
-		"simple API with Fetch Request protected with Basic Auth": {
-			given: graphql.ApplicationExt{
-				APIDefinitions: graphql.APIDefinitionPageExt{
-					APIDefinitionPage: fixPageWithTotalCountOne(),
-					Data: []*graphql.APIDefinitionExt{
-						{
-							Spec: &graphql.APISpecExt{
-								FetchRequest: &graphql.FetchRequest{
-									URL: "http://apispec.url",
-									Auth: &graphql.Auth{
-										Credential: graphql.BasicCredentialData{
-											Username: "username",
-											Password: "password",
-										},
-									},
-								},
-							},
-						}}}},
-			expected: model.ServiceDetails{
-				Api: &model.API{
-					SpecificationUrl: "http://apispec.url",
-					SpecificationCredentials: &model.Credentials{
-						Basic: &model.BasicAuth{
-							Username: "username",
-							Password: "password",
-						},
-					},
-				},
-			},
-		},
-		"simple API with Fetch Request protected with Oauth": {
-			given: graphql.ApplicationExt{
-				APIDefinitions: graphql.APIDefinitionPageExt{
-					APIDefinitionPage: fixPageWithTotalCountOne(),
-					Data: []*graphql.APIDefinitionExt{
-						{
-							Spec: &graphql.APISpecExt{
-								FetchRequest: &graphql.FetchRequest{
-									URL: "http://apispec.url",
-									Auth: &graphql.Auth{
-										Credential: graphql.OAuthCredentialData{
-											URL:          "http://oauth.url",
-											ClientID:     "client_id",
-											ClientSecret: "client_secret",
-										},
-									},
-								},
-							},
-						}}}},
-			expected: model.ServiceDetails{
-				Api: &model.API{
-					SpecificationUrl: "http://apispec.url",
-					SpecificationCredentials: &model.Credentials{
-						Oauth: &model.Oauth{
-							URL:          "http://oauth.url",
-							ClientID:     "client_id",
-							ClientSecret: "client_secret",
-						},
-					},
-				},
-			},
-		},
-		"events": {
-			given: graphql.ApplicationExt{
-				EventDefinitions: graphql.EventAPIDefinitionPageExt{
-					EventDefinitionPage: graphql.EventDefinitionPage{
-						TotalCount: 1,
-					},
-					Data: []*graphql.EventAPIDefinitionExt{
-						{
-							Spec: &graphql.EventAPISpecExt{
-								EventSpec: graphql.EventSpec{
-									Data: ptrClob(graphql.CLOB(`asyncapi: "1.2.0"`)),
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: model.ServiceDetails{
-				Events: &model.Events{
-					Spec: json.RawMessage(`asyncapi: "1.2.0"`),
-				},
-			},
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			// WHEN
-			actual, err := sut.GraphQLToDetailsModel(tc.given)
-			// THEN
-			require.NoError(t, err)
-			assert.Equal(t, tc.expected, actual)
-		})
-	}
-
-}
-
 func TestGraphQLToServiceDetails(t *testing.T) {
 
 	type testCase struct {
 		given    model.GraphQLServiceDetails
 		expected model.ServiceDetails
 	}
-	sut := NewConverter()
+	sut := service.NewConverter()
 
 	for name, tc := range map[string]testCase{
-
+		"name and description is loaded from api/event": {
+			given: model.GraphQLServiceDetails{
+				API: &graphql.APIDefinitionExt{
+					APIDefinition: graphql.APIDefinition{
+						Name:        "name",
+						Description: ptrString("description"),
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Name:        "name",
+				Description: "description",
+				Api:         &model.API{},
+				Labels:      emptyLabels(),
+			},
+		},
 		"simple API": {
 			given: model.GraphQLServiceDetails{
 				API: &graphql.APIDefinitionExt{
@@ -823,7 +535,7 @@ func TestGraphQLToServiceDetails(t *testing.T) {
 					APIDefinition: graphql.APIDefinition{
 						TargetURL: "http://target.url",
 						DefaultAuth: &graphql.Auth{
-							Credential: graphql.BasicCredentialData{
+							Credential: &graphql.BasicCredentialData{
 								Username: "username",
 								Password: "password",
 							},
@@ -853,7 +565,7 @@ func TestGraphQLToServiceDetails(t *testing.T) {
 					APIDefinition: graphql.APIDefinition{
 						TargetURL: "http://target.url",
 						DefaultAuth: &graphql.Auth{
-							Credential: graphql.OAuthCredentialData{
+							Credential: &graphql.OAuthCredentialData{
 								URL:          "http://oauth.url",
 								ClientID:     "client_id",
 								ClientSecret: "client_secret",
@@ -919,7 +631,7 @@ func TestGraphQLToServiceDetails(t *testing.T) {
 						FetchRequest: &graphql.FetchRequest{
 							URL: "http://apispec.url",
 							Auth: &graphql.Auth{
-								Credential: graphql.BasicCredentialData{
+								Credential: &graphql.BasicCredentialData{
 									Username: "username",
 									Password: "password",
 								},
@@ -945,7 +657,7 @@ func TestGraphQLToServiceDetails(t *testing.T) {
 						FetchRequest: &graphql.FetchRequest{
 							URL: "http://apispec.url",
 							Auth: &graphql.Auth{
-								Credential: graphql.OAuthCredentialData{
+								Credential: &graphql.OAuthCredentialData{
 									URL:          "http://oauth.url",
 									ClientID:     "client_id",
 									ClientSecret: "client_secret",
@@ -994,69 +706,6 @@ func TestGraphQLToServiceDetails(t *testing.T) {
 	}
 }
 
-func TestConvertGraphQLToModel(t *testing.T) {
-
-	t.Run("all fields provided", func(t *testing.T) {
-		// GIVEN
-		var err error
-
-		givenIn := graphql.ApplicationExt{
-			Application: graphql.Application{
-				ID:           "id",
-				Name:         "name",
-				Description:  ptrStringOrNilForEmpty("description"),
-				ProviderName: ptrStringOrNilForEmpty("providerName"),
-			},
-		}
-		givenIn.Labels, err = fixLabels()
-		givenIn.Labels[unmappedFieldIdentifier] = "identifier-dont-confuse-with-id-please"
-		require.NoError(t, err)
-
-		expectedOut := model.Service{
-			ID:          "id",
-			Name:        "name",
-			Provider:    "providerName",
-			Description: "description",
-			Identifier:  "identifier-dont-confuse-with-id-please",
-			Labels: &map[string]string{
-				"simple-label": "simple-value",
-			},
-		}
-		sut := NewConverter()
-
-		// WHEN
-		actualOut, err := sut.GraphQLToModel(givenIn)
-		// THEN
-
-		require.NoError(t, err)
-		assert.Equal(t, expectedOut, actualOut)
-	})
-
-	t.Run("only required fields provided", func(t *testing.T) {
-		// GIVEN
-		var err error
-
-		givenIn := graphql.ApplicationExt{
-			Application: graphql.Application{
-				ID:   "id",
-				Name: "name",
-			},
-		}
-
-		expectedOut := model.Service{
-			ID:   "id",
-			Name: "name",
-		}
-		sut := NewConverter()
-		// WHEN
-		actualOut, err := sut.GraphQLToModel(givenIn)
-		// THEN
-		require.NoError(t, err)
-		assert.Equal(t, expectedOut, actualOut)
-	})
-
-}
-
 func TestConverter_ServiceDetailsToService(t *testing.T) {
 	//GIVEN
 	input := model.ServiceDetails{
@@ -1070,7 +719,7 @@ func TestConverter_ServiceDetailsToService(t *testing.T) {
 	id := "id"
 
 	//WHEN
-	sut := NewConverter()
+	sut := service.NewConverter()
 	output, err := sut.ServiceDetailsToService(input, id)
 
 	//THEN
@@ -1082,21 +731,99 @@ func TestConverter_ServiceDetailsToService(t *testing.T) {
 	assert.Equal(t, input.Labels, output.Labels)
 }
 
-func fixLabels() (graphql.Labels, error) {
-	l := graphql.Labels{}
-	j := `{ "ignored-group": ["production", "experimental"], "ignored-scenarios": ["DEFAULT"], "simple-label":"simple-value", "embedded":{"key":"value"} }`
-	err := json.Unmarshal(([]byte)(j), &l)
-	if err != nil {
-		return nil, err
+func TestConverter_DetailsToGraphQLInput_TestSpecsRecognition(t *testing.T) {
+	// GIVEN
+	sut := service.NewConverter()
+
+	// API
+	apiCases := []struct {
+		Name           string
+		InputAPI       model.API
+		ExpectedType   graphql.APISpecType
+		ExpectedFormat graphql.SpecFormat
+	}{
+		{
+			Name:           "OpenAPI + YAML",
+			InputAPI:       fixAPIOpenAPIYAML(),
+			ExpectedType:   graphql.APISpecTypeOpenAPI,
+			ExpectedFormat: graphql.SpecFormatYaml,
+		},
+		{
+			Name:           "OpenAPI + JSON",
+			InputAPI:       fixAPIOpenAPIJSON(),
+			ExpectedType:   graphql.APISpecTypeOpenAPI,
+			ExpectedFormat: graphql.SpecFormatJSON,
+		},
+		{
+			Name:           "OData + XML",
+			InputAPI:       fixAPIODataXML(),
+			ExpectedType:   graphql.APISpecTypeOdata,
+			ExpectedFormat: graphql.SpecFormatXML,
+		},
 	}
 
-	return l, nil
-}
+	for _, testCase := range apiCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			in := model.ServiceDetails{Api: &testCase.InputAPI}
 
-func fixPageWithTotalCountOne() graphql.APIDefinitionPage {
-	return graphql.APIDefinitionPage{TotalCount: 1}
+			// WHEN
+			out, err := sut.DetailsToGraphQLInput("id", in)
+
+			// THEN
+			require.NoError(t, err)
+			require.NotNil(t, out.API)
+			require.NotNil(t, out.API.Spec)
+			assert.Equal(t, testCase.ExpectedType, out.API.Spec.Type)
+			assert.Equal(t, testCase.ExpectedFormat, out.API.Spec.Format)
+		})
+	}
+
+	// Events
+	eventsCases := []struct {
+		Name           string
+		InputEvents    model.Events
+		ExpectedType   graphql.EventSpecType
+		ExpectedFormat graphql.SpecFormat
+	}{
+		{
+			Name:           "Async API + JSON",
+			InputEvents:    fixEventsAsyncAPIJSON(),
+			ExpectedType:   graphql.EventSpecTypeAsyncAPI,
+			ExpectedFormat: graphql.SpecFormatJSON,
+		},
+		{
+			Name:           "Async API + YAML",
+			InputEvents:    fixEventsAsyncAPIYAML(),
+			ExpectedType:   graphql.EventSpecTypeAsyncAPI,
+			ExpectedFormat: graphql.SpecFormatYaml,
+		},
+	}
+
+	for _, testCase := range eventsCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			in := model.ServiceDetails{Events: &testCase.InputEvents}
+
+			// WHEN
+			out, err := sut.DetailsToGraphQLInput("id", in)
+
+			// THEN
+			require.NoError(t, err)
+			require.NotNil(t, out.Event)
+			require.NotNil(t, out.Event.Spec)
+			assert.Equal(t, testCase.ExpectedType, out.Event.Spec.Type)
+			assert.Equal(t, testCase.ExpectedFormat, out.Event.Spec.Format)
+		})
+	}
 }
 
 func emptyLabels() *map[string]string {
 	return &map[string]string{}
+}
+
+func ptrString(in string) *string {
+	return &in
+}
+
+func ptrClob(in graphql.CLOB) *graphql.CLOB {
+	return &in
 }

@@ -51,3 +51,24 @@ func (_m *Converter) GraphQLToServiceDetails(converted model.GraphQLServiceDetai
 
 	return r0, r1
 }
+
+// ServiceDetailsToService provides a mock function with given fields: in, serviceID
+func (_m *Converter) ServiceDetailsToService(in model.ServiceDetails, serviceID string) (model.Service, error) {
+	ret := _m.Called(in, serviceID)
+
+	var r0 model.Service
+	if rf, ok := ret.Get(0).(func(model.ServiceDetails, string) model.Service); ok {
+		r0 = rf(in, serviceID)
+	} else {
+		r0 = ret.Get(0).(model.Service)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(model.ServiceDetails, string) error); ok {
+		r1 = rf(in, serviceID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

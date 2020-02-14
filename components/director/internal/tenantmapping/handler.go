@@ -113,7 +113,7 @@ func (h *Handler) getObjectContext(ctx context.Context, reqData ReqData) (Object
 	switch authFlow {
 	case JWTAuthFlow:
 		return h.mapperForUser.GetObjectContext(ctx, reqData, authID)
-	case OAuth2Flow, CertificateFlow:
+	case OAuth2Flow, CertificateFlow, OneTimeTokenFlow:
 		return h.mapperForSystemAuth.GetObjectContext(ctx, reqData, authID, authFlow)
 	}
 
