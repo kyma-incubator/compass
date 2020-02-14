@@ -92,3 +92,21 @@ func (r readSession) getOperation(condition dbr.Builder) (OperationDTO, dberr.Er
 	}
 	return operation, nil
 }
+
+func (r readSession) GetLMSTenant(name, region string) (LMSTenantDTO, dberr.Error) {
+	var dto LMSTenantDTO
+	err := r.session.
+		Select("*").
+		From(postsql.LMSTenantTableName).
+		Where(dbr.Eq("name", name)).
+		Where(dbr.Eq("region", region)).
+		LoadOne(&dto)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return LMSTenantDTO{}, dberr.NotFound("Cannot find lms tenant for name/region: '%s/%s'", name, region)
+		}
+		return LMSTenantDTO{}, dberr.Internal("Failed to get operation: %s", err)
+	}
+	return dto, nil
+}

@@ -59,3 +59,11 @@ func (e dbError) Code() int {
 func (e dbError) Error() string {
 	return e.message
 }
+
+func IsConflict(err error) bool {
+	dbe, ok := err.(Error)
+	if !ok {
+		return false
+	}
+	return dbe.Code() == CodeConflict
+}

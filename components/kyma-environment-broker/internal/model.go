@@ -22,6 +22,13 @@ type ProvisionInputCreator interface {
 	Create() (gqlschema.ProvisionRuntimeInput, error)
 }
 
+type LMSTenant struct {
+	ID        string
+	Name      string
+	Region    string
+	CreatedAt time.Time
+}
+
 type Instance struct {
 	InstanceID      string
 	RuntimeID       string
@@ -54,13 +61,19 @@ type ProvisioningOperation struct {
 	Operation `json:"-"`
 
 	// following fields are serialized to JSON and stored in the storage
-	LmsTenantID            string `json:"lms_tenant_id"`
+	Lms                    LMS    `json:"lms"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionInputCreator `json:"-"`
 
 	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
+}
+
+type LMS struct {
+	TenantID    string    `json:"tenant_id"`
+	Failed      bool      `json:"failed"`
+	RequestedAt time.Time `json:"requested_at"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation

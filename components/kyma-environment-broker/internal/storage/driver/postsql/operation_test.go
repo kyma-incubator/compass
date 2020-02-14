@@ -37,6 +37,6 @@ func fixProvisioningOperation() internal.ProvisioningOperation {
 			State:                  domain.InProgress,
 			ProvisionerOperationID: "target-op-id",
 		},
-		LmsTenantID: "l-t-id",
+		Lms: internal.LMS{TenantID: "l-t-id"},
 	}
 }

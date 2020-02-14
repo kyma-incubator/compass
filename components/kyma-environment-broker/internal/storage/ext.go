@@ -20,3 +20,8 @@ type Operations interface {
 	GetOperation(operationID string) (*internal.Operation, error)
 	GetOperationsInProgressByType(operationType dbsession.OperationType) ([]internal.Operation, error)
 }
+
+type LMSTenants interface {
+	FindTenantByName(name, region string) (internal.LMSTenant, bool, error)
+	InsertTenant(tenant internal.LMSTenant) error
+}

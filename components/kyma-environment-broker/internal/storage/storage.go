@@ -11,6 +11,7 @@ import (
 type BrokerStorage interface {
 	Instances() Instances
 	Operations() Operations
+	LMSTenants() LMSTenants
 }
 
 func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, error) {
@@ -28,21 +29,24 @@ func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, error) {
 	fact := dbsession.NewFactory(connection)
 
 	return storage{
-		instance:  postgres.NewInstance(fact),
-		operation: postgres.NewOperation(fact),
+		instance:   postgres.NewInstance(fact),
+		operation:  postgres.NewOperation(fact),
+		lmsTenants: postgres.NewLMSTenants(fact),
 	}, nil
 }
 
 func NewMemoryStorage() BrokerStorage {
 	return storage{
-		instance:  memory.NewInstance(),
-		operation: memory.NewOperation(),
+		instance:   memory.NewInstance(),
+		operation:  memory.NewOperation(),
+		lmsTenants: memory.NewLMSTenants(),
 	}
 }
 
 type storage struct {
-	instance  Instances
-	operation Operations
+	instance   Instances
+	operation  Operations
+	lmsTenants LMSTenants
 }
 
 func (s storage) Instances() Instances {
@@ -51,4 +55,8 @@ func (s storage) Instances() Instances {
 
 func (s storage) Operations() Operations {
 	return s.operation
+}
+
+func (s storage) LMSTenants() LMSTenants {
+	return s.lmsTenants
 }
