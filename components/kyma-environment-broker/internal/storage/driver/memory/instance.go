@@ -1,4 +1,4 @@
-package postsql
+package memory
 
 import (
 	"sync"

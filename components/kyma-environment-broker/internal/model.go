@@ -3,8 +3,10 @@ package internal
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 type Instance struct {
@@ -20,6 +22,41 @@ type Instance struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DelatedAt time.Time
+}
+
+type Operation struct {
+	ID        string
+	Version   int
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
+	InstanceID             string
+	ProvisionerOperationID string
+	State                  domain.LastOperationState
+	Description            string
+}
+
+// ProvisioningOperation holds all information about provisioning operation
+type ProvisioningOperation struct {
+	Operation `json:"-"`
+
+	// following fields are serialized to JSON and stored in the storage
+	LmsTenantID            string `json:"lms_tenant_id"`
+	ProvisioningParameters string `json:"provisioning_parameters"`
+}
+
+// NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
+func NewProvisioningOperation(instanceID, params string) ProvisioningOperation {
+	return ProvisioningOperation{
+		Operation: Operation{
+			ID:          uuid.New().String(),
+			Version:     0,
+			Description: "Operation created",
+			InstanceID:  instanceID,
+			State:       domain.InProgress,
+		},
+		ProvisioningParameters: params,
+	}
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput
