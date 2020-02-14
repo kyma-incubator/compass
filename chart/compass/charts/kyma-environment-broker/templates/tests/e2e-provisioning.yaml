@@ -50,10 +50,14 @@ spec:
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e_provisioning.dir }}e2e-provisioning-test:{{ .Values.global.images.tests.e2e_provisioning.version }}
           imagePullPolicy: IfNotPresent
           env:
-          - name: APP_BROKER_URL
-            value: 'https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}'
           - name: APP_BROKER_PROVISION_TIMEOUT
             value: "3h"
+          - name: APP_BROKER_DEPROVISION_TIMEOUT
+            value: "1h"
+          - name: APP_SKIP_CERT_VERIFICATION
+            value: "true"
+          - name: APP_BROKER_URL
+            value: 'https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}'
           - name: APP_BROKER_PROVISION_GCP
             value: "false"
           - name: APP_BROKER_AUTH_USERNAME
@@ -71,5 +75,11 @@ spec:
             value: "kyma-system"
           - name: APP_TENANT_ID
             value: "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
+          - name: APP_DIRECTOR_URL
+            value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+          - name: APP_DIRECTOR_NAMESPACE
+            value: "compass-system"
+          - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
+            value: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
           command: ["/bin/sh"]
           args: ["-c", "echo 'Starting e2e-provisioning test. Waiting 20s for api server...'; sleep 20; ./test.test; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]

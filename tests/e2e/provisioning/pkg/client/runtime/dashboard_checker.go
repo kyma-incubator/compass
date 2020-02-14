@@ -62,7 +62,8 @@ func (c *DashboardChecker) buildTargetURL(dashboardURL string) string {
 
 	u := url.URL{
 		Scheme: "https",
-		Host:   fmt.Sprintf("dex.%s/auth", domain),
+		Host:   fmt.Sprintf("dex.%s", domain),
+		Path:   "auth",
 	}
 	q := u.Query()
 

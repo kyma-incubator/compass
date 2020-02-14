@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/google/uuid"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
@@ -25,8 +23,7 @@ type Config struct {
 		Username string
 		Password string
 	}
-	ProvisionGCP     bool
-	ProvisionTimeout time.Duration
+	ProvisionGCP bool
 }
 
 type Client struct {
@@ -131,12 +128,12 @@ func (c *Client) DeprovisionRuntime() (string, error) {
 	return response.Operation, nil
 }
 
-func (c *Client) AwaitOperationSucceeded(operationID string) error {
+func (c *Client) AwaitOperationSucceeded(operationID string, timeout time.Duration) error {
 	lastOperationURL := fmt.Sprintf("%s%s/%s/last_operation?operation=%s", c.brokerConfig.URL, instancesURL, c.instanceID, operationID)
-	c.log.Infof("Waiting for operation at most %s", c.brokerConfig.ProvisionTimeout.String())
+	c.log.Infof("Waiting for operation at most %s", timeout.String())
 
 	response := lastOperationResponse{}
-	err := wait.Poll(5*time.Minute, c.brokerConfig.ProvisionTimeout, func() (bool, error) {
+	err := wait.Poll(5*time.Minute, timeout, func() (bool, error) {
 		err := c.executeRequest(http.MethodGet, lastOperationURL, nil, &response)
 		if err != nil {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
@@ -185,7 +182,7 @@ func (c *Client) FetchDashboardURL() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "while waiting for dashboardURL")
 	}
-	c.log.Info("Successfully fetched dashboard URL: %s", response.DashboardURL)
+	c.log.Infof("Successfully fetched dashboard URL: %s", response.DashboardURL)
 
 	return response.DashboardURL, nil
 }
@@ -242,7 +239,6 @@ func (c *Client) executeRequest(method, url string, body io.Reader, responseBody
 	if err != nil {
 		return errors.Wrapf(err, "while executing request URL: %s", url)
 	}
-	spew.Dump(resp.Body)
 
 	err = json.NewDecoder(resp.Body).Decode(responseBody)
 	if err != nil {

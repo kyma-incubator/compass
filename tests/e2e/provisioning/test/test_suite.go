@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director/oauth"
@@ -28,6 +29,9 @@ type Config struct {
 
 	TenantID             string `default:"3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
 	SkipCertVerification bool   `envconfig:"default=true"`
+
+	ProvisionTimeout   time.Duration
+	DeprovisionTimeout time.Duration
 }
 
 // Suite provides set of clients able to provision and test Kyma runtime
@@ -38,6 +42,9 @@ type Suite struct {
 	brokerClient     *broker.Client
 	runtimeClient    *runtime.Client
 	dashboardChecker *runtime.DashboardChecker
+
+	ProvisionTimeout   time.Duration
+	DeprovisionTimeout time.Duration
 }
 
 func (ts *Suite) TearDown() {
@@ -46,7 +53,7 @@ func (ts *Suite) TearDown() {
 	assert.NoError(ts.t, err)
 	operationID, err := ts.brokerClient.DeprovisionRuntime()
 	require.NoError(ts.t, err)
-	err = ts.brokerClient.AwaitOperationSucceeded(operationID)
+	err = ts.brokerClient.AwaitOperationSucceeded(operationID, ts.DeprovisionTimeout)
 	require.NoError(ts.t, err)
 }
 
@@ -55,11 +62,10 @@ func newTestSuite(t *testing.T) *Suite {
 	err := envconfig.InitWithPrefix(cfg, "APP")
 	require.NoError(t, err)
 
-	httpClient := newHTTPClient(cfg.SkipCertVerification)
-
 	log := logrus.New()
 	instanceID := uuid.New().String()
-	brokerClient := broker.NewClient(cfg.Broker, cfg.TenantID, instanceID, *httpClient, log.WithField("service", "broker_client"))
+
+	httpClient := newHTTPClient(cfg.SkipCertVerification)
 
 	// create director client on the base of graphQL client and OAuth client
 	graphQLClient := gcli.NewClient(cfg.Director.URL, gcli.WithHTTPClient(httpClient))
@@ -77,6 +83,8 @@ func newTestSuite(t *testing.T) *Suite {
 		panic(err)
 	}
 
+	brokerClient := broker.NewClient(cfg.Broker, cfg.TenantID, instanceID, *httpClient, log.WithField("service", "broker_client"))
+
 	directorClient := director.NewDirectorClient(oauthClient, graphQLClient)
 
 	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, instanceID, *httpClient, *directorClient, log.WithField("service", "runtime_client"))
@@ -84,11 +92,13 @@ func newTestSuite(t *testing.T) *Suite {
 	dashboardChecker := runtime.NewDashboardChecker(*httpClient, log.WithField("service", "dashboard_checker"))
 
 	return &Suite{
-		t:                t,
-		log:              log,
-		dashboardChecker: dashboardChecker,
-		brokerClient:     brokerClient,
-		runtimeClient:    runtimeClient,
+		t:                  t,
+		log:                log,
+		dashboardChecker:   dashboardChecker,
+		brokerClient:       brokerClient,
+		runtimeClient:      runtimeClient,
+		ProvisionTimeout:   cfg.ProvisionTimeout,
+		DeprovisionTimeout: cfg.DeprovisionTimeout,
 	}
 }
 

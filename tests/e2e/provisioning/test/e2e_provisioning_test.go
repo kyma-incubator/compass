@@ -13,7 +13,7 @@ func Test_E2E_Provisioning(t *testing.T) {
 	require.NoError(t, err)
 	defer ts.TearDown()
 
-	err = ts.brokerClient.AwaitOperationSucceeded(operationID)
+	err = ts.brokerClient.AwaitOperationSucceeded(operationID, ts.ProvisionTimeout)
 	require.NoError(t, err)
 
 	dashboardURL, err := ts.brokerClient.FetchDashboardURL()
