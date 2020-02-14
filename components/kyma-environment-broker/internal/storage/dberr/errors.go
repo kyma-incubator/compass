@@ -32,6 +32,13 @@ func NotFound(format string, a ...interface{}) Error {
 	return errorf(CodeNotFound, format, a...)
 }
 
+func IsNotFound(err error) bool {
+	nf, ok := err.(interface {
+		Code() int
+	})
+	return ok && nf.Code() == CodeNotFound
+}
+
 func AlreadyExists(format string, a ...interface{}) Error {
 	return errorf(CodeAlreadyExists, format, a...)
 }

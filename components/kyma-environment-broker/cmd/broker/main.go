@@ -5,6 +5,11 @@ import (
 	"net/http"
 	"os"
 
+	"context"
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
@@ -130,7 +135,7 @@ func main() {
 		broker.NewDeprovision(db.Instances(), provisionerClient, dumper),
 		broker.NewUpdate(dumper),
 		broker.NewGetInstance(db.Instances(), dumper),
-		broker.NewLastOperation(db.Operations()),
+		broker.NewLastOperation(db.Operations(), dumper),
 		broker.NewBind(dumper),
 		broker.NewUnbind(dumper),
 		broker.NewGetBinding(dumper),

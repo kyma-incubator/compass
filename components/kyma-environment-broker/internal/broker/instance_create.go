@@ -8,6 +8,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
@@ -54,12 +55,11 @@ func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, bui
 // Provision creates a new service instance
 //   PUT /v2/service_instances/{instance_id}
 func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
-	// TODO: check if instance already exist in progress/ready state
-
+	// validation of incoming input
 	ersContext, parameters, err := b.validate(details)
 	if err != nil {
 		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
-		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, errMsg)
+		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
 	}
 
 	provisioningParameters := internal.ProvisioningParameters{
@@ -68,23 +68,37 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ErsContext: ersContext,
 		Parameters: parameters,
 	}
-	ppRaw, err := json.Marshal(provisioningParameters)
-	if err != nil {
-		return domain.ProvisionedServiceSpec{}, errors.New("cannot marshal provisioning parameters")
+
+	// check if operation with instance ID already created
+	existingOperation, errStorage := b.operationsStorage.GetProvisioningOperationByInstanceID(instanceID)
+	switch {
+	case errStorage != nil && !dberr.IsNotFound(errStorage):
+		b.dumper.Dump("cannot get existing operation from storage", err)
+		return domain.ProvisionedServiceSpec{}, errors.New("cannot get existing operation from storage")
+	case existingOperation != nil && !dberr.IsNotFound(errStorage):
+		return b.handleExistingOperation(existingOperation, provisioningParameters)
 	}
 
-	operation := internal.NewProvisioningOperation(instanceID, string(ppRaw))
+	// create and save new operation
+	operation, err := internal.NewProvisioningOperation(instanceID, provisioningParameters)
+	if err != nil {
+		b.dumper.Dump("cannot create new operation: ", err)
+		return domain.ProvisionedServiceSpec{}, errors.New("cannot create new operation")
+	}
+
 	err = b.operationsStorage.InsertProvisioningOperation(operation)
 	if err != nil {
+		b.dumper.Dump("cannot save operations: ", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot save operations")
 	}
 
+	// add new operation to queue
 	b.queue.Add(operation.ID)
-	spec := domain.ProvisionedServiceSpec{
+
+	return domain.ProvisionedServiceSpec{
 		IsAsync:       true,
 		OperationData: operation.ID,
-	}
-	return spec, nil
+	}, nil
 }
 
 func (b *ProvisionEndpoint) validate(details domain.ProvisionDetails) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
@@ -138,4 +152,23 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 	}
 
 	return parameters, nil
+}
+
+func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.ProvisioningOperation, input internal.ProvisioningParameters) (domain.ProvisionedServiceSpec, error) {
+	pp, err := operation.GetProvisioningParameters()
+	if err != nil {
+		b.dumper.Dump("cannot get provisioning parameters from exist operation", err)
+		return domain.ProvisionedServiceSpec{}, errors.New("cannot get provisioning parameters from exist operation")
+	}
+	if pp.IsEqual(input) {
+		return domain.ProvisionedServiceSpec{
+			IsAsync:       true,
+			AlreadyExists: true,
+			OperationData: operation.ID,
+		}, nil
+	}
+
+	err = errors.New("provisioning operation already exist")
+	log := fmt.Sprintf("provisioning operation with InstanceID %s already exist", operation.InstanceID)
+	return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusConflict, log)
 }

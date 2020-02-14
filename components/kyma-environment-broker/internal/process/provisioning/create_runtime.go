@@ -41,11 +41,11 @@ func NewCreateRuntimeStep(os storage.Operations, is storage.Instances, builderFa
 
 func (s *CreateRuntimeStep) Run(operation *internal.ProvisioningOperation) (error, time.Duration) {
 	// TODO make sure that the process has not already been activated
+	// TODO mark operation as failed if error is permanent
 
-	var pp internal.ProvisioningParameters
-	err := json.Unmarshal([]byte(operation.ProvisioningParameters), &pp)
+	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
-		return errors.Wrap(err, "while unmarshaling provisioning parameters"), 0
+		return errors.Wrap(err, "while getting provisioning parameters from operation"), 0
 	}
 	rawParameters, err := json.Marshal(pp.Parameters)
 	if err != nil {
@@ -80,7 +80,7 @@ func (s *CreateRuntimeStep) Run(operation *internal.ProvisioningOperation) (erro
 		RuntimeID:       *resp.RuntimeID,
 		ServiceID:       pp.ServiceID,
 		ServicePlanID:   pp.PlanID,
-		// TODO do we need ProvisioningParameters if we have in operation?
+		// TODO do we need RawProvisioningParameters if we have in operation?
 		ProvisioningParameters: string(rawParameters),
 	})
 	if err != nil {

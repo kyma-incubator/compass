@@ -26,7 +26,7 @@ func TestLastOperation_LastOperation(t *testing.T) {
 	assert.NoError(t, err)
 
 	// #create LastOperation endpoint
-	lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations())
+	lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), &broker.DumyDumper{})
 
 	// when
 	response, err := lastOperationEndpoint.LastOperation(context.TODO(), instID, domain.PollDetails{OperationData: operationID})

@@ -58,4 +58,18 @@ func TestAppError(t *testing.T) {
 		assert.Equal(t, "Some additional message: error, Some NotFound apperror, Some pkg err", appendedNotFoundErr.Error())
 		assert.Equal(t, "Some additional message: error, Some AlreadyExists apperror, Some pkg err", appendedAlreadyExistsErr.Error())
 	})
+
+	t.Run("should recognize type of error", func(t *testing.T) {
+		//given
+		internalErr := Internal("Some Internal apperror, %s", "Some pkg err")
+		notFoundErr := NotFound("Some NotFound apperror, %s", "Some pkg err")
+
+		//when
+		checkOne := IsNotFound(internalErr)
+		checkTwo := IsNotFound(notFoundErr)
+
+		//then
+		assert.False(t, checkOne)
+		assert.True(t, checkTwo)
+	})
 }

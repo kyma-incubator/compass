@@ -30,17 +30,45 @@ func (r readSession) GetInstanceByID(instanceID string) (internal.Instance, dber
 }
 
 func (r readSession) GetOperationByID(opID string) (OperationDTO, dberr.Error) {
+	condition := dbr.Eq("id", opID)
+	operation, err := r.getOperation(condition)
+	if err != nil {
+		switch {
+		case dberr.IsNotFound(err):
+			return OperationDTO{}, dberr.NotFound("for ID: %s %s", opID, err)
+		default:
+			return OperationDTO{}, err
+		}
+	}
+	return operation, nil
+}
+
+func (r readSession) GetOperationByInstanceID(inID string) (OperationDTO, dberr.Error) {
+	condition := dbr.Eq("instance_id", inID)
+	operation, err := r.getOperation(condition)
+	if err != nil {
+		switch {
+		case dberr.IsNotFound(err):
+			return OperationDTO{}, dberr.NotFound("for instanceID: %s %s", inID, err)
+		default:
+			return OperationDTO{}, err
+		}
+	}
+	return operation, nil
+}
+
+func (r readSession) getOperation(condition dbr.Builder) (OperationDTO, dberr.Error) {
 	var operation OperationDTO
 
 	err := r.session.
 		Select("*").
 		From(postsql.OperationTableName).
-		Where(dbr.Eq("id", opID)).
+		Where(condition).
 		LoadOne(&operation)
 
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return OperationDTO{}, dberr.NotFound("Cannot find operation for ID: '%s'", opID)
+			return OperationDTO{}, dberr.NotFound("cannot find operation: %s", err)
 		}
 		return OperationDTO{}, dberr.Internal("Failed to get operation: %s", err)
 	}

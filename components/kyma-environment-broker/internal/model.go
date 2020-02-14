@@ -1,12 +1,15 @@
 package internal
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pkg/errors"
 )
 
 type Instance struct {
@@ -46,7 +49,12 @@ type ProvisioningOperation struct {
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
-func NewProvisioningOperation(instanceID, params string) ProvisioningOperation {
+func NewProvisioningOperation(instanceID string, parameters ProvisioningParameters) (ProvisioningOperation, error) {
+	params, err := json.Marshal(parameters)
+	if err != nil {
+		return ProvisioningOperation{}, errors.Wrap(err, "while marshaling provisioning parameters")
+	}
+
 	return ProvisioningOperation{
 		Operation: Operation{
 			ID:          uuid.New().String(),
@@ -55,8 +63,19 @@ func NewProvisioningOperation(instanceID, params string) ProvisioningOperation {
 			InstanceID:  instanceID,
 			State:       domain.InProgress,
 		},
-		ProvisioningParameters: params,
+		ProvisioningParameters: string(params),
+	}, nil
+}
+
+func (po *ProvisioningOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
+	var pp ProvisioningParameters
+
+	err := json.Unmarshal([]byte(po.ProvisioningParameters), &pp)
+	if err != nil {
+		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
 	}
+
+	return pp, nil
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput

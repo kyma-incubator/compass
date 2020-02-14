@@ -1,10 +1,32 @@
 package internal
 
+import (
+	"reflect"
+)
+
 type ProvisioningParameters struct {
 	PlanID     string                    `json:"plan_id"`
 	ServiceID  string                    `json:"service_id"`
 	ErsContext ERSContext                `json:"ers_context"`
 	Parameters ProvisioningParametersDTO `json:"parameters"`
+}
+
+func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {
+	if p.PlanID != input.PlanID {
+		return false
+	}
+	if p.ServiceID != input.ServiceID {
+		return false
+	}
+
+	if !reflect.DeepEqual(p.ErsContext, input.ErsContext) {
+		return false
+	}
+	if !reflect.DeepEqual(p.Parameters, input.Parameters) {
+		return false
+	}
+
+	return true
 }
 
 type ProvisioningParametersDTO struct {

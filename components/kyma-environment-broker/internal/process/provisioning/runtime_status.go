@@ -41,6 +41,7 @@ func NewRuntimeStatusStep(os storage.Operations, is storage.Instances, pc provis
 
 func (s *RuntimeStatusStep) Run(operation *internal.ProvisioningOperation) (error, time.Duration) {
 	// TODO check if should operation be processed
+	// TODO mark operation as failed if error is permanent
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	if err != nil {

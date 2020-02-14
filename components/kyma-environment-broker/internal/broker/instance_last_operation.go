@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -13,11 +14,13 @@ import (
 
 type LastOperationEndpoint struct {
 	operationStorage storage.Operations
+	dumper           StructDumper
 }
 
-func NewLastOperation(os storage.Operations) *LastOperationEndpoint {
+func NewLastOperation(os storage.Operations, d StructDumper) *LastOperationEndpoint {
 	return &LastOperationEndpoint{
 		operationStorage: os,
+		dumper:           d,
 	}
 }
 
@@ -26,6 +29,7 @@ func NewLastOperation(os storage.Operations) *LastOperationEndpoint {
 func (b *LastOperationEndpoint) LastOperation(ctx context.Context, instanceID string, details domain.PollDetails) (domain.LastOperation, error) {
 	operation, err := b.operationStorage.GetProvisioningOperationByID(details.OperationData)
 	if err != nil {
+		b.dumper.Dump(fmt.Sprintf("cannot get operation from storage: %s", err))
 		return domain.LastOperation{}, errors.Wrapf(err, "while getting operation from storage")
 	}
 
