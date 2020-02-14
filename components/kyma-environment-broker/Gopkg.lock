@@ -874,7 +874,7 @@
   version = "v0.17.1"
 
 [[projects]]
-  digest = "1:d15037d80d60d48c1b94aa84baebe1bdf3a1990df0eb0978b372c976cababa11"
+  digest = "1:e0ce2f07c93aa1fdfcc220a8dbe183a28bfa4fdb4f893301795f1f1ac3a3bc63"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -901,6 +901,7 @@
     "util/flowcontrol",
     "util/homedir",
     "util/keyutil",
+    "util/workqueue",
   ]
   pruneopts = "UT"
   revision = "78d2af792babf2dd937ba2e2a8d99c753a5eda89"
@@ -989,6 +990,7 @@
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/util/wait",
+    "k8s.io/client-go/util/workqueue",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
     "sigs.k8s.io/controller-runtime/pkg/client/fake",

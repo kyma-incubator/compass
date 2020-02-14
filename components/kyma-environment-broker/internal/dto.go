@@ -1,5 +1,12 @@
 package internal
 
+type ProvisioningParameters struct {
+	PlanID     string                    `json:"plan_id"`
+	ServiceID  string                    `json:"service_id"`
+	ErsContext ERSContext                `json:"ers_context"`
+	Parameters ProvisioningParametersDTO `json:"parameters"`
+}
+
 type ProvisioningParametersDTO struct {
 	Name                        string   `json:"name"`
 	NodeCount                   *int     `json:"nodeCount"`

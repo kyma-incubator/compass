@@ -1,10 +1,11 @@
-package broker
+package provisioning
 
 import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker/automock"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/automock"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
@@ -32,7 +33,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, "1.10.0", internal.ServiceManagerOverride{}, "https://compass-gateway-auth-oauth.kyma.local/director/graphql")
 
 	// when
-	builder, found := factory.ForPlan(azurePlanID)
+	builder, found := factory.ForPlan(broker.AzurePlanID)
 
 	// then
 	require.True(t, found)
@@ -46,7 +47,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 			ServiceManager: smOverrides,
 			SubAccountID:   fixID,
 		}).
-		SetProvisioningConfig(ProvisioningConfig{
+		SetProvisioningConfig(Config{
 			AzureSecretName: "azure-secret",
 		}).
 		SetInstanceID(fixID).
@@ -80,6 +81,7 @@ func find(in internal.ComponentConfigurationInputList, name string) (*gqlschema.
 	}
 	return nil, false
 }
+
 func fixKymaComponentList() []v1alpha1.KymaComponent {
 	return []v1alpha1.KymaComponent{
 		{Name: "dex", Namespace: "kyma-system"},

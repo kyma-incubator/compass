@@ -10,6 +10,8 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -32,7 +34,7 @@ type Config struct {
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
-	Provisioning       broker.ProvisioningConfig
+	Provisioning       provisioning.Config
 	Director           director.Config
 	Database           storage.Config
 	ManagementPlaneURL string
@@ -46,6 +48,9 @@ type Config struct {
 }
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// create and fill config
 	var cfg Config
 	err := envconfig.InitWithPrefix(&cfg, "APP")
@@ -64,6 +69,7 @@ func main() {
 		Password: cfg.Auth.Password,
 	}
 
+	// create provisioner client
 	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 
 	// create kubernetes client
@@ -75,8 +81,6 @@ func main() {
 	// create director client on the base of graphQL client and OAuth client
 	httpClient := http_client.NewHTTPClient(30, cfg.Director.SkipCertVerification)
 	graphQLClient := gcli.NewClient(cfg.Director.URL, gcli.WithHTTPClient(httpClient))
-	// TODO: remove after debug mode
-	graphQLClient.Log = func(s string) { log.Println(s) }
 	oauthClient := oauth.NewOauthClient(httpClient, cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
 	fatalOnError(oauthClient.WaitForCredentials())
 	directorClient := director.NewDirectorClient(oauthClient, graphQLClient)
@@ -102,18 +106,31 @@ func main() {
 	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
 	fatalOnError(err)
 
-	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager, cfg.ManagementPlaneURL)
+	inputFactory := provisioning.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager, cfg.ManagementPlaneURL)
 
+	// create log dumper
 	dumper, err := broker.NewDumper()
 	fatalOnError(err)
 
+	// create and run queue, steps provisioning
+	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), inputFactory, cfg.Provisioning, provisionerClient)
+	runtimeStatusStep := provisioning.NewRuntimeStatusStep(db.Operations(), db.Instances(), provisionerClient, directorClient)
+
+	stepManager := process.NewManager()
+	stepManager.AddStep(runtimeStep)
+	stepManager.AddStep(runtimeStatusStep)
+
+	queue := process.NewQueue(stepManager)
+	queue.Run(ctx.Done())
+
+	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
 		broker.NewServices(cfg.Broker, optComponentsSvc, dumper),
-		broker.NewProvision(cfg.Broker, db.Instances(), inputFactory, cfg.Provisioning, provisionerClient, dumper),
+		broker.NewProvision(cfg.Broker, db.Operations(), queue, inputFactory, dumper),
 		broker.NewDeprovision(db.Instances(), provisionerClient, dumper),
 		broker.NewUpdate(dumper),
 		broker.NewGetInstance(db.Instances(), dumper),
-		broker.NewLastOperation(db.Instances(), provisionerClient, directorClient, dumper),
+		broker.NewLastOperation(db.Operations()),
 		broker.NewBind(dumper),
 		broker.NewUnbind(dumper),
 		broker.NewGetBinding(dumper),

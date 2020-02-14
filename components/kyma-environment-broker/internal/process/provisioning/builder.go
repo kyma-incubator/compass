@@ -1,14 +1,15 @@
-package broker
+package provisioning
 
 import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	cloudProvider "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
-
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+
 	"github.com/pkg/errors"
 )
 
@@ -39,12 +40,13 @@ type (
 	ConcreteInputBuilder interface {
 		SetProvisioningParameters(params internal.ProvisioningParametersDTO) ConcreteInputBuilder
 		SetERSContext(ersCtx internal.ERSContext) ConcreteInputBuilder
-		SetProvisioningConfig(brokerConfig ProvisioningConfig) ConcreteInputBuilder
+		SetProvisioningConfig(provisioningConfig Config) ConcreteInputBuilder
 		SetInstanceID(instanceID string) ConcreteInputBuilder
 		Build() (gqlschema.ProvisionRuntimeInput, error)
 	}
 
 	InputBuilderForPlan interface {
+		IsPlanSupport(planID string) bool
 		ForPlan(planID string) (ConcreteInputBuilder, bool)
 	}
 )
@@ -67,12 +69,25 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullCompo
 	}
 }
 
+func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
+	switch planID {
+	case broker.GcpPlanID, broker.AzurePlanID:
+		return true
+	default:
+		return false
+	}
+}
+
 func (f *InputBuilderFactory) ForPlan(planID string) (ConcreteInputBuilder, bool) {
+	if !f.IsPlanSupport(planID) {
+		return nil, false
+	}
+
 	var provider HyperscalerInputProvider
 	switch planID {
-	case gcpPlanID:
+	case broker.GcpPlanID:
 		provider = &cloudProvider.GcpInput{}
-	case azurePlanID:
+	case broker.AzurePlanID:
 		provider = &cloudProvider.AzureInput{}
 	// insert cases for other providers like AWS or GCP
 	default:
@@ -101,7 +116,7 @@ type InputBuilder struct {
 	directorURL               string
 
 	ersCtx                 internal.ERSContext
-	provisioningConfig     ProvisioningConfig
+	provisioningConfig     Config
 	provisioningParameters internal.ProvisioningParametersDTO
 }
 
@@ -115,8 +130,8 @@ func (b *InputBuilder) SetERSContext(ersCtx internal.ERSContext) ConcreteInputBu
 	return b
 }
 
-func (b *InputBuilder) SetProvisioningConfig(brokerConfig ProvisioningConfig) ConcreteInputBuilder {
-	b.provisioningConfig = brokerConfig
+func (b *InputBuilder) SetProvisioningConfig(provisioningConfig Config) ConcreteInputBuilder {
+	b.provisioningConfig = provisioningConfig
 	return b
 }
 
@@ -228,9 +243,9 @@ func (b *InputBuilder) applyManagementPlaneOverrides(in *gqlschema.ProvisionRunt
 // Will be removed and refactored in near future.
 func (b *InputBuilder) applyTemporaryCustomization(in *gqlschema.ProvisionRuntimeInput) error {
 	switch b.planID {
-	case azurePlanID:
+	case broker.AzurePlanID:
 		in.ClusterConfig.GardenerConfig.TargetSecret = b.provisioningConfig.AzureSecretName
-	case gcpPlanID:
+	case broker.GcpPlanID:
 		in.ClusterConfig.GardenerConfig.TargetSecret = b.provisioningConfig.GCPSecretName
 	default:
 		return fmt.Errorf("unknown Plan ID %s", b.planID)

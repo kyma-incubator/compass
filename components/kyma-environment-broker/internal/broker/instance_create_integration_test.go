@@ -17,8 +17,8 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/golden"
 )
 
 // TestBrokerProvisioningScenario tests that we are sending proper provisioner input.

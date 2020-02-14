@@ -7,8 +7,6 @@ import (
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
-//go:generate mockery -name=OptionalComponentNamesProvider -output=automock -outpkg=automock -case=underscore
-
 // OptionalComponentNamesProvider provides optional components names
 type OptionalComponentNamesProvider interface {
 	GetAllOptionalComponentsNames() []string

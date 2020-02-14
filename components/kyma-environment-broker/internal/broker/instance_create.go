@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
@@ -15,24 +14,28 @@ import (
 	"github.com/pkg/errors"
 )
 
+//go:generate mockery -name=Queue -output=automock -outpkg=automock -case=underscore
+//go:generate mockery -name=InputBuilderForPlan -output=automock -outpkg=automock -case=underscore
+
+type (
+	Queue interface {
+		Add(operationId string)
+	}
+
+	InputBuilderForPlan interface {
+		IsPlanSupport(planID string) bool
+	}
+)
+
 type ProvisionEndpoint struct {
-	instancesStorage  storage.Instances
+	operationsStorage storage.Operations
+	queue             Queue
 	builderFactory    InputBuilderForPlan
-	provisioningCfg   ProvisioningConfig
-	provisionerClient provisioner.Client
 	dumper            StructDumper
 	enabledPlanIDs    map[string]struct{}
 }
 
-// ProvisioningConfig holds all configurations connected with Provisioner API
-type ProvisioningConfig struct {
-	URL             string
-	GCPSecretName   string
-	AzureSecretName string
-	AWSSecretName   string
-}
-
-func NewProvision(cfg Config, instancesStorage storage.Instances, builderFactory InputBuilderForPlan, provisioningCfg ProvisioningConfig, provisionerClient provisioner.Client, dumper StructDumper) *ProvisionEndpoint {
+func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory InputBuilderForPlan, dumper StructDumper) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
 		id := planIDsMapping[planName]
@@ -40,10 +43,9 @@ func NewProvision(cfg Config, instancesStorage storage.Instances, builderFactory
 	}
 
 	return &ProvisionEndpoint{
-		instancesStorage:  instancesStorage,
+		operationsStorage: operationsStorage,
+		queue:             q,
 		builderFactory:    builderFactory,
-		provisioningCfg:   provisioningCfg,
-		provisionerClient: provisionerClient,
 		dumper:            dumper,
 		enabledPlanIDs:    enabledPlanIDs,
 	}
@@ -52,79 +54,88 @@ func NewProvision(cfg Config, instancesStorage storage.Instances, builderFactory
 // Provision creates a new service instance
 //   PUT /v2/service_instances/{instance_id}
 func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
-	b.dumper.Dump("Provision instanceID:", instanceID)
-	b.dumper.Dump("Provision details:", details)
-	b.dumper.Dump("Provision asyncAllowed:", asyncAllowed)
+	// TODO: check if instance already exist in progress/ready state
 
-	// unmarshall ERS context
+	ersContext, parameters, err := b.validate(details)
+	if err != nil {
+		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
+		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, errMsg)
+	}
+
+	provisioningParameters := internal.ProvisioningParameters{
+		PlanID:     details.PlanID,
+		ServiceID:  details.ServiceID,
+		ErsContext: ersContext,
+		Parameters: parameters,
+	}
+	ppRaw, err := json.Marshal(provisioningParameters)
+	if err != nil {
+		return domain.ProvisionedServiceSpec{}, errors.New("cannot marshal provisioning parameters")
+	}
+
+	operation := internal.NewProvisioningOperation(instanceID, string(ppRaw))
+	err = b.operationsStorage.InsertProvisioningOperation(operation)
+	if err != nil {
+		return domain.ProvisionedServiceSpec{}, errors.New("cannot save operations")
+	}
+
+	b.queue.Add(operation.ID)
+	spec := domain.ProvisionedServiceSpec{
+		IsAsync:       true,
+		OperationData: operation.ID,
+	}
+	return spec, nil
+}
+
+func (b *ProvisionEndpoint) validate(details domain.ProvisionDetails) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
+	var ersContext internal.ERSContext
+	var parameters internal.ProvisioningParametersDTO
+
+	if details.ServiceID != kymaServiceID {
+		return ersContext, parameters, errors.New("service_id not recognized")
+	}
+	if _, exists := b.enabledPlanIDs[details.PlanID]; !exists {
+		return ersContext, parameters, errors.Errorf("plan ID %q is not recognized", details.PlanID)
+	}
+
+	ersContext, err := b.extractERSContext(details)
+	if err != nil {
+		return ersContext, parameters, errors.Wrap(err, "while extracting ers context")
+	}
+
+	parameters, err = b.extractInputParameters(details)
+	if err != nil {
+		return ersContext, parameters, errors.Wrap(err, "while extracting input parameters")
+	}
+
+	found := b.builderFactory.IsPlanSupport(details.PlanID)
+	if !found {
+		return ersContext, parameters, errors.Errorf("the plan ID not known, planID: %s", details.PlanID)
+	}
+
+	return ersContext, parameters, nil
+}
+
+func (b *ProvisionEndpoint) extractERSContext(details domain.ProvisionDetails) (internal.ERSContext, error) {
 	var ersContext internal.ERSContext
 	err := json.Unmarshal(details.RawContext, &ersContext)
 	if err != nil {
-		return domain.ProvisionedServiceSpec{}, errors.Wrap(err, "while decoding context")
+		return ersContext, errors.Wrap(err, "while decoding context")
+
 	}
 	if ersContext.GlobalAccountID == "" {
-		return domain.ProvisionedServiceSpec{}, errors.New("GlobalAccountID parameter cannot be empty")
-	}
-	b.dumper.Dump("ERS context:", ersContext)
-
-	if details.ServiceID != kymaServiceID {
-		return domain.ProvisionedServiceSpec{}, errors.New("service_id not recognized")
+		return ersContext, errors.New("global accountID parameter cannot be empty")
 	}
 
-	// unmarshall provisioning parameters
+	return ersContext, nil
+}
+
+func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetails) (internal.ProvisioningParametersDTO, error) {
 	var parameters internal.ProvisioningParametersDTO
-	err = json.Unmarshal(details.RawParameters, &parameters)
+	err := json.Unmarshal(details.RawParameters, &parameters)
 	if err != nil {
-		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not read parameters, instanceID %s", instanceID))
+		return parameters, errors.Wrap(err, "while unmarshaling raw parameters")
 	}
 
-	if _, exists := b.enabledPlanIDs[details.PlanID]; !exists {
-		return domain.ProvisionedServiceSpec{}, errors.Errorf("Plan ID %q is not recognized", details.PlanID)
-	}
-
-	// create input parameters according to selected plan
-	inputBuilder, found := b.builderFactory.ForPlan(details.PlanID)
-	if !found {
-		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("The plan ID not known, instanceID %s, planID: %s", instanceID, details.PlanID))
-	}
-	inputBuilder.
-		SetERSContext(ersContext).
-		SetProvisioningParameters(parameters).
-		SetProvisioningConfig(b.provisioningCfg).
-		SetInstanceID(instanceID)
-
-	input, err := inputBuilder.Build()
-	if err != nil {
-		return domain.ProvisionedServiceSpec{}, errors.Wrap(err, "while building provisioning inputToReturn")
-	}
-
-	b.dumper.Dump("Created provisioning input:", input)
-	resp, err := b.provisionerClient.ProvisionRuntime(ersContext.GlobalAccountID, input)
-	if err != nil {
-		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not provision runtime, instanceID %s", instanceID))
-	}
-	if resp.RuntimeID == nil {
-		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusInternalServerError, fmt.Sprintf("could not provision runtime, runtime ID not provided (instanceID %s)", instanceID))
-	}
-	err = b.instancesStorage.Insert(internal.Instance{
-		InstanceID:             instanceID,
-		GlobalAccountID:        ersContext.GlobalAccountID,
-		RuntimeID:              *resp.RuntimeID,
-		ServiceID:              details.ServiceID,
-		ServicePlanID:          details.PlanID,
-		DashboardURL:           "",
-		ProvisioningParameters: string(details.RawParameters),
-	})
-	if err != nil {
-		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusInternalServerError, fmt.Sprintf("could not save instance, instanceID %s", instanceID))
-	}
-
-	spec := domain.ProvisionedServiceSpec{
-		IsAsync:       true,
-		OperationData: *resp.ID,
-		DashboardURL:  "",
-	}
-	b.dumper.Dump("Returned provisioned service spec:", spec)
-
-	return spec, nil
+	return parameters, nil
 }

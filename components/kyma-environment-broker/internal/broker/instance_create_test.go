@@ -8,12 +8,12 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,27 +31,23 @@ func TestProvision_Provision(t *testing.T) {
 	// #setup memory storage
 	memoryStorage := storage.NewMemoryStorage()
 
-	// #setup provisioner client
-	fCli := provisioner.NewFakeClient()
+	queue := &automock.Queue{}
+	queue.On("Add", mock.AnythingOfType("string"))
 
-	// #setup builder
-	fixInput := schema.ProvisionRuntimeInput{}
-	factoryBuilderFake := &InputBuilderForPlanFake{
-		inputToReturn: fixInput,
-	}
+	factoryBuilder := &automock.InputBuilderForPlan{}
+	factoryBuilder.On("IsPlanSupport", planID).Return(true)
 
 	// #create provisioner endpoint
 	provisionEndpoint := broker.NewProvision(
 		broker.Config{EnablePlans: []string{"gcp", "azure"}},
-		memoryStorage.Instances(),
-		factoryBuilderFake,
-		broker.ProvisioningConfig{},
-		fCli,
+		memoryStorage.Operations(),
+		queue,
+		factoryBuilder,
 		&broker.DumyDumper{},
 	)
 
 	// when
-	_, err := provisionEndpoint.Provision(context.TODO(), instID, domain.ProvisionDetails{
+	response, err := provisionEndpoint.Provision(context.TODO(), instID, domain.ProvisionDetails{
 		ServiceID:     serviceID,
 		PlanID:        planID,
 		RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -60,23 +56,18 @@ func TestProvision_Provision(t *testing.T) {
 	require.NoError(t, err)
 
 	// then
-	assert.Equal(t, fixInput, fCli.GetProvisionRuntimeInput(0))
+	assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
+	assert.NotEqual(t, instID, response.OperationData)
 
-	inst, err := memoryStorage.Instances().GetByID(instID)
+	operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 	require.NoError(t, err)
-	assert.Equal(t, inst.InstanceID, instID)
-}
+	assert.Equal(t, operation.InstanceID, instID)
 
-type InputBuilderForPlanFake struct {
-	inputToReturn schema.ProvisionRuntimeInput
-}
+	var instanceParameters internal.ProvisioningParameters
+	assert.NoError(t, json.Unmarshal([]byte(operation.ProvisioningParameters), &instanceParameters))
 
-func (i InputBuilderForPlanFake) ForPlan(planID string) (broker.ConcreteInputBuilder, bool) {
-	return &ConcreteInputBuilderFake{
-		input: i.inputToReturn,
-	}, true
-}
-
+	assert.Equal(t, globalAccountID, instanceParameters.ErsContext.GlobalAccountID)
+	assert.Equal(t, clusterName, instanceParameters.Parameters.Name)
 type ConcreteInputBuilderFake struct {
 	input schema.ProvisionRuntimeInput
 }
