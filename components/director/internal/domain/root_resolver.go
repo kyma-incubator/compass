@@ -144,7 +144,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		intSys:              integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:              viewer.NewViewerResolver(),
 		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
-		mpPackage:           mp_package.NewResolver(transact, packageConverter, packageSvc),
+		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageConverter),
 		packageInstanceAuth: packageinstanceauth.NewResolver(),
 	}
 }

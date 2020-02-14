@@ -36,8 +36,8 @@ type Resolver struct {
 
 func NewResolver(
 	transact persistence.Transactioner,
-	packageConverter PackageConverter,
-	packageSvc PackageService) *Resolver {
+	packageSvc PackageService,
+	packageConverter PackageConverter) *Resolver {
 	return &Resolver{
 		transact:         transact,
 		packageConverter: packageConverter,
