@@ -69,7 +69,7 @@ func (r *TestRuntime) AddStatus(status string) {
 func (r *TestRuntime) Provision(provisioningInput gqlschema.ProvisionRuntimeInput) (operationStatusID, runtimeID string, err error) {
 	r.AddStatus("Starting provisioning...")
 	r.provisioningInput = provisioningInput
-	r.currentOperationID, r.runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
+	r.currentOperationID, r.runtimeID, err = testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
 	if err != nil {
 		r.AddStatus(fmt.Sprintf("Error while provisioning Runtime: %s", err))
 		return nil, nil, errors.New(r.GetCurrentStatus())
