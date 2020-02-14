@@ -16,12 +16,15 @@ type Factory interface {
 //go:generate mockery -name=ReadSession
 type ReadSession interface {
 	GetInstanceByID(instanceID string) (internal.Instance, dberr.Error)
+	GetOperationByID(opID string) (OperationDTO, dberr.Error)
 }
 
 //go:generate mockery -name=WriteSession
 type WriteSession interface {
 	InsertInstance(instance internal.Instance) dberr.Error
+	InsertOperation(dto OperationDTO) dberr.Error
 	UpdateInstance(instance internal.Instance) dberr.Error
+	UpdateOperation(instance OperationDTO) dberr.Error
 }
 
 type Transaction interface {
