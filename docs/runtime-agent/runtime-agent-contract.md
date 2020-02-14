@@ -19,7 +19,7 @@ Depending on the type of trusted connection, during the runtime lifecycle, it ma
 
 > **NOTE:** To represent API and Event Definitions of the connected Applications on Runtime, Open Service Broker API usage is recommended.
 
-In Kyma Runtime, during Runtime configuration, API and Event Definitions of the Applications are integrated into Kyma Service Catalog using [Application](https://kyma-project.io/docs/components/application-connector#custom-resource-application) custom resources and [Application Broker](https://kyma-project.io/docs/components/application-connector#architecture-application-broker). By default, a single API or Event Definition is represented as a single Service Class in Service Catalog. However, by using [Package API](./package-api.md), multiple API Definitions can be grouped and, in a result, represented as a single Service Class.
+In Kyma Runtime, during Runtime configuration, Application's Packages are integrated into the Service Catalog using [Application](https://kyma-project.io/docs/components/application-connector#custom-resource-application) custom resources and [Application Broker](https://kyma-project.io/docs/components/application-connector#architecture-application-broker). By default, a single Application is represented as a ServiceClass, and a single Package is represented as a ServicePlan in the Service Catalog. To learn more about Packages, read [this](../compass/03-packages-api.md) document.
 
 Runtime Agent periodically requests for the configuration of its Runtime from the Management Plane. Changes in the configuration for the Runtime are applied by the Runtime Agent on the Runtime.
 

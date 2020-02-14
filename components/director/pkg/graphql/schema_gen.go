@@ -290,11 +290,12 @@ type ComplexityRoot struct {
 		RequestClientCredentialsForRuntime           func(childComplexity int, id string) int
 		RequestOneTimeTokenForApplication            func(childComplexity int, id string) int
 		RequestOneTimeTokenForRuntime                func(childComplexity int, id string) int
-		RequestPackageInstanceAuth                   func(childComplexity int, packageID string, in PackageInstanceAuthRequestInput) int
+		RequestPackageInstanceAuthCreation           func(childComplexity int, packageID string, in PackageInstanceAuthRequestInput) int
+		RequestPackageInstanceAuthDeletion           func(childComplexity int, packageID string, authID string) int
 		SetAPIAuth                                   func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
 		SetApplicationLabel                          func(childComplexity int, applicationID string, key string, value interface{}) int
 		SetDefaultEventingForApplication             func(childComplexity int, appID string, runtimeID string) int
-		SetPackageInstanceAuth                       func(childComplexity int, packageID string, authID string, in AuthInput) int
+		SetPackageInstanceAuth                       func(childComplexity int, packageID string, authID string, in PackageInstanceAuthSetInput) int
 		SetRuntimeLabel                              func(childComplexity int, runtimeID string, key string, value interface{}) int
 		UnregisterApplication                        func(childComplexity int, id string) int
 		UnregisterIntegrationSystem                  func(childComplexity int, id string) int
@@ -538,9 +539,10 @@ type MutationResolver interface {
 	DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*Label, error)
 	SetDefaultEventingForApplication(ctx context.Context, appID string, runtimeID string) (*ApplicationEventingConfiguration, error)
 	DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*ApplicationEventingConfiguration, error)
-	SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in AuthInput) (*PackageInstanceAuth, error)
+	SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in PackageInstanceAuthSetInput) (*PackageInstanceAuth, error)
 	DeletePackageInstanceAuth(ctx context.Context, packageID string, authID string) (*PackageInstanceAuth, error)
-	RequestPackageInstanceAuth(ctx context.Context, packageID string, in PackageInstanceAuthRequestInput) (*PackageInstanceAuth, error)
+	RequestPackageInstanceAuthCreation(ctx context.Context, packageID string, in PackageInstanceAuthRequestInput) (*PackageInstanceAuth, error)
+	RequestPackageInstanceAuthDeletion(ctx context.Context, packageID string, authID string) (*PackageInstanceAuth, error)
 	AddPackage(ctx context.Context, applicationID string, in PackageCreateInput) (*Package, error)
 	UpdatePackage(ctx context.Context, id string, in PackageUpdateInput) (*Package, error)
 	DeletePackage(ctx context.Context, id string) (*Package, error)
@@ -1891,17 +1893,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RequestOneTimeTokenForRuntime(childComplexity, args["id"].(string)), true
 
-	case "Mutation.requestPackageInstanceAuth":
-		if e.complexity.Mutation.RequestPackageInstanceAuth == nil {
+	case "Mutation.requestPackageInstanceAuthCreation":
+		if e.complexity.Mutation.RequestPackageInstanceAuthCreation == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_requestPackageInstanceAuth_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_requestPackageInstanceAuthCreation_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RequestPackageInstanceAuth(childComplexity, args["packageID"].(string), args["in"].(PackageInstanceAuthRequestInput)), true
+		return e.complexity.Mutation.RequestPackageInstanceAuthCreation(childComplexity, args["packageID"].(string), args["in"].(PackageInstanceAuthRequestInput)), true
+
+	case "Mutation.requestPackageInstanceAuthDeletion":
+		if e.complexity.Mutation.RequestPackageInstanceAuthDeletion == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestPackageInstanceAuthDeletion_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RequestPackageInstanceAuthDeletion(childComplexity, args["packageID"].(string), args["authID"].(string)), true
 
 	case "Mutation.setAPIAuth":
 		if e.complexity.Mutation.SetAPIAuth == nil {
@@ -1949,7 +1963,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SetPackageInstanceAuth(childComplexity, args["packageID"].(string), args["authID"].(string), args["in"].(AuthInput)), true
+		return e.complexity.Mutation.SetPackageInstanceAuth(childComplexity, args["packageID"].(string), args["authID"].(string), args["in"].(PackageInstanceAuthSetInput)), true
 
 	case "Mutation.setRuntimeLabel":
 		if e.complexity.Mutation.SetRuntimeLabel == nil {
@@ -2935,6 +2949,7 @@ enum FetchRequestStatusCondition {
 	INITIAL
 	SUCCEEDED
 	FAILED
+	UNUSED
 }
 
 enum HealthCheckStatusCondition {
@@ -2946,13 +2961,22 @@ enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
 }
 
+enum PackageInstanceAuthSetStatusConditionInput {
+	SUCCEEDED
+	FAILED
+}
+
 enum PackageInstanceAuthStatusCondition {
 	"""
-	When creating or deleting new one
+	When creating, before Application sets the credentials
 	"""
 	PENDING
 	SUCCEEDED
 	FAILED
+	"""
+	When Runtime requests deletion and Application has to revoke the credentials
+	"""
+	UNUSED
 }
 
 enum RuntimeStatusCondition {
@@ -3158,6 +3182,37 @@ input PackageInstanceAuthRequestInput {
 	JSON validated against package.instanceAuthRequestInputSchema
 	"""
 	inputParams: Any
+}
+
+input PackageInstanceAuthSetInput {
+	"""
+	If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
+	"""
+	auth: AuthInput
+	"""
+	Optional if the auth is provided.
+	If the status condition is "FAILED", auth must be empty.
+	"""
+	status: PackageInstanceAuthStatusInput
+}
+
+input PackageInstanceAuthStatusInput {
+	condition: PackageInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	"""
+	Required, if condition is "FAILED". If empty for SUCCEEDED status, default message is set.
+	"""
+	message: String
+	"""
+	Required, if condition is "FAILED". If empty for SUCCEEDED status, "CredentialsProvided" reason is set.
+	
+	Example reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	"""
+	reason: String
 }
 
 input PackageUpdateInput {
@@ -3876,9 +3931,16 @@ type Mutation {
 	
 	When used without error, the status of pending auth is set to success.
 	"""
-	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: AuthInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
+	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: PackageInstanceAuthSetInput!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
 	deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
-	requestPackageInstanceAuth(packageID: ID!, in: PackageInstanceAuthRequestInput!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuth")
+	"""
+	When defaultInstanceAuth is set, it fires "createPackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to PENDING.
+	"""
+	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
+	"""
+	When defaultInstanceAuth is set, it fires "deletePackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to UNUSED.
+	"""
+	requestPackageInstanceAuthDeletion(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
 	addPackage(applicationID: ID!, in: PackageCreateInput! @validate): Package! @hasScopes(path: "graphql.mutation.addPackage")
 	updatePackage(id: ID!, in: PackageUpdateInput! @validate): Package! @hasScopes(path: "graphql.mutation.updatePackage")
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
@@ -4855,7 +4917,7 @@ func (ec *executionContext) field_Mutation_requestOneTimeTokenForRuntime_args(ct
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_requestPackageInstanceAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_requestPackageInstanceAuthCreation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -4874,6 +4936,28 @@ func (ec *executionContext) field_Mutation_requestPackageInstanceAuth_args(ctx c
 		}
 	}
 	args["in"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_requestPackageInstanceAuthDeletion_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["packageID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["packageID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["authID"]; ok {
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["authID"] = arg1
 	return args, nil
 }
 
@@ -4990,23 +5074,11 @@ func (ec *executionContext) field_Mutation_setPackageInstanceAuth_args(ctx conte
 		}
 	}
 	args["authID"] = arg1
-	var arg2 AuthInput
+	var arg2 PackageInstanceAuthSetInput
 	if tmp, ok := rawArgs["in"]; ok {
-		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, tmp)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			return ec.directives.Validate(ctx, rawArgs, directive0)
-		}
-
-		tmp, err = directive1(ctx)
+		arg2, err = ec.unmarshalNPackageInstanceAuthSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthSetInput(ctx, tmp)
 		if err != nil {
 			return nil, err
-		}
-		if data, ok := tmp.(AuthInput); ok {
-			arg2 = data
-		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.AuthInput`, tmp)
 		}
 	}
 	args["in"] = arg2
@@ -13137,7 +13209,7 @@ func (ec *executionContext) _Mutation_setPackageInstanceAuth(ctx context.Context
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SetPackageInstanceAuth(rctx, args["packageID"].(string), args["authID"].(string), args["in"].(AuthInput))
+			return ec.resolvers.Mutation().SetPackageInstanceAuth(rctx, args["packageID"].(string), args["authID"].(string), args["in"].(PackageInstanceAuthSetInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.setPackageInstanceAuth")
@@ -13238,7 +13310,7 @@ func (ec *executionContext) _Mutation_deletePackageInstanceAuth(ctx context.Cont
 	return ec.marshalNPackageInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_requestPackageInstanceAuth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_requestPackageInstanceAuthCreation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13255,7 +13327,7 @@ func (ec *executionContext) _Mutation_requestPackageInstanceAuth(ctx context.Con
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_requestPackageInstanceAuth_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_requestPackageInstanceAuthCreation_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -13265,10 +13337,74 @@ func (ec *executionContext) _Mutation_requestPackageInstanceAuth(ctx context.Con
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().RequestPackageInstanceAuth(rctx, args["packageID"].(string), args["in"].(PackageInstanceAuthRequestInput))
+			return ec.resolvers.Mutation().RequestPackageInstanceAuthCreation(rctx, args["packageID"].(string), args["in"].(PackageInstanceAuthRequestInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestPackageInstanceAuth")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestPackageInstanceAuthCreation")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(*PackageInstanceAuth); ok {
+			return data, nil
+		} else if tmp == nil {
+			return nil, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageInstanceAuth`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PackageInstanceAuth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPackageInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_requestPackageInstanceAuthDeletion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_requestPackageInstanceAuthDeletion_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().RequestPackageInstanceAuthDeletion(rctx, args["packageID"].(string), args["authID"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestPackageInstanceAuthDeletion")
 			if err != nil {
 				return nil, err
 			}
@@ -19036,6 +19172,64 @@ func (ec *executionContext) unmarshalInputPackageInstanceAuthRequestInput(ctx co
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPackageInstanceAuthSetInput(ctx context.Context, obj interface{}) (PackageInstanceAuthSetInput, error) {
+	var it PackageInstanceAuthSetInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "auth":
+			var err error
+			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "status":
+			var err error
+			it.Status, err = ec.unmarshalOPackageInstanceAuthStatusInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPackageInstanceAuthStatusInput(ctx context.Context, obj interface{}) (PackageInstanceAuthStatusInput, error) {
+	var it PackageInstanceAuthStatusInput
+	var asMap = obj.(map[string]interface{})
+
+	if _, present := asMap["condition"]; !present {
+		asMap["condition"] = "SUCCEEDED"
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "condition":
+			var err error
+			it.Condition, err = ec.unmarshalNPackageInstanceAuthSetStatusConditionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthSetStatusConditionInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "message":
+			var err error
+			it.Message, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "reason":
+			var err error
+			it.Reason, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputPackageUpdateInput(ctx context.Context, obj interface{}) (PackageUpdateInput, error) {
 	var it PackageUpdateInput
 	var asMap = obj.(map[string]interface{})
@@ -20747,8 +20941,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "requestPackageInstanceAuth":
-			out.Values[i] = ec._Mutation_requestPackageInstanceAuth(ctx, field)
+		case "requestPackageInstanceAuthCreation":
+			out.Values[i] = ec._Mutation_requestPackageInstanceAuthCreation(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "requestPackageInstanceAuthDeletion":
+			out.Values[i] = ec._Mutation_requestPackageInstanceAuthDeletion(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -23028,6 +23227,19 @@ func (ec *executionContext) unmarshalNPackageInstanceAuthRequestInput2githubᚗc
 	return ec.unmarshalInputPackageInstanceAuthRequestInput(ctx, v)
 }
 
+func (ec *executionContext) unmarshalNPackageInstanceAuthSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthSetInput(ctx context.Context, v interface{}) (PackageInstanceAuthSetInput, error) {
+	return ec.unmarshalInputPackageInstanceAuthSetInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNPackageInstanceAuthSetStatusConditionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthSetStatusConditionInput(ctx context.Context, v interface{}) (PackageInstanceAuthSetStatusConditionInput, error) {
+	var res PackageInstanceAuthSetStatusConditionInput
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNPackageInstanceAuthSetStatusConditionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthSetStatusConditionInput(ctx context.Context, sel ast.SelectionSet, v PackageInstanceAuthSetStatusConditionInput) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNPackageInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusCondition(ctx context.Context, v interface{}) (PackageInstanceAuthStatusCondition, error) {
 	var res PackageInstanceAuthStatusCondition
 	return res, res.UnmarshalGQL(v)
@@ -24360,6 +24572,18 @@ func (ec *executionContext) marshalOPackageInstanceAuthStatus2ᚖgithubᚗcomᚋ
 		return graphql.Null
 	}
 	return ec._PackageInstanceAuthStatus(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPackageInstanceAuthStatusInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusInput(ctx context.Context, v interface{}) (PackageInstanceAuthStatusInput, error) {
+	return ec.unmarshalInputPackageInstanceAuthStatusInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOPackageInstanceAuthStatusInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusInput(ctx context.Context, v interface{}) (*PackageInstanceAuthStatusInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOPackageInstanceAuthStatusInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalOPackagePage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackagePage(ctx context.Context, sel ast.SelectionSet, v PackagePage) graphql.Marshaler {
