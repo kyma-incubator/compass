@@ -9,7 +9,7 @@ In Kyma Runtime, every Application is represented as a single ServiceClass, and 
 
 
 A single Package can contain many different API Definitions/Event Definitions/Documents but the same API Definition/Event Definition/Document cannot belong to two different Packages. One Packages can belong only to one Application.
-- Package belongs to a single Application entity.
+
 
 ## GraphQL API
 
