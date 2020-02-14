@@ -59,8 +59,8 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
 	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
 	assert.Equal(t, &gqlschema.Labels{
-		labelKeyPrefix + "instance_id":    []string{fixID},
-		labelKeyPrefix + "sub_account_id": []string{fixID},
+		brokerKeyPrefix + "instance_id":   []string{fixID},
+		globalKeyPrefix + "subaccount_id": []string{fixID},
 	}, input.RuntimeInput.Labels)
 
 	assertServiceManagerOverrides(t, input.KymaConfig.Components, smOverrides)

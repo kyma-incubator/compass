@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	labelKeyPrefix              = "broker/"
+	brokerKeyPrefix             = "broker_"
+	globalKeyPrefix             = "global_"
 	serviceManagerComponentName = "service-manager-proxy"
 )
 
@@ -240,8 +241,8 @@ func (b *InputBuilder) applyTemporaryCustomization(in *gqlschema.ProvisionRuntim
 
 func (b *InputBuilder) applyRuntimeLabels(in *gqlschema.ProvisionRuntimeInput) error {
 	in.RuntimeInput.Labels = &gqlschema.Labels{
-		labelKeyPrefix + "instance_id":    []string{b.instanceID},
-		labelKeyPrefix + "sub_account_id": []string{b.ersCtx.SubAccountID},
+		brokerKeyPrefix + "instance_id":   []string{b.instanceID},
+		globalKeyPrefix + "subaccount_id": []string{b.ersCtx.SubAccountID},
 	}
 
 	return nil
