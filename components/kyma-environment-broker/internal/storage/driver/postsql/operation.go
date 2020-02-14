@@ -86,14 +86,14 @@ func (s *operations) GetOperation(operationID string) (*internal.Operation, erro
 
 func toOperation(op *dbsession.OperationDTO) internal.Operation {
 	return internal.Operation{
-		ID:                op.ID,
-		CreatedAt:         op.CreatedAt,
-		UpdatedAt:         op.UpdatedAt,
-		TargetOperationID: op.TargetOperationID,
-		State:             domain.LastOperationState(op.State),
-		InstanceID:        op.InstanceID,
-		Description:       op.Description,
-		Version:           op.Version,
+		ID:                     op.ID,
+		CreatedAt:              op.CreatedAt,
+		UpdatedAt:              op.UpdatedAt,
+		ProvisionerOperationID: op.TargetOperationID,
+		State:                  domain.LastOperationState(op.State),
+		InstanceID:             op.InstanceID,
+		Description:            op.Description,
+		Version:                op.Version,
 	}
 }
 
@@ -126,7 +126,7 @@ func provisioningOperationToDTO(op *internal.ProvisioningOperation) (dbsession.O
 func operationToDB(op *internal.Operation) dbsession.OperationDTO {
 	return dbsession.OperationDTO{
 		ID:                op.ID,
-		TargetOperationID: op.TargetOperationID,
+		TargetOperationID: op.ProvisionerOperationID,
 		State:             string(op.State),
 		Description:       op.Description,
 		UpdatedAt:         op.UpdatedAt,

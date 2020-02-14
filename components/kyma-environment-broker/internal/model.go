@@ -30,10 +30,10 @@ type Operation struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	InstanceID        string
-	TargetOperationID string
-	State             domain.LastOperationState
-	Description       string
+	InstanceID             string
+	ProvisionerOperationID string
+	State                  domain.LastOperationState
+	Description            string
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -41,7 +41,7 @@ type ProvisioningOperation struct {
 	Operation `json:"-"`
 
 	// following fields are serialized to JSON and stored in the storage
-	LoggingTenantID        string `json:"logging_tenant_id"`
+	LmsTenantID            string `json:"lms_tenant_id"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
 }
 

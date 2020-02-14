@@ -118,14 +118,14 @@ func TestSchemaInitializer(t *testing.T) {
 				ID:    "operation-id",
 				State: domain.InProgress,
 				// used Round and set timezone to be able to compare timestamps
-				CreatedAt:         time.Now().Truncate(time.Millisecond),
-				UpdatedAt:         time.Now().Truncate(time.Millisecond).Add(time.Second),
-				InstanceID:        "inst-id",
-				TargetOperationID: "target-op-id",
-				Description:       "description",
-				Version:           1,
+				CreatedAt:              time.Now().Truncate(time.Millisecond),
+				UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
+				InstanceID:             "inst-id",
+				ProvisionerOperationID: "target-op-id",
+				Description:            "description",
+				Version:                1,
 			},
-			LoggingTenantID:        "tenant-id",
+			LmsTenantID:            "tenant-id",
 			ProvisioningParameters: `{"k":"v"}`,
 		}
 
@@ -174,13 +174,13 @@ func TestSchemaInitializer(t *testing.T) {
 				ID:    "operation-001",
 				State: domain.InProgress,
 				// used Round and set timezone to be able to compare timestamps
-				CreatedAt:         time.Now(),
-				UpdatedAt:         time.Now().Add(time.Second),
-				InstanceID:        "inst-id",
-				TargetOperationID: "target-op-id",
-				Description:       "description",
+				CreatedAt:              time.Now(),
+				UpdatedAt:              time.Now().Add(time.Second),
+				InstanceID:             "inst-id",
+				ProvisionerOperationID: "target-op-id",
+				Description:            "description",
 			},
-			LoggingTenantID:        "tenant-id",
+			LmsTenantID:            "tenant-id",
 			ProvisioningParameters: `{"key":"value"}`,
 		}
 

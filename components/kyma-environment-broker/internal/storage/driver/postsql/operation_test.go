@@ -28,15 +28,15 @@ func TestProvisioningOperationToStorageConversion(t *testing.T) {
 func fixProvisioningOperation() internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			ID:                "id-001",
-			InstanceID:        "instance-id-001",
-			Version:           0,
-			CreatedAt:         time.Now(),
-			UpdatedAt:         time.Now().Add(time.Second),
-			Description:       "some description",
-			State:             domain.InProgress,
-			TargetOperationID: "target-op-id",
+			ID:                     "id-001",
+			InstanceID:             "instance-id-001",
+			Version:                0,
+			CreatedAt:              time.Now(),
+			UpdatedAt:              time.Now().Add(time.Second),
+			Description:            "some description",
+			State:                  domain.InProgress,
+			ProvisionerOperationID: "target-op-id",
 		},
-		LoggingTenantID: "l-t-id",
+		LmsTenantID: "l-t-id",
 	}
 }
