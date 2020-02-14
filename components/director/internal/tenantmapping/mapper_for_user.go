@@ -25,38 +25,30 @@ type mapperForUser struct {
 	tenantRepo      TenantRepository
 }
 
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
-}
-
 const tenantGroupPrefix = "tenantID="
 
 // GetGroupScopesAndTenant get all scopes from group array, without duplicates
 func GetGroupScopesAndTenant(groups []StaticGroup) (string, string) {
-	var filteredScopesArray []string
+	var scopeMap map[string]bool
 	var tenantID string
+	filteredScopes := []string{}
 
 	for _, group := range groups {
 		if strings.HasPrefix(group.GroupName, tenantGroupPrefix) {
-			// group name is tenantID
 			tenantID = strings.Replace(group.GroupName, tenantGroupPrefix, "", 1)
 		} else {
-			// group name is
 			for _, scope := range group.Scopes {
-
-				if !stringInSlice(scope, filteredScopesArray) {
-					filteredScopesArray = append(filteredScopesArray, scope)
+				_, ok := scopeMap[scope]
+				if !ok {
+					filteredScopes = append(filteredScopes, scope)
+					scopeMap[scope] = true
 				}
+
 			}
 		}
 	}
 
-	return strings.Join(filteredScopesArray, " "), tenantID
+	return strings.Join(filteredScopes, " "), tenantID
 }
 
 func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {

@@ -171,13 +171,14 @@ func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersS
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
-	staticUsersRepo, errUsers := tenantmapping.NewStaticUserRepository(staticUsersSrc)
-	staticGroupsRepo, errGroups := tenantmapping.NewStaticGroupRepository(staticGroupsSrc)
-	if errUsers != nil {
-		return nil, errors.Wrap(errUsers, "while creating StaticUser repository instance")
+	staticUsersRepo, err := tenantmapping.NewStaticUserRepository(staticUsersSrc)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating StaticUser repository instance")
 	}
-	if errGroups != nil {
-		return nil, errors.Wrap(errGroups, "while creating StaticGroup repository instance")
+	staticGroupsRepo, err := tenantmapping.NewStaticGroupRepository(staticGroupsSrc)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating StaticGroup repository instance")
 	}
 
 	tenantConverter := tenant.NewConverter()
