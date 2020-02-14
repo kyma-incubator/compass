@@ -115,7 +115,7 @@ func TestStaticGroupRepository(t *testing.T) {
 				},
 				"admin": StaticGroup{
 					GroupName: "admin",
-					Scopes:    []string{"application:read","application:write"},
+					Scopes:    []string{"application:read", "application:write"},
 					Tenants:   tenantIDs,
 				},
 			},
@@ -131,7 +131,7 @@ func TestStaticGroupRepository(t *testing.T) {
 
 		require.Equal(t, "admin", staticGroup[1].GroupName)
 		require.Equal(t, tenantIDs, staticGroup[1].Tenants)
-		require.Equal(t, []string{"application:read","application:write"}, staticGroup[1].Scopes)
+		require.Equal(t, []string{"application:read", "application:write"}, staticGroup[1].Scopes)
 	})
 
 	t.Run("returns empty array when staticGroup does not exist", func(t *testing.T) {
