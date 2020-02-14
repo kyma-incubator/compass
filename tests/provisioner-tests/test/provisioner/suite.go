@@ -48,60 +48,72 @@ type TestSuite struct {
 }
 
 type TestRuntime struct {
+	testSuite          *TestSuite
 	provisioningInput  gqlschema.ProvisionRuntimeInput
 	runtimeID          string
-	running            bool
+	isRunning          bool
 	currentOperationID string
 	status             []string
 }
 
-func (*TestSuite) NewRuntime(provisioningInput gqlschema.ProvisionRuntimeInput) *TestRuntime {
-	return &TestRuntime{
-		running: false,
-		status: {"Initialized."},
+func (ts *TestSuite) NewRuntime(provisioningInput gqlschema.ProvisionRuntimeInput) *TestRuntime {
+	testRuntime := TestRuntime{
+		testSuite:         ts,
+		provisioningInput: provisioningInput,
+		isRunning:         false,
+		status:            []string{"Initialized."},
 	}
+	ts.TestRuntimes = append(ts.TestRuntimes, testRuntime)
+	return &testRuntime
 }
 
 func (r *TestRuntime) AddStatus(status string) {
 	r.status = append(r.status, status)
 }
 
-func (r *TestRuntime) Provision(provisioningInput gqlschema.ProvisionRuntimeInput) (operationStatusID, runtimeID string, err error) {
+func (r *TestRuntime) Provision() (operationStatusID, runtimeID string, err error) {
 	r.AddStatus("Starting provisioning...")
-	r.provisioningInput = provisioningInput
-	r.currentOperationID, r.runtimeID, err = testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
+	r.currentOperationID, r.runtimeID, err = r.testSuite.ProvisionerClient.ProvisionRuntime(r.provisioningInput)
 	if err != nil {
 		r.AddStatus(fmt.Sprintf("Error while provisioning Runtime: %s", err))
-		return nil, nil, errors.New(r.GetCurrentStatus())
+		return "", "", errors.New(r.GetCurrentStatus())
 	}
 	r.AddStatus("Provisioning started.")
-	r.running = true
+	r.isRunning = true
 	return r.currentOperationID, r.runtimeID, nil
 }
 
 func (r *TestRuntime) GetOperationStatus() (gqlschema.OperationStatus, error) {
-	operationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(r.currentOperationID)
+	operationStatus, err := r.testSuite.ProvisionerClient.RuntimeOperationStatus(r.currentOperationID)
 	if err != nil {
 		r.AddStatus(fmt.Sprintf("Error while fetching Runtime Status: %s", err))
-		return nil, errors.New(r.GetCurrentStatus())
+		return gqlschema.OperationStatus{}, errors.New(r.GetCurrentStatus())
 	}
 	r.AddStatus(fmt.Sprintf("%s: %s: %s", operationStatus.Operation, operationStatus.State, *operationStatus.Message))
 	return operationStatus, nil
 }
 
-func (r *TestRuntime) Deprovision() (operationStatusID string, err error){
+func (r *TestRuntime) Deprovision() (operationStatusID string, err error) {
 	r.AddStatus("Starting deprovisioning...")
-	r.currentOperationID, err := testSuite.ProvisionerClient.DeprovisionRuntime(r.runtimeID)
+	r.currentOperationID, err = r.testSuite.ProvisionerClient.DeprovisionRuntime(r.runtimeID)
 	if err != nil {
 		r.AddStatus(fmt.Sprintf("Error while deprovisioning runtime: %s", err))
-		return nil, errors.New(r.GetCurrentStatus())
+		return "", errors.New(r.GetCurrentStatus())
 	}
 	r.AddStatus("Deprovisioning started.")
 	return r.currentOperationID, nil
 }
 
 func (r *TestRuntime) GetCurrentStatus() string {
-	return r.status[len(r.status) - 1]
+	return r.status[len(r.status)-1]
+}
+
+func (r *TestRuntime) StatusToString() string {
+	strStatus := ""
+	for _, state := range r.status {
+		strStatus += fmt.Sprintf("\t%s\n", state)
+	}
+	return strStatus
 }
 
 func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
@@ -131,12 +143,52 @@ func (ts *TestSuite) Setup() error {
 }
 
 func (ts *TestSuite) Cleanup() {
-	provisionerLogs := "https://github.com/kubernetes/kubernetes/blob/c2e90cd1549dff87db7941544ce15f4c8ad0ba4c/pkg/kubectl/cmd/log.go#L188"
-	logrus.Infof(provisionerLogs)
+	// TODO(@rafalpotempa): Fetching provisioner logs when tests fail
 	logrus.Infof("Starting cleanup...")
 
-	runtimeStatus, err := testSuite.ProvisionerClient.RuntimeStatus(runtimeID)
+	undeprovisionedRuntimes := ts.EnsureRuntimeDeprovisioning()
+	if undeprovisionedRuntimes != nil {
+		for _, runtime := range undeprovisionedRuntimes {
+			logrus.Errorf("Error while performing cleanup: %s: %s", runtime.GetCurrentStatus(), runtime.StatusToString())
+		}
+	}
+}
 
+func (ts *TestSuite) EnsureRuntimeDeprovisioning() []TestRuntime {
+	failedRuntimes := []TestRuntime{}
+	for _, runtime := range ts.TestRuntimes {
+		if runtime.isRunning {
+			go func(runtime TestRuntime) {
+				for i := 0; i < 5; i++ {
+					if runtime.isRunning {
+						runtime.AddStatus("Starting deprovisioning...")
+						operationID, err := runtime.Deprovision()
+						if err != nil {
+							runtime.AddStatus(fmt.Sprintf("Starting deprovisioning failed: %s", err))
+							logrus.Infof("Failed to start deprovisioning Runtime '%s': %s: ", runtime.runtimeID, operationID, err)
+							continue
+						}
+						runtime.AddStatus("Deprovisioning started.")
+						logrus.Infof("Deprovisioning Runtime '%s' started: %s", runtime.runtimeID, operationID)
+
+						operationStatus, err := ts.WaitUntilOperationIsFinished(30*time.Minute, operationID)
+						if err != nil {
+							runtime.AddStatus(fmt.Sprintf("Deprovisioning failed: %s. State: %s", err, operationStatus.State))
+							logrus.Infof("Deprovisioning Runtime '%s' failed: %s. State: %s", runtime.runtimeID, err, operationStatus.State)
+							continue
+						}
+						runtime.AddStatus("Deprovisioning completed.")
+						logrus.Infof("Deprovisioning Runtime '%s' completed.", runtime.runtimeID, err, operationStatus.State)
+						runtime.isRunning = false
+						break
+					}
+				}
+				runtime.AddStatus("Failed to deprovision Runtime.")
+				failedRuntimes = append(failedRuntimes, runtime)
+			}(runtime)
+		}
+	}
+	return failedRuntimes
 }
 
 func (ts *TestSuite) WaitUntilOperationIsFinished(timeout time.Duration, operationID string) (gqlschema.OperationStatus, error) {
