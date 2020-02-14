@@ -161,6 +161,51 @@ func TestHandler(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock, mapperForSystemAuthMock)
 	})
 
+	t.Run("success for the request parsed as OneTimeToken flow", func(t *testing.T) {
+		scopes := "application:read"
+		reqDataMock := tenantmapping.ReqData{
+			Body: tenantmapping.ReqBody{
+				Extra: make(map[string]interface{}),
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(tenantmapping.ClientIDTokenKey): []string{systemAuthID.String()},
+				},
+			},
+		}
+		objCtx := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
+			Scopes:       scopes,
+			ConsumerID:   objID.String(),
+			ConsumerType: "Integration System",
+		}
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + objID.String() + `","consumerType":"Integration System","externalTenant":"` + externalTenantID + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":{"Client-Id-From-Token":["` + systemAuthID.String() + `"]}}`
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		transactMock := getTransactMock()
+
+		mapperForSystemAuthMock := getMapperForSystemAuthMock()
+		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), tenantmapping.OneTimeTokenFlow).Return(objCtx, nil).Once()
+
+		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, mapperForSystemAuthMock)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock, mapperForSystemAuthMock)
+	})
+
 	t.Run("error when sending different HTTP verb than POST", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
 		w := httptest.NewRecorder()

@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director"
-
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -29,18 +29,19 @@ func RegisterHandler(router *mux.Router, config Config, directorURL string) erro
 	logger := logrus.New().WithField("component", "connector").Logger
 	logger.SetReportCaller(true)
 
-	client, err := connector.NewClient(config.ConnectorEndpoint, config.ConnectorInternalEndpoint, timeout)
+	directorClientProvider := director.NewClientProvider(directorURL)
+	connectorClient, err := connector.NewClient(config.ConnectorEndpoint, config.ConnectorInternalEndpoint, timeout)
 	if err != nil {
-		return errors.Wrap(err, "Failed to initialize compass client")
+		return errors.Wrap(err, "Failed to initialize Compass Connector client")
 	}
 
 	authorizationMiddleware := middlewares.NewAuthorizationMiddleware()
-	router.Use(mux.MiddlewareFunc(authorizationMiddleware.GetAuthorizationHeaders))
+	router.Use(authorizationMiddleware.GetAuthorizationHeaders)
 
-	signingRequestInfoHandler := newSigningRequestInfoHandler(config, client, logger)
-	managementInfoHandler := newManagementInfoHandler(config, client, logger, directorURL)
-	certificatesHandler := newCertificateHandler(client, logger)
-	revocationsHandler := newRevocationsHandler(client, logger)
+	signingRequestInfoHandler := newSigningRequestInfoHandler(config, connectorClient, directorClientProvider, logger)
+	managementInfoHandler := newManagementInfoHandler(config, connectorClient, directorClientProvider, logger)
+	certificatesHandler := newCertificateHandler(connectorClient, logger)
+	revocationsHandler := newRevocationsHandler(connectorClient, logger)
 
 	router.Handle("/signingRequests/info", signingRequestInfoHandler).Methods(http.MethodGet)
 	router.Handle("/management/info", managementInfoHandler).Methods(http.MethodGet)
@@ -51,16 +52,16 @@ func RegisterHandler(router *mux.Router, config Config, directorURL string) erro
 	return nil
 }
 
-func newSigningRequestInfoHandler(config Config, client connector.Client, logger *logrus.Logger) http.Handler {
-	signingRequestInfo := api.NewSigningRequestInfoHandler(client, logger, config.AdapterBaseURL, config.AdapterMtlsBaseURL)
-	signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetSigningRequestInfo)
+func newSigningRequestInfoHandler(config Config, connectorClient connector.Client, directorClientProvider director.ClientProvider, logger *logrus.Logger) http.Handler {
+	signingRequestInfo := api.NewInfoHandler(connectorClient, directorClientProvider, logger, config.AdapterBaseURL, config.AdapterMtlsBaseURL, model.NewCSRInfoResponse)
+	signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetInfo)
 
 	return signingRequestInfoHandler
 }
 
-func newManagementInfoHandler(config Config, client connector.Client, logger *logrus.Logger, directorURL string) http.Handler {
-	managementInfo := api.NewManagementInfoHandler(client, logger, config.AdapterMtlsBaseURL, director.NewClientProvider(directorURL))
-	managementInfoHandler := http.HandlerFunc(managementInfo.GetManagementInfo)
+func newManagementInfoHandler(config Config, connectorClient connector.Client, directorClientProvider director.ClientProvider, logger *logrus.Logger) http.Handler {
+	managementInfo := api.NewInfoHandler(connectorClient, directorClientProvider, logger, "", config.AdapterMtlsBaseURL, model.NewManagementInfoResponse)
+	managementInfoHandler := http.HandlerFunc(managementInfo.GetInfo)
 
 	return managementInfoHandler
 }

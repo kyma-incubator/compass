@@ -21,7 +21,7 @@ DB_USER="usr"
 DB_PWD="pwd"
 DB_PORT="5432"
 DB_SSL_PARAM="disable"
-POSTGRES_MULTIPLE_DATABASES="compass, broker"
+POSTGRES_MULTIPLE_DATABASES="compass, broker, provisioner"
 
 function cleanup() {
     echo -e "${GREEN}Cleanup Postgres container and network${NC}"
@@ -97,3 +97,4 @@ function migrationProcess() {
 
 migrationProcess "director" "compass"
 migrationProcess "kyma-environment-broker" "broker"
+migrationProcess "provisioner" "provisioner"

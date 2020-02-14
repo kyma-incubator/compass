@@ -19,23 +19,27 @@ const (
 	clusterTableName = "cluster"
 )
 
-// InitializeDatabase opens database connection and initializes schema if it does not exist
-// This is temporary solution
-func InitializeDatabase(connectionString, schemaFilePath string, retryCount int) (*dbr.Connection, error) {
+// InitializeDatabaseConnection opens database connection
+func InitializeDatabaseConnection(connectionString string, retryCount int) (*dbr.Connection, error) {
 	connection, err := waitForDatabaseAccess(connectionString, retryCount)
 	if err != nil {
 		return nil, err
 	}
 
+	return connection, nil
+}
+
+// SetupSchema initializes Provisioner database schema
+func SetupSchema(connection *dbr.Connection, schemaFilePath string) error {
 	initialized, err := checkIfDatabaseInitialized(connection)
 	if err != nil {
 		closeDBConnection(connection)
-		return nil, errors.Wrap(err, "Failed to check if database is initialized")
+		return errors.Wrap(err, "Failed to check if database is initialized")
 	}
 
 	if initialized {
 		log.Info("Database already initialized")
-		return connection, nil
+		return nil
 	}
 
 	log.Info("Database not initialized. Setting up schema...")
@@ -43,18 +47,17 @@ func InitializeDatabase(connectionString, schemaFilePath string, retryCount int)
 	content, err := ioutil.ReadFile(schemaFilePath)
 	if err != nil {
 		closeDBConnection(connection)
-		return nil, errors.Wrap(err, "Failed to read schema file")
+		return errors.Wrap(err, "Failed to read schema file")
 	}
 
 	_, err = connection.Exec(string(content))
 	if err != nil {
 		closeDBConnection(connection)
-		return nil, errors.Wrap(err, "Failed to setup database schema")
+		return errors.Wrap(err, "Failed to setup database schema")
 	}
 
 	log.Info("Database initialized successfully")
-
-	return connection, nil
+	return nil
 }
 
 func closeDBConnection(db *dbr.Connection) {
