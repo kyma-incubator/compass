@@ -165,7 +165,7 @@ func (ts *TestSuite) EnsureRuntimeDeprovisioning() []TestRuntime {
 						operationID, err := runtime.Deprovision()
 						if err != nil {
 							runtime.AddStatus(fmt.Sprintf("Starting deprovisioning failed: %s", err))
-							logrus.Infof("Failed to start deprovisioning Runtime '%s': %s: ", runtime.runtimeID, operationID, err)
+							logrus.Infof("Failed to start deprovisioning Runtime '%s': %s: %s", runtime.runtimeID, operationID, err)
 							continue
 						}
 						runtime.AddStatus("Deprovisioning started.")
@@ -178,7 +178,7 @@ func (ts *TestSuite) EnsureRuntimeDeprovisioning() []TestRuntime {
 							continue
 						}
 						runtime.AddStatus("Deprovisioning completed.")
-						logrus.Infof("Deprovisioning Runtime '%s' completed.", runtime.runtimeID, err, operationStatus.State)
+						logrus.Infof("Deprovisioning Runtime '%s' completed.", runtime.runtimeID)
 						runtime.isRunning = false
 						break
 					}
