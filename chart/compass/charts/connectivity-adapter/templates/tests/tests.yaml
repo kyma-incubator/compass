@@ -28,7 +28,7 @@ spec:
             - name: APP_CONNECTIVITY_ADAPTER_URL
               value: http://compass-connectivity-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connectivity_adapter.port }}
             - name: APP_DIRECTOR_URL
-              value: http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}
+              value: http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/graphql
             - name: APP_SKIP_SSL_VERIFY
               value: "{{ .Values.tests.skipTLSVerify }}"
             - name: APP_TENANT
