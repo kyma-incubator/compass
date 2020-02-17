@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 func NewMapperForUser(staticUserRepo StaticUserRepository, staticGroupRepo StaticGroupRepository, tenantRepo TenantRepository) *mapperForUser {
@@ -52,12 +51,12 @@ func GetGroupScopesAndTenant(groups []StaticGroup) (string, string) {
 }
 
 func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
-	var externalTenantID, scopes string
+	var externalTenantID, scopes, finalUserName string
 	var staticUser StaticUser
 	var staticGroups []StaticGroup
+	var assignedTenants []string
 
 	userGroups, err := reqData.GetGroups()
-	log.Infof("GetGroups returned %s\n", userGroups)
 
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while getting groups for a static user with username %s", username))
@@ -70,13 +69,19 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 	if len(staticGroups) > 0 {
 		// proceed with group scopes flow
 		scopes, externalTenantID = GetGroupScopesAndTenant(staticGroups)
-		log.Infof("Decided to use groups copes %s\n", scopes)
+		for _, group := range staticGroups {
+			assignedTenants = append(assignedTenants, group.Tenants...)
+		}
+		finalUserName = username
+
 	} else {
 		// proceed with staticUser (and his scopes) flow
 		staticUser, err = m.staticUserRepo.Get(username)
 		if err != nil {
 			return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))
 		}
+		assignedTenants = staticUser.Tenants
+		finalUserName = staticUser.Username
 
 		scopes, err = reqData.GetScopes()
 		if err != nil {
@@ -85,7 +90,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 			}
 
 			scopes = strings.Join(staticUser.Scopes, " ")
-			log.Infof("Decided to use staticUser scopes %s\n", scopes)
+
 		}
 		externalTenantID, err = reqData.GetExternalTenantID()
 		if err != nil {
@@ -101,11 +106,11 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
 
-	if len(userGroups) <= 0 && !hasValidTenant(staticUser.Tenants, tenantMapping.ExternalTenant) {
+	if !hasValidTenant(assignedTenants, tenantMapping.ExternalTenant) {
 		return ObjectContext{}, errors.New("tenant mismatch")
 	}
 
-	return NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, staticUser.Username, consumer.User), nil
+	return NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, finalUserName, consumer.User), nil
 }
 
 func hasValidTenant(assignedTenants []string, tenant string) bool {

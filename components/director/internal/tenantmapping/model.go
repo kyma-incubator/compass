@@ -142,21 +142,21 @@ func (d *ReqData) GetScopes() (string, error) {
 func (d *ReqData) GetGroups() ([]string, error) {
 	if groupsVal, ok := d.Body.Extra[GroupsKey]; ok {
 
-		groupsArray, arrayConvertedOk := groupsVal.([]interface{})
+		groupsArray, arrayConvertedOk := groupsVal.([]string)
 		groupsFiltered := []string{}
 
 		for _, group := range groupsArray {
-
-			groupString, stringConversionErr := str.Cast(group)
-			if stringConversionErr != nil {
-				log.Infof("%s skipped because string conversion failed", group)
-				continue
-			}
+			groupString := group
+			// groupString, stringConversionErr := str.Cast(group)
+			// if stringConversionErr != nil {
+			// 	log.Infof("%s skipped because string conversion failed", group)
+			// 	continue
+			// }
 
 			groupsFiltered = append(groupsFiltered, groupString)
 		}
 
-		if !arrayConvertedOk || len(groupsFiltered) <= 0 {
+		if !arrayConvertedOk || len(groupsFiltered) == 0 {
 			log.Infof("No groups found; proceeding with individual scopes (ok=%t)\n", arrayConvertedOk)
 			return []string{}, nil
 		}
