@@ -40,7 +40,7 @@ func Test_E2E_Gardener(t *testing.T) {
 			runtimeName := fmt.Sprintf("runtime-%s", uuid.New().String()[:4])
 			provisioningInput.RuntimeInput.Name = runtimeName
 
-			log.Infof("Provisioning '%s' runtime on %s...", runtimeName, provider)
+			log.Infof("Provisioning runtime '%s' on %s...", runtimeName, provider)
 			provisioningOperationID, runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
 			assertions.RequireNoError(t, err)
 			defer ensureClusterIsDeprovisioned(runtimeID)
