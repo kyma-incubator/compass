@@ -68,14 +68,13 @@ func TestConnector(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Connector Service flow for Application", func(t *testing.T) {
-		appName := "testapp"
 
 		certificateGenerationSuite(t, client, appID, config)
 		certificateRotationSuite(t, client, appID, config)
 		certificateRevocationSuite(t, client, appID, config.Tenant, config.SkipSslVerify, createApplicationRevocationUrl(config))
 
-		appMgmInfoEndpointSuite(t, client, appID, config, appName)
-		appCsrInfoEndpointSuite(t, client, appID, config, appName)
+		appMgmInfoEndpointSuite(t, client, appID, config, TestApp)
+		appCsrInfoEndpointSuite(t, client, appID, config, TestApp)
 
 		subjectGenerationSuite(t, client, appID, config)
 	})
