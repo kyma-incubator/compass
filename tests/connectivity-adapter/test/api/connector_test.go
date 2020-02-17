@@ -75,8 +75,6 @@ func TestConnector(t *testing.T) {
 
 		appMgmInfoEndpointSuite(t, client, appID, config, TestApp)
 		appCsrInfoEndpointSuite(t, client, appID, config, TestApp)
-
-		subjectGenerationSuite(t, client, appID, config)
 	})
 }
 
@@ -286,27 +284,6 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		assert.Equal(t, expectedEventsURL, infoResponse.Api.RuntimeURLs.EventsUrl)
 		assert.Equal(t, expectedMetadataURL, infoResponse.Api.RuntimeURLs.MetadataUrl)
 	})
-}
-
-func subjectGenerationSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration) {
-	// TODO: check what should be tested here
-	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
-
-	// when
-	tokenResponse := client.CreateToken(t)
-
-	// then
-	require.NotEmpty(t, tokenResponse.Token)
-	require.Contains(t, tokenResponse.URL, "token="+tokenResponse.Token)
-
-	// when
-	infoResponse, errorResponse := client.GetInfo(t, tokenResponse.URL)
-
-	// then
-	require.Nil(t, errorResponse)
-	subject := connector.ParseSubject(infoResponse.Certificate.Subject)
-	require.NotEmpty(t, subject.Organization[0])
-	require.NotEmpty(t, subject.OrganizationalUnit[0])
 }
 
 func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string) {
