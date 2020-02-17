@@ -18,6 +18,10 @@ func (f AuthFlow) IsCertFlow() bool {
 	return f == CertificateFlow
 }
 
+func (f AuthFlow) IsOneTimeTokenFlow() bool {
+	return f == OneTimeTokenFlow
+}
+
 func (f AuthFlow) IsOAuth2Flow() bool {
 	return f == OAuth2Flow
 }
@@ -27,13 +31,15 @@ func (f AuthFlow) IsJWTFlow() bool {
 }
 
 const (
-	CertificateFlow AuthFlow = "Certificate"
-	OAuth2Flow      AuthFlow = "OAuth2"
-	JWTAuthFlow     AuthFlow = "JWT"
+	CertificateFlow  AuthFlow = "Certificate"
+	OneTimeTokenFlow AuthFlow = "OneTimeToken"
+	OAuth2Flow       AuthFlow = "OAuth2"
+	JWTAuthFlow      AuthFlow = "JWT"
 
 	ClientIDKey       = "client_id"
 	UsernameKey       = "name"
 	ClientIDCertKey   = "client-id-from-certificate"
+	ClientIDTokenKey  = "client-id-from-token"
 	ExternalTenantKey = "tenant"
 	ScopesKey         = "scope"
 
@@ -77,6 +83,10 @@ func (d *ReqData) GetAuthID() (string, AuthFlow, error) {
 
 	if idVal := d.Body.Header.Get(ClientIDCertKey); idVal != "" {
 		return idVal, CertificateFlow, nil
+	}
+
+	if idVal := d.Body.Header.Get(ClientIDTokenKey); idVal != "" {
+		return idVal, OneTimeTokenFlow, nil
 	}
 
 	if usernameVal, ok := d.Body.Extra[UsernameKey]; ok {

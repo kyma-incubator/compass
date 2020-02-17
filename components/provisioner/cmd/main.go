@@ -54,8 +54,6 @@ type config struct {
 		Port     string `envconfig:"default=5432"`
 		Name     string `envconfig:"default=provisioner"`
 		SSLMode  string `envconfig:"default=disable"`
-
-		SchemaFilePath string `envconfig:"default=assets/database/provisioner.sql"`
 	}
 
 	Installation struct {
@@ -75,12 +73,12 @@ func (c *config) String() string {
 	return fmt.Sprintf("Address: %s, APIEndpoint: %s, CredentialsNamespace: %s, "+
 		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s"+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
-		"DatabaseName: %s, DatabaseSSLMode: %s, DatabaseSchemaFilePath: %s, "+
+		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, Provisioner: %s",
 		c.Address, c.APIEndpoint, c.CredentialsNamespace,
 		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
-		c.Database.Name, c.Database.SSLMode, c.Database.SchemaFilePath,
+		c.Database.Name, c.Database.SSLMode,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Provisioner)
 }
 
@@ -110,7 +108,7 @@ func main() {
 
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
-	connection, err := database.InitializeDatabase(connString, cfg.Database.SchemaFilePath, databaseConnectionRetries)
+	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
 	exitOnError(err, "Failed to initialize persistence")
 
 	dbsFactory := dbsession.NewFactory(connection)
