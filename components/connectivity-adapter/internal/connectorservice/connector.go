@@ -15,10 +15,9 @@ import (
 )
 
 type Config struct {
-	ConnectorEndpoint         string `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
-	ConnectorInternalEndpoint string `envconfig:"default=http://compass-connector-internal.compass-system.svc.cluster.local:3001/graphql"`
-	AdapterBaseURL            string `envconfig:"default=https://adapter-gateway.kyma.local"`
-	AdapterMtlsBaseURL        string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
+	ConnectorEndpoint  string `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
+	AdapterBaseURL     string `envconfig:"default=https://adapter-gateway.kyma.local"`
+	AdapterMtlsBaseURL string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
 }
 
 const (
@@ -30,7 +29,7 @@ func RegisterHandler(router *mux.Router, config Config, directorURL string) erro
 	logger.SetReportCaller(true)
 
 	directorClientProvider := director.NewClientProvider(directorURL)
-	connectorClient, err := connector.NewClient(config.ConnectorEndpoint, config.ConnectorInternalEndpoint, timeout)
+	connectorClient, err := connector.NewClient(config.ConnectorEndpoint, timeout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to initialize Compass Connector client")
 	}

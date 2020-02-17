@@ -57,7 +57,7 @@ func NewClient(directorURL, tenant string, scopes []string) (Client, error) {
 		return nil, err
 	}
 
-	gqlClient, err := getClient(internalTenantID, scopes)
+	gqlClient, err := getClient(directorURL, internalTenantID, scopes)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func getInternalTenantID(url string, externalTenantID string) (string, error) {
 		return "", err
 	}
 
-	client := gqlTools.NewAuthorizedGraphQLClient(token)
+	client := gqlTools.NewAuthorizedGraphQLClientWithCustomURL(token, url)
 
 	var response TenantsResponse
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -213,14 +213,14 @@ func (c client) execute(query string, res interface{}) error {
 	return err
 }
 
-func getClient(tenant string, scopes []string) (*gcli.Client, error) {
+func getClient(url string, tenant string, scopes []string) (*gcli.Client, error) {
 
 	token, err := getToken(tenant, scopes)
 	if err != nil {
 		return nil, err
 	}
 
-	return gqlTools.NewAuthorizedGraphQLClient(token), nil
+	return gqlTools.NewAuthorizedGraphQLClientWithCustomURL(token, url), nil
 }
 
 func getToken(tenant string, scopes []string) (string, error) {

@@ -17,7 +17,7 @@ type Configuration struct {
 func ReadConfiguration() (Configuration, error) {
 	var cfg Configuration
 
-	err := envconfig.InitWithPrefix(&cfg, "")
+	err := envconfig.InitWithPrefix(&cfg, "APP")
 	if err != nil {
 		return Configuration{}, err
 	}

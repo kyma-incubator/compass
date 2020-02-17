@@ -71,7 +71,7 @@ func TestConnector(t *testing.T) {
 
 		certificateGenerationSuite(t, client, appID, config)
 		certificateRotationSuite(t, client, appID, config)
-		certificateRevocationSuite(t, client, appID, config.Tenant, config.SkipSslVerify, createApplicationRevocationUrl(config))
+		certificateRevocationSuite(t, client, appID, config.Tenant, config.SkipSslVerify)
 
 		appMgmInfoEndpointSuite(t, client, appID, config, TestApp)
 		appCsrInfoEndpointSuite(t, client, appID, config, TestApp)
@@ -187,7 +187,7 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotEmpty(t, tokenResponse.Token)
 		require.Contains(t, tokenResponse.URL, "token="+tokenResponse.Token)
 
-		wrongUrl := replaceToken(tokenResponse.URL, "incorrect-token")
+		wrongUrl := replaceToken(t, tokenResponse.URL, "incorrect-token")
 
 		// when
 		_, err := client.GetInfo(t, wrongUrl)
@@ -214,7 +214,7 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		require.Nil(t, errorResponse)
 		require.NotEmpty(t, infoResponse.CertUrl)
 
-		wrongUrl := replaceToken(infoResponse.CertUrl, "incorrect-token")
+		wrongUrl := replaceToken(t, infoResponse.CertUrl, "incorrect-token")
 
 		// then
 		require.Nil(t, errorResponse)
@@ -254,7 +254,7 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotNil(t, err)
 		require.Equal(t, http.StatusBadRequest, err.StatusCode)
 		require.Equal(t, http.StatusBadRequest, err.ErrorResponse.Code)
-		require.Equal(t, "There was an error while parsing the base64 content. An incorrect value was provided.", err.ErrorResponse.Error)
+		require.Contains(t, err.ErrorResponse.Error, "Error while parsing base64 content")
 	})
 
 }
@@ -390,7 +390,7 @@ func certificateRotationSuite(t *testing.T, directorClient director.Client, appI
 	})
 }
 
-func certificateRevocationSuite(t *testing.T, directorClient director.Client, appID, tenant string, skipVerify bool, internalRevocationUrl string) {
+func certificateRevocationSuite(t *testing.T, directorClient director.Client, appID, tenant string, skipVerify bool) {
 	client := connector.NewConnectorClient(directorClient, appID, tenant, skipVerify)
 
 	clientKey := connector.CreateKey(t)
@@ -460,16 +460,15 @@ func createCertificateChain(t *testing.T, connectorClient connector.ConnectorCli
 	return crtResponse, infoResponse
 }
 
-func replaceToken(originalUrl string, newToken string) string {
-	parsedUrl, _ := url.Parse(originalUrl)
-	queryParams, _ := url.ParseQuery(parsedUrl.RawQuery)
+func replaceToken(t *testing.T, originalUrl string, newToken string) string {
+	parsedUrl, err := url.Parse(originalUrl)
+	require.NoError(t, err)
+
+	queryParams, err := url.ParseQuery(parsedUrl.RawQuery)
+	require.NoError(t, err)
 
 	queryParams.Set("token", newToken)
 	parsedUrl.RawQuery = queryParams.Encode()
 
 	return parsedUrl.String()
-}
-
-func createApplicationRevocationUrl(config testkit.Configuration) string {
-	return config.ConnectivityAdapterMtlsUrl + "/v1/applications/certificates/revocations"
 }

@@ -88,7 +88,10 @@ func (cc securedConnectorClient) RevokeCertificate(t *testing.T, url string) *Er
 func (cc securedConnectorClient) secureConnectorRequest(t *testing.T, request *http.Request, data interface{}, expectedStatus int) *Error {
 	response, err := cc.httpClient.Do(request)
 	require.NoError(t, err)
-	defer response.Body.Close()
+	defer func() {
+		err := response.Body.Close()
+		require.NoError(t, err)
+	}()
 
 	if response.StatusCode != expectedStatus {
 		return parseErrorResponse(t, response)

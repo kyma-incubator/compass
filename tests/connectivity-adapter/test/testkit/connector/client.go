@@ -77,7 +77,10 @@ func (cc connectorClient) RevokeCertificate(t *testing.T, revocationUrl, hash st
 
 	response, err := cc.httpClient.Do(request)
 	require.NoError(t, err)
-	defer response.Body.Close()
+	defer func() {
+		err := response.Body.Close()
+		require.NoError(t, err)
+	}()
 
 	if response.StatusCode != http.StatusCreated {
 		return parseErrorResponse(t, response)
@@ -93,7 +96,10 @@ func (cc connectorClient) GetInfo(t *testing.T, url string) (*InfoResponse, *Err
 
 	response, err := cc.httpClient.Do(request)
 	require.NoError(t, err)
-	defer response.Body.Close()
+	defer func() {
+		err := response.Body.Close()
+		require.NoError(t, err)
+	}()
 
 	if response.StatusCode != http.StatusOK {
 		return nil, parseErrorResponse(t, response)
@@ -120,7 +126,10 @@ func (cc connectorClient) CreateCertChain(t *testing.T, csr, url string) (*CrtRe
 
 	response, err := cc.httpClient.Do(request)
 	require.NoError(t, err)
-	defer response.Body.Close()
+	defer func() {
+		err := response.Body.Close()
+		require.NoError(t, err)
+	}()
 
 	if response.StatusCode != http.StatusCreated {
 		return nil, parseErrorResponse(t, response)
