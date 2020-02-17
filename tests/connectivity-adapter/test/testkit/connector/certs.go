@@ -1,4 +1,4 @@
-package testkit
+package connector
 
 import (
 	"crypto/rand"

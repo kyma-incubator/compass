@@ -13,6 +13,7 @@ import (
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/connectivity-adapter/test/testkit"
+	"github.com/kyma-incubator/compass/tests/connectivity-adapter/test/testkit/connector"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,7 +26,7 @@ func TestConnector(t *testing.T) {
 	appInput := directorSchema.ApplicationRegisterInput{
 		Name:           TestApp,
 		ProviderName:   ptr.String("provider name"),
-		Description:    ptr.String("my first wordpress application"),
+		Description:    ptr.String("my application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: &directorSchema.Labels{
 			"scenarios": []interface{}{"DEFAULT"},
@@ -67,24 +68,24 @@ func TestConnector(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Connector Service flow for Application", func(t *testing.T) {
-		appName := "mytestapp"
+		appName := "testapp"
+
 		certificateGenerationSuite(t, client, appID, config)
+		certificateRotationSuite(t, client, appID, config)
+		certificateRevocationSuite(t, client, appID, config.Tenant, config.SkipSslVerify, createApplicationRevocationUrl(config))
 
 		appMgmInfoEndpointSuite(t, client, appID, config, appName)
 		appCsrInfoEndpointSuite(t, client, appID, config, appName)
-		certificateRotationSuite(t, client, appID, config)
 
 		subjectGenerationSuite(t, client, appID, config)
-
-		certificateRevocationSuite(t, client, appID, config.Tenant, config.SkipSslVerify, createApplicationRevocationUrl(config))
 	})
 }
 
 func certificateGenerationSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration) {
 
-	client := testkit.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 
-	clientKey := testkit.CreateKey(t)
+	clientKey := connector.CreateKey(t)
 
 	t.Run("should create client certificate", func(t *testing.T) {
 		// when
@@ -94,11 +95,11 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotEmpty(t, crtResponse.CRTChain)
 
 		// when
-		certificates := testkit.DecodeAndParseCerts(t, crtResponse)
+		certificates := connector.DecodeAndParseCerts(t, crtResponse)
 
 		// then
 		clientsCrt := certificates.CRTChain[0]
-		testkit.CheckIfSubjectEquals(t, infoResponse.Certificate.Subject, clientsCrt)
+		connector.CheckIfSubjectEquals(t, infoResponse.Certificate.Subject, clientsCrt)
 	})
 
 	t.Run("should create two certificates in a chain", func(t *testing.T) {
@@ -109,7 +110,7 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotEmpty(t, crtResponse.CRTChain)
 
 		// when
-		certificates := testkit.DecodeAndParseCerts(t, crtResponse)
+		certificates := connector.DecodeAndParseCerts(t, crtResponse)
 
 		// then
 		require.Equal(t, 2, len(certificates.CRTChain))
@@ -123,10 +124,10 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotEmpty(t, crtResponse.CRTChain)
 
 		// when
-		certificates := testkit.DecodeAndParseCerts(t, crtResponse)
+		certificates := connector.DecodeAndParseCerts(t, crtResponse)
 
 		//then
-		testkit.CheckIfCertIsSigned(t, certificates.CRTChain)
+		connector.CheckIfCertIsSigned(t, certificates.CRTChain)
 	})
 
 	t.Run("should respond with client certificate together with CA crt", func(t *testing.T) {
@@ -137,11 +138,11 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotEmpty(t, crtResponse.CRTChain)
 
 		// when
-		certificates := testkit.DecodeAndParseCerts(t, crtResponse)
+		certificates := connector.DecodeAndParseCerts(t, crtResponse)
 
 		// then
 		clientsCrt := certificates.CRTChain[0]
-		testkit.CheckIfSubjectEquals(t, infoResponse.Certificate.Subject, clientsCrt)
+		connector.CheckIfSubjectEquals(t, infoResponse.Certificate.Subject, clientsCrt)
 		require.Equal(t, certificates.ClientCRT, clientsCrt)
 
 		caCrt := certificates.CRTChain[1]
@@ -166,8 +167,8 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 
 		// given
 		infoResponse.Certificate.Subject = "subject=OU=Test,O=Test,L=Wrong,ST=Wrong,C=PL,CN=Wrong"
-		csr := testkit.CreateCsr(t, infoResponse.Certificate.Subject, clientKey)
-		csrBase64 := testkit.EncodeBase64(csr)
+		csr := connector.CreateCsr(t, infoResponse.Certificate.Subject, clientKey)
+		csrBase64 := connector.EncodeBase64(csr)
 
 		// when
 		_, err := client.CreateCertChain(t, csrBase64, infoResponse.CertUrl)
@@ -263,10 +264,11 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 
 	t.Run("should use default values to build CSR info response", func(t *testing.T) {
 		// given
-		client := testkit.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+		client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 		expectedMetadataURL := config.ConnectivityAdapterMtlsUrl
 		expectedEventsURL := config.EventsBaseURL
 
+		// TODO: use sprintf?
 		expectedMetadataURL += "/" + appName + "/v1/metadata/services"
 		expectedEventsURL += "/" + appName + "/v1/events"
 
@@ -289,7 +291,7 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 
 func subjectGenerationSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration) {
 	// TODO: check what should be tested here
-	client := testkit.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 
 	// when
 	tokenResponse := client.CreateToken(t)
@@ -303,22 +305,23 @@ func subjectGenerationSuite(t *testing.T, directorClient director.Client, appID 
 
 	// then
 	require.Nil(t, errorResponse)
-	subject := testkit.ParseSubject(infoResponse.Certificate.Subject)
+	subject := connector.ParseSubject(infoResponse.Certificate.Subject)
 	require.NotEmpty(t, subject.Organization[0])
 	require.NotEmpty(t, subject.OrganizationalUnit[0])
 }
 
 func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string) {
 
-	client := testkit.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 
-	clientKey := testkit.CreateKey(t)
+	clientKey := connector.CreateKey(t)
 
 	t.Run("should use default values to build management info", func(t *testing.T) {
 		// given
 		expectedMetadataURL := config.ConnectivityAdapterMtlsUrl
 		expectedEventsURL := config.EventsBaseURL
 
+		// TODO: use sprintf?
 		expectedMetadataURL += "/" + appName + "/v1/metadata/services"
 		expectedEventsURL += "/" + appName + "/v1/events"
 
@@ -329,8 +332,8 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		require.NotEmpty(t, crtResponse.CRTChain)
 		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
 
-		certificates := testkit.DecodeAndParseCerts(t, crtResponse)
-		client := testkit.NewSecuredConnectorClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
+		certificates := connector.DecodeAndParseCerts(t, crtResponse)
+		client := connector.NewSecuredConnectorClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
 
 		// when
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
@@ -341,19 +344,20 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		assert.Equal(t, expectedEventsURL, mgmInfoResponse.URLs.EventsUrl)
 		assert.Equal(t, appName, mgmInfoResponse.ClientIdentity.Application)
 		assert.NotEmpty(t, mgmInfoResponse.Certificate.Subject)
-		assert.Equal(t, testkit.Extensions, mgmInfoResponse.Certificate.Extensions)
-		assert.Equal(t, testkit.KeyAlgorithm, mgmInfoResponse.Certificate.KeyAlgorithm)
+		assert.Equal(t, connector.Extensions, mgmInfoResponse.Certificate.Extensions)
+		assert.Equal(t, connector.KeyAlgorithm, mgmInfoResponse.Certificate.KeyAlgorithm)
 
 		assert.Empty(t, mgmInfoResponse.ClientIdentity.Group)
+		// TODO: Tenant should be set up in the Connectivity Adapter
 		assert.Empty(t, mgmInfoResponse.ClientIdentity.Tenant)
 
 	})
 }
 
 func certificateRotationSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration) {
-	client := testkit.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 
-	clientKey := testkit.CreateKey(t)
+	clientKey := connector.CreateKey(t)
 
 	t.Run("should renew client certificate", func(t *testing.T) {
 		// when
@@ -362,8 +366,8 @@ func certificateRotationSuite(t *testing.T, directorClient director.Client, appI
 		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
 		require.NotEmpty(t, infoResponse.Certificate)
 
-		certificates := testkit.DecodeAndParseCerts(t, crtResponse)
-		client := testkit.NewSecuredConnectorClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
+		certificates := connector.DecodeAndParseCerts(t, crtResponse)
+		client := connector.NewSecuredConnectorClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
 
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
 		require.Nil(t, errorResponse)
@@ -371,16 +375,16 @@ func certificateRotationSuite(t *testing.T, directorClient director.Client, appI
 		require.NotEmpty(t, mgmInfoResponse.Certificate)
 		require.Equal(t, infoResponse.Certificate, mgmInfoResponse.Certificate)
 
-		csr := testkit.CreateCsr(t, mgmInfoResponse.Certificate.Subject, clientKey)
-		csrBase64 := testkit.EncodeBase64(csr)
+		csr := connector.CreateCsr(t, mgmInfoResponse.Certificate.Subject, clientKey)
+		csrBase64 := connector.EncodeBase64(csr)
 
 		certificateResponse, errorResponse := client.RenewCertificate(t, mgmInfoResponse.URLs.RenewCertUrl, csrBase64)
 
 		// then
 		require.Nil(t, errorResponse)
 
-		certificates = testkit.DecodeAndParseCerts(t, certificateResponse)
-		clientWithRenewedCert := testkit.NewSecuredConnectorClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
+		certificates = connector.DecodeAndParseCerts(t, certificateResponse)
+		clientWithRenewedCert := connector.NewSecuredConnectorClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
 
 		mgmInfoResponse, errorResponse = clientWithRenewedCert.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
 		require.Nil(t, errorResponse)
@@ -388,9 +392,9 @@ func certificateRotationSuite(t *testing.T, directorClient director.Client, appI
 }
 
 func certificateRevocationSuite(t *testing.T, directorClient director.Client, appID, tenant string, skipVerify bool, internalRevocationUrl string) {
-	client := testkit.NewConnectorClient(directorClient, appID, tenant, skipVerify)
+	client := connector.NewConnectorClient(directorClient, appID, tenant, skipVerify)
 
-	clientKey := testkit.CreateKey(t)
+	clientKey := connector.CreateKey(t)
 
 	t.Run("should revoke client certificate with external API", func(t *testing.T) {
 		// when
@@ -401,8 +405,8 @@ func certificateRevocationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
 
 		// when
-		certificates := testkit.DecodeAndParseCerts(t, crtResponse)
-		client := testkit.NewSecuredConnectorClient(skipVerify, clientKey, certificates.ClientCRT.Raw, tenant)
+		certificates := connector.DecodeAndParseCerts(t, crtResponse)
+		client := connector.NewSecuredConnectorClient(skipVerify, clientKey, certificates.ClientCRT.Raw, tenant)
 
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
 
@@ -417,8 +421,8 @@ func certificateRevocationSuite(t *testing.T, directorClient director.Client, ap
 		require.Nil(t, errorResponse)
 
 		// when
-		csr := testkit.CreateCsr(t, infoResponse.Certificate.Subject, clientKey)
-		csrBase64 := testkit.EncodeBase64(csr)
+		csr := connector.CreateCsr(t, infoResponse.Certificate.Subject, clientKey)
+		csrBase64 := connector.EncodeBase64(csr)
 
 		_, errorResponse = client.RenewCertificate(t, mgmInfoResponse.URLs.RenewCertUrl, csrBase64)
 
@@ -428,7 +432,7 @@ func certificateRevocationSuite(t *testing.T, directorClient director.Client, ap
 	})
 }
 
-func createCertificateChain(t *testing.T, connectorClient testkit.ConnectorClient, key *rsa.PrivateKey) (*testkit.CrtResponse, *testkit.InfoResponse) {
+func createCertificateChain(t *testing.T, connectorClient connector.ConnectorClient, key *rsa.PrivateKey) (*connector.CrtResponse, *connector.InfoResponse) {
 	// when
 	tokenResponse := connectorClient.CreateToken(t)
 
@@ -445,8 +449,8 @@ func createCertificateChain(t *testing.T, connectorClient testkit.ConnectorClien
 	require.Equal(t, "rsa2048", infoResponse.Certificate.KeyAlgorithm)
 
 	// given
-	csr := testkit.CreateCsr(t, infoResponse.Certificate.Subject, key)
-	csrBase64 := testkit.EncodeBase64(csr)
+	csr := connector.CreateCsr(t, infoResponse.Certificate.Subject, key)
+	csrBase64 := connector.EncodeBase64(csr)
 
 	// when
 	crtResponse, errorResponse := connectorClient.CreateCertChain(t, csrBase64, infoResponse.CertUrl)
