@@ -53,14 +53,14 @@ func RegisterHandler(router *mux.Router, config Config, directorURL string) erro
 }
 
 func newSigningRequestInfoHandler(config Config, connectorClient connector.Client, directorClientProvider director.ClientProvider, logger *logrus.Logger) http.Handler {
-	signingRequestInfo := api.NewInfoHandler(connectorClient, directorClientProvider, logger, config.AdapterBaseURL, config.AdapterMtlsBaseURL, model.NewCSRInfoResponse)
+	signingRequestInfo := api.NewInfoHandler(connectorClient, directorClientProvider, logger, model.NewCSRInfoResponseProvider(config.AdapterBaseURL, config.AdapterMtlsBaseURL))
 	signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetInfo)
 
 	return signingRequestInfoHandler
 }
 
 func newManagementInfoHandler(config Config, connectorClient connector.Client, directorClientProvider director.ClientProvider, logger *logrus.Logger) http.Handler {
-	managementInfo := api.NewInfoHandler(connectorClient, directorClientProvider, logger, "", config.AdapterMtlsBaseURL, model.NewManagementInfoResponse)
+	managementInfo := api.NewInfoHandler(connectorClient, directorClientProvider, logger, model.NewManagementInfoResponseProvider(config.AdapterMtlsBaseURL))
 	managementInfoHandler := http.HandlerFunc(managementInfo.GetInfo)
 
 	return managementInfoHandler

@@ -18,12 +18,10 @@ const (
 	ContentTypeApplicationJson = "application/json;charset=UTF-8"
 )
 
-type newResponseFunction func(string, string, string, string, string, model.CertInfo) interface{}
-
 type infoHandler struct {
 	connectorClient                connector.Client
 	directorClientProvider         director.ClientProvider
-	newResponse                    newResponseFunction
+	makeResponseFunc               model.InfoProviderFunc
 	connectivityAdapterBaseURL     string
 	connectivityAdapterMTLSBaseURL string
 	logger                         *log.Logger
@@ -33,17 +31,13 @@ func NewInfoHandler(
 	connectorClient connector.Client,
 	directorClientProvider director.ClientProvider,
 	logger *log.Logger,
-	connectivityAdapterBaseURL string,
-	connectivityAdapterMTLSBaseURL string,
-	newResponse newResponseFunction) infoHandler {
+	makeResponseFunc model.InfoProviderFunc) infoHandler {
 
 	return infoHandler{
-		connectorClient:                connectorClient,
-		directorClientProvider:         directorClientProvider,
-		newResponse:                    newResponse,
-		connectivityAdapterBaseURL:     connectivityAdapterBaseURL,
-		connectivityAdapterMTLSBaseURL: connectivityAdapterMTLSBaseURL,
-		logger:                         logger,
+		connectorClient:        connectorClient,
+		directorClientProvider: directorClientProvider,
+		makeResponseFunc:       makeResponseFunc,
+		logger:                 logger,
 	}
 }
 
@@ -77,16 +71,12 @@ func (ih *infoHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	certInfo := connector.ToCertInfo(configuration)
 
-	//TODO: handle case when configuration.Token is nil
-	infoResponse := ih.newResponse(
+	infoResponse := ih.makeResponseFunc(
 		application.Name,
-		configuration.Token.Token,
-		ih.connectivityAdapterBaseURL,
-		ih.connectivityAdapterMTLSBaseURL,
 		application.EventingConfiguration.DefaultURL,
-		certInfo)
+		"",
+		configuration)
 
 	respondWithBody(w, http.StatusOK, infoResponse, contextLogger)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
@@ -59,7 +60,7 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		certResponse := connector.ToCertResponse(certificationResult)
+		certResponse := model.ToCertResponse(certificationResult)
 		respondWithBody(w, http.StatusCreated, certResponse, contextLogger)
 	}
 }
