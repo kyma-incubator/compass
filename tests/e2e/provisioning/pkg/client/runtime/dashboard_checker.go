@@ -40,16 +40,19 @@ func (c *DashboardChecker) AssertRedirectedToUAA(dashboardURL string) error {
 	if err != nil {
 		return errors.Wrapf(err, "while calling dashboard '%s'", dashboardURL)
 	}
-	defer c.warnOnError(resp.Body.Close())
 
 	if err = checkStatusCode(resp, http.StatusFound); err != nil {
 		return err
 	}
+
+
 	if location, err := resp.Location(); err != nil {
 		return errors.Wrap(err, "while getting response location")
 	} else if location.Path != "/auth/xsuaa" {
 		return errors.Errorf("request was wrongly redirected: %s", location.String())
 	}
+
+	c.warnOnError(resp.Body.Close())
 	c.log.Info("Successful response from the dashboard URL")
 
 	return nil
@@ -70,8 +73,8 @@ func (c *DashboardChecker) buildTargetURL(dashboardURL string) string {
 	// Static params
 	q.Set("client_id", "console")
 	q.Set("redirect_uri", dashboardURL)
-	q.Set("response_type", "id_token")
-	q.Set("scope", "audience:server:client_id:kyma-client:audience:server:client_id:console:openid:profile:email:groups")
+	q.Set("response_type", "id_token token")
+	q.Set("scope", "audience:server:client_id:kyma-client audience:server:client_id:console openid profile email groups")
 
 	// These params are faked because its value must be non-empty
 	q.Set("state", "5a4f3d15")
