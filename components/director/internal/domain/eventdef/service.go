@@ -17,8 +17,10 @@ import (
 type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.EventDefinition, error)
+	GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.EventDefinition, error)
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
 	ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	ListByPackageID(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	Create(ctx context.Context, item *model.EventDefinition) error
 	CreateMany(ctx context.Context, items []*model.EventDefinition) error
 	Update(ctx context.Context, item *model.EventDefinition) error
@@ -66,6 +68,19 @@ func (s *service) List(ctx context.Context, applicationID string, pageSize int, 
 	return s.eventAPIRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
 }
 
+func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while loading tenant from context")
+	}
+
+	if pageSize < 1 || pageSize > 100 {
+		return nil, errors.New("page size must be between 1 and 100")
+	}
+
+	return s.eventAPIRepo.ListByPackageID(ctx, tnt, packageID, pageSize, cursor)
+}
+
 func (s *service) Get(ctx context.Context, id string) (*model.EventDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -87,6 +102,20 @@ func (s *service) GetForApplication(ctx context.Context, id string, applicationI
 	}
 
 	eventAPI, err := s.eventAPIRepo.GetForApplication(ctx, tnt, id, applicationID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting API definition")
+	}
+
+	return eventAPI, nil
+}
+
+func (s *service) GetForPackage(ctx context.Context, id string, packageID string) (*model.EventDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	eventAPI, err := s.eventAPIRepo.GetForApplication(ctx, tnt, id, packageID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting API definition")
 	}

@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lib/pq"
-
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/pkg/errors"
@@ -66,6 +64,25 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Doc
 	return &docModel, nil
 }
 
+func (r *repository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.Document, error) {
+	var ent Entity
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("id", id),
+		repo.NewEqualCondition("package_id", packageID),
+	}
+	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
+		return nil, err
+	}
+
+	documentModel, err := r.conv.FromEntity(ent)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating document model from entity")
+	}
+
+	return &documentModel, nil
+}
+
 func (r *repository) Create(ctx context.Context, item *model.Document) error {
 	if item == nil {
 		return errors.New("Document cannot be empty")
@@ -101,25 +118,33 @@ func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant string
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition("app_id", applicationID)})
 }
 
-func (r *repository) ListByApplicationID(ctx context.Context, tenant string, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error) {
-	appCondition := fmt.Sprintf("%s = %s", "app_id", pq.QuoteLiteral(applicationID))
+func (r *repository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error) {
+	appCond := fmt.Sprintf("%s = '%s'", "app_id", applicationID)
+	return r.list(ctx, tenantID, pageSize, cursor, appCond)
+}
 
-	var entityCollection Collection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &entityCollection, appCondition)
+func (r *repository) ListByPackageID(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.DocumentPage, error) {
+	pkgCond := fmt.Sprintf("%s = '%s'", "package_id", packageID)
+	return r.list(ctx, tenantID, pageSize, cursor, pkgCond)
+}
+
+func (r *repository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions string) (*model.DocumentPage, error) {
+	var documentCollection Collection
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &documentCollection, conditions)
 	if err != nil {
 		return nil, err
 	}
 
 	var items []*model.Document
 
-	for _, entity := range entityCollection {
-		docModel, err := r.conv.FromEntity(entity)
+	for _, documentEnt := range documentCollection {
+		m, err := r.conv.FromEntity(documentEnt)
 		if err != nil {
-			return nil, errors.Wrap(err, "while converting Document entity to model")
+			return nil, errors.Wrap(err, "while creating APIDefinition model from entity")
 		}
-
-		items = append(items, &docModel)
+		items = append(items, &m)
 	}
+
 	return &model.DocumentPage{
 		Data:       items,
 		TotalCount: totalCount,

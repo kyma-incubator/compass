@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lib/pq"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/pkg/errors"
@@ -91,20 +89,48 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 	return &eventAPIModel, nil
 }
 
+func (r *pgRepository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.EventDefinition, error) {
+	var ent Entity
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("id", id),
+		repo.NewEqualCondition("package_id", packageID),
+	}
+	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
+		return nil, err
+	}
+
+	eventAPIModel, err := r.conv.FromEntity(ent)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating event definition model from entity")
+	}
+
+	return &eventAPIModel, nil
+}
+
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
-	appCond := fmt.Sprintf("app_id = %s ", pq.QuoteLiteral(applicationID))
-	var eventAPIDefCollection EventAPIDefCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &eventAPIDefCollection, appCond)
+	appCond := fmt.Sprintf("%s = '%s'", "app_id", applicationID)
+	return r.list(ctx, tenantID, pageSize, cursor, appCond)
+}
+
+func (r *pgRepository) ListByPackageID(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+	pkgCond := fmt.Sprintf("%s = '%s'", "package_id", packageID)
+	return r.list(ctx, tenantID, pageSize, cursor, pkgCond)
+}
+
+func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions string) (*model.EventDefinitionPage, error) {
+	var eventCollection EventAPIDefCollection
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &eventCollection, conditions)
 	if err != nil {
 		return nil, err
 	}
 
 	var items []*model.EventDefinition
 
-	for _, apiDefEnt := range eventAPIDefCollection {
-		m, err := r.conv.FromEntity(apiDefEnt)
+	for _, eventEnt := range eventCollection {
+		m, err := r.conv.FromEntity(eventEnt)
 		if err != nil {
-			return nil, errors.Wrap(err, "while creating EventDefinition model from entity")
+			return nil, errors.Wrap(err, "while creating APIDefinition model from entity")
 		}
 		items = append(items, &m)
 	}

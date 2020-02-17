@@ -17,7 +17,9 @@ import (
 type DocumentRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Document, error)
+	GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.Document, error)
 	ListByApplicationID(ctx context.Context, tenant string, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error)
+	ListByPackageID(ctx context.Context, tenant string, packageID string, pageSize int, cursor string) (*model.DocumentPage, error)
 	Create(ctx context.Context, item *model.Document) error
 	Delete(ctx context.Context, tenant, id string) error
 }
@@ -64,6 +66,20 @@ func (s *service) Get(ctx context.Context, id string) (*model.Document, error) {
 	return document, nil
 }
 
+func (s *service) GetForPackage(ctx context.Context, id string, packageID string) (*model.Document, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	document, err := s.repo.GetForPackage(ctx, tnt, id, packageID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting API definition")
+	}
+
+	return document, nil
+}
+
 func (s *service) List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -71,6 +87,15 @@ func (s *service) List(ctx context.Context, applicationID string, pageSize int, 
 	}
 
 	return s.repo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
+}
+
+func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.DocumentPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.repo.ListByPackageID(ctx, tnt, packageID, pageSize, cursor)
 }
 
 func (s *service) Create(ctx context.Context, applicationID string, in model.DocumentInput) (string, error) {
