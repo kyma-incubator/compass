@@ -16,10 +16,11 @@ import (
 type SetCombination string
 
 const (
-	IntersectSet      SetCombination = "INTERSECT"
-	UnionSet          SetCombination = "UNION"
-	scenariosLabelKey string         = "SCENARIOS"
-	stmtPrefixFormat  string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND "tenant_id" = '%s'`
+	IntersectSet        SetCombination = "INTERSECT"
+	UnionSet            SetCombination = "UNION"
+	scenariosLabelKey   string         = "SCENARIOS"
+	brokerInstanceIdKey string         = "BROKER_INSTANCE_ID"
+	stmtPrefixFormat    string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND "tenant_id" = '%s'`
 )
 
 // FilterQuery builds select query for given filters
@@ -53,7 +54,7 @@ func FilterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 			// in SQL/JSON path format supported by PostgreSQL 12. Till it
 			// is not production ready, we need to transform the Query from
 			// SQL/JSON path to old JSON queries.
-			if strings.ToUpper(lblFilter.Key) == scenariosLabelKey {
+			if strings.ToUpper(lblFilter.Key) == scenariosLabelKey || strings.ToUpper(lblFilter.Key) == brokerInstanceIdKey {
 				extractedValues, err := ExtractValueFromJSONPath(queryValue)
 				if err != nil {
 					return "", errors.Wrap(err, "while extracting value from JSON path")
