@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -113,8 +114,16 @@ func (c *Client) DeprovisionRuntime() (string, error) {
 
 	response := provisionResponse{}
 	c.log.Infof("Deprovisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
+
+	form := url.Values{}
+	form.Set("service_id", kymaClassID)
+	form.Set("plan_id", azurePlanID)
+	if c.brokerConfig.ProvisionGCP {
+		form.Set("plan_id", gcpPlanID)
+	}
+
 	err := wait.Poll(time.Second, time.Second*5, func() (bool, error) {
-		err := c.executeRequest(http.MethodDelete, deprovisionURL, nil, &response)
+		err := c.executeRequest(http.MethodDelete, deprovisionURL, strings.NewReader(form.Encode()), &response)
 		if err != nil {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil
@@ -124,7 +133,7 @@ func (c *Client) DeprovisionRuntime() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "while waiting for successful deprovision call")
 	}
-	c.log.Infof("Successfully send deprovision request, got operation ID %s", response.Operation)
+	c.log.Infof("Successfully send deprovision request")
 	return response.Operation, nil
 }
 
