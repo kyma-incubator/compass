@@ -8,7 +8,7 @@ type queryProvider struct{}
 
 func (qp queryProvider) Runtime(instanceID string) string {
 	return fmt.Sprintf(`query {
-	result: runtimes(filter: { key: "%s" query: "%s" }, first: 1, after: "") {
+	result: runtimes(filter: { key: "%s" query: "\"%s\"" }) {
     data {
       id
 	}

@@ -45,7 +45,6 @@ func (c *DashboardChecker) AssertRedirectedToUAA(dashboardURL string) error {
 		return err
 	}
 
-
 	if location, err := resp.Location(); err != nil {
 		return errors.Wrap(err, "while getting response location")
 	} else if location.Path != "/auth/xsuaa" {
