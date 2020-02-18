@@ -137,8 +137,8 @@ func TestService_Update(t *testing.T) {
 		DefaultInstanceAuth:            &model.AuthInput{},
 	}
 
-	inputAPIDefinitionModel := mock.MatchedBy(func(api *model.Package) bool {
-		return api.Name == modelInput.Name
+	inputPackageModel := mock.MatchedBy(func(pkg *model.Package) bool {
+		return pkg.Name == modelInput.Name
 	})
 
 	packageModel := &model.Package{
@@ -166,7 +166,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.PackageRepository {
 				repo := &automock.PackageRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(packageModel, nil).Once()
-				repo.On("Update", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, inputPackageModel).Return(nil).Once()
 				return repo
 			},
 			InputID:     "foo",
@@ -178,7 +178,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.PackageRepository {
 				repo := &automock.PackageRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(packageModel, nil).Once()
-				repo.On("Update", ctx, inputAPIDefinitionModel).Return(testErr).Once()
+				repo.On("Update", ctx, inputPackageModel).Return(testErr).Once()
 				return repo
 			},
 			InputID:     "foo",
@@ -473,7 +473,7 @@ func TestService_GetForApplication(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Returns error when APIDefinition retrieval failed",
+			Name: "Returns error when Package retrieval failed",
 			RepositoryFn: func() *automock.PackageRepository {
 				repo := &automock.PackageRepository{}
 				repo.On("GetForApplication", ctx, tenantID, id, appID).Return(nil, testErr).Once()

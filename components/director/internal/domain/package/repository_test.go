@@ -324,10 +324,10 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	inputPageSize := 3
 	inputCursor := ""
 	totalCount := 2
-	firstApiDefID := "111111111-1111-1111-1111-111111111111"
-	firstApiDefEntity := fixEntityPackage(firstApiDefID, "foo", "bar")
-	secondApiDefID := "222222222-2222-2222-2222-222222222222"
-	secondApiDefEntity := fixEntityPackage(secondApiDefID, "foo", "bar")
+	firstPkgID := "111111111-1111-1111-1111-111111111111"
+	firstPkgEntity := fixEntityPackage(firstPkgID, "foo", "bar")
+	secondPkgID := "222222222-2222-2222-2222-222222222222"
+	secondPkgEntity := fixEntityPackage(secondPkgID, "foo", "bar")
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.packages
 		WHERE tenant_id=\$1 AND app_id = '%s'
@@ -340,8 +340,8 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		rows := sqlmock.NewRows(fixPackageColumns()).
-			AddRow(fixPackageRow(firstApiDefID, "placeholder")...).
-			AddRow(fixPackageRow(secondApiDefID, "placeholder")...)
+			AddRow(fixPackageRow(firstPkgID, "placeholder")...).
+			AddRow(fixPackageRow(secondPkgID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID).
@@ -353,16 +353,16 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", firstApiDefEntity).Return(&model.Package{ID: firstApiDefID}, nil)
-		convMock.On("FromEntity", secondApiDefEntity).Return(&model.Package{ID: secondApiDefID}, nil)
+		convMock.On("FromEntity", firstPkgEntity).Return(&model.Package{ID: firstPkgID}, nil)
+		convMock.On("FromEntity", secondPkgEntity).Return(&model.Package{ID: secondPkgID}, nil)
 		pgRepository := mp_package.NewRepository(convMock)
 		// WHEN
 		modelPkg, err := pgRepository.ListByApplicationID(ctx, tenantID, appID, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelPkg.Data, 2)
-		assert.Equal(t, firstApiDefID, modelPkg.Data[0].ID)
-		assert.Equal(t, secondApiDefID, modelPkg.Data[1].ID)
+		assert.Equal(t, firstPkgID, modelPkg.Data[0].ID)
+		assert.Equal(t, secondPkgID, modelPkg.Data[1].ID)
 		assert.Equal(t, "", modelPkg.PageInfo.StartCursor)
 		assert.Equal(t, totalCount, modelPkg.TotalCount)
 		convMock.AssertExpectations(t)
@@ -393,7 +393,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testErr := errors.New("test error")
 		rows := sqlmock.NewRows(fixPackageColumns()).
-			AddRow(fixPackageRow(firstApiDefID, "foo")...)
+			AddRow(fixPackageRow(firstPkgID, "foo")...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID).
@@ -405,7 +405,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", firstApiDefEntity).Return(&model.Package{}, testErr).Once()
+		convMock.On("FromEntity", firstPkgEntity).Return(&model.Package{}, testErr).Once()
 		pgRepository := mp_package.NewRepository(convMock)
 		//WHEN
 		_, err := pgRepository.ListByApplicationID(ctx, tenantID, appID, inputPageSize, inputCursor)
