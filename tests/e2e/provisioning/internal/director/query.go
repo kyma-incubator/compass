@@ -12,5 +12,6 @@ func (qp queryProvider) Runtime(instanceID string) string {
     data {
       id
 	}
+}
 }`, instanceIDLabelKey, instanceID)
 }
