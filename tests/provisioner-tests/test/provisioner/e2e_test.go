@@ -24,15 +24,14 @@ const (
 // TODO: Consider fetching logs from Provisioner on error (or from created Runtime)
 
 func Test_E2E_Gardener(t *testing.T) {
-	log := logrus.WithField("TestId", testSuite.TestId)
+	globalLog := logrus.WithField("TestId", testSuite.TestId)
 
-	log.Infof("Starting Compass Provisioner tests on Gardener")
+	globalLog.Infof("Starting Compass Provisioner tests on Gardener")
 
 	for _, provider := range testSuite.gardenerProviders {
 		t.Run(provider, func(t *testing.T) {
 			t.Parallel()
-
-			log.Info(provider)
+			log := globalLog.WithField("Provider", provider)
 
 			// Provisioning runtime
 			// Get Kyma modules from Installation CR
@@ -49,34 +48,8 @@ func Test_E2E_Gardener(t *testing.T) {
 
 			var provisioningOperationStatus gqlschema.OperationStatus
 
-			//Check if another provisioning of the same cluster can start while previous one is in progress
-			err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
-				func() error {
-					log.Infof("Waiting for provisioning to finish...")
-					var waitErr error
-					provisioningOperationStatus, waitErr = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationID)
-					return waitErr
-				},
-				func() error {
-					log.Infof("Checking if operation will fail while other in progress...")
-					operationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(provisioningOperationID)
-					if err != nil {
-						return errors.WithMessagef(err, "Failed to get %s operation status", provisioningOperationID)
-					}
-
-					if operationStatus.State != gqlschema.OperationStateInProgress {
-						return errors.New("Operation %s not in progress")
-					}
-
-					_, _, err = testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
-					defer ensureClusterIsDeprovisioned(runtimeID)
-					if err == nil {
-						return errors.New("Operation scheduled successfully while other operation in progress")
-					}
-
-					return nil
-				},
-			)
+			log.Infof("Waiting for provisioning to finish...")
+			provisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationID)
 			assertions.RequireNoError(t, err, "Provisioning operation status: ", provisioningOperationStatus.State)
 
 			assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
@@ -95,7 +68,7 @@ func Test_E2E_Gardener(t *testing.T) {
 			_, err = k8sClient.ServerVersion()
 			assertions.RequireNoError(t, err)
 
-			// TODO: Run E2e Runtime tests
+			// TODO: Consider running E2E Runtime tests
 
 			log.Infof("Deprovisioning %s runtime %s...", provider, runtimeName)
 			deprovisioningOperationID, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeID)
