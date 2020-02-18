@@ -1,9 +1,13 @@
 package mp_package_test
 
 import (
+	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 
 	"github.com/stretchr/testify/require"
 
@@ -14,14 +18,14 @@ import (
 )
 
 const (
-	apiDefID = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
-	appID    = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	tenantID = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
+	packageID = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	appID     = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	tenantID  = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 )
 
 func fixPackageModel(t *testing.T, name, desc string) *model.Package {
 	return &model.Package{
-		ID:                             apiDefID,
+		ID:                             packageID,
 		TenantID:                       tenantID,
 		ApplicationID:                  appID,
 		Name:                           name,
@@ -32,11 +36,12 @@ func fixPackageModel(t *testing.T, name, desc string) *model.Package {
 }
 
 func fixGQLPackage(id, name, desc string) *graphql.Package {
+	schema := graphql.JSONSchema(`{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`)
 	return &graphql.Package{
 		ID:                             id,
 		Name:                           name,
 		Description:                    &desc,
-		InstanceAuthRequestInputSchema: fixBasicInputSchema(),
+		InstanceAuthRequestInputSchema: &schema,
 		DefaultInstanceAuth:            fixGQLAuth(),
 	}
 }
@@ -147,7 +152,7 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 	}
 
 	return model.APIDefinition{
-		ID:            apiDefID,
+		ID:            packageID,
 		ApplicationID: appID,
 		Tenant:        tenantID,
 		Name:          placeholder,
@@ -177,7 +182,7 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 		Data:         &data,
 		Format:       format,
 		Type:         graphql.APISpecTypeOpenAPI,
-		DefinitionID: apiDefID,
+		DefinitionID: packageID,
 	}
 
 	deprecated := false
@@ -197,7 +202,7 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 	}
 
 	return &graphql.APIDefinition{
-		ID:            apiDefID,
+		ID:            packageID,
 		ApplicationID: appID,
 		Name:          placeholder,
 		Description:   str.Ptr("desc_" + placeholder),
@@ -353,32 +358,50 @@ func fixGQLAuth() *graphql.Auth {
 	}
 }
 
+func fixEntityPackage(id, name, desc string) *mp_package.Entity {
+	descSQL := sql.NullString{desc, true}
+	schemaSQL := sql.NullString{
+		String: inputSchemaString(),
+		Valid:  true,
+	}
+	authSQL := sql.NullString{
+		String: `{"Credential":{"Basic":{"Username":"foo","Password":"bar"},"Oauth":null},"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]},"RequestAuth":{"Csrf":{"TokenEndpointURL":"foo.url","Credential":{"Basic":{"Username":"boo","Password":"far"},"Oauth":null},"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]}}}}`,
+		Valid:  true,
+	}
+
+	return &mp_package.Entity{
+		ID:                            id,
+		TenantID:                      tenantID,
+		ApplicationID:                 appID,
+		Name:                          name,
+		Description:                   descSQL,
+		InstanceAuthRequestJSONSchema: schemaSQL,
+		DefaultInstanceAuth:           authSQL,
+	}
+}
+
+func fixPackageColumns() []string {
+	return []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth"}
+}
+
+func fixPackageRow(id, placeholder string) []driver.Value {
+	return []driver.Value{id, tenantID, appID, "foo", "bar", fixSchema(), fixDefaultAuth()}
+}
+
+func fixPackageCreateArgs(defAuth, schema string, pkg *model.Package) []driver.Value {
+	return []driver.Value{packageID, tenantID, appID, pkg.Name, pkg.Description, schema, defAuth}
+}
+
 func fixDefaultAuth() string {
-	return `{"Credential":{"Basic":null,"Oauth":null},"AdditionalHeaders":{"testHeader":["hval1","hval2"]},"AdditionalQueryParams":null,"RequestAuth":null}`
+	return `{"Credential":{"Basic":{"Username":"foo","Password":"bar"},"Oauth":null},"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]},"RequestAuth":{"Csrf":{"TokenEndpointURL":"foo.url","Credential":{"Basic":{"Username":"boo","Password":"far"},"Oauth":null},"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]}}}}`
+}
+
+func inputSchemaString() string {
+	return `{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`
 }
 
 func fixBasicInputSchema() *graphql.JSONSchema {
-	sch := `{
-		"$id": "https://example.com/person.schema.json",
-  		"$schema": "http://json-schema.org/draft-07/schema#",
-  		"title": "Person",
-  		"type": "object",
-  		"properties": {
-  		  "firstName": {
-  		    "type": "string",
-  		    "description": "The person's first name."
-  		  },
-  		  "lastName": {
-  		    "type": "string",
-  		    "description": "The person's last name."
-  		  },
-  		  "age": {
-  		    "description": "Age in years which must be equal to or greater than zero.",
-  		    "type": "integer",
-  		    "minimum": 0
-  		  }
-  		}
-	  }`
+	sch := inputSchemaString()
 	jsonSchema := graphql.JSONSchema(sch)
 	return &jsonSchema
 }
@@ -395,25 +418,29 @@ func fixBasicSchema(t *testing.T) *interface{} {
 	return &objTemp
 }
 
-func fixSchema(t *testing.T, propertyName, propertyType, propertyDescription, requiredProperty string) *interface{} {
-	sch := fmt.Sprintf(`{
-		"$id": "https://example.com/person.schema.json",
-		"$schema": "http://json-schema.org/draft-07/schema#",
-		"title": "Person",
-		"type": "object",
-		"properties": {
-		  "%s": {
-		    "type": "%s",
-		    "description": "%s"
-		  }
-		},
-		"required": ["%s"]
-	  }`, propertyName, propertyType, propertyDescription, requiredProperty)
-	var obj map[string]interface{}
-
-	err := json.Unmarshal([]byte(sch), &obj)
-	require.NoError(t, err)
-	var objTemp interface{}
-	objTemp = obj
-	return &objTemp
+func fixSchema() string {
+	return `{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`
 }
+
+//func fixSchema(t *testing.T, propertyName, propertyType, propertyDescription, requiredProperty string) *interface{} {
+//	sch := fmt.Sprintf(`{
+//		"$id": "https://example.com/person.schema.json",
+//		"$schema": "http://json-schema.org/draft-07/schema#",
+//		"title": "Person",
+//		"type": "object",
+//		"properties": {
+//		  "%s": {
+//		    "type": "%s",
+//		    "description": "%s"
+//		  }
+//		},
+//		"required": ["%s"]
+//	  }`, propertyName, propertyType, propertyDescription, requiredProperty)
+//	var obj map[string]interface{}
+//
+//	err := json.Unmarshal([]byte(sch), &obj)
+//	require.NoError(t, err)
+//	var objTemp interface{}
+//	objTemp = obj
+//	return &objTemp
+//}

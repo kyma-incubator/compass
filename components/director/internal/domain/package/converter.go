@@ -45,7 +45,6 @@ func (c *converter) ToEntity(in *model.Package) (*Entity, error) {
 		Name:                in.Name,
 		Description:         repo.NewNullableString(in.Description),
 		DefaultInstanceAuth: repo.NewNullableString(defaultInstanceAuth),
-		EntityInstanceAuth:  EntityInstanceAuth{},
 	}
 
 	if in.InstanceAuthRequestInputSchema != nil {

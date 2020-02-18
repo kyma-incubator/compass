@@ -52,7 +52,7 @@ func (r PackageCollection) Len() int {
 
 func (r *pgRepository) Create(ctx context.Context, model *model.Package) error {
 	if model == nil {
-		return errors.New("model can not be empty")
+		return errors.New("model can not be nil")
 	}
 
 	pkgEnt, err := r.conv.ToEntity(model)
@@ -65,7 +65,7 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Package) error {
 
 func (r *pgRepository) Update(ctx context.Context, model *model.Package) error {
 	if model == nil {
-		return errors.New("model can not be empty")
+		return errors.New("model can not be nil")
 	}
 
 	pkgEnt, err := r.conv.ToEntity(model)

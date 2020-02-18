@@ -1,8 +1,6 @@
 package model
 
 import (
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
@@ -21,36 +19,6 @@ func (pkg *Package) SetFromUpdateInput(update PackageUpdateInput) {
 	pkg.Description = update.Description
 	pkg.InstanceAuthRequestInputSchema = update.InstanceAuthRequestInputSchema
 	pkg.DefaultInstanceAuth = update.DefaultInstanceAuth.ToAuth()
-}
-
-type PackageInstanceAuthStatusCondition string
-
-const (
-	PackageInstanceAuthStatusConditionPending   PackageInstanceAuthStatusCondition = "PENDING"
-	PackageInstanceAuthStatusConditionSucceeded PackageInstanceAuthStatusCondition = "SUCCEEDED"
-	PackageInstanceAuthStatusConditionFailed    PackageInstanceAuthStatusCondition = "FAILED"
-)
-
-type PackageInstanceAuth struct {
-	ID          string
-	PackageID   string
-	TenantID    string
-	JSONContext *string
-	AuthValue   *Auth
-	Status      PackageInstanceAuthStatus
-}
-
-type PackageInstanceAuthStatus struct {
-	Condition PackageInstanceAuthStatusCondition
-	Timestamp time.Time
-	Message   string
-	// Possible reasons:
-	// - PendingNotification
-	// - NotificationSent
-	// - CredentialsProvided
-	// - CredentialsNotProvided
-	// - PendingDeletion
-	Reason string
 }
 
 type PackageCreateInput struct {
