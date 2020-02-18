@@ -106,7 +106,6 @@ func (c client) CreateRuntime(in schema.RuntimeInput) (string, error) {
 	runtimeGraphQL, err := c.graphqulizer.RuntimeInputToGQL(in)
 
 	var result RuntimeResponse
-
 	query := createRuntimeQuery(runtimeGraphQL)
 
 	err = c.execute(query, &result)
@@ -158,7 +157,6 @@ func (c client) SetDefaultEventing(runtimeID string, appID string, eventsBaseURL
 func (c client) GetOneTimeTokenUrl(appID string) (string, string, error) {
 
 	query := getOneTimeTokenQuery(appID)
-
 	var response OneTimeTokenResponse
 
 	err := c.execute(query, &response)
@@ -169,7 +167,7 @@ func (c client) GetOneTimeTokenUrl(appID string) (string, string, error) {
 	return response.Result.LegacyConnectorURL, response.Result.Token, nil
 }
 
-func getInternalTenantID(url string, externalTenantID string) (string, error) {
+func getInternalTenantID(directorURL string, externalTenantID string) (string, error) {
 
 	query := getTenantsQuery()
 
@@ -180,7 +178,7 @@ func getInternalTenantID(url string, externalTenantID string) (string, error) {
 		return "", err
 	}
 
-	client := gqlTools.NewAuthorizedGraphQLClientWithCustomURL(token, url)
+	client := gqlTools.NewAuthorizedGraphQLClientWithCustomURL(token, directorURL)
 
 	var response TenantsResponse
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
