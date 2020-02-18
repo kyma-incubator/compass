@@ -163,7 +163,7 @@ func CreateGardenerProvisioningInput(config *TestConfig, provider string) (gqlsc
 }
 
 func createInstallationCRURL(kymaVersion string) string {
-	return fmt.Sprintf("https://raw.githubusercontent.com/kyma-project/kyma/release-%s/installation/resources/installer-cr-cluster-with-compass.yaml.tpl", strings.TrimSuffix(kymaVersion, ".0"))
+	return fmt.Sprintf("https://raw.githubusercontent.com/kyma-project/kyma/%s/installation/resources/installer-cr-cluster-runtime.yaml.tpl", kymaVersion)
 }
 
 func processErrors(errorsArray []error) error {
