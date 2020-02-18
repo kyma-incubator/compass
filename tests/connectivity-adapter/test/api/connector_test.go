@@ -265,7 +265,6 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		expectedMetadataURL := config.ConnectivityAdapterMtlsUrl
 		expectedEventsURL := config.EventsBaseURL
 
-		// TODO: use sprintf?
 		expectedMetadataURL += "/" + appName + "/v1/metadata/services"
 		expectedEventsURL += "/" + appName + "/v1/events"
 
@@ -297,7 +296,6 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		expectedMetadataURL := config.ConnectivityAdapterMtlsUrl
 		expectedEventsURL := config.EventsBaseURL
 
-		// TODO: use sprintf?
 		expectedMetadataURL += "/" + appName + "/v1/metadata/services"
 		expectedEventsURL += "/" + appName + "/v1/events"
 
@@ -324,7 +322,7 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		assert.Equal(t, connector.KeyAlgorithm, mgmInfoResponse.Certificate.KeyAlgorithm)
 
 		assert.Empty(t, mgmInfoResponse.ClientIdentity.Group)
-		// TODO: Tenant should be set up in the Connectivity Adapter
+
 		assert.Empty(t, mgmInfoResponse.ClientIdentity.Tenant)
 
 	})

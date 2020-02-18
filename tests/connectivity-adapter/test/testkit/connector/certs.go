@@ -3,11 +3,9 @@ package connector
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/pem"
 	"strings"
 	"testing"
@@ -46,13 +44,6 @@ func CreateCsr(t *testing.T, strSubject string, keys *rsa.PrivateKey) []byte {
 	return csr
 }
 
-// CertificateSHA256Fingerprint returns certificate fingerprint generated using SHA256 algorithm
-func CertificateSHA256Fingerprint(t *testing.T, certificate *x509.Certificate) string {
-	sha := sha256.Sum256(certificate.Raw)
-
-	return hex.EncodeToString(sha[:])
-}
-
 // EncodedCertChainToPemBytes decodes certificates chain and return pemBlock's bytes for client cert and ca cert
 func EncodedCertChainToPemBytes(t *testing.T, encodedChain string) []byte {
 	crtBytes := decodeBase64Cert(encodedChain, t)
@@ -77,15 +68,6 @@ func EncodedCertToPemBytes(t *testing.T, encodedCert string) []byte {
 	require.NotNil(t, certificate)
 
 	return certificate.Bytes
-}
-
-func EncodeCertToPem(t *testing.T, certificate *x509.Certificate) []byte {
-	pemBlock := &pem.Block{Type: "CERTIFICATE", Bytes: certificate.Raw}
-
-	encodedPem := pem.EncodeToMemory(pemBlock)
-	require.NotNil(t, encodedPem)
-
-	return encodedPem
 }
 
 // DecodeAndParseCerts decodes base64 encoded certificates chain and parses it
