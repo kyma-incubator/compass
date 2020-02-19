@@ -553,6 +553,7 @@ func TestPackageInstanceAuthSetInput_Validate(t *testing.T) {
 			Value: graphql.PackageInstanceAuthSetInput{
 				Status: &graphql.PackageInstanceAuthStatusInput{
 					Condition: graphql.PackageInstanceAuthSetStatusConditionInputFailed,
+					Reason:    &str,
 				},
 			},
 			ExpectedValid: true,
@@ -564,7 +565,7 @@ func TestPackageInstanceAuthSetInput_Validate(t *testing.T) {
 					Condition: graphql.PackageInstanceAuthSetStatusConditionInputSucceeded,
 				},
 			},
-			ExpectedValid: true,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Auth and Success Status",
@@ -599,6 +600,69 @@ func TestPackageInstanceAuthSetInput_Validate(t *testing.T) {
 		{
 			Name:          "Empty",
 			Value:         graphql.PackageInstanceAuthSetInput{},
+			ExpectedValid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//WHEN
+			err := testCase.Value.Validate()
+			//THEN
+			if testCase.ExpectedValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestPackageInstanceAuthStatusInput_Validate(t *testing.T) {
+	//GIVEN
+	str := "foo"
+	emptyStr := ""
+	testCases := []struct {
+		Name          string
+		Value         graphql.PackageInstanceAuthStatusInput
+		ExpectedValid bool
+	}{
+		{
+			Name: "Success condition",
+			Value: graphql.PackageInstanceAuthStatusInput{
+				Condition: graphql.PackageInstanceAuthSetStatusConditionInputSucceeded,
+			},
+			ExpectedValid: true,
+		},
+		{
+			Name: "Failed condition without reason",
+			Value: graphql.PackageInstanceAuthStatusInput{
+				Condition: graphql.PackageInstanceAuthSetStatusConditionInputFailed,
+			},
+			ExpectedValid: false,
+		},
+		{
+			Name: "Failed condition with reason",
+			Value: graphql.PackageInstanceAuthStatusInput{
+				Condition: graphql.PackageInstanceAuthSetStatusConditionInputFailed,
+				Reason:    &str,
+			},
+			ExpectedValid: true,
+		},
+		{
+			Name: "Empty Reason",
+			Value: graphql.PackageInstanceAuthStatusInput{
+				Condition: graphql.PackageInstanceAuthSetStatusConditionInputSucceeded,
+				Reason:    &emptyStr,
+			},
+			ExpectedValid: false,
+		},
+		{
+			Name: "Empty Message",
+			Value: graphql.PackageInstanceAuthStatusInput{
+				Condition: graphql.PackageInstanceAuthSetStatusConditionInputSucceeded,
+				Message:   &emptyStr,
+			},
 			ExpectedValid: false,
 		},
 	}

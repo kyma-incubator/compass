@@ -43,12 +43,30 @@ func (i PackageInstanceAuthSetInput) Validate() error {
 		return errors.New("at least one field (Auth or Status) has to be provided")
 	}
 
-	if i.Auth != nil && i.Status != nil && i.Status.Condition != PackageInstanceAuthSetStatusConditionInputSucceeded {
-		return fmt.Errorf("status condition has to be equal to %s when the auth is provided", PackageInstanceAuthSetStatusConditionInputSucceeded)
+	if i.Status != nil {
+		if i.Auth != nil && i.Status.Condition != PackageInstanceAuthSetStatusConditionInputSucceeded {
+			return fmt.Errorf("status condition has to be equal to %s when the auth is provided", PackageInstanceAuthSetStatusConditionInputSucceeded)
+		}
+
+		if i.Auth == nil && i.Status.Condition == PackageInstanceAuthSetStatusConditionInputSucceeded {
+			return fmt.Errorf("status cannot be success has to be equal to %s when the auth is provided", PackageInstanceAuthSetStatusConditionInputSucceeded)
+		}
 	}
 
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Status, validation.NilOrNotEmpty),
 		validation.Field(&i.Auth, validation.NilOrNotEmpty),
+	)
+}
+
+func (i PackageInstanceAuthStatusInput) Validate() error {
+	if i.Condition == PackageInstanceAuthSetStatusConditionInputFailed && i.Reason == nil {
+		return errors.New("reason is required for failed status")
+	}
+
+	return validation.ValidateStruct(&i,
+		validation.Field(&i.Reason, validation.NilOrNotEmpty),
+		validation.Field(&i.Message, validation.NilOrNotEmpty),
+		validation.Field(&i.Condition, validation.NilOrNotEmpty),
 	)
 }

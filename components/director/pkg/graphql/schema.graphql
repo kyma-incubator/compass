@@ -1042,7 +1042,7 @@ type Mutation {
 	
 	When used without error, the status of pending auth is set to success.
 	"""
-	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: PackageInstanceAuthSetInput!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
+	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: PackageInstanceAuthSetInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
 	deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
 	"""
 	When defaultInstanceAuth is set, it fires "createPackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to PENDING.
