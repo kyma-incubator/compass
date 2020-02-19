@@ -39,7 +39,7 @@ type Client struct {
 }
 
 type successResponse struct {
-	Result graphql.RuntimeExt `json:"result"`
+	Result graphql.RuntimePageExt `json:"result"`
 }
 
 var lock sync.Mutex
@@ -71,7 +71,7 @@ func (dc *Client) GetRuntimeID(accountID, instanceID string) (string, error) {
 	}
 
 	log.Info("Extract the RuntimeID from the response")
-	return dc.getIDFromRuntime(&response.Result)
+	return dc.getIDFromRuntime(&response.Result), nil
 }
 
 func (dc *Client) callDirector(req *machineGraph.Request) (*successResponse, error) {
@@ -132,10 +132,6 @@ func (dc *Client) setToken() error {
 	return nil
 }
 
-func (dc *Client) getIDFromRuntime(response *graphql.RuntimeExt) (string, error) {
-	if response.Runtime.ID == "" {
-		return "", fmt.Errorf("got empty runtime ID from director from runtime name")
-	}
-
-	return response.Runtime.ID, nil
+func (dc *Client) getIDFromRuntime(response *graphql.RuntimePageExt) string {
+	return response.Data[0].ID
 }

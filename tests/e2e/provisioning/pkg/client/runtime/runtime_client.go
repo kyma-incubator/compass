@@ -14,6 +14,7 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes/scheme"
 
 	graphCli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -114,7 +115,9 @@ func (c *Client) newRuntimeClient() (client.Client, error) {
 	}
 	defer func() {
 		err = os.Remove(runtimeConfigTmpFile.Name())
-		c.log.Fatal(err)
+		if err != nil {
+			c.log.Fatal(err)
+		}
 	}()
 
 	if _, err := runtimeConfigTmpFile.Write(content); err != nil {
@@ -132,6 +135,8 @@ func (c *Client) newRuntimeClient() (client.Client, error) {
 }
 
 func (c *Client) newClient(configPath string) (client.Client, error) {
+	sch, err := v1beta1.SchemeBuilder()
+
 	config, err := clientcmd.BuildConfigFromFlags("", configPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting kubeconfig under path %s", configPath)

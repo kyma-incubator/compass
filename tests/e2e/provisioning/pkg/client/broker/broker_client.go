@@ -80,7 +80,7 @@ type provisionParameters struct {
 }
 
 func (c *Client) ProvisionRuntime() (string, error) {
-	c.log.Infof("Provisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
+	c.log.Infof("Provisioning Runtime [instanceID: %s, NAME: %s]", c.instanceID, c.clusterName)
 	requestByte, err := c.prepareProvisionDetails()
 	if err != nil {
 		return "", errors.Wrap(err, "while preparing provision details")
