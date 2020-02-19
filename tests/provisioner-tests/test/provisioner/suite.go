@@ -162,29 +162,25 @@ func (ts *TestSuite) EnsureRuntimeDeprovisioning() []TestRuntime {
 	for _, runtime := range ts.TestRuntimes {
 		if runtime.isRunning {
 			go func(runtime TestRuntime) {
-				for i := 0; i < 5; i++ {
-					if runtime.isRunning {
-						runtime.AddStatus("Starting deprovisioning...")
-						operationID, err := runtime.Deprovision()
-						if err != nil {
-							runtime.AddStatus(fmt.Sprintf("Starting deprovisioning failed: %s", err))
-							logrus.Infof("Failed to start deprovisioning Runtime '%s': %s: %s", runtime.runtimeID, operationID, err)
-							continue
-						}
-						runtime.AddStatus("Deprovisioning started.")
-						logrus.Infof("Deprovisioning Runtime '%s' started: %s", runtime.runtimeID, operationID)
-
-						operationStatus, err := ts.WaitUntilOperationIsFinished(30*time.Minute, operationID)
-						if err != nil {
-							runtime.AddStatus(fmt.Sprintf("Deprovisioning failed: %s. State: %s", err, operationStatus.State))
-							logrus.Infof("Deprovisioning Runtime '%s' failed: %s. State: %s", runtime.runtimeID, err, operationStatus.State)
-							continue
-						}
-						runtime.AddStatus("Deprovisioning completed.")
-						logrus.Infof("Deprovisioning Runtime '%s' completed.", runtime.runtimeID)
-						runtime.isRunning = false
-						break
+				if runtime.isRunning {
+					runtime.AddStatus("Starting deprovisioning...")
+					operationID, err := runtime.Deprovision()
+					if err != nil {
+						runtime.AddStatus(fmt.Sprintf("Starting deprovisioning failed: %s", err))
+						logrus.Infof("Failed to start deprovisioning Runtime '%s': %s: %s", runtime.runtimeID, operationID, err)
 					}
+					runtime.AddStatus("Deprovisioning started.")
+					logrus.Infof("Deprovisioning Runtime '%s' started: %s", runtime.runtimeID, operationID)
+
+					operationStatus, err := ts.WaitUntilOperationIsFinished(30*time.Minute, operationID)
+					if err != nil {
+						runtime.AddStatus(fmt.Sprintf("Deprovisioning failed: %s. State: %s", err, operationStatus.State))
+						logrus.Infof("Deprovisioning Runtime '%s' failed: %s. State: %s", runtime.runtimeID, err, operationStatus.State)
+					}
+					runtime.AddStatus("Deprovisioning completed.")
+					logrus.Infof("Deprovisioning Runtime '%s' completed.", runtime.runtimeID)
+					runtime.isRunning = false
+					return
 				}
 				runtime.AddStatus("Failed to deprovision Runtime.")
 				failedRuntimes = append(failedRuntimes, runtime)
