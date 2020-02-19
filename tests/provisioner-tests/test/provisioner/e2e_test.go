@@ -28,7 +28,8 @@ func Test_E2E_Gardener(t *testing.T) {
 
 	globalLog.Infof("Starting Compass Provisioner tests on Gardener")
 
-	for _, provider := range testSuite.gardenerProviders {
+	for _, prov := range testSuite.gardenerProviders {
+		provider := prov
 		t.Run(provider, func(t *testing.T) {
 			t.Parallel()
 			log := globalLog.WithField("Provider", provider)
