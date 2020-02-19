@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -159,33 +160,37 @@ func (ts *TestSuite) Cleanup() {
 
 func (ts *TestSuite) EnsureRuntimeDeprovisioning() []TestRuntime {
 	failedRuntimes := []TestRuntime{}
+	var wg sync.WaitGroup
+	defer wg.Wait()
 	for _, runtime := range ts.TestRuntimes {
-		if runtime.isRunning {
-			go func(runtime TestRuntime) {
-				if runtime.isRunning {
-					runtime.AddStatus("Starting deprovisioning...")
-					operationID, err := runtime.Deprovision()
-					if err != nil {
-						runtime.AddStatus(fmt.Sprintf("Starting deprovisioning failed: %s", err))
-						logrus.Infof("Failed to start deprovisioning Runtime '%s': %s: %s", runtime.runtimeID, operationID, err)
-					}
-					runtime.AddStatus("Deprovisioning started.")
-					logrus.Infof("Deprovisioning Runtime '%s' started: %s", runtime.runtimeID, operationID)
+		go func(runtime TestRuntime) {
+			wg.Add(1)
+			defer wg.Done()
 
-					operationStatus, err := ts.WaitUntilOperationIsFinished(30*time.Minute, operationID)
-					if err != nil {
-						runtime.AddStatus(fmt.Sprintf("Deprovisioning failed: %s. State: %s", err, operationStatus.State))
-						logrus.Infof("Deprovisioning Runtime '%s' failed: %s. State: %s", runtime.runtimeID, err, operationStatus.State)
-					}
-					runtime.AddStatus("Deprovisioning completed.")
-					logrus.Infof("Deprovisioning Runtime '%s' completed.", runtime.runtimeID)
-					runtime.isRunning = false
-					return
+			if runtime.isRunning {
+				runtime.AddStatus("Starting deprovisioning...")
+				operationID, err := runtime.Deprovision()
+				if err != nil {
+					runtime.AddStatus(fmt.Sprintf("Starting deprovisioning failed: %s", err))
+					logrus.Infof("Failed to start deprovisioning Runtime '%s': %s: %s", runtime.runtimeID, operationID, err)
 				}
-				runtime.AddStatus("Failed to deprovision Runtime.")
-				failedRuntimes = append(failedRuntimes, runtime)
-			}(runtime)
-		}
+				runtime.AddStatus("Deprovisioning started.")
+				logrus.Infof("Deprovisioning Runtime '%s' started: %s", runtime.runtimeID, operationID)
+
+				operationStatus, err := ts.WaitUntilOperationIsFinished(30*time.Minute, operationID)
+				if err != nil {
+					runtime.AddStatus(fmt.Sprintf("Deprovisioning failed: %s. State: %s", err, operationStatus.State))
+					logrus.Infof("Deprovisioning Runtime '%s' failed: %s. State: %s", runtime.runtimeID, err, operationStatus.State)
+				}
+				runtime.AddStatus("Deprovisioning completed.")
+				logrus.Infof("Deprovisioning Runtime '%s' completed.", runtime.runtimeID)
+				runtime.isRunning = false
+				return
+			}
+			runtime.AddStatus("Failed to deprovision Runtime.")
+			failedRuntimes = append(failedRuntimes, runtime)
+		}(runtime)
+
 	}
 	return failedRuntimes
 }
