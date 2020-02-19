@@ -1,22 +1,24 @@
 package provisioning
 
 import (
+	"fmt"
 	"net/url"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
-	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
-	// time delay after which the instance becomes obsolete in the process of polling for last operation
-	delayInstanceTime = 3 * time.Hour
+	// the time after which the operation is marked as expired
+	CheckStatusTimeout = 3 * time.Hour
 )
 
 type DirectorClient interface {
@@ -24,7 +26,7 @@ type DirectorClient interface {
 }
 
 type RuntimeStatusStep struct {
-	operationStorage  storage.Operations
+	operationManager  *process.OperationManager
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
 	DirectorClient    DirectorClient
@@ -32,30 +34,37 @@ type RuntimeStatusStep struct {
 
 func NewRuntimeStatusStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient) *RuntimeStatusStep {
 	return &RuntimeStatusStep{
-		operationStorage:  os,
+		operationManager:  process.NewOperationManager(os),
 		instanceStorage:   is,
 		provisionerClient: pc,
 		DirectorClient:    dc,
 	}
 }
 
-func (s *RuntimeStatusStep) Run(operation *internal.ProvisioningOperation) (error, time.Duration) {
-	// TODO check if should operation be processed
-	// TODO mark operation as failed if error is permanent
+func (s *RuntimeStatusStep) Name() string {
+	return "Check_Runtime_Status"
+}
+
+func (s *RuntimeStatusStep) Run(operation internal.ProvisioningOperation, log *logrus.Entry) (internal.ProvisioningOperation, time.Duration, error) {
+	if time.Since(operation.CreatedAt) > CheckStatusTimeout {
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout))
+	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	if err != nil {
-		return nil, 1 * time.Minute
+		return operation, 1 * time.Minute, nil
 	}
+
 	_, err = url.ParseRequestURI(instance.DashboardURL)
 	if err == nil {
-		return nil, 0
+		return s.operationManager.OperationSucceeded(operation, "URL dashboard already exist")
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
 	if err != nil {
-		return nil, 1 * time.Minute
+		return operation, 1 * time.Minute, nil
 	}
+	log.Infof("Call to provisioner returned %s status", status.State.String())
 
 	var msg string
 	if status.Message != nil {
@@ -64,60 +73,36 @@ func (s *RuntimeStatusStep) Run(operation *internal.ProvisioningOperation) (erro
 
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
-		operation.State = domain.Succeeded
-		operation.Description = msg
-		return s.handleSuccessRuntime(operation, instance)
+		repeat, err := s.handleDashboardURL(instance)
+		if err != nil || repeat != 0 {
+			return operation, repeat, err
+		}
+		return s.operationManager.OperationSucceeded(operation, msg)
 	case gqlschema.OperationStateInProgress:
-		return nil, 10 * time.Minute
+		return operation, 10 * time.Minute, nil
 	case gqlschema.OperationStatePending:
-		return nil, 10 * time.Minute
+		return operation, 10 * time.Minute, nil
 	case gqlschema.OperationStateFailed:
-		return errors.Errorf("provisioner client returns failed status: %s", msg), 0
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg))
 	}
 
-	return errors.Errorf("unsupported provisioner client status: %s", status.State.String()), 0
+	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()))
 }
 
-func (s *RuntimeStatusStep) handleSuccessRuntime(operation *internal.ProvisioningOperation, instance *internal.Instance) (error, time.Duration) {
-	err, repeat := s.handleDashboardURL(instance)
-	if err != nil || repeat != 0 {
-		return err, repeat
-	}
-
-	_, err = s.operationStorage.UpdateProvisioningOperation(*operation)
-	if err != nil {
-		return nil, 1 * time.Minute
-	}
-
-	return nil, 0
-}
-
-func (s *RuntimeStatusStep) handleDashboardURL(instance *internal.Instance) (error, time.Duration) {
+func (s *RuntimeStatusStep) handleDashboardURL(instance *internal.Instance) (time.Duration, error) {
 	dashboardURL, err := s.DirectorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
 	if director.IsTemporaryError(err) {
-		return s.checkInstanceOutdated(instance)
+		return 10 * time.Minute, nil
 	}
 	if err != nil {
-		return errors.Wrapf(err, "while geting URL from director"), 0
+		return 0, errors.Wrapf(err, "while geting URL from director")
 	}
 
 	instance.DashboardURL = dashboardURL
 	err = s.instanceStorage.Update(*instance)
 	if err != nil {
-		return nil, 1 * time.Minute
+		return 1 * time.Minute, nil
 	}
 
-	return nil, 0
-}
-
-func (s *RuntimeStatusStep) checkInstanceOutdated(instance *internal.Instance) (error, time.Duration) {
-	addTime := instance.CreatedAt.Add(delayInstanceTime)
-	subTime := time.Now().Sub(addTime)
-
-	if subTime > 0 {
-		// after delayInstanceTime Instance last operation is marked as failed
-		return errors.Errorf(""), 0
-	}
-
-	return nil, 10 * time.Minute
+	return 0, nil
 }

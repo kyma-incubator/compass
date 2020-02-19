@@ -25,6 +25,7 @@ import (
 	"github.com/gorilla/handlers"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pivotal-cf/brokerapi"
+	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -121,9 +122,10 @@ func main() {
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), inputFactory, cfg.Provisioning, provisionerClient)
 	runtimeStatusStep := provisioning.NewRuntimeStatusStep(db.Operations(), db.Instances(), provisionerClient, directorClient)
 
-	stepManager := process.NewManager()
-	stepManager.AddStep(runtimeStep)
-	stepManager.AddStep(runtimeStatusStep)
+	logs := logrus.New()
+	stepManager := process.NewManager(logs)
+	stepManager.AddStep(1, runtimeStep)
+	stepManager.AddStep(2, runtimeStatusStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())

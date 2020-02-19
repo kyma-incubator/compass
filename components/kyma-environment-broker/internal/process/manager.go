@@ -1,45 +1,71 @@
 package process
 
 import (
+	"sort"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Step interface {
-	Run(operation *internal.ProvisioningOperation) (error, time.Duration)
+	Name() string
+	Run(operation internal.ProvisioningOperation, logger *logrus.Entry) (internal.ProvisioningOperation, time.Duration, error)
 }
 
 type Manager struct {
+	log              *logrus.Logger
 	operationStorage storage.Operations
-	steps            []Step
+	steps            map[int]Step
 }
 
-func NewManager() *Manager {
-	return &Manager{}
+func NewManager(logger *logrus.Logger) *Manager {
+	return &Manager{
+		log:   logger,
+		steps: make(map[int]Step, 1),
+	}
 }
 
-func (m *Manager) AddStep(step Step) {
-	m.steps = append(m.steps, step)
+func (m *Manager) AddStep(order int, step Step) {
+	m.steps[order] = step
 }
 
-func (m *Manager) Execute(operationID string) (error, time.Duration) {
+func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	operation, err := m.operationStorage.GetProvisioningOperationByID(operationID)
 	if err != nil {
-		return nil, 10 * time.Minute
+		return 10 * time.Minute, nil
 	}
 
-	for _, step := range m.steps {
-		err, when := step.Run(operation)
+	var when time.Duration
+	processedOperation := *operation
+	log := m.log.WithFields(logrus.Fields{"operation": operationID})
+
+	var order []int
+	for o := range m.steps {
+		order = append(order, o)
+	}
+	sort.Ints(order)
+
+	for _, orderStep := range order {
+		step := m.steps[orderStep]
+		log.WithFields(logrus.Fields{"step": step.Name()})
+		log.Infof("Start step")
+
+		processedOperation, when, err = step.Run(processedOperation, log)
 		if err != nil {
-			return err, 0
+			log.Errorf("Step failed: %s", err)
+			return 0, err
 		}
 		if when == 0 {
+			log.Info("Step successful")
 			continue
 		}
-		return nil, when
+
+		log.Infof("Step will be repeated in %s ...", when)
+		return when, nil
 	}
 
-	return nil, 0
+	return 0, nil
 }

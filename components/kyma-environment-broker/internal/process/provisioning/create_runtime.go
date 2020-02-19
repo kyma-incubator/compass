@@ -2,15 +2,22 @@ package provisioning
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
+)
+
+const (
+	// the time after which the operation is marked as expired
+	CreateRuntimeTimeout = 1 * time.Hour
 )
 
 // Config holds all configurations connected with Provisioner API
@@ -22,7 +29,7 @@ type Config struct {
 }
 
 type CreateRuntimeStep struct {
-	operationStorage  storage.Operations
+	operationManager  *process.OperationManager
 	instanceStorage   storage.Instances
 	builderFactory    InputBuilderForPlan
 	provisioningCfg   Config
@@ -31,7 +38,7 @@ type CreateRuntimeStep struct {
 
 func NewCreateRuntimeStep(os storage.Operations, is storage.Instances, builderFactory InputBuilderForPlan, cfg Config, cli provisioner.Client) *CreateRuntimeStep {
 	return &CreateRuntimeStep{
-		operationStorage:  os,
+		operationManager:  process.NewOperationManager(os),
 		instanceStorage:   is,
 		builderFactory:    builderFactory,
 		provisioningCfg:   cfg,
@@ -39,55 +46,66 @@ func NewCreateRuntimeStep(os storage.Operations, is storage.Instances, builderFa
 	}
 }
 
-func (s *CreateRuntimeStep) Run(operation *internal.ProvisioningOperation) (error, time.Duration) {
-	// TODO make sure that the process has not already been activated
-	// TODO mark operation as failed if error is permanent
+func (s *CreateRuntimeStep) Name() string {
+	return "Create_Runtime"
+}
+
+func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log *logrus.Entry) (internal.ProvisioningOperation, time.Duration, error) {
+	if time.Since(operation.CreatedAt) > CreateRuntimeTimeout {
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout))
+	}
 
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
-		return errors.Wrap(err, "while getting provisioning parameters from operation"), 0
+		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 	rawParameters, err := json.Marshal(pp.Parameters)
 	if err != nil {
-		return errors.Wrap(err, "while marshaling instance parameters"), 0
+		return s.operationManager.OperationFailed(operation, "invalid operation parameters")
 	}
 
 	input, err := s.createProvisionInput(pp)
 	if err != nil {
-		return errors.Wrap(err, "while creating provision input"), 0
+		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input")
 	}
 
-	// TODO save runtimeID in operation to not ask provisioner again (what happen when I call provisioner again?)
-	resp, err := s.provisionerClient.ProvisionRuntime(pp.ErsContext.GlobalAccountID, input)
-	if err != nil {
-		log.Errorf("[%s] Call to provision failed: %s", operation.ID, err)
-		return nil, 1 * time.Minute
-	}
-	if resp.RuntimeID == nil {
-		// TODO: return error or time.Duration ?
-		return nil, 10 * time.Minute
+	var provisionerResponse gqlschema.OperationStatus
+	if operation.ProvisionerOperationID == "" {
+		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(pp.ErsContext.GlobalAccountID, input)
+		if err != nil {
+			log.Errorf("call to provisioner failed: %s", err)
+			return operation, 1 * time.Minute, nil
+		}
+		operation.ProvisionerOperationID = *provisionerResponse.ID
+		operation, repeat := s.operationManager.UpdateOperation(operation)
+		if repeat != 0 {
+			log.Errorf("cannot save operation ID from provisioner")
+			return operation, 1 * time.Minute, nil
+		}
 	}
 
-	operation.ProvisionerOperationID = *resp.ID
-	_, err = s.operationStorage.UpdateProvisioningOperation(*operation)
-	if err != nil {
-		return nil, 1 * time.Minute
+	if provisionerResponse.RuntimeID == nil {
+		provisionerResponse, err = s.provisionerClient.RuntimeOperationStatus(pp.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
+		if err != nil {
+			log.Errorf("call to provisioner about operation status failed: %s", err)
+			return operation, 5 * time.Minute, nil
+		}
 	}
 
 	err = s.instanceStorage.Insert(internal.Instance{
-		InstanceID:      operation.InstanceID,
-		GlobalAccountID: pp.ErsContext.GlobalAccountID,
-		RuntimeID:       *resp.RuntimeID,
-		ServiceID:       pp.ServiceID,
-		ServicePlanID:   pp.PlanID,
-		// TODO do we need RawProvisioningParameters if we have in operation?
+		InstanceID:             operation.InstanceID,
+		GlobalAccountID:        pp.ErsContext.GlobalAccountID,
+		RuntimeID:              *provisionerResponse.RuntimeID,
+		ServiceID:              pp.ServiceID,
+		ServicePlanID:          pp.PlanID,
 		ProvisioningParameters: string(rawParameters),
 	})
 	if err != nil {
-		return nil, 1 * time.Minute
+		log.Errorf("cannot save instance in storage: %s", err)
+		return operation, 1 * time.Minute, nil
 	}
 
-	return nil, 0
+	return operation, 0, nil
 }
 
 func (s *CreateRuntimeStep) createProvisionInput(parameters internal.ProvisioningParameters) (gqlschema.ProvisionRuntimeInput, error) {

@@ -4,7 +4,6 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -14,7 +13,7 @@ const (
 )
 
 type Executor interface {
-	Execute(operationID string) (error, time.Duration)
+	Execute(operationID string) (time.Duration, error)
 }
 
 type Queue struct {
@@ -41,7 +40,7 @@ func (q *Queue) Run(stop <-chan struct{}) {
 	}
 }
 
-func createWorker(queue workqueue.RateLimitingInterface, process func(id string) (error, time.Duration), stopCh <-chan struct{}, waitGroup *sync.WaitGroup) {
+func createWorker(queue workqueue.RateLimitingInterface, process func(id string) (time.Duration, error), stopCh <-chan struct{}, waitGroup *sync.WaitGroup) {
 	waitGroup.Add(1)
 	go func() {
 		wait.Until(worker(queue, process), time.Second, stopCh)
@@ -49,7 +48,7 @@ func createWorker(queue workqueue.RateLimitingInterface, process func(id string)
 	}()
 }
 
-func worker(queue workqueue.RateLimitingInterface, process func(key string) (error, time.Duration)) func() {
+func worker(queue workqueue.RateLimitingInterface, process func(key string) (time.Duration, error)) func() {
 	return func() {
 		exit := false
 		for !exit {
@@ -60,13 +59,10 @@ func worker(queue workqueue.RateLimitingInterface, process func(key string) (err
 				}
 				defer queue.Done(key)
 
-				err, when := process(key.(string))
+				when, err := process(key.(string))
 				if err == nil && when != 0 {
 					queue.AddAfter(key, when)
 					return false
-				}
-				if err != nil {
-					log.Errorf("[Queue][%s] Operation permanently failed: %s", key, err)
 				}
 
 				queue.Forget(key)
