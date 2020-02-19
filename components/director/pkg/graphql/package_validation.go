@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"fmt"
+
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
