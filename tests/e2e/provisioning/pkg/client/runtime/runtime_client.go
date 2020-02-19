@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/client-go/kubernetes/scheme"
 	"net/http"
 	"os"
 	"time"
+
+	"k8s.io/client-go/kubernetes/scheme"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
