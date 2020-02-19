@@ -11,7 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
@@ -257,21 +256,6 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id st
 
 }
 
-//TODO Remove mock
-func (r *Resolver) InstanceAuthMock(ctx context.Context, obj *graphql.Package, id string) (*graphql.PackageInstanceAuth, error) {
-	var condition graphql.PackageInstanceAuthStatusCondition
-	switch id {
-	case "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb":
-		condition = graphql.PackageInstanceAuthStatusConditionSucceeded
-	case "cccccccc-cccc-cccc-cccc-cccccccccccc":
-		condition = graphql.PackageInstanceAuthStatusConditionFailed
-	default:
-		condition = graphql.PackageInstanceAuthStatusConditionPending
-	}
-
-	return mock.FixPackageInstanceAuth(id, condition), nil
-}
-
 func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*graphql.PackageInstanceAuth, error) {
 	if obj == nil {
 		return nil, errors.New("Package cannot be empty")
@@ -298,17 +282,6 @@ func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*
 
 	return out, nil
 }
-
-//TODO Remove mock
-func (r *Resolver) InstanceAuthsMock(ctx context.Context, obj *graphql.Package) ([]*graphql.PackageInstanceAuth, error) {
-	return []*graphql.PackageInstanceAuth{
-		mock.FixPackageInstanceAuth("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", graphql.PackageInstanceAuthStatusConditionPending),
-		mock.FixPackageInstanceAuth("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", graphql.PackageInstanceAuthStatusConditionSucceeded),
-		mock.FixPackageInstanceAuth("cccccccc-cccc-cccc-cccc-cccccccccccc", graphql.PackageInstanceAuthStatusConditionFailed),
-	}, nil
-}
-
-var packageID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
 func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Package, id string) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()

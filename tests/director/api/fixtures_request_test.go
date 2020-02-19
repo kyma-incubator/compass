@@ -374,10 +374,10 @@ func fixApplicationTemplateRequest(applicationTemplateID string) *gcli.Request {
 func fixLabelDefinitionsRequest() *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
-  		result:	labelDefinitions() {
-			key
-    		schema
-  				}
+			result:	labelDefinitions() {
+					key
+					schema
+				}
 			}`))
 }
 
@@ -450,7 +450,6 @@ func fixTenantsRequest() *gcli.Request {
 				}`, tc.gqlFieldsProvider.ForTenant()))
 }
 
-// DELETE
 func fixDeleteLabelDefinitionRequest(labelDefinitionKey string, deleteRelatedLabels bool) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -548,60 +547,6 @@ func fixSetDefaultEventingForApplication(appID string, runtimeID string) *gcli.R
 			runtimeID, appID, tc.gqlFieldsProvider.ForEventingConfiguration()))
 }
 
-func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`query {
-			result: application(id: "%s") {
-				%s
-				}
-			}`, applicationID, tc.gqlFieldsProvider.ForApplication(gql.FieldCtx{
-			"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`, packageID, tc.gqlFieldsProvider.ForPackage()),
-		})))
-}
-
-func fixAddPackageRequest(appID, in string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: addPackage(applicationID: "%s", in: %s) {
-				id
-			}}`, appID, in))
-}
-
-func fixUpdatePackageRequest(packageID, pkgUpdateInput string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: updatePackage(id: "%s", in: %s) {
-				%s
-			}
-		}`, packageID, pkgUpdateInput, tc.gqlFieldsProvider.ForPackage()))
-}
-
-func fixDeletePackageRequest(id string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: deletePackage(id: "%s") {
-				id
-			}}`, id))
-}
-
-func fixSetPackageInstanceAuthRequest(authID, apiAuthInput string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: setPackageInstanceAuth(authID: "%s", in: %s) {
-				%s
-			}
-		}`, authID, apiAuthInput, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
-}
-
-func fixRequestPackageInstanceAuthCreationRequest(packageID, pkgInstanceAuthRequestInput string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: requestPackageInstanceAuthCreation(packageID: "%s", in: %s) {
-				%s
-			}
-		}`, packageID, pkgInstanceAuthRequestInput, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
-}
-
 func fixAPIDefinitionInPackageRequest(appID, pkgID, apiID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -679,4 +624,104 @@ func fixDocumentsInPackageRequest(appID, pkgID string) *gcli.Request {
 					}
 				}
 			}`, appID, pkgID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForDocument())))
+}
+
+func fixAddPackageRequest(appID, pkgCreateInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addPackage(applicationID: "%s", in: %s) {
+				%s
+			}}`, appID, pkgCreateInput, tc.gqlFieldsProvider.ForPackage()))
+}
+
+func fixUpdatePackageRequest(packageID, pkgUpdateInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: updatePackage(id: "%s", in: %s) {
+				%s
+			}
+		}`, packageID, pkgUpdateInput, tc.gqlFieldsProvider.ForPackage()))
+}
+
+func fixDeletePackageRequest(packageID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deletePackage(id: "%s") {
+				%s
+			}
+		}`, packageID, tc.gqlFieldsProvider.ForPackage()))
+}
+
+func fixSetPackageInstanceAuthRequest(authID, apiAuthInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: setPackageInstanceAuth(authID: "%s", in: %s) {
+				%s
+			}
+		}`, authID, apiAuthInput, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+}
+
+func fixDeletePackageInstanceAuthRequest(authID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deletePackageInstanceAuth(authID: "%s") {
+				%s
+			}
+		}`, authID, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+}
+
+func fixRequestPackageInstanceAuthCreationRequest(packageID, pkgInstanceAuthRequestInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: requestPackageInstanceAuthCreation(packageID: "%s", in: %s) {
+				%s
+			}
+		}`, packageID, pkgInstanceAuthRequestInput, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+}
+
+func fixRequestPackageInstanceAuthDeletionRequest(authID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: requestPackageInstanceAuthDeletion(authID: "%s") {
+				%s
+			}
+		}`, authID, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+}
+
+func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+				%s
+				}
+			}`, applicationID, tc.gqlFieldsProvider.ForApplication(gql.FieldCtx{
+			"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`, packageID, tc.gqlFieldsProvider.ForPackage()),
+		})))
+}
+
+func fixPackageWithInstanceAuthRequest(applicationID string, packageID string, instanceAuthID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+				%s
+				}
+			}`, applicationID,
+			tc.gqlFieldsProvider.ForApplication(
+				gql.FieldCtx{"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`,
+					packageID,
+					tc.gqlFieldsProvider.ForPackage(gql.FieldCtx{
+						"Package.instanceAuth": fmt.Sprintf(`instanceAuth(id: "%s") {%s}`,
+							instanceAuthID,
+							tc.gqlFieldsProvider.ForPackageInstanceAuth()),
+					})),
+				})))
+}
+
+func fixPackagesRequest(applicationID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+				%s
+				}
+			}`, applicationID, tc.gqlFieldsProvider.ForApplication()))
 }

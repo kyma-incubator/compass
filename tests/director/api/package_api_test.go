@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 func TestAddAPIToPackage(t *testing.T) {
@@ -240,4 +240,111 @@ func TestDocumentsInPackage(t *testing.T) {
 	require.Equal(t, 2, docs.TotalCount)
 	assertDocuments(t, []*graphql.DocumentInput{&inputA, &inputB}, docs.Data)
 	saveExample(t, queryDocsForPkg.Query(), "query documents")
+}
+
+func TestAddPackage(t *testing.T) {
+	ctx := context.Background()
+
+	application := registerApplication(t, ctx, "app-test-package")
+	defer unregisterApplication(t, application.ID)
+
+	pkgInput := fixPackageCreateInput("pkg-app-1")
+	pkg, err := tc.graphqlizer.PackageCreateInputToGQL(pkgInput)
+	require.NoError(t, err)
+
+	addPkgRequest := fixAddPackageRequest(application.ID, pkg)
+	output := graphql.Package{}
+
+	// WHEN
+	t.Log("Create package")
+	err = tc.RunOperation(ctx, addPkgRequest, &output)
+
+	// THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, output.ID)
+	defer deletePackage(t, ctx, output.ID)
+
+	require.NotEmpty(t, output.Name)
+	saveExample(t, addPkgRequest.Query(), "add package")
+
+	packageRequest := fixPackageRequest(application.ID, output.ID)
+	pkgFromAPI := graphql.ApplicationExt{}
+
+	err = tc.RunOperation(ctx, packageRequest, &pkgFromAPI)
+	require.NoError(t, err)
+
+	saveExample(t, packageRequest.Query(), "query package")
+}
+
+func TestQueryPackages(t *testing.T) {
+	ctx := context.Background()
+
+	application := registerApplication(t, ctx, "app-test-package")
+	defer unregisterApplication(t, application.ID)
+
+	pkg1 := createPackage(t, ctx, application.ID, "pkg-app-1")
+	defer deletePackage(t, ctx, pkg1.ID)
+
+	pkg2 := createPackage(t, ctx, application.ID, "pkg-app-2")
+	defer deletePackage(t, ctx, pkg2.ID)
+
+	packagesRequest := fixPackagesRequest(application.ID)
+	pkgsFromAPI := graphql.ApplicationExt{}
+
+	err := tc.RunOperation(ctx, packagesRequest, &pkgsFromAPI)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(pkgsFromAPI.Packages.Data))
+
+	saveExample(t, packagesRequest.Query(), "query packages")
+}
+
+func TestUpdatePackage(t *testing.T) {
+	ctx := context.Background()
+
+	application := registerApplication(t, ctx, "app-test-package")
+	defer unregisterApplication(t, application.ID)
+
+	pkg := createPackage(t, ctx, application.ID, "pkg-app-1")
+	defer deletePackage(t, ctx, pkg.ID)
+
+	pkgUpdateInput := fixPackageUpdateInput("pkg-app-1-up")
+	pkgUpdate, err := tc.graphqlizer.PackageUpdateInputToGQL(pkgUpdateInput)
+	require.NoError(t, err)
+
+	updatePkgReq := fixUpdatePackageRequest(pkg.ID, pkgUpdate)
+	output := graphql.Package{}
+
+	// WHEN
+	t.Log("Update package")
+	err = tc.RunOperation(ctx, updatePkgReq, &output)
+
+	// THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, output.ID)
+
+	require.NotEmpty(t, output.Name)
+	saveExample(t, updatePkgReq.Query(), "update package")
+}
+
+func TestDeletePackage(t *testing.T) {
+	ctx := context.Background()
+
+	application := registerApplication(t, ctx, "app-test-package")
+	defer unregisterApplication(t, application.ID)
+
+	pkg := createPackage(t, ctx, application.ID, "pkg-app-1")
+
+	pkdDeleteReq := fixDeletePackageRequest(pkg.ID)
+	output := graphql.Package{}
+
+	// WHEN
+	t.Log("Delete package")
+	err := tc.RunOperation(ctx, pkdDeleteReq, &output)
+
+	// THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, output.ID)
+
+	require.NotEmpty(t, output.Name)
+	saveExample(t, pkdDeleteReq.Query(), "delete package")
 }

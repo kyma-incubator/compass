@@ -2,9 +2,7 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -76,7 +74,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	labelDefinitionInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: marshallJSONSchema(t, schema),
+		Schema: marshalJSONSchema(t, schema),
 	}
 
 	labelDefinitionInputGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -204,7 +202,7 @@ func TestEditLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	labelDefinitionInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: marshallJSONSchema(t, schema),
+		Schema: marshalJSONSchema(t, schema),
 	}
 
 	labelDefinitionInputGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -238,7 +236,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		var invalidSchema interface{} = invalidJsonSchema
 		labelDefinitionInput = graphql.LabelDefinitionInput{
 			Key:    labelKey,
-			Schema: marshallJSONSchema(t, invalidSchema),
+			Schema: marshalJSONSchema(t, invalidSchema),
 		}
 
 		ldInputGql, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -279,7 +277,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		var newSchema interface{} = newValidJsonSchema
 		labelDefinitionInput = graphql.LabelDefinitionInput{
 			Key:    labelKey,
-			Schema: marshallJSONSchema(t, newSchema),
+			Schema: marshalJSONSchema(t, newSchema),
 		}
 
 		ldInputGql, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -294,7 +292,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		//THEN
 		require.NoError(t, err)
 
-		schemaVal, ok := (unmarshallJSONSchema(t, labelDefinition.Schema)).(map[string]interface{})
+		schemaVal, ok := (unmarshalJSONSchema(t, labelDefinition.Schema)).(map[string]interface{})
 		require.True(t, ok)
 		actualProperties, ok := schemaVal["properties"].(map[string]interface{})
 		require.True(t, ok)
@@ -371,7 +369,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	var schema interface{} = jsonSchema
 	ldInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: marshallJSONSchema(t, schema),
+		Schema: marshalJSONSchema(t, schema),
 	}
 
 	ldInputGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(ldInput)
@@ -428,7 +426,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	labelDefinitionInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: marshallJSONSchema(t, schema),
+		Schema: marshalJSONSchema(t, schema),
 	}
 
 	ldInputGql, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -540,7 +538,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 
 		err = tc.RunOperation(context.Background(), deleteLabelDefinitionRequest, &labelDefinition)
 		require.NoError(t, err)
-		assert.ObjectsAreEqualValues(labelDefinitionInput.Schema, labelDefinition.Schema)
+		assertGraphQLJSONSchema(t, labelDefinitionInput.Schema, labelDefinition.Schema)
 	})
 }
 
@@ -587,7 +585,7 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	ldInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: marshallJSONSchema(t, schema),
+		Schema: marshalJSONSchema(t, schema),
 	}
 
 	ldInputGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(ldInput)
@@ -833,21 +831,4 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//THEN
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `must be one of the following: "DEFAULT", "Christmas", "New Year"`)
-}
-
-func marshallJSONSchema(t *testing.T, schema interface{}) *graphql.JSONSchema {
-	out, err := json.Marshal(schema)
-	require.NoError(t, err)
-	output := strconv.Quote(string(out))
-	jsonSchema := graphql.JSONSchema(output)
-	return &jsonSchema
-}
-
-func unmarshallJSONSchema(t *testing.T, schema *graphql.JSONSchema) interface{} {
-	require.NotNil(t, schema)
-	var output interface{}
-	err := json.Unmarshal([]byte(*schema), &output)
-	require.NoError(t, err)
-
-	return output
 }

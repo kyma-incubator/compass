@@ -26,6 +26,8 @@ github.com/avast/retry-go v2.4.3+incompatible h1:c/FTk2POrEQyZfaHBMkMrXdu3/6IESJ
 github.com/avast/retry-go v2.4.3+incompatible/go.mod h1:XtSnn+n/sHqQIpZ10K1qAevBhOOCWBLXXy3hyiqqBrY=
 github.com/avast/retry-go v2.5.0+incompatible h1:8SaFqliw34WeeaPs+GEtMMkiwEsC2S6+YyqnLqI55Ks=
 github.com/avast/retry-go v2.5.0+incompatible/go.mod h1:XtSnn+n/sHqQIpZ10K1qAevBhOOCWBLXXy3hyiqqBrY=
+github.com/crabtree/compass/components/director v0.0.0-20200228084841-446b4167eebc h1:Io0PtbH+AO/rpVJzTVG8zKlz00pTX3PFsoD0MarEq40=
+github.com/crabtree/compass/components/director v0.0.0-20200228084841-446b4167eebc/go.mod h1:YCMIcaXV5kofz/VeajqyTEt/ELCLIuDeH+RpkohyIsY=
 github.com/davecgh/go-spew v0.0.0-20151105211317-5215b55f46b2/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
@@ -107,8 +109,16 @@ github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORN
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
-github.com/kyma-incubator/compass/components/director v0.0.0-20200227121740-72d903827d5e h1:y/6glers6xUo7vhkNCGbfWHsTOd2K7vQ77qZ6YhfUHY=
-github.com/kyma-incubator/compass/components/director v0.0.0-20200227121740-72d903827d5e/go.mod h1:YCMIcaXV5kofz/VeajqyTEt/ELCLIuDeH+RpkohyIsY=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200129154738-ba6cbee1854a h1:synYcgka/SQBgJcCA0IfMX9EpGlk0r32w5dVMXpJlQo=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200129154738-ba6cbee1854a/go.mod h1:IRN+kcB90xUmyQcPB1YWMHSjnsNCjx2cOxI/C/5ywms=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200204090111-0997ef97abfb h1:ZsJOBHWrusUokOiehNlqmBMULvPbi7ecTYUMWFOFgLU=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200204090111-0997ef97abfb/go.mod h1:fNc7gzZnrKPfFAo2vh2UkNq5sxCZ/dX36CLmrCGDJ8I=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200218091901-109f4dc2dccf h1:/AbC5QWhk9NSCZmHcGnVsWSMi5upX2bd4watV9D8Jzc=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200218091901-109f4dc2dccf/go.mod h1:fNc7gzZnrKPfFAo2vh2UkNq5sxCZ/dX36CLmrCGDJ8I=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200225125554-6d68c9e6a448 h1:jYjmPcHjdY1HPfZx143vTdZFpu4zNEoyZ+E9z3yXpLo=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200225125554-6d68c9e6a448/go.mod h1:F8a9Qk9CY6lV/rKEhcO5TQMJR7eRwFm7iwAIaNsr8w8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200227195132-224de7d01873 h1:iqn+DN5irxkdhMLzciQYGJgX4FK10BDi95puFyOs0sI=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200227195132-224de7d01873/go.mod h1:YCMIcaXV5kofz/VeajqyTEt/ELCLIuDeH+RpkohyIsY=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/lestrrat-go/jwx v0.9.0/go.mod h1:iEoxlYfZjvoGpuWwxUz+eR5e6KTJGsaRcy/YNA/UnBk=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=

@@ -17,6 +17,8 @@ type PackageExt struct {
 	APIDefinition    APIDefinitionExt          `json:"apiDefinition"`
 	EventDefinition  EventDefinition           `json:"eventDefinition"`
 	Document         Document                  `json:"document"`
+	InstanceAuth     *PackageInstanceAuth      `json:"instanceAuth"`
+	InstanceAuths    []*PackageInstanceAuth    `json:"instanceAuths"`
 }
 
 type PackagePageExt struct {

@@ -413,17 +413,6 @@ func (g *Graphqlizer) PackageUpdateInputToGQL(in graphql.PackageUpdateInput) (st
 	}`)
 }
 
-func (g *Graphqlizer) PackageInstanceAuthRequestInputToGQL(in graphql.PackageInstanceAuthRequestInput) (string, error) {
-	return g.genericToGQL(in, `{
-		{{- if .Context }}
-		context: {{ .Context }}
-		{{- end }}
-		{{- if .InputParams }}
-		inputParams: {{ .InputParams }}
-		{{- end }}
-	}`)
-}
-
 func (g *Graphqlizer) PackageInstanceAuthStatusInputToGQL(in graphql.PackageInstanceAuthStatusInput) (string, error) {
 	return g.genericToGQL(in, `{
 		condition: {{ .Condition }}
@@ -432,6 +421,17 @@ func (g *Graphqlizer) PackageInstanceAuthStatusInputToGQL(in graphql.PackageInst
 		{{- end }}
 		{{- if .Reason }}
 		reason: "{{ .Reason }}"
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) PackageInstanceAuthRequestInputToGQL(in graphql.PackageInstanceAuthRequestInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .Context }}
+		context: {{ .Context }}
+		{{- end }}
+		{{- if .InputParams }}
+		inputParams: {{ .InputParams }}
 		{{- end }}
 	}`)
 }
