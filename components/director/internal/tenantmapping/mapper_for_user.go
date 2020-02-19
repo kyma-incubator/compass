@@ -24,8 +24,6 @@ type mapperForUser struct {
 	tenantRepo      TenantRepository
 }
 
-const tenantGroupPrefix = "tenantID="
-
 // GetGroupScopes get all scopes from group array, without duplicates
 func GetGroupScopes(groups []StaticGroup) string {
 	scopeMap := make(map[string]bool)
