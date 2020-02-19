@@ -32,6 +32,7 @@ func Test_E2E_Gardener(t *testing.T) {
 		t.Run(provider, func(t *testing.T) {
 			t.Parallel()
 			log := globalLog.WithField("Provider", provider)
+			log.Infof("Gardener providers: %v", testSuite.gardenerProviders)
 
 			// Provisioning runtime
 			// Get Kyma modules from Installation CR

@@ -151,7 +151,10 @@ func (ts *TestSuite) Cleanup() {
 		for _, runtime := range undeprovisionedRuntimes {
 			logrus.Errorf("Error while performing cleanup: %s: %s", runtime.GetCurrentStatus(), runtime.StatusToString())
 		}
+		logrus.Infof("Cleanup failed.")
+		return
 	}
+	logrus.Infof("Cleanup completed.")
 }
 
 func (ts *TestSuite) EnsureRuntimeDeprovisioning() []TestRuntime {
