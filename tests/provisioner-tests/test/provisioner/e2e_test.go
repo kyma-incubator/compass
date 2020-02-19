@@ -2,6 +2,7 @@ package provisioner
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -27,61 +28,66 @@ func Test_E2E_Gardener(t *testing.T) {
 	globalLog := logrus.WithField("TestId", testSuite.TestId)
 
 	globalLog.Infof("Starting Compass Provisioner tests on Gardener")
+	var wg sync.WaitGroup
+	defer wg.Wait()
 
 	for _, prov := range testSuite.gardenerProviders {
-		provider := prov
-		t.Run(provider, func(t *testing.T) {
-			t.Parallel()
-			log := globalLog.WithField("Provider", provider)
-			log.Infof("Gardener providers: %v", testSuite.gardenerProviders)
+		go func(provider string) {
+			wg.Add(1)
+			defer wg.Done()
 
-			// Provisioning runtime
-			// Get Kyma modules from Installation CR
-			provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, provider)
-			runtimeName := fmt.Sprintf("runtime-%s", uuid.New().String()[:4])
-			provisioningInput.RuntimeInput.Name = runtimeName
+			t.Run(provider, func(t *testing.T) {
+				log := globalLog.WithField("Provider", provider)
+				log.Infof("Gardener providers: %v", testSuite.gardenerProviders)
 
-			log.Infof("Provisioning runtime '%s' on %s...", runtimeName, provider)
-			provisioningOperationID, runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
-			assertions.RequireNoError(t, err)
-			defer ensureClusterIsDeprovisioned(runtimeID)
+				// Provisioning runtime
+				// Get Kyma modules from Installation CR
+				provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, provider)
+				runtimeName := fmt.Sprintf("runtime-%s", uuid.New().String()[:4])
+				provisioningInput.RuntimeInput.Name = runtimeName
 
-			log.Infof("Provisioning operation id: %s, runtime id: %s", provisioningOperationID, runtimeID)
+				log.Infof("Provisioning runtime '%s' on %s...", runtimeName, provider)
+				provisioningOperationID, runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
+				assertions.RequireNoError(t, err)
+				defer ensureClusterIsDeprovisioned(runtimeID)
 
-			var provisioningOperationStatus gqlschema.OperationStatus
+				log.Infof("Provisioning operation id: %s, runtime id: %s", provisioningOperationID, runtimeID)
 
-			log.Infof("Waiting for provisioning to finish...")
-			provisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationID)
-			assertions.RequireNoError(t, err, "Provisioning operation status: ", provisioningOperationStatus.State)
+				var provisioningOperationStatus gqlschema.OperationStatus
 
-			assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
-			log.Infof("Runtime provisioned successfully on %s", provider)
+				log.Infof("Waiting for provisioning to finish...")
+				provisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationID)
+				assertions.RequireNoError(t, err, "Provisioning operation status: ", provisioningOperationStatus.State)
 
-			log.Infof("Fetching %s runtime status...", provider)
-			runtimeStatus, err := testSuite.ProvisionerClient.RuntimeStatus(runtimeID)
-			assertions.RequireNoError(t, err)
+				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
+				log.Infof("Runtime provisioned successfully on %s", provider)
 
-			assertGardenerRuntimeConfiguration(t, provisioningInput, runtimeStatus)
+				log.Infof("Fetching %s runtime status...", provider)
+				runtimeStatus, err := testSuite.ProvisionerClient.RuntimeStatus(runtimeID)
+				assertions.RequireNoError(t, err)
 
-			log.Infof("Preparing K8s client...")
-			k8sClient := testSuite.KubernetesClientFromRawConfig(t, *runtimeStatus.RuntimeConfiguration.Kubeconfig)
+				assertGardenerRuntimeConfiguration(t, provisioningInput, runtimeStatus)
 
-			logrus.Infof("Accessing API Server on provisioned cluster...")
-			_, err = k8sClient.ServerVersion()
-			assertions.RequireNoError(t, err)
+				log.Infof("Preparing K8s client...")
+				k8sClient := testSuite.KubernetesClientFromRawConfig(t, *runtimeStatus.RuntimeConfiguration.Kubeconfig)
 
-			// TODO: Consider running E2E Runtime tests
+				logrus.Infof("Accessing API Server on provisioned cluster...")
+				_, err = k8sClient.ServerVersion()
+				assertions.RequireNoError(t, err)
 
-			log.Infof("Deprovisioning %s runtime %s...", provider, runtimeName)
-			deprovisioningOperationID, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeID)
-			assertions.RequireNoError(t, err)
-			log.Infof("Deprovisioning operation id: %s", deprovisioningOperationID)
+				// TODO: Consider running E2E Runtime tests
 
-			deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationID)
-			assertions.RequireNoError(t, err)
-			assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
-			log.Infof("Runtime deprovisioned successfully")
-		})
+				log.Infof("Deprovisioning %s runtime %s...", provider, runtimeName)
+				deprovisioningOperationID, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeID)
+				assertions.RequireNoError(t, err)
+				log.Infof("Deprovisioning operation id: %s", deprovisioningOperationID)
+
+				deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationID)
+				assertions.RequireNoError(t, err)
+				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
+				log.Infof("Runtime deprovisioned successfully")
+			})
+		}(provider)
 	}
 }
 
