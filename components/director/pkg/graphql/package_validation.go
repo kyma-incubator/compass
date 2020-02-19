@@ -49,7 +49,7 @@ func (i PackageInstanceAuthSetInput) Validate() error {
 		}
 
 		if i.Auth == nil && i.Status.Condition == PackageInstanceAuthSetStatusConditionInputSucceeded {
-			return fmt.Errorf("status cannot be success has to be equal to %s when the auth is provided", PackageInstanceAuthSetStatusConditionInputSucceeded)
+			return fmt.Errorf("status cannot be equal to %s when auth is not provided", PackageInstanceAuthSetStatusConditionInputSucceeded)
 		}
 	}
 
@@ -60,8 +60,8 @@ func (i PackageInstanceAuthSetInput) Validate() error {
 }
 
 func (i PackageInstanceAuthStatusInput) Validate() error {
-	if i.Condition == PackageInstanceAuthSetStatusConditionInputFailed && i.Reason == nil {
-		return errors.New("reason is required for failed status")
+	if i.Condition == PackageInstanceAuthSetStatusConditionInputFailed && (i.Reason == nil || i.Message == nil) {
+		return errors.New("reason and message are required for failed status")
 	}
 
 	return validation.ValidateStruct(&i,

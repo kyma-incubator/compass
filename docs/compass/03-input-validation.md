@@ -277,5 +277,5 @@ status: PackageInstanceAuthStatusInput | false | | at least one field: `auth` or
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 condition: PackageInstanceAuthSetStatusConditionInput! | true | | 
-message: String | false | |  
+message: String | false | | required, if condition is `FAILED`   
 reason: String | false | | required, if condition is `FAILED` 

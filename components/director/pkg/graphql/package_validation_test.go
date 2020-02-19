@@ -554,6 +554,7 @@ func TestPackageInstanceAuthSetInput_Validate(t *testing.T) {
 				Status: &graphql.PackageInstanceAuthStatusInput{
 					Condition: graphql.PackageInstanceAuthSetStatusConditionInputFailed,
 					Reason:    &str,
+					Message:   &str,
 				},
 			},
 			ExpectedValid: true,
@@ -646,6 +647,23 @@ func TestPackageInstanceAuthStatusInput_Validate(t *testing.T) {
 			Value: graphql.PackageInstanceAuthStatusInput{
 				Condition: graphql.PackageInstanceAuthSetStatusConditionInputFailed,
 				Reason:    &str,
+			},
+			ExpectedValid: false,
+		},
+		{
+			Name: "Failed condition with message",
+			Value: graphql.PackageInstanceAuthStatusInput{
+				Condition: graphql.PackageInstanceAuthSetStatusConditionInputFailed,
+				Message:   &str,
+			},
+			ExpectedValid: false,
+		},
+		{
+			Name: "Failed condition with reason and message",
+			Value: graphql.PackageInstanceAuthStatusInput{
+				Condition: graphql.PackageInstanceAuthSetStatusConditionInputFailed,
+				Reason:    &str,
+				Message:   &str,
 			},
 			ExpectedValid: true,
 		},
