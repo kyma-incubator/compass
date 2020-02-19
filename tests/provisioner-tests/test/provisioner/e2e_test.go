@@ -38,34 +38,36 @@ func Test_E2E_Gardener(t *testing.T) {
 
 			t.Run(provider, func(t *testing.T) {
 				log := globalLog.WithField("Provider", provider)
-				log.Infof("Gardener providers: %v", testSuite.gardenerProviders)
 
 				// Provisioning runtime
-				// Get Kyma modules from Installation CR
+				// Create provisioning input
 				provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, provider)
 				runtimeName := fmt.Sprintf("runtime-%s", uuid.New().String()[:4])
 				provisioningInput.RuntimeInput.Name = runtimeName
+				runtime := testSuite.NewRuntime(provisioningInput).WithLog(log)
 
-				log.Infof("Provisioning runtime '%s' on %s...", runtimeName, provider)
-				provisioningOperationID, runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
+				// Provision runtime
+				provisioningOperationID, runtimeID, err := runtime.Provision()
 				assertions.RequireNoError(t, err)
-				defer ensureClusterIsDeprovisioned(runtimeID)
+				//defer ensureClusterIsDeprovisioned(runtimeID)
 
-				log.Infof("Provisioning operation id: %s, runtime id: %s", provisioningOperationID, runtimeID)
+				// Get Operation Status
+				provisioningOperationStatus, err := runtime.GetOperationStatus(provisioningOperationID)
+				assertions.RequireNoError(t, err)
+				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
 
-				var provisioningOperationStatus gqlschema.OperationStatus
-
-				log.Infof("Waiting for provisioning to finish...")
+				// Wait for provisioning to finish
+				runtime.LogStatus("Waiting for provisioning to finish...")
 				provisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationID)
-				assertions.RequireNoError(t, err, "Provisioning operation status: ", provisioningOperationStatus.State)
-
+				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
-				log.Infof("Runtime provisioned successfully on %s", provider)
+				runtime.LogStatus("Provisioning completed.")
 
-				log.Infof("Fetching %s runtime status...", provider)
-				runtimeStatus, err := testSuite.ProvisionerClient.RuntimeStatus(runtimeID)
+				// Fetch Runtime Status
+				runtimeStatus, err := runtime.GetRuntimeStatus()
 				assertions.RequireNoError(t, err)
 
+				// Asserting Gardener Configuration
 				assertGardenerRuntimeConfiguration(t, provisioningInput, runtimeStatus)
 
 				log.Infof("Preparing K8s client...")
