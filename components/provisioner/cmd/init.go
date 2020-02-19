@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/backup"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -48,7 +49,7 @@ func newProvisioningService(
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo, gardenerProject)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
-	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator)
+	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, backup.NewService("kyma-system", 0, 0))
 }
 
 func newDirectorClient(config config) (director.DirectorClient, error) {

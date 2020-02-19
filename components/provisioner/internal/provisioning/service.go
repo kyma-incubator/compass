@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/backup"
+
 	uuid "github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -43,6 +45,7 @@ type service struct {
 	dbSessionFactory dbsession.Factory
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
+	backupService    backup.Service
 }
 
 func NewProvisioningService(
@@ -52,6 +55,7 @@ func NewProvisioningService(
 	factory dbsession.Factory,
 	provisioner Provisioner,
 	generator uuid.UUIDGenerator,
+	backupService backup.Service,
 ) Service {
 	return &service{
 		inputConverter:   inputConverter,
@@ -60,6 +64,7 @@ func NewProvisioningService(
 		dbSessionFactory: factory,
 		provisioner:      provisioner,
 		uuidGenerator:    generator,
+		backupService:    backupService,
 	}
 }
 
@@ -102,6 +107,12 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 		return nil, fmt.Errorf("Failed to commit transaction: %s", err.Error())
 	}
 
+	err = r.scheduleBackup(runtimeID)
+	if err != nil {
+		r.unregisterFailedRuntime(runtimeID, tenant)
+		return nil, fmt.Errorf("Failed to schedule backup: %s", err.Error())
+	}
+
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
@@ -111,6 +122,21 @@ func (r *service) unregisterFailedRuntime(id, tenant string) {
 	if err != nil {
 		log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())
 	}
+}
+
+func (r *service) scheduleBackup(runtimeID string) error {
+	rs := r.dbSessionFactory.NewReadSession()
+	cluster, err := rs.GetCluster(runtimeID)
+	if err != nil {
+		return err
+	}
+
+	kubeconfig := cluster.Kubeconfig
+	if kubeconfig == nil {
+		return errors.New("kubeconfig is empty")
+	}
+
+	return r.backupService.ScheduleBackup(*kubeconfig)
 }
 
 func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {

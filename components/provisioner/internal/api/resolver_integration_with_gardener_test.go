@@ -15,6 +15,7 @@ import (
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	backupmock "github.com/kyma-incubator/compass/components/provisioner/internal/backup/mocks"
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
@@ -127,6 +128,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	installationServiceMock.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
 	installationServiceMock.On("TriggerUninstall", mock.Anything).Return(nil)
 
+	backupServiceMock := &backupmock.Service{}
+	backupServiceMock.On("ScheduleBackup", mock.Anything).Return(nil)
+
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 
 	cleanupNetwork, err := testutils.EnsureTestNetworkForDB(t, ctx)
@@ -188,7 +192,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project")
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, backupServiceMock)
 
 			validator := NewValidator(dbsFactory.NewReadSession())
 

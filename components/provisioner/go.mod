@@ -29,6 +29,7 @@ require (
 	github.com/terraform-providers/terraform-provider-openstack v1.20.0 // indirect
 	github.com/testcontainers/testcontainers-go v0.0.8
 	github.com/vektah/gqlparser v1.2.0
+	github.com/vmware-tanzu/velero v1.2.0
 	github.com/vrischmann/envconfig v1.2.0
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	google.golang.org/appengine v1.6.4 // indirect

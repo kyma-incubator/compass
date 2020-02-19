@@ -26,6 +26,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
+	backupmock "github.com/kyma-incubator/compass/components/provisioner/internal/backup/mocks"
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
@@ -203,6 +204,9 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 		mock.AnythingOfType("[]model.KymaComponentConfig")).
 		Return(nil)
 
+	backupServiceMock := &backupmock.Service{}
+	backupServiceMock.On("ScheduleBackup", mock.Anything).Return(nil)
+
 	uuidGenerator := uuid.NewUUIDGenerator()
 
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
@@ -248,7 +252,7 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock, runtimeConfigurator)
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator, backupServiceMock)
 			validator := NewValidator(dbSessionFactory.NewReadSession())
 			provisioner := NewResolver(provisioningService, validator)
 
