@@ -33,7 +33,7 @@ func (c *converter) ToEntity(in *model.Package) (*Entity, error) {
 		return nil, nil
 	}
 
-	defaultInstanceAuth, err := marshallDefaultInstanceAuth(in.DefaultInstanceAuth)
+	defaultInstanceAuth, err := c.marshalDefaultInstanceAuth(in.DefaultInstanceAuth)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Package, error) {
 		return nil, errors.New("the Package entity is nil")
 	}
 
-	defaultInstanceAuth, err := unmarshallDefaultInstanceAuth(entity.DefaultInstanceAuth)
+	defaultInstanceAuth, err := c.unmarshalDefaultInstanceAuth(entity.DefaultInstanceAuth)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*mode
 	}, nil
 }
 
-func marshallDefaultInstanceAuth(defaultInstanceAuth *model.Auth) (*string, error) {
+func (c *converter) marshalDefaultInstanceAuth(defaultInstanceAuth *model.Auth) (*string, error) {
 	if defaultInstanceAuth == nil {
 		return nil, nil
 	}
@@ -166,7 +166,7 @@ func marshallDefaultInstanceAuth(defaultInstanceAuth *model.Auth) (*string, erro
 	return str.Ptr(string(output)), nil
 }
 
-func unmarshallDefaultInstanceAuth(defaultInstanceAuthSql sql.NullString) (*model.Auth, error) {
+func (c *converter) unmarshalDefaultInstanceAuth(defaultInstanceAuthSql sql.NullString) (*model.Auth, error) {
 	var defaultInstanceAuth *model.Auth
 	if defaultInstanceAuthSql.Valid && defaultInstanceAuthSql.String != "" {
 		defaultInstanceAuth = &model.Auth{}
