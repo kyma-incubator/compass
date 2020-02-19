@@ -14,8 +14,7 @@ This document contains validation rules for all input types.
 - `oneof` - Value has to be one of specified values.
 - `[$VALIDATION_RULE]` - Array that can be nil or empty but every array element has to fulfill specified `$VALIDATION_RULE`.
 
-
-## Proposed validation rules for Compass input types
+## Validation rules for Compass input types
 
 ### APIDefinitionInput
 
@@ -237,3 +236,46 @@ tokenEndpointURL: String! | true | `url` |  
 credential: CredentialDataInput! | true | | 
 additionalHeaders: HttpHeaders (map[string][]string) | false | key: `required`, value: `required`, `[required]` | 
 additionalQueryParams: QueryParams (map[string][]string) | false | key: `required`, value: `required`, `[required]` | 
+
+### PackageCreateInput
+
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+name: String! | true | `ASCII`, `max=100` | varchar(256) in db  
+description: String | false | `max=2000` |  
+instanceAuthRequestInputSchema: JSONSchema (string) | false | | 
+defaultInstanceAuth: AuthInput | false | |  
+apiDefinitions: [APIDefinitionInput!] | false | `[required]` |  
+eventDefinitions: [EventDefinitionInput!] | false | `[required]` |  
+documents: [DocumentInput!] | false | `[required]` |  
+
+### PackageUpdateInput
+
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+name: String! | true | `ASCII`, `max=100` | varchar(256) in db  
+description: String | false | `max=2000` |  
+instanceAuthRequestInputSchema: JSONSchema (string) | false | | 
+defaultInstanceAuth: AuthInput | false | |
+
+### PackageInstanceAuthRequestInput
+
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+context: Any | false | | 
+inputParams: Any | false | | validated against `Package.instanceAuthRequestInputSchema` JSON schema
+
+### PackageInstanceAuthSetInput
+
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+auth: AuthInput | false | | at least one field: `auth` or `status` is required; if provided, status condition has to be `SUCCEEDED`
+status: PackageInstanceAuthStatusInput | false | | at least one field: `auth` or `status` is required; if status condition is `SUCCEEDED`, `auth` has to be provided
+
+### PackageInstanceAuthStatusInput
+
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+condition: PackageInstanceAuthSetStatusConditionInput! | true | | 
+message: String | false | | required, if condition is `FAILED`   
+reason: String | false | | required, if condition is `FAILED` 
