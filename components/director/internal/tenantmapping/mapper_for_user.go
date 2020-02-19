@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 func NewMapperForUser(staticUserRepo StaticUserRepository, staticGroupRepo StaticGroupRepository, tenantRepo TenantRepository) *mapperForUser {
@@ -28,8 +27,8 @@ type mapperForUser struct {
 const tenantGroupPrefix = "tenantID="
 
 // GetGroupScopes get all scopes from group array, without duplicates
-func GetGroupScopes(groups []StaticGroup) (string) {
-	scopeMap :=make(map[string]bool)
+func GetGroupScopes(groups []StaticGroup) string {
+	scopeMap := make(map[string]bool)
 	filteredScopes := []string{}
 
 	for _, group := range groups {

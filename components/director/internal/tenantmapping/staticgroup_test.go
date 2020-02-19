@@ -15,21 +15,18 @@ var validGroupsNameFileContent string = `
   scopes:
   - "application:write"
   - "application:read"
-  tenants: 
-  - "3f2d9157-a0ba-4ff3-9d50-f5d6f9730eed"
+  tenants: "*"
 - groupname: "developer"
   scopes:
   - "application:read"
-  tenants: 
-  - "555d9157-a1bf-4aa2-9a22-f5d6f9730aaf"
+  tenants: "*"
 `
 
 var unknownGroupsNameFieldsFileContent string = `
 - groupname: "admin"
   notascope:
   - "application:write"
-  tenants: 
-  - "3f2d9157-a0ba-4ff3-9d50-f5d6f9730eed"
+  tenants: "*"
 `
 
 func TestStaticGroupRepository(t *testing.T) {
@@ -85,13 +82,13 @@ func TestStaticGroupRepository(t *testing.T) {
 	})
 
 	t.Run("returns single matching staticGroup", func(t *testing.T) {
-		tenantIDs := []string{uuid.New().String()}
+		tenantID := uuid.New().String()
 		repo := staticGroupRepository{
 			data: map[string]StaticGroup{
 				"developer": StaticGroup{
 					GroupName: "developer",
 					Scopes:    []string{"application:read"},
-					Tenants:   tenantIDs,
+					Tenants:   tenantID,
 				},
 			},
 		}
@@ -100,23 +97,23 @@ func TestStaticGroupRepository(t *testing.T) {
 
 		require.Equal(t, int(1), len(staticGroup))
 		require.Equal(t, "developer", staticGroup[0].GroupName)
-		require.Equal(t, tenantIDs, staticGroup[0].Tenants)
+		require.Equal(t, tenantID, staticGroup[0].Tenants)
 		require.Equal(t, []string{"application:read"}, staticGroup[0].Scopes)
 	})
 
 	t.Run("returns multiple matching staticGroup", func(t *testing.T) {
-		tenantIDs := []string{uuid.New().String()}
+		tenantID := uuid.New().String()
 		repo := staticGroupRepository{
 			data: map[string]StaticGroup{
 				"developer": StaticGroup{
 					GroupName: "developer",
 					Scopes:    []string{"application:read"},
-					Tenants:   tenantIDs,
+					Tenants:   tenantID,
 				},
 				"admin": StaticGroup{
 					GroupName: "admin",
 					Scopes:    []string{"application:read", "application:write"},
-					Tenants:   tenantIDs,
+					Tenants:   tenantID,
 				},
 			},
 		}
@@ -126,11 +123,11 @@ func TestStaticGroupRepository(t *testing.T) {
 		require.Equal(t, int(2), len(staticGroup))
 
 		require.Equal(t, "developer", staticGroup[0].GroupName)
-		require.Equal(t, tenantIDs, staticGroup[0].Tenants)
+		require.Equal(t, tenantID, staticGroup[0].Tenants)
 		require.Equal(t, []string{"application:read"}, staticGroup[0].Scopes)
 
 		require.Equal(t, "admin", staticGroup[1].GroupName)
-		require.Equal(t, tenantIDs, staticGroup[1].Tenants)
+		require.Equal(t, tenantID, staticGroup[1].Tenants)
 		require.Equal(t, []string{"application:read", "application:write"}, staticGroup[1].Scopes)
 	})
 

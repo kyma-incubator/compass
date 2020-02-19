@@ -259,9 +259,8 @@ func TestReqData_GetGroups(t *testing.T) {
 			},
 		}
 
-		groups, err := reqData.GetGroups()
+		groups := reqData.GetUserGroups()
 
-		require.NoError(t, err)
 		require.Equal(t, expectedGroups, groups)
 	})
 
@@ -274,9 +273,8 @@ func TestReqData_GetGroups(t *testing.T) {
 			},
 		}
 
-		groups, err := reqData.GetGroups()
+		groups := reqData.GetUserGroups()
 
-		require.NoError(t, err)
 		require.Equal(t, []string{}, groups)
 	})
 

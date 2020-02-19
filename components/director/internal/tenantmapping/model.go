@@ -139,7 +139,7 @@ func (d *ReqData) GetScopes() (string, error) {
 }
 
 // GetGroups returns group name or empty string if there's no group
-func (d *ReqData) GetUserGroups() ([]string) {
+func (d *ReqData) GetUserGroups() []string {
 	if groupsVal, ok := d.Body.Extra[GroupsKey]; ok {
 
 		groupsArray, arrayConvertedOk := groupsVal.([]interface{})
