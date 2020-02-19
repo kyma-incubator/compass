@@ -32,6 +32,7 @@ type Config struct {
 
 	ProvisionTimeout   time.Duration
 	DeprovisionTimeout time.Duration
+	DummyTest          bool
 }
 
 // Suite provides set of clients able to provision and test Kyma runtime
@@ -45,6 +46,7 @@ type Suite struct {
 
 	ProvisionTimeout   time.Duration
 	DeprovisionTimeout time.Duration
+	IsDummyTest        bool
 }
 
 func (ts *Suite) TearDown() {
@@ -97,6 +99,7 @@ func newTestSuite(t *testing.T) *Suite {
 		runtimeClient:      runtimeClient,
 		ProvisionTimeout:   cfg.ProvisionTimeout,
 		DeprovisionTimeout: cfg.DeprovisionTimeout,
+		IsDummyTest:        cfg.DummyTest,
 	}
 }
 

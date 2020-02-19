@@ -9,6 +9,9 @@ import (
 
 func Test_E2E_Provisioning(t *testing.T) {
 	ts := newTestSuite(t)
+	if ts.IsDummyTest {
+		return
+	}
 	operationID, err := ts.brokerClient.ProvisionRuntime()
 	require.NoError(t, err)
 	defer ts.TearDown()

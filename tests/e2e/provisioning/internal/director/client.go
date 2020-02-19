@@ -133,13 +133,6 @@ func (dc *Client) setToken() error {
 }
 
 func (dc *Client) getIDFromRuntime(response *graphql.RuntimeExt) (string, error) {
-	if response.Status == nil {
-		return "", TemporaryError{"response status from director is nil"}
-	}
-	if response.Status.Condition == graphql.RuntimeStatusConditionFailed {
-		return "", fmt.Errorf("response status condition from director is %s", graphql.RuntimeStatusConditionFailed)
-	}
-
 	if response.Runtime.ID == "" {
 		return "", fmt.Errorf("got empty runtime ID from director from runtime name")
 	}

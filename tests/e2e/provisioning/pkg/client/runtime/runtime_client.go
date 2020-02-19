@@ -8,10 +8,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -68,6 +67,7 @@ func (c *Client) EnsureUAAInstanceRemoved() error {
 	if err != nil {
 		return errors.Wrap(err, "while removing UUA instance")
 	}
+	c.log.Info("Successfully ensured UAA instance was removed")
 	return nil
 }
 
