@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -110,20 +109,16 @@ func (c *Client) ProvisionRuntime() (string, error) {
 }
 
 func (c *Client) DeprovisionRuntime() (string, error) {
-	deprovisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.instanceID)
+	format := "%s%s/%s?service_id=%s&plan_id=%s"
+	deprovisionURL := fmt.Sprintf(format, c.brokerConfig.URL, instancesURL, c.instanceID, kymaClassID, azurePlanID)
+	if c.brokerConfig.ProvisionGCP {
+		deprovisionURL = fmt.Sprintf(format, c.brokerConfig.URL, instancesURL, c.instanceID, kymaClassID, gcpPlanID)
+	}
 
 	response := provisionResponse{}
 	c.log.Infof("Deprovisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
-
-	form := url.Values{}
-	form.Set("service_id", kymaClassID)
-	form.Set("plan_id", azurePlanID)
-	if c.brokerConfig.ProvisionGCP {
-		form.Set("plan_id", gcpPlanID)
-	}
-
 	err := wait.Poll(time.Second, time.Second*5, func() (bool, error) {
-		err := c.executeRequest(http.MethodDelete, deprovisionURL, strings.NewReader(form.Encode()), &response)
+		err := c.executeRequest(http.MethodDelete, deprovisionURL, nil, &response)
 		if err != nil {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil

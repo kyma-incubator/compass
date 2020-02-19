@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/client-go/kubernetes/scheme"
 	"net/http"
 	"os"
 	"time"
@@ -14,7 +15,6 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes/scheme"
 
 	graphCli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -135,8 +135,10 @@ func (c *Client) newRuntimeClient() (client.Client, error) {
 }
 
 func (c *Client) newClient(configPath string) (client.Client, error) {
-	sch, err := v1beta1.SchemeBuilder()
-
+	err := v1beta1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return nil, errors.Wrap(err, "while adding schema")
+	}
 	config, err := clientcmd.BuildConfigFromFlags("", configPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting kubeconfig under path %s", configPath)
