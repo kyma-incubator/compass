@@ -1,8 +1,5 @@
-- groupname: "namespace-admins"
-  tenants:
-    {{- range .Values.global.tenants }}
-      - {{ .id }}
-    {{- end }}
+- groupname: "kyma_mps_superadmins"
+  tenants: "*"
   scopes:
   - "application:read"
   - "application:write"

@@ -11,7 +11,7 @@ import (
 
 type StaticGroup struct {
 	GroupName string   `json:"groupname"`
-	Tenants   []string `json:"tenants"`
+	Tenants   string `json:"tenants"`
 	Scopes    []string `json:"scopes"`
 }
 
