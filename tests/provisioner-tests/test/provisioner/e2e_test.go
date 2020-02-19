@@ -51,7 +51,7 @@ func Test_E2E_Gardener(t *testing.T) {
 				assertions.RequireNoError(t, err)
 				//defer ensureClusterIsDeprovisioned(runtimeID)
 
-				// Get Operation Status
+				// Get provisioning Operation Status
 				provisioningOperationStatus, err := runtime.GetOperationStatus(provisioningOperationID)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
@@ -79,15 +79,21 @@ func Test_E2E_Gardener(t *testing.T) {
 
 				// TODO: Consider running E2E Runtime tests
 
+				// Deprovisioning runtime
 				log.Infof("Deprovisioning %s runtime %s...", provider, runtimeName)
-				deprovisioningOperationID, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeID)
+				deprovisioningOperationID, err := runtime.Deprovision()
 				assertions.RequireNoError(t, err)
-				log.Infof("Deprovisioning operation id: %s", deprovisioningOperationID)
+				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeDeprovision, runtimeID)
 
-				deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationID)
+				// Get provisioning Operation Status
+				deprovisioningOperationStatus, err := runtime.GetOperationStatus(deprovisioningOperationID)
+				assertions.RequireNoError(t, err)
+				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
+
+				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationID)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
-				log.Infof("Runtime deprovisioned successfully")
+				runtime.LogStatus("Deprovisioning completed.")
 			})
 		}(provider)
 	}
