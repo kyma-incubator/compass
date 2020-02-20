@@ -31,7 +31,7 @@ func Test_E2E_Gardener(t *testing.T) {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	for _, prov := range testSuite.gardenerProviders {
+	for _, provider := range testSuite.gardenerProviders {
 		go func(provider string) {
 			wg.Add(1)
 			defer wg.Done()
