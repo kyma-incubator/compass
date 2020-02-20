@@ -3931,12 +3931,12 @@ type Mutation {
 	
 	When used without error, the status of pending auth is set to success.
 	"""
-	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: PackageInstanceAuthSetInput!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
+	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: PackageInstanceAuthSetInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
 	deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
 	"""
 	When defaultInstanceAuth is set, it fires "createPackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to PENDING.
 	"""
-	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
+	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
 	"""
 	When defaultInstanceAuth is set, it fires "deletePackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to UNUSED.
 	"""
@@ -4930,9 +4930,21 @@ func (ec *executionContext) field_Mutation_requestPackageInstanceAuthCreation_ar
 	args["packageID"] = arg0
 	var arg1 PackageInstanceAuthRequestInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNPackageInstanceAuthRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthRequestInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNPackageInstanceAuthRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthRequestInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(PackageInstanceAuthRequestInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageInstanceAuthRequestInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -5076,9 +5088,21 @@ func (ec *executionContext) field_Mutation_setPackageInstanceAuth_args(ctx conte
 	args["authID"] = arg1
 	var arg2 PackageInstanceAuthSetInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg2, err = ec.unmarshalNPackageInstanceAuthSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthSetInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNPackageInstanceAuthSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthSetInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(PackageInstanceAuthSetInput); ok {
+			arg2 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageInstanceAuthSetInput`, tmp)
 		}
 	}
 	args["in"] = arg2

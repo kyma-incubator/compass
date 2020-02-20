@@ -45,7 +45,7 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-670"
+      version: "PR-854"
     tests:
       director:
         dir:
