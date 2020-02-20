@@ -175,8 +175,8 @@ func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersS
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating StaticUser repository instance")
 	}
-	staticGroupsRepo, err := tenantmapping.NewStaticGroupRepository(staticGroupsSrc)
 
+	staticGroupsRepo, err := tenantmapping.NewStaticGroupRepository(staticGroupsSrc)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating StaticGroup repository instance")
 	}

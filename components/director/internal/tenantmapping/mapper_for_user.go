@@ -46,6 +46,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 	var externalTenantID, scopes, finalUserName string
 	var staticUser StaticUser
 	var staticGroups []StaticGroup
+	var consumerType consumer.ConsumerType
 	var err error
 
 	userGroups := reqData.GetUserGroups()
@@ -59,6 +60,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 		scopes = GetGroupScopes(staticGroups)
 
 		finalUserName = username
+		consumerType = consumer.Group
 	} else {
 		// proceed with staticUser (and his scopes) flow
 		staticUser, err = m.staticUserRepo.Get(username)
@@ -67,6 +69,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 		}
 
 		finalUserName = staticUser.Username
+		consumerType = consumer.User
 
 		scopes, err = reqData.GetScopes()
 		if err != nil {
@@ -95,7 +98,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 		return ObjectContext{}, errors.New("tenant mismatch")
 	}
 
-	return NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, finalUserName, consumer.User), nil
+	return NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, finalUserName, consumerType), nil
 }
 
 func hasValidTenant(assignedTenants []string, tenant string) bool {
