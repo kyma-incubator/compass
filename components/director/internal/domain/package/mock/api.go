@@ -2,7 +2,7 @@ package mock
 
 import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-func FixAPIDefinition(id, packageID string) *graphql.APIDefinition {
+func FixAPIDefinition(id string) *graphql.APIDefinition {
 	desc := "Lorem ipsum"
 	data := graphql.CLOB(`
 openapi: "3.0.0"
@@ -120,7 +120,6 @@ components:
 	return &graphql.APIDefinition{
 		ID:            id,
 		ApplicationID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-		PackageID:     &packageID,
 		Name:          "foo",
 		Description:   &desc,
 		Spec: &graphql.APISpec{

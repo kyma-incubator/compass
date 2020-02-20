@@ -18,9 +18,17 @@ The Runtime Provisioner also needs access to the cluster from which it fetches S
 
 ## Development
 
-After you introduce changes in the GraphQL schema, run the `gqlgen.sh` script.
-To run the Provisioner, use the following command:
+### GraphQL schema
 
+After you introduce changes in the GraphQL schema, run the `gqlgen.sh` script.
+
+### Database schema
+
+For tests to run properly, update the database schema in `./assets/database/provisioner.sql`. Provide the new migration in the Schema Migrator component in `migrations/provisioner`.
+
+### Run Provisioner
+
+To run the Runtime Provisioner, use the following command:
 ```bash
 go run cmd/main.go
 ```
@@ -45,7 +53,6 @@ This table lists the environment variables, their descriptions, and default valu
 | **APP_DATABASE_PORT** | Database port | `5432` |
 | **APP_DATABASE_NAME** | Database name | `provisioner` |
 | **APP_DATABASE_SSL_MODE** | SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html)  | `disable`|
-| **APP_SCHEMA_FILE_PATH** | Filepath for the database schema | `assets/database/provisioner.sql` |
 | **APP_INSTALLATION_TIMEOUT** | Kyma installation timeout | `30m`|
 | **APP_INSTALLATION_ERRORS_COUNT_FAILURE_THRESHOLD** | Number of installation errors that cause installation to fail  | `5`|
 | **APP_GARDENER_PROJECT** | Name of the Gardener project connected to the service account  | `gardenerProject`|
