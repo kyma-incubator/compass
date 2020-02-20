@@ -28,7 +28,7 @@ global:
       version: "PR-798"
     director:
       dir:
-      version: "PR-797"
+      version: "PR-798"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -179,13 +179,6 @@ global:
     idTokenConfig:
       claims: "{\"scopes\": \"{{ print .Extra.scope }}\", \"tenant\": \"{{ print .Extra.tenant }}\", \"consumerID\": \"{{ print .Extra.consumerID}}\", \"consumerType\": \"{{ print .Extra.consumerType }}\"}"
     mutators:
-      runtimeMappingService:
-          config:
-            api:
-              url: http://compass-director.compass-system.svc.cluster.local:3000/runtime-mapping
-              retry:
-                give_up_after: 3s
-                max_delay: 2000ms
       tenantMappingService:
         config:
           api:
