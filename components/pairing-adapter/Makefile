@@ -1,5 +1,5 @@
-APP_NAME = connectivity-adapter
-APP_PATH = components/connectivity-adapter
+APP_NAME = pairing-adapter
+APP_PATH = components/pairing-adapter
 ENTRYPOINT = cmd/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20190913-65b55d1
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
