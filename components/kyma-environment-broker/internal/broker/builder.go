@@ -189,22 +189,26 @@ func (b *InputBuilder) applyServiceManagerOverrides(in *gqlschema.ProvisionRunti
 	return nil
 }
 
-func (b *InputBuilder) applyManagementPlaneOverrides(in *gqlschema.ProvisionRuntimeInput) error {
-	const coreComponentName = "core"
-	const compassRuntimeAgentComponentName = "compass-runtime-agent"
-
-	var mpOverrides = []*gqlschema.ConfigEntryInput{
-		{
-			Key:   "managementPlane.url",
-			Value: b.directorURL,
-		},
+func applySingleOverride(in *gqlschema.ProvisionRuntimeInput, componentName, key, value string) {
+	override := gqlschema.ConfigEntryInput{
+		Key:   key,
+		Value: value,
 	}
 
 	for i := range in.KymaConfig.Components {
-		if in.KymaConfig.Components[i].Component == coreComponentName || in.KymaConfig.Components[i].Component == compassRuntimeAgentComponentName {
-			in.KymaConfig.Components[i].Configuration = append(in.KymaConfig.Components[i].Configuration, mpOverrides...)
+		if in.KymaConfig.Components[i].Component == componentName {
+			in.KymaConfig.Components[i].Configuration = append(in.KymaConfig.Components[i].Configuration, &override)
 		}
 	}
+}
+
+func (b *InputBuilder) applyManagementPlaneOverrides(in *gqlschema.ProvisionRuntimeInput) error {
+
+	// core override
+	applySingleOverride(in, "core", "console.managementPlane.url", b.directorURL)
+
+	// compass runtime agent override
+	applySingleOverride(in, "compass-runtime-agent", "managementPlane.url", b.directorURL)
 
 	return nil
 }

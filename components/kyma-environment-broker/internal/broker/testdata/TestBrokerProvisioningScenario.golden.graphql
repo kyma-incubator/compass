@@ -100,7 +100,7 @@
             namespace: "kyma-system"
             configuration: [
               {
-                key: "managementPlane.url"
+                key: "console.managementPlane.url"
                 value: "https://compass-gateway-auth-oauth.kyma.local/director/graphql"
               } 
             ] 
