@@ -138,7 +138,7 @@ func (d *ReqData) GetScopes() (string, error) {
 	return "", apperrors.NewKeyDoesNotExistError(ScopesKey)
 }
 
-// GetGroups returns group name or empty string if there's no group
+// GetUserGroups returns group name or empty string if there's no group
 func (d *ReqData) GetUserGroups() []string {
 	if groupsVal, ok := d.Body.Extra[GroupsKey]; ok {
 
