@@ -143,10 +143,8 @@ func (c *Client) AwaitOperationSucceeded(operationID string, timeout time.Durati
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil
 		}
+		c.log.Infof("Last operation status: %s", response.State)
 		switch domain.LastOperationState(response.State) {
-		case domain.Failed:
-			c.log.Info("Operation failed")
-			return true, errors.New("operation failed")
 		case domain.Succeeded:
 			c.log.Infof("Operation succeeded!")
 			return true, nil
