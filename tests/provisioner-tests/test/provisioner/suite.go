@@ -90,9 +90,9 @@ func (r *TestRuntime) Provision() (operationStatusID, runtimeID string, err erro
 	return r.currentOperationID, r.runtimeID, nil
 }
 
-func (r *TestRuntime) GetOperationStatus() (gqlschema.OperationStatus, error) {
+func (r *TestRuntime) GetOperationStatus(operationID string) (gqlschema.OperationStatus, error) {
 	r.LogStatus("Fetching Operation Status...")
-	operationStatus, err := r.testSuite.ProvisionerClient.RuntimeOperationStatus(r.currentOperationID)
+	operationStatus, err := r.testSuite.ProvisionerClient.RuntimeOperationStatus(operationID)
 	if err != nil {
 		r.LogStatus(fmt.Sprintf("Error while fetching Operation Status: %s", err))
 		return gqlschema.OperationStatus{}, errors.New(r.GetCurrentStatus())
@@ -101,9 +101,13 @@ func (r *TestRuntime) GetOperationStatus() (gqlschema.OperationStatus, error) {
 	return operationStatus, nil
 }
 
+func (r *TestRuntime) GetCurrentOperationStatus() (gqlschema.OperationStatus, error) {
+	return r.GetOperationStatus(r.currentOperationID)
+}
+
 func (r *TestRuntime) GetRuntimeStatus() (gqlschema.RuntimeStatus, error) {
 	r.LogStatus("Fetching Runtime Status...")
-	runtimeStatus, err := testSuite.ProvisionerClient.RuntimeStatus(r.runtimeID)
+	runtimeStatus, err := r.testSuite.ProvisionerClient.RuntimeStatus(r.runtimeID)
 	if err != nil {
 		r.LogStatus(fmt.Sprintf("Error while fetching Runtime Status: %s", err))
 		return gqlschema.RuntimeStatus{}, errors.New(r.GetCurrentStatus())
@@ -175,7 +179,7 @@ func (ts *TestSuite) Cleanup() {
 	logrus.Infof("Cleanup completed.")
 }
 
-func (ts *TestSuite) EnsureRuntimeDeprovisioning(l *logrus.Entry) []TestRuntime {
+func (ts *TestSuite) EnsureRuntimeDeprovisioning() []TestRuntime {
 	failedRuntimes := []TestRuntime{}
 	var wg sync.WaitGroup
 	defer wg.Wait()
@@ -188,7 +192,7 @@ func (ts *TestSuite) EnsureRuntimeDeprovisioning(l *logrus.Entry) []TestRuntime 
 			if runtime.isRunning {
 				runtime.LogStatus("Starting deprovisioning...")
 				operationID, err := runtime.Deprovision()
-				log := l.WithFields(logrus.Fields{
+				runtime.log = runtime.log.WithFields(logrus.Fields{
 					"RuntimeID":   runtime.runtimeID,
 					"OperationID": operationID,
 				})

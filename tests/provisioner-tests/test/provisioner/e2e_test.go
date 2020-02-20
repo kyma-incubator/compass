@@ -44,7 +44,8 @@ func Test_E2E_Gardener(t *testing.T) {
 				provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, provider)
 				runtimeName := fmt.Sprintf("runtime-%s", uuid.New().String()[:4])
 				provisioningInput.RuntimeInput.Name = runtimeName
-				runtime := testSuite.NewRuntime(provisioningInput).WithLog(log)
+				runtime := testSuite.NewRuntime(provisioningInput)
+				runtime.WithLog(log)
 
 				// Provision runtime
 				provisioningOperationID, runtimeID, err := runtime.Provision()
@@ -52,7 +53,7 @@ func Test_E2E_Gardener(t *testing.T) {
 				//defer ensureClusterIsDeprovisioned(runtimeID)
 
 				// Get provisioning Operation Status
-				provisioningOperationStatus, err := runtime.GetOperationStatus(provisioningOperationID)
+				provisioningOperationStatus, err := runtime.GetCurrentOperationStatus()
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
 
@@ -83,10 +84,9 @@ func Test_E2E_Gardener(t *testing.T) {
 				log.Infof("Deprovisioning %s runtime %s...", provider, runtimeName)
 				deprovisioningOperationID, err := runtime.Deprovision()
 				assertions.RequireNoError(t, err)
-				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeDeprovision, runtimeID)
 
 				// Get provisioning Operation Status
-				deprovisioningOperationStatus, err := runtime.GetOperationStatus(deprovisioningOperationID)
+				deprovisioningOperationStatus, err := runtime.GetCurrentOperationStatus()
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 
