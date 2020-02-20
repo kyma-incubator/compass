@@ -6,7 +6,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/pkg/errors"
 
@@ -19,23 +18,18 @@ type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant string) (model.Cluster, error)
 }
 
-func NewInputConverter(uuidGenerator uuid.UUIDGenerator,
-	releaseRepo release.ReadRepository,
-	gardenerProject string,
-	hyperscalerAccountProvider hyperscaler.AccountProvider) InputConverter {
+func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository, gardenerProject string) InputConverter {
 	return &converter{
-		uuidGenerator:              uuidGenerator,
-		releaseRepo:                releaseRepo,
-		gardenerProject:            gardenerProject,
-		hyperscalerAccountProvider: hyperscalerAccountProvider,
+		uuidGenerator:   uuidGenerator,
+		releaseRepo:     releaseRepo,
+		gardenerProject: gardenerProject,
 	}
 }
 
 type converter struct {
-	uuidGenerator              uuid.UUIDGenerator
-	releaseRepo                release.ReadRepository
-	gardenerProject            string
-	hyperscalerAccountProvider hyperscaler.AccountProvider
+	uuidGenerator   uuid.UUIDGenerator
+	releaseRepo     release.ReadRepository
+	gardenerProject string
 }
 
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant string) (model.Cluster, error) {
@@ -51,7 +45,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 
 	var providerConfig model.ProviderConfiguration
 	if input.ClusterConfig != nil {
-		providerConfig, err = c.providerConfigFromInput(runtimeID, *input.ClusterConfig, tenant)
+		providerConfig, err = c.providerConfigFromInput(runtimeID, *input.ClusterConfig)
 		if err != nil {
 			return model.Cluster{}, err
 		}
@@ -66,10 +60,10 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}, nil
 }
 
-func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput, tenant string) (model.ProviderConfiguration, error) {
+func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput) (model.ProviderConfiguration, error) {
 	if input.GardenerConfig != nil {
 		config := input.GardenerConfig
-		return c.gardenerConfigFromInput(runtimeID, *config, tenant)
+		return c.gardenerConfigFromInput(runtimeID, *config)
 	}
 	if input.GcpConfig != nil {
 		config := input.GcpConfig
@@ -78,7 +72,7 @@ func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.Clu
 	return nil, errors.New("cluster config does not match any provider")
 }
 
-func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput, tenant string) (model.GardenerConfig, error) {
+func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
 	id := c.uuidGenerator.New()
 	name := c.createGardenerClusterName(input.Provider)
 
@@ -93,12 +87,6 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		seed = *input.Seed
 	}
 
-	targetSecret, err := c.hyperscalerAccountProvider.GardenerSecretName(&input, tenant)
-
-	if err != nil {
-		return model.GardenerConfig{}, err
-	}
-
 	return model.GardenerConfig{
 		ID:                     id,
 		Name:                   name,
@@ -110,7 +98,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		MachineType:            input.MachineType,
 		Provider:               input.Provider,
 		Seed:                   seed,
-		TargetSecret:           targetSecret,
+		TargetSecret:           input.TargetSecret,
 		WorkerCidr:             input.WorkerCidr,
 		Region:                 input.Region,
 		AutoScalerMin:          input.AutoScalerMin,
@@ -133,45 +121,22 @@ func (c converter) createGardenerClusterName(provider string) string {
 	return name
 }
 
-func HyperscalerTypeFromProviderInput(input *gqlschema.ProviderSpecificInput) (hyperscaler.HyperscalerType, error) {
-
+func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {
 	if input == nil {
-		return hyperscaler.HyperscalerType(""), errors.New("ProviderSpecificInput not specified (was nil)")
+		return nil, errors.New("provider config not specified")
 	}
 
 	if input.GcpConfig != nil {
-		return hyperscaler.GCP, nil
+		return model.NewGCPGardenerConfig(input.GcpConfig)
 	}
 	if input.AzureConfig != nil {
-		return hyperscaler.Azure, nil
+		return model.NewAzureGardenerConfig(input.AzureConfig)
 	}
 	if input.AwsConfig != nil {
-		return hyperscaler.AWS, nil
-	}
-
-	return hyperscaler.HyperscalerType(""), errors.New("ProviderSpecificInput not specified")
-}
-
-func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {
-
-	hyperscalerType, err := HyperscalerTypeFromProviderInput(input)
-	if err != nil {
-		return nil, err
-	}
-
-	switch hyperscalerType {
-	case hyperscaler.GCP:
-		return model.NewGCPGardenerConfig(input.GcpConfig)
-
-	case hyperscaler.Azure:
-		return model.NewAzureGardenerConfig(input.AzureConfig)
-
-	case hyperscaler.AWS:
 		return model.NewAWSGardenerConfig(input.AwsConfig)
-
 	}
 
-	return nil, errors.Errorf("Unexpected HyperscalerType: %s from ProviderSpecificInput", hyperscalerType)
+	return nil, errors.New("provider config not specified")
 }
 
 func (c converter) gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput) model.GCPConfig {

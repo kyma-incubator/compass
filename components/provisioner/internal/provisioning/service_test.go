@@ -14,13 +14,11 @@ import (
 	sessionMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 
 	releaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
-	hyperscalerMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -49,6 +47,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	releaseRepo := &releaseMocks.Repository{}
 	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject)
 	graphQLConverter := NewGraphQLConverter()
 	uuidGenerator := uuid.NewUUIDGenerator()
 
@@ -80,10 +79,8 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput:  runtimeInput,
 		ClusterConfig: clusterConfig,
-		Credentials: &gqlschema.CredentialsInput{
-			SecretName: "secretName",
-		},
-		KymaConfig: fixKymaGraphQLConfigInput(),
+		Credentials:   &gqlschema.CredentialsInput{},
+		KymaConfig:    fixKymaGraphQLConfigInput(),
 	}
 
 	clusterMatcher := getClusterMatcher(expectedCluster)
@@ -95,11 +92,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 		directorServiceMock := &directormock.DirectorClient{}
 		provisioner := &mocks2.Provisioner{}
-
-		accountProviderMock := &hyperscalerMocks.AccountProvider{}
-		accountProviderMock.On("GardenerSecretName", mock.AnythingOfType("*gqlschema.GardenerConfigInput"), tenant).Return("gardener-secret-tenant", nil)
-
-		inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject, accountProviderMock)
 
 		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
@@ -123,7 +115,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)
 		directorServiceMock.AssertExpectations(t)
-		accountProviderMock.AssertExpectations(t)
 		provisioner.AssertExpectations(t)
 		releaseRepo.AssertExpectations(t)
 	})
@@ -146,8 +137,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 		directorServiceMock := &directormock.DirectorClient{}
 		provisioner := &mocks2.Provisioner{}
-
-		inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject, nil)
 
 		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
@@ -180,11 +169,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		directorServiceMock := &directormock.DirectorClient{}
 		provisioner := &mocks2.Provisioner{}
 
-		accountProviderMock := &hyperscalerMocks.AccountProvider{}
-		accountProviderMock.On("GardenerSecretName", mock.AnythingOfType("*gqlschema.GardenerConfigInput"), tenant).Return("gardener-secret-tenant", nil)
-
-		inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject, accountProviderMock)
-
 		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
@@ -207,7 +191,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)
 		directorServiceMock.AssertExpectations(t)
-		accountProviderMock.AssertExpectations(t)
 		provisioner.AssertExpectations(t)
 		releaseRepo.AssertExpectations(t)
 	})
@@ -218,11 +201,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 		directorServiceMock := &directormock.DirectorClient{}
 		provisioner := &mocks2.Provisioner{}
-
-		accountProviderMock := &hyperscalerMocks.AccountProvider{}
-		accountProviderMock.On("GardenerSecretName", mock.AnythingOfType("*gqlschema.GardenerConfigInput"), tenant).Return("gardener-secret-tenant", nil)
-
-		inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject, accountProviderMock)
 
 		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
@@ -245,7 +223,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)
 		directorServiceMock.AssertExpectations(t)
-		accountProviderMock.AssertExpectations(t)
 		provisioner.AssertExpectations(t)
 		releaseRepo.AssertExpectations(t)
 	})
@@ -253,10 +230,8 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	t.Run("Should return error when failed to register Runtime", func(t *testing.T) {
 		//given
 		directorServiceMock := &directormock.DirectorClient{}
-		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return("", errors.New("error"))
 
-		accountProvider := hyperscaler.NewAccountProvider(nil, nil)
-		inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject, accountProvider)
+		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return("", errors.New("error"))
 
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, nil, nil, uuidGenerator)
 
@@ -273,8 +248,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 func TestService_DeprovisionRuntime(t *testing.T) {
 
-	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), nil, gardenerProject, accountProvider)
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), nil, gardenerProject)
 	graphQLConverter := NewGraphQLConverter()
 	lastOperation := model.Operation{State: model.Succeeded}
 
@@ -409,8 +383,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 func TestService_RuntimeOperationStatus(t *testing.T) {
 	uuidGenerator := &uuidMocks.UUIDGenerator{}
-	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
-	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject, accountProvider)
+	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject)
 	graphQLConverter := NewGraphQLConverter()
 
 	operation := model.Operation{
@@ -466,8 +439,7 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 
 func TestService_RuntimeStatus(t *testing.T) {
 	uuidGenerator := &uuidMocks.UUIDGenerator{}
-	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
-	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject, accountProvider)
+	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject)
 	graphQLConverter := NewGraphQLConverter()
 
 	operation := model.Operation{
