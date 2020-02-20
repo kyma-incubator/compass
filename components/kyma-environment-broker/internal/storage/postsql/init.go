@@ -15,6 +15,7 @@ import (
 const (
 	schemaName         = "public"
 	InstancesTableName = "instances"
+	OperationTableName = "operations"
 	connectionRetries  = 10
 )
 

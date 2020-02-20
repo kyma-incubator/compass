@@ -1,4 +1,4 @@
-FROM golang:1.13.1-alpine3.10 as builder
+FROM golang:1.13.8-alpine3.11 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/provisioner
 WORKDIR ${BASE_APP_DIR}
@@ -35,7 +35,7 @@ RUN go build -v -o main ./cmd/
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 RUN wget https://github.com/kyma-incubator/terraform-provider-gardener/releases/download/v0.0.3/terraform-provider-gardener-linux-amd64
 
-FROM alpine:3.10
+FROM alpine:3.11.3
 LABEL source = git@github.com:kyma-incubator/compass.git
 # Hydroform needs write permissions
 RUN mkdir /app && chmod 777 /app
