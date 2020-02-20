@@ -235,14 +235,14 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 	emptyModelPackageCreateInput := &model.PackageCreateInput{}
 	testCases := []struct {
 		Name            string
-		Input           graphql.PackageCreateInput
-		Expected        model.PackageCreateInput
+		Input           *graphql.PackageCreateInput
+		Expected        *model.PackageCreateInput
 		AuthConverterFn func() *automock.AuthConverter
 	}{
 		{
 			Name:     "All properties given",
-			Input:    gqlPackageCreateInput,
-			Expected: modelPackageCreateInput,
+			Input:    &gqlPackageCreateInput,
+			Expected: &modelPackageCreateInput,
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
 				conv.On("InputFromGraphQL", gqlPackageCreateInput.DefaultInstanceAuth).Return(modelPackageCreateInput.DefaultInstanceAuth).Once()
@@ -251,8 +251,8 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 		},
 		{
 			Name:     "Empty",
-			Input:    graphql.PackageCreateInput{},
-			Expected: model.PackageCreateInput{},
+			Input:    &graphql.PackageCreateInput{},
+			Expected: &model.PackageCreateInput{},
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
 				conv.On("InputFromGraphQL", emptyGQLPackageCreateInput.DefaultInstanceAuth).Return(emptyModelPackageCreateInput.DefaultInstanceAuth).Once()
@@ -268,7 +268,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 
 			// when
 			converter := mp_package.NewConverter(authConverter)
-			res, err := converter.CreateInputFromGraphQL(testCase.Input)
+			res, err := converter.CreateInputFromGraphQL(*testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.Expected, res)
@@ -288,14 +288,14 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 	emptyModelPackageCreateInput := &model.PackageCreateInput{}
 	testCases := []struct {
 		Name            string
-		Input           graphql.PackageUpdateInput
-		Expected        model.PackageUpdateInput
+		Input           *graphql.PackageUpdateInput
+		Expected        *model.PackageUpdateInput
 		AuthConverterFn func() *automock.AuthConverter
 	}{
 		{
 			Name:     "All properties given",
-			Input:    gqlPackageCreateInput,
-			Expected: modelPackageCreateInput,
+			Input:    &gqlPackageCreateInput,
+			Expected: &modelPackageCreateInput,
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
 				conv.On("InputFromGraphQL", gqlPackageCreateInput.DefaultInstanceAuth).Return(modelPackageCreateInput.DefaultInstanceAuth).Once()
@@ -304,8 +304,8 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 		},
 		{
 			Name:     "Empty",
-			Input:    graphql.PackageUpdateInput{},
-			Expected: model.PackageUpdateInput{},
+			Input:    &graphql.PackageUpdateInput{},
+			Expected: &model.PackageUpdateInput{},
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
 				conv.On("InputFromGraphQL", emptyGQLPackageCreateInput.DefaultInstanceAuth).Return(emptyModelPackageCreateInput.DefaultInstanceAuth).Once()
@@ -321,7 +321,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 
 			// when
 			converter := mp_package.NewConverter(authConverter)
-			res, err := converter.UpdateInputFromGraphQL(testCase.Input)
+			res, err := converter.UpdateInputFromGraphQL(*testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.Expected, res)

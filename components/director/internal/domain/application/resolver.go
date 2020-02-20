@@ -828,11 +828,9 @@ func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first
 		return nil, err
 	}
 
-	totalCount := len(gqlPkgs)
-
 	return &graphql.PackagePage{
 		Data:       gqlPkgs,
-		TotalCount: totalCount,
+		TotalCount: pkgsPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(pkgsPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(pkgsPage.PageInfo.EndCursor),

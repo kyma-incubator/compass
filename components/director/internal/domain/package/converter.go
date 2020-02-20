@@ -35,7 +35,7 @@ func (c *converter) ToEntity(in *model.Package) (*Entity, error) {
 
 	defaultInstanceAuth, err := marshallDefaultInstanceAuth(in.DefaultInstanceAuth)
 	if err != nil {
-		return &Entity{}, err
+		return nil, err
 	}
 
 	output := &Entity{
@@ -50,9 +50,9 @@ func (c *converter) ToEntity(in *model.Package) (*Entity, error) {
 	if in.InstanceAuthRequestInputSchema != nil {
 		b, err := json.Marshal(in.InstanceAuthRequestInputSchema)
 		if err != nil {
-			return &Entity{}, errors.Wrap(err, "while marshaling schema to JSON")
+			return nil, errors.Wrap(err, "while marshaling schema to JSON")
 		}
-		output.InstanceAuthRequestJSONSchema = sql.NullString{String: string(b), Valid: true}
+		output.InstanceAuthRequestJSONSchema = repo.NewValidNullableString(string(b))
 	} else {
 		output.InstanceAuthRequestJSONSchema = sql.NullString{Valid: false}
 	}
@@ -84,7 +84,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Package, error) {
 		var tmp interface{}
 		err := json.Unmarshal([]byte(entity.InstanceAuthRequestJSONSchema.String), &mapDest)
 		if err != nil {
-			return &model.Package{}, err
+			return nil, err
 		}
 		tmp = mapDest
 		output.InstanceAuthRequestInputSchema = &tmp
@@ -99,7 +99,7 @@ func (c *converter) ToGraphQL(in *model.Package) (*graphql.Package, error) {
 
 	schema, err := graphql.MarshalSchema(in.InstanceAuthRequestInputSchema)
 	if err != nil {
-		return &graphql.Package{}, err
+		return nil, err
 	}
 
 	return &graphql.Package{
@@ -127,13 +127,13 @@ func (c *converter) MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, 
 	return packages, nil
 }
 
-func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) (model.PackageCreateInput, error) {
+func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) (*model.PackageCreateInput, error) {
 	schema, err := in.InstanceAuthRequestInputSchema.Unmarshal()
 	if err != nil {
-		return model.PackageCreateInput{}, err
+		return nil, err
 	}
 
-	return model.PackageCreateInput{
+	return &model.PackageCreateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: schema,
@@ -141,12 +141,12 @@ func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) (model
 	}, nil
 }
 
-func (c *converter) UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (model.PackageUpdateInput, error) {
+func (c *converter) UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error) {
 	schema, err := in.InstanceAuthRequestInputSchema.Unmarshal()
 	if err != nil {
-		return model.PackageUpdateInput{}, err
+		return nil, err
 	}
-	return model.PackageUpdateInput{
+	return &model.PackageUpdateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: schema,
