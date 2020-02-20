@@ -30,7 +30,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -228,7 +227,6 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 
 	kymaConfig := fixKymaGraphQLConfigInput()
 	clusterConfigurations := getTestClusterConfigurations()
-	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
 
 	for _, cfg := range clusterConfigurations {
 		t.Run(cfg.description, func(t *testing.T) {
@@ -247,7 +245,7 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 
 			dbSessionFactory := dbsession.NewFactory(connection)
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
-			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject, accountProvider)
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock, runtimeConfigurator)
 			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator)
