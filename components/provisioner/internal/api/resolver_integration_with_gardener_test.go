@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
@@ -171,8 +169,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
-
 	for _, config := range clusterConfigurations {
 		t.Run(config.description, func(t *testing.T) {
 			configMapClient.Delete(runtimeConfigrtr.ConfigMapName, &metav1.DeleteOptions{})
@@ -189,7 +185,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 
-			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project", accountProvider)
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project")
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
 			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator)
