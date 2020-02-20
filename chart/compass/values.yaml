@@ -22,7 +22,10 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-801"
+      version: "PR-798"
+    pairing_adapter:
+      dir:
+      version: "PR-798"
     director:
       dir:
       version: "PR-797"
@@ -58,7 +61,7 @@ global:
         version: "PR-552"
       connectivity_adapter:
         dir:
-        version: "PR-822"
+        version: "PR-787"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -223,3 +226,6 @@ global:
       nameField: "name"
       discriminatorField: ""
       discriminatorValue: ""
+
+pairing-adapter:
+  enabled: false

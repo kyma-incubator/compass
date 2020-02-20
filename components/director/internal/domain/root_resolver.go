@@ -2,6 +2,8 @@ package domain
 
 import (
 	"context"
+	"net/http"
+	"time"
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
@@ -64,7 +66,7 @@ type RootResolver struct {
 	packageInstanceAuth *packageinstanceauth.Resolver
 }
 
-func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config) *RootResolver {
+func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, pairingAdaptersMapping map[string]string) *RootResolver {
 	authConverter := auth.NewConverter()
 	apiRtmAuthConverter := apiruntimeauth.NewConverter(authConverter)
 	runtimeConverter := runtime.NewConverter()
@@ -115,11 +117,12 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
-	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, oneTimeTokenCfg.ConnectorURL)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+	httpClient := getHttpClient()
+	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
 	oAuth20Svc := oauth20.NewService(scopeCfgProvider, uidSvc, oAuth20Cfg)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
 	return &RootResolver{
 		app:                 application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc),
@@ -141,6 +144,13 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		mpPackage:           mp_package.NewResolver(),
 		packageInstanceAuth: packageinstanceauth.NewResolver(),
 	}
+}
+
+func getHttpClient() *http.Client {
+	out := &http.Client{
+		Timeout: time.Second * 3,
+	}
+	return out
 }
 
 func (r *RootResolver) Mutation() graphql.MutationResolver {
