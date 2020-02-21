@@ -270,6 +270,31 @@ func (r *Resolver) InstanceAuthsMock(ctx context.Context, obj *graphql.Package) 
 
 var packageID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
+func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Package, id string) (*graphql.APIDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	api, err := r.apiSvc.GetForPackage(ctx, id, obj.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.apiConverter.ToGraphQL(api), nil
+}
+
 func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Package, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -310,6 +335,31 @@ func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Package, gro
 			HasNextPage: apisPage.PageInfo.HasNextPage,
 		},
 	}, nil
+}
+
+func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Package, id string) (*graphql.EventDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	eventAPI, err := r.eventSvc.GetForPackage(ctx, id, obj.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.eventConverter.ToGraphQL(eventAPI), nil
 }
 
 func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Package, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
@@ -353,6 +403,31 @@ func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Package, g
 	}, nil
 }
 
+func (r *Resolver) Document(ctx context.Context, obj *graphql.Package, id string) (*graphql.Document, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	eventAPI, err := r.documentSvc.GetForPackage(ctx, id, obj.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.documentConverter.ToGraphQL(eventAPI), nil
+}
+
 // TODO: Proper error handling
 func (r *Resolver) Documents(ctx context.Context, obj *graphql.Package, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	tx, err := r.transact.Begin()
@@ -394,79 +469,4 @@ func (r *Resolver) Documents(ctx context.Context, obj *graphql.Package, first *i
 			HasNextPage: documentsPage.PageInfo.HasNextPage,
 		},
 	}, nil
-}
-
-func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Package, id string) (*graphql.APIDefinition, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommited(tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	api, err := r.apiSvc.GetForPackage(ctx, id, obj.ID)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.apiConverter.ToGraphQL(api), nil
-}
-
-func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Package, id string) (*graphql.EventDefinition, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommited(tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	eventAPI, err := r.eventSvc.GetForPackage(ctx, id, obj.ID)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.eventConverter.ToGraphQL(eventAPI), nil
-}
-
-func (r *Resolver) Document(ctx context.Context, obj *graphql.Package, id string) (*graphql.Document, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommited(tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	eventAPI, err := r.documentSvc.GetForPackage(ctx, id, obj.ID)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.documentConverter.ToGraphQL(eventAPI), nil
 }
