@@ -46,7 +46,7 @@ func (s *RuntimeStatusStep) Name() string {
 }
 
 func (s *RuntimeStatusStep) Run(operation internal.ProvisioningOperation, log *logrus.Entry) (internal.ProvisioningOperation, time.Duration, error) {
-	if time.Since(operation.CreatedAt) > CheckStatusTimeout {
+	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout))
 	}
 

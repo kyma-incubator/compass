@@ -17,55 +17,70 @@ type Step interface {
 
 type Manager struct {
 	log              *logrus.Logger
+	steps            map[int][]Step
 	operationStorage storage.Operations
-	steps            map[int]Step
 }
 
-func NewManager(logger *logrus.Logger) *Manager {
+func NewManager(storage storage.Operations, logger *logrus.Logger) *Manager {
 	return &Manager{
-		log:   logger,
-		steps: make(map[int]Step, 1),
+		log:              logger,
+		operationStorage: storage,
+		steps:            make(map[int][]Step, 0),
 	}
 }
 
-func (m *Manager) AddStep(order int, step Step) {
-	m.steps[order] = step
+func (m *Manager) InitStep(step Step) {
+	m.AddStep(0, step)
+}
+
+func (m *Manager) AddStep(weight int, step Step) {
+	if weight <= 0 {
+		weight = 1
+	}
+	m.steps[weight] = append(m.steps[weight], step)
 }
 
 func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	operation, err := m.operationStorage.GetProvisioningOperationByID(operationID)
 	if err != nil {
-		return 10 * time.Minute, nil
+		return 3 * time.Second, nil
 	}
 
 	var when time.Duration
 	processedOperation := *operation
-	log := m.log.WithFields(logrus.Fields{"operation": operationID})
+	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID})
 
-	var order []int
-	for o := range m.steps {
-		order = append(order, o)
-	}
-	sort.Ints(order)
+	logOperation.Info("Start steps")
+	for _, weightStep := range m.sortWeight() {
+		steps := m.steps[weightStep]
+		for _, step := range steps {
+			logStep := logOperation.WithFields(logrus.Fields{"step": step.Name()})
+			logStep.Infof("Start step")
 
-	for _, orderStep := range order {
-		step := m.steps[orderStep]
-		log.WithFields(logrus.Fields{"step": step.Name()})
-		log.Infof("Start step")
+			processedOperation, when, err = step.Run(processedOperation, logStep)
+			if err != nil {
+				logStep.Errorf("Step failed: %s", err)
+				return 0, err
+			}
+			if when == 0 {
+				logStep.Info("Step successful")
+				continue
+			}
 
-		processedOperation, when, err = step.Run(processedOperation, log)
-		if err != nil {
-			log.Errorf("Step failed: %s", err)
-			return 0, err
+			logStep.Infof("Step will be repeated in %s ...", when)
+			return when, nil
 		}
-		if when == 0 {
-			log.Info("Step successful")
-			continue
-		}
-
-		log.Infof("Step will be repeated in %s ...", when)
-		return when, nil
 	}
 
 	return 0, nil
+}
+
+func (m *Manager) sortWeight() []int {
+	var weight []int
+	for w := range m.steps {
+		weight = append(weight, w)
+	}
+	sort.Ints(weight)
+
+	return weight
 }

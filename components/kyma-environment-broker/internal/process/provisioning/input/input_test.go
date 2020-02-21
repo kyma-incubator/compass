@@ -1,19 +1,18 @@
-package provisioning
+package input
 
 import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/automock"
-
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-// Currently only azure is supported
 
 func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	// given
@@ -22,7 +21,6 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 		mappedComponentList = mapToGQLComponentConfigurationInput(inputComponentList)
 		toDisableComponents = []string{"kiali"}
 		smOverrides         = internal.ServiceManagerEntryDTO{URL: "http://sm-pico-bello-url.com"}
-		fixID               = "fix-id"
 	)
 
 	optComponentsSvc := &automock.OptionalComponentService{}
@@ -30,7 +28,13 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return(toDisableComponents)
 	optComponentsSvc.On("ExecuteDisablers", mappedComponentList, toDisableComponents[0]).Return(mappedComponentList, nil)
 
-	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, "1.10.0", internal.ServiceManagerOverride{}, "https://compass-gateway-auth-oauth.kyma.local/director/graphql")
+	config := Config{
+		URL:             "",
+		GCPSecretName:   "",
+		AzureSecretName: "azure-secret",
+		AWSSecretName:   "",
+	}
+	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, config, "1.10.0")
 
 	// when
 	builder, found := factory.ForPlan(broker.AzurePlanID)
@@ -41,34 +45,38 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	// when
 	input, err := builder.
 		SetProvisioningParameters(internal.ProvisioningParametersDTO{
-			Name: "azure-cluster",
+			Name:      "azure-cluster",
+			NodeCount: ptr.Integer(4),
 		}).
-		SetERSContext(internal.ERSContext{
-			ServiceManager: smOverrides,
-			SubAccountID:   fixID,
-		}).
-		SetProvisioningConfig(Config{
-			AzureSecretName: "azure-secret",
-		}).
-		SetInstanceID(fixID).
-		Build()
+		SetOverrides(ServiceManagerComponentName, []*gqlschema.ConfigEntryInput{
+			{
+				Key:   "config.sm.url",
+				Value: smOverrides.URL,
+			},
+			{
+				Key:   "sm.user",
+				Value: smOverrides.Credentials.BasicAuth.Username,
+			},
+			{
+				Key:    "sm.password",
+				Value:  smOverrides.Credentials.BasicAuth.Password,
+				Secret: ptr.Bool(true),
+			},
+		}).Create()
 
 	// then
 	require.NoError(t, err)
-	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 	assert.Equal(t, "azure-cluster", input.RuntimeInput.Name)
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
 	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
-	assert.Equal(t, &gqlschema.Labels{
-		brokerKeyPrefix + "instance_id":   []string{fixID},
-		globalKeyPrefix + "subaccount_id": []string{fixID},
-	}, input.RuntimeInput.Labels)
+	assert.Equal(t, 4, input.ClusterConfig.GardenerConfig.NodeCount)
+	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 
 	assertServiceManagerOverrides(t, input.KymaConfig.Components, smOverrides)
 }
 
 func assertServiceManagerOverrides(t *testing.T, components internal.ComponentConfigurationInputList, overrides internal.ServiceManagerEntryDTO) {
-	smComponent, found := find(components, serviceManagerComponentName)
+	smComponent, found := find(components, ServiceManagerComponentName)
 	require.True(t, found)
 	assert.Equal(t, overrides.URL, smComponent.Configuration[0].Value)
 }
@@ -87,6 +95,6 @@ func fixKymaComponentList() []v1alpha1.KymaComponent {
 		{Name: "dex", Namespace: "kyma-system"},
 		{Name: "ory", Namespace: "kyma-system"},
 		{Name: "keb", Namespace: "kyma-system"},
-		{Name: serviceManagerComponentName, Namespace: "kyma-system"},
+		{Name: ServiceManagerComponentName, Namespace: "kyma-system"},
 	}
 }

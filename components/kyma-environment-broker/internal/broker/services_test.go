@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/automock"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

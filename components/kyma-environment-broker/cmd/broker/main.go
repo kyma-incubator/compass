@@ -1,10 +1,6 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"os"
-
 	"context"
 	"log"
 	"net/http"
@@ -17,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -40,7 +37,7 @@ type Config struct {
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
-	Provisioning       provisioning.Config
+	Provisioning       input.Config
 	Director           director.Config
 	Database           storage.Config
 	ManagementPlaneURL string
@@ -112,18 +109,22 @@ func main() {
 	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
 	fatalOnError(err)
 
-	inputFactory := provisioning.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager, cfg.ManagementPlaneURL)
+	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion)
 
 	// create log dumper
 	dumper, err := broker.NewDumper()
 	fatalOnError(err)
 
 	// create and run queue, steps provisioning
-	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), inputFactory, cfg.Provisioning, provisionerClient)
+	inputInitialisation := provisioning.NewInputInitialisationStep(db.Operations(), inputFactory, cfg.ManagementPlaneURL)
+
+	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
 	runtimeStatusStep := provisioning.NewRuntimeStatusStep(db.Operations(), db.Instances(), provisionerClient, directorClient)
 
 	logs := logrus.New()
-	stepManager := process.NewManager(logs)
+	stepManager := process.NewManager(db.Operations(), logs)
+	stepManager.InitStep(inputInitialisation)
+
 	stepManager.AddStep(1, runtimeStep)
 	stepManager.AddStep(2, runtimeStatusStep)
 

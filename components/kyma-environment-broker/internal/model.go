@@ -12,6 +12,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+type ProvisionInputCreator interface {
+	SetProvisioningParameters(params ProvisioningParametersDTO) ProvisionInputCreator
+	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
+	Create() (gqlschema.ProvisionRuntimeInput, error)
+}
+
 type Instance struct {
 	InstanceID      string
 	RuntimeID       string
@@ -46,6 +52,9 @@ type ProvisioningOperation struct {
 	// following fields are serialized to JSON and stored in the storage
 	LmsTenantID            string `json:"lms_tenant_id"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
+
+	// following fields are not stored in the storage
+	InputCreator ProvisionInputCreator
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation

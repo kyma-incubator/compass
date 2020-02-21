@@ -36,7 +36,7 @@ func TestProvision_Provision(t *testing.T) {
 		queue := &automock.Queue{}
 		queue.On("Add", mock.AnythingOfType("string"))
 
-		factoryBuilder := &automock.InputBuilderForPlan{}
+		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", planID).Return(true)
 
 		// #create provisioner endpoint
@@ -79,7 +79,7 @@ func TestProvision_Provision(t *testing.T) {
 		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
 		assert.NoError(t, err)
 
-		factoryBuilder := &automock.InputBuilderForPlan{}
+		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", planID).Return(true)
 
 		// #create provisioner endpoint
@@ -112,7 +112,7 @@ func TestProvision_Provision(t *testing.T) {
 		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
 		assert.NoError(t, err)
 
-		factoryBuilder := &automock.InputBuilderForPlan{}
+		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", planID).Return(true)
 
 		// #create provisioner endpoint

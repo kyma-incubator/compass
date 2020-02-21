@@ -16,14 +16,14 @@ import (
 )
 
 //go:generate mockery -name=Queue -output=automock -outpkg=automock -case=underscore
-//go:generate mockery -name=InputBuilderForPlan -output=automock -outpkg=automock -case=underscore
+//go:generate mockery -name=PlanValidator -output=automock -outpkg=automock -case=underscore
 
 type (
 	Queue interface {
 		Add(operationId string)
 	}
 
-	InputBuilderForPlan interface {
+	PlanValidator interface {
 		IsPlanSupport(planID string) bool
 	}
 )
@@ -31,12 +31,12 @@ type (
 type ProvisionEndpoint struct {
 	operationsStorage storage.Operations
 	queue             Queue
-	builderFactory    InputBuilderForPlan
+	builderFactory    PlanValidator
 	dumper            StructDumper
 	enabledPlanIDs    map[string]struct{}
 }
 
-func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory InputBuilderForPlan, dumper StructDumper) *ProvisionEndpoint {
+func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory PlanValidator, dumper StructDumper) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
 		id := planIDsMapping[planName]
