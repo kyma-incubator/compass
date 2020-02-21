@@ -45,6 +45,7 @@ type TestSuite struct {
 	config        testkit.TestConfig
 	secretsClient v1client.SecretInterface
 
+	waitGroup    sync.WaitGroup
 	TestRuntimes []TestRuntime
 }
 
@@ -155,6 +156,8 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 		gardenerProviders: config.Gardener.Providers,
 
 		config: config,
+
+		waitGroup: sync.WaitGroup{},
 	}, nil
 }
 
@@ -166,6 +169,7 @@ func (ts *TestSuite) Setup() error {
 
 func (ts *TestSuite) Cleanup() {
 	// TODO(@rafalpotempa): Fetching provisioner logs when tests fail
+	ts.waitGroup.Wait()
 	logrus.Infof("Starting cleanup...")
 
 	undeprovisionedRuntimes := ts.EnsureRuntimeDeprovisioning()

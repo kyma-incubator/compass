@@ -25,6 +25,8 @@ const (
 // TODO: Consider fetching logs from Provisioner on error (or from created Runtime)
 
 func Test_E2E_Gardener(t *testing.T) {
+	testSuite.waitGroup.Add(1)
+	defer testSuite.waitGroup.Done()
 	globalLog := logrus.WithField("TestId", testSuite.TestId)
 
 	globalLog.Infof("Starting Compass Provisioner tests on Gardener")
