@@ -43,22 +43,22 @@ func getGroupScopes(groups StaticGroups) string {
 }
 
 // getGroupData get scopes and username from group
-func getGroupData(m *mapperForUser, reqData ReqData, username string) (scopes string, user string, proceedWithUser bool) {
+func getGroupData(m *mapperForUser, reqData ReqData) (scopes string,  proceedWithUser bool) {
 	userGroups := reqData.GetUserGroups()
 
 	if len(userGroups) == 0 {
-		return "", username, true
+		return "", true
 	}
 
 	staticGroups := m.staticGroupRepo.Get(userGroups)
 
 	if len(staticGroups) == 0 {
-		return "", username, true
+		return "", true
 	}
 
 	scopes = getGroupScopes(staticGroups)
 
-	return scopes, username, false
+	return scopes, false
 }
 
 // getUserData get all scopes, tenants and username from user
@@ -79,13 +79,14 @@ func getUserData(m *mapperForUser, reqData ReqData, username string) (scopes str
 }
 
 func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
-	var externalTenantID, scopes, finalUserName string
+	var externalTenantID, scopes string
 	var tenants []string
 	var err error
 	proceedWithUser := false
 	consumerType := consumer.Group
+	finalUserName := username
 
-	scopes, finalUserName, proceedWithUser = getGroupData(m, reqData, username)
+	scopes, proceedWithUser = getGroupData(m, reqData)
 
 
 	if proceedWithUser {
