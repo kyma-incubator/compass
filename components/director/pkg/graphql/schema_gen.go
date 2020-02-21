@@ -273,7 +273,7 @@ type ComplexityRoot struct {
 		DeleteEventDefinition                        func(childComplexity int, id string) int
 		DeleteLabelDefinition                        func(childComplexity int, key string, deleteRelatedLabels *bool) int
 		DeletePackage                                func(childComplexity int, id string) int
-		DeletePackageInstanceAuth                    func(childComplexity int, packageID string, authID string) int
+		DeletePackageInstanceAuth                    func(childComplexity int, authID string) int
 		DeleteRuntimeLabel                           func(childComplexity int, runtimeID string, key string) int
 		DeleteSystemAuthForApplication               func(childComplexity int, authID string) int
 		DeleteSystemAuthForIntegrationSystem         func(childComplexity int, authID string) int
@@ -291,11 +291,11 @@ type ComplexityRoot struct {
 		RequestOneTimeTokenForApplication            func(childComplexity int, id string) int
 		RequestOneTimeTokenForRuntime                func(childComplexity int, id string) int
 		RequestPackageInstanceAuthCreation           func(childComplexity int, packageID string, in PackageInstanceAuthRequestInput) int
-		RequestPackageInstanceAuthDeletion           func(childComplexity int, packageID string, authID string) int
+		RequestPackageInstanceAuthDeletion           func(childComplexity int, authID string) int
 		SetAPIAuth                                   func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
 		SetApplicationLabel                          func(childComplexity int, applicationID string, key string, value interface{}) int
 		SetDefaultEventingForApplication             func(childComplexity int, appID string, runtimeID string) int
-		SetPackageInstanceAuth                       func(childComplexity int, packageID string, authID string, in PackageInstanceAuthSetInput) int
+		SetPackageInstanceAuth                       func(childComplexity int, authID string, in PackageInstanceAuthSetInput) int
 		SetRuntimeLabel                              func(childComplexity int, runtimeID string, key string, value interface{}) int
 		UnregisterApplication                        func(childComplexity int, id string) int
 		UnregisterIntegrationSystem                  func(childComplexity int, id string) int
@@ -539,10 +539,10 @@ type MutationResolver interface {
 	DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*Label, error)
 	SetDefaultEventingForApplication(ctx context.Context, appID string, runtimeID string) (*ApplicationEventingConfiguration, error)
 	DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*ApplicationEventingConfiguration, error)
-	SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in PackageInstanceAuthSetInput) (*PackageInstanceAuth, error)
-	DeletePackageInstanceAuth(ctx context.Context, packageID string, authID string) (*PackageInstanceAuth, error)
+	SetPackageInstanceAuth(ctx context.Context, authID string, in PackageInstanceAuthSetInput) (*PackageInstanceAuth, error)
+	DeletePackageInstanceAuth(ctx context.Context, authID string) (*PackageInstanceAuth, error)
 	RequestPackageInstanceAuthCreation(ctx context.Context, packageID string, in PackageInstanceAuthRequestInput) (*PackageInstanceAuth, error)
-	RequestPackageInstanceAuthDeletion(ctx context.Context, packageID string, authID string) (*PackageInstanceAuth, error)
+	RequestPackageInstanceAuthDeletion(ctx context.Context, authID string) (*PackageInstanceAuth, error)
 	AddPackage(ctx context.Context, applicationID string, in PackageCreateInput) (*Package, error)
 	UpdatePackage(ctx context.Context, id string, in PackageUpdateInput) (*Package, error)
 	DeletePackage(ctx context.Context, id string) (*Package, error)
@@ -1699,7 +1699,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeletePackageInstanceAuth(childComplexity, args["packageID"].(string), args["authID"].(string)), true
+		return e.complexity.Mutation.DeletePackageInstanceAuth(childComplexity, args["authID"].(string)), true
 
 	case "Mutation.deleteRuntimeLabel":
 		if e.complexity.Mutation.DeleteRuntimeLabel == nil {
@@ -1915,7 +1915,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RequestPackageInstanceAuthDeletion(childComplexity, args["packageID"].(string), args["authID"].(string)), true
+		return e.complexity.Mutation.RequestPackageInstanceAuthDeletion(childComplexity, args["authID"].(string)), true
 
 	case "Mutation.setAPIAuth":
 		if e.complexity.Mutation.SetAPIAuth == nil {
@@ -1963,7 +1963,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SetPackageInstanceAuth(childComplexity, args["packageID"].(string), args["authID"].(string), args["in"].(PackageInstanceAuthSetInput)), true
+		return e.complexity.Mutation.SetPackageInstanceAuth(childComplexity, args["authID"].(string), args["in"].(PackageInstanceAuthSetInput)), true
 
 	case "Mutation.setRuntimeLabel":
 		if e.complexity.Mutation.SetRuntimeLabel == nil {
@@ -3931,8 +3931,8 @@ type Mutation {
 	
 	When used without error, the status of pending auth is set to success.
 	"""
-	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: PackageInstanceAuthSetInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
-	deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
+	setPackageInstanceAuth(authID: ID!, in: PackageInstanceAuthSetInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
+	deletePackageInstanceAuth(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
 	"""
 	When defaultInstanceAuth is set, it fires "createPackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to PENDING.
 	"""
@@ -3940,7 +3940,7 @@ type Mutation {
 	"""
 	When defaultInstanceAuth is set, it fires "deletePackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to UNUSED.
 	"""
-	requestPackageInstanceAuthDeletion(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
+	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
 	addPackage(applicationID: ID!, in: PackageCreateInput! @validate): Package! @hasScopes(path: "graphql.mutation.addPackage")
 	updatePackage(id: ID!, in: PackageUpdateInput! @validate): Package! @hasScopes(path: "graphql.mutation.updatePackage")
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
@@ -4605,21 +4605,13 @@ func (ec *executionContext) field_Mutation_deletePackageInstanceAuth_args(ctx co
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["packageID"]; ok {
+	if tmp, ok := rawArgs["authID"]; ok {
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["packageID"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["authID"]; ok {
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["authID"] = arg1
+	args["authID"] = arg0
 	return args, nil
 }
 
@@ -4955,21 +4947,13 @@ func (ec *executionContext) field_Mutation_requestPackageInstanceAuthDeletion_ar
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["packageID"]; ok {
+	if tmp, ok := rawArgs["authID"]; ok {
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["packageID"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["authID"]; ok {
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["authID"] = arg1
+	args["authID"] = arg0
 	return args, nil
 }
 
@@ -5071,22 +5055,14 @@ func (ec *executionContext) field_Mutation_setPackageInstanceAuth_args(ctx conte
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["packageID"]; ok {
+	if tmp, ok := rawArgs["authID"]; ok {
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["packageID"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["authID"]; ok {
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["authID"] = arg1
-	var arg2 PackageInstanceAuthSetInput
+	args["authID"] = arg0
+	var arg1 PackageInstanceAuthSetInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
 			return ec.unmarshalNPackageInstanceAuthSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthSetInput(ctx, tmp)
@@ -5100,12 +5076,12 @@ func (ec *executionContext) field_Mutation_setPackageInstanceAuth_args(ctx conte
 			return nil, err
 		}
 		if data, ok := tmp.(PackageInstanceAuthSetInput); ok {
-			arg2 = data
+			arg1 = data
 		} else {
 			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.PackageInstanceAuthSetInput`, tmp)
 		}
 	}
-	args["in"] = arg2
+	args["in"] = arg1
 	return args, nil
 }
 
@@ -13233,7 +13209,7 @@ func (ec *executionContext) _Mutation_setPackageInstanceAuth(ctx context.Context
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SetPackageInstanceAuth(rctx, args["packageID"].(string), args["authID"].(string), args["in"].(PackageInstanceAuthSetInput))
+			return ec.resolvers.Mutation().SetPackageInstanceAuth(rctx, args["authID"].(string), args["in"].(PackageInstanceAuthSetInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.setPackageInstanceAuth")
@@ -13297,7 +13273,7 @@ func (ec *executionContext) _Mutation_deletePackageInstanceAuth(ctx context.Cont
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeletePackageInstanceAuth(rctx, args["packageID"].(string), args["authID"].(string))
+			return ec.resolvers.Mutation().DeletePackageInstanceAuth(rctx, args["authID"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deletePackageInstanceAuth")
@@ -13425,7 +13401,7 @@ func (ec *executionContext) _Mutation_requestPackageInstanceAuthDeletion(ctx con
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().RequestPackageInstanceAuthDeletion(rctx, args["packageID"].(string), args["authID"].(string))
+			return ec.resolvers.Mutation().RequestPackageInstanceAuthDeletion(rctx, args["authID"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestPackageInstanceAuthDeletion")

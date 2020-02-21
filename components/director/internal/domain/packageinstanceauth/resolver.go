@@ -6,29 +6,51 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-type Resolver struct{}
+//go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
+type Service interface {
+	Get(ctx context.Context, id string) (*model.PackageInstanceAuth, error)
+	Delete(ctx context.Context, id string) error
+}
 
-func NewResolver() *Resolver {
-	return &Resolver{}
+//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
+type Converter interface {
+	ToGraphQL(in *model.PackageInstanceAuth) *graphql.PackageInstanceAuth
+}
+
+type Resolver struct {
+	transact persistence.Transactioner
+	svc      Service
+	conv     Converter
+}
+
+func NewResolver(transact persistence.Transactioner, svc Service, conv Converter) *Resolver {
+	return &Resolver{
+		transact: transact,
+		svc:      svc,
+		conv:     conv,
+	}
 }
 
 var mockRequestTypeKey = "type"
+var mockPackageID = "db5d3b2a-cf30-498b-9a66-29e60247c66b"
 
-// TODO: Replace with real implementation
-func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
-	return mock.FixPackageInstanceAuth(packageID, graphql.PackageInstanceAuthStatusConditionSucceeded), nil
+// TODO: Remove mock
+func (r *Resolver) SetPackageInstanceAuthMock(ctx context.Context, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
+	return mock.FixPackageInstanceAuth(mockPackageID, graphql.PackageInstanceAuthStatusConditionSucceeded), nil
 }
 
-// TODO: Replace with real implementation
-func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, packageID string, authID string) (*graphql.PackageInstanceAuth, error) {
-	return mock.FixPackageInstanceAuth(packageID, graphql.PackageInstanceAuthStatusConditionUnused), nil
+// TODO: Remove mock
+func (r *Resolver) DeletePackageInstanceAuthMock(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
+	return mock.FixPackageInstanceAuth(mockPackageID, graphql.PackageInstanceAuthStatusConditionUnused), nil
 }
 
-// TODO: Replace with real implementation
-func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packageID string, in graphql.PackageInstanceAuthRequestInput) (*graphql.PackageInstanceAuth, error) {
+// TODO: Remove mock
+func (r *Resolver) RequestPackageInstanceAuthCreationMock(ctx context.Context, packageID string, in graphql.PackageInstanceAuthRequestInput) (*graphql.PackageInstanceAuth, error) {
 	id := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	if in.Context == nil {
 		return mock.FixPackageInstanceAuth(id, graphql.PackageInstanceAuthStatusConditionPending), nil
@@ -58,7 +80,51 @@ func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packa
 	return mock.FixPackageInstanceAuth(id, graphql.PackageInstanceAuthStatusConditionPending), nil
 }
 
+// TODO: Remove mock
+func (r *Resolver) RequestPackageInstanceAuthDeletionMock(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
+	return mock.FixPackageInstanceAuth(mockPackageID, graphql.PackageInstanceAuthStatusConditionUnused), nil
+}
+
+func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Validate if client has access to given packageID
+
+	defer r.transact.RollbackUnlessCommited(tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	instanceAuth, err := r.svc.Get(ctx, authID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.svc.Delete(ctx, authID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(instanceAuth), nil
+}
+
+// TODO: Replace with real implementation
+func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
+	panic("not implemented")
+}
+
+// TODO: Replace with real implementation
+func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packageID string, in graphql.PackageInstanceAuthRequestInput) (*graphql.PackageInstanceAuth, error) {
+	panic("not implemented")
+}
+
 // TODO: Replace with real implementation
 func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, packageID string, authID string) (*graphql.PackageInstanceAuth, error) {
-	return mock.FixPackageInstanceAuth(packageID, graphql.PackageInstanceAuthStatusConditionUnused), nil
+	panic("not implemented")
 }

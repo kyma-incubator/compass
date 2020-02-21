@@ -154,10 +154,10 @@ type Mutation {
 
   When used without error, the status of pending auth is set to success.
   """
-  setPackageInstanceAuth(packageID: ID!, authID: ID!, in: PackageInstanceAuthSetInput!): PackageInstanceAuth!
-  deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth!
+  setPackageInstanceAuth(authID: ID!, in: PackageInstanceAuthSetInput!): PackageInstanceAuth!
+  deletePackageInstanceAuth(authID: ID!): PackageInstanceAuth!
   requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput!): PackageInstanceAuth!
-  requestPackageInstanceAuthDeletion(packageID: ID!, authID: ID!): PackageInstanceAuth!
+  requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth!
 }
 ```
 
