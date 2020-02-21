@@ -5,6 +5,7 @@ We want to secure the Compass using ORY's Hydra and OathKeeper. There will be th
  - OAuth 2.0
  - Client Certificates (mTLS)
  - JWT token issued by identity service
+ - OneTimeToken
 
  To achieve that, first, we need to integrate Hydra and OathKeeper into Compass. We also need to implement additional supporting components to make our scenarios valid.
 
@@ -213,6 +214,39 @@ foo@bar.com:
 8. The request is forwarded to the Director.
 
 ![Auth](./assets/certificate-security-diagram-director.svg)
+
+**Scopes**
+
+Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are fixed regarding of type of the object (Application / Runtime). Application and Runtime are always have the same scopes defined.
+
+### OneTimeToken
+
+**Used by:** Runtime/Application
+
+<!---
+**Compass Connector flow:**
+
+1. Runtime/Application makes a call to the Connector to the certificate-secured subdomain.
+2. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request.
+3. The certificate info (subject and certificate hash) is added to the `Certificate-Data` header.
+4. The OathKeeper uses the Token Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has been revoked, the two headers are empty.
+5. The request is forwarded to the Connector through the Compass Gateway.
+
+![Auth](./assets/token-security-diagram-connector.svg)
+--->
+
+**Compass Director Flow:**
+
+1. Runtime/Application makes a call to the Director <!---to the certificate-secured subdomain--->.
+<!--- 2. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request. --->
+<!---. The certificate info (subject and certificate hash) is added to the `Certificate-Data` header.--->
+1. The OathKeeper uses the Token Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has been revoked, the two headers are empty.
+1. The call is then proxied to the Tenant mapping handler, where the `client_id` is mapped onto the `tenant` and returned to the OathKeeper. If the Common Name is invalid, the `tenant` will be empty.
+1. Hydrator passes the response to ID_Token mutator which constructs a JWT token with scopes and tenant in the payload.
+1. The OathKeeper proxies the request further to the Compass Gateway.
+1. The request is forwarded to the Director.
+
+![Auth](./assets/token-security-diagram-director.svg)
 
 **Scopes**
 
