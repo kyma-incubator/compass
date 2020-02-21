@@ -14,8 +14,14 @@ import (
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
+	RequestDeletion(ctx context.Context, instanceAuth *model.PackageInstanceAuth, defaultPackageInstanceAuth *model.Auth) (bool, error)
 	Get(ctx context.Context, id string) (*model.PackageInstanceAuth, error)
 	Delete(ctx context.Context, id string) error
+}
+
+//go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
+type PackageService interface {
+	GetByInstanceAuthID(ctx context.Context, instanceAuthID string) (*model.Package, error)
 }
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
@@ -24,16 +30,18 @@ type Converter interface {
 }
 
 type Resolver struct {
-	transact persistence.Transactioner
-	svc      Service
-	conv     Converter
+	transact   persistence.Transactioner
+	svc        Service
+	packageSvc PackageService
+	conv       Converter
 }
 
-func NewResolver(transact persistence.Transactioner, svc Service, conv Converter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc Service, packageSvc PackageService, conv Converter) *Resolver {
 	return &Resolver{
-		transact: transact,
-		svc:      svc,
-		conv:     conv,
+		transact:   transact,
+		svc:        svc,
+		packageSvc: packageSvc,
+		conv:       conv,
 	}
 }
 
@@ -98,8 +106,6 @@ func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, authID string)
 		return nil, err
 	}
 
-	// TODO: Validate if client has access to given packageID
-
 	defer r.transact.RollbackUnlessCommited(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -122,7 +128,7 @@ func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, authID string)
 }
 
 // TODO: Replace with real implementation
-func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
+func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
 	panic("not implemented")
 }
 
@@ -131,7 +137,41 @@ func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packa
 	panic("not implemented")
 }
 
-// TODO: Replace with real implementation
-func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, packageID string, authID string) (*graphql.PackageInstanceAuth, error) {
-	panic("not implemented")
+func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer r.transact.RollbackUnlessCommited(tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	instanceAuth, err := r.svc.Get(ctx, authID)
+	if err != nil {
+		return nil, err
+	}
+
+	pkg, err := r.packageSvc.GetByInstanceAuthID(ctx, authID)
+	if err != nil {
+		return nil, err
+	}
+
+	deleted, err := r.svc.RequestDeletion(ctx, instanceAuth, pkg.DefaultInstanceAuth)
+	if err != nil {
+		return nil, err
+	}
+
+	if !deleted {
+		instanceAuth, err = r.svc.Get(ctx, authID) // get InstanceAuth once again for new status
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(instanceAuth), nil
 }

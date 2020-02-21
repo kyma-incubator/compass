@@ -148,7 +148,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		viewer:              viewer.NewViewerResolver(),
 		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
 		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, packageConverter, packageInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
-		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageInstanceAuthConv),
+		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageSvc, packageInstanceAuthConv),
 	}
 }
 
@@ -405,16 +405,16 @@ func (r *mutationResolver) AddDocumentToPackage(ctx context.Context, packageID s
 	return r.doc.AddDocumentToPackage(ctx, packageID, in)
 }
 func (r *mutationResolver) SetPackageInstanceAuth(ctx context.Context, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.SetPackageInstanceAuthMock(ctx, authID, in)
+	return r.packageInstanceAuth.SetPackageInstanceAuthMock(ctx, authID, in) // TODO: Replace with real implementation
 }
 func (r *mutationResolver) DeletePackageInstanceAuth(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.DeletePackageInstanceAuthMock(ctx, authID)
+	return r.packageInstanceAuth.DeletePackageInstanceAuthMock(ctx, authID) // TODO: Replace with real implementation
 }
 func (r *mutationResolver) RequestPackageInstanceAuthCreation(ctx context.Context, packageID string, in graphql.PackageInstanceAuthRequestInput) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.RequestPackageInstanceAuthCreationMock(ctx, packageID, in)
+	return r.packageInstanceAuth.RequestPackageInstanceAuthCreationMock(ctx, packageID, in) // TODO: Replace with real implementation
 }
 func (r *mutationResolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.RequestPackageInstanceAuthDeletionMock(ctx, authID)
+	return r.packageInstanceAuth.RequestPackageInstanceAuthDeletionMock(ctx, authID) // TODO: Replace with real implementation
 }
 
 func (r *mutationResolver) AddPackage(ctx context.Context, applicationID string, in graphql.PackageCreateInput) (*graphql.Package, error) {
