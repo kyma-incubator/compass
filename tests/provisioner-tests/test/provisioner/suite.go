@@ -169,9 +169,10 @@ func (ts *TestSuite) Cleanup() {
 	logrus.Infof("Starting cleanup...")
 
 	undeprovisionedRuntimes := ts.EnsureRuntimeDeprovisioning()
-	if undeprovisionedRuntimes != nil {
+	logrus.Infof()
+	if len(undeprovisionedRuntimes) > 0 {
 		for _, runtime := range undeprovisionedRuntimes {
-			logrus.Errorf("Error while performing cleanup: %s: %s", runtime.GetCurrentStatus(), runtime.StatusToString())
+			logrus.Infof("Error while performing cleanup: %s: %s", runtime.GetCurrentStatus(), runtime.StatusToString())
 		}
 		logrus.Infof("Cleanup failed.")
 		return
@@ -181,11 +182,11 @@ func (ts *TestSuite) Cleanup() {
 
 func (ts *TestSuite) EnsureRuntimeDeprovisioning() []TestRuntime {
 	failedRuntimes := []TestRuntime{}
+	c := make(chan *TestRuntime)
 	var wg sync.WaitGroup
-	defer wg.Wait()
 
 	for _, runtime := range ts.TestRuntimes {
-		go func(runtime TestRuntime) {
+		go func(runtime TestRuntime, c chan *TestRuntime) {
 			wg.Add(1)
 			defer wg.Done()
 
@@ -210,8 +211,14 @@ func (ts *TestSuite) EnsureRuntimeDeprovisioning() []TestRuntime {
 				return
 			}
 			runtime.LogStatus("Failed to deprovision Runtime.")
-			failedRuntimes = append(failedRuntimes, runtime)
-		}(runtime)
+			c <- &runtime
+		}(runtime, c)
+	}
+	wg.Wait()
+	close(c)
+
+	for _, failedRuntime := range c {
+		failedRuntimes = append(failedRuntimes, failedRuntime)
 	}
 	return failedRuntimes
 }
