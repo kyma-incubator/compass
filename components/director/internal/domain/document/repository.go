@@ -77,7 +77,7 @@ func (r *repository) GetForPackage(ctx context.Context, tenant string, id string
 
 	documentModel, err := r.conv.FromEntity(ent)
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating document model from entity")
+		return nil, errors.Wrap(err, "while converting Document entity to model")
 	}
 
 	return &documentModel, nil
@@ -118,12 +118,12 @@ func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant string
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition("app_id", applicationID)})
 }
 
-func (r *repository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error) {
+func (r *repository) ListForApplication(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error) {
 	appCond := fmt.Sprintf("%s = '%s'", "app_id", applicationID)
 	return r.list(ctx, tenantID, pageSize, cursor, appCond)
 }
 
-func (r *repository) ListByPackageID(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.DocumentPage, error) {
+func (r *repository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.DocumentPage, error) {
 	pkgCond := fmt.Sprintf("%s = '%s'", "package_id", packageID)
 	return r.list(ctx, tenantID, pageSize, cursor, pkgCond)
 }

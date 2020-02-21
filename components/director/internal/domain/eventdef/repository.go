@@ -108,12 +108,12 @@ func (r *pgRepository) GetForPackage(ctx context.Context, tenant string, id stri
 	return &eventAPIModel, nil
 }
 
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+func (r *pgRepository) ListForApplication(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
 	appCond := fmt.Sprintf("%s = '%s'", "app_id", applicationID)
 	return r.list(ctx, tenantID, pageSize, cursor, appCond)
 }
 
-func (r *pgRepository) ListByPackageID(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+func (r *pgRepository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
 	pkgCond := fmt.Sprintf("%s = '%s'", "package_id", packageID)
 	return r.list(ctx, tenantID, pageSize, cursor, pkgCond)
 }

@@ -160,8 +160,8 @@ func (_m *APIRepository) GetForPackage(ctx context.Context, tenant string, id st
 	return r0, r1
 }
 
-// ListByApplicationID provides a mock function with given fields: ctx, tenantID, applicationID, pageSize, cursor
-func (_m *APIRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+// ListForApplication provides a mock function with given fields: ctx, tenantID, applicationID, pageSize, cursor
+func (_m *APIRepository) ListForApplication(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
 	ret := _m.Called(ctx, tenantID, applicationID, pageSize, cursor)
 
 	var r0 *model.APIDefinitionPage
@@ -183,8 +183,8 @@ func (_m *APIRepository) ListByApplicationID(ctx context.Context, tenantID strin
 	return r0, r1
 }
 
-// ListByPackageID provides a mock function with given fields: ctx, tenantID, packageID, pageSize, cursor
-func (_m *APIRepository) ListByPackageID(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+// ListForPackage provides a mock function with given fields: ctx, tenantID, packageID, pageSize, cursor
+func (_m *APIRepository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
 	ret := _m.Called(ctx, tenantID, packageID, pageSize, cursor)
 
 	var r0 *model.APIDefinitionPage

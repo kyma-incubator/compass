@@ -228,7 +228,7 @@ func TestRepository_ListByApplicationID(t *testing.T) {
 
 		pgRepository := document.NewRepository(conv)
 		// WHEN
-		modelAPIDef, err := pgRepository.ListByApplicationID(ctx, tenantID, appID(), inputPageSize, inputCursor)
+		modelAPIDef, err := pgRepository.ListForApplication(ctx, tenantID, appID(), inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelAPIDef.Data, 2)
@@ -251,7 +251,7 @@ func TestRepository_ListByApplicationID(t *testing.T) {
 
 		pgRepository := document.NewRepository(conv)
 		// WHEN
-		_, err := pgRepository.ListByApplicationID(ctx, tenantID, appID(), 3, "")
+		_, err := pgRepository.ListForApplication(ctx, tenantID, appID(), 3, "")
 		//THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), testErr.Error())
@@ -280,7 +280,109 @@ func TestRepository_ListByApplicationID(t *testing.T) {
 
 		repo := document.NewRepository(conv)
 		//WHEN
-		_, err := repo.ListByApplicationID(ctx, tenantID, appID(), inputPageSize, inputCursor)
+		_, err := repo.ListForApplication(ctx, tenantID, appID(), inputPageSize, inputCursor)
+		//THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), testErr.Error())
+	})
+}
+
+func TestRepository_ListByPackageID(t *testing.T) {
+	// GIVEN
+	tenantID := "tnt"
+	ExpectedLimit := 3
+	ExpectedOffset := 0
+	testErr := errors.New("Test error")
+
+	inputPageSize := 3
+	inputCursor := ""
+	totalCount := 2
+	docEntity1 := fixEntityDocument("1", appID(), pkgID())
+	docEntity2 := fixEntityDocument("2", appID(), pkgID())
+
+	selectQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT id, tenant_id, app_id, package_id, title, display_name, description, format, kind, data
+		FROM public.documents WHERE tenant_id=$1 AND package_id = '%s' ORDER BY id LIMIT %d OFFSET %d`, pkgID(), ExpectedLimit, ExpectedOffset))
+
+	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM public.documents WHERE tenant_id=$1 AND package_id = '%s'`, pkgID())
+	countQuery := regexp.QuoteMeta(rawCountQuery)
+
+	t.Run("Success", func(t *testing.T) {
+		rows := sqlmock.NewRows(columns).
+			AddRow(docEntity1.ID, docEntity1.TenantID, docEntity1.AppID, docEntity1.PkgID, docEntity1.Title, docEntity1.DisplayName, docEntity1.Description, docEntity1.Format, docEntity1.Kind, docEntity1.Data).
+			AddRow(docEntity2.ID, docEntity2.TenantID, docEntity2.AppID, docEntity2.PkgID, docEntity2.Title, docEntity2.DisplayName, docEntity2.Description, docEntity2.Format, docEntity2.Kind, docEntity2.Data)
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(tenantID).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		conv := &automock.Converter{}
+		defer conv.AssertExpectations(t)
+
+		conv.On("FromEntity", *docEntity1).Return(model.Document{ID: docEntity1.ID}, nil).Once()
+		conv.On("FromEntity", *docEntity2).Return(model.Document{ID: docEntity2.ID}, nil).Once()
+
+		pgRepository := document.NewRepository(conv)
+		// WHEN
+		modelAPIDef, err := pgRepository.ListForPackage(ctx, tenantID, pkgID(), inputPageSize, inputCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelAPIDef.Data, 2)
+		assert.Equal(t, docEntity1.ID, modelAPIDef.Data[0].ID)
+		assert.Equal(t, docEntity2.ID, modelAPIDef.Data[1].ID)
+		assert.Equal(t, "", modelAPIDef.PageInfo.StartCursor)
+		assert.Equal(t, totalCount, modelAPIDef.TotalCount)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID).
+			WillReturnError(testErr)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		conv := &automock.Converter{}
+		defer conv.AssertExpectations(t)
+
+		pgRepository := document.NewRepository(conv)
+		// WHEN
+		_, err := pgRepository.ListForPackage(ctx, tenantID, pkgID(), 3, "")
+		//THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), testErr.Error())
+	})
+
+	t.Run("Converter Error", func(t *testing.T) {
+		testErr := errors.New("test error")
+		rows := sqlmock.NewRows(columns).
+			AddRow(docEntity1.ID, docEntity1.TenantID, docEntity1.AppID, docEntity1.PkgID, docEntity1.Title, docEntity1.DisplayName, docEntity1.Description, docEntity1.Format, docEntity1.Kind, docEntity1.Data).
+			AddRow(docEntity2.ID, docEntity2.TenantID, docEntity2.AppID, docEntity2.PkgID, docEntity2.Title, docEntity2.DisplayName, docEntity2.Description, docEntity2.Format, docEntity2.Kind, docEntity2.Data)
+
+		conv := &automock.Converter{}
+		conv.On("FromEntity", *docEntity1).Return(model.Document{}, testErr).Once()
+		defer conv.AssertExpectations(t)
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(tenantID).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+		repo := document.NewRepository(conv)
+		//WHEN
+		_, err := repo.ListForPackage(ctx, tenantID, pkgID(), inputPageSize, inputCursor)
 		//THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), testErr.Error())
@@ -378,6 +480,81 @@ func TestRepository_GetByID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		// WHEN
 		_, err := repo.GetByID(ctx, givenTenant(), givenID())
+		// THEN
+		require.EqualError(t, err, "while getting object from DB: some error")
+	})
+}
+
+func TestRepository_GetForPackage(t *testing.T) {
+	refID := appID()
+
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		docModel := fixModelDocument(givenID(), refID, pkgID())
+		docEntity := fixEntityDocument(givenID(), refID, pkgID())
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("FromEntity", *docEntity).Return(*docModel, nil).Once()
+
+		repo := document.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+
+		rows := sqlmock.NewRows(columns).
+			AddRow(givenID(), givenTenant(), refID, pkgID(), docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data)
+
+		query := "SELECT id, tenant_id, app_id, package_id, title, display_name, description, format, kind, data FROM public.documents WHERE tenant_id = $1 AND id = $2 AND package_id = $3"
+		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(givenTenant(), givenID(), pkgID()).WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		actual, err := repo.GetForPackage(ctx, givenTenant(), givenID(), pkgID())
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, actual)
+		assert.Equal(t, docModel, actual)
+
+		mockConverter.AssertExpectations(t)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Converter Error", func(t *testing.T) {
+		// GIVEN
+		docEntity := fixEntityDocument(givenID(), refID, pkgID())
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", *docEntity).Return(model.Document{}, givenError())
+
+		repo := document.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rows := sqlmock.NewRows(columns).
+			AddRow(givenID(), givenTenant(), refID, pkgID(), docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data)
+
+		dbMock.ExpectQuery("SELECT .*").
+			WithArgs(givenTenant(), givenID(), pkgID()).WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		_, err := repo.GetForPackage(ctx, givenTenant(), givenID(), pkgID())
+		// THEN
+		require.EqualError(t, err, "while converting Document entity to model: some error")
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		// GIVEN
+		repo := document.NewRepository(nil)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectQuery("SELECT .*").
+			WithArgs(givenTenant(), givenID(), pkgID()).WillReturnError(givenError())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		_, err := repo.GetForPackage(ctx, givenTenant(), givenID(), pkgID())
 		// THEN
 		require.EqualError(t, err, "while getting object from DB: some error")
 	})

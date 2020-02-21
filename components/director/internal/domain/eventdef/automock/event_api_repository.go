@@ -161,8 +161,8 @@ func (_m *EventAPIRepository) GetForPackage(ctx context.Context, tenant string, 
 	return r0, r1
 }
 
-// ListByApplicationID provides a mock function with given fields: ctx, tenantID, applicationID, pageSize, cursor
-func (_m *EventAPIRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+// ListForApplication provides a mock function with given fields: ctx, tenantID, applicationID, pageSize, cursor
+func (_m *EventAPIRepository) ListForApplication(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
 	ret := _m.Called(ctx, tenantID, applicationID, pageSize, cursor)
 
 	var r0 *model.EventDefinitionPage
@@ -184,8 +184,8 @@ func (_m *EventAPIRepository) ListByApplicationID(ctx context.Context, tenantID 
 	return r0, r1
 }
 
-// ListByPackageID provides a mock function with given fields: ctx, tenantID, packageID, pageSize, cursor
-func (_m *EventAPIRepository) ListByPackageID(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+// ListForPackage provides a mock function with given fields: ctx, tenantID, packageID, pageSize, cursor
+func (_m *EventAPIRepository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
 	ret := _m.Called(ctx, tenantID, packageID, pageSize, cursor)
 
 	var r0 *model.EventDefinitionPage

@@ -84,6 +84,84 @@ func TestService_Get(t *testing.T) {
 	}
 }
 
+func TestService_GetForPackage(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+	id := "foo"
+	appID := appID()
+	pkgID := pkgID()
+	tenantID := "bar"
+	packageID := "test"
+	doc := fixModelDocument(id, appID, pkgID)
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.DocumentRepository
+		Input              model.DocumentInput
+		InputID            string
+		PackageID          string
+		ExpectedDocument   *model.Document
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("GetForPackage", ctx, tenantID, id, packageID).Return(doc, nil).Once()
+				return repo
+			},
+			InputID:            id,
+			PackageID:          packageID,
+			ExpectedDocument:   doc,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when Event Definition retrieval failed",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("GetForPackage", ctx, tenantID, id, packageID).Return(nil, testErr).Once()
+				return repo
+			},
+			InputID:            id,
+			PackageID:          packageID,
+			ExpectedDocument:   doc,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := document.NewService(repo, nil, nil)
+
+			// when
+			eventAPIDefinition, err := svc.GetForPackage(ctx, testCase.InputID, testCase.PackageID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedDocument, eventAPIDefinition)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := document.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.GetForPackage(context.TODO(), "", "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
 func TestService_List(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
@@ -123,7 +201,7 @@ func TestService_List(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("ListByApplicationID", ctx, tnt, applicationID, first, after).Return(documentPage, nil).Once()
+				repo.On("ListForApplication", ctx, tnt, applicationID, first, after).Return(documentPage, nil).Once()
 				return repo
 			},
 			ExpectedResult:     documentPage,
@@ -133,7 +211,7 @@ func TestService_List(t *testing.T) {
 			Name: "Returns error when document listing failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("ListByApplicationID", ctx, tnt, applicationID, first, after).Return(nil, testErr).Once()
+				repo.On("ListForApplication", ctx, tnt, applicationID, first, after).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedResult:     nil,
@@ -149,6 +227,86 @@ func TestService_List(t *testing.T) {
 
 			// when
 			docs, err := svc.List(ctx, applicationID, first, after)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, docs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_ListForPackage(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	applicationID := "foo"
+	packageID := "bar"
+	modelDocuments := []*model.Document{
+		fixModelDocument(applicationID, "foo", packageID),
+		fixModelDocument(applicationID, "bar", packageID),
+		fixModelDocument("baz", "bar", packageID),
+	}
+	documentPage := &model.DocumentPage{
+		Data:       modelDocuments,
+		TotalCount: len(modelDocuments),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+
+	tnt := modelDocuments[0].Tenant
+
+	first := 2
+	after := "test"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, modelDocuments[0].Tenant)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.DocumentRepository
+		ExpectedResult     *model.DocumentPage
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("ListForPackage", ctx, tnt, packageID, first, after).Return(documentPage, nil).Once()
+				return repo
+			},
+			ExpectedResult:     documentPage,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when document listing failed",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("ListForPackage", ctx, tnt, packageID, first, after).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := document.NewService(repo, nil, nil)
+
+			// when
+			docs, err := svc.ListForPackage(ctx, packageID, first, after)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

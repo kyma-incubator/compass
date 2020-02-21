@@ -148,6 +148,81 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 	})
 }
 
+func TestPgRepository_GetForPackage(t *testing.T) {
+	// given
+	apiDefEntity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
+
+	selectQuery := `^SELECT (.+) FROM "public"."api_definitions" WHERE tenant_id = \$1 AND id = \$2 AND package_id = \$3`
+
+	t.Run("success", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(fixAPIDefinitionColumns()).
+			AddRow(fixAPIDefinitionRow(apiDefID, "placeholder")...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, apiDefID, packageID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.APIDefinitionConverter{}
+		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{ID: apiDefID, Tenant: tenantID, PackageID: str.Ptr(packageID)}, nil).Once()
+		pgRepository := api.NewRepository(convMock)
+		// WHEN
+		modelApiDef, err := pgRepository.GetForPackage(ctx, tenantID, apiDefID, packageID)
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, apiDefID, modelApiDef.ID)
+		assert.Equal(t, tenantID, modelApiDef.Tenant)
+		assert.Equal(t, packageID, *modelApiDef.PackageID)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		// given
+		repo := api.NewRepository(nil)
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		testError := errors.New("test error")
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, apiDefID, packageID).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+		// when
+		modelApiDef, err := repo.GetForPackage(ctx, tenantID, apiDefID, packageID)
+		// then
+
+		sqlMock.AssertExpectations(t)
+		assert.Nil(t, modelApiDef)
+		require.EqualError(t, err, fmt.Sprintf("while getting object from DB: %s", testError.Error()))
+	})
+
+	t.Run("returns error when conversion failed", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		testError := errors.New("test error")
+		rows := sqlmock.NewRows(fixAPIDefinitionColumns()).
+			AddRow(fixAPIDefinitionRow(apiDefID, "placeholder")...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, apiDefID, packageID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.APIDefinitionConverter{}
+		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{}, testError).Once()
+		pgRepository := api.NewRepository(convMock)
+		// WHEN
+		_, err := pgRepository.GetForPackage(ctx, tenantID, apiDefID, packageID)
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testError.Error())
+		sqlMock.AssertExpectations(t)
+		convMock.AssertExpectations(t)
+	})
+}
+
 func TestPgRepository_ListByApplicationID(t *testing.T) {
 	// GIVEN
 	ExpectedLimit := 3
@@ -189,7 +264,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		convMock.On("FromEntity", secondApiDefEntity).Return(model.APIDefinition{ID: secondApiDefID}, nil)
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
-		modelAPIDef, err := pgRepository.ListByApplicationID(ctx, tenantID, appID, inputPageSize, inputCursor)
+		modelAPIDef, err := pgRepository.ListForApplication(ctx, tenantID, appID, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelAPIDef.Data, 2)
@@ -220,7 +295,88 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		convMock.On("FromEntity", firstApiDefEntity).Return(model.APIDefinition{}, testErr).Once()
 		pgRepository := api.NewRepository(convMock)
 		//WHEN
-		_, err := pgRepository.ListByApplicationID(ctx, tenantID, appID, inputPageSize, inputCursor)
+		_, err := pgRepository.ListForApplication(ctx, tenantID, appID, inputPageSize, inputCursor)
+		//THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), testErr.Error())
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+}
+
+func TestPgRepository_ListByPackageID(t *testing.T) {
+	// GIVEN
+	ExpectedLimit := 3
+	ExpectedOffset := 0
+
+	inputPageSize := 3
+	inputCursor := ""
+	totalCount := 2
+	firstApiDefID := "111111111-1111-1111-1111-111111111111"
+	firstApiDefEntity := fixFullEntityAPIDefinition(firstApiDefID, "placeholder")
+	secondApiDefID := "222222222-2222-2222-2222-222222222222"
+	secondApiDefEntity := fixFullEntityAPIDefinition(secondApiDefID, "placeholder")
+
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."api_definitions" 
+		WHERE tenant_id=\$1 AND package_id = '%s' 
+		ORDER BY id LIMIT %d OFFSET %d`, packageID, ExpectedLimit, ExpectedOffset)
+
+	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM "public"."api_definitions" 
+		WHERE tenant_id=$1 AND package_id = '%s'`, packageID)
+	countQuery := regexp.QuoteMeta(rawCountQuery)
+
+	t.Run("success", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(fixAPIDefinitionColumns()).
+			AddRow(fixAPIDefinitionRow(firstApiDefID, "placeholder")...).
+			AddRow(fixAPIDefinitionRow(secondApiDefID, "placeholder")...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(tenantID).
+			WillReturnRows(testdb.RowCount(2))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.APIDefinitionConverter{}
+		convMock.On("FromEntity", firstApiDefEntity).Return(model.APIDefinition{ID: firstApiDefID}, nil)
+		convMock.On("FromEntity", secondApiDefEntity).Return(model.APIDefinition{ID: secondApiDefID}, nil)
+		pgRepository := api.NewRepository(convMock)
+		// WHEN
+		modelAPIDef, err := pgRepository.ListForPackage(ctx, tenantID, packageID, inputPageSize, inputCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelAPIDef.Data, 2)
+		assert.Equal(t, firstApiDefID, modelAPIDef.Data[0].ID)
+		assert.Equal(t, secondApiDefID, modelAPIDef.Data[1].ID)
+		assert.Equal(t, "", modelAPIDef.PageInfo.StartCursor)
+		assert.Equal(t, totalCount, modelAPIDef.TotalCount)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("returns error when conversion from entity to model failed", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		testErr := errors.New("test error")
+		rows := sqlmock.NewRows(fixAPIDefinitionColumns()).
+			AddRow(fixAPIDefinitionRow(firstApiDefID, "placeholder")...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(tenantID).
+			WillReturnRows(testdb.RowCount(1))
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+		convMock := &automock.APIDefinitionConverter{}
+		convMock.On("FromEntity", firstApiDefEntity).Return(model.APIDefinition{}, testErr).Once()
+		pgRepository := api.NewRepository(convMock)
+		//WHEN
+		_, err := pgRepository.ListForPackage(ctx, tenantID, packageID, inputPageSize, inputCursor)
 		//THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), testErr.Error())

@@ -18,8 +18,8 @@ type APIRepository interface {
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.APIDefinition, error)
 	GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
-	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
-	ListByPackageID(ctx context.Context, tenantID, packageID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
+	ListForApplication(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
+	ListForPackage(ctx context.Context, tenantID, packageID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	CreateMany(ctx context.Context, item []*model.APIDefinition) error
 	Create(ctx context.Context, item *model.APIDefinition) error
 	Update(ctx context.Context, item *model.APIDefinition) error
@@ -64,7 +64,7 @@ func (s *service) List(ctx context.Context, applicationID string, pageSize int, 
 		return nil, errors.New("page size must be between 1 and 100")
 	}
 
-	return s.repo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
+	return s.repo.ListForApplication(ctx, tnt, applicationID, pageSize, cursor)
 }
 
 func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
@@ -77,7 +77,7 @@ func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize
 		return nil, errors.New("page size must be between 1 and 100")
 	}
 
-	return s.repo.ListByPackageID(ctx, tnt, packageID, pageSize, cursor)
+	return s.repo.ListForPackage(ctx, tnt, packageID, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, error) {
