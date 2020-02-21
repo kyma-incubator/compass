@@ -25,7 +25,7 @@ type mapperForUser struct {
 }
 
 // getGroupScopes get all scopes from group array, without duplicates
-func getGroupScopes(groups StaticGroups) string {
+func (groups StaticGroups) getGroupScopes() string {
 	scopeMap := make(map[string]bool)
 	filteredScopes := []string{}
 
@@ -43,7 +43,7 @@ func getGroupScopes(groups StaticGroups) string {
 }
 
 // getGroupData get scopes and username from group
-func getGroupData(m *mapperForUser, reqData ReqData) (scopes string,  proceedWithUser bool) {
+func (m *mapperForUser) getGroupData(reqData ReqData) (scopes string, proceedWithUser bool) {
 	userGroups := reqData.GetUserGroups()
 
 	if len(userGroups) == 0 {
@@ -56,13 +56,13 @@ func getGroupData(m *mapperForUser, reqData ReqData) (scopes string,  proceedWit
 		return "", true
 	}
 
-	scopes = getGroupScopes(staticGroups)
+	scopes = staticGroups.getGroupScopes()
 
 	return scopes, false
 }
 
 // getUserData get all scopes, tenants and username from user
-func getUserData(m *mapperForUser, reqData ReqData, username string) (scopes string, tenants []string, user string, err error) {
+func (m *mapperForUser) getUserData(reqData ReqData, username string) (scopes string, tenants []string, user string, err error) {
 	staticUser, err := m.staticUserRepo.Get(username)
 	if err != nil {
 		return "", []string{}, "", errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))
@@ -86,11 +86,10 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 	consumerType := consumer.Group
 	finalUserName := username
 
-	scopes, proceedWithUser = getGroupData(m, reqData)
-
+	scopes, proceedWithUser = m.getGroupData(reqData)
 
 	if proceedWithUser {
-		scopes, tenants, finalUserName, err = getUserData(m, reqData, username)
+		scopes, tenants, finalUserName, err = m.getUserData(reqData, username)
 		if err != nil {
 			return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while getting user data"))
 		}

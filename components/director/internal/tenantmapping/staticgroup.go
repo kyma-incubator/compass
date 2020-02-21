@@ -18,7 +18,7 @@ type StaticGroups []StaticGroup
 
 //go:generate mockery -name=StaticGroupRepository -output=automock -outpkg=automock -case=underscore
 type StaticGroupRepository interface {
-	Get(groupnames []string) []StaticGroup
+	Get(groupnames []string) StaticGroups
 }
 
 type staticGroupRepository struct {
@@ -47,7 +47,7 @@ func NewStaticGroupRepository(srcPath string) (*staticGroupRepository, error) {
 	}, nil
 }
 
-func (r *staticGroupRepository) Get(groupnames []string) []StaticGroup {
+func (r *staticGroupRepository) Get(groupnames []string) StaticGroups {
 	result := []StaticGroup{}
 
 	for _, groupname := range groupnames {
