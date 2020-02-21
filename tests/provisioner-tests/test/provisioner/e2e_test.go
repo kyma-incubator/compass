@@ -49,7 +49,7 @@ func Test_E2E_Gardener(t *testing.T) {
 				// Provision runtime
 				provisioningOperationID, runtimeID, err := runtime.Provision()
 				assertions.RequireNoError(t, err)
-				//defer ensureClusterIsDeprovisioned(runtimeID)
+				defer ensureClusterIsDeprovisioned(runtimeID)
 
 				// Get provisioning Operation Status
 				provisioningOperationStatus, err := runtime.GetCurrentOperationStatus()
