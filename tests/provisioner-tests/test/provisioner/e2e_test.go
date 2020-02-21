@@ -25,17 +25,14 @@ const (
 // TODO: Consider fetching logs from Provisioner on error (or from created Runtime)
 
 func Test_E2E_Gardener(t *testing.T) {
-	testSuite.waitGroup.Add(1)
-	defer testSuite.waitGroup.Done()
 	globalLog := logrus.WithField("TestId", testSuite.TestId)
 
 	globalLog.Infof("Starting Compass Provisioner tests on Gardener")
 	var wg sync.WaitGroup
-	defer wg.Wait()
 
 	for _, provider := range testSuite.gardenerProviders {
+		wg.Add(1)
 		go func(provider string) {
-			wg.Add(1)
 			defer wg.Done()
 
 			t.Run(provider, func(t *testing.T) {
@@ -99,6 +96,7 @@ func Test_E2E_Gardener(t *testing.T) {
 			})
 		}(provider)
 	}
+	wg.Wait()
 }
 
 func Test_E2e(t *testing.T) {
