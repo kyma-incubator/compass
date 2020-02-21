@@ -1,6 +1,166 @@
 package mp_package_test
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+)
+
+func fixModelAPIDefinition(id string, pkgID *string, name, description string, group string) *model.APIDefinition {
+	return &model.APIDefinition{
+		ID:          id,
+		PackageID:   pkgID,
+		Name:        name,
+		Description: &description,
+		Group:       &group,
+	}
+}
+
+func fixGQLAPIDefinition(id string, pkgID *string, name, description string, group string) *graphql.APIDefinition {
+	return &graphql.APIDefinition{
+		ID:          id,
+		PackageID:   pkgID,
+		Name:        name,
+		Description: &description,
+		Group:       &group,
+	}
+}
+
+func fixGQLPackage(id, name string) *graphql.Package {
+	return &graphql.Package{
+		ID:                             id,
+		Name:                           name,
+		Description:                    nil,
+		InstanceAuthRequestInputSchema: nil,
+		DefaultInstanceAuth:            nil,
+	}
+}
+
+func fixAPIDefinitionPage(apiDefinitions []*model.APIDefinition) *model.APIDefinitionPage {
+	return &model.APIDefinitionPage{
+		Data: apiDefinitions,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(apiDefinitions),
+	}
+}
+
+func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.APIDefinitionPage {
+	return &graphql.APIDefinitionPage{
+		Data: apiDefinitions,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(apiDefinitions),
+	}
+}
+
+func fixModelEventAPIDefinition(id string, appId, packageID *string, name, description string, group string) *model.EventDefinition {
+	return &model.EventDefinition{
+		ID:            id,
+		ApplicationID: appId,
+		PackageID:     packageID,
+		Name:          name,
+		Description:   &description,
+		Group:         &group,
+	}
+}
+func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
+	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
+		ApplicationID: str.Ptr("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), PackageID: str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"), Name: placeholder}
+}
+func fixGQLEventDefinition(id string, appId, packageID *string, name, description string, group string) *graphql.EventDefinition {
+	return &graphql.EventDefinition{
+		ID:            id,
+		ApplicationID: appId,
+		PackageID:     packageID,
+		Name:          name,
+		Description:   &description,
+		Group:         &group,
+	}
+}
+
+func fixEventAPIDefinitionPage(eventAPIDefinitions []*model.EventDefinition) *model.EventDefinitionPage {
+	return &model.EventDefinitionPage{
+		Data: eventAPIDefinitions,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(eventAPIDefinitions),
+	}
+}
+
+func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *graphql.EventDefinitionPage {
+	return &graphql.EventDefinitionPage{
+		Data: eventAPIDefinitions,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(eventAPIDefinitions),
+	}
+}
+
+var (
+	docKind  = "fookind"
+	docTitle = "footitle"
+	docData  = "foodata"
+	docCLOB  = graphql.CLOB(docData)
+)
+
+func fixModelDocument(packageID, applicationID, id string) *model.Document {
+	return &model.Document{
+		ApplicationID: &applicationID,
+		PackageID:     &packageID,
+		ID:            id,
+		Title:         docTitle,
+		Format:        model.DocumentFormatMarkdown,
+		Kind:          &docKind,
+		Data:          &docData,
+	}
+}
+
+func fixModelDocumentPage(documents []*model.Document) *model.DocumentPage {
+	return &model.DocumentPage{
+		Data: documents,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(documents),
+	}
+}
+
+func fixGQLDocument(id string) *graphql.Document {
+	return &graphql.Document{
+		ID:     id,
+		Title:  docTitle,
+		Format: graphql.DocumentFormatMarkdown,
+		Kind:   &docKind,
+		Data:   &docCLOB,
+	}
+}
+
+func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
+	return &graphql.DocumentPage{
+		Data: documents,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(documents),
+	}
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
