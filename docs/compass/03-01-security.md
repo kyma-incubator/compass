@@ -1,11 +1,10 @@
 # Security
 
-Currently, communication between Compass and both Runtimes and Applications is not secured. We need to provide some security possibilities.
-We want to secure the Compass using ORY's Hydra and OathKeeper. There will be three ways of authentication:
+Compass is secured with ORY [Hydra](https://www.ory.sh/hydra/) and [OathKeeper](https://github.com/ory/oathkeeper). There are the following ways of authentication: 
  - OAuth 2.0
  - Client Certificates (mTLS)
  - JWT token issued by identity service
- - OneTimeToken
+ - One-time token
 
  To achieve that, first, we need to integrate Hydra and OathKeeper into Compass. We also need to implement additional supporting components to make our scenarios valid.
 
@@ -24,6 +23,7 @@ The `authorization_id` is equal to:
 - `client_id` in OAuth 2.0 authentication flow
 - `username` in Basic authentication flow
 - Common Name (CN) in Certificates authentication flow
+- Client ID in One-time token authentication flow
 
 While generating one-time token, `client_id`/`client_secret` pair or basic authentication details for Runtime/Application/Integration System (using proper GraphQL mutation on the Director), an entry in `system_auths` table in the Director database is created. The `system_auths` table is used for tenant mapping.
 
@@ -219,29 +219,16 @@ foo@bar.com:
 
 Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are fixed regarding of type of the object (Application / Runtime). Application and Runtime are always have the same scopes defined.
 
-### OneTimeToken
+### One-time token
 
 **Used by:** Runtime/Application
 
-<!---
-**Compass Connector flow:**
-
-1. Runtime/Application makes a call to the Connector to the certificate-secured subdomain.
-2. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request.
-3. The certificate info (subject and certificate hash) is added to the `Certificate-Data` header.
-4. The OathKeeper uses the Token Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has been revoked, the two headers are empty.
-5. The request is forwarded to the Connector through the Compass Gateway.
-
-![Auth](./assets/token-security-diagram-connector.svg)
---->
-
 **Compass Director Flow:**
 
-1. Runtime/Application makes a call to the Director <!---to the certificate-secured subdomain--->.
-<!--- 2. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request. --->
-<!---. The certificate info (subject and certificate hash) is added to the `Certificate-Data` header.--->
-1. The OathKeeper uses the Token Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has been revoked, the two headers are empty.
-1. The call is then proxied to the Tenant mapping handler, where the `client_id` is mapped onto the `tenant` and returned to the OathKeeper. If the Common Name is invalid, the `tenant` will be empty.
+1. Runtime/Application makes a call to the Director.
+1. The OathKeeper uses the Token Resolver as a mutator. 
+1. The Client ID is extracted from the One-time token's `Conector-Token` header or from the `token` query parameter. The `client_id` is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
+1. The call is then proxied to the Tenant mapping handler mutator, where the Client ID is mapped onto the `tenant` and returned to the OathKeeper. 
 1. Hydrator passes the response to ID_Token mutator which constructs a JWT token with scopes and tenant in the payload.
 1. The OathKeeper proxies the request further to the Compass Gateway.
 1. The request is forwarded to the Director.
@@ -250,4 +237,4 @@ Scopes are added to the authentication session in Tenant Mapping Handler. The ha
 
 **Scopes**
 
-Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are fixed regarding of type of the object (Application / Runtime). Application and Runtime are always have the same scopes defined.
+Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are fixed regarding of type of the object (Application / Runtime). Application and Runtime always have the same scopes defined.
