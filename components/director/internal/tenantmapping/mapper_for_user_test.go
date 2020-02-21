@@ -226,7 +226,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 				},
 			},
 		}
-		staticGroups := []tenantmapping.StaticGroup{
+		staticGroups := tenantmapping.StaticGroups{
 			{
 				GroupName: groupName,
 				Scopes:    expectedGroupScopes,
@@ -280,7 +280,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 				},
 			},
 		}
-		staticGroups := []tenantmapping.StaticGroup{
+		staticGroups := tenantmapping.StaticGroups{
 			{
 				GroupName: groupName1,
 				Scopes:    expectedGroupScopes,
@@ -323,7 +323,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 				},
 			},
 		}
-		var staticGroups []tenantmapping.StaticGroup
+		var staticGroups tenantmapping.StaticGroups
 
 		staticUser := tenantmapping.StaticUser{
 			Username: username,

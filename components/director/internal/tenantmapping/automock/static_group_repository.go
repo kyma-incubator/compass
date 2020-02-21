@@ -13,15 +13,15 @@ type StaticGroupRepository struct {
 }
 
 // Get provides a mock function with given fields: groupnames
-func (_m *StaticGroupRepository) Get(groupnames []string) []tenantmapping.StaticGroup {
+func (_m *StaticGroupRepository) Get(groupnames []string) tenantmapping.StaticGroups {
 	ret := _m.Called(groupnames)
 
-	var r0 []tenantmapping.StaticGroup
-	if rf, ok := ret.Get(0).(func([]string) []tenantmapping.StaticGroup); ok {
+	var r0 tenantmapping.StaticGroups
+	if rf, ok := ret.Get(0).(func([]string) tenantmapping.StaticGroups); ok {
 		r0 = rf(groupnames)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]tenantmapping.StaticGroup)
+			r0 = ret.Get(0).(tenantmapping.StaticGroups)
 		}
 	}
 
