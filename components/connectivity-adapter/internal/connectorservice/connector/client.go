@@ -9,7 +9,6 @@ import (
 
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/machinebox/graphql"
-	"github.com/pkg/errors"
 )
 
 type client struct {
@@ -43,7 +42,7 @@ func (c client) Configuration(headers map[string]string) (schema.Configuration, 
 
 	err := c.executeExternal(headers, query, &response)
 	if err != nil {
-		return schema.Configuration{}, toAppError(errors.Wrap(err, "Failed to get configuration"))
+		return schema.Configuration{}, toAppError(err)
 	}
 
 	return response.Result, nil
@@ -56,7 +55,7 @@ func (c client) SignCSR(csr string, headers map[string]string) (schema.Certifica
 
 	err := c.executeExternal(headers, query, &response)
 	if err != nil {
-		return schema.CertificationResult{}, toAppError(errors.Wrap(err, "Failed to sign csr"))
+		return schema.CertificationResult{}, toAppError(err)
 	}
 
 	return response.Result, nil

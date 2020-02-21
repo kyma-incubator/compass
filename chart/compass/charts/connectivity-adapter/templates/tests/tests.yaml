@@ -32,7 +32,7 @@ spec:
             - name: APP_SKIP_SSL_VERIFY
               value: "{{ .Values.tests.skipTLSVerify }}"
             - name: APP_TENANT
-              value: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
+              value: {{ .Values.global.defaultTenant }}
           command:
             - "/bin/sh"
           args:

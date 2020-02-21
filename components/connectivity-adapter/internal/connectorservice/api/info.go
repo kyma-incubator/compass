@@ -56,27 +56,29 @@ func (ih *infoHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 
 	application, err := ih.directorClientProvider.Client(r).GetApplication(systemAuthID)
 	if err != nil {
-		err = errors.Wrap(err, "Failed to get Application from Director")
-		contextLogger.Error(err.Error())
-		reqerror.WriteError(w, err, apperrors.CodeInternal)
+		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to get application from Director"), apperrors.CodeInternal)
 
 		return
 	}
 
 	configuration, err := ih.connectorClient.Configuration(authorizationHeaders)
 	if err != nil {
-		err = errors.Wrap(err, "Failed to get Configuration from Connector")
-		contextLogger.Error(err.Error())
-		reqerror.WriteError(w, err, apperrors.CodeInternal)
+		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to get configuration from Connector"), apperrors.CodeInternal)
 
 		return
 	}
 
-	infoResponse := ih.makeResponseFunc(
+	infoResponse, err := ih.makeResponseFunc(
 		application.Name,
 		application.EventingConfiguration.DefaultURL,
 		"",
 		configuration)
+
+	if err != nil {
+		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to build info response"), apperrors.CodeInternal)
+
+		return
+	}
 
 	respondWithBody(w, http.StatusOK, infoResponse, contextLogger)
 }

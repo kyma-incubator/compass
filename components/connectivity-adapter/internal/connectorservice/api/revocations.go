@@ -39,9 +39,9 @@ func (rh *revocationsHandler) RevokeCertificate(w http.ResponseWriter, r *http.R
 
 	err = rh.gqlClient.Revoke(authorizationHeaders)
 	if err != nil {
-		err = errors.Wrap(err, "Failed to revoke certificate")
-		contextLogger.Error(err.Error())
-		reqerror.WriteError(w, err, apperrors.CodeInternal)
+		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to revoke certificate"), apperrors.CodeInternal)
+
+		return
 	}
 
 	respond(w, http.StatusCreated)
