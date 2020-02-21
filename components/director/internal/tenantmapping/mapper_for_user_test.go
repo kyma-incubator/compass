@@ -216,7 +216,6 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 
 	t.Run("returns scopes defined on the StaticGroup from the request", func(t *testing.T) {
 		groupName := "test"
-		expectedGroupTenants := "*"
 		expectedGroupScopes := []string{"tennants:read", "application:read"}
 
 		reqData := tenantmapping.ReqData{
@@ -230,7 +229,6 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		staticGroups := []tenantmapping.StaticGroup{
 			{
 				GroupName: groupName,
-				Tenants:   expectedGroupTenants,
 				Scopes:    expectedGroupScopes,
 			},
 		}
@@ -270,7 +268,6 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 	t.Run("returns all unique scopes defined on the StaticGroups from the request", func(t *testing.T) {
 		groupName1 := "test"
 		groupName2 := "test2"
-		expectedGroupTenants := "*"
 		expectedGroupScopes := []string{"tennants:read", "application:read"}
 		expectedGroupScopes2 := []string{"application:read", "applications:edit"}
 		allExpectedGroupScopes := []string{"tennants:read", "application:read", "applications:edit"}
@@ -286,11 +283,9 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		staticGroups := []tenantmapping.StaticGroup{
 			{
 				GroupName: groupName1,
-				Tenants:   expectedGroupTenants,
 				Scopes:    expectedGroupScopes,
 			}, {
 				GroupName: groupName2,
-				Tenants:   expectedGroupTenants,
 				Scopes:    expectedGroupScopes2,
 			},
 		}
@@ -440,7 +435,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, nil)
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
-		require.EqualError(t, err, "while fetching scopes: while parsing the value for scope: unable to cast the value to a string type")
+		require.EqualError(t, err, "while getting user data: while fetching scopes: while parsing the value for scope: unable to cast the value to a string type")
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})
@@ -455,7 +450,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, nil)
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
-		require.EqualError(t, err, "while searching for a static user with username non-existing: some-error")
+		require.EqualError(t, err, "while getting user data: while searching for a static user with username non-existing: some-error")
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})

@@ -11,9 +11,10 @@ import (
 
 type StaticGroup struct {
 	GroupName string   `json:"groupname"`
-	Tenants   string   `json:"tenants"`
 	Scopes    []string `json:"scopes"`
 }
+
+type StaticGroups []StaticGroup
 
 //go:generate mockery -name=StaticGroupRepository -output=automock -outpkg=automock -case=underscore
 type StaticGroupRepository interface {

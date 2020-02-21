@@ -268,7 +268,7 @@ func TestReqData_GetGroups(t *testing.T) {
 		reqData := ReqData{
 			Body: ReqBody{
 				Extra: map[string]interface{}{
-					ScopesKey: []byte{1, 2, 3},
+					GroupsKey: []byte{1, 2, 3},
 				},
 			},
 		}

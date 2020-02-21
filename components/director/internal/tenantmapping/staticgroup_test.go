@@ -5,8 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/uuid"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,18 +13,15 @@ var validGroupsNameFileContent string = `
   scopes:
   - "application:write"
   - "application:read"
-  tenants: "*"
 - groupname: "developer"
   scopes:
   - "application:read"
-  tenants: "*"
 `
 
 var unknownGroupsNameFieldsFileContent string = `
 - groupname: "admin"
   notascope:
   - "application:write"
-  tenants: "*"
 `
 
 func TestStaticGroupRepository(t *testing.T) {
@@ -82,13 +77,11 @@ func TestStaticGroupRepository(t *testing.T) {
 	})
 
 	t.Run("returns single matching staticGroup", func(t *testing.T) {
-		tenantID := uuid.New().String()
 		repo := staticGroupRepository{
 			data: map[string]StaticGroup{
 				"developer": StaticGroup{
 					GroupName: "developer",
 					Scopes:    []string{"application:read"},
-					Tenants:   tenantID,
 				},
 			},
 		}
@@ -97,23 +90,19 @@ func TestStaticGroupRepository(t *testing.T) {
 
 		require.Equal(t, int(1), len(staticGroup))
 		require.Equal(t, "developer", staticGroup[0].GroupName)
-		require.Equal(t, tenantID, staticGroup[0].Tenants)
 		require.Equal(t, []string{"application:read"}, staticGroup[0].Scopes)
 	})
 
 	t.Run("returns multiple matching staticGroup", func(t *testing.T) {
-		tenantID := uuid.New().String()
 		repo := staticGroupRepository{
 			data: map[string]StaticGroup{
 				"developer": StaticGroup{
 					GroupName: "developer",
 					Scopes:    []string{"application:read"},
-					Tenants:   tenantID,
 				},
 				"admin": StaticGroup{
 					GroupName: "admin",
 					Scopes:    []string{"application:read", "application:write"},
-					Tenants:   tenantID,
 				},
 			},
 		}
@@ -123,11 +112,9 @@ func TestStaticGroupRepository(t *testing.T) {
 		require.Equal(t, int(2), len(staticGroup))
 
 		require.Equal(t, "developer", staticGroup[0].GroupName)
-		require.Equal(t, tenantID, staticGroup[0].Tenants)
 		require.Equal(t, []string{"application:read"}, staticGroup[0].Scopes)
 
 		require.Equal(t, "admin", staticGroup[1].GroupName)
-		require.Equal(t, tenantID, staticGroup[1].Tenants)
 		require.Equal(t, []string{"application:read", "application:write"}, staticGroup[1].Scopes)
 	})
 

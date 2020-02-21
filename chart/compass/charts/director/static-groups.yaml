@@ -1,5 +1,4 @@
 - groupname: "kyma_mps_superadmins"
-  tenants: "*"
   scopes:
   - "application:read"
   - "application:write"

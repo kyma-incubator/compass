@@ -24,8 +24,8 @@ type mapperForUser struct {
 	tenantRepo      TenantRepository
 }
 
-// GetGroupScopes get all scopes from group array, without duplicates
-func GetGroupScopes(groups []StaticGroup) string {
+// getGroupScopes get all scopes from group array, without duplicates
+func getGroupScopes(groups StaticGroups) string {
 	scopeMap := make(map[string]bool)
 	filteredScopes := []string{}
 
@@ -42,42 +42,58 @@ func GetGroupScopes(groups []StaticGroup) string {
 	return strings.Join(filteredScopes, " ")
 }
 
-func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
-	var externalTenantID, scopes, finalUserName string
-	var staticUser StaticUser
-	var staticGroups []StaticGroup
-	var consumerType consumer.ConsumerType
-	var err error
-
+// getGroupData get scopes and username from group
+func getGroupData(m *mapperForUser, reqData ReqData, username string) (scopes string, user string, proceedWithUser bool) {
 	userGroups := reqData.GetUserGroups()
 
-	if len(userGroups) > 0 {
-		staticGroups = m.staticGroupRepo.Get(userGroups)
+	if len(userGroups) == 0 {
+		return "", username, true
 	}
 
-	if len(staticGroups) > 0 {
-		// proceed with group scopes flow
-		scopes = GetGroupScopes(staticGroups)
+	staticGroups := m.staticGroupRepo.Get(userGroups)
 
-		finalUserName = username
-		consumerType = consumer.Group
-	} else {
-		// proceed with staticUser (and his scopes) flow
-		staticUser, err = m.staticUserRepo.Get(username)
-		if err != nil {
-			return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))
+	if len(staticGroups) == 0 {
+		return "", username, true
+	}
+
+	scopes = getGroupScopes(staticGroups)
+
+	return scopes, username, false
+}
+
+// getUserData get all scopes, tenants and username from user
+func getUserData(m *mapperForUser, reqData ReqData, username string) (scopes string, tenants []string, user string, err error) {
+	staticUser, err := m.staticUserRepo.Get(username)
+	if err != nil {
+		return "", []string{}, "", errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))
+	}
+	scopes, err = reqData.GetScopes()
+	if err != nil {
+		if !apperrors.IsKeyDoesNotExist(err) {
+			return "", []string{}, "", errors.Wrap(err, "while fetching scopes")
 		}
+		scopes = strings.Join(staticUser.Scopes, " ")
+	}
 
-		finalUserName = staticUser.Username
+	return scopes, staticUser.Tenants, staticUser.Username, nil
+}
+
+func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
+	var externalTenantID, scopes, finalUserName string
+	var tenants []string
+	var err error
+	proceedWithUser := false
+	consumerType := consumer.Group
+
+	scopes, finalUserName, proceedWithUser = getGroupData(m, reqData, username)
+
+
+	if proceedWithUser {
+		scopes, tenants, finalUserName, err = getUserData(m, reqData, username)
+		if err != nil {
+			return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while getting user data"))
+		}
 		consumerType = consumer.User
-
-		scopes, err = reqData.GetScopes()
-		if err != nil {
-			if !apperrors.IsKeyDoesNotExist(err) {
-				return ObjectContext{}, errors.Wrap(err, "while fetching scopes")
-			}
-			scopes = strings.Join(staticUser.Scopes, " ")
-		}
 	}
 
 	externalTenantID, err = reqData.GetExternalTenantID()
@@ -94,7 +110,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
 
-	if len(userGroups) == 0 && !hasValidTenant(staticUser.Tenants, tenantMapping.ExternalTenant) {
+	if proceedWithUser && !hasValidTenant(tenants, tenantMapping.ExternalTenant) {
 		return ObjectContext{}, errors.New("tenant mismatch")
 	}
 
