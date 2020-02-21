@@ -32,9 +32,10 @@ type Config struct {
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
-	Provisioning broker.ProvisioningConfig
-	Director     director.Config
-	Database     storage.Config
+	Provisioning       broker.ProvisioningConfig
+	Director           director.Config
+	Database           storage.Config
+	ManagementPlaneURL string
 
 	ServiceManager internal.ServiceManagerOverride
 
@@ -101,7 +102,7 @@ func main() {
 	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
 	fatalOnError(err)
 
-	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager)
+	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager, cfg.ManagementPlaneURL)
 
 	dumper, err := broker.NewDumper()
 	fatalOnError(err)

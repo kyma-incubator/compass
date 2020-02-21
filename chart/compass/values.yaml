@@ -23,9 +23,12 @@ global:
     connectivity_adapter:
       dir:
       version: "PR-831"
+    pairing_adapter:
+      dir:
+      version: "PR-798"
     director:
       dir:
-      version: "PR-819"
+      version: "PR-841"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -45,7 +48,7 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-670"
+      version: "PR-830"
     tests:
       director:
         dir:
@@ -216,3 +219,6 @@ global:
       nameField: "name"
       discriminatorField: ""
       discriminatorValue: ""
+
+pairing-adapter:
+  enabled: false

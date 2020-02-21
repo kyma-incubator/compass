@@ -141,7 +141,7 @@ func (dc *Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error
 
 	value, ok := response.Labels[consoleURLLabelKey]
 	if !ok {
-		return "", fmt.Errorf("response label key is not equal to %q", consoleURLLabelKey)
+		return "", TemporaryError{fmt.Sprintf("response label key is not equal to %q", consoleURLLabelKey)}
 	}
 
 	var URL string

@@ -25,7 +25,7 @@ const (
 
 	releaseFetchURL   = "https://api.github.com/repos/kyma-project/kyma/releases"
 	installerYAMLName = "kyma-installer-cluster.yaml"
-	tillerFormat      = "https://raw.githubusercontent.com/kyma-project/kyma/release-%s/installation/resources/tiller.yaml"
+	tillerFormat      = "https://raw.githubusercontent.com/kyma-project/kyma/%s/installation/resources/tiller.yaml"
 )
 
 func NewArtifactsDownloader(repository Repository, latestReleases int, includePreReleases bool, client *http.Client, log *logrus.Entry) *artifactsDownloader {
@@ -201,5 +201,5 @@ func getLatestReleases(releases []model.GithubRelease, latestReleases int) []mod
 }
 
 func buildTillerURL(releaseName string) string {
-	return fmt.Sprintf(tillerFormat, releaseName[:3])
+	return fmt.Sprintf(tillerFormat, releaseName)
 }

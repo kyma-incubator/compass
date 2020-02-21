@@ -110,7 +110,7 @@ func (s *service) UnsetForApplication(ctx context.Context, app model.Application
 
 	appID, err := uuid.Parse(app.ID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while parsing applicaiton ID: %s", app.ID)
+		return nil, errors.Wrapf(err, "while parsing application ID: %s", app.ID)
 	}
 
 	runtime, found, err := s.unsetForApplication(ctx, tenantID, appID)
@@ -143,7 +143,7 @@ func (s *service) GetForApplication(ctx context.Context, app model.Application) 
 
 	appID, err := uuid.Parse(app.ID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while parsing applicaiton ID: %s", app.ID)
+		return nil, errors.Wrapf(err, "while parsing application ID: %s", app.ID)
 	}
 
 	var defaultVerified, foundDefault, foundOldest bool
