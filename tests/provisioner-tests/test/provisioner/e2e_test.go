@@ -33,6 +33,7 @@ func Test_E2E_Gardener(t *testing.T) {
 	for _, provider := range testSuite.gardenerProviders {
 		wg.Add(1)
 		go func(provider string) {
+			defer testSuite.Recover()
 			defer wg.Done()
 
 			t.Run(provider, func(t *testing.T) {
@@ -233,6 +234,7 @@ func assertGCPRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntim
 }
 
 func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntimeInput, status gqlschema.RuntimeStatus) {
+	assert.NotEmpty(t, status)
 	assertRuntimeConfiguration(t, status)
 
 	clusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(*gqlschema.GardenerConfig)
