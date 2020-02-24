@@ -1,11 +1,13 @@
 package broker
 
 import (
+	"github.com/stretchr/testify/mock"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker/automock"
 
+	hyperscalerMocks "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
@@ -28,7 +30,11 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return(toDisableComponents)
 	optComponentsSvc.On("ExecuteDisablers", mappedComponentList, toDisableComponents[0]).Return(mappedComponentList, nil)
 
-	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, "1.10.0", internal.ServiceManagerOverride{})
+	accountProviderMock := &hyperscalerMocks.AccountProvider{}
+
+	accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getGardenerRuntimeInputMatcherForAzure()), azurePlanID).Return("gardener-secret-azurePlanID", nil)
+
+	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, "1.10.0", internal.ServiceManagerOverride{}, accountProviderMock)
 
 	// when
 	builder, found := factory.ForPlan(azurePlanID)
@@ -44,16 +50,16 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 		SetERSContext(internal.ERSContext{
 			ServiceManager: smOverrides,
 		}).
-		SetProvisioningConfig(ProvisioningConfig{
-			AzureSecretName: "azure-secret",
-		}).
+		//SetProvisioningConfig(ProvisioningConfig{
+		//	AzureSecretName: "azure-secret",
+		//}).
 		Build()
 
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, "azure-cluster", input.RuntimeInput.Name)
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
-	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
+	assert.Equal(t, "gardener-secret-azurePlanID", input.ClusterConfig.GardenerConfig.TargetSecret)
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 
 	assertServiceManagerOverrides(t, input.KymaConfig.Components, smOverrides)
@@ -81,3 +87,16 @@ func fixKymaComponentList() []v1alpha1.KymaComponent {
 		{Name: serviceManagerComponentName, Namespace: "kyma-system"},
 	}
 }
+
+func getGardenerRuntimeInputMatcherForAzure() func(*gqlschema.GardenerConfigInput) bool {
+	return func(input *gqlschema.GardenerConfigInput) bool {
+		return input.ProviderSpecificConfig.AzureConfig != nil
+	}
+}
+
+func getGardenerRuntimeInputMatcherForGCP() func(*gqlschema.GardenerConfigInput) bool {
+	return func(input *gqlschema.GardenerConfigInput) bool {
+		return input.ProviderSpecificConfig.GcpConfig != nil
+	}
+}
+

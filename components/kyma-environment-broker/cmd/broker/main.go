@@ -1,10 +1,16 @@
 package main
 
 import (
+	"fmt"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 
+	"code.cloudfoundry.org/lager"
+	"github.com/gorilla/handlers"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
@@ -13,12 +19,12 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-
-	"code.cloudfoundry.org/lager"
-	"github.com/gorilla/handlers"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pivotal-cf/brokerapi"
 	"github.com/vrischmann/envconfig"
+	"k8s.io/client-go/kubernetes"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	restclient "k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
@@ -35,6 +41,7 @@ type Config struct {
 	Provisioning broker.ProvisioningConfig
 	Director     director.Config
 	Database     storage.Config
+	Gardener     gardener.Config
 
 	ServiceManager internal.ServiceManagerOverride
 
@@ -101,7 +108,23 @@ func main() {
 	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
 	fatalOnError(err)
 
-	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager)
+	gardenerClusterConfig, err := newGardenerClusterConfig(cfg)
+	fatalOnError(err)
+
+	gardenerSecrets, err := newGardenerSecretsInterface(gardenerClusterConfig, cfg)
+	fatalOnError(err)
+
+	// TODO: check if is it possible to use compass account pool someday?
+	var compassAccountPool hyperscaler.AccountPool = nil
+	var gardenerAccountPool hyperscaler.AccountPool = nil
+
+	if gardenerSecrets != nil {
+		gardenerAccountPool = hyperscaler.NewAccountPool(gardenerSecrets)
+	}
+
+	accountProvider := hyperscaler.NewAccountProvider(compassAccountPool, gardenerAccountPool)
+
+	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager, accountProvider)
 
 	dumper, err := broker.NewDumper()
 	fatalOnError(err)
@@ -124,6 +147,33 @@ func main() {
 	r := handlers.LoggingHandler(os.Stdout, brokerAPI)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
+}
+
+func newGardenerClusterConfig(cfg Config) (*restclient.Config, error) {
+
+	rawKubeconfig, err := ioutil.ReadFile(cfg.Gardener.KubeconfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read Gardener Kubeconfig from path %s: %s", cfg.Gardener.KubeconfigPath, err.Error())
+	}
+
+	gardenerClusterConfig, err := gardener.RESTConfig(rawKubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("")
+	}
+
+	return gardenerClusterConfig, nil
+}
+
+func newGardenerSecretsInterface(gardenerClusterCfg *restclient.Config, cfg Config) (corev1.SecretInterface, error) {
+
+	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
+
+	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return gardenerClusterClient.CoreV1().Secrets(gardenerNamespace), nil
 }
 
 func fatalOnError(err error) {

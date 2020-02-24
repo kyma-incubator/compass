@@ -120,6 +120,14 @@ spec:
               value: {{ .Values.kymaVersion }}
             - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_FILE_PATH
               value: /config/additionalRuntimeComponents.yaml
+            - name: APP_GARDENER_PROJECT
+              value: {{ .Values.gardener.project }}
+            - name: APP_GARDENER_KUBECONFIG_PATH
+              value: {{ .Values.gardener.kubeconfigPath }}
+          volumeMounts:
+            - mountPath: /gardener/kubeconfig
+              name: gardener-kubeconfig
+              readOnly: true
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
@@ -159,3 +167,6 @@ spec:
         secret:
           secretName: cloudsql-instance-credentials
       {{- end}}
+      - name: gardener-kubeconfig
+        secret:
+          secretName: {{ .Values.gardener.secretName }}

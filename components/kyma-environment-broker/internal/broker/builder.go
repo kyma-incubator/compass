@@ -2,6 +2,7 @@ package broker
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	cloudProvider "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provider"
@@ -45,18 +46,20 @@ type (
 )
 
 type InputBuilderFactory struct {
-	kymaVersion        string
-	optComponentsSvc   OptionalComponentService
-	serviceManager     internal.ServiceManagerOverride
-	fullComponentsList internal.ComponentConfigurationInputList
+	kymaVersion                string
+	optComponentsSvc           OptionalComponentService
+	serviceManager             internal.ServiceManagerOverride
+	hyperscalerAccountProvider hyperscaler.AccountProvider
+	fullComponentsList         internal.ComponentConfigurationInputList
 }
 
-func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullComponentsList []v1alpha1.KymaComponent, kymaVersion string, smOverride internal.ServiceManagerOverride) InputBuilderForPlan {
+func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullComponentsList []v1alpha1.KymaComponent, kymaVersion string, smOverride internal.ServiceManagerOverride, hyperscalerAccountProvider hyperscaler.AccountProvider) InputBuilderForPlan {
 	return &InputBuilderFactory{
-		kymaVersion:        kymaVersion,
-		serviceManager:     smOverride,
-		optComponentsSvc:   optComponentsSvc,
-		fullComponentsList: mapToGQLComponentConfigurationInput(fullComponentsList),
+		kymaVersion:                kymaVersion,
+		serviceManager:             smOverride,
+		optComponentsSvc:           optComponentsSvc,
+		hyperscalerAccountProvider: hyperscalerAccountProvider,
+		fullComponentsList:         mapToGQLComponentConfigurationInput(fullComponentsList),
 	}
 }
 
@@ -73,22 +76,24 @@ func (f *InputBuilderFactory) ForPlan(planID string) (ConcreteInputBuilder, bool
 	}
 
 	return &InputBuilder{
-		planID:                    planID,
-		kymaVersion:               f.kymaVersion,
-		serviceManager:            f.serviceManager,
-		hyperscalerInputProvider:  provider,
-		optionalComponentsService: f.optComponentsSvc,
-		fullRuntimeComponentList:  f.fullComponentsList,
+		planID:                     planID,
+		kymaVersion:                f.kymaVersion,
+		serviceManager:             f.serviceManager,
+		hyperscalerInputProvider:   provider,
+		hyperscalerAccountProvider: f.hyperscalerAccountProvider,
+		optionalComponentsService:  f.optComponentsSvc,
+		fullRuntimeComponentList:   f.fullComponentsList,
 	}, true
 }
 
 type InputBuilder struct {
-	planID                    string
-	kymaVersion               string
-	serviceManager            internal.ServiceManagerOverride
-	hyperscalerInputProvider  HyperscalerInputProvider
-	optionalComponentsService OptionalComponentService
-	fullRuntimeComponentList  internal.ComponentConfigurationInputList
+	planID                     string
+	kymaVersion                string
+	serviceManager             internal.ServiceManagerOverride
+	hyperscalerInputProvider   HyperscalerInputProvider
+	hyperscalerAccountProvider hyperscaler.AccountProvider
+	optionalComponentsService  OptionalComponentService
+	fullRuntimeComponentList   internal.ComponentConfigurationInputList
 
 	ersCtx                 internal.ERSContext
 	provisioningConfig     ProvisioningConfig
@@ -188,14 +193,27 @@ func (b *InputBuilder) applyServiceManagerOverrides(in *gqlschema.ProvisionRunti
 // applyTemporaryCustomization applies some additional information. This is only a temporary solution for MVP scenario.
 // Will be removed and refactored in near future.
 func (b *InputBuilder) applyTemporaryCustomization(in *gqlschema.ProvisionRuntimeInput) error {
-	switch b.planID {
-	case azurePlanID:
-		in.ClusterConfig.GardenerConfig.TargetSecret = b.provisioningConfig.AzureSecretName
-	case gcpPlanID:
-		in.ClusterConfig.GardenerConfig.TargetSecret = b.provisioningConfig.GCPSecretName
-	default:
-		return fmt.Errorf("unknown Plan ID %s", b.planID)
+	// old implementation
+	//switch b.planID {
+	//case azurePlanID:
+	//	in.ClusterConfig.GardenerConfig.TargetSecret = b.provisioningConfig.AzureSecretName
+	//case gcpPlanID:
+	//	in.ClusterConfig.GardenerConfig.TargetSecret = b.provisioningConfig.GCPSecretName
+	//default:
+	//	return fmt.Errorf("unknown Plan ID %s", b.planID)
+	//}
+
+	if in.ClusterConfig.GardenerConfig == nil {
+		return fmt.Errorf("gardener config for cluster is empty (nil)")
 	}
+
+	targetSecretName, err := b.hyperscalerAccountProvider.GardenerSecretName(in.ClusterConfig.GardenerConfig, b.planID)
+
+	if err != nil {
+		return err
+	}
+
+	in.ClusterConfig.GardenerConfig.TargetSecret = targetSecretName
 
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/mock"
 	"path"
 	"testing"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+
+	hyperscalerMocks "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/mocks"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/require"
@@ -68,7 +71,11 @@ func TestBrokerProvisioningScenario(t *testing.T) {
 	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
 	require.NoError(t, err)
 
-	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, kymaVersion, sm)
+	// ask Gophers about it
+	accountProviderMock := &hyperscalerMocks.AccountProvider{}
+	accountProviderMock.On("GardenerSecretName", mock.Anything, mock.Anything).Return("", nil)
+
+	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, kymaVersion, sm, accountProviderMock)
 
 	brokerCfg := broker.Config{EnablePlans: []string{"gcp", "azure"}}
 	dumper := &broker.DumyDumper{}
