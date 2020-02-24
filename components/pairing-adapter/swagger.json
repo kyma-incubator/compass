@@ -1,0 +1,105 @@
+{
+  "swagger": "2.0",
+  "paths": {
+    "/adapter": {
+      "post": {
+        "description": "Request token from external solution",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "adapter",
+        "parameters": [
+          {
+            "name": "Application",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Application"
+            }
+          },
+          {
+            "name": "Tenant",
+            "in": "body",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/externalToken"
+          },
+          "400": {},
+          "500": {}
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Application": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "healthCheckURL": {
+          "type": "string",
+          "x-go-name": "HealthCheckURL"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "integrationSystemID": {
+          "type": "string",
+          "x-go-name": "IntegrationSystemID"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "providerName": {
+          "type": "string",
+          "x-go-name": "ProviderName"
+        },
+        "status": {
+          "$ref": "#/definitions/ApplicationStatus"
+        }
+      },
+      "x-go-package": "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+    },
+    "ApplicationStatus": {
+      "type": "object",
+      "properties": {
+        "condition": {
+          "$ref": "#/definitions/ApplicationStatusCondition"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/Timestamp"
+        }
+      },
+      "x-go-package": "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+    },
+    "ApplicationStatusCondition": {
+      "type": "string",
+      "x-go-package": "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "x-go-package": "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+    }
+  },
+  "responses": {
+    "externalToken": {
+      "headers": {
+        "Token": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

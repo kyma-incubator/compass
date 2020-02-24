@@ -424,3 +424,49 @@ func fixGQLApplicationEventingConfiguration(url string) *graphql.ApplicationEven
 		DefaultURL: url,
 	}
 }
+
+func fixModelPackage(id, tenantID, appId, name, description string) *model.Package {
+	return &model.Package{
+		ID:                             id,
+		TenantID:                       tenantID,
+		ApplicationID:                  appId,
+		Name:                           name,
+		Description:                    &description,
+		InstanceAuthRequestInputSchema: nil,
+		DefaultInstanceAuth:            nil,
+	}
+}
+
+func fixGQLPackage(id, appId, name, description string) *graphql.Package {
+	return &graphql.Package{
+		ID:                             id,
+		Name:                           name,
+		Description:                    &description,
+		InstanceAuthRequestInputSchema: nil,
+		DefaultInstanceAuth:            nil,
+	}
+}
+
+func fixGQLPackagePage(packages []*graphql.Package) *graphql.PackagePage {
+	return &graphql.PackagePage{
+		Data: packages,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(packages),
+	}
+}
+
+func fixPackagePage(packages []*model.Package) *model.PackagePage {
+	return &model.PackagePage{
+		Data: packages,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(packages),
+	}
+}

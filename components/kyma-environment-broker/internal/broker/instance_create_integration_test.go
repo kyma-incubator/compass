@@ -36,6 +36,7 @@ func TestBrokerProvisioningScenario(t *testing.T) {
 		clusterName     = "cluster-testing"
 		instID          = "inst-id"
 		kymaVersion     = "1.9.0"
+		directorUrl     = "https://compass-gateway-auth-oauth.kyma.local/director/graphql"
 		serviceID       = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
 		planID          = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 		globalAccountID = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
@@ -75,7 +76,7 @@ func TestBrokerProvisioningScenario(t *testing.T) {
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
 	accountProviderMock.On("GardenerSecretName", mock.Anything, mock.Anything).Return("", nil)
 
-	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, kymaVersion, sm, accountProviderMock)
+	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, kymaVersion, sm, accountProviderMock, directorUrl)
 
 	brokerCfg := broker.Config{EnablePlans: []string{"gcp", "azure"}}
 	dumper := &broker.DumyDumper{}

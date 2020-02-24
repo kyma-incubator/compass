@@ -34,7 +34,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 
 	accountProviderMock.On("GardenerSecretName", mock.MatchedBy(getGardenerRuntimeInputMatcherForAzure()), azurePlanID).Return("gardener-secret-azurePlanID", nil)
 
-	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, "1.10.0", internal.ServiceManagerOverride{}, accountProviderMock)
+	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, "1.10.0", internal.ServiceManagerOverride{}, "https://compass-gateway-auth-oauth.kyma.local/director/graphql", accountProviderMock)
 
 	// when
 	builder, found := factory.ForPlan(azurePlanID)

@@ -51,15 +51,17 @@ type InputBuilderFactory struct {
 	serviceManager             internal.ServiceManagerOverride
 	hyperscalerAccountProvider hyperscaler.AccountProvider
 	fullComponentsList         internal.ComponentConfigurationInputList
+	directorURL        string
 }
 
-func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullComponentsList []v1alpha1.KymaComponent, kymaVersion string, smOverride internal.ServiceManagerOverride, hyperscalerAccountProvider hyperscaler.AccountProvider) InputBuilderForPlan {
+func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullComponentsList []v1alpha1.KymaComponent, kymaVersion string, smOverride internal.ServiceManagerOverride, directorURL string, hyperscalerAccountProvider hyperscaler.AccountProvider) InputBuilderForPlan {
 	return &InputBuilderFactory{
 		kymaVersion:                kymaVersion,
 		serviceManager:             smOverride,
 		optComponentsSvc:           optComponentsSvc,
 		hyperscalerAccountProvider: hyperscalerAccountProvider,
 		fullComponentsList:         mapToGQLComponentConfigurationInput(fullComponentsList),
+		directorURL:        		directorURL,
 	}
 }
 
@@ -83,6 +85,7 @@ func (f *InputBuilderFactory) ForPlan(planID string) (ConcreteInputBuilder, bool
 		hyperscalerAccountProvider: f.hyperscalerAccountProvider,
 		optionalComponentsService:  f.optComponentsSvc,
 		fullRuntimeComponentList:   f.fullComponentsList,
+		directorURL:               f.directorURL,
 	}, true
 }
 
@@ -94,6 +97,7 @@ type InputBuilder struct {
 	hyperscalerAccountProvider hyperscaler.AccountProvider
 	optionalComponentsService  OptionalComponentService
 	fullRuntimeComponentList   internal.ComponentConfigurationInputList
+	directorURL               string
 
 	ersCtx                 internal.ERSContext
 	provisioningConfig     ProvisioningConfig
@@ -190,6 +194,30 @@ func (b *InputBuilder) applyServiceManagerOverrides(in *gqlschema.ProvisionRunti
 	return nil
 }
 
+func applySingleOverride(in *gqlschema.ProvisionRuntimeInput, componentName, key, value string) {
+	override := gqlschema.ConfigEntryInput{
+		Key:   key,
+		Value: value,
+	}
+
+	for i := range in.KymaConfig.Components {
+		if in.KymaConfig.Components[i].Component == componentName {
+			in.KymaConfig.Components[i].Configuration = append(in.KymaConfig.Components[i].Configuration, &override)
+		}
+	}
+}
+
+func (b *InputBuilder) applyManagementPlaneOverrides(in *gqlschema.ProvisionRuntimeInput) error {
+
+	// core override
+	applySingleOverride(in, "core", "console.managementPlane.url", b.directorURL)
+
+	// compass runtime agent override
+	applySingleOverride(in, "compass-runtime-agent", "managementPlane.url", b.directorURL)
+
+	return nil
+}
+
 // applyTemporaryCustomization applies some additional information. This is only a temporary solution for MVP scenario.
 // Will be removed and refactored in near future.
 func (b *InputBuilder) applyTemporaryCustomization(in *gqlschema.ProvisionRuntimeInput) error {
@@ -248,6 +276,10 @@ func (b *InputBuilder) Build() (gqlschema.ProvisionRuntimeInput, error) {
 		{
 			name:    "applying service manager overrides",
 			execute: b.applyServiceManagerOverrides,
+		},
+		{
+			name:    "applying management plane overrides",
+			execute: b.applyManagementPlaneOverrides,
 		},
 		{
 			name:    "applying temporary customization",

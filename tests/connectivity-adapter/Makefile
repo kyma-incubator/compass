@@ -15,3 +15,5 @@ ensure-local:
 
 dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}
+
+test-local: ;

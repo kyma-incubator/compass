@@ -12,6 +12,14 @@ scalar CLOB
 
 scalar HttpHeaders
 
+"""
+Stringified JSON
+"""
+scalar JSON
+
+"""
+Stringified JSON
+"""
 scalar JSONSchema
 
 scalar Labels
@@ -288,11 +296,11 @@ input PackageInstanceAuthRequestInput {
 	"""
 	Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
 	"""
-	context: Any
+	context: JSON
 	"""
 	JSON validated against package.instanceAuthRequestInputSchema
 	"""
-	inputParams: Any
+	inputParams: JSON
 }
 
 input PackageInstanceAuthSetInput {
@@ -653,17 +661,17 @@ type PackageInstanceAuth {
 	"""
 	Context of PackageInstanceAuth - such as Runtime ID, namespace
 	"""
-	context: Any
+	context: JSON
 	"""
 	User input while requesting Package Instance Auth
 	"""
-	inputParams: Any
+	inputParams: JSON
 	"""
 	It may be empty if status is PENDING.
 	Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
 	"""
 	auth: Auth
-	status: PackageInstanceAuthStatus
+	status: PackageInstanceAuthStatus!
 }
 
 type PackageInstanceAuthStatus {
@@ -1042,8 +1050,8 @@ type Mutation {
 	
 	When used without error, the status of pending auth is set to success.
 	"""
-	setPackageInstanceAuth(packageID: ID!, authID: ID!, in: PackageInstanceAuthSetInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
-	deletePackageInstanceAuth(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
+	setPackageInstanceAuth(authID: ID!, in: PackageInstanceAuthSetInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
+	deletePackageInstanceAuth(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
 	"""
 	When defaultInstanceAuth is set, it fires "createPackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to PENDING.
 	"""
@@ -1051,7 +1059,7 @@ type Mutation {
 	"""
 	When defaultInstanceAuth is set, it fires "deletePackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to UNUSED.
 	"""
-	requestPackageInstanceAuthDeletion(packageID: ID!, authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
+	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
 	addPackage(applicationID: ID!, in: PackageCreateInput! @validate): Package! @hasScopes(path: "graphql.mutation.addPackage")
 	updatePackage(id: ID!, in: PackageUpdateInput! @validate): Package! @hasScopes(path: "graphql.mutation.updatePackage")
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
