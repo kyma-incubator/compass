@@ -25,7 +25,7 @@ global:
       version: "PR-798"
     pairing_adapter:
       dir:
-      version: "PR-798"
+      version: "PR-867"
     director:
       dir:
       version: "PR-798"
