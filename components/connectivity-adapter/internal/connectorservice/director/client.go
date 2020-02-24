@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/machinebox/graphql"
-	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
@@ -38,7 +37,7 @@ func (c client) GetApplication(systemAuthID string) (schema.ApplicationExt, appe
 
 	err = c.execute(c.gqlClient, query, &response)
 	if err != nil {
-		return schema.ApplicationExt{}, apperrors.Internal("Failed to get application: %s", err)
+		return schema.ApplicationExt{}, apperrors.Internal(err.Error())
 	}
 
 	return response.Result, nil
@@ -51,7 +50,7 @@ func (c client) getApplicationID(systemAuthID string) (string, error) {
 
 	err := c.execute(c.gqlClient, query, &response)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to get certificate info")
+		return "", err
 	}
 
 	return response.Result.ID, nil

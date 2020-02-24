@@ -28,3 +28,21 @@ func (r readSession) GetInstanceByID(instanceID string) (internal.Instance, dber
 	}
 	return instance, nil
 }
+
+func (r readSession) GetOperationByID(opID string) (OperationDTO, dberr.Error) {
+	var operation OperationDTO
+
+	err := r.session.
+		Select("*").
+		From(postsql.OperationTableName).
+		Where(dbr.Eq("id", opID)).
+		LoadOne(&operation)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return OperationDTO{}, dberr.NotFound("Cannot find operation for ID: '%s'", opID)
+		}
+		return OperationDTO{}, dberr.Internal("Failed to get operation: %s", err)
+	}
+	return operation, nil
+}

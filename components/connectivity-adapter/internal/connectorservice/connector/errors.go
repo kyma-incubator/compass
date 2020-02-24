@@ -21,5 +21,9 @@ func toAppError(err error) apperrors.AppError {
 		return apperrors.WrongInput(err.Error())
 	}
 
+	if strings.Contains(err.Error(), "Error while decoding Certificate Signing Request") {
+		return apperrors.WrongInput(err.Error())
+	}
+
 	return apperrors.Internal(err.Error())
 }

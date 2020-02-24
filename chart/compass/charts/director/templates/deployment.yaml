@@ -81,6 +81,10 @@ spec:
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
             - name: APP_LEGACY_CONNECTOR_URL
               value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}/v1/applications/signingRequests/info"
+            {{ if .Values.deployment.pairingAdapterConfigMap }}
+            - name: APP_PAIRING_ADAPTER_SRC
+              value: /pairing-adapters/config.json
+            {{ end }}
           volumeMounts:
             - mountPath: /config
               name: director-config
@@ -90,6 +94,11 @@ spec:
             - mountPath: /data/static-groups.yaml
               name: static-groups
               subPath: static-groups.yaml
+            {{ if .Values.deployment.pairingAdapterConfigMap }}
+            - name: pairing-adapters-config
+              mountPath: /pairing-adapters
+            {{ end }}
+
 
         {{if eq .Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials
@@ -124,3 +133,8 @@ spec:
         - name: static-groups
           configMap:
             name: {{ template "fullname" . }}-static-groups
+        {{ if .Values.deployment.pairingAdapterConfigMap }}
+        - name: pairing-adapters-config
+          configMap:
+            name: {{ .Values.deployment.pairingAdapterConfigMap }}
+        {{ end }}

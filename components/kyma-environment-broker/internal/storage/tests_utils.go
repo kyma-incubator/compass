@@ -101,8 +101,6 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 
 	connString := makeConnectionString(hostname, port.Port())
 
-	fmt.Println(connString)
-
 	return cleanupFunc, connString, nil
 }
 
@@ -194,7 +192,7 @@ func EnsureTestNetworkForDB(t *testing.T, ctx context.Context) (func(), error) {
 func fixTables() map[string]string {
 	return map[string]string{
 		postsql.InstancesTableName: fmt.Sprintf(
-			`CREATE TABLE %s (
+			`CREATE TABLE IF NOT EXISTS %s (
 			instance_id varchar(255) PRIMARY KEY,
 			runtime_id varchar(255) NOT NULL,
 			global_account_id varchar(255) NOT NULL,
@@ -205,5 +203,19 @@ func fixTables() map[string]string {
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			delated_at TIMESTAMPTZ NOT NULL DEFAULT '0001-01-01 00:00:00+00'
-		)`, postsql.InstancesTableName)}
+		)`, postsql.InstancesTableName),
+		postsql.OperationTableName: fmt.Sprintf(
+			`CREATE TABLE IF NOT EXISTS %s (
+			id varchar(255) PRIMARY KEY,
+			instance_id varchar(255) NOT NULL,
+			target_operation_id varchar(255) NOT NULL,
+			version integer NOT NULL,
+			state varchar(32) NOT NULL,
+			description text NOT NULL,
+			type varchar(32) NOT NULL,
+			data json NOT NULL,
+			created_at TIMESTAMPTZ NOT NULL,
+			updated_at TIMESTAMPTZ NOT NULL
+			)`, postsql.OperationTableName)}
+
 }

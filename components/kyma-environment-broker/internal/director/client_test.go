@@ -198,7 +198,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 
 		// Then
 		assert.Error(t, tokenErr)
-		assert.False(t, IsTemporaryError(tokenErr))
+		assert.True(t, IsTemporaryError(tokenErr))
 		assert.Equal(t, "", URL)
 	})
 
