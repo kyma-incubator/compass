@@ -2,6 +2,7 @@ package tenantmapping
 
 import (
 	"io/ioutil"
+	"strings"
 
 	"github.com/ghodss/yaml"
 
@@ -59,4 +60,22 @@ func (r *staticGroupRepository) Get(groupnames []string) StaticGroups {
 	}
 
 	return result
+}
+
+// getGroupScopes get all scopes from group array, without duplicates
+func (groups StaticGroups) GetGroupScopes() string {
+	scopeMap := make(map[string]bool)
+	filteredScopes := []string{}
+
+	for _, group := range groups {
+		for _, scope := range group.Scopes {
+			_, ok := scopeMap[scope]
+			if !ok {
+				filteredScopes = append(filteredScopes, scope)
+				scopeMap[scope] = true
+			}
+		}
+	}
+
+	return strings.Join(filteredScopes, " ")
 }

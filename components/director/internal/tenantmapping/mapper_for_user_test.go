@@ -23,7 +23,6 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 	expectedExternalTenantID := uuid.New()
 	expectedScopes := []string{"application:read", "application:write"}
 	userObjCtxType := "Static User"
-	groupObjCtxType := "Static Group"
 
 	t.Run("returns tenant and scopes that are defined in the Extra map of ReqData", func(t *testing.T) {
 		reqData := tenantmapping.ReqData{
@@ -260,7 +259,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
 		require.Equal(t, strings.Join(expectedGroupScopes, " "), objCtx.Scopes)
 		require.Equal(t, username, objCtx.ConsumerID)
-		require.Equal(t, groupObjCtxType, string(objCtx.ConsumerType))
+		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
 
 		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, tenantRepoMock)
 	})
@@ -308,7 +307,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
 		require.Equal(t, strings.Join(allExpectedGroupScopes, " "), objCtx.Scopes)
 		require.Equal(t, username, objCtx.ConsumerID)
-		require.Equal(t, groupObjCtxType, string(objCtx.ConsumerType))
+		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
 
 		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, tenantRepoMock)
 	})
