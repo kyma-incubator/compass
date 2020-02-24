@@ -76,6 +76,13 @@ func (c *converter) StatusToGraphQL(in *model.PackageInstanceAuthStatus) *graphq
 	}
 }
 
+func (c *converter) RequestInputFromGraphQL(in graphql.PackageInstanceAuthRequestInput) model.PackageInstanceAuthRequestInput {
+	return model.PackageInstanceAuthRequestInput{
+		Context:     c.jsonPtrToStrPtr(in.Context),
+		InputParams: c.jsonPtrToStrPtr(in.InputParams),
+	}
+}
+
 func (c *converter) SetInputFromGraphQL(in graphql.PackageInstanceAuthSetInput) model.PackageInstanceAuthSetInput {
 	out := model.PackageInstanceAuthSetInput{
 		Auth: c.authConverter.InputFromGraphQL(in.Auth),
@@ -149,6 +156,14 @@ func (c *converter) strPtrToJSONPtr(in *string) *graphql.JSON {
 		return nil
 	}
 	out := graphql.JSON(*in)
+	return &out
+}
+
+func (c *converter) jsonPtrToStrPtr(in *graphql.JSON) *string {
+	if in == nil {
+		return nil
+	}
+	out := string(*in)
 	return &out
 }
 

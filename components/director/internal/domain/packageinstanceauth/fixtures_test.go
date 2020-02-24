@@ -239,3 +239,15 @@ func fixSQLRowFromEntity(entity packageinstanceauth.Entity) sqlRow {
 func fixCreateArgs(ent packageinstanceauth.Entity) []driver.Value {
 	return []driver.Value{ent.ID, ent.TenantID, ent.PackageID, ent.Context, ent.InputParams, ent.AuthValue, ent.StatusCondition, ent.StatusTimestamp, ent.StatusMessage, ent.StatusReason}
 }
+
+func fixSimpleModelPackageInstanceAuth(id string) *model.PackageInstanceAuth {
+	return &model.PackageInstanceAuth{
+		ID: id,
+	}
+}
+
+func fixSimpleGQLPackageInstanceAuth(id string) *graphql.PackageInstanceAuth {
+	return &graphql.PackageInstanceAuth{
+		ID: id,
+	}
+}

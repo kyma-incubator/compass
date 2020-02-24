@@ -184,6 +184,53 @@ func TestConverter_StatusToGraphQL(t *testing.T) {
 	}
 }
 
+func TestConverter_RequestInputFromGraphQL(t *testing.T) {
+	// GIVEN
+	testJSON := graphql.JSON("test")
+	testStr := "test"
+
+	testCases := []struct {
+		Name     string
+		Input    graphql.PackageInstanceAuthRequestInput
+		Expected model.PackageInstanceAuthRequestInput
+	}{
+		{
+			Name: "Success when nil",
+			Input: graphql.PackageInstanceAuthRequestInput{
+				Context:     nil,
+				InputParams: nil,
+			},
+			Expected: model.PackageInstanceAuthRequestInput{
+				Context:     nil,
+				InputParams: nil,
+			},
+		},
+		{
+			Name: "Success when not nil",
+			Input: graphql.PackageInstanceAuthRequestInput{
+				Context:     &testJSON,
+				InputParams: &testJSON,
+			},
+			Expected: model.PackageInstanceAuthRequestInput{
+				Context:     &testStr,
+				InputParams: &testStr,
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			conv := packageinstanceauth.NewConverter(nil)
+
+			// WHEN
+			result := conv.RequestInputFromGraphQL(testCase.Input)
+
+			// THEN
+			require.Equal(t, testCase.Expected, result)
+		})
+	}
+}
+
 func TestConverter_SetInputFromGraphQL(t *testing.T) {
 	// GIVEN
 	authInputModel := fixModelAuthInput()
