@@ -24,37 +24,6 @@ type mapperForUser struct {
 	tenantRepo      TenantRepository
 }
 
-func (m *mapperForUser) getScopesForUserGroups(reqData ReqData) string {
-	userGroups := reqData.GetUserGroups()
-	if len(userGroups) == 0 {
-		return ""
-	}
-
-	staticGroups := m.staticGroupRepo.Get(userGroups)
-	if len(staticGroups) == 0 {
-		return ""
-	}
-
-	return staticGroups.GetGroupScopes()
-}
-
-func (m *mapperForUser) getUserData(reqData ReqData, username string) (*StaticUser, string, error) {
-	staticUser, err := m.staticUserRepo.Get(username)
-	if err != nil {
-		return nil, "", errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))
-	}
-
-	scopes, err := reqData.GetScopes()
-	if err != nil {
-		if !apperrors.IsKeyDoesNotExist(err) {
-			return nil, "", errors.Wrap(err, "while fetching scopes")
-		}
-		scopes = strings.Join(staticUser.Scopes, " ")
-	}
-
-	return &staticUser, scopes, nil
-}
-
 func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
 	var externalTenantID, scopes string
 	var staticUser *StaticUser
@@ -86,6 +55,37 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 	}
 
 	return NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, username, consumer.User), nil
+}
+
+func (m *mapperForUser) getScopesForUserGroups(reqData ReqData) string {
+	userGroups := reqData.GetUserGroups()
+	if len(userGroups) == 0 {
+		return ""
+	}
+
+	staticGroups := m.staticGroupRepo.Get(userGroups)
+	if len(staticGroups) == 0 {
+		return ""
+	}
+
+	return staticGroups.GetGroupScopes()
+}
+
+func (m *mapperForUser) getUserData(reqData ReqData, username string) (*StaticUser, string, error) {
+	staticUser, err := m.staticUserRepo.Get(username)
+	if err != nil {
+		return nil, "", errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))
+	}
+
+	scopes, err := reqData.GetScopes()
+	if err != nil {
+		if !apperrors.IsKeyDoesNotExist(err) {
+			return nil, "", errors.Wrap(err, "while fetching scopes")
+		}
+		scopes = strings.Join(staticUser.Scopes, " ")
+	}
+
+	return &staticUser, scopes, nil
 }
 
 func hasValidTenant(assignedTenants []string, tenant string) bool {
