@@ -44,13 +44,21 @@ func (c *ExternalClient) Do(ctx context.Context, app RequestData) (*ExternalToke
 	}
 
 	defer func() {
+		if _, err := io.Copy(ioutil.Discard, resp.Body); err != nil {
+			logrus.Error("Got error on discarding body content", err)
+		}
+
 		if err = resp.Body.Close(); err != nil {
 			logrus.Error("Got error on closing response body", err)
 		}
 	}()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("wrong status code, got: %d", resp.StatusCode)
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("wrong status code, got: [%d], cannot read body: [%v]", resp.StatusCode, err)
+		}
+		return nil, fmt.Errorf("wrong status code, got: [%d], body: [%s]", resp.StatusCode, string(b))
 	}
 
 	tkn, err := c.getTokenFromResponse(resp.Body)
