@@ -2,9 +2,17 @@ package adapter
 
 import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
+const (
+	AuthStyleAutoDetect AuthStyle = "AuthDetect"
+	AuthStyleInParams   AuthStyle = "InParams"
+	AuthStyleInHeader   AuthStyle = "InHeader"
+)
+
+type AuthStyle string
+
 type Configuration struct {
 	Mapping Mapping
-	OAuth   Oauth
+	OAuth   OAuth
 	Port    string `envconfig:"default=8080"`
 }
 
@@ -15,10 +23,11 @@ type Mapping struct {
 	TemplateTokenFromResponse string
 }
 
-type Oauth struct {
+type OAuth struct {
 	URL          string
 	ClientID     string
 	ClientSecret string
+	AuthStyle    AuthStyle `envconfig:"default=AuthDetect"`
 }
 
 // swagger:response externalToken
