@@ -33,7 +33,7 @@ func TestService_Create(t *testing.T) {
 	modelInput := model.PackageCreateInput{
 		Name:                           name,
 		Description:                    &desc,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.AuthInput{},
 	}
 
@@ -43,7 +43,7 @@ func TestService_Create(t *testing.T) {
 		ApplicationID:                  applicationID,
 		Name:                           name,
 		Description:                    &desc,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.Auth{},
 	}
 
@@ -133,7 +133,7 @@ func TestService_Update(t *testing.T) {
 	modelInput := model.PackageUpdateInput{
 		Name:                           name,
 		Description:                    &desc,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.AuthInput{},
 	}
 
@@ -147,7 +147,7 @@ func TestService_Update(t *testing.T) {
 		ApplicationID:                  "id",
 		Name:                           name,
 		Description:                    &desc,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.Auth{},
 	}
 
