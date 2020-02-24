@@ -28,7 +28,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return(toDisableComponents)
 	optComponentsSvc.On("ExecuteDisablers", mappedComponentList, toDisableComponents[0]).Return(mappedComponentList, nil)
 
-	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, "1.10.0", internal.ServiceManagerOverride{})
+	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, "1.10.0", internal.ServiceManagerOverride{}, "https://compass-gateway-auth-oauth.kyma.local/director/graphql")
 
 	// when
 	builder, found := factory.ForPlan(azurePlanID)

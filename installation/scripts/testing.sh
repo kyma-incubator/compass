@@ -25,6 +25,8 @@ matchNames=$(cat <<-END
         namespace: kyma-system
       - name: compass-connector-tests
         namespace: compass-system
+      - name: connectivity-adapter
+        namespace: compass-system
 END
 )
 

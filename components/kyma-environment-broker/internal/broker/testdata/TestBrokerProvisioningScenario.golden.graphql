@@ -97,7 +97,13 @@
           }
           {
             component: "core"
-            namespace: "kyma-system" 
+            namespace: "kyma-system"
+            configuration: [
+              {
+                key: "console.managementPlane.url"
+                value: "https://compass-gateway-auth-oauth.kyma.local/director/graphql"
+              } 
+            ] 
           }
           {
             component: "knative-provisioner-natss"
@@ -170,7 +176,13 @@
           }
           {
             component: "compass-runtime-agent"
-            namespace: "compass-system" 
+            namespace: "compass-system"
+            configuration: [
+              {
+                key: "managementPlane.url"
+                value: "https://compass-gateway-auth-oauth.kyma.local/director/graphql"
+              } 
+            ] 
           } 
         ]         
 	}
