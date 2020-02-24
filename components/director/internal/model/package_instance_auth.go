@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/pkg/errors"
 )
 
 type PackageInstanceAuth struct {
@@ -16,13 +16,38 @@ type PackageInstanceAuth struct {
 	Status      *PackageInstanceAuthStatus
 }
 
-func (a *PackageInstanceAuth) SetAuth(setInput PackageInstanceAuthSetInput, timestamp time.Time) {
+func (a *PackageInstanceAuth) SetDefaultStatus(condition PackageInstanceAuthStatusCondition, timestamp time.Time) error {
 	if a == nil {
-		return
+		return nil
 	}
 
-	a.Auth = setInput.Auth.ToAuth()
-	a.Status = setInput.Status.ToPackageInstanceAuthStatus(timestamp)
+	var reason, message string
+
+	switch condition {
+	case PackageInstanceAuthStatusConditionSucceeded:
+		reason = "CredentialsProvided"
+		message = "Credentials were provided."
+		break
+	case PackageInstanceAuthStatusConditionPending:
+		reason = "CredentialsNotProvided"
+		message = "Credentials were not yet provided."
+		break
+	case PackageInstanceAuthStatusConditionUnused:
+		reason = "PendingDeletion"
+		message = "Credentials for given Package Instance Auth are ready for being deleted by Application or Integration System."
+		break
+	default:
+		return errors.New("invalid status condition")
+	}
+
+	a.Status = &PackageInstanceAuthStatus{
+		Condition: condition,
+		Timestamp: timestamp,
+		Message:   &message,
+		Reason:    &reason,
+	}
+
+	return nil
 }
 
 type PackageInstanceAuthStatus struct {
@@ -47,7 +72,7 @@ type PackageInstanceAuthRequestInput struct {
 	InputParams *string
 }
 
-func (ri PackageInstanceAuthRequestInput) ToPackageInstanceAuth(id, packageID, tenant string, auth *Auth, timestamp time.Time) PackageInstanceAuth {
+func (ri PackageInstanceAuthRequestInput) ToPackageInstanceAuth(id, packageID, tenant string, auth *Auth, status PackageInstanceAuthStatus) PackageInstanceAuth {
 	return PackageInstanceAuth{
 		ID:          id,
 		PackageID:   packageID,
@@ -55,25 +80,7 @@ func (ri PackageInstanceAuthRequestInput) ToPackageInstanceAuth(id, packageID, t
 		Context:     ri.Context,
 		InputParams: ri.InputParams,
 		Auth:        auth,
-		Status:      ri.statusFromAuth(auth, timestamp),
-	}
-}
-
-func (ri PackageInstanceAuthRequestInput) statusFromAuth(auth *Auth, timestamp time.Time) *PackageInstanceAuthStatus {
-	if auth == nil {
-		return &PackageInstanceAuthStatus{
-			Condition: PackageInstanceAuthStatusConditionPending,
-			Timestamp: timestamp,
-			Message:   str.Ptr("Credentials were not yet provided."),
-			Reason:    str.Ptr("CredentialsNotProvided"),
-		}
-	}
-
-	return &PackageInstanceAuthStatus{
-		Condition: PackageInstanceAuthStatusConditionSucceeded,
-		Timestamp: timestamp,
-		Message:   str.Ptr("Credentials were provided."),
-		Reason:    str.Ptr("CredentialsProvided"),
+		Status:      &status,
 	}
 }
 
