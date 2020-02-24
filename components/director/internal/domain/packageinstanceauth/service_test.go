@@ -14,10 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	testTenant = "tenant"
-)
-
 func TestService_Get(t *testing.T) {
 	// GIVEN
 	tnt := testTenant
@@ -26,7 +22,7 @@ func TestService_Get(t *testing.T) {
 
 	id := "foo"
 
-	modelInstanceAuth := fixModelPackageInstanceAuth(id)
+	modelInstanceAuth := fixSimpleModelPackageInstanceAuth(id)
 
 	testErr := errors.New("test error")
 
@@ -168,10 +164,4 @@ func contextThatHasTenant(expectedTenant string) interface{} {
 		}
 		return actualTenant == expectedTenant
 	})
-}
-
-func fixModelPackageInstanceAuth(id string) *model.PackageInstanceAuth {
-	return &model.PackageInstanceAuth{
-		ID: id,
-	}
 }

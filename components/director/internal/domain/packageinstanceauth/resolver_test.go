@@ -18,8 +18,8 @@ func TestResolver_DeletePackageInstanceAuth(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	modelInstanceAuth := fixModelPackageInstanceAuth(id)
-	gqlInstanceAuth := fixGQLPackageInstanceAuth(id)
+	modelInstanceAuth := fixSimpleModelPackageInstanceAuth(id)
+	gqlInstanceAuth := fixSimpleGQLPackageInstanceAuth(id)
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -132,11 +132,5 @@ func TestResolver_DeletePackageInstanceAuth(t *testing.T) {
 			transact.AssertExpectations(t)
 			persist.AssertExpectations(t)
 		})
-	}
-}
-
-func fixGQLPackageInstanceAuth(id string) *graphql.PackageInstanceAuth {
-	return &graphql.PackageInstanceAuth{
-		ID: id,
 	}
 }

@@ -2901,6 +2901,14 @@ scalar CLOB
 
 scalar HttpHeaders
 
+"""
+Stringified JSON
+"""
+scalar JSON
+
+"""
+Stringified JSON
+"""
 scalar JSONSchema
 
 scalar Labels
@@ -3177,11 +3185,11 @@ input PackageInstanceAuthRequestInput {
 	"""
 	Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
 	"""
-	context: Any
+	context: JSON
 	"""
 	JSON validated against package.instanceAuthRequestInputSchema
 	"""
-	inputParams: Any
+	inputParams: JSON
 }
 
 input PackageInstanceAuthSetInput {
@@ -3542,17 +3550,17 @@ type PackageInstanceAuth {
 	"""
 	Context of PackageInstanceAuth - such as Runtime ID, namespace
 	"""
-	context: Any
+	context: JSON
 	"""
 	User input while requesting Package Instance Auth
 	"""
-	inputParams: Any
+	inputParams: JSON
 	"""
 	It may be empty if status is PENDING.
 	Populated with ` + "`" + `package.defaultAuth` + "`" + ` value if ` + "`" + `package.defaultAuth` + "`" + ` is defined. If not, Compass notifies Application/Integration System about the Auth request.
 	"""
 	auth: Auth
-	status: PackageInstanceAuthStatus
+	status: PackageInstanceAuthStatus!
 }
 
 type PackageInstanceAuthStatus {
@@ -14627,10 +14635,10 @@ func (ec *executionContext) _PackageInstanceAuth_context(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*interface{})
+	res := resTmp.(*JSON)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAny2ᚖinterface(ctx, field.Selections, res)
+	return ec.marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PackageInstanceAuth_inputParams(ctx context.Context, field graphql.CollectedField, obj *PackageInstanceAuth) (ret graphql.Marshaler) {
@@ -14661,10 +14669,10 @@ func (ec *executionContext) _PackageInstanceAuth_inputParams(ctx context.Context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*interface{})
+	res := resTmp.(*JSON)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAny2ᚖinterface(ctx, field.Selections, res)
+	return ec.marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PackageInstanceAuth_auth(ctx context.Context, field graphql.CollectedField, obj *PackageInstanceAuth) (ret graphql.Marshaler) {
@@ -14727,12 +14735,15 @@ func (ec *executionContext) _PackageInstanceAuth_status(ctx context.Context, fie
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*PackageInstanceAuthStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOPackageInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatus(ctx, field.Selections, res)
+	return ec.marshalNPackageInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PackageInstanceAuthStatus_condition(ctx context.Context, field graphql.CollectedField, obj *PackageInstanceAuthStatus) (ret graphql.Marshaler) {
@@ -19156,13 +19167,13 @@ func (ec *executionContext) unmarshalInputPackageInstanceAuthRequestInput(ctx co
 		switch k {
 		case "context":
 			var err error
-			it.Context, err = ec.unmarshalOAny2ᚖinterface(ctx, v)
+			it.Context, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "inputParams":
 			var err error
-			it.InputParams, err = ec.unmarshalOAny2ᚖinterface(ctx, v)
+			it.InputParams, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -21280,6 +21291,9 @@ func (ec *executionContext) _PackageInstanceAuth(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._PackageInstanceAuth_auth(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._PackageInstanceAuth_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -23240,6 +23254,20 @@ func (ec *executionContext) marshalNPackageInstanceAuthSetStatusConditionInput2g
 	return v
 }
 
+func (ec *executionContext) marshalNPackageInstanceAuthStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, v PackageInstanceAuthStatus) graphql.Marshaler {
+	return ec._PackageInstanceAuthStatus(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPackageInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, v *PackageInstanceAuthStatus) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PackageInstanceAuthStatus(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNPackageInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusCondition(ctx context.Context, v interface{}) (PackageInstanceAuthStatusCondition, error) {
 	var res PackageInstanceAuthStatusCondition
 	return res, res.UnmarshalGQL(v)
@@ -23945,35 +23973,6 @@ func (ec *executionContext) unmarshalOAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincu
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOAny2interface(ctx context.Context, v interface{}) (interface{}, error) {
-	if v == nil {
-		return nil, nil
-	}
-	return graphql.UnmarshalAny(v)
-}
-
-func (ec *executionContext) marshalOAny2interface(ctx context.Context, sel ast.SelectionSet, v interface{}) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return graphql.MarshalAny(v)
-}
-
-func (ec *executionContext) unmarshalOAny2ᚖinterface(ctx context.Context, v interface{}) (*interface{}, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOAny2interface(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOAny2ᚖinterface(ctx context.Context, sel ast.SelectionSet, v *interface{}) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalOAny2interface(ctx, sel, *v)
-}
-
 func (ec *executionContext) marshalOApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v Application) graphql.Marshaler {
 	return ec._Application(ctx, sel, &v)
 }
@@ -24430,6 +24429,30 @@ func (ec *executionContext) marshalOIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑi
 	return ec._IntegrationSystem(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, v interface{}) (JSON, error) {
+	var res JSON
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, sel ast.SelectionSet, v JSON) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, v interface{}) (*JSON, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, sel ast.SelectionSet, v *JSON) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) unmarshalOJSONSchema2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx context.Context, v interface{}) (JSONSchema, error) {
 	var res JSONSchema
 	return res, res.UnmarshalGQL(v)
@@ -24561,17 +24584,6 @@ func (ec *executionContext) marshalOPackageInstanceAuth2ᚖgithubᚗcomᚋkyma�
 		return graphql.Null
 	}
 	return ec._PackageInstanceAuth(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOPackageInstanceAuthStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, v PackageInstanceAuthStatus) graphql.Marshaler {
-	return ec._PackageInstanceAuthStatus(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOPackageInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, v *PackageInstanceAuthStatus) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._PackageInstanceAuthStatus(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOPackageInstanceAuthStatusInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuthStatusInput(ctx context.Context, v interface{}) (PackageInstanceAuthStatusInput, error) {
