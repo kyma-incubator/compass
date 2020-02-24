@@ -12,7 +12,6 @@ const (
 	Application       ConsumerType = "Application"
 	IntegrationSystem ConsumerType = "Integration System"
 	User              ConsumerType = "Static User"
-	Group             ConsumerType = "Static Group"
 )
 
 type Consumer struct {
