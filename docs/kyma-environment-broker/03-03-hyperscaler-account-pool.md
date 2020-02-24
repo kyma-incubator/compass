@@ -7,7 +7,7 @@ The HAP stores credentials for the hyperscaler accounts that have been set up in
 The Secrets are stored in the Gardener Kubernetes cluster. They are available within a given Gardener project specified in the KEB and Runtime Provisioner configuration. This configuration uses a `kubeconfig` that gives KEB and the Runtime Provisioner access to the Gardener cluster, which, in turn, enables access to those Secrets. 
 
 When a new cluster is provisioned, the KEB queries for a Secret based on the **tenant-name** and **hyperscaler-type** labels. 
-If a Secret is found, the KEB uses the credentials stored in this Secret. If a matching Secret is not found, the KEB queries again for an unassigned Secret and adds the **tenant-name** label to claim the account and use the credentials for provisioning. 
+If a Secret is found, the KEB uses the credentials stored in this Secret. If a matching Secret is not found, the KEB queries again for an unassigned Secret for a given hyperscaler and adds the **tenant-name** label to claim the account and use the credentials for provisioning. 
 
 One tenant can use only one account per given hyperscaler type.
 
