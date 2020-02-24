@@ -1,10 +1,17 @@
 package mp_package_test
 
 import (
+	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
+	"testing"
+
+	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/stretchr/testify/require"
 )
 
 func fixModelAPIDefinition(id string, pkgID *string, name, description string, group string) *model.APIDefinition {
@@ -24,16 +31,6 @@ func fixGQLAPIDefinition(id string, pkgID *string, name, description string, gro
 		Name:        name,
 		Description: &description,
 		Group:       &group,
-	}
-}
-
-func fixGQLPackage(id, name string) *graphql.Package {
-	return &graphql.Package{
-		ID:                             id,
-		Name:                           name,
-		Description:                    nil,
-		InstanceAuthRequestInputSchema: nil,
-		DefaultInstanceAuth:            nil,
 	}
 }
 

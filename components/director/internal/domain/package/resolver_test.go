@@ -28,7 +28,7 @@ func TestResolver_API(t *testing.T) {
 		appId := str.Ptr("1")
 		modelAPI := fixModelAPIDefinition(id, appId, "name", "bar", "test")
 		gqlAPI := fixGQLAPIDefinition(id, appId, "name", "bar", "test")
-		app := fixGQLPackage("foo", "foo")
+		app := fixGQLPackage("foo", "foo", "foo")
 		testErr := errors.New("Test error")
 		txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -139,7 +139,7 @@ func TestResolver_API(t *testing.T) {
 				svc := testCase.ServiceFn()
 				converter := testCase.ConverterFn()
 
-				resolver := mp_package.NewResolver(transact, svc, nil, nil, converter, nil, nil)
+				resolver := mp_package.NewResolver(transact, nil, svc, nil, nil, nil, converter, nil, nil)
 
 				// when
 				result, err := resolver.APIDefinition(context.TODO(), testCase.Package, testCase.InputID)
@@ -163,7 +163,7 @@ func TestResolver_Apis(t *testing.T) {
 
 	packageID := "1"
 	group := "group"
-	app := fixGQLPackage(packageID, "foo")
+	app := fixGQLPackage(packageID, "foo", "foo")
 	modelAPIDefinitions := []*model.APIDefinition{
 
 		fixModelAPIDefinition("foo", &packageID, "Foo", "Lorem Ipsum", group),
@@ -258,7 +258,7 @@ func TestResolver_Apis(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, svc, nil, nil, converter, nil, nil)
+			resolver := mp_package.NewResolver(transact, nil, svc, nil, nil, nil, converter, nil, nil)
 			// when
 			result, err := resolver.APIDefinitions(context.TODO(), app, &group, &first, &gqlAfter)
 
@@ -280,7 +280,7 @@ func TestResolver_EventAPI(t *testing.T) {
 
 	modelAPI := fixMinModelEventAPIDefinition(id, "placeholder")
 	gqlAPI := fixGQLEventDefinition(id, str.Ptr("placeholder"), str.Ptr("placeholder"), "placeholder", "placeholder", "placeholder")
-	pkg := fixGQLPackage("foo", "foo")
+	pkg := fixGQLPackage("foo", "foo", "foo")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -391,7 +391,7 @@ func TestResolver_EventAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, nil, svc, nil, nil, converter, nil)
+			resolver := mp_package.NewResolver(transact, nil, nil, svc, nil, nil, nil, converter, nil)
 
 			// when
 			result, err := resolver.EventDefinition(context.TODO(), testCase.Package, testCase.InputID)
@@ -415,7 +415,7 @@ func TestResolver_EventAPIs(t *testing.T) {
 	packageID := "1"
 	applicationID := "1"
 	group := "group"
-	pkg := fixGQLPackage(packageID, "foo")
+	pkg := fixGQLPackage(packageID, "foo", "foo")
 	modelEventAPIDefinitions := []*model.EventDefinition{
 
 		fixModelEventAPIDefinition("foo", &packageID, &applicationID, "Foo", "Lorem Ipsum", group),
@@ -487,7 +487,7 @@ func TestResolver_EventAPIs(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, nil, svc, nil, nil, converter, nil)
+			resolver := mp_package.NewResolver(transact, nil, nil, svc, nil, nil, nil, converter, nil)
 			// when
 			result, err := resolver.EventDefinitions(context.TODO(), pkg, &group, testCase.InputFirst, testCase.InputAfter)
 
@@ -509,7 +509,7 @@ func TestResolver_Document(t *testing.T) {
 
 	modelDoc := fixModelDocument("foo", "bar", id)
 	gqlDoc := fixGQLDocument(id)
-	pkg := fixGQLPackage("foo", "foo")
+	pkg := fixGQLPackage("foo", "foo", "foo")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -620,7 +620,7 @@ func TestResolver_Document(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, nil, nil, svc, nil, nil, converter)
+			resolver := mp_package.NewResolver(transact, nil, nil, nil, svc, nil, nil, nil, converter)
 
 			// when
 			result, err := resolver.Document(context.TODO(), testCase.Package, testCase.InputID)
@@ -651,7 +651,7 @@ func TestResolver_Documents(t *testing.T) {
 		fixGQLDocument("foo"),
 		fixGQLDocument("bar"),
 	}
-	pkg := fixGQLPackage(pkgID, "foo")
+	pkg := fixGQLPackage(pkgID, "foo", "foo")
 
 	first := 2
 	gqlAfter := graphql.PageCursor("test")
@@ -709,7 +709,7 @@ func TestResolver_Documents(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := mp_package.NewResolver(transact, nil, nil, svc, nil, nil, converter)
+			resolver := mp_package.NewResolver(transact, nil, nil, nil, svc, nil, nil, nil, converter)
 
 			// when
 			result, err := resolver.Documents(context.TODO(), pkg, &first, &gqlAfter)
@@ -874,7 +874,7 @@ func TestResolver_AddPackage(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, svc, converter, nil, nil)
+			resolver := mp_package.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.AddPackage(context.TODO(), appId, gqlPackageInput)
@@ -1048,7 +1048,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, svc, converter, nil, nil)
+			resolver := mp_package.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.UpdatePackage(context.TODO(), id, gqlPackageUpdateInput)
@@ -1194,7 +1194,7 @@ func TestResolver_DeletePackage(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, svc, converter, nil, nil)
+			resolver := mp_package.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.DeletePackage(context.TODO(), id)

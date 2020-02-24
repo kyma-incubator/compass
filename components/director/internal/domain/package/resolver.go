@@ -2,7 +2,6 @@ package mp_package
 
 import (
 	"context"
-	"errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -19,6 +18,21 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
+
+//go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
+type PackageService interface {
+	Create(ctx context.Context, applicationID string, in model.PackageCreateInput) (string, error)
+	Update(ctx context.Context, id string, in model.PackageUpdateInput) error
+	Delete(ctx context.Context, id string) error
+	Get(ctx context.Context, id string) (*model.Package, error)
+}
+
+//go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
+type PackageConverter interface {
+	ToGraphQL(in *model.Package) (*graphql.Package, error)
+	CreateInputFromGraphQL(in graphql.PackageCreateInput) (*model.PackageCreateInput, error)
+	UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error)
+}
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
@@ -59,22 +73,26 @@ type DocumentConverter interface {
 type Resolver struct {
 	transact persistence.Transactioner
 
+	packageSvc  PackageService
 	apiSvc      APIService
 	eventSvc    EventService
 	documentSvc DocumentService
 
+	packageConverter  PackageConverter
 	apiConverter      APIConverter
 	eventConverter    EventConverter
 	documentConverter DocumentConverter
 }
 
-func NewResolver(transact persistence.Transactioner, apiSvc APIService, eventSvc EventService,
-	documentSvc DocumentService, apiConv APIConverter, eventConv EventConverter, documentConv DocumentConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, packageSvc PackageService, apiSvc APIService, eventSvc EventService,
+	documentSvc DocumentService, packageConverter PackageConverter, apiConv APIConverter, eventConv EventConverter, documentConv DocumentConverter) *Resolver {
 	return &Resolver{
 		transact:          transact,
+		packageSvc:        packageSvc,
 		apiSvc:            apiSvc,
 		eventSvc:          eventSvc,
 		documentSvc:       documentSvc,
+		packageConverter:  packageConverter,
 		apiConverter:      apiConv,
 		eventConverter:    eventConv,
 		documentConverter: documentConv,
