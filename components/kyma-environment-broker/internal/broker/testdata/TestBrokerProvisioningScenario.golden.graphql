@@ -148,10 +148,6 @@
               {
                 key: "loki.enabled",
                 value: "false",
-              }
-              {
-                key: "fluent-bit.conf.Output.loki.enabled",
-                value: "false",
               } 
             ] 
           }
