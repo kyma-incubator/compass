@@ -2,8 +2,10 @@ package director
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"time"
 
+	"github.com/avast/retry-go"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gqlTools "github.com/kyma-incubator/compass/tests/director/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/director/pkg/jwtbuilder"
@@ -52,6 +54,23 @@ type TenantsResponse struct {
 }
 
 func NewClient(directorURL, tenant string, scopes []string) (Client, error) {
+	var directorClient Client
+
+	err := retry.Do(func() error {
+		client, err := newClient(directorURL, tenant, scopes)
+		if err == nil {
+			directorClient = client
+		} else {
+			logrus.Warningf("Failed to create Director client: %s", err)
+		}
+
+		return err
+	}, retry.Delay(time.Second*15))
+
+	return directorClient, err
+}
+
+func newClient(directorURL, tenant string, scopes []string) (Client, error) {
 	internalTenantID, err := getInternalTenantID(directorURL, tenant)
 	if err != nil {
 		return nil, err
