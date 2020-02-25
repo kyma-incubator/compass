@@ -43,12 +43,12 @@ The table is used by the Director and Tenant Mapping Handler. It contains the fo
 
 ### GraphQL security
 
-The Gateway passes request along with JWT token to Compass GraphQL services, such as the Director or the Connector. The GraphQL components have authentication middleware and GraphQL [directives](https://graphql.org/learn/queries/#directives) set up for all GraphQL operations (and some specific type fields, if necessary).
+The Gateway passes the request to Compass GraphQL services, such as the Director or the Connector. Additionally, the request contains authentication data. In the Director it is a JWT token, in the Connector it is a one-time token and the `Clinet-Id-From-Token` or `Client-Id-From-Certificate` header. The GraphQL components have authentication middleware and GraphQL [directives](https://graphql.org/learn/queries/#directives) set up for all GraphQL operations (and some specific type fields, if necessary). 
 
 #### HTTP middleware
 
-In GraphQL servers, such as the Director or the Connector, there is an HTTP authentication middleware set up, which validates and decodes JWT token. It puts user scopes and tenant in request context
-(`context.Context`).
+In GraphQL servers, such as the Director or the Connector, there is an HTTP authentication middleware set up. In the Director, it validates and decodes the JWT token, and it puts user scopes and tenant in the request context
+(`context.Context`). In the Connector, it verifies the `Clinet-Id-From-Token` or `Client-Id-From-Certificate` header.
 
 ![](./assets/graphql-security.svg)
 
