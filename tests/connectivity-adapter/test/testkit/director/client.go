@@ -2,10 +2,12 @@ package director
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
+	"net/http"
 	"time"
 
 	"github.com/avast/retry-go"
+	"github.com/sirupsen/logrus"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gqlTools "github.com/kyma-incubator/compass/tests/director/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/director/pkg/jwtbuilder"
@@ -53,24 +55,13 @@ type TenantsResponse struct {
 	Result []*schema.Tenant
 }
 
-func NewClient(directorURL, tenant string, scopes []string) (Client, error) {
-	var directorClient Client
+func NewClient(directorURL, directorHealthzURL, tenant string, scopes []string) (Client, error) {
 
-	err := retry.Do(func() error {
-		client, err := newClient(directorURL, tenant, scopes)
-		if err == nil {
-			directorClient = client
-		} else {
-			logrus.Warningf("Failed to create Director client: %s", err)
-		}
+	err := waitUntilDirectorIsReady(directorHealthzURL)
+	if err != nil {
+		return nil, err
+	}
 
-		return err
-	}, retry.Delay(time.Second*15))
-
-	return directorClient, err
-}
-
-func newClient(directorURL, tenant string, scopes []string) (Client, error) {
 	internalTenantID, err := getInternalTenantID(directorURL, tenant)
 	if err != nil {
 		return nil, err
@@ -87,6 +78,37 @@ func newClient(directorURL, tenant string, scopes []string) (Client, error) {
 		graphqulizer: gqlTools.Graphqlizer{},
 		client:       gqlClient,
 	}, nil
+}
+
+func waitUntilDirectorIsReady(directorHealthzURL string) error {
+	httpClient := http.Client{}
+
+	return retry.Do(func() error {
+		req, err := http.NewRequest(http.MethodGet, directorHealthzURL, nil)
+		if err != nil {
+			logrus.Warningf("Failed to create request while waiting for Director: %s", err)
+			return err
+		}
+
+		res, err := httpClient.Do(req)
+		if err != nil {
+			logrus.Warningf("Failed to execute request while waiting for Director: %s", err)
+			return err
+		}
+
+		if res.StatusCode != http.StatusOK {
+			return errors.New("Unexpected status code received when waiting for Director: " + res.Status)
+		}
+
+		defer func() {
+			err := res.Body.Close()
+			if err != nil {
+				logrus.Warningf("Failed to close request body while waiting for Director: %s", err)
+			}
+		}()
+
+		return nil
+	}, retry.Delay(time.Second*20))
 }
 
 func (c client) CreateApplication(in schema.ApplicationRegisterInput) (string, error) {
