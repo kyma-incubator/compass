@@ -14,7 +14,7 @@ import (
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
 type DocumentService interface {
 	Create(ctx context.Context, applicationID string, in model.DocumentInput) (string, error)
-	CreateToPackage(ctx context.Context, packageID string, in model.DocumentInput) (string, error)
+	CreateInPackage(ctx context.Context, packageID string, in model.DocumentInput) (string, error)
 	Get(ctx context.Context, id string) (*model.Document, error)
 	Delete(ctx context.Context, id string) error
 	GetFetchRequest(ctx context.Context, documentID string) (*model.FetchRequest, error)
@@ -183,7 +183,7 @@ func (r *Resolver) AddDocumentToPackage(ctx context.Context, packageID string, i
 		return nil, errors.New("Cannot add Document to not existing Package")
 	}
 
-	id, err := r.svc.CreateToPackage(ctx, packageID, *convertedIn)
+	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}

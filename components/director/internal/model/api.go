@@ -85,24 +85,24 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, appID *string, tenant st
 	}
 }
 
-func (a *APIDefinitionInput) ToAPIDefinitionWithPackage(id string, packageID *string, tenant string) *APIDefinition {
+//TODO After switching to new packages API this method will replace ToAPIDefinition
+func (a *APIDefinitionInput) ToAPIDefinitionWithinPackage(id string, packageID *string, tenant string) *APIDefinition {
 	if a == nil {
 		return nil
 	}
 
 	return &APIDefinition{
-		ID:            id,
-		PackageID:     packageID,
-		ApplicationID: nil,
-		Tenant:        tenant,
-		Name:          a.Name,
-		Description:   a.Description,
-		Spec:          a.Spec.ToAPISpec(),
-		TargetURL:     a.TargetURL,
-		Group:         a.Group,
-		Auths:         nil,
-		DefaultAuth:   a.DefaultAuth.ToAuth(),
-		Version:       a.Version.ToVersion(),
+		ID:          id,
+		PackageID:   packageID,
+		Tenant:      tenant,
+		Name:        a.Name,
+		Description: a.Description,
+		Spec:        a.Spec.ToAPISpec(),
+		TargetURL:   a.TargetURL,
+		Group:       a.Group,
+		Auths:       nil,
+		DefaultAuth: a.DefaultAuth.ToAuth(),
+		Version:     a.Version.ToVersion(),
 	}
 }
 

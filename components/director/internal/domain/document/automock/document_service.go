@@ -36,8 +36,8 @@ func (_m *DocumentService) Create(ctx context.Context, applicationID string, in 
 	return r0, r1
 }
 
-// CreateToPackage provides a mock function with given fields: ctx, packageID, in
-func (_m *DocumentService) CreateToPackage(ctx context.Context, packageID string, in model.DocumentInput) (string, error) {
+// CreateInPackage provides a mock function with given fields: ctx, packageID, in
+func (_m *DocumentService) CreateInPackage(ctx context.Context, packageID string, in model.DocumentInput) (string, error) {
 	ret := _m.Called(ctx, packageID, in)
 
 	var r0 string

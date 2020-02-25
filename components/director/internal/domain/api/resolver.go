@@ -13,7 +13,7 @@ import (
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
 	Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error)
-	CreateToPackage(ctx context.Context, packageID string, in model.APIDefinitionInput) (string, error)
+	CreateInPackage(ctx context.Context, packageID string, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
@@ -381,7 +381,7 @@ func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID stri
 		return nil, errors.New("Cannot add API to not existing package")
 	}
 
-	id, err := r.svc.CreateToPackage(ctx, packageID, *convertedIn)
+	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}

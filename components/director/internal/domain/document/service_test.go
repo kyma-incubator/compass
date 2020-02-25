@@ -457,7 +457,7 @@ func TestService_CreateToPackage(t *testing.T) {
 	frID := "fr-id"
 	timestamp := time.Now()
 	modelInput := fixModelDocumentInputWithFetchRequest(frURL)
-	modelDoc := modelInput.ToDocumentWithPackage(id, tnt, &packageID)
+	modelDoc := modelInput.ToDocumentWithinPackage(id, tnt, &packageID)
 
 	testCases := []struct {
 		Name               string
@@ -539,7 +539,7 @@ func TestService_CreateToPackage(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			result, err := svc.CreateToPackage(ctx, packageID, testCase.Input)
+			result, err := svc.CreateInPackage(ctx, packageID, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)
@@ -559,7 +559,7 @@ func TestService_CreateToPackage(t *testing.T) {
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := document.NewService(nil, nil, nil)
 		// when
-		_, err := svc.CreateToPackage(context.TODO(), "Dd", model.DocumentInput{})
+		_, err := svc.CreateInPackage(context.TODO(), "Dd", model.DocumentInput{})
 		assert.Equal(t, tenant.NoTenantError, err)
 	})
 }

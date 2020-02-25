@@ -729,7 +729,7 @@ func TestService_CreateToPackage(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			result, err := svc.CreateToPackage(ctx, packageID, testCase.Input)
+			result, err := svc.CreateInPackage(ctx, packageID, testCase.Input)
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -747,7 +747,7 @@ func TestService_CreateToPackage(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := eventdef.NewService(nil, nil, nil)
 		// WHEN
-		_, err := svc.CreateToPackage(context.TODO(), "", model.EventDefinitionInput{})
+		_, err := svc.CreateInPackage(context.TODO(), "", model.EventDefinitionInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

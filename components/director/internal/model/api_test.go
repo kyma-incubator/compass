@@ -108,7 +108,7 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithPackageID(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToAPIDefinitionWithPackage(id, pkgID, tenant)
+			result := testCase.Input.ToAPIDefinitionWithinPackage(id, pkgID, tenant)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

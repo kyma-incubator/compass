@@ -15,7 +15,7 @@ import (
 //go:generate mockery -name=EventDefService -output=automock -outpkg=automock -case=underscore
 type EventDefService interface {
 	Create(ctx context.Context, applicationID string, in model.EventDefinitionInput) (string, error)
-	CreateToPackage(ctx context.Context, packageID string, in model.EventDefinitionInput) (string, error)
+	CreateInPackage(ctx context.Context, packageID string, in model.EventDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.EventDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
 	Delete(ctx context.Context, id string) error
@@ -246,7 +246,7 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 		return nil, errors.New("Cannot add Event Definition to not existing Package")
 	}
 
-	id, err := r.svc.CreateToPackage(ctx, packageID, *convertedIn)
+	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}

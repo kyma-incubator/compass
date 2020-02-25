@@ -113,8 +113,8 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 
 	out := model.Document{
 		ID:            in.ID,
-		ApplicationID: &in.AppID.String,
-		PackageID:     &in.PkgID.String,
+		ApplicationID: repo.StringPtrFromNullableString(in.AppID),
+		PackageID:     repo.StringPtrFromNullableString(in.PkgID),
 		Tenant:        in.TenantID,
 		Title:         in.Title,
 		DisplayName:   in.DisplayName,

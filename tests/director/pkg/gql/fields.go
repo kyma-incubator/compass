@@ -132,7 +132,6 @@ func (fp *GqlFieldsProvider) ForPageInfo() string {
 func (fp *GqlFieldsProvider) ForEventDefinition() string {
 	return fmt.Sprintf(`
 			id
-			applicationID
 			name
 			description
 			group 
@@ -151,7 +150,6 @@ func (fp *GqlFieldsProvider) ForEventSpec() string {
 func (fp *GqlFieldsProvider) ForDocument() string {
 	return fmt.Sprintf(`
 		id
-		applicationID
 		title
 		displayName
 		description

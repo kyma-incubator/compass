@@ -35,8 +35,8 @@ func (_m *APIService) Create(ctx context.Context, applicationID string, in model
 	return r0, r1
 }
 
-// CreateToPackage provides a mock function with given fields: ctx, packageID, in
-func (_m *APIService) CreateToPackage(ctx context.Context, packageID string, in model.APIDefinitionInput) (string, error) {
+// CreateInPackage provides a mock function with given fields: ctx, packageID, in
+func (_m *APIService) CreateInPackage(ctx context.Context, packageID string, in model.APIDefinitionInput) (string, error) {
 	ret := _m.Called(ctx, packageID, in)
 
 	var r0 string

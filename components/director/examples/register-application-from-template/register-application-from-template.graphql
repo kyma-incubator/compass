@@ -198,7 +198,6 @@ mutation {
     eventDefinitions {
       data {
         id
-        applicationID
         name
         description
         group
@@ -266,7 +265,6 @@ mutation {
     documents {
       data {
         id
-        applicationID
         title
         displayName
         description

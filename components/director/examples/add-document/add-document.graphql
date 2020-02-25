@@ -10,7 +10,6 @@ mutation {
     }
   ) {
     id
-    applicationID
     title
     displayName
     description

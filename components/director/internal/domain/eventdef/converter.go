@@ -114,8 +114,8 @@ func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
 	return model.EventDefinition{
 		ID:            entity.ID,
 		Tenant:        entity.TenantID,
-		ApplicationID: &entity.AppID.String,
-		PackageID:     &entity.PkgID.String,
+		ApplicationID: repo.StringPtrFromNullableString(entity.AppID),
+		PackageID:     repo.StringPtrFromNullableString(entity.PkgID),
 		Name:          entity.Name,
 		Description:   repo.StringPtrFromNullableString(entity.Description),
 		Group:         repo.StringPtrFromNullableString(entity.GroupName),

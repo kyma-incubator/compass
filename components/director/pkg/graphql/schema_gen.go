@@ -57,18 +57,16 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	APIDefinition struct {
-		ApplicationID func(childComplexity int) int
-		Auth          func(childComplexity int, runtimeID string) int
-		Auths         func(childComplexity int) int
-		DefaultAuth   func(childComplexity int) int
-		Description   func(childComplexity int) int
-		Group         func(childComplexity int) int
-		ID            func(childComplexity int) int
-		Name          func(childComplexity int) int
-		PackageID     func(childComplexity int) int
-		Spec          func(childComplexity int) int
-		TargetURL     func(childComplexity int) int
-		Version       func(childComplexity int) int
+		Auth        func(childComplexity int, runtimeID string) int
+		Auths       func(childComplexity int) int
+		DefaultAuth func(childComplexity int) int
+		Description func(childComplexity int) int
+		Group       func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Spec        func(childComplexity int) int
+		TargetURL   func(childComplexity int) int
+		Version     func(childComplexity int) int
 	}
 
 	APIDefinitionPage struct {
@@ -164,16 +162,14 @@ type ComplexityRoot struct {
 	}
 
 	Document struct {
-		ApplicationID func(childComplexity int) int
-		Data          func(childComplexity int) int
-		Description   func(childComplexity int) int
-		DisplayName   func(childComplexity int) int
-		FetchRequest  func(childComplexity int) int
-		Format        func(childComplexity int) int
-		ID            func(childComplexity int) int
-		Kind          func(childComplexity int) int
-		PackageID     func(childComplexity int) int
-		Title         func(childComplexity int) int
+		Data         func(childComplexity int) int
+		Description  func(childComplexity int) int
+		DisplayName  func(childComplexity int) int
+		FetchRequest func(childComplexity int) int
+		Format       func(childComplexity int) int
+		ID           func(childComplexity int) int
+		Kind         func(childComplexity int) int
+		Title        func(childComplexity int) int
 	}
 
 	DocumentPage struct {
@@ -183,14 +179,12 @@ type ComplexityRoot struct {
 	}
 
 	EventDefinition struct {
-		ApplicationID func(childComplexity int) int
-		Description   func(childComplexity int) int
-		Group         func(childComplexity int) int
-		ID            func(childComplexity int) int
-		Name          func(childComplexity int) int
-		PackageID     func(childComplexity int) int
-		Spec          func(childComplexity int) int
-		Version       func(childComplexity int) int
+		Description func(childComplexity int) int
+		Group       func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Spec        func(childComplexity int) int
+		Version     func(childComplexity int) int
 	}
 
 	EventDefinitionPage struct {
@@ -607,13 +601,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "APIDefinition.applicationID":
-		if e.complexity.APIDefinition.ApplicationID == nil {
-			break
-		}
-
-		return e.complexity.APIDefinition.ApplicationID(childComplexity), true
-
 	case "APIDefinition.auth":
 		if e.complexity.APIDefinition.Auth == nil {
 			break
@@ -667,13 +654,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.APIDefinition.Name(childComplexity), true
-
-	case "APIDefinition.packageID":
-		if e.complexity.APIDefinition.PackageID == nil {
-			break
-		}
-
-		return e.complexity.APIDefinition.PackageID(childComplexity), true
 
 	case "APIDefinition.spec":
 		if e.complexity.APIDefinition.Spec == nil {
@@ -1107,13 +1087,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CredentialRequestAuth.Csrf(childComplexity), true
 
-	case "Document.applicationID":
-		if e.complexity.Document.ApplicationID == nil {
-			break
-		}
-
-		return e.complexity.Document.ApplicationID(childComplexity), true
-
 	case "Document.data":
 		if e.complexity.Document.Data == nil {
 			break
@@ -1163,13 +1136,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Document.Kind(childComplexity), true
 
-	case "Document.packageID":
-		if e.complexity.Document.PackageID == nil {
-			break
-		}
-
-		return e.complexity.Document.PackageID(childComplexity), true
-
 	case "Document.title":
 		if e.complexity.Document.Title == nil {
 			break
@@ -1198,13 +1164,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DocumentPage.TotalCount(childComplexity), true
 
-	case "EventDefinition.applicationID":
-		if e.complexity.EventDefinition.ApplicationID == nil {
-			break
-		}
-
-		return e.complexity.EventDefinition.ApplicationID(childComplexity), true
-
 	case "EventDefinition.description":
 		if e.complexity.EventDefinition.Description == nil {
 			break
@@ -1232,13 +1191,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EventDefinition.Name(childComplexity), true
-
-	case "EventDefinition.packageID":
-		if e.complexity.EventDefinition.PackageID == nil {
-			break
-		}
-
-		return e.complexity.EventDefinition.PackageID(childComplexity), true
 
 	case "EventDefinition.spec":
 		if e.complexity.EventDefinition.Spec == nil {
@@ -3288,11 +3240,6 @@ input WebhookInput {
 
 type APIDefinition {
 	id: ID!
-	"""
-	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
-	"""
-	applicationID: ID @deprecated(reason: "Use ID field from parent object")
-	packageID: ID
 	name: String!
 	description: String
 	spec: APISpec
@@ -3423,11 +3370,6 @@ type CredentialRequestAuth {
 
 type Document {
 	id: ID!
-	"""
-	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
-	"""
-	applicationID: ID @deprecated(reason: "Use ID field from parent object")
-	packageID: ID
 	title: String!
 	displayName: String!
 	description: String!
@@ -3448,11 +3390,6 @@ type DocumentPage implements Pageable {
 
 type EventDefinition {
 	id: ID!
-	"""
-	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
-	"""
-	applicationID: ID @deprecated(reason: "Use ID field from parent object")
-	packageID: ID
 	name: String!
 	description: String
 	"""
@@ -5971,74 +5908,6 @@ func (ec *executionContext) _APIDefinition_id(ctx context.Context, field graphql
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _APIDefinition_applicationID(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "APIDefinition",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ApplicationID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _APIDefinition_packageID(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "APIDefinition",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PackageID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _APIDefinition_name(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -8337,74 +8206,6 @@ func (ec *executionContext) _Document_id(ctx context.Context, field graphql.Coll
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Document_applicationID(ctx context.Context, field graphql.CollectedField, obj *Document) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Document",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ApplicationID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Document_packageID(ctx context.Context, field graphql.CollectedField, obj *Document) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Document",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PackageID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Document_title(ctx context.Context, field graphql.CollectedField, obj *Document) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -8801,74 +8602,6 @@ func (ec *executionContext) _EventDefinition_id(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _EventDefinition_applicationID(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "EventDefinition",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ApplicationID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _EventDefinition_packageID(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "EventDefinition",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PackageID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventDefinition_name(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
@@ -19640,10 +19373,6 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "applicationID":
-			out.Values[i] = ec._APIDefinition_applicationID(ctx, field, obj)
-		case "packageID":
-			out.Values[i] = ec._APIDefinition_packageID(ctx, field, obj)
 		case "name":
 			out.Values[i] = ec._APIDefinition_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -20297,10 +20026,6 @@ func (ec *executionContext) _Document(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "applicationID":
-			out.Values[i] = ec._Document_applicationID(ctx, field, obj)
-		case "packageID":
-			out.Values[i] = ec._Document_packageID(ctx, field, obj)
 		case "title":
 			out.Values[i] = ec._Document_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -20400,10 +20125,6 @@ func (ec *executionContext) _EventDefinition(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "applicationID":
-			out.Values[i] = ec._EventDefinition_applicationID(ctx, field, obj)
-		case "packageID":
-			out.Values[i] = ec._EventDefinition_packageID(ctx, field, obj)
 		case "name":
 			out.Values[i] = ec._EventDefinition_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

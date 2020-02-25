@@ -251,7 +251,7 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
-				svc.On("CreateToPackage", contextParam, packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInPackage", contextParam, packageID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(modelAPI, nil).Once()
 				return svc
 			},
@@ -332,7 +332,7 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
-				svc.On("CreateToPackage", contextParam, packageID, *modelAPIInput).Return("", testErr).Once()
+				svc.On("CreateInPackage", contextParam, packageID, *modelAPIInput).Return("", testErr).Once()
 				return svc
 			},
 			PkgServiceFn: func() *automock.PackageService {
@@ -353,7 +353,7 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
-				svc.On("CreateToPackage", contextParam, packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInPackage", contextParam, packageID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
@@ -375,7 +375,7 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
-				svc.On("CreateToPackage", contextParam, packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInPackage", contextParam, packageID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(modelAPI, nil).Once()
 				return svc
 			},

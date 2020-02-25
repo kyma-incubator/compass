@@ -135,8 +135,8 @@ func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
 
 	return model.APIDefinition{
 		ID:            entity.ID,
-		ApplicationID: &entity.AppID.String,
-		PackageID:     &entity.PkgID.String,
+		ApplicationID: repo.StringPtrFromNullableString(entity.AppID),
+		PackageID:     repo.StringPtrFromNullableString(entity.PkgID),
 		Name:          entity.Name,
 		TargetURL:     entity.TargetURL,
 		Tenant:        entity.TenantID,

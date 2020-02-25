@@ -146,7 +146,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.API
 	return id, nil
 }
 
-func (s *service) CreateToPackage(ctx context.Context, packageID string, in model.APIDefinitionInput) (string, error) {
+func (s *service) CreateInPackage(ctx context.Context, packageID string, in model.APIDefinitionInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -154,7 +154,7 @@ func (s *service) CreateToPackage(ctx context.Context, packageID string, in mode
 
 	id := s.uidService.Generate()
 
-	api := in.ToAPIDefinitionWithPackage(id, &packageID, tnt)
+	api := in.ToAPIDefinitionWithinPackage(id, &packageID, tnt)
 	err = s.repo.Create(ctx, api)
 	if err != nil {
 		return "", err

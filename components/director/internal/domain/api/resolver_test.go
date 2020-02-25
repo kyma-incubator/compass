@@ -254,7 +254,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateToPackage", txtest.CtxWithDBMatcher(), *packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), *packageID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelAPI, nil).Once()
 				return svc
 			},
@@ -335,7 +335,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateToPackage", txtest.CtxWithDBMatcher(), *packageID, *modelAPIInput).Return("", testErr).Once()
+				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), *packageID, *modelAPIInput).Return("", testErr).Once()
 				return svc
 			},
 			PkgServiceFn: func() *automock.PackageService {
@@ -356,7 +356,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateToPackage", txtest.CtxWithDBMatcher(), *packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), *packageID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
 				return svc
 			},
@@ -378,7 +378,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateToPackage", txtest.CtxWithDBMatcher(), *packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), *packageID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelAPI, nil).Once()
 				return svc
 			},

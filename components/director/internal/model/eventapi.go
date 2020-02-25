@@ -68,7 +68,8 @@ func (e *EventDefinitionInput) ToEventDefinition(id string, appID *string, tenan
 	}
 }
 
-func (e *EventDefinitionInput) ToEventDefinitionWithPackageID(id string, pkgID *string, tenant string) *EventDefinition {
+//TODO After switching to the new packages api this method will replace ToEventDefinition
+func (e *EventDefinitionInput) ToEventDefinitionWithinPackage(id string, pkgID *string, tenant string) *EventDefinition {
 	if e == nil {
 		return nil
 	}

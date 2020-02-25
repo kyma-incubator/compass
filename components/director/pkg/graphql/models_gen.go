@@ -195,19 +195,6 @@ type DocumentPage struct {
 
 func (DocumentPage) IsPageable() {}
 
-type EventDefinition struct {
-	ID string `json:"id"`
-	// TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
-	ApplicationID *string `json:"applicationID"`
-	PackageID     *string `json:"packageID"`
-	Name          string  `json:"name"`
-	Description   *string `json:"description"`
-	// group allows you to find the same API but in different version
-	Group   *string    `json:"group"`
-	Spec    *EventSpec `json:"spec"`
-	Version *Version   `json:"version"`
-}
-
 type EventDefinitionInput struct {
 	Name        string          `json:"name"`
 	Description *string         `json:"description"`

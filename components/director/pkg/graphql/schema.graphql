@@ -375,11 +375,6 @@ input WebhookInput {
 
 type APIDefinition {
 	id: ID!
-	"""
-	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
-	"""
-	applicationID: ID @deprecated(reason: "Use ID field from parent object")
-	packageID: ID
 	name: String!
 	description: String
 	spec: APISpec
@@ -510,11 +505,6 @@ type CredentialRequestAuth {
 
 type Document {
 	id: ID!
-	"""
-	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
-	"""
-	applicationID: ID @deprecated(reason: "Use ID field from parent object")
-	packageID: ID
 	title: String!
 	displayName: String!
 	description: String!
@@ -535,11 +525,6 @@ type DocumentPage implements Pageable {
 
 type EventDefinition {
 	id: ID!
-	"""
-	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
-	"""
-	applicationID: ID @deprecated(reason: "Use ID field from parent object")
-	packageID: ID
 	name: String!
 	description: String
 	"""

@@ -94,6 +94,12 @@ models:
       fetchRequest:
         resolver: true
 
+  EventDefinition:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.EventDefinition"
+    fields:
+      eventSpec:
+        resolver: true
+
   Document:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Document"
     fields:

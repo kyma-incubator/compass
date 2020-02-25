@@ -125,7 +125,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Doc
 	return document.ID, nil
 }
 
-func (s *service) CreateToPackage(ctx context.Context, packageID string, in model.DocumentInput) (string, error) {
+func (s *service) CreateInPackage(ctx context.Context, packageID string, in model.DocumentInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -133,7 +133,7 @@ func (s *service) CreateToPackage(ctx context.Context, packageID string, in mode
 
 	id := s.uidService.Generate()
 
-	document := in.ToDocumentWithPackage(id, tnt, &packageID)
+	document := in.ToDocumentWithinPackage(id, tnt, &packageID)
 	err = s.repo.Create(ctx, document)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating Document")

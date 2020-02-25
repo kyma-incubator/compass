@@ -148,7 +148,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Eve
 	return id, nil
 }
 
-func (s *service) CreateToPackage(ctx context.Context, packageID string, in model.EventDefinitionInput) (string, error) {
+func (s *service) CreateInPackage(ctx context.Context, packageID string, in model.EventDefinitionInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
@@ -156,7 +156,7 @@ func (s *service) CreateToPackage(ctx context.Context, packageID string, in mode
 
 	id := s.uidService.Generate()
 
-	eventAPI := in.ToEventDefinitionWithPackageID(id, &packageID, tnt)
+	eventAPI := in.ToEventDefinitionWithinPackage(id, &packageID, tnt)
 
 	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {

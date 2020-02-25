@@ -276,7 +276,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateToPackage", contextParam, packageID, *modelInput).Return(id, nil).Once()
+				svc.On("CreateInPackage", contextParam, packageID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(modelDocument, nil).Once()
 				return svc
 			},
@@ -371,7 +371,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateToPackage", contextParam, packageID, *modelInput).Return("", testErr).Once()
+				svc.On("CreateInPackage", contextParam, packageID, *modelInput).Return("", testErr).Once()
 				return svc
 			},
 			PkgServiceFn: func() *automock.PackageService {
@@ -402,7 +402,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateToPackage", contextParam, packageID, *modelInput).Return(id, nil).Once()
+				svc.On("CreateInPackage", contextParam, packageID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},

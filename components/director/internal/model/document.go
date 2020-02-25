@@ -58,7 +58,8 @@ func (d *DocumentInput) ToDocument(id, tenant string, applicationID *string) *Do
 	}
 }
 
-func (d *DocumentInput) ToDocumentWithPackage(id, tenant string, packageID *string) *Document {
+//TODO after switching to the new packages API this method will replace ToDocument
+func (d *DocumentInput) ToDocumentWithinPackage(id, tenant string, packageID *string) *Document {
 	if d == nil {
 		return nil
 	}

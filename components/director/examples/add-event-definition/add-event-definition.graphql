@@ -8,7 +8,6 @@ mutation {
     }
   ) {
     id
-    applicationID
     name
     description
     group
