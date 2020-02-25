@@ -3,6 +3,8 @@ package mp_package
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
@@ -21,6 +23,18 @@ type PackageService interface {
 	Get(ctx context.Context, id string) (*model.Package, error)
 }
 
+//go:generate mockery -name=PackageInstanceAuthService -output=automock -outpkg=automock -case=underscore
+type PackageInstanceAuthService interface {
+	GetForPackage(ctx context.Context, id string, packageID string) (*model.PackageInstanceAuth, error)
+	List(ctx context.Context, id string) ([]*model.PackageInstanceAuth, error)
+}
+
+//go:generate mockery -name=PackageInstanceAuthConverter -output=automock -outpkg=automock -case=underscore
+type PackageInstanceAuthConverter interface {
+	ToGraphQL(in *model.PackageInstanceAuth) *graphql.PackageInstanceAuth
+	MultipleToGraphQL(in []*model.PackageInstanceAuth) []*graphql.PackageInstanceAuth
+}
+
 //go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
 type PackageConverter interface {
 	ToGraphQL(in *model.Package) (*graphql.Package, error)
@@ -29,19 +43,25 @@ type PackageConverter interface {
 }
 
 type Resolver struct {
-	transact         persistence.Transactioner
-	packageConverter PackageConverter
-	packageSvc       PackageService
+	transact                     persistence.Transactioner
+	packageConverter             PackageConverter
+	packageSvc                   PackageService
+	packageInstanceAuthSvc       PackageInstanceAuthService
+	packageInstanceAuthConverter PackageInstanceAuthConverter
 }
 
 func NewResolver(
 	transact persistence.Transactioner,
 	packageSvc PackageService,
-	packageConverter PackageConverter) *Resolver {
+	packageConverter PackageConverter,
+	packageInstanceAuthSvc PackageInstanceAuthService,
+	packageInstanceAuthConverter PackageInstanceAuthConverter) *Resolver {
 	return &Resolver{
-		transact:         transact,
-		packageConverter: packageConverter,
-		packageSvc:       packageSvc,
+		transact:                     transact,
+		packageConverter:             packageConverter,
+		packageSvc:                   packageSvc,
+		packageInstanceAuthSvc:       packageInstanceAuthSvc,
+		packageInstanceAuthConverter: packageInstanceAuthConverter,
 	}
 }
 
@@ -151,8 +171,38 @@ func (r *Resolver) DeletePackage(ctx context.Context, id string) (*graphql.Packa
 	return deletedPkg, nil
 }
 
-// TODO: Replace with real implementation
 func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id string) (*graphql.PackageInstanceAuth, error) {
+	if obj == nil {
+		return nil, errors.New("Package cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	pkg, err := r.packageInstanceAuthSvc.GetForPackage(ctx, id, obj.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.packageInstanceAuthConverter.ToGraphQL(pkg), nil
+
+}
+
+//TODO Remove mock
+func (r *Resolver) InstanceAuthMock(ctx context.Context, obj *graphql.Package, id string) (*graphql.PackageInstanceAuth, error) {
 	var condition graphql.PackageInstanceAuthStatusCondition
 	switch id {
 	case "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb":
@@ -166,8 +216,35 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id st
 	return mock.FixPackageInstanceAuth(id, condition), nil
 }
 
-// TODO: Replace with real implementation
 func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*graphql.PackageInstanceAuth, error) {
+	if obj == nil {
+		return nil, errors.New("Package cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	pkgInstanceAuths, err := r.packageInstanceAuthSvc.List(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	out := r.packageInstanceAuthConverter.MultipleToGraphQL(pkgInstanceAuths)
+
+	return out, nil
+}
+
+//TODO Remove mock
+func (r *Resolver) InstanceAuthsMock(ctx context.Context, obj *graphql.Package) ([]*graphql.PackageInstanceAuth, error) {
 	return []*graphql.PackageInstanceAuth{
 		mock.FixPackageInstanceAuth("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", graphql.PackageInstanceAuthStatusConditionPending),
 		mock.FixPackageInstanceAuth("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", graphql.PackageInstanceAuthStatusConditionSucceeded),
