@@ -85,7 +85,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	appTemplateConverter := apptemplate.NewConverter(appConverter)
 	tenantConverter := tenant.NewConverter()
 	packageConverter := mp_package.NewConverter(authConverter)
-	var packageInstanceAuthConv packageinstanceauth.Converter // TODO: replace it with actual implementation
+	packageInstanceAuthConv := packageinstanceauth.NewConverter(authConverter)
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
@@ -103,6 +103,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 	tenantRepo := tenant.NewRepository(tenantConverter)
 	packageRepo := mp_package.NewRepository(packageConverter)
+	packageInstanceAuthRepo := packageinstanceauth.NewRepository(packageInstanceAuthConv)
 
 	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL)
 
@@ -127,7 +128,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
 	packageSvc := mp_package.NewService(packageRepo, uidSvc)
-	packageInstanceAuthSvc := packageinstanceauth.NewService(nil, uidSvc)
+	packageInstanceAuthSvc := packageinstanceauth.NewService(packageInstanceAuthRepo, uidSvc)
 
 	return &RootResolver{
 		app:                 application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc, packageSvc, packageConverter),
@@ -146,7 +147,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		intSys:              integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:              viewer.NewViewerResolver(),
 		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
-		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageConverter),
+		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageConverter, packageInstanceAuthSvc, packageInstanceAuthConv),
 		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageInstanceAuthConv),
 	}
 }
@@ -539,10 +540,10 @@ func (r *oneTimeTokenForRuntimeResolver) Raw(ctx context.Context, obj *graphql.O
 type PackageResolver struct{ *RootResolver }
 
 func (r *PackageResolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id string) (*graphql.PackageInstanceAuth, error) {
-	return r.mpPackage.InstanceAuth(ctx, obj, id)
+	return r.mpPackage.InstanceAuthMock(ctx, obj, id)
 }
 func (r *PackageResolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*graphql.PackageInstanceAuth, error) {
-	return r.mpPackage.InstanceAuths(ctx, obj)
+	return r.mpPackage.InstanceAuthsMock(ctx, obj)
 }
 func (r *PackageResolver) APIDefinitions(ctx context.Context, obj *graphql.Package, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	return r.mpPackage.APIDefinitions(ctx, obj, group, first, after)

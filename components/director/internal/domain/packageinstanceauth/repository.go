@@ -79,6 +79,25 @@ func (r *repository) GetByID(ctx context.Context, tenantID string, id string) (*
 	return &itemModel, nil
 }
 
+func (r *repository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.PackageInstanceAuth, error) {
+	var ent Entity
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("id", id),
+		repo.NewEqualCondition("package_id", packageID),
+	}
+	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
+		return nil, err
+	}
+
+	pkgModel, err := r.conv.FromEntity(ent)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating Package model from entity")
+	}
+
+	return &pkgModel, nil
+}
+
 func (r *repository) ListByPackageID(ctx context.Context, tenantID string, packageID string) ([]*model.PackageInstanceAuth, error) {
 	var entities Collection
 

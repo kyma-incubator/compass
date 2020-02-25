@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"testing"
+	"time"
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 
@@ -231,4 +232,48 @@ func fixBasicSchema(t *testing.T) *interface{} {
 
 func fixSchema() string {
 	return `{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`
+}
+
+func fixModelPackageInstanceAuth(id string) *model.PackageInstanceAuth {
+	msg := "test-message"
+	reason := "test-reason"
+	status := model.PackageInstanceAuthStatus{
+		Condition: model.PackageInstanceAuthStatusConditionPending,
+		Timestamp: time.Time{},
+		Message:   &msg,
+		Reason:    &reason,
+	}
+
+	context := "ctx"
+	params := "test-param"
+	return &model.PackageInstanceAuth{
+		ID:          id,
+		PackageID:   packageID,
+		Tenant:      tenantID,
+		Context:     &context,
+		InputParams: &params,
+		Auth:        fixModelAuth(),
+		Status:      &status,
+	}
+}
+
+func fixGQLPackageInstanceAuth(id string) *graphql.PackageInstanceAuth {
+	msg := "test-message"
+	reason := "test-reason"
+	status := graphql.PackageInstanceAuthStatus{
+		Condition: graphql.PackageInstanceAuthStatusConditionPending,
+		Timestamp: graphql.Timestamp{},
+		Message:   msg,
+		Reason:    reason,
+	}
+
+	params := graphql.JSON("test-param")
+	ctx := graphql.JSON("ctx")
+	return &graphql.PackageInstanceAuth{
+		ID:          id,
+		Context:     &ctx,
+		InputParams: &params,
+		Auth:        fixGQLAuth(),
+		Status:      &status,
+	}
 }
