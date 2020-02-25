@@ -33,113 +33,113 @@
         components: [
           {
             component: "cluster-essentials",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
             component: "testing",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
             component: "istio-init",
-            namespace: "istio-system",
+            namespace: "istio-system", 
           }
           {
             component: "istio",
-            namespace: "istio-system",
+            namespace: "istio-system", 
           }
           {
             component: "xip-patch",
-            namespace: "kyma-installer",
+            namespace: "kyma-installer", 
           }
           {
             component: "istio-kyma-patch",
-            namespace: "istio-system",
+            namespace: "istio-system", 
           }
           {
             component: "knative-serving-init",
-            namespace: "knative-serving",
+            namespace: "knative-serving", 
           }
           {
             component: "knative-serving",
-            namespace: "knative-serving",
+            namespace: "knative-serving", 
           }
           {
             component: "knative-eventing",
-            namespace: "knative-eventing",
+            namespace: "knative-eventing", 
           }
           {
             component: "dex",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
             component: "ory",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
             component: "api-gateway",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
             component: "service-catalog",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
             component: "service-catalog-addons",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
             component: "helm-broker",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
             component: "nats-streaming",
-            namespace: "natss",
+            namespace: "natss", 
           }
           {
             component: "rafter",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
-            component: "core"
-            namespace: "kyma-system"
+            component: "core",
+            namespace: "kyma-system",
             configuration: [
               {
-                key: "console.managementPlane.url"
-                value: "https://compass-gateway-auth-oauth.kyma.local/director/graphql"
-              }
-            ]
+                key: "console.managementPlane.url",
+                value: "https://compass-gateway-auth-oauth.kyma.local/director/graphql",
+              } 
+            ] 
           }
           {
             component: "knative-provisioner-natss",
-            namespace: "knative-eventing",
+            namespace: "knative-eventing", 
           }
           {
             component: "event-bus",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
             component: "event-sources",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
             component: "application-connector-ingress",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
             component: "application-connector-helper",
-            namespace: "kyma-integration",
+            namespace: "kyma-integration", 
           }
           {
             component: "application-connector",
-            namespace: "kyma-integration",
+            namespace: "kyma-integration", 
           }
           {
             component: "backup-init",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
             component: "backup",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
             component: "logging",
@@ -176,17 +176,17 @@
           }
           {
             component: "uaa-activator",
-            namespace: "kyma-system",
+            namespace: "kyma-system", 
           }
           {
-            component: "compass-runtime-agent"
-            namespace: "compass-system"
+            component: "compass-runtime-agent",
+            namespace: "compass-system",
             configuration: [
               {
-                key: "managementPlane.url"
-                value: "https://compass-gateway-auth-oauth.kyma.local/director/graphql"
-              }
-            ]
+                key: "managementPlane.url",
+                value: "https://compass-gateway-auth-oauth.kyma.local/director/graphql",
+              } 
+            ] 
           } 
         ]         
 	},
