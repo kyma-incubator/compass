@@ -588,6 +588,6 @@ func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
 				%s
 				}
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication(gql.FieldCtx{
-			"Package.package": fmt.Sprintf(`package(id: "%s") {%s}`, packageID, tc.gqlFieldsProvider.ForPackage()),
+			"Package.package": fmt.Sprintf(`package(id: "%s") {id}`, packageID),
 		})))
 }

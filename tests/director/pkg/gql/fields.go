@@ -273,10 +273,7 @@ func (fp *GqlFieldsProvider) ForPackage(ctx ...FieldCtx) string {
 	return addFieldsFromContext(fmt.Sprintf(`
 		id
 		name
-		description
-		instanceAuthRequestInputSchema
-		instanceAuths {%s}
-		defaultInstanceAuth {%s}`, fp.ForPackageInstanceAuth(), fp.ForAuth()),
+		description`),
 		ctx, []string{"Package.package"})
 }
 
