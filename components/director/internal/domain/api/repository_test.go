@@ -223,7 +223,7 @@ func TestPgRepository_GetForPackage(t *testing.T) {
 	})
 }
 
-func TestPgRepository_ListByApplicationID(t *testing.T) {
+func TestPgRepository_ListForApplication(t *testing.T) {
 	// GIVEN
 	ExpectedLimit := 3
 	ExpectedOffset := 0
@@ -304,7 +304,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	})
 }
 
-func TestPgRepository_ListByPackageID(t *testing.T) {
+func TestPgRepository_ListForPackage(t *testing.T) {
 	// GIVEN
 	ExpectedLimit := 3
 	ExpectedOffset := 0

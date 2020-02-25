@@ -185,7 +185,7 @@ func TestRepository_CreateMany(t *testing.T) {
 	})
 }
 
-func TestRepository_ListByApplicationID(t *testing.T) {
+func TestRepository_ListForApplication(t *testing.T) {
 	// GIVEN
 	tenantID := "tnt"
 	ExpectedLimit := 3
@@ -287,7 +287,7 @@ func TestRepository_ListByApplicationID(t *testing.T) {
 	})
 }
 
-func TestRepository_ListByPackageID(t *testing.T) {
+func TestRepository_ListForPackage(t *testing.T) {
 	// GIVEN
 	tenantID := "tnt"
 	ExpectedLimit := 3
