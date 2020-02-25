@@ -20,10 +20,10 @@ It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c656945393
 
 To unify the approach for mapping, we introduce `authorization_id`, widely used by multiple authentication flows.
 The `authorization_id` is equal to:
-- `client_id` in OAuth 2.0 authentication flow
-- `username` in Basic authentication flow
-- Common Name (CN) in Certificates authentication flow
-- Client ID in One-time token authentication flow
+- `client_id` in the OAuth 2.0 authentication flow
+- `username` in the Basic authentication flow
+- Common Name (CN) in the Certificates authentication flow
+- Client ID in the one-time token authentication flow
 
 While generating one-time token, `client_id`/`client_secret` pair or basic authentication details for Runtime/Application/Integration System (using proper GraphQL mutation on the Director), an entry in `system_auths` table in the Director database is created. The `system_auths` table is used for tenant mapping.
 
@@ -223,11 +223,22 @@ Scopes are added to the authentication session in Tenant Mapping Handler. The ha
 
 **Used by:** Runtime/Application
 
+**Compass Connector flow:**
+
+1. Runtime/Application makes a call to the Connector to the certificate-secured subdomain.
+2. The Hydrator verifies the one-time token. If the one-time token is invalid, the request is rejected.
+3. The Hydrator writes the Client ID to the `Client-Id-From-Token` header.
+4. The OathKeeper uses the Token Resolver as a mutator. In the case of failure, the header is empty.
+5. The request is forwarded to the Connector through the Compass Gateway.
+
+![Auth](./assets/token-security-diagram-connector.svg)
+
 **Compass Director Flow:**
 
 1. Runtime/Application makes a call to the Director.
 1. The OathKeeper uses the Token Resolver as a mutator. 
-1. The Client ID is extracted from the One-time token's `Conector-Token` header or from the `token` query parameter. The `client_id` is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
+1. The Client ID is extracted from the one-time token's `Conector-Token` header or from the `token` query parameter. 
+1. The Client ID is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
 1. The call is then proxied to the Tenant mapping handler mutator, where the Client ID is mapped onto the `tenant` and returned to the OathKeeper. 
 1. Hydrator passes the response to ID_Token mutator which constructs a JWT token with scopes and tenant in the payload.
 1. The OathKeeper proxies the request further to the Compass Gateway.
@@ -237,4 +248,4 @@ Scopes are added to the authentication session in Tenant Mapping Handler. The ha
 
 **Scopes**
 
-Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are fixed regarding of type of the object (Application / Runtime). Application and Runtime always have the same scopes defined.
+Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are fixed regarding of type of the object (Application/Runtime). Application and Runtime always have the same scopes defined.
