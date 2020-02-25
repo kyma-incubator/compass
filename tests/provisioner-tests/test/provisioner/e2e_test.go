@@ -38,7 +38,7 @@ func Test_E2E_Gardener(t *testing.T) {
 				provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, provider)
 				assertions.RequireNoError(t, err)
 
-				runtimeName := fmt.Sprintf("provisioner-test-%s-%s", provider, uuid.New().String()[:4])
+				runtimeName := fmt.Sprintf("provisioner-test-%s-%s", strings.ToLower(provider), uuid.New().String()[:4])
 				provisioningInput.RuntimeInput.Name = runtimeName
 				//runtime := NewRuntime(provisioningInput)
 
