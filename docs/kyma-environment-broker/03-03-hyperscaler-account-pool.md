@@ -2,7 +2,7 @@
 ​
 To provision clusters through Gardener using the Runtime Provisioner, the Kyma Environment Broker (KEB) requires a hyperscaler (GCP, Azure, AWS, etc.) account/subscription. Managing the available hyperscaler accounts is not in the scope of the KEB. Instead, the available accounts are handled by the Hyperscaler Account Pool (HAP). 
 
-The HAP stores credentials for the hyperscaler accounts that have been set up in advance in Kubernetes Secrets. The credentials are stored separately for each provider and tenant. The content of the credentials Secrets may vary for different use cases. The Secrets are labeled with the **hyperscaler-type** and **tenant-name** labels to manage pools of credentials for use by the provisioning process. This way, the in-use credentials and unassigned credentials available for use are tracked. Only the **hyperscaler-type** label is added during Secret creation, and the **tenant-name** label is added when the account respective for a given Secret is claimed. The Hyperscaler Account Pool is unaware of the Secrets' content.
+The HAP stores credentials for the hyperscaler accounts that have been set up in advance in Kubernetes Secrets. The credentials are stored separately for each provider and tenant. The content of the credentials Secrets may vary for different use cases. The Secrets are labeled with the **hyperscaler-type** and **tenant-name** labels to manage pools of credentials for use by the provisioning process. This way, the in-use credentials and unassigned credentials available for use are tracked. Only the **hyperscaler-type** label is added during Secret creation, and the **tenant-name** label is added when the account respective for a given Secret is claimed. The content of the Secrets is opaque to the HAP.
 
 The Secrets are stored in the Gardener Kubernetes cluster. They are available within a given Gardener project specified in the KEB and Runtime Provisioner configuration. This configuration uses a `kubeconfig` that gives KEB and the Runtime Provisioner access to the Gardener cluster, which, in turn, enables access to those Secrets. 
 
@@ -11,7 +11,7 @@ If a Secret is found, the KEB uses the credentials stored in this Secret. If a m
 
 One tenant can use only one account per given hyperscaler type.
 
-This is an example Kubernetes Secret storing hyperscaler credentials:
+This is an example of a Kubernetes Secret that stores hyperscaler credentials:
 ​
 ```yaml
 apiVersion: v1
