@@ -22,7 +22,7 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-831"
+      version: "PR-865"
     pairing_adapter:
       dir:
       version: "PR-867"
