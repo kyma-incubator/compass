@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
@@ -39,11 +40,9 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 	}
 
 	contextLogger := contextLogger(ch.logger, authorizationHeaders.GetSystemAuthID())
-	certRequest, err := readCertRequest(r, contextLogger)
+	certRequest, err := readCertRequest(r)
 	if err != nil {
-		err = errors.Wrap(err, "Failed to read certificate request")
-		contextLogger.Error(err.Error())
-		reqerror.WriteError(w, err, apperrors.CodeWrongInput)
+		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to read certificate request"), apperrors.CodeWrongInput)
 
 		return
 	}
@@ -53,18 +52,17 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 	{
 		certificationResult, err := ch.client.SignCSR(certRequest.CSR, authorizationHeaders)
 		if err != nil {
-			contextLogger.Error(err.Error())
-			reqerror.WriteError(w, err, err.Code())
+			respondWithError(w, contextLogger, errors.Wrap(err, "Failed to sign CSR"), err.Code())
 
 			return
 		}
 
-		certResponse := connector.ToCertResponse(certificationResult)
+		certResponse := model.ToCertResponse(certificationResult)
 		respondWithBody(w, http.StatusCreated, certResponse, contextLogger)
 	}
 }
 
-func readCertRequest(r *http.Request, logger *log.Entry) (*certRequest, error) {
+func readCertRequest(r *http.Request) (*certRequest, error) {
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "error while reading request body: %s")
@@ -96,6 +94,11 @@ func respondWithBody(w http.ResponseWriter, statusCode int, responseBody interfa
 func respond(w http.ResponseWriter, statusCode int) {
 	w.Header().Set(HeaderContentType, ContentTypeApplicationJson)
 	w.WriteHeader(statusCode)
+}
+
+func respondWithError(w http.ResponseWriter, contextLogger *log.Entry, err error, appErroCode int) {
+	contextLogger.Error(err.Error())
+	reqerror.WriteError(w, err, appErroCode)
 }
 
 func contextLogger(logger *log.Logger, application string) *log.Entry {

@@ -45,7 +45,8 @@ spec:
                     secretKeyRef:
                         name: {{.Values.deployment.oauthSecret}}
                         key: clientSecret
-
+              - name: OAUTH_AUTH_STYLE
+                value: {{ .Values.deployment.envs.oauthStyle | quote }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}

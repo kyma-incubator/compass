@@ -198,7 +198,8 @@ func TestClient(t *testing.T) {
 
 	t.Run("fails when server returns status code other than HTTP 200", func(t *testing.T) {
 		// GIVEN
-		givenResponse := &http.Response{StatusCode: http.StatusTeapot, Body: ioutil.NopCloser(&bytes.Buffer{})}
+		buf := bytes.NewBufferString("detailed message")
+		givenResponse := &http.Response{StatusCode: http.StatusTeapot, Body: ioutil.NopCloser(buf)}
 		mockDoer := &automock.HTTPDoer{}
 		defer mockDoer.AssertExpectations(t)
 
@@ -207,7 +208,7 @@ func TestClient(t *testing.T) {
 		// WHEN
 		_, err := cli.Do(context.TODO(), adapter.RequestData{})
 		// THEN
-		assert.EqualError(t, err, "wrong status code, got: 418")
+		assert.EqualError(t, err, "wrong status code, got: [418], body: [detailed message]")
 	})
 }
 

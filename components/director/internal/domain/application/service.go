@@ -314,7 +314,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	labelName := createLabel(nameKey, in.Name, app.ID)
 	err = s.SetLabel(ctx, labelName)
 	if err != nil {
-		return errors.Wrap(err, "while setting applicaiton name label")
+		return errors.Wrap(err, "while setting application name label")
 	}
 	return nil
 }

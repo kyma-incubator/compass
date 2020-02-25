@@ -84,6 +84,8 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	intSysConverter := integrationsystem.NewConverter()
 	appTemplateConverter := apptemplate.NewConverter(appConverter)
 	tenantConverter := tenant.NewConverter()
+	packageConverter := mp_package.NewConverter(authConverter)
+	var packageInstanceAuthConv packageinstanceauth.Converter // TODO: replace it with actual implementation
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
@@ -100,6 +102,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 	tenantRepo := tenant.NewRepository(tenantConverter)
+	packageRepo := mp_package.NewRepository(packageConverter)
 
 	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL)
 
@@ -123,9 +126,11 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	oAuth20Svc := oauth20.NewService(scopeCfgProvider, uidSvc, oAuth20Cfg)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
+	packageSvc := mp_package.NewService(packageRepo, uidSvc)
+	packageInstanceAuthSvc := packageinstanceauth.NewService(nil, uidSvc)
 
 	return &RootResolver{
-		app:                 application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc),
+		app:                 application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc, packageSvc, packageConverter),
 		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:                 api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
 		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
@@ -141,8 +146,8 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		intSys:              integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:              viewer.NewViewerResolver(),
 		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
-		mpPackage:           mp_package.NewResolver(),
-		packageInstanceAuth: packageinstanceauth.NewResolver(),
+		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageConverter),
+		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageInstanceAuthConv),
 	}
 }
 
@@ -398,17 +403,17 @@ func (r *mutationResolver) AddEventDefinitionToPackage(ctx context.Context, pack
 func (r *mutationResolver) AddDocumentToPackage(ctx context.Context, packageID string, in graphql.DocumentInput) (*graphql.Document, error) {
 	return r.doc.AddDocumentToPackage(ctx, packageID, in)
 }
-func (r *mutationResolver) SetPackageInstanceAuth(ctx context.Context, packageID string, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.SetPackageInstanceAuth(ctx, packageID, authID, in)
+func (r *mutationResolver) SetPackageInstanceAuth(ctx context.Context, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
+	return r.packageInstanceAuth.SetPackageInstanceAuthMock(ctx, authID, in)
 }
-func (r *mutationResolver) DeletePackageInstanceAuth(ctx context.Context, packageID string, authID string) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.DeletePackageInstanceAuth(ctx, packageID, authID)
+func (r *mutationResolver) DeletePackageInstanceAuth(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
+	return r.packageInstanceAuth.DeletePackageInstanceAuthMock(ctx, authID)
 }
 func (r *mutationResolver) RequestPackageInstanceAuthCreation(ctx context.Context, packageID string, in graphql.PackageInstanceAuthRequestInput) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.RequestPackageInstanceAuthCreation(ctx, packageID, in)
+	return r.packageInstanceAuth.RequestPackageInstanceAuthCreationMock(ctx, packageID, in)
 }
-func (r *mutationResolver) RequestPackageInstanceAuthDeletion(ctx context.Context, packageID string, authID string) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.RequestPackageInstanceAuthDeletion(ctx, packageID, authID)
+func (r *mutationResolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
+	return r.packageInstanceAuth.RequestPackageInstanceAuthDeletionMock(ctx, authID)
 }
 
 func (r *mutationResolver) AddPackage(ctx context.Context, applicationID string, in graphql.PackageCreateInput) (*graphql.Package, error) {
