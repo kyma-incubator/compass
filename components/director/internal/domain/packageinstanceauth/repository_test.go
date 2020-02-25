@@ -225,7 +225,7 @@ func TestRepository_GetForPackage(t *testing.T) {
 		// then
 		require.EqualError(t, err, "while getting object from DB: test")
 	})
-	//
+
 	t.Run("returns error when conversion failed", func(t *testing.T) {
 		// given
 		piaEntity := fixEntityPackageInstanceAuth(t, testID, testPackageID, testTenant, nil, fixModelStatusPending())

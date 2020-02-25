@@ -511,7 +511,7 @@ func TestResolver_DeletePackage(t *testing.T) {
 	}
 }
 
-func TestResolver_Package(t *testing.T) {
+func TestResolver_InstanceAuth(t *testing.T) {
 	// given
 	id := "foo"
 	modelPackageInstanceAuth := fixModelPackageInstanceAuth(id)
@@ -550,7 +550,7 @@ func TestResolver_Package(t *testing.T) {
 			ExpectedErr:                 nil,
 		},
 		{
-			Name:            "Returns error when application retrieval failed",
+			Name:            "Returns error when Package retrieval failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.PackageInstanceAuthService {
 				svc := &automock.PackageInstanceAuthService{}
