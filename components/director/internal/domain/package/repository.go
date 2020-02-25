@@ -3,6 +3,9 @@ package mp_package
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -10,6 +13,8 @@ import (
 )
 
 const packageTable string = `public.packages`
+const packageInstanceAuthTable string = `public.package_instance_auths`
+const packageInstanceAuthPackageRefField string = `package_id`
 
 var (
 	packageColumns = []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth"}
@@ -118,6 +123,35 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 	return pkgModel, nil
 }
 
+func (r *pgRepository) GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Package, error) {
+	var pkgEnt Entity
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	prefixedFieldNames := r.prefixStrings(packageColumns, "p.")
+	stmt := fmt.Sprintf(`SELECT %s FROM %s AS p JOIN %s AS a on a.%s=p.id where a.tenant_id=$1 AND a.id=$2`,
+		strings.Join(prefixedFieldNames, ", "),
+		packageTable,
+		packageInstanceAuthTable,
+		packageInstanceAuthPackageRefField)
+
+	err = persist.Get(&pkgEnt, stmt, tenant, instanceAuthID)
+	switch {
+	case err != nil:
+		return nil, errors.Wrap(err, "while getting Package by Instance Auth ID")
+	}
+
+	pkgModel, err := r.conv.FromEntity(&pkgEnt)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating Package model from entity")
+	}
+
+	return pkgModel, nil
+}
+
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.PackagePage, error) {
 	pkgCond := fmt.Sprintf("%s = '%s'", "app_id", applicationID)
 	var packageCollection PackageCollection
@@ -141,4 +175,13 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+func (r *pgRepository) prefixStrings(in []string, prefix string) []string {
+	var prefixedFieldNames []string
+	for _, column := range packageColumns {
+		prefixedFieldNames = append(prefixedFieldNames, fmt.Sprintf("%s%s", prefix, column))
+	}
+
+	return prefixedFieldNames
 }

@@ -94,18 +94,26 @@ type Resolver struct {
 	documentConverter            DocumentConverter
 }
 
-func NewResolver(transact persistence.Transactioner, packageSvc PackageService, packageInstanceAuthSvc PackageInstanceAuthService,
-	apiSvc APIService, eventSvc EventService, documentSvc DocumentService, packageConverter PackageConverter,
-	packageInstanceAuthConverter PackageInstanceAuthConverter, apiConv APIConverter, eventConv EventConverter,
+func NewResolver(
+	transact persistence.Transactioner,
+	packageSvc PackageService,
+	packageInstanceAuthSvc PackageInstanceAuthService,
+	apiSvc APIService,
+	eventSvc EventService,
+	documentSvc DocumentService,
+	packageConverter PackageConverter,
+	packageInstanceAuthConverter PackageInstanceAuthConverter,
+	apiConv APIConverter,
+	eventConv EventConverter,
 	documentConv DocumentConverter) *Resolver {
 	return &Resolver{
 		transact:                     transact,
+		packageConverter:             packageConverter,
 		packageSvc:                   packageSvc,
 		packageInstanceAuthSvc:       packageInstanceAuthSvc,
 		apiSvc:                       apiSvc,
 		eventSvc:                     eventSvc,
 		documentSvc:                  documentSvc,
-		packageConverter:             packageConverter,
 		packageInstanceAuthConverter: packageInstanceAuthConverter,
 		apiConverter:                 apiConv,
 		eventConverter:               eventConv,

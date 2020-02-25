@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth/automock"
@@ -303,6 +304,110 @@ func TestService_ListByApplicationID(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_RequestDeletion(t *testing.T) {
+	// GIVEN
+	tnt := testTenant
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt)
+
+	id := "foo"
+	timestampNow := time.Now()
+	pkgInstanceAuth := fixSimpleModelPackageInstanceAuth(id)
+	//testErr := errors.New("test error")
+
+	testCases := []struct {
+		Name                       string
+		PackageDefaultInstanceAuth *model.Auth
+		InstanceAuthRepoFn         func() *automock.Repository
+
+		ExpectedResult bool
+		ExpectedError  error
+	}{
+		{
+			Name: "Success - No Package Default Instance Auth",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Update", contextThatHasTenant(tnt), mock.MatchedBy(func(in *model.PackageInstanceAuth) bool {
+					return in.ID == id && in.Status.Condition == model.PackageInstanceAuthStatusConditionUnused
+				})).Return(nil).Once()
+				return instanceAuthRepo
+			},
+			ExpectedResult: false,
+			ExpectedError:  nil,
+		},
+		{
+			Name:                       "Success - Package Default Instance Auth",
+			PackageDefaultInstanceAuth: fixModelAuth(),
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Delete", contextThatHasTenant(tnt), tnt, id).Return(nil).Once()
+				return instanceAuthRepo
+			},
+			ExpectedResult: true,
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Error - Update",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Update", contextThatHasTenant(tnt), mock.MatchedBy(func(in *model.PackageInstanceAuth) bool {
+					return in.ID == id && in.Status.Condition == model.PackageInstanceAuthStatusConditionUnused
+				})).Return(testError).Once()
+				return instanceAuthRepo
+			},
+			ExpectedError: testError,
+		},
+		{
+			Name:                       "Error - Delete",
+			PackageDefaultInstanceAuth: fixModelAuth(),
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Delete", contextThatHasTenant(tnt), tnt, id).Return(testError).Once()
+				return instanceAuthRepo
+			},
+			ExpectedError: testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			instanceAuthRepo := testCase.InstanceAuthRepoFn()
+
+			svc := packageinstanceauth.NewService(instanceAuthRepo, nil)
+			svc.SetTimestampGen(func() time.Time {
+				return timestampNow
+			})
+
+			// WHEN
+			res, err := svc.RequestDeletion(ctx, pkgInstanceAuth, testCase.PackageDefaultInstanceAuth)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, res)
+			}
+
+			instanceAuthRepo.AssertExpectations(t)
+		})
+	}
+
+	t.Run("Error - nil", func(t *testing.T) {
+		// GIVEN
+		expectedError := errors.New("instance auth is required to request its deletion")
+
+		// WHEN
+		svc := packageinstanceauth.NewService(nil, nil)
+		_, err := svc.RequestDeletion(ctx, nil, nil)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), expectedError.Error())
 	})
 }
 
