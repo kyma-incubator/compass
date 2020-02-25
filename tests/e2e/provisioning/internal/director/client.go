@@ -10,7 +10,7 @@ import (
 
 	machineGraph "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -36,6 +36,7 @@ type Client struct {
 	oauthClient   OauthClient
 	queryProvider queryProvider
 	token         oauth.Token
+	log           logrus.FieldLogger
 }
 
 type successResponse struct {
@@ -45,32 +46,33 @@ type successResponse struct {
 var lock sync.Mutex
 
 // NewDirectorClient returns new director client struct pointer
-func NewDirectorClient(oauthClient OauthClient, gqlClient GraphQLClient) *Client {
+func NewDirectorClient(oauthClient OauthClient, gqlClient GraphQLClient, log logrus.FieldLogger) *Client {
 	return &Client{
 		graphQLClient: gqlClient,
 		oauthClient:   oauthClient,
 		queryProvider: queryProvider{},
 		token:         oauth.Token{},
+		log:           log,
 	}
 }
 
 // GetRuntimeID fetches runtime ID with given label name from director component
 func (dc *Client) GetRuntimeID(accountID, instanceID string) (string, error) {
-	log.WithField("service", "director-client")
-	log.Info("Create request to director service")
+	c.log.WithField("service", "director-client")
+	c.log.Info("Create request to director service")
 
 	query := dc.queryProvider.Runtime(instanceID)
 	req := machineGraph.NewRequest(query)
 	req.Header.Add(tenantHeaderKey, accountID)
 
-	log.Info("Send request to director")
+	c.log.Info("Send request to director")
 	response, err := dc.callDirector(req)
 	if err != nil {
 		// do not wrap error, because type of error (TemporaryError) is important
 		return "", err
 	}
 
-	log.Info("Extract the RuntimeID from the response")
+	c.log.Info("Extract the RuntimeID from the response")
 	return dc.getIDFromRuntime(&response.Result), nil
 }
 
@@ -84,7 +86,7 @@ func (dc *Client) callDirector(req *machineGraph.Request) (*successResponse, err
 		err := dc.setToken()
 		if err != nil {
 			lastError = err
-			log.Errorf("cannot set token to director client (attempt %d): %s", i, err)
+			c.log.Errorf("cannot set token to director client (attempt %d): %s", i, err)
 			continue
 		}
 		req.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", dc.token.AccessToken))
@@ -93,7 +95,7 @@ func (dc *Client) callDirector(req *machineGraph.Request) (*successResponse, err
 			lastError = err
 			dc.token.AccessToken = ""
 			req.Header.Del(authorizationKey)
-			log.Errorf("call to director failed (attempt %d): %s", i, err)
+			c.log.Errorf("call to director failed (attempt %d): %s", i, err)
 			continue
 		}
 		success = true

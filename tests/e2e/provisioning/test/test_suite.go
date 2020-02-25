@@ -85,7 +85,7 @@ func newTestSuite(t *testing.T) *Suite {
 
 	brokerClient := broker.NewClient(cfg.Broker, cfg.TenantID, instanceID, *httpClient, log.WithField("service", "broker_client"))
 
-	directorClient := director.NewDirectorClient(oauthClient, graphQLClient)
+	directorClient := director.NewDirectorClient(oauthClient, graphQLClient, log.WithField("service", "director_client"))
 
 	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, instanceID, *httpClient, *directorClient, log.WithField("service", "runtime_client"))
 
