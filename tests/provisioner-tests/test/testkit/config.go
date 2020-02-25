@@ -41,9 +41,9 @@ type GCPConfig struct {
 
 func (c TestConfig) String() string {
 	return fmt.Sprintf("InternalProvisionerURL=%s, QueryLogging=%v, "+
-		"GardenerAzureSecret=%v, GardenerGCPSecret=%v",
+		"GardenerProviders=%v GardenerAzureSecret=%v, GardenerGCPSecret=%v",
 		c.InternalProvisionerURL, c.QueryLogging,
-		c.Gardener.AzureSecret, c.Gardener.GCPSecret)
+		c.Gardener.Providers, c.Gardener.AzureSecret, c.Gardener.GCPSecret)
 }
 
 func ReadConfig() (TestConfig, error) {
