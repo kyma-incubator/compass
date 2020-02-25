@@ -28,10 +28,6 @@ func TestLokiDisabler(t *testing.T) {
 					Key:   "loki.enabled",
 					Value: "false",
 				},
-				{
-					Key:   "fluent-bit.conf.Output.loki.enabled",
-					Value: "false",
-				},
 			},
 		},
 	}
