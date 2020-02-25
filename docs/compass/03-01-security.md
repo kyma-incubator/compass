@@ -223,7 +223,7 @@ Scopes are added to the authentication session in Tenant Mapping Handler. The ha
 
 **Used by:** Runtime/Application
 
-**Compass Connector flow:**
+**Connector flow:**
 
 1. Runtime/Application makes a call to the Connector to the certificate-secured subdomain.
 2. The Hydrator verifies the one-time token. If the one-time token is invalid, the request is rejected.
@@ -233,7 +233,7 @@ Scopes are added to the authentication session in Tenant Mapping Handler. The ha
 
 ![Auth](./assets/token-security-diagram-connector.svg)
 
-**Compass Director Flow:**
+**Director Flow:**
 
 1. Runtime/Application makes a call to the Director.
 1. The OathKeeper uses the Token Resolver as a mutator. 
