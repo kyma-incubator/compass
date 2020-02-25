@@ -85,7 +85,6 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	appTemplateConverter := apptemplate.NewConverter(appConverter)
 	tenantConverter := tenant.NewConverter()
 	packageConverter := mp_package.NewConverter(authConverter)
-	//var packageInstanceAuthConv packageinstanceauth.Converter // TODO: replace it with actual implementation
 	packageInstanceAuthConv := packageinstanceauth.NewConverter(authConverter)
 
 	healthcheckRepo := healthcheck.NewRepository()
