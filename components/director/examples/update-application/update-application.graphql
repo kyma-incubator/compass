@@ -65,6 +65,7 @@ mutation {
       data {
         id
         name
+        applicationID
         description
         spec {
           data

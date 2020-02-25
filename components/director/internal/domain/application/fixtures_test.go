@@ -228,9 +228,10 @@ var (
 	docCLOB  = graphql.CLOB(docData)
 )
 
-func fixModelDocument(applicationID, id string) *model.Document {
+func fixModelDocument(applicationID, packageID, id string) *model.Document {
 	return &model.Document{
-		ApplicationID: applicationID,
+		ApplicationID: &applicationID,
+		PackageID:     &packageID,
 		ID:            id,
 		Title:         docTitle,
 		Format:        model.DocumentFormatMarkdown,
@@ -316,7 +317,7 @@ func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.A
 	}
 }
 
-func fixModelAPIDefinition(id, appId, name, description string, group string) *model.APIDefinition {
+func fixModelAPIDefinition(id string, appId *string, name, description string, group string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ID:            id,
 		ApplicationID: appId,
@@ -326,7 +327,7 @@ func fixModelAPIDefinition(id, appId, name, description string, group string) *m
 	}
 }
 
-func fixGQLAPIDefinition(id, appId, name, description string, group string) *graphql.APIDefinition {
+func fixGQLAPIDefinition(id string, appId *string, name, description string, group string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:            id,
 		ApplicationID: appId,
@@ -359,10 +360,11 @@ func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *
 	}
 }
 
-func fixModelEventAPIDefinition(id, appId, name, description string, group string) *model.EventDefinition {
+func fixModelEventAPIDefinition(id string, appId, packageID *string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
 		ID:            id,
 		ApplicationID: appId,
+		PackageID:     packageID,
 		Name:          name,
 		Description:   &description,
 		Group:         &group,
@@ -370,12 +372,13 @@ func fixModelEventAPIDefinition(id, appId, name, description string, group strin
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
 	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		ApplicationID: "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", Name: placeholder}
+		ApplicationID: str.Ptr("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), PackageID: str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"), Name: placeholder}
 }
-func fixGQLEventDefinition(id, appId, name, description string, group string) *graphql.EventDefinition {
+func fixGQLEventDefinition(id string, appId, packageID *string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
 		ID:            id,
 		ApplicationID: appId,
+		PackageID:     packageID,
 		Name:          name,
 		Description:   &description,
 		Group:         &group,

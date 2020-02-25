@@ -22,13 +22,13 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-865"
+      version: "PR-831"
     pairing_adapter:
       dir:
-      version: "PR-867"
+      version: "PR-798"
     director:
       dir:
-      version: "PR-872"
+      version: "PR-844"
     gateway:
       dir: pr/
       version: "PR-357"

@@ -133,10 +133,10 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	return &RootResolver{
 		app:                 application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc, packageSvc, packageConverter),
 		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
-		api:                 api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
-		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
+		api:                 api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, packageSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
+		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, appSvc, packageSvc, eventAPIConverter, frConverter),
 		eventing:            eventing.NewResolver(transact, eventingSvc, appSvc),
-		doc:                 document.NewResolver(transact, docSvc, appSvc, frConverter),
+		doc:                 document.NewResolver(transact, docSvc, appSvc, packageSvc, frConverter),
 		runtime:             runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
 		healthCheck:         healthcheck.NewResolver(healthCheckSvc),
 		webhook:             webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
@@ -147,7 +147,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		intSys:              integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:              viewer.NewViewerResolver(),
 		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
-		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageConverter, packageInstanceAuthSvc, packageInstanceAuthConv),
+		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, packageConverter, packageInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
 		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageInstanceAuthConv),
 	}
 }

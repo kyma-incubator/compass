@@ -299,7 +299,7 @@ func TestEventApiSpecDataConversionNilStaysNil(t *testing.T) {
 	require.NotNil(t, convertedInputModel)
 	require.NotNil(t, convertedInputModel.Spec)
 	require.Nil(t, convertedInputModel.Spec.Data)
-	convertedEvAPIDef := convertedInputModel.ToEventDefinition("id", tenantID, "app_id")
+	convertedEvAPIDef := convertedInputModel.ToEventDefinition("id", str.Ptr("app_id"), tenantID)
 	require.NotNil(t, convertedEvAPIDef)
 	convertedGraphqlEvAPIDef := converter.ToGraphQL(convertedEvAPIDef)
 	require.NotNil(t, convertedGraphqlEvAPIDef)

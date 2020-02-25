@@ -1,6 +1,9 @@
 package mock
 
-import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+)
 
 func FixDocument(id string) *graphql.Document {
 	desc := "Lorem ipsum"
@@ -29,7 +32,8 @@ Kyma comes equipped with these out-of-the-box functionalities:
 `)
 	return &graphql.Document{
 		ID:            id,
-		ApplicationID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+		ApplicationID: str.Ptr("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+		PackageID:     str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"),
 		Title:         "Document Title",
 		DisplayName:   "Document Display Name",
 		Description:   desc,
