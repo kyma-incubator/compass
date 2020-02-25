@@ -372,6 +372,45 @@ func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFr
 	}`)
 }
 
+func (g *Graphqlizer) PackageCreateInputToGQL(in graphql.PackageCreateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{ .Name }}"
+		{{- if .Description }}
+		description: "{{ .Description }}"
+		{{- end }}
+		{{- if .InstanceAuthRequestInputSchema }}
+		instanceAuthRequestInputSchema: {{ .InstanceAuthRequestInputSchema }}
+		{{- end }}
+		{{- if .DefaultInstanceAuth }}
+		defaultInstanceAuth: {{- AuthInputToGQL .DefaultInstanceAuth }}
+		{{- end }}
+		{{- if .APIDefinitions }}
+		apiDefinitions: {{- APIDefinitionInputToGQL .APIDefinitions }}
+		{{- end }}
+		{{- if .EventDefinitions }}
+		eventDefinitions: {{- EventDefinitionInputToGQL .EventDefinitions }}
+		{{- end }}
+		{{- if .Documents }}
+		documents: {{- DocumentInputToGQL .Documents }}
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) PackageUpdateInputToGQL(in graphql.PackageUpdateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{ .Name }}"
+		{{- if .Description }}
+		description: "{{ .Description }}"
+		{{- end }}
+		{{- if .InstanceAuthRequestInputSchema }}
+		instanceAuthRequestInputSchema: {{ .InstanceAuthRequestInputSchema }}
+		{{- end }}
+		{{- if .DefaultInstanceAuth }}
+		defaultInstanceAuth: {{- AuthInputToGQL .DefaultInstanceAuth }}
+		{{- end }}
+	}`)
+}
+
 func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
 	fm["ApplicationRegisterInputToGQL"] = g.ApplicationRegisterInputToGQL
@@ -392,6 +431,8 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["CredentialRequestAuthInputToGQL"] = g.CredentialRequestAuthInputToGQL
 	fm["PlaceholderDefinitionInputToGQL"] = g.PlaceholderDefinitionInputToGQL
 	fm["TemplateValueInput"] = g.TemplateValueInputToGQL
+	fm["PackageCreateInputToGQL"] = g.PackageCreateInputToGQL
+	fm["PackageUpdateInputToGQL"] = g.PackageUpdateInputToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {

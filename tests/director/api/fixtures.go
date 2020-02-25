@@ -93,3 +93,15 @@ func fixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 	}
 	return appTemplateInput
 }
+
+func fixPackageCreateInput(name string) graphql.PackageCreateInput {
+	return graphql.PackageCreateInput{
+		Name: name,
+	}
+}
+
+func fixPackageUpdateInput(name string) graphql.PackageUpdateInput {
+	return graphql.PackageUpdateInput{
+		Name: name,
+	}
+}
