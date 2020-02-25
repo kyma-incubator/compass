@@ -22,7 +22,7 @@ func Test_E2E_Gardener(t *testing.T) {
 	globalLog := logrus.WithField("TestId", testSuite.TestId)
 
 	globalLog.Infof("Starting Compass Provisioner tests on Gardener")
-	var wg *sync.WaitGroup
+	wg := &sync.WaitGroup{}
 
 	for _, provider := range testSuite.gardenerProviders {
 		wg.Add(1)
