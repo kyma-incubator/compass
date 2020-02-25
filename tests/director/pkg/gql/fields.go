@@ -80,6 +80,7 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 func (fp *GqlFieldsProvider) ForAPIDefinition(ctx ...FieldCtx) string {
 	return addFieldsFromContext(fmt.Sprintf(`		id
 		name
+		applicationID
 		description
 		spec {%s}
 		targetURL
@@ -132,6 +133,7 @@ func (fp *GqlFieldsProvider) ForPageInfo() string {
 func (fp *GqlFieldsProvider) ForEventDefinition() string {
 	return fmt.Sprintf(`
 			id
+			applicationID
 			name
 			description
 			group 
@@ -150,6 +152,7 @@ func (fp *GqlFieldsProvider) ForEventSpec() string {
 func (fp *GqlFieldsProvider) ForDocument() string {
 	return fmt.Sprintf(`
 		id
+		applicationID
 		title
 		displayName
 		description

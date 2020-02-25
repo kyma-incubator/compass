@@ -3,6 +3,7 @@ query {
   result: application(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
     eventDefinition(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
       id
+      applicationID
       name
       description
       group

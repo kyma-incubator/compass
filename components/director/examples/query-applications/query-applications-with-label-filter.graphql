@@ -58,6 +58,7 @@ query {
         data {
           id
           name
+          applicationID
           description
           spec {
             data
@@ -194,6 +195,7 @@ query {
       eventDefinitions {
         data {
           id
+          applicationID
           name
           description
           group
@@ -261,6 +263,7 @@ query {
       documents {
         data {
           id
+          applicationID
           title
           displayName
           description
