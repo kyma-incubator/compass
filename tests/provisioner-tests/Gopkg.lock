@@ -164,7 +164,7 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "01c042cbfefcc6f39acfda952f23ebbe3b95f876"
+  revision = "1d08c3c107ecee32dbffb40a466839636162b7d7"
 
 [[projects]]
   digest = "1:bde204c6c8dd5169cd05ed5aa9a1e027bc8d2cdd172c5e80b971cb4e14b55e3c"

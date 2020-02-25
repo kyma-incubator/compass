@@ -1,11 +1,9 @@
 package provisioner
 
 import (
-	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -44,7 +42,7 @@ type TestSuite struct {
 	config        testkit.TestConfig
 	secretsClient v1client.SecretInterface
 
-	TestRuntimes []TestRuntime
+	//TestRuntimes []TestRuntime
 }
 
 func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
@@ -77,14 +75,14 @@ func (ts *TestSuite) Cleanup() {
 	// TODO(@rafalpotempa): Fetching provisioner logs when tests fail
 	logrus.Infof("Starting cleanup...")
 
-	undeprovisionedRuntimes := ts.EnsureRuntimeDeprovisioning()
-	if len(undeprovisionedRuntimes) > 0 {
-		for _, runtime := range undeprovisionedRuntimes {
-			logrus.Errorf("Error while performing cleanup: %s: %s", runtime.GetCurrentStatus(), runtime.StatusToString())
-		}
-		logrus.Infof("Cleanup failed.")
-		return
-	}
+	//undeprovisionedRuntimes := ts.EnsureRuntimeDeprovisioning()
+	//if len(undeprovisionedRuntimes) > 0 {
+	//	for _, runtime := range undeprovisionedRuntimes {
+	//		logrus.Errorf("Error while performing cleanup: %s: %s", runtime.GetCurrentStatus(), runtime.StatusToString())
+	//	}
+	//	logrus.Infof("Cleanup failed.")
+	//	return
+	//}
 	logrus.Infof("Cleanup completed.")
 }
 
@@ -94,47 +92,47 @@ func (ts *TestSuite) Recover() {
 	}
 }
 
-func (ts *TestSuite) EnsureRuntimeDeprovisioning() []TestRuntime {
-	failedRuntimes := []TestRuntime{}
-	var wg sync.WaitGroup
-
-	for _, runtime := range ts.TestRuntimes {
-		go func(runtime TestRuntime) {
-			wg.Add(1)
-			defer wg.Done()
-
-			if runtime.isRunning {
-				runtime.LogStatus("Starting deprovisioning...")
-				operationID, err := runtime.Deprovision()
-				runtime.log = runtime.log.WithFields(logrus.Fields{
-					"RuntimeID":   runtime.runtimeID,
-					"OperationID": operationID,
-				})
-				if err != nil {
-					runtime.LogStatus(fmt.Sprintf("Starting deprovisioning failed: %s", err))
-				}
-				runtime.LogStatus("Deprovisioning started.")
-
-				operationStatus, err := ts.WaitUntilOperationIsFinished(30*time.Minute, operationID)
-				if err != nil {
-					runtime.LogStatus(fmt.Sprintf("Deprovisioning failed: %s. State: %s", err, operationStatus.State))
-				}
-				runtime.LogStatus("Deprovisioning completed.")
-				runtime.isRunning = false
-				return
-			}
-			runtime.LogStatus("Failed to deprovision Runtime.")
-		}(runtime)
-	}
-	wg.Wait()
-
-	for _, runtime := range ts.TestRuntimes {
-		if runtime.isRunning {
-			failedRuntimes = append(failedRuntimes, runtime)
-		}
-	}
-	return failedRuntimes
-}
+//func (ts *TestSuite) EnsureRuntimeDeprovisioning() []TestRuntime {
+//	failedRuntimes := []TestRuntime{}
+//	var wg sync.WaitGroup
+//
+//	for _, runtime := range ts.TestRuntimes {
+//		go func(runtime TestRuntime) {
+//			wg.Add(1)
+//			defer wg.Done()
+//
+//			if runtime.isRunning {
+//				runtime.LogStatus("Starting deprovisioning...")
+//				operationID, err := runtime.Deprovision()
+//				runtime.log = runtime.log.WithFields(logrus.Fields{
+//					"RuntimeID":   runtime.runtimeID,
+//					"OperationID": operationID,
+//				})
+//				if err != nil {
+//					runtime.LogStatus(fmt.Sprintf("Starting deprovisioning failed: %s", err))
+//				}
+//				runtime.LogStatus("Deprovisioning started.")
+//
+//				operationStatus, err := ts.WaitUntilOperationIsFinished(30*time.Minute, operationID)
+//				if err != nil {
+//					runtime.LogStatus(fmt.Sprintf("Deprovisioning failed: %s. State: %s", err, operationStatus.State))
+//				}
+//				runtime.LogStatus("Deprovisioning completed.")
+//				runtime.isRunning = false
+//				return
+//			}
+//			runtime.LogStatus("Failed to deprovision Runtime.")
+//		}(runtime)
+//	}
+//	wg.Wait()
+//
+//	for _, runtime := range ts.TestRuntimes {
+//		if runtime.isRunning {
+//			failedRuntimes = append(failedRuntimes, runtime)
+//		}
+//	}
+//	return failedRuntimes
+//}
 
 func (ts *TestSuite) WaitUntilOperationIsFinished(timeout time.Duration, operationID string) (gqlschema.OperationStatus, error) {
 	var operationStatus gqlschema.OperationStatus
