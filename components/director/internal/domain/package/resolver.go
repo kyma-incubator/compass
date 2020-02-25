@@ -5,9 +5,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
-	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -15,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
@@ -32,6 +28,18 @@ type PackageConverter interface {
 	ToGraphQL(in *model.Package) (*graphql.Package, error)
 	CreateInputFromGraphQL(in graphql.PackageCreateInput) (*model.PackageCreateInput, error)
 	UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error)
+}
+
+//go:generate mockery -name=PackageInstanceAuthService -output=automock -outpkg=automock -case=underscore
+type PackageInstanceAuthService interface {
+	GetForPackage(ctx context.Context, id string, packageID string) (*model.PackageInstanceAuth, error)
+	List(ctx context.Context, id string) ([]*model.PackageInstanceAuth, error)
+}
+
+//go:generate mockery -name=PackageInstanceAuthConverter -output=automock -outpkg=automock -case=underscore
+type PackageInstanceAuthConverter interface {
+	ToGraphQL(in *model.PackageInstanceAuth) *graphql.PackageInstanceAuth
+	MultipleToGraphQL(in []*model.PackageInstanceAuth) []*graphql.PackageInstanceAuth
 }
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
@@ -73,29 +81,35 @@ type DocumentConverter interface {
 type Resolver struct {
 	transact persistence.Transactioner
 
-	packageSvc  PackageService
-	apiSvc      APIService
-	eventSvc    EventService
-	documentSvc DocumentService
+	packageSvc             PackageService
+	packageInstanceAuthSvc PackageInstanceAuthService
+	apiSvc                 APIService
+	eventSvc               EventService
+	documentSvc            DocumentService
 
-	packageConverter  PackageConverter
-	apiConverter      APIConverter
-	eventConverter    EventConverter
-	documentConverter DocumentConverter
+	packageConverter             PackageConverter
+	packageInstanceAuthConverter PackageInstanceAuthConverter
+	apiConverter                 APIConverter
+	eventConverter               EventConverter
+	documentConverter            DocumentConverter
 }
 
-func NewResolver(transact persistence.Transactioner, packageSvc PackageService, apiSvc APIService, eventSvc EventService,
-	documentSvc DocumentService, packageConverter PackageConverter, apiConv APIConverter, eventConv EventConverter, documentConv DocumentConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, packageSvc PackageService, packageInstanceAuthSvc PackageInstanceAuthService,
+	apiSvc APIService, eventSvc EventService, documentSvc DocumentService, packageConverter PackageConverter,
+	packageInstanceAuthConverter PackageInstanceAuthConverter, apiConv APIConverter, eventConv EventConverter,
+	documentConv DocumentConverter) *Resolver {
 	return &Resolver{
-		transact:          transact,
-		packageSvc:        packageSvc,
-		apiSvc:            apiSvc,
-		eventSvc:          eventSvc,
-		documentSvc:       documentSvc,
-		packageConverter:  packageConverter,
-		apiConverter:      apiConv,
-		eventConverter:    eventConv,
-		documentConverter: documentConv,
+		transact:                     transact,
+		packageSvc:                   packageSvc,
+		packageInstanceAuthSvc:       packageInstanceAuthSvc,
+		apiSvc:                       apiSvc,
+		eventSvc:                     eventSvc,
+		documentSvc:                  documentSvc,
+		packageConverter:             packageConverter,
+		packageInstanceAuthConverter: packageInstanceAuthConverter,
+		apiConverter:                 apiConv,
+		eventConverter:               eventConv,
+		documentConverter:            documentConv,
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"testing"
+	"time"
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -158,19 +159,7 @@ func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
 		},
 		TotalCount: len(documents),
 	}
-	"database/sql"
-	"database/sql/driver"
-	"encoding/json"
-	"testing"
-	"time"
-
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-)
+}
 
 const (
 	packageID = "ddddddddd-dddd-dddd-dddd-dddddddddddd"

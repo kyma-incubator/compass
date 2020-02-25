@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
-	persistenceautomock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -139,7 +138,7 @@ func TestResolver_API(t *testing.T) {
 				svc := testCase.ServiceFn()
 				converter := testCase.ConverterFn()
 
-				resolver := mp_package.NewResolver(transact, nil, svc, nil, nil, nil, converter, nil, nil)
+				resolver := mp_package.NewResolver(transact, nil, nil, svc, nil, nil, nil, nil, converter, nil, nil)
 
 				// when
 				result, err := resolver.APIDefinition(context.TODO(), testCase.Package, testCase.InputID)
@@ -258,7 +257,7 @@ func TestResolver_Apis(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, nil, svc, nil, nil, nil, converter, nil, nil)
+			resolver := mp_package.NewResolver(transact, nil, nil, svc, nil, nil, nil, nil, converter, nil, nil)
 			// when
 			result, err := resolver.APIDefinitions(context.TODO(), app, &group, &first, &gqlAfter)
 
@@ -391,7 +390,7 @@ func TestResolver_EventAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, nil, nil, svc, nil, nil, nil, converter, nil)
+			resolver := mp_package.NewResolver(transact, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil)
 
 			// when
 			result, err := resolver.EventDefinition(context.TODO(), testCase.Package, testCase.InputID)
@@ -487,7 +486,7 @@ func TestResolver_EventAPIs(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, nil, nil, svc, nil, nil, nil, converter, nil)
+			resolver := mp_package.NewResolver(transact, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil)
 			// when
 			result, err := resolver.EventDefinitions(context.TODO(), pkg, &group, testCase.InputFirst, testCase.InputAfter)
 
@@ -620,7 +619,7 @@ func TestResolver_Document(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, nil, nil, nil, svc, nil, nil, nil, converter)
+			resolver := mp_package.NewResolver(transact, nil, nil, nil, nil, svc, nil, nil, nil, nil, converter)
 
 			// when
 			result, err := resolver.Document(context.TODO(), testCase.Package, testCase.InputID)
@@ -709,7 +708,7 @@ func TestResolver_Documents(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := mp_package.NewResolver(transact, nil, nil, nil, svc, nil, nil, nil, converter)
+			resolver := mp_package.NewResolver(transact, nil, nil, nil, nil, svc, nil, nil, nil, nil, converter)
 
 			// when
 			result, err := resolver.Documents(context.TODO(), pkg, &first, &gqlAfter)
@@ -874,7 +873,7 @@ func TestResolver_AddPackage(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
+			resolver := mp_package.NewResolver(transact, svc, nil, nil, nil, nil, converter, nil, nil, nil, nil)
 
 			// when
 			result, err := resolver.AddPackage(context.TODO(), appId, gqlPackageInput)
@@ -1048,7 +1047,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
+			resolver := mp_package.NewResolver(transact, svc, nil, nil, nil, nil, converter, nil, nil, nil, nil)
 
 			// when
 			result, err := resolver.UpdatePackage(context.TODO(), id, gqlPackageUpdateInput)
@@ -1194,7 +1193,7 @@ func TestResolver_DeletePackage(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
+			resolver := mp_package.NewResolver(transact, svc, nil, nil, nil, nil, converter, nil, nil, nil, nil)
 
 			// when
 			result, err := resolver.DeletePackage(context.TODO(), id)
@@ -1332,7 +1331,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, nil, nil, svc, converter)
+			resolver := mp_package.NewResolver(transact, nil, svc, nil, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.InstanceAuth(context.TODO(), testCase.Package, testCase.InputID)
@@ -1349,7 +1348,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 	}
 
 	t.Run("Returns error when Package is nil", func(t *testing.T) {
-		resolver := mp_package.NewResolver(nil, nil, nil, nil, nil)
+		resolver := mp_package.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		//when
 		_, err := resolver.InstanceAuth(context.TODO(), nil, "")
 		//then
@@ -1452,7 +1451,7 @@ func TestResolver_InstanceAuths(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_package.NewResolver(transact, nil, nil, svc, converter)
+			resolver := mp_package.NewResolver(transact, nil, svc, nil, nil, nil, nil, converter, nil, nil, nil)
 			// when
 			result, err := resolver.InstanceAuths(context.TODO(), pkg)
 
@@ -1468,7 +1467,7 @@ func TestResolver_InstanceAuths(t *testing.T) {
 	}
 
 	t.Run("Returns error when Package is nil", func(t *testing.T) {
-		resolver := mp_package.NewResolver(nil, nil, nil, nil, nil)
+		resolver := mp_package.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		//when
 		_, err := resolver.InstanceAuths(context.TODO(), nil)
 		//then
