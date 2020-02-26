@@ -2,10 +2,12 @@ package authenticator
 
 import (
 	"context"
+	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
@@ -24,7 +26,8 @@ const AuthorizationHeaderKey = "Authorization"
 type Authenticator struct {
 	jwksEndpoint        string
 	allowJWTSigningNone bool
-	Jwks                *jwk.Set
+	cachedJWKs          *jwk.Set
+	mux                 sync.Mutex
 }
 
 func New(jwksEndpoint string, allowJWTSigningNone bool) *Authenticator {
@@ -32,12 +35,15 @@ func New(jwksEndpoint string, allowJWTSigningNone bool) *Authenticator {
 }
 
 func (a *Authenticator) SynchronizeJWKS() error {
+	a.mux.Lock()
+	log.Info("Synchronizing JWKS...")
 	jwks, err := FetchJWK(a.jwksEndpoint)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching JWKS from endpoint %s", a.jwksEndpoint)
 	}
 
-	a.Jwks = jwks
+	a.cachedJWKs = jwks
+	a.mux.Unlock()
 	return nil
 }
 
@@ -51,12 +57,10 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			claims := Claims{}
-			_, err = jwt.ParseWithClaims(bearerToken, &claims, a.getKeyFunc())
+			claims, err := a.parseClaimsWithRetry(bearerToken)
 			if err != nil {
-				wrappedErr := errors.Wrap(err, "while parsing token")
-				log.Error(wrappedErr)
-				a.writeError(w, wrappedErr.Error(), http.StatusUnauthorized)
+				log.Error(err)
+				a.writeError(w, err.Error(), http.StatusUnauthorized)
 				return
 			}
 
@@ -65,6 +69,43 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func (a *Authenticator) parseClaimsWithRetry(bearerToken string) (Claims, error) {
+	var claims Claims
+	var err error
+
+	claims, err = a.parseClaims(bearerToken)
+	if err != nil {
+		validationErr, ok := err.(*jwt.ValidationError)
+		if !ok || validationErr.Inner != rsa.ErrVerification {
+			return Claims{}, errors.Wrap(err, "while parsing token")
+		}
+
+		err := a.SynchronizeJWKS()
+		if err != nil {
+			return Claims{}, errors.Wrap(err, "while synchronizing JWKs during parsing token")
+		}
+
+		claims, err = a.parseClaims(bearerToken)
+		if err != nil {
+			return Claims{}, errors.Wrap(err, "while parsing token")
+		}
+
+		return claims, err
+	}
+
+	return claims, nil
+}
+
+func (a *Authenticator) parseClaims(bearerToken string) (Claims, error) {
+	claims := Claims{}
+	_, err := jwt.ParseWithClaims(bearerToken, &claims, a.getKeyFunc())
+	if err != nil {
+		return Claims{}, err
+	}
+
+	return claims, nil
 }
 
 func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
@@ -92,7 +133,9 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 
 		switch token.Method.Alg() {
 		case jwt.SigningMethodRS256.Name:
-			keys := a.Jwks.Keys
+			a.mux.Lock()
+			keys := a.cachedJWKs.Keys
+			a.mux.Unlock()
 			for _, key := range keys {
 				if key.Algorithm() == token.Method.Alg() {
 					return key.Materialize()
