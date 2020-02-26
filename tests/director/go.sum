@@ -95,6 +95,8 @@ github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQL
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/kjaksik/compass/components/director v0.0.0-20200226132607-5feb0cc82123 h1:/IAFjtt1APJRPFsYJrUzZ+sSBL7dcACz6Vhf25MCO8Y=
 github.com/kjaksik/compass/components/director v0.0.0-20200226132607-5feb0cc82123/go.mod h1:YCMIcaXV5kofz/VeajqyTEt/ELCLIuDeH+RpkohyIsY=
+github.com/kjaksik/compass/components/director v0.0.0-20200226143954-13a970c4b8c1 h1:9Q+MxwxJRAr8Prykf5cPzNdS4yOQ0lQk8EHSFW9tn3g=
+github.com/kjaksik/compass/components/director v0.0.0-20200226143954-13a970c4b8c1/go.mod h1:YCMIcaXV5kofz/VeajqyTEt/ELCLIuDeH+RpkohyIsY=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2 h1:DB17ag19krx9CFsz4o3enTrPXyIXCl+2iCXH/aMAp9s=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
