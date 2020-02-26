@@ -35,15 +35,15 @@ func New(jwksEndpoint string, allowJWTSigningNone bool) *Authenticator {
 }
 
 func (a *Authenticator) SynchronizeJWKS() error {
-	a.mux.Lock()
 	log.Info("Synchronizing JWKS...")
+	a.mux.Lock()
+	defer a.mux.Unlock()
 	jwks, err := FetchJWK(a.jwksEndpoint)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching JWKS from endpoint %s", a.jwksEndpoint)
 	}
 
 	a.cachedJWKs = jwks
-	a.mux.Unlock()
 	return nil
 }
 
