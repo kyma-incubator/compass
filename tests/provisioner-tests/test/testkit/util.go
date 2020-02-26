@@ -114,7 +114,7 @@ func CreateGardenerProvisioningInput(config *TestConfig, provider string) (gqlsc
 			},
 		},
 		Azure: {
-			MachineType:  "Standard_D2_v3",
+			MachineType:  "Standard_D4_v3",
 			DiskType:     "Standard_LRS",
 			Region:       "westeurope",
 			TargetSecret: config.Gardener.AzureSecret,
