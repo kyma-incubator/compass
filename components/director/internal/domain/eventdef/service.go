@@ -17,8 +17,10 @@ import (
 type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.EventDefinition, error)
+	GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.EventDefinition, error)
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
-	ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	ListForApplication(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	Create(ctx context.Context, item *model.EventDefinition) error
 	CreateMany(ctx context.Context, items []*model.EventDefinition) error
 	Update(ctx context.Context, item *model.EventDefinition) error
@@ -63,7 +65,20 @@ func (s *service) List(ctx context.Context, applicationID string, pageSize int, 
 		return nil, errors.New("page size must be between 1 and 100")
 	}
 
-	return s.eventAPIRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
+	return s.eventAPIRepo.ListForApplication(ctx, tnt, applicationID, pageSize, cursor)
+}
+
+func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while loading tenant from context")
+	}
+
+	if pageSize < 1 || pageSize > 100 {
+		return nil, errors.New("page size must be between 1 and 100")
+	}
+
+	return s.eventAPIRepo.ListForPackage(ctx, tnt, packageID, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.EventDefinition, error) {
@@ -94,6 +109,20 @@ func (s *service) GetForApplication(ctx context.Context, id string, applicationI
 	return eventAPI, nil
 }
 
+func (s *service) GetForPackage(ctx context.Context, id string, packageID string) (*model.EventDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	eventAPI, err := s.eventAPIRepo.GetForPackage(ctx, tnt, id, packageID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting API definition")
+	}
+
+	return eventAPI, nil
+}
+
 func (s *service) Create(ctx context.Context, applicationID string, in model.EventDefinitionInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -102,7 +131,32 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Eve
 
 	id := s.uidService.Generate()
 
-	eventAPI := in.ToEventDefinition(id, applicationID, tnt)
+	eventAPI := in.ToEventDefinition(id, &applicationID, tnt)
+
+	err = s.eventAPIRepo.Create(ctx, eventAPI)
+	if err != nil {
+		return "", err
+	}
+
+	if in.Spec != nil && in.Spec.FetchRequest != nil {
+		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+		if err != nil {
+			return "", errors.Wrapf(err, "while creating FetchRequest for EventDefinition %s", id)
+		}
+	}
+
+	return id, nil
+}
+
+func (s *service) CreateInPackage(ctx context.Context, packageID string, in model.EventDefinitionInput) (string, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return "", errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	id := s.uidService.Generate()
+
+	eventAPI := in.ToEventDefinitionWithinPackage(id, &packageID, tnt)
 
 	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {

@@ -80,6 +80,7 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 func (fp *GqlFieldsProvider) ForAPIDefinition(ctx ...FieldCtx) string {
 	return addFieldsFromContext(fmt.Sprintf(`		id
 		name
+		applicationID
 		description
 		spec {%s}
 		targetURL

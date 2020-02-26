@@ -33,6 +33,7 @@ func (c *converter) ToGraphQL(in *model.EventDefinition) *graphql.EventDefinitio
 	return &graphql.EventDefinition{
 		ID:            in.ID,
 		ApplicationID: in.ApplicationID,
+		PackageID:     in.PackageID,
 		Name:          in.Name,
 		Description:   in.Description,
 		Group:         in.Group,
@@ -113,7 +114,8 @@ func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
 	return model.EventDefinition{
 		ID:            entity.ID,
 		Tenant:        entity.TenantID,
-		ApplicationID: entity.AppID,
+		ApplicationID: repo.StringPtrFromNullableString(entity.AppID),
+		PackageID:     repo.StringPtrFromNullableString(entity.PkgID),
 		Name:          entity.Name,
 		Description:   repo.StringPtrFromNullableString(entity.Description),
 		Group:         repo.StringPtrFromNullableString(entity.GroupName),
@@ -126,7 +128,8 @@ func (c *converter) ToEntity(eventModel model.EventDefinition) (Entity, error) {
 	return Entity{
 		ID:          eventModel.ID,
 		TenantID:    eventModel.Tenant,
-		AppID:       eventModel.ApplicationID,
+		AppID:       repo.NewNullableString(eventModel.ApplicationID),
+		PkgID:       repo.NewNullableString(eventModel.PackageID),
 		Name:        eventModel.Name,
 		Description: repo.NewNullableString(eventModel.Description),
 		GroupName:   repo.NewNullableString(eventModel.Group),

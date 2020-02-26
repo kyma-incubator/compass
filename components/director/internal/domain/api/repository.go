@@ -13,7 +13,7 @@ const apiDefTable string = `"public"."api_definitions"`
 
 var (
 	tenantColumn  = "tenant_id"
-	apiDefColumns = []string{"id", "tenant_id", "app_id", "name", "description", "group_name", "target_url", "spec_data",
+	apiDefColumns = []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "target_url", "spec_data",
 		"spec_format", "spec_type", "default_auth",
 		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 	idColumns        = []string{"id"}
@@ -55,10 +55,19 @@ func (r APIDefCollection) Len() int {
 	return len(r)
 }
 
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+func (r *pgRepository) ListForApplication(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
 	appCond := fmt.Sprintf("%s = '%s'", "app_id", applicationID)
+	return r.list(ctx, tenantID, pageSize, cursor, appCond)
+}
+
+func (r *pgRepository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+	pkgCond := fmt.Sprintf("%s = '%s'", "package_id", packageID)
+	return r.list(ctx, tenantID, pageSize, cursor, pkgCond)
+}
+
+func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions string) (*model.APIDefinitionPage, error) {
 	var apiDefCollection APIDefCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &apiDefCollection, appCond)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &apiDefCollection, conditions)
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +110,25 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("id", id),
 		repo.NewEqualCondition("app_id", applicationID),
+	}
+	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
+		return nil, err
+	}
+
+	apiDefModel, err := r.conv.FromEntity(ent)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating api definition model from entity")
+	}
+
+	return &apiDefModel, nil
+}
+
+func (r *pgRepository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.APIDefinition, error) {
+	var ent Entity
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("id", id),
+		repo.NewEqualCondition("package_id", packageID),
 	}
 	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return nil, err

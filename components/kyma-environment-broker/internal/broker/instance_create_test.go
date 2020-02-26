@@ -93,6 +93,10 @@ func (c *ConcreteInputBuilderFake) SetProvisioningConfig(brokerConfig broker.Pro
 	return c
 }
 
+func (c *ConcreteInputBuilderFake) SetInstanceID(instanceID string) broker.ConcreteInputBuilder {
+	return c
+}
+
 func (c *ConcreteInputBuilderFake) Build() (schema.ProvisionRuntimeInput, error) {
 	return c.input, nil
 }

@@ -2,7 +2,11 @@ package director
 
 import (
 	"context"
+	"net/http"
 	"time"
+
+	"github.com/avast/retry-go"
+	"github.com/sirupsen/logrus"
 
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gqlTools "github.com/kyma-incubator/compass/tests/director/pkg/gql"
@@ -51,7 +55,13 @@ type TenantsResponse struct {
 	Result []*schema.Tenant
 }
 
-func NewClient(directorURL, tenant string, scopes []string) (Client, error) {
+func NewClient(directorURL, directorHealthzURL, tenant string, scopes []string) (Client, error) {
+
+	err := waitUntilDirectorIsReady(directorHealthzURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "Director is not ready")
+	}
+
 	internalTenantID, err := getInternalTenantID(directorURL, tenant)
 	if err != nil {
 		return nil, err
@@ -68,6 +78,37 @@ func NewClient(directorURL, tenant string, scopes []string) (Client, error) {
 		graphqulizer: gqlTools.Graphqlizer{},
 		client:       gqlClient,
 	}, nil
+}
+
+func waitUntilDirectorIsReady(directorHealthzURL string) error {
+	httpClient := http.Client{}
+
+	return retry.Do(func() error {
+		req, err := http.NewRequest(http.MethodGet, directorHealthzURL, nil)
+		if err != nil {
+			logrus.Warningf("Failed to create request while waiting for Director: %s", err)
+			return err
+		}
+
+		res, err := httpClient.Do(req)
+		if err != nil {
+			logrus.Warningf("Failed to execute request while waiting for Director: %s", err)
+			return err
+		}
+
+		err = res.Body.Close()
+		if err != nil {
+			logrus.Warningf("Failed to close request body while waiting for Director: %s", err)
+		}
+
+		if res.StatusCode != http.StatusOK {
+			return errors.New("Unexpected status code received when waiting for Director: " + res.Status)
+		}
+
+		return nil
+	},
+		retry.Delay(time.Second*20),
+		retry.Attempts(10))
 }
 
 func (c client) CreateApplication(in schema.ApplicationRegisterInput) (string, error) {

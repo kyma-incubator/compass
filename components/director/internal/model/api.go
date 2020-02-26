@@ -8,7 +8,8 @@ import (
 
 type APIDefinition struct {
 	ID            string
-	ApplicationID string
+	ApplicationID *string
+	PackageID     *string
 	Tenant        string
 	Name          string
 	Description   *string
@@ -64,7 +65,7 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
-func (a *APIDefinitionInput) ToAPIDefinition(id string, appID string, tenant string) *APIDefinition {
+func (a *APIDefinitionInput) ToAPIDefinition(id string, appID *string, tenant string) *APIDefinition {
 	if a == nil {
 		return nil
 	}
@@ -81,6 +82,27 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, appID string, tenant str
 		Auths:         nil,
 		DefaultAuth:   a.DefaultAuth.ToAuth(),
 		Version:       a.Version.ToVersion(),
+	}
+}
+
+//TODO After switching to new packages API this method will replace ToAPIDefinition
+func (a *APIDefinitionInput) ToAPIDefinitionWithinPackage(id string, packageID *string, tenant string) *APIDefinition {
+	if a == nil {
+		return nil
+	}
+
+	return &APIDefinition{
+		ID:          id,
+		PackageID:   packageID,
+		Tenant:      tenant,
+		Name:        a.Name,
+		Description: a.Description,
+		Spec:        a.Spec.ToAPISpec(),
+		TargetURL:   a.TargetURL,
+		Group:       a.Group,
+		Auths:       nil,
+		DefaultAuth: a.DefaultAuth.ToAuth(),
+		Version:     a.Version.ToVersion(),
 	}
 }
 
