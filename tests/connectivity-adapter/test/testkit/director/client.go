@@ -59,7 +59,7 @@ func NewClient(directorURL, directorHealthzURL, tenant string, scopes []string) 
 
 	err := waitUntilDirectorIsReady(directorHealthzURL)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Director is not ready")
 	}
 
 	internalTenantID, err := getInternalTenantID(directorURL, tenant)
@@ -96,19 +96,19 @@ func waitUntilDirectorIsReady(directorHealthzURL string) error {
 			return err
 		}
 
+		err = res.Body.Close()
+		if err != nil {
+			logrus.Warningf("Failed to close request body while waiting for Director: %s", err)
+		}
+
 		if res.StatusCode != http.StatusOK {
 			return errors.New("Unexpected status code received when waiting for Director: " + res.Status)
 		}
 
-		defer func() {
-			err := res.Body.Close()
-			if err != nil {
-				logrus.Warningf("Failed to close request body while waiting for Director: %s", err)
-			}
-		}()
-
 		return nil
-	}, retry.Delay(time.Second*20))
+	},
+		retry.Delay(time.Second*20),
+		retry.Attempts(10))
 }
 
 func (c client) CreateApplication(in schema.ApplicationRegisterInput) (string, error) {
