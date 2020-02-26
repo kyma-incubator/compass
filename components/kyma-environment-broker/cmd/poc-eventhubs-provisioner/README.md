@@ -21,7 +21,7 @@ The scope of the POC:
 
 Use the following steps for verification:
 
-- Update the `test.env` file with your account Azure account details.
+- Update the `test.env` file with your Azure account details.
 
 - Run the `verify.sh` file which will build and run a go binary that will execute the following flow in order:
 
