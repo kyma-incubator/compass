@@ -152,7 +152,7 @@ func TestDocumentInPackage(t *testing.T) {
 	pkg := createPackage(t, ctx, application.ID, pkgName)
 	defer deletePackage(t, ctx, pkg.ID)
 
-	api := addDocumentoPackage(t, ctx, pkg.ID)
+	api := addDocumentToPackage(t, ctx, pkg.ID)
 	queryApiForPkg := gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
@@ -167,6 +167,108 @@ func TestDocumentInPackage(t *testing.T) {
 	err := tc.RunOperation(ctx, queryApiForPkg, &app)
 	require.NoError(t, err)
 	assert.Equal(t, api.ID, app.Package.Document.ID)
+}
+
+func TestAPIDefinitionsInPackage(t *testing.T) {
+	ctx := context.Background()
+
+	appName := "app-test-package"
+	application := registerApplication(t, ctx, appName)
+	defer unregisterApplication(t, application.ID)
+
+	pkgName := "test-package"
+	pkg := createPackage(t, ctx, application.ID, pkgName)
+	defer deletePackage(t, ctx, pkg.ID)
+
+	addAPIToPackage(t, ctx, pkg.ID)
+
+	queryApiForPkg := gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+						package(id: "%s"){
+							apiDefinitions{
+						%s
+						}					
+					}
+				}
+			}`, application.ID, pkg.ID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForAPIDefinition())))
+
+	app := graphql.ApplicationExt{}
+	err := tc.RunOperation(ctx, queryApiForPkg, &app)
+
+	in := fixAPIDefinitionInput()
+	require.NoError(t, err)
+	require.Equal(t, 1, app.Package.APIDefinitions.TotalCount)
+	assertAPI(t, []*graphql.APIDefinitionInput{&in}, app.Package.APIDefinitions.Data)
+
+}
+
+func TestEventDefinitionsInPackage(t *testing.T) {
+	ctx := context.Background()
+
+	appName := "app-test-package"
+	application := registerApplication(t, ctx, appName)
+	defer unregisterApplication(t, application.ID)
+
+	pkgName := "test-package"
+	pkg := createPackage(t, ctx, application.ID, pkgName)
+	defer deletePackage(t, ctx, pkg.ID)
+
+	addEventToPackage(t, ctx, pkg.ID)
+
+	queryApiForPkg := gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+						package(id: "%s"){
+							eventDefinitions{
+						%s
+						}					
+					}
+				}
+			}`, application.ID, pkg.ID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForEventDefinition())))
+
+	app := graphql.ApplicationExt{}
+	err := tc.RunOperation(ctx, queryApiForPkg, &app)
+
+	in := fixEventAPIDefinitionInput()
+	require.NoError(t, err)
+	require.Equal(t, 1, app.Package.EventDefinitions.TotalCount)
+	assertEventsAPI(t, []*graphql.EventDefinitionInput{&in}, app.Package.EventDefinitions.Data)
+
+}
+
+func TestDocumentsInPackage(t *testing.T) {
+	ctx := context.Background()
+
+	appName := "app-test-package"
+	application := registerApplication(t, ctx, appName)
+	defer unregisterApplication(t, application.ID)
+
+	pkgName := "test-package"
+	pkg := createPackage(t, ctx, application.ID, pkgName)
+	defer deletePackage(t, ctx, pkg.ID)
+
+	addDocumentToPackage(t, ctx, pkg.ID)
+
+	queryApiForPkg := gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+						package(id: "%s"){
+							documents{
+						%s
+						}					
+					}
+				}
+			}`, application.ID, pkg.ID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForDocument())))
+
+	app := graphql.ApplicationExt{}
+	err := tc.RunOperation(ctx, queryApiForPkg, &app)
+
+	in := fixDocumentInput()
+	require.NoError(t, err)
+	require.Equal(t, 1, app.Package.Documents.TotalCount)
+	assertDocuments(t, []*graphql.DocumentInput{&in}, app.Package.Documents.Data)
+
 }
 
 func createPackage(t *testing.T, ctx context.Context, appID, pkgName string) graphql.Package {
@@ -228,7 +330,7 @@ func addEventToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.
 	return event
 }
 
-func addDocumentoPackage(t *testing.T, ctx context.Context, pkgID string) graphql.DocumentExt {
+func addDocumentToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.DocumentExt {
 	input := fixDocumentInput()
 	inStr, err := tc.graphqlizer.DocumentInputToGQL(&input)
 	require.NoError(t, err)
