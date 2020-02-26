@@ -244,12 +244,12 @@ func (c *Client) executeRequest(method, url string, body io.Reader, responseBody
 	if err != nil {
 		return errors.Wrapf(err, "while executing request URL: %s", url)
 	}
-	defer c.warnOnError(resp.Body.Close())
 
 	err = json.NewDecoder(resp.Body).Decode(responseBody)
 	if err != nil {
 		return errors.Wrapf(err, "while decoding body")
 	}
+	c.warnOnError(resp.Body.Close())
 	return nil
 }
 
