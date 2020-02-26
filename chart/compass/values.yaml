@@ -28,7 +28,7 @@ global:
       version: "PR-798"
     director:
       dir:
-      version: "PR-871"
+      version: "PR-874"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -52,7 +52,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-792"
+        version: "PR-874"
       connector:
         dir:
         version: "02e8358c"

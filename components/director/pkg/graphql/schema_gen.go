@@ -3206,13 +3206,8 @@ input PackageInstanceAuthSetInput {
 
 input PackageInstanceAuthStatusInput {
 	condition: PackageInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	message: String!
 	"""
-	Required, if condition is "FAILED". If empty for SUCCEEDED status, default message is set.
-	"""
-	message: String
-	"""
-	Required, if condition is "FAILED". If empty for SUCCEEDED status, "CredentialsProvided" reason is set.
-	
 	Example reasons:
 	- PendingNotification
 	- NotificationSent
@@ -3220,7 +3215,7 @@ input PackageInstanceAuthStatusInput {
 	- CredentialsNotProvided
 	- PendingDeletion
 	"""
-	reason: String
+	reason: String!
 }
 
 input PackageUpdateInput {
@@ -19216,13 +19211,13 @@ func (ec *executionContext) unmarshalInputPackageInstanceAuthStatusInput(ctx con
 			}
 		case "message":
 			var err error
-			it.Message, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.Message, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "reason":
 			var err error
-			it.Reason, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.Reason, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
