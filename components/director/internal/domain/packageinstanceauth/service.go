@@ -39,7 +39,7 @@ func NewService(repo Repository, uidService UIDService) *service {
 	}
 }
 
-func (s *service) Create(ctx context.Context, packageID string, in model.PackageInstanceAuthRequestInput, auth *model.Auth, requestInputSchema *string) (string, error) {
+func (s *service) Create(ctx context.Context, packageID string, in model.PackageInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -51,9 +51,9 @@ func (s *service) Create(ctx context.Context, packageID string, in model.Package
 	}
 
 	id := s.uidService.Generate()
-	pkgInstAuth := in.ToPackageInstanceAuth(id, packageID, tnt, auth, nil)
+	pkgInstAuth := in.ToPackageInstanceAuth(id, packageID, tnt, defaultAuth, nil)
 
-	err = s.setCreationStatusFromAuth(&pkgInstAuth, auth)
+	err = s.setCreationStatusFromAuth(&pkgInstAuth, defaultAuth)
 	if err != nil {
 		return "", err
 	}
@@ -197,13 +197,13 @@ func (s *service) setUpdateAuthAndStatus(instanceAuth *model.PackageInstanceAuth
 	return nil
 }
 
-func (s *service) setCreationStatusFromAuth(instanceAuth *model.PackageInstanceAuth, auth *model.Auth) error {
+func (s *service) setCreationStatusFromAuth(instanceAuth *model.PackageInstanceAuth, defaultAuth *model.Auth) error {
 	if instanceAuth == nil {
 		return nil
 	}
 
 	var condition model.PackageInstanceAuthStatusCondition
-	if auth != nil {
+	if defaultAuth != nil {
 		condition = model.PackageInstanceAuthStatusConditionSucceeded
 	} else {
 		condition = model.PackageInstanceAuthStatusConditionPending

@@ -15,7 +15,7 @@ import (
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
 	RequestDeletion(ctx context.Context, instanceAuth *model.PackageInstanceAuth, defaultPackageInstanceAuth *model.Auth) (bool, error)
-	Create(ctx context.Context, packageID string, in model.PackageInstanceAuthRequestInput, auth *model.Auth, requestInputSchema *string) (string, error)
+	Create(ctx context.Context, packageID string, in model.PackageInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error)
 	Get(ctx context.Context, id string) (*model.PackageInstanceAuth, error)
 	SetAuth(ctx context.Context, id string, in model.PackageInstanceAuthSetInput) error
 	Delete(ctx context.Context, id string) error
