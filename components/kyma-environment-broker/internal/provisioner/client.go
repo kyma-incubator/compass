@@ -10,6 +10,8 @@ import (
 // accountIDKey is a header key name for request send by graphQL client
 const accountIDKey = "tenant"
 
+//go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
+
 type Client interface {
 	ProvisionRuntime(accountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error)
 	UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (string, error)

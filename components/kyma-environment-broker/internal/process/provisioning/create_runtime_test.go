@@ -7,9 +7,9 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	inputAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
+	provisionerAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -34,15 +34,15 @@ const (
 )
 
 func TestCreateRuntimeStep_Run(t *testing.T) {
-	// Given
+	// given
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperation(t)
+	operation := fixOperationCreateRuntime(t)
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
-	provisionerClient := &automock.ProvisionerClient{}
+	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("ProvisionRuntime", globalAccountID, gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "",
@@ -141,7 +141,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	assert.Equal(t, instance.RuntimeID, runtimeID)
 }
 
-func fixOperation(t *testing.T) internal.ProvisioningOperation {
+func fixOperationCreateRuntime(t *testing.T) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ID:          operationID,

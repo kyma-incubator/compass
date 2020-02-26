@@ -21,6 +21,8 @@ const (
 	CheckStatusTimeout = 3 * time.Hour
 )
 
+//go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
+
 type DirectorClient interface {
 	GetConsoleURL(accountID, runtimeID string) (string, error)
 }
