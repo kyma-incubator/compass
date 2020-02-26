@@ -2,6 +2,9 @@ package provisioning
 
 import (
 	"encoding/json"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/automock"
@@ -10,17 +13,18 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 const (
 	kymaVersion            = "1.10"
+	instanceID             = "58f8c703-1756-48ab-9299-a847974d1fee"
 	operationID            = "fd5cee4d-0eeb-40d0-a7a7-0708e5eba470"
 	globalAccountID        = "80ac17bd-33e8-4ffa-8d56-1d5367755723"
+	subAccountID           = "12df5747-3efb-4df6-ad6f-4414bb661ce3"
 	provisionerOperationID = "1a0ed09b-9bb9-4e6f-a88c-01955c5f1129"
 	runtimeID              = "2498c8ee-803a-43c2-8194-6d6dd0354c30"
 
@@ -43,7 +47,10 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "",
 			Description: nil,
-			Labels:      nil,
+			Labels: &gqlschema.Labels{
+				"broker_instance_id":   []string{instanceID},
+				"global_subaccount_id": []string{subAccountID},
+			},
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -138,7 +145,7 @@ func fixOperation(t *testing.T) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ID:          operationID,
-			InstanceID:  "",
+			InstanceID:  instanceID,
 			Description: "",
 			UpdatedAt:   time.Now(),
 		},
@@ -153,6 +160,7 @@ func fixProvisioningParameters(t *testing.T) string {
 		ServiceID: "",
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
+			SubAccountID:    subAccountID,
 			ServiceManager: internal.ServiceManagerEntryDTO{
 				Credentials: internal.ServiceManagerCredentials{
 					BasicAuth: internal.ServiceManagerBasicAuth{

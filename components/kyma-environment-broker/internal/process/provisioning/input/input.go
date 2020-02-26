@@ -7,7 +7,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-const ServiceManagerComponentName = "service-manager-proxy"
+const (
+	brokerKeyPrefix             = "broker_"
+	globalKeyPrefix             = "global_"
+	ServiceManagerComponentName = "service-manager-proxy"
+)
 
 type Config struct {
 	URL             string
@@ -33,6 +37,15 @@ func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningPar
 func (r *RuntimeInput) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {
 	// TODO add possibility to adding same overrides to the same component
 	r.overrides[component] = overrides
+	return r
+}
+
+func (r *RuntimeInput) SetRuntimeLabels(instanceID, subAccountID string) internal.ProvisionInputCreator {
+	r.input.RuntimeInput.Labels = &gqlschema.Labels{
+		brokerKeyPrefix + "instance_id":   []string{instanceID},
+		globalKeyPrefix + "subaccount_id": []string{subAccountID},
+	}
+
 	return r
 }
 
