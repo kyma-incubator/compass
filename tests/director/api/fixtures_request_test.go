@@ -71,6 +71,15 @@ func fixAddDocumentRequest(appID, documentInputInGQL string) *gcli.Request {
 		}`, appID, documentInputInGQL, tc.gqlFieldsProvider.ForDocument()))
 }
 
+func fixAddDocumentToPackageRequest(packageID, documentInputInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: addDocumentToPackage(packageID: "%s", in: %s) {
+ 				%s
+			}				
+		}`, packageID, documentInputInGQL, tc.gqlFieldsProvider.ForDocument()))
+}
+
 func fixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -91,6 +100,16 @@ func fixAddAPIRequest(appID, APIInputGQL string) *gcli.Request {
 		`, appID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
 }
 
+func fixAddAPIToPackageRequest(pkgID, APIInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: addAPIDefinitionToPackage(packageID: "%s", in: %s) {
+				%s
+			}
+		}
+		`, pkgID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+}
+
 func fixUpdateAPIRequest(appID, APIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -109,6 +128,16 @@ func fixAddEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
 			}
 		}
 		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
+}
+
+func fixAddEventAPIToPackageRequest(pkgID, eventAPIInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: addEventDefinitionToPackage(packageID: "%s", in: %s) {
+				%s
+			}
+		}
+		`, pkgID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
 func fixUpdateEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {

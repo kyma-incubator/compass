@@ -3,8 +3,11 @@
 
 Below you can find a list of mock GraphQL queries and mutations:
 - [add api definition](./add-api-definition/add-api-definition.graphql)
+- [add api to package](./add-api-to-package/add-api-to-package.graphql)
 - [add document](./add-document/add-document.graphql)
+- [add document to package](./add-document-to-package/add-document-to-package.graphql)
 - [add event definition](./add-event-definition/add-event-definition.graphql)
+- [add event definition to package](./add-event-definition-to-package/add-event-definition-to-package.graphql)
 - [add application webhook](./add-webhook/add-application-webhook.graphql)
 - [create application template](./create-application-template/create-application-template.graphql)
 - [create label definition](./create-label-definition/create-label-definition.graphql)

@@ -5,58 +5,81 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gcli "github.com/machinebox/graphql"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
-func TestAddPackage(t *testing.T) {
+func TestAddAPIToPackage(t *testing.T) {
 	ctx := context.Background()
 
 	appName := "app-test-package"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgInput := fixPackageCreateInput("pkg-app-1")
-	pkg, err := tc.graphqlizer.PackageCreateInputToGQL(pkgInput)
+	pkgName := "test-package"
+	pkg := createPackage(t, ctx, application.ID, pkgName)
+	defer deletePackage(t, ctx, pkg.ID)
+
+	input := fixAPIDefinitionInput()
+	inStr, err := tc.graphqlizer.APIDefinitionInputToGQL(input)
 	require.NoError(t, err)
 
-	addPkgRequest := fixAddPackageRequest(application.ID, pkg)
-	output := graphql.Package{}
-
-	// WHEN
-	t.Log("Create package")
-	err = tc.RunOperation(ctx, addPkgRequest, &output)
-
-	// THEN
+	actualApi := graphql.APIDefinitionExt{}
+	req := fixAddAPIToPackageRequest(pkg.ID, inStr)
+	err = tc.RunOperation(ctx, req, &actualApi)
 	require.NoError(t, err)
-	require.NotEmpty(t, output.ID)
-	defer deletePackage(t, ctx, output.ID)
 
-	require.NotEmpty(t, output.Name)
-	saveExample(t, addPkgRequest.Query(), "create package")
+	assertAPI(t, []*graphql.APIDefinitionInput{&input}, []*graphql.APIDefinitionExt{&actualApi})
+	saveExample(t, req.Query(), "add api to package")
+}
 
-	t.Log("Check if package was created")
+func TestAddEventDefinitionToPackage(t *testing.T) {
+	ctx := context.Background()
 
-	getPackageRequest := fixPackageRequest(application.ID, output.ID)
-	pkgOutput := graphql.Package{}
-	logrus.Info(fmt.Sprintf(`query {
-			result: application(id: "%s") {
-				%s
-				}
-			}`, "applicationID", tc.gqlFieldsProvider.ForApplication(gql.FieldCtx{
-		"Package.package": fmt.Sprintf(`package(id: "%s") {id}`, "packageID"),
-	})))
-	err = tc.RunOperation(ctx, getPackageRequest, &pkgOutput)
+	appName := "app-test-package"
+	application := registerApplication(t, ctx, appName)
+	defer unregisterApplication(t, application.ID)
 
+	pkgName := "test-package"
+	pkg := createPackage(t, ctx, application.ID, pkgName)
+	defer deletePackage(t, ctx, pkg.ID)
+
+	input := fixEventAPIDefinitionInput()
+	inStr, err := tc.graphqlizer.EventDefinitionInputToGQL(input)
 	require.NoError(t, err)
-	//require.NotEmpty(t, pkgOutput)
-	//assertPackage(t, pkgInput, pkgOutput)
-	//assert.Equal(t, pkgInput.Name, pkgOutput.Name)
-	//saveExample(t, getPackageRequest.Query(), "query package")
+
+	actualEvent := graphql.EventAPIDefinitionExt{}
+	req := fixAddEventAPIToPackageRequest(pkg.ID, inStr)
+	err = tc.RunOperation(ctx, req, &actualEvent)
+	require.NoError(t, err)
+
+	assertEventsAPI(t, []*graphql.EventDefinitionInput{&input}, []*graphql.EventAPIDefinitionExt{&actualEvent})
+	saveExample(t, req.Query(), "add event definition to package")
+}
+
+func TestAddDocumentToPackage(t *testing.T) {
+	ctx := context.Background()
+
+	appName := "app-test-package"
+	application := registerApplication(t, ctx, appName)
+	defer unregisterApplication(t, application.ID)
+
+	pkgName := "test-package"
+	pkg := createPackage(t, ctx, application.ID, pkgName)
+	defer deletePackage(t, ctx, pkg.ID)
+
+	input := fixDocumentInput()
+	inStr, err := tc.graphqlizer.DocumentInputToGQL(&input)
+	require.NoError(t, err)
+
+	actualDocument := graphql.DocumentExt{}
+	req := fixAddDocumentToPackageRequest(pkg.ID, inStr)
+	err = tc.RunOperation(ctx, req, &actualDocument)
+	require.NoError(t, err)
+
+	assertDocuments(t, []*graphql.DocumentInput{&input}, []*graphql.DocumentExt{&actualDocument})
+	saveExample(t, req.Query(), "add document to package")
 }
 
 func createPackage(t *testing.T, ctx context.Context, appID, pkgName string) graphql.Package {

@@ -331,6 +331,21 @@ func fixEventAPIDefinitionInput() graphql.EventDefinitionInput {
 		}}
 }
 
+func fixAPIDefinitionInput() graphql.APIDefinitionInput {
+	return graphql.APIDefinitionInput{
+		Name:      "new-api-name",
+		TargetURL: "https://target.url",
+		Spec: &graphql.APISpecInput{
+			Format: graphql.SpecFormatJSON,
+			Type:   graphql.APISpecTypeOpenAPI,
+			FetchRequest: &graphql.FetchRequestInput{
+				URL: "https://foo.bar",
+			},
+		},
+	}
+
+}
+
 // Application Template
 
 func TestCreateApplicationTemplate_Validation(t *testing.T) {

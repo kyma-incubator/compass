@@ -411,6 +411,17 @@ func (g *Graphqlizer) PackageUpdateInputToGQL(in graphql.PackageUpdateInput) (st
 	}`)
 }
 
+func (g *Graphqlizer) PackageInstanceAuthRequestInputToGQL(in graphql.PackageInstanceAuthRequestInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .Context }}
+		context: {{ .Context }}
+		{{- end }}
+		{{- if .InputParams }}
+		inputParams: {{ .InputParams }}
+		{{- end }}
+	}`)
+}
+
 func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
 	fm["ApplicationRegisterInputToGQL"] = g.ApplicationRegisterInputToGQL
