@@ -44,6 +44,7 @@ func (s *CreateRuntimeStep) Name() string {
 
 func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CreateRuntimeTimeout {
+		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout))
 	}
 
@@ -66,13 +67,13 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(pp.ErsContext.GlobalAccountID, requestInput)
 		if err != nil {
 			log.Errorf("call to provisioner failed: %s", err)
-			return operation, 1 * time.Minute, nil
+			return operation, 5 * time.Second, nil
 		}
 		operation.ProvisionerOperationID = *provisionerResponse.ID
 		operation, repeat := s.operationManager.UpdateOperation(operation)
 		if repeat != 0 {
 			log.Errorf("cannot save operation ID from provisioner")
-			return operation, 1 * time.Minute, nil
+			return operation, 5 * time.Second, nil
 		}
 	}
 
@@ -80,11 +81,11 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		provisionerResponse, err = s.provisionerClient.RuntimeOperationStatus(pp.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
 		if err != nil {
 			log.Errorf("call to provisioner about operation status failed: %s", err)
-			return operation, 5 * time.Minute, nil
+			return operation, 1 * time.Minute, nil
 		}
 	}
 	if provisionerResponse.RuntimeID == nil {
-		return operation, 5 * time.Minute, nil
+		return operation, 1 * time.Minute, nil
 	}
 
 	err = s.instanceStorage.Insert(internal.Instance{
@@ -97,7 +98,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	})
 	if err != nil {
 		log.Errorf("cannot save instance in storage: %s", err)
-		return operation, 1 * time.Minute, nil
+		return operation, 10 * time.Second, nil
 	}
 
 	return operation, 0, nil

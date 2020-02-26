@@ -49,12 +49,13 @@ func (s *RuntimeStatusStep) Name() string {
 
 func (s *RuntimeStatusStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
+		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout))
 	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	if err != nil {
-		return operation, 1 * time.Minute, nil
+		return operation, 10 * time.Second, nil
 	}
 
 	_, err = url.ParseRequestURI(instance.DashboardURL)
@@ -81,9 +82,9 @@ func (s *RuntimeStatusStep) Run(operation internal.ProvisioningOperation, log lo
 		}
 		return s.operationManager.OperationSucceeded(operation, msg)
 	case gqlschema.OperationStateInProgress:
-		return operation, 10 * time.Minute, nil
+		return operation, 2 * time.Minute, nil
 	case gqlschema.OperationStatePending:
-		return operation, 10 * time.Minute, nil
+		return operation, 2 * time.Minute, nil
 	case gqlschema.OperationStateFailed:
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg))
 	}
@@ -94,7 +95,7 @@ func (s *RuntimeStatusStep) Run(operation internal.ProvisioningOperation, log lo
 func (s *RuntimeStatusStep) handleDashboardURL(instance *internal.Instance) (time.Duration, error) {
 	dashboardURL, err := s.DirectorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
 	if director.IsTemporaryError(err) {
-		return 10 * time.Minute, nil
+		return 3 * time.Minute, nil
 	}
 	if err != nil {
 		return 0, errors.Wrapf(err, "while geting URL from director")
@@ -103,7 +104,7 @@ func (s *RuntimeStatusStep) handleDashboardURL(instance *internal.Instance) (tim
 	instance.DashboardURL = dashboardURL
 	err = s.instanceStorage.Update(*instance)
 	if err != nil {
-		return 1 * time.Minute, nil
+		return 10 * time.Second, nil
 	}
 
 	return 0, nil

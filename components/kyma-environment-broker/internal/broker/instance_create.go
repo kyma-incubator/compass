@@ -73,7 +73,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	existingOperation, errStorage := b.operationsStorage.GetProvisioningOperationByInstanceID(instanceID)
 	switch {
 	case errStorage != nil && !dberr.IsNotFound(errStorage):
-		b.dumper.Dump("cannot get existing operation from storage", err)
+		b.dumper.Dump("cannot get existing operation from storage", errStorage)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot get existing operation from storage")
 	case existingOperation != nil && !dberr.IsNotFound(errStorage):
 		return b.handleExistingOperation(existingOperation, provisioningParameters)

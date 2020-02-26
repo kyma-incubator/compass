@@ -72,6 +72,8 @@ func NewProvisioningOperation(instanceID string, parameters ProvisioningParamete
 			Description: "Operation created",
 			InstanceID:  instanceID,
 			State:       domain.InProgress,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
 		},
 		ProvisioningParameters: string(params),
 	}, nil
