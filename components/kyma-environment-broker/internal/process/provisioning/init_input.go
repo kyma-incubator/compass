@@ -30,7 +30,7 @@ func (s *InputInitialisationStep) Name() string {
 	return "Initialize runtime input request"
 }
 
-func (s *InputInitialisationStep) Run(operation internal.ProvisioningOperation, log *logrus.Entry) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *InputInitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)

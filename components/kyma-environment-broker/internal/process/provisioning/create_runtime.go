@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -22,14 +21,21 @@ const (
 	CreateRuntimeTimeout = 1 * time.Hour
 )
 
+//go:generate mockery -name=ProvisionerClient -output=automock -outpkg=automock -case=underscore
+
+type ProvisionerClient interface {
+	ProvisionRuntime(accountID string, config gqlschema.ProvisionRuntimeInput) (gqlschema.OperationStatus, error)
+	RuntimeOperationStatus(accountID, operationID string) (gqlschema.OperationStatus, error)
+}
+
 type CreateRuntimeStep struct {
 	operationManager  *process.OperationManager
 	instanceStorage   storage.Instances
-	provisionerClient provisioner.Client
+	provisionerClient ProvisionerClient
 	serviceManager    internal.ServiceManagerOverride
 }
 
-func NewCreateRuntimeStep(os storage.Operations, is storage.Instances, cli provisioner.Client, smOverride internal.ServiceManagerOverride) *CreateRuntimeStep {
+func NewCreateRuntimeStep(os storage.Operations, is storage.Instances, cli ProvisionerClient, smOverride internal.ServiceManagerOverride) *CreateRuntimeStep {
 	return &CreateRuntimeStep{
 		operationManager:  process.NewOperationManager(os),
 		instanceStorage:   is,
@@ -42,7 +48,7 @@ func (s *CreateRuntimeStep) Name() string {
 	return "Create_Runtime"
 }
 
-func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log *logrus.Entry) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CreateRuntimeTimeout {
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout))
 	}

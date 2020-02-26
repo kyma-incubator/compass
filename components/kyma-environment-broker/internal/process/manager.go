@@ -12,7 +12,7 @@ import (
 
 type Step interface {
 	Name() string
-	Run(operation internal.ProvisioningOperation, logger *logrus.Entry) (internal.ProvisioningOperation, time.Duration, error)
+	Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error)
 }
 
 type Manager struct {
@@ -48,13 +48,13 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 
 	var when time.Duration
 	processedOperation := *operation
-	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID})
+	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID})
 
 	logOperation.Info("Start steps")
 	for _, weightStep := range m.sortWeight() {
 		steps := m.steps[weightStep]
 		for _, step := range steps {
-			logStep := logOperation.WithFields(logrus.Fields{"step": step.Name()})
+			logStep := logOperation.WithField("step", step.Name())
 			logStep.Infof("Start step")
 
 			processedOperation, when, err = step.Run(processedOperation, logStep)

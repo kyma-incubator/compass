@@ -84,7 +84,7 @@ func fixOperation(ID string) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ID:          ID,
-			InstanceID:  "",
+			InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
 			Description: "",
 		},
 	}
@@ -100,7 +100,7 @@ func (ts *testStep) Name() string {
 	return ts.name
 }
 
-func (ts *testStep) Run(operation internal.ProvisioningOperation, logger *logrus.Entry) (internal.ProvisioningOperation, time.Duration, error) {
+func (ts *testStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	logger.Infof("inside %s step", ts.name)
 
 	operation.Description = fmt.Sprintf("%s %s", operation.Description, ts.name)
