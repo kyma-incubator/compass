@@ -2,6 +2,7 @@ package broker
 
 import (
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -56,17 +57,17 @@ type InputBuilderFactory struct {
 	serviceManager             internal.ServiceManagerOverride
 	hyperscalerAccountProvider hyperscaler.AccountProvider
 	fullComponentsList         internal.ComponentConfigurationInputList
-	directorURL        string
+	directorURL                string
 }
 
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullComponentsList []v1alpha1.KymaComponent, kymaVersion string, smOverride internal.ServiceManagerOverride, directorURL string, hyperscalerAccountProvider hyperscaler.AccountProvider) InputBuilderForPlan {
 	return &InputBuilderFactory{
-		kymaVersion:        kymaVersion,
-		serviceManager:     smOverride,
-		optComponentsSvc:   optComponentsSvc,
+		kymaVersion:                kymaVersion,
+		serviceManager:             smOverride,
+		optComponentsSvc:           optComponentsSvc,
 		hyperscalerAccountProvider: hyperscalerAccountProvider,
-		fullComponentsList: mapToGQLComponentConfigurationInput(fullComponentsList),
-		directorURL:        directorURL,
+		fullComponentsList:         mapToGQLComponentConfigurationInput(fullComponentsList),
+		directorURL:                directorURL,
 	}
 }
 
@@ -83,27 +84,27 @@ func (f *InputBuilderFactory) ForPlan(planID string) (ConcreteInputBuilder, bool
 	}
 
 	return &InputBuilder{
-		planID:                    planID,
-		kymaVersion:               f.kymaVersion,
-		serviceManager:            f.serviceManager,
-		hyperscalerInputProvider:  provider,
+		planID:                     planID,
+		kymaVersion:                f.kymaVersion,
+		serviceManager:             f.serviceManager,
+		hyperscalerInputProvider:   provider,
 		hyperscalerAccountProvider: f.hyperscalerAccountProvider,
-		optionalComponentsService: f.optComponentsSvc,
-		fullRuntimeComponentList:  f.fullComponentsList,
-		directorURL:               f.directorURL,
+		optionalComponentsService:  f.optComponentsSvc,
+		fullRuntimeComponentList:   f.fullComponentsList,
+		directorURL:                f.directorURL,
 	}, true
 }
 
 type InputBuilder struct {
-	planID                    string
-	instanceID                string
-	kymaVersion               string
-	serviceManager            internal.ServiceManagerOverride
-	hyperscalerInputProvider  HyperscalerInputProvider
+	planID                     string
+	instanceID                 string
+	kymaVersion                string
+	serviceManager             internal.ServiceManagerOverride
+	hyperscalerInputProvider   HyperscalerInputProvider
 	hyperscalerAccountProvider hyperscaler.AccountProvider
-	optionalComponentsService OptionalComponentService
-	fullRuntimeComponentList  internal.ComponentConfigurationInputList
-	directorURL               string
+	optionalComponentsService  OptionalComponentService
+	fullRuntimeComponentList   internal.ComponentConfigurationInputList
+	directorURL                string
 
 	ersCtx                 internal.ERSContext
 	provisioningConfig     ProvisioningConfig

@@ -30,7 +30,7 @@ type Operation struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	InstanceID             string
+	InstanceID string
 
 	ProvisionerOperationID string
 	State                  domain.LastOperationState

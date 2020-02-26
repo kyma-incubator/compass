@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
@@ -38,11 +39,11 @@ type Config struct {
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
-	Provisioning       	broker.ProvisioningConfig
-	Director           	director.Config
-	Database           	storage.Config
-	ManagementPlaneURL 	string
-	Gardener     		gardener.Config
+	Provisioning       broker.ProvisioningConfig
+	Director           director.Config
+	Database           storage.Config
+	ManagementPlaneURL string
+	Gardener           gardener.Config
 
 	ServiceManager internal.ServiceManagerOverride
 

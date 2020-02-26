@@ -26,7 +26,7 @@ type ProvisionEndpoint struct {
 
 // ProvisioningConfig holds all configurations connected with Provisioner API
 type ProvisioningConfig struct {
-	URL             string
+	URL string
 	//GCPSecretName   string
 	//AzureSecretName string
 	//AWSSecretName   string

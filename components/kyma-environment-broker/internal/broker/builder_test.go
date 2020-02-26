@@ -1,8 +1,9 @@
 package broker
 
 import (
-	"github.com/stretchr/testify/mock"
 	"testing"
+
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker/automock"
@@ -106,4 +107,3 @@ func getGardenerRuntimeInputMatcherForGCP() func(*gqlschema.GardenerConfigInput)
 		return input.ProviderSpecificConfig.GcpConfig != nil
 	}
 }
-

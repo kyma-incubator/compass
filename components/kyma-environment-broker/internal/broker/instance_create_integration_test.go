@@ -6,9 +6,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/mock"
 	"path"
 	"testing"
+
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
