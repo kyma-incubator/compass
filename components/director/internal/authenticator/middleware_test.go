@@ -27,6 +27,7 @@ const defaultTenant = "af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e"
 const PublicJWKSURL = "file://testdata/jwks-public.json"
 const PrivateJWKSURL = "file://testdata/jwks-private.json"
 const PrivateJWKS2URL = "file://testdata/jwks-private2.json"
+const PublicJWKS2URL = "file://testdata/jwks-public2.json"
 const fakeJWKSURL = "file://testdata/invalid.json"
 
 func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
@@ -116,6 +117,62 @@ func TestAuthenticator_Handler(t *testing.T) {
 		//then
 		assert.Equal(t, "OK", rr.Body.String())
 		assert.Equal(t, http.StatusOK, rr.Code)
+	})
+
+	t.Run("Success - retry parsing token with synchronizing JWKS", func(t *testing.T) {
+		//given
+		auth := authenticator.New(PublicJWKSURL, false)
+		err := auth.SynchronizeJWKS()
+		require.NoError(t, err)
+
+		auth.SetJWKSEndpoint(PublicJWKS2URL)
+
+		middleware := auth.Handler()
+
+		handler := testHandler(t, defaultTenant, scopes)
+		rr := httptest.NewRecorder()
+		req := fixEmptyRequest(t)
+
+		privateJWKS2, err := authenticator.FetchJWK(PrivateJWKS2URL)
+		require.NoError(t, err)
+
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS2.Keys[0])
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, "OK", rr.Body.String())
+		assert.Equal(t, http.StatusOK, rr.Code)
+	})
+
+	t.Run("Error - retry parsing token with failing synchronizing JWKS", func(t *testing.T) {
+		//given
+		auth := authenticator.New(PublicJWKSURL, false)
+		err := auth.SynchronizeJWKS()
+		require.NoError(t, err)
+
+		auth.SetJWKSEndpoint("invalid.url.scheme")
+
+		middleware := auth.Handler()
+
+		handler := testHandler(t, defaultTenant, scopes)
+		rr := httptest.NewRecorder()
+		req := fixEmptyRequest(t)
+
+		privateJWKS2, err := authenticator.FetchJWK(PrivateJWKS2URL)
+		require.NoError(t, err)
+
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS2.Keys[0])
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, "{\"errors\":[{\"message\":\"while synchronizing JWKs during parsing token: while fetching JWKS from endpoint invalid.url.scheme: invalid url scheme \"}]}\n", rr.Body.String())
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 	})
 
 	t.Run("Error - token with no signing method when it's not allowed", func(t *testing.T) {
