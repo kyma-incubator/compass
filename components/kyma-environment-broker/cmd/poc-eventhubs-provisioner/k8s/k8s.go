@@ -5,8 +5,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func SecretFrom(name, namespace, brokersEndpoint, username, password, eventHubNamespace string) *corev1.Secret {
+func SecretFrom(name, namespace, brokersEndpoint, password, eventHubNamespace string) *corev1.Secret {
 	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -19,9 +23,9 @@ func SecretFrom(name, namespace, brokersEndpoint, username, password, eventHubNa
 		},
 		StringData: map[string]string{
 			"kafka.brokers":             brokersEndpoint,
-			"kafka.username":            username,
-			"kafka.password":            password,
 			"kafka.namespace":           eventHubNamespace,
+			"kafka.password":            password,
+			"kafka.username":            "${K8S_SECRET_USERNAME}",
 			"kafka.secretName":          "knative-kafka",
 			"environment.kafkaProvider": "azure",
 		},

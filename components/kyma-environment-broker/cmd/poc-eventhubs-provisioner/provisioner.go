@@ -19,8 +19,7 @@ const (
 	eventHubsNamespace    = "poc-sample-eventhubs-namespace"
 	authorizationRuleName = "RootManageSharedAccessKey"
 
-	kafkaPort     = 9093
-	kafkaUsername = "kafka-username"
+	kafkaPort = 9093
 
 	k8sSecretName      = "secret-name"
 	k8sSecretNamespace = "secret-namespace"
@@ -60,7 +59,7 @@ func main() {
 	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
-	secret := k8s.SecretFrom(k8sSecretName, k8sSecretNamespace, kafkaEndpoint, kafkaUsername, kafkaPassword, eventHubsNamespace)
+	secret := k8s.SecretFrom(k8sSecretName, k8sSecretNamespace, kafkaEndpoint, kafkaPassword, eventHubsNamespace)
 	secretBytes, _ := json.MarshalIndent(secret, "", "    ")
 	log.Printf("Kubernetes secret:\n%s", secretBytes)
 
