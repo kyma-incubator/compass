@@ -3,7 +3,7 @@
 
 Below you can find a list of mock GraphQL queries and mutations:
 - [add api definition](./add-api-definition/add-api-definition.graphql)
-- [add api to package](./add-api-to-package/add-api-to-package.graphql)
+- [add api definition to package](./add-api-definition-to-package/add-api-definition-to-package.graphql)
 - [add document](./add-document/add-document.graphql)
 - [add document to package](./add-document-to-package/add-document-to-package.graphql)
 - [add event definition](./add-event-definition/add-event-definition.graphql)

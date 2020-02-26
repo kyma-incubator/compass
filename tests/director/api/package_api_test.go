@@ -33,7 +33,7 @@ func TestAddAPIToPackage(t *testing.T) {
 	pack := getPackage(t, ctx, application.ID, pkg.ID)
 	require.Equal(t, pkg.ID, pack.ID)
 	assertAPI(t, []*graphql.APIDefinitionInput{&input}, []*graphql.APIDefinitionExt{&actualApi})
-	saveExample(t, req.Query(), "add api to package")
+	saveExample(t, req.Query(), "add api definition to package")
 }
 
 func TestAddEventDefinitionToPackage(t *testing.T) {
