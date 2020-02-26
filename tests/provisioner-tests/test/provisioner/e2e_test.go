@@ -94,7 +94,7 @@ func Test_E2E_Gardener(t *testing.T) {
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 
-				log.Log("Waitinh for deprovisioning to finish...")
+				log.Log("Waiting for deprovisioning to finish...")
 				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationID)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
@@ -187,18 +187,25 @@ func assertRuntimeConfiguration(t *testing.T, status gqlschema.RuntimeStatus) {
 }
 
 func verifyProviderConfig(t *testing.T, input gqlschema.ProviderSpecificInput, config interface{}) {
+	gardenerConfig, ok := config.(gqlschema.GardenerConfig)
+	if !ok {
+		t.FailNow()
+	}
+
+	providerSpecificConfig := gardenerConfig.ProviderSpecificConfig
+
 	if input.AzureConfig != nil {
-		azureConfig, ok := config.(gqlschema.AzureProviderConfig)
+		azureConfig, ok := providerSpecificConfig.(gqlschema.AzureProviderConfig)
 		if !ok {
-			t.Failed()
+			t.FailNow()
 		}
 		assertions.AssertNotNilAndEqualString(t, input.AzureConfig.VnetCidr, azureConfig.VnetCidr)
 	}
 
 	if input.AwsConfig != nil {
-		awsConfig, ok := config.(gqlschema.AWSProviderConfig)
+		awsConfig, ok := providerSpecificConfig.(gqlschema.AWSProviderConfig)
 		if !ok {
-			t.Failed()
+			t.FailNow()
 		}
 		assertions.AssertNotNilAndEqualString(t, input.AwsConfig.VpcCidr, awsConfig.VpcCidr)
 		assertions.AssertNotNilAndEqualString(t, input.AwsConfig.Zone, awsConfig.Zone)
@@ -207,11 +214,11 @@ func verifyProviderConfig(t *testing.T, input gqlschema.ProviderSpecificInput, c
 	}
 
 	if input.GcpConfig != nil {
-		gcpConfig, ok := config.(gqlschema.GCPProviderConfigInput)
+		gcpConfig, ok := providerSpecificConfig.(gqlschema.GCPProviderConfig)
 		if !ok {
-			t.Failed()
+			t.FailNow()
 		}
-		assertions.AssertNotNilAndEqualString(t, input.GcpConfig.Zone, &gcpConfig.Zone)
+		assertions.AssertNotNilAndEqualString(t, input.GcpConfig.Zone, gcpConfig.Zone)
 	}
 }
 
