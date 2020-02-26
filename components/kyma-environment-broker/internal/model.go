@@ -31,6 +31,7 @@ type Operation struct {
 	UpdatedAt time.Time
 
 	InstanceID             string
+
 	ProvisionerOperationID string
 	State                  domain.LastOperationState
 	Description            string
@@ -43,6 +44,7 @@ type ProvisioningOperation struct {
 	// following fields are serialized to JSON and stored in the storage
 	LmsTenantID            string `json:"lms_tenant_id"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
+	TargetSecret           string `json:"target_secret"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation

@@ -48,7 +48,7 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-830"
+      version: "PR-565"
     tests:
       director:
         dir:
@@ -61,7 +61,7 @@ global:
         version: "PR-565"
       connectivity_adapter:
         dir:
-        version: "PR-831"
+        version: "PR-565"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -183,9 +183,6 @@ global:
         config:
           api:
             url: http://compass-director.compass-system.svc.cluster.local:3000/tenant-mapping
-            retry:
-              give_up_after: 3s
-              max_delay: 2000ms
       certificateResolverService:
         config:
           api:
