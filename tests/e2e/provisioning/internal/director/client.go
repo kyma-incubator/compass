@@ -52,7 +52,6 @@ func NewDirectorClient(oauthClient OauthClient, gqlClient GraphQLClient, log log
 		queryProvider: queryProvider{},
 		token:         oauth.Token{},
 		log:           log,
-		lock:          sync.Mutex{},
 	}
 }
 

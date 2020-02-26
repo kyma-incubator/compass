@@ -87,7 +87,7 @@ func newTestSuite(t *testing.T) *Suite {
 
 	directorClient := director.NewDirectorClient(oauthClient, graphQLClient, log.WithField("service", "director_client"))
 
-	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, instanceID, *httpClient, *directorClient, log.WithField("service", "runtime_client"))
+	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, instanceID, *httpClient, directorClient, log.WithField("service", "runtime_client"))
 
 	dashboardChecker := runtime.NewDashboardChecker(*httpClient, log.WithField("service", "dashboard_checker"))
 

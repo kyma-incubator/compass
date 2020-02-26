@@ -38,14 +38,14 @@ type Config struct {
 type Client struct {
 	config         Config
 	httpClient     http.Client
-	directorClient director.Client
+	directorClient *director.Client
 	log            logrus.FieldLogger
 
 	instanceID string
 	tenantID   string
 }
 
-func NewClient(config Config, tenantID, instanceID string, clientHttp http.Client, directorClient director.Client, log logrus.FieldLogger) *Client {
+func NewClient(config Config, tenantID, instanceID string, clientHttp http.Client, directorClient *director.Client, log logrus.FieldLogger) *Client {
 	return &Client{
 		tenantID:       tenantID,
 		instanceID:     instanceID,
