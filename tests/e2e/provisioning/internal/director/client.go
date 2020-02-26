@@ -37,13 +37,12 @@ type Client struct {
 	queryProvider queryProvider
 	token         oauth.Token
 	log           logrus.FieldLogger
+	lock          sync.Mutex
 }
 
 type successResponse struct {
 	Result graphql.RuntimePageExt `json:"result"`
 }
-
-var lock sync.Mutex
 
 // NewDirectorClient returns new director client struct pointer
 func NewDirectorClient(oauthClient OauthClient, gqlClient GraphQLClient, log logrus.FieldLogger) *Client {
@@ -53,6 +52,7 @@ func NewDirectorClient(oauthClient OauthClient, gqlClient GraphQLClient, log log
 		queryProvider: queryProvider{},
 		token:         oauth.Token{},
 		log:           log,
+		lock:          sync.Mutex{},
 	}
 }
 
@@ -73,7 +73,7 @@ func (dc *Client) GetRuntimeID(accountID, instanceID string) (string, error) {
 	}
 
 	dc.log.Info("Extract the RuntimeID from the response")
-	return dc.getIDFromRuntime(&response.Result), nil
+	return dc.getIDFromRuntime(&response.Result)
 }
 
 func (dc *Client) callDirector(req *machineGraph.Request) (*successResponse, error) {
@@ -119,8 +119,8 @@ func (dc *Client) call(req *machineGraph.Request) (*successResponse, error) {
 }
 
 func (dc *Client) setToken() error {
-	lock.Lock()
-	defer lock.Unlock()
+	dc.lock.Lock()
+	defer dc.lock.Unlock()
 	if !dc.token.EmptyOrExpired() {
 		return nil
 	}
@@ -134,6 +134,12 @@ func (dc *Client) setToken() error {
 	return nil
 }
 
-func (dc *Client) getIDFromRuntime(response *graphql.RuntimePageExt) string {
-	return response.Data[0].ID
+func (dc *Client) getIDFromRuntime(response *graphql.RuntimePageExt) (string, error) {
+	if response.Data == nil || len(response.Data) == 0 {
+		return "", errors.New("got empty data from director response")
+	}
+	if len(response.Data) > 1 {
+		return "", errors.Errorf("expected single runtime, got: %v", response.Data)
+	}
+	return response.Data[0].ID, nil
 }
