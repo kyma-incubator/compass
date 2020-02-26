@@ -965,6 +965,9 @@ type Mutation {
 	addEventDefinition(applicationID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
 	"""
 	Temporary name before doing breaking change. Eventually the `addEventDefinition` mutation will be changed and there will be just one mutation: `addEventDefinitionToPackage`.
+	
+	**Examples**
+	- [add event definition to package](examples/add-event-definition-to-package/add-event-definition-to-package.graphql)
 	"""
 	addEventDefinitionToPackage(packageID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToPackage")
 	"""
@@ -985,6 +988,9 @@ type Mutation {
 	addDocument(applicationID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
 	"""
 	Temporary name before doing breaking change
+	
+	**Examples**
+	- [add document to package](examples/add-document-to-package/add-document-to-package.graphql)
 	"""
 	addDocumentToPackage(packageID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocumentToPackage")
 	"""
