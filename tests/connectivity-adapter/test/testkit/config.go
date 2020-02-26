@@ -12,6 +12,7 @@ type Configuration struct {
 	SkipSslVerify              bool   `envconfig:"default=true"`
 	EventsBaseURL              string `envconfig:"default=https://events.com"`
 	Tenant                     string `envconfig:"default=3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
+	DirectorHealthzUrl         string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/healthz"`
 }
 
 func ReadConfiguration() (Configuration, error) {

@@ -176,6 +176,86 @@ func TestRepository_GetByID(t *testing.T) {
 	})
 }
 
+func TestRepository_GetForPackage(t *testing.T) {
+	// given
+	piaModel := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+	piaEntity := fixEntityPackageInstanceAuth(t, testID, testPackageID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+
+	selectQuery := `^SELECT (.+) FROM public.package_instance_auths WHERE tenant_id = \$1 AND id = \$2 AND package_id = \$3`
+
+	t.Run("success", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+
+		rows := fixSQLRows([]sqlRow{fixSQLRowFromEntity(*piaEntity)})
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(testTenant, testID, testPackageID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.EntityConverter{}
+		convMock.On("FromEntity", *piaEntity).Return(*piaModel, nil).Once()
+		repo := packageinstanceauth.NewRepository(convMock)
+
+		// WHEN
+		actual, err := repo.GetForPackage(ctx, testTenant, testID, testPackageID)
+
+		//THEN
+		require.NoError(t, err)
+		require.NotNil(t, actual)
+		assert.Equal(t, piaModel, actual)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		// given
+		repo := packageinstanceauth.NewRepository(nil)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectQuery("SELECT .*").
+			WithArgs(testTenant, testID, testPackageID).WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		// when
+		_, err := repo.GetForPackage(ctx, testTenant, testID, testPackageID)
+
+		// then
+		require.EqualError(t, err, "while getting object from DB: test")
+	})
+
+	t.Run("returns error when conversion failed", func(t *testing.T) {
+		// given
+		piaEntity := fixEntityPackageInstanceAuth(t, testID, testPackageID, testTenant, nil, fixModelStatusPending())
+
+		mockConverter := &automock.EntityConverter{}
+		mockConverter.On("FromEntity", *piaEntity).Return(model.PackageInstanceAuth{}, testError).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		repo := packageinstanceauth.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rows := fixSQLRows([]sqlRow{fixSQLRowFromEntity(*piaEntity)})
+
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.package_instance_auths WHERE tenant_id = \$1 AND id = \$2 AND package_id = \$3`).
+			WithArgs(testTenant, testID, testPackageID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		// when
+		actual, err := repo.GetForPackage(ctx, testTenant, testID, testPackageID)
+
+		// then
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testError.Error())
+		require.Nil(t, actual)
+	})
+}
+
 func TestRepository_ListByPackageID(t *testing.T) {
 	//GIVEN
 	t.Run("Success", func(t *testing.T) {

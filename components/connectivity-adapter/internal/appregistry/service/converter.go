@@ -130,6 +130,9 @@ func (c *converter) DetailsToGraphQLInput(id string, deprecated model.ServiceDet
 				out.API.Spec.FetchRequest = &graphql.FetchRequestInput{
 					URL: deprecated.Api.SpecificationUrl,
 				}
+
+				out.API.Spec.Type = toNewSpecType(deprecated.Api.ApiType)
+				out.API.Spec.Format = graphql.SpecFormatJSON
 			}
 
 			if deprecated.Api.SpecificationCredentials != nil || deprecated.Api.SpecificationRequestParameters != nil {
@@ -199,6 +202,18 @@ func (c *converter) DetailsToGraphQLInput(id string, deprecated model.ServiceDet
 	}
 
 	return out, nil
+}
+
+func toNewSpecType(apiType string) graphql.APISpecType {
+	switch strings.ToLower(apiType) {
+	case "openapi":
+		return graphql.APISpecTypeOpenAPI
+	case "odata":
+		return graphql.APISpecTypeOdata
+	default:
+		return graphql.APISpecTypeOpenAPI
+
+	}
 }
 
 func (c *converter) GraphQLToServiceDetails(in model.GraphQLServiceDetails) (model.ServiceDetails, error) {

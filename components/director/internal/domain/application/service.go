@@ -56,14 +56,14 @@ type WebhookRepository interface {
 
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
 type APIRepository interface {
-	ListByApplicationID(ctx context.Context, tenant, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
+	ListForApplication(ctx context.Context, tenant, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	Create(ctx context.Context, item *model.APIDefinition) error
 	DeleteAllByApplicationID(ctx context.Context, tenant, id string) error
 }
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
-	ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	ListForApplication(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	Create(ctx context.Context, items *model.EventDefinition) error
 	DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error
 }
@@ -459,7 +459,7 @@ func (s *service) createAPIs(ctx context.Context, appID, tenant string, apis []*
 	var err error
 	for _, item := range apis {
 		apiDefID := s.uidService.Generate()
-		err = s.apiRepo.Create(ctx, item.ToAPIDefinition(apiDefID, appID, tenant))
+		err = s.apiRepo.Create(ctx, item.ToAPIDefinition(apiDefID, &appID, tenant))
 		if err != nil {
 			return errors.Wrap(err, "while creating API for application")
 		}
@@ -478,7 +478,7 @@ func (s *service) createEvents(ctx context.Context, appID, tenant string, events
 	var err error
 	for _, item := range events {
 		eventID := s.uidService.Generate()
-		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinition(eventID, appID, tenant))
+		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinition(eventID, &appID, tenant))
 		if err != nil {
 			return errors.Wrap(err, "while creating EventDefinitions for application")
 		}
@@ -497,7 +497,7 @@ func (s *service) createDocuments(ctx context.Context, appID, tenant string, eve
 	var err error
 	for _, item := range events {
 		documentID := s.uidService.Generate()
-		err = s.documentRepo.Create(ctx, item.ToDocument(documentID, tenant, appID))
+		err = s.documentRepo.Create(ctx, item.ToDocument(documentID, tenant, &appID))
 		if err != nil {
 			return errors.Wrapf(err, "while creating Document for application")
 		}

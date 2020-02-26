@@ -25,10 +25,10 @@ global:
       version: "PR-831"
     pairing_adapter:
       dir:
-      version: "PR-867"
+      version: "PR-798"
     director:
       dir:
-      version: "PR-862"
+      version: "PR-871"
     gateway:
       dir: pr/
       version: "PR-357"

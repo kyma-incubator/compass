@@ -47,3 +47,24 @@ func (_m *Service) Get(ctx context.Context, id string) (*model.PackageInstanceAu
 
 	return r0, r1
 }
+
+// RequestDeletion provides a mock function with given fields: ctx, instanceAuth, defaultPackageInstanceAuth
+func (_m *Service) RequestDeletion(ctx context.Context, instanceAuth *model.PackageInstanceAuth, defaultPackageInstanceAuth *model.Auth) (bool, error) {
+	ret := _m.Called(ctx, instanceAuth, defaultPackageInstanceAuth)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *model.PackageInstanceAuth, *model.Auth) bool); ok {
+		r0 = rf(ctx, instanceAuth, defaultPackageInstanceAuth)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *model.PackageInstanceAuth, *model.Auth) error); ok {
+		r1 = rf(ctx, instanceAuth, defaultPackageInstanceAuth)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

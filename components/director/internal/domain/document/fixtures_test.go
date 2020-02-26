@@ -20,10 +20,11 @@ var (
 	docCLOB        = graphql.CLOB(docData)
 )
 
-func fixModelDocument(id, applicationID string) *model.Document {
+func fixModelDocument(id, applicationID, packageID string) *model.Document {
 	return &model.Document{
 		ID:            id,
-		ApplicationID: applicationID,
+		ApplicationID: &applicationID,
+		PackageID:     &packageID,
 		Tenant:        docTenant,
 		Title:         docTitle,
 		DisplayName:   docDisplayName,
@@ -34,10 +35,11 @@ func fixModelDocument(id, applicationID string) *model.Document {
 	}
 }
 
-func fixEntityDocument(id, applicationID string) *document.Entity {
+func fixEntityDocument(id, applicationID, packageID string) *document.Entity {
 	return &document.Entity{
 		ID:          id,
-		AppID:       applicationID,
+		AppID:       repo.NewNullableString(&applicationID),
+		PkgID:       repo.NewNullableString(&packageID),
 		TenantID:    docTenant,
 		Title:       docTitle,
 		DisplayName: docDisplayName,
@@ -48,10 +50,11 @@ func fixEntityDocument(id, applicationID string) *document.Entity {
 	}
 }
 
-func fixGQLDocument(id, applicationID string) *graphql.Document {
+func fixGQLDocument(id, applicationID, packageID string) *graphql.Document {
 	return &graphql.Document{
 		ID:            id,
-		ApplicationID: applicationID,
+		ApplicationID: &applicationID,
+		PackageID:     &packageID,
 		Title:         docTitle,
 		DisplayName:   docDisplayName,
 		Description:   docDescription,

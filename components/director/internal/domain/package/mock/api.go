@@ -1,6 +1,9 @@
 package mock
 
-import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+)
 
 func FixAPIDefinition(id string) *graphql.APIDefinition {
 	desc := "Lorem ipsum"
@@ -119,7 +122,8 @@ components:
 `)
 	return &graphql.APIDefinition{
 		ID:            id,
-		ApplicationID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+		ApplicationID: str.Ptr("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+		PackageID:     str.Ptr("pppppppp-pppp-pppp-pppp-pppppppppppp"),
 		Name:          "foo",
 		Description:   &desc,
 		Spec: &graphql.APISpec{

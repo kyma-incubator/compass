@@ -24,10 +24,11 @@ func (LokiDisabler) Disable(components internal.ComponentConfigurationInputList)
 			Key:   "loki.enabled",
 			Value: "false",
 		},
-		{
-			Key:   "fluent-bit.conf.Output.loki.enabled",
-			Value: "false",
-		},
+		// TODO: enable after adding LMS configuration
+		//{
+		//	Key:   "fluent-bit.conf.Output.loki.enabled",
+		//	Value: "false",
+		//},
 	}
 
 	for _, c := range components {

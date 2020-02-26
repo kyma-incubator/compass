@@ -36,24 +36,24 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 		},
 	}
 	expRender := `{
-		version: "966"
+		version: "966",
         components: [
           {
-            component: "pico"
-            namespace: "bello" 
+            component: "pico",
+            namespace: "bello", 
           }
           {
-            component: "hakuna"
-            namespace: "matata"
+            component: "hakuna",
+            namespace: "matata",
             configuration: [
               {
-                key: "testing-secret-key"
-                value: "testing-secret-value"
-                secret: true
+                key: "testing-secret-key",
+                value: "testing-secret-value",
+                secret: true,
               }
               {
-                key: "testing-public-key"
-                value: "testing-public-value"
+                key: "testing-public-key",
+                value: "testing-public-value",
               } 
             ] 
           } 
@@ -77,7 +77,7 @@ func TestKymaConfigToGraphQLOnlyKymaVersion(t *testing.T) {
 		Version: "966",
 	}
 	expRender := `{
-		version: "966"         
+		version: "966",         
 	}`
 
 	sut := Graphqlizer{}

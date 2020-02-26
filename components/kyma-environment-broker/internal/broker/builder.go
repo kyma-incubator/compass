@@ -13,7 +13,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-const serviceManagerComponentName = "service-manager-proxy"
+const (
+	brokerKeyPrefix             = "broker_"
+	globalKeyPrefix             = "global_"
+	serviceManagerComponentName = "service-manager-proxy"
+)
 
 //go:generate mockery -name=OptionalComponentService -output=automock -outpkg=automock -case=underscore
 //go:generate mockery -name=InputBuilderForPlan -output=automock -outpkg=automock -case=underscore
@@ -37,6 +41,7 @@ type (
 		SetProvisioningParameters(params internal.ProvisioningParametersDTO) ConcreteInputBuilder
 		SetERSContext(ersCtx internal.ERSContext) ConcreteInputBuilder
 		SetProvisioningConfig(brokerConfig ProvisioningConfig) ConcreteInputBuilder
+		SetInstanceID(instanceID string) ConcreteInputBuilder
 		Build() (gqlschema.ProvisionRuntimeInput, error)
 	}
 
@@ -56,12 +61,12 @@ type InputBuilderFactory struct {
 
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullComponentsList []v1alpha1.KymaComponent, kymaVersion string, smOverride internal.ServiceManagerOverride, directorURL string, hyperscalerAccountProvider hyperscaler.AccountProvider) InputBuilderForPlan {
 	return &InputBuilderFactory{
-		kymaVersion:                kymaVersion,
-		serviceManager:             smOverride,
-		optComponentsSvc:           optComponentsSvc,
+		kymaVersion:        kymaVersion,
+		serviceManager:     smOverride,
+		optComponentsSvc:   optComponentsSvc,
 		hyperscalerAccountProvider: hyperscalerAccountProvider,
-		fullComponentsList:         mapToGQLComponentConfigurationInput(fullComponentsList),
-		directorURL:        		directorURL,
+		fullComponentsList: mapToGQLComponentConfigurationInput(fullComponentsList),
+		directorURL:        directorURL,
 	}
 }
 
@@ -78,25 +83,26 @@ func (f *InputBuilderFactory) ForPlan(planID string) (ConcreteInputBuilder, bool
 	}
 
 	return &InputBuilder{
-		planID:                     planID,
-		kymaVersion:                f.kymaVersion,
-		serviceManager:             f.serviceManager,
-		hyperscalerInputProvider:   provider,
+		planID:                    planID,
+		kymaVersion:               f.kymaVersion,
+		serviceManager:            f.serviceManager,
+		hyperscalerInputProvider:  provider,
 		hyperscalerAccountProvider: f.hyperscalerAccountProvider,
-		optionalComponentsService:  f.optComponentsSvc,
-		fullRuntimeComponentList:   f.fullComponentsList,
+		optionalComponentsService: f.optComponentsSvc,
+		fullRuntimeComponentList:  f.fullComponentsList,
 		directorURL:               f.directorURL,
 	}, true
 }
 
 type InputBuilder struct {
-	planID                     string
-	kymaVersion                string
-	serviceManager             internal.ServiceManagerOverride
-	hyperscalerInputProvider   HyperscalerInputProvider
+	planID                    string
+	instanceID                string
+	kymaVersion               string
+	serviceManager            internal.ServiceManagerOverride
+	hyperscalerInputProvider  HyperscalerInputProvider
 	hyperscalerAccountProvider hyperscaler.AccountProvider
-	optionalComponentsService  OptionalComponentService
-	fullRuntimeComponentList   internal.ComponentConfigurationInputList
+	optionalComponentsService OptionalComponentService
+	fullRuntimeComponentList  internal.ComponentConfigurationInputList
 	directorURL               string
 
 	ersCtx                 internal.ERSContext
@@ -116,6 +122,11 @@ func (b *InputBuilder) SetERSContext(ersCtx internal.ERSContext) ConcreteInputBu
 
 func (b *InputBuilder) SetProvisioningConfig(brokerConfig ProvisioningConfig) ConcreteInputBuilder {
 	b.provisioningConfig = brokerConfig
+	return b
+}
+
+func (b *InputBuilder) SetInstanceID(instanceID string) ConcreteInputBuilder {
+	b.instanceID = instanceID
 	return b
 }
 
@@ -246,6 +257,15 @@ func (b *InputBuilder) applyTemporaryCustomization(in *gqlschema.ProvisionRuntim
 	return nil
 }
 
+func (b *InputBuilder) applyRuntimeLabels(in *gqlschema.ProvisionRuntimeInput) error {
+	in.RuntimeInput.Labels = &gqlschema.Labels{
+		brokerKeyPrefix + "instance_id":   []string{b.instanceID},
+		globalKeyPrefix + "subaccount_id": []string{b.ersCtx.SubAccountID},
+	}
+
+	return nil
+}
+
 func (b *InputBuilder) initInput() gqlschema.ProvisionRuntimeInput {
 	return gqlschema.ProvisionRuntimeInput{
 		RuntimeInput:  &gqlschema.RuntimeInput{},
@@ -284,6 +304,10 @@ func (b *InputBuilder) Build() (gqlschema.ProvisionRuntimeInput, error) {
 		{
 			name:    "applying temporary customization",
 			execute: b.applyTemporaryCustomization,
+		},
+		{
+			name:    "applying labels to runtime",
+			execute: b.applyRuntimeLabels,
 		},
 	} {
 		if err := step.execute(&input); err != nil {

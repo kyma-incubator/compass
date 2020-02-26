@@ -37,7 +37,7 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 				},
 			},
 			Expected: &model.Document{
-				ApplicationID: applicationID,
+				ApplicationID: &applicationID,
 				ID:            id,
 				Tenant:        tenant,
 				Title:         title,
@@ -60,7 +60,7 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 				FetchRequest: nil,
 			},
 			Expected: &model.Document{
-				ApplicationID: applicationID,
+				ApplicationID: &applicationID,
 				ID:            id,
 				Tenant:        tenant,
 				Title:         title,
@@ -75,7 +75,7 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 			Name:  "Empty",
 			Input: &model.DocumentInput{},
 			Expected: &model.Document{
-				ApplicationID: applicationID,
+				ApplicationID: &applicationID,
 				ID:            id,
 				Tenant:        tenant,
 			},
@@ -91,7 +91,7 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToDocument(id, tenant, applicationID)
+			result := testCase.Input.ToDocument(id, tenant, &applicationID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

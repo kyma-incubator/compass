@@ -23,6 +23,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 		mappedComponentList = mapToGQLComponentConfigurationInput(inputComponentList)
 		toDisableComponents = []string{"kiali"}
 		smOverrides         = internal.ServiceManagerEntryDTO{URL: "http://sm-pico-bello-url.com"}
+		fixID               = "fix-id"
 	)
 
 	optComponentsSvc := &automock.OptionalComponentService{}
@@ -49,18 +50,24 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 		}).
 		SetERSContext(internal.ERSContext{
 			ServiceManager: smOverrides,
+			SubAccountID:   fixID,
 		}).
 		//SetProvisioningConfig(ProvisioningConfig{
 		//	AzureSecretName: "azure-secret",
 		//}).
+		SetInstanceID(fixID).
 		Build()
 
 	// then
 	require.NoError(t, err)
+	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 	assert.Equal(t, "azure-cluster", input.RuntimeInput.Name)
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
 	assert.Equal(t, "gardener-secret-azurePlanID", input.ClusterConfig.GardenerConfig.TargetSecret)
-	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
+	assert.Equal(t, &gqlschema.Labels{
+		brokerKeyPrefix + "instance_id":   []string{fixID},
+		globalKeyPrefix + "subaccount_id": []string{fixID},
+	}, input.RuntimeInput.Labels)
 
 	assertServiceManagerOverrides(t, input.KymaConfig.Components, smOverrides)
 }

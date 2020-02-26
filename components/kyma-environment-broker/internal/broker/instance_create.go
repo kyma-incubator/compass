@@ -87,11 +87,11 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	if !found {
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("The plan ID not known, instanceID %s, planID: %s", instanceID, details.PlanID))
 	}
-
 	inputBuilder.
 		SetERSContext(ersContext).
 		SetProvisioningParameters(parameters).
-		SetProvisioningConfig(b.provisioningCfg)
+		SetProvisioningConfig(b.provisioningCfg).
+		SetInstanceID(instanceID)
 
 	input, err := inputBuilder.Build()
 	if err != nil {
