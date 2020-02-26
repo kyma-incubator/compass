@@ -637,7 +637,7 @@ func TestPackageInstanceAuthStatusInput_Validate(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name: "No reason",
+			Name: "No reason provided",
 			Value: graphql.PackageInstanceAuthStatusInput{
 				Condition: graphql.PackageInstanceAuthSetStatusConditionInputSucceeded,
 				Message:   str,
@@ -645,7 +645,7 @@ func TestPackageInstanceAuthStatusInput_Validate(t *testing.T) {
 			ExpectedValid: false,
 		},
 		{
-			Name: "No message",
+			Name: "No message provided",
 			Value: graphql.PackageInstanceAuthStatusInput{
 				Condition: graphql.PackageInstanceAuthSetStatusConditionInputSucceeded,
 				Reason:    str,
@@ -653,7 +653,7 @@ func TestPackageInstanceAuthStatusInput_Validate(t *testing.T) {
 			ExpectedValid: false,
 		},
 		{
-			Name: "No condition",
+			Name: "No condition provided",
 			Value: graphql.PackageInstanceAuthStatusInput{
 				Message: str,
 				Reason:  str,

@@ -528,7 +528,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedError:  errors.New(`while validating value { against JSON Schema: {"type": "string"}: unexpected EOF`),
 		},
 		{
-			Name: "Error when invalid input params",
+			Name: "Error when input doesn't match schema",
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
 				return instanceAuthRepo
