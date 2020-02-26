@@ -37,14 +37,14 @@ func (a *PackageInstanceAuth) SetDefaultStatus(condition PackageInstanceAuthStat
 		message = "Credentials for given Package Instance Auth are ready for being deleted by Application or Integration System."
 		break
 	default:
-		return errors.New("invalid status condition")
+		return errors.Errorf("invalid status condition: %s", condition)
 	}
 
 	a.Status = &PackageInstanceAuthStatus{
 		Condition: condition,
 		Timestamp: timestamp,
-		Message:   &message,
-		Reason:    &reason,
+		Message:   message,
+		Reason:    reason,
 	}
 
 	return nil
@@ -53,8 +53,8 @@ func (a *PackageInstanceAuth) SetDefaultStatus(condition PackageInstanceAuthStat
 type PackageInstanceAuthStatus struct {
 	Condition PackageInstanceAuthStatusCondition
 	Timestamp time.Time
-	Message   *string
-	Reason    *string
+	Message   string
+	Reason    string
 }
 
 type PackageInstanceAuthStatusCondition string
@@ -72,7 +72,7 @@ type PackageInstanceAuthRequestInput struct {
 	InputParams *string
 }
 
-func (ri PackageInstanceAuthRequestInput) ToPackageInstanceAuth(id, packageID, tenant string, auth *Auth, status PackageInstanceAuthStatus) PackageInstanceAuth {
+func (ri PackageInstanceAuthRequestInput) ToPackageInstanceAuth(id, packageID, tenant string, auth *Auth, status *PackageInstanceAuthStatus) PackageInstanceAuth {
 	return PackageInstanceAuth{
 		ID:          id,
 		PackageID:   packageID,
@@ -80,7 +80,7 @@ func (ri PackageInstanceAuthRequestInput) ToPackageInstanceAuth(id, packageID, t
 		Context:     ri.Context,
 		InputParams: ri.InputParams,
 		Auth:        auth,
-		Status:      &status,
+		Status:      status,
 	}
 }
 
@@ -92,8 +92,8 @@ type PackageInstanceAuthSetInput struct {
 
 type PackageInstanceAuthStatusInput struct {
 	Condition PackageInstanceAuthSetStatusConditionInput
-	Message   *string
-	Reason    *string
+	Message   string
+	Reason    string
 }
 
 func (si *PackageInstanceAuthStatusInput) ToPackageInstanceAuthStatus(timestamp time.Time) *PackageInstanceAuthStatus {

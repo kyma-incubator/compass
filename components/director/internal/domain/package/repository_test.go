@@ -34,11 +34,9 @@ func TestPgRepository_Create(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		defAuth, err := json.Marshal(pkgModel.DefaultInstanceAuth)
 		require.NoError(t, err)
-		schema, err := json.Marshal(pkgModel.InstanceAuthRequestInputSchema)
-		require.NoError(t, err)
 
 		sqlMock.ExpectExec(insertQuery).
-			WithArgs(fixPackageCreateArgs(string(defAuth), string(schema), pkgModel)...).
+			WithArgs(fixPackageCreateArgs(string(defAuth), *pkgModel.InstanceAuthRequestInputSchema, pkgModel)...).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)

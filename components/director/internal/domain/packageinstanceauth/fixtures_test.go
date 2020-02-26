@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
 var (
@@ -70,8 +69,8 @@ func fixModelStatusSucceeded() *model.PackageInstanceAuthStatus {
 	return &model.PackageInstanceAuthStatus{
 		Condition: model.PackageInstanceAuthStatusConditionSucceeded,
 		Timestamp: testTime,
-		Message:   str.Ptr("Credentials were provided."),
-		Reason:    str.Ptr("CredentialsProvided"),
+		Message:   "Credentials were provided.",
+		Reason:    "CredentialsProvided",
 	}
 }
 
@@ -79,8 +78,8 @@ func fixModelStatusPending() *model.PackageInstanceAuthStatus {
 	return &model.PackageInstanceAuthStatus{
 		Condition: model.PackageInstanceAuthStatusConditionPending,
 		Timestamp: testTime,
-		Message:   str.Ptr("Credentials were not yet provided."),
-		Reason:    str.Ptr("CredentialsNotProvided"),
+		Message:   "Credentials were not yet provided.",
+		Reason:    "CredentialsNotProvided",
 	}
 }
 
@@ -102,7 +101,7 @@ func fixGQLStatusPending() *graphql.PackageInstanceAuthStatus {
 	}
 }
 
-func fixModelStatusInput(condition model.PackageInstanceAuthSetStatusConditionInput, message, reason *string) *model.PackageInstanceAuthStatusInput {
+func fixModelStatusInput(condition model.PackageInstanceAuthSetStatusConditionInput, message, reason string) *model.PackageInstanceAuthStatusInput {
 	return &model.PackageInstanceAuthStatusInput{
 		Condition: condition,
 		Message:   message,
@@ -110,11 +109,42 @@ func fixModelStatusInput(condition model.PackageInstanceAuthSetStatusConditionIn
 	}
 }
 
-func fixGQLStatusInput(condition graphql.PackageInstanceAuthSetStatusConditionInput, message, reason *string) *graphql.PackageInstanceAuthStatusInput {
+func fixGQLStatusInput(condition graphql.PackageInstanceAuthSetStatusConditionInput, message, reason string) *graphql.PackageInstanceAuthStatusInput {
 	return &graphql.PackageInstanceAuthStatusInput{
 		Condition: condition,
 		Message:   message,
 		Reason:    reason,
+	}
+}
+
+func fixModelRequestInput() *model.PackageInstanceAuthRequestInput {
+	return &model.PackageInstanceAuthRequestInput{
+		Context:     &testContext,
+		InputParams: &testInputParams,
+	}
+}
+
+func fixGQLRequestInput() *graphql.PackageInstanceAuthRequestInput {
+	context := graphql.JSON(testContext)
+	inputParams := graphql.JSON(testInputParams)
+
+	return &graphql.PackageInstanceAuthRequestInput{
+		Context:     &context,
+		InputParams: &inputParams,
+	}
+}
+
+func fixModelSetInput() *model.PackageInstanceAuthSetInput {
+	return &model.PackageInstanceAuthSetInput{
+		Auth:   fixModelAuthInput(),
+		Status: fixModelStatusInput(model.PackageInstanceAuthSetStatusConditionInputSucceeded, "foo", "bar"),
+	}
+}
+
+func fixGQLSetInput() *graphql.PackageInstanceAuthSetInput {
+	return &graphql.PackageInstanceAuthSetInput{
+		Auth:   fixGQLAuthInput(),
+		Status: fixGQLStatusInput(graphql.PackageInstanceAuthSetStatusConditionInputSucceeded, "foo", "bar"),
 	}
 }
 
@@ -145,14 +175,8 @@ func fixEntityPackageInstanceAuthWithoutContextAndInputParams(t *testing.T, id, 
 	if status != nil {
 		out.StatusCondition = string(status.Condition)
 		out.StatusTimestamp = status.Timestamp
-
-		if status.Message != nil {
-			out.StatusMessage = *status.Message
-		}
-
-		if status.Reason != nil {
-			out.StatusReason = *status.Reason
-		}
+		out.StatusMessage = status.Message
+		out.StatusReason = status.Reason
 	}
 
 	return &out
@@ -249,5 +273,16 @@ func fixSimpleModelPackageInstanceAuth(id string) *model.PackageInstanceAuth {
 func fixSimpleGQLPackageInstanceAuth(id string) *graphql.PackageInstanceAuth {
 	return &graphql.PackageInstanceAuth{
 		ID: id,
+	}
+}
+
+func fixModelPackage(id string, requestInputSchema *string, defaultAuth *model.Auth) *model.Package {
+	return &model.Package{
+		ID:                             id,
+		TenantID:                       testTenant,
+		ApplicationID:                  "foo",
+		Name:                           "test-package",
+		InstanceAuthRequestInputSchema: requestInputSchema,
+		DefaultInstanceAuth:            defaultAuth,
 	}
 }

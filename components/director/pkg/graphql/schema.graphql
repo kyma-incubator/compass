@@ -317,13 +317,8 @@ input PackageInstanceAuthSetInput {
 
 input PackageInstanceAuthStatusInput {
 	condition: PackageInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	message: String!
 	"""
-	Required, if condition is "FAILED". If empty for SUCCEEDED status, default message is set.
-	"""
-	message: String
-	"""
-	Required, if condition is "FAILED". If empty for SUCCEEDED status, "CredentialsProvided" reason is set.
-	
 	Example reasons:
 	- PendingNotification
 	- NotificationSent
@@ -331,7 +326,7 @@ input PackageInstanceAuthStatusInput {
 	- CredentialsNotProvided
 	- PendingDeletion
 	"""
-	reason: String
+	reason: String!
 }
 
 input PackageUpdateInput {

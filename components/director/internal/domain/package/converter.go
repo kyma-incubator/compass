@@ -39,22 +39,13 @@ func (c *converter) ToEntity(in *model.Package) (*Entity, error) {
 	}
 
 	output := &Entity{
-		ID:                  in.ID,
-		TenantID:            in.TenantID,
-		ApplicationID:       in.ApplicationID,
-		Name:                in.Name,
-		Description:         repo.NewNullableString(in.Description),
-		DefaultInstanceAuth: repo.NewNullableString(defaultInstanceAuth),
-	}
-
-	if in.InstanceAuthRequestInputSchema != nil {
-		b, err := json.Marshal(in.InstanceAuthRequestInputSchema)
-		if err != nil {
-			return nil, errors.Wrap(err, "while marshaling schema to JSON")
-		}
-		output.InstanceAuthRequestJSONSchema = repo.NewValidNullableString(string(b))
-	} else {
-		output.InstanceAuthRequestJSONSchema = sql.NullString{Valid: false}
+		ID:                            in.ID,
+		TenantID:                      in.TenantID,
+		ApplicationID:                 in.ApplicationID,
+		Name:                          in.Name,
+		Description:                   repo.NewNullableString(in.Description),
+		DefaultInstanceAuth:           repo.NewNullableString(defaultInstanceAuth),
+		InstanceAuthRequestJSONSchema: repo.NewNullableString(in.InstanceAuthRequestInputSchema),
 	}
 
 	return output, nil
@@ -71,24 +62,15 @@ func (c *converter) FromEntity(entity *Entity) (*model.Package, error) {
 	}
 
 	output := &model.Package{
-		ID:                  entity.ID,
-		TenantID:            entity.TenantID,
-		ApplicationID:       entity.ApplicationID,
-		Name:                entity.Name,
-		Description:         &entity.Description.String,
-		DefaultInstanceAuth: defaultInstanceAuth,
+		ID:                             entity.ID,
+		TenantID:                       entity.TenantID,
+		ApplicationID:                  entity.ApplicationID,
+		Name:                           entity.Name,
+		Description:                    &entity.Description.String,
+		DefaultInstanceAuth:            defaultInstanceAuth,
+		InstanceAuthRequestInputSchema: repo.StringPtrFromNullableString(entity.InstanceAuthRequestJSONSchema),
 	}
 
-	if entity.InstanceAuthRequestJSONSchema.Valid {
-		mapDest := map[string]interface{}{}
-		var tmp interface{}
-		err := json.Unmarshal([]byte(entity.InstanceAuthRequestJSONSchema.String), &mapDest)
-		if err != nil {
-			return nil, err
-		}
-		tmp = mapDest
-		output.InstanceAuthRequestInputSchema = &tmp
-	}
 	return output, nil
 }
 
@@ -97,16 +79,11 @@ func (c *converter) ToGraphQL(in *model.Package) (*graphql.Package, error) {
 		return nil, errors.New("the model Package is nil")
 	}
 
-	schema, err := graphql.MarshalSchema(in.InstanceAuthRequestInputSchema)
-	if err != nil {
-		return nil, err
-	}
-
 	return &graphql.Package{
 		ID:                             in.ID,
 		Name:                           in.Name,
 		Description:                    in.Description,
-		InstanceAuthRequestInputSchema: schema,
+		InstanceAuthRequestInputSchema: c.strPtrToJSONSchemaPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            c.auth.ToGraphQL(in.DefaultInstanceAuth),
 	}, nil
 }
@@ -128,28 +105,19 @@ func (c *converter) MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, 
 }
 
 func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) (*model.PackageCreateInput, error) {
-	schema, err := in.InstanceAuthRequestInputSchema.Unmarshal()
-	if err != nil {
-		return nil, err
-	}
-
 	return &model.PackageCreateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
-		InstanceAuthRequestInputSchema: schema,
+		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            c.auth.InputFromGraphQL(in.DefaultInstanceAuth),
 	}, nil
 }
 
 func (c *converter) UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error) {
-	schema, err := in.InstanceAuthRequestInputSchema.Unmarshal()
-	if err != nil {
-		return nil, err
-	}
 	return &model.PackageUpdateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
-		InstanceAuthRequestInputSchema: schema,
+		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            c.auth.InputFromGraphQL(in.DefaultInstanceAuth),
 	}, nil
 }
@@ -177,4 +145,20 @@ func (c *converter) unmarshalDefaultInstanceAuth(defaultInstanceAuthSql sql.Null
 	}
 
 	return defaultInstanceAuth, nil
+}
+
+func (c *converter) strPtrToJSONSchemaPtr(in *string) *graphql.JSONSchema {
+	if in == nil {
+		return nil
+	}
+	out := graphql.JSONSchema(*in)
+	return &out
+}
+
+func (c *converter) jsonSchemaPtrToStrPtr(in *graphql.JSONSchema) *string {
+	if in == nil {
+		return nil
+	}
+	out := string(*in)
+	return &out
 }

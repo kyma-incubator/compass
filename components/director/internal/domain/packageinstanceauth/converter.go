@@ -37,7 +37,7 @@ func (c *converter) ToGraphQL(in *model.PackageInstanceAuth) *graphql.PackageIns
 		Context:     c.strPtrToJSONPtr(in.Context),
 		InputParams: c.strPtrToJSONPtr(in.InputParams),
 		Auth:        c.authConverter.ToGraphQL(in.Auth),
-		Status:      c.StatusToGraphQL(in.Status),
+		Status:      c.statusToGraphQL(in.Status),
 	}
 }
 
@@ -52,28 +52,6 @@ func (c *converter) MultipleToGraphQL(in []*model.PackageInstanceAuth) []*graphq
 	}
 
 	return packageInstanceAuths
-}
-
-func (c *converter) StatusToGraphQL(in *model.PackageInstanceAuthStatus) *graphql.PackageInstanceAuthStatus {
-	if in == nil {
-		return nil
-	}
-
-	var message string
-	if in.Message != nil {
-		message = *in.Message
-	}
-	var reason string
-	if in.Reason != nil {
-		reason = *in.Reason
-	}
-
-	return &graphql.PackageInstanceAuthStatus{
-		Condition: graphql.PackageInstanceAuthStatusCondition(in.Condition),
-		Timestamp: graphql.Timestamp(in.Timestamp),
-		Message:   message,
-		Reason:    reason,
-	}
 }
 
 func (c *converter) RequestInputFromGraphQL(in graphql.PackageInstanceAuthRequestInput) model.PackageInstanceAuthRequestInput {
@@ -116,14 +94,8 @@ func (c *converter) ToEntity(in model.PackageInstanceAuth) (Entity, error) {
 	if in.Status != nil {
 		out.StatusCondition = string(in.Status.Condition)
 		out.StatusTimestamp = in.Status.Timestamp
-
-		if in.Status.Message != nil {
-			out.StatusMessage = *in.Status.Message
-		}
-
-		if in.Status.Reason != nil {
-			out.StatusReason = *in.Status.Reason
-		}
+		out.StatusMessage = in.Status.Message
+		out.StatusReason = in.Status.Reason
 	}
 
 	return out, nil
@@ -145,10 +117,23 @@ func (c *converter) FromEntity(in Entity) (model.PackageInstanceAuth, error) {
 		Status: &model.PackageInstanceAuthStatus{
 			Condition: model.PackageInstanceAuthStatusCondition(in.StatusCondition),
 			Timestamp: in.StatusTimestamp,
-			Message:   &in.StatusMessage,
-			Reason:    &in.StatusReason,
+			Message:   in.StatusMessage,
+			Reason:    in.StatusReason,
 		},
 	}, nil
+}
+
+func (c *converter) statusToGraphQL(in *model.PackageInstanceAuthStatus) *graphql.PackageInstanceAuthStatus {
+	if in == nil {
+		return nil
+	}
+
+	return &graphql.PackageInstanceAuthStatus{
+		Condition: graphql.PackageInstanceAuthStatusCondition(in.Condition),
+		Timestamp: graphql.Timestamp(in.Timestamp),
+		Message:   in.Message,
+		Reason:    in.Reason,
+	}
 }
 
 func (c *converter) strPtrToJSONPtr(in *string) *graphql.JSON {

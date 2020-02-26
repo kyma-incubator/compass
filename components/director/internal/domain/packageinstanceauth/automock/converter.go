@@ -11,6 +11,34 @@ type Converter struct {
 	mock.Mock
 }
 
+// RequestInputFromGraphQL provides a mock function with given fields: in
+func (_m *Converter) RequestInputFromGraphQL(in graphql.PackageInstanceAuthRequestInput) model.PackageInstanceAuthRequestInput {
+	ret := _m.Called(in)
+
+	var r0 model.PackageInstanceAuthRequestInput
+	if rf, ok := ret.Get(0).(func(graphql.PackageInstanceAuthRequestInput) model.PackageInstanceAuthRequestInput); ok {
+		r0 = rf(in)
+	} else {
+		r0 = ret.Get(0).(model.PackageInstanceAuthRequestInput)
+	}
+
+	return r0
+}
+
+// SetInputFromGraphQL provides a mock function with given fields: in
+func (_m *Converter) SetInputFromGraphQL(in graphql.PackageInstanceAuthSetInput) model.PackageInstanceAuthSetInput {
+	ret := _m.Called(in)
+
+	var r0 model.PackageInstanceAuthSetInput
+	if rf, ok := ret.Get(0).(func(graphql.PackageInstanceAuthSetInput) model.PackageInstanceAuthSetInput); ok {
+		r0 = rf(in)
+	} else {
+		r0 = ret.Get(0).(model.PackageInstanceAuthSetInput)
+	}
+
+	return r0
+}
+
 // ToGraphQL provides a mock function with given fields: in
 func (_m *Converter) ToGraphQL(in *model.PackageInstanceAuth) *graphql.PackageInstanceAuth {
 	ret := _m.Called(in)
