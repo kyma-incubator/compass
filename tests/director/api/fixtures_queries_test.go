@@ -2,10 +2,7 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"testing"
-
-	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
@@ -319,17 +316,12 @@ func setDefaultEventingForApplication(t *testing.T, ctx context.Context, appID s
 	require.NoError(t, err)
 }
 
-func createPackage(t *testing.T, ctx context.Context, appID, pkgName string) graphql.Package {
+func createPackage(t *testing.T, ctx context.Context, appID, pkgName string) graphql.PackageExt {
 	in, err := tc.graphqlizer.PackageCreateInputToGQL(fixPackageCreateInput(pkgName))
 	require.NoError(t, err)
 
-	req := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: addPackage(applicationID: "%s", in: %s) {
-				id
-			}}`, appID, in))
-
-	var resp graphql.Package
+	req := fixAddPackageRequest(appID, in)
+	var resp graphql.PackageExt
 
 	err = tc.RunOperation(ctx, req, &resp)
 	require.NoError(t, err)
@@ -345,13 +337,9 @@ func getPackage(t *testing.T, ctx context.Context, appID, pkgID string) graphql.
 }
 
 func deletePackage(t *testing.T, ctx context.Context, id string) {
-	req := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			deletePackage(id: "%s") {
-				id
-			}}`, id))
+	req := fixDeletePackageRequest(id)
 
-	require.NoError(t, tc.RunOperation(context.Background(), req, nil))
+	require.NoError(t, tc.RunOperation(ctx, req, nil))
 }
 
 func addAPIToPackageWithInput(t *testing.T, ctx context.Context, pkgID string, input graphql.APIDefinitionInput) graphql.APIDefinitionExt {
@@ -366,15 +354,8 @@ func addAPIToPackageWithInput(t *testing.T, ctx context.Context, pkgID string, i
 }
 
 func addAPIToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.APIDefinitionExt {
-	input := fixAPIDefinitionInput()
-	inStr, err := tc.graphqlizer.APIDefinitionInputToGQL(input)
-	require.NoError(t, err)
+	return addAPIToPackageWithInput(t, ctx, pkgID, fixAPIDefinitionInput())
 
-	actualApi := graphql.APIDefinitionExt{}
-	req := fixAddAPIToPackageRequest(pkgID, inStr)
-	err = tc.RunOperation(ctx, req, &actualApi)
-	require.NoError(t, err)
-	return actualApi
 }
 
 func addEventToPackageWithInput(t *testing.T, ctx context.Context, pkgID string, input graphql.EventDefinitionInput) graphql.EventDefinition {
@@ -389,15 +370,7 @@ func addEventToPackageWithInput(t *testing.T, ctx context.Context, pkgID string,
 }
 
 func addEventToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.EventDefinition {
-	input := fixEventAPIDefinitionInput()
-	inStr, err := tc.graphqlizer.EventDefinitionInputToGQL(input)
-	require.NoError(t, err)
-
-	event := graphql.EventDefinition{}
-	req := fixAddEventAPIToPackageRequest(pkgID, inStr)
-	err = tc.RunOperation(ctx, req, &event)
-	require.NoError(t, err)
-	return event
+	return addEventToPackageWithInput(t, ctx, pkgID, fixEventAPIDefinitionInput())
 }
 
 func addDocumentToPackageWithInput(t *testing.T, ctx context.Context, pkgID string, input graphql.DocumentInput) graphql.DocumentExt {
@@ -412,13 +385,5 @@ func addDocumentToPackageWithInput(t *testing.T, ctx context.Context, pkgID stri
 }
 
 func addDocumentToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.DocumentExt {
-	input := fixDocumentInput()
-	inStr, err := tc.graphqlizer.DocumentInputToGQL(&input)
-	require.NoError(t, err)
-
-	actualDoc := graphql.DocumentExt{}
-	req := fixAddDocumentToPackageRequest(pkgID, inStr)
-	err = tc.RunOperation(ctx, req, &actualDoc)
-	require.NoError(t, err)
-	return actualDoc
+	return addDocumentToPackageWithInput(t, ctx, pkgID, fixDocumentInput())
 }

@@ -2,11 +2,8 @@
 # Examples
 
 Below you can find a list of mock GraphQL queries and mutations:
-- [add api definition](./add-api-definition/add-api-definition.graphql)
 - [add api definition to package](./add-api-definition-to-package/add-api-definition-to-package.graphql)
-- [add document](./add-document/add-document.graphql)
 - [add document to package](./add-document-to-package/add-document-to-package.graphql)
-- [add event definition](./add-event-definition/add-event-definition.graphql)
 - [add event definition to package](./add-event-definition-to-package/add-event-definition-to-package.graphql)
 - [add application webhook](./add-webhook/add-application-webhook.graphql)
 - [create application template](./create-application-template/create-application-template.graphql)
@@ -28,6 +25,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [query applications with label filter](./query-applications/query-applications-with-label-filter.graphql)
 - [query applications](./query-applications/query-applications.graphql)
 - [query applications for runtime](./query-applications-for-runtime/query-applications-for-runtime.graphql)
+- [query document](./query-document/query-document.graphql)
 - [query event definition](./query-event-definition/query-event-definition.graphql)
 - [query integration system](./query-integration-system/query-integration-system.graphql)
 - [query integration systems](./query-integration-systems/query-integration-systems.graphql)
@@ -37,9 +35,6 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [query runtimes with pagination](./query-runtimes/query-runtimes-with-pagination.graphql)
 - [query runtimes](./query-runtimes/query-runtimes.graphql)
 - [query tenants](./query-tenants/query-tenants.graphql)
-- [register application with api definitions](./register-application/register-application-with-api-definitions.graphql)
-- [register application with documents](./register-application/register-application-with-documents.graphql)
-- [register application with event definitions](./register-application/register-application-with-event-definitions.graphql)
 - [register application with webhooks](./register-application/register-application-with-webhooks.graphql)
 - [register application](./register-application/register-application.graphql)
 - [register application from template](./register-application-from-template/register-application-from-template.graphql)

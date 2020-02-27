@@ -180,7 +180,6 @@ func TestRegisterApplicationWithAPIs(t *testing.T) {
 			appInputGQL,
 			tc.gqlFieldsProvider.ForApplication(),
 		))
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with API definitions")
 
 	err = tc.RunOperation(ctx, request, &actualApp)
 
@@ -245,7 +244,6 @@ func TestRegisterApplicationWithEventDefinitions(t *testing.T) {
 			tc.gqlFieldsProvider.ForApplication(),
 		))
 
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with event definitions")
 	err = tc.RunOperation(ctx, request, &actualApp)
 
 	//THEN
@@ -302,7 +300,6 @@ func TestRegisterApplicationWithDocuments(t *testing.T) {
 			tc.gqlFieldsProvider.ForApplication(),
 		))
 
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with documents")
 	err = tc.RunOperation(ctx, request, &actualApp)
 
 	//THEN
@@ -703,7 +700,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 					%s
 				}
 			}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForAPIDefinition()))
-		saveExample(t, addReq.Query(), "add API Definition")
 		err = tc.RunOperation(ctx, addReq, &actualAPI)
 
 		//THEN
@@ -797,7 +793,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 						%s	
 					}
 				}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForEventDefinition()))
-		saveExample(t, addReq.Query(), "add Event Definition")
 		err = tc.RunOperation(ctx, addReq, &actualEventAPI)
 		// THEN
 		require.NoError(t, err)
@@ -870,7 +865,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 					}
 			}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForDocument()))
 		err = tc.RunOperation(ctx, addReq, &actualDoc)
-		saveExample(t, addReq.Query(), "add Document")
 
 		//THEN
 		require.NoError(t, err)
@@ -1237,7 +1231,6 @@ func TestQuerySpecificAPIDefinition(t *testing.T) {
 				}
 			}`, applicationID, actualAPI.ID, tc.gqlFieldsProvider.ForAPIDefinition()))
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualAPI)
-	saveExample(t, queryAppReq.Query(), "query api definition")
 
 	//THEN
 	require.NoError(t, err)
@@ -1283,7 +1276,6 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 				}
 			}`, applicationID, actualEventAPI.ID, tc.gqlFieldsProvider.ForEventDefinition()))
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualEventAPI)
-	saveExample(t, queryAppReq.Query(), "query event definition")
 
 	//THEN
 	require.NoError(t, err)
