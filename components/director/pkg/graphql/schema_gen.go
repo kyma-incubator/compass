@@ -3206,13 +3206,8 @@ input PackageInstanceAuthSetInput {
 
 input PackageInstanceAuthStatusInput {
 	condition: PackageInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	message: String!
 	"""
-	Required, if condition is "FAILED". If empty for SUCCEEDED status, default message is set.
-	"""
-	message: String
-	"""
-	Required, if condition is "FAILED". If empty for SUCCEEDED status, "CredentialsProvided" reason is set.
-	
 	Example reasons:
 	- PendingNotification
 	- NotificationSent
@@ -3220,7 +3215,7 @@ input PackageInstanceAuthStatusInput {
 	- CredentialsNotProvided
 	- PendingDeletion
 	"""
-	reason: String
+	reason: String!
 }
 
 input PackageUpdateInput {
@@ -3264,10 +3259,7 @@ input WebhookInput {
 
 type APIDefinition {
 	id: ID!
-	"""
-	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
-	"""
-	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
+	applicationID: ID @deprecated(reason: "Use ID field from parent object")
 	name: String!
 	description: String
 	spec: APISpec
@@ -3398,10 +3390,7 @@ type CredentialRequestAuth {
 
 type Document {
 	id: ID!
-	"""
-	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
-	"""
-	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
+	applicationID: ID @deprecated(reason: "Use ID field from parent object")
 	title: String!
 	displayName: String!
 	description: String!
@@ -3422,10 +3411,7 @@ type DocumentPage implements Pageable {
 
 type EventDefinition {
 	id: ID!
-	"""
-	TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
-	"""
-	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
+	applicationID: ID @deprecated(reason: "Use ID field from parent object")
 	name: String!
 	description: String
 	"""
@@ -5970,15 +5956,12 @@ func (ec *executionContext) _APIDefinition_applicationID(ctx context.Context, fi
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_name(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
@@ -8305,15 +8288,12 @@ func (ec *executionContext) _Document_applicationID(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Document_title(ctx context.Context, field graphql.CollectedField, obj *Document) (ret graphql.Marshaler) {
@@ -8740,15 +8720,12 @@ func (ec *executionContext) _EventDefinition_applicationID(ctx context.Context, 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventDefinition_name(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
@@ -19225,13 +19202,13 @@ func (ec *executionContext) unmarshalInputPackageInstanceAuthStatusInput(ctx con
 			}
 		case "message":
 			var err error
-			it.Message, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.Message, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "reason":
 			var err error
-			it.Reason, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.Reason, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19522,9 +19499,6 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			}
 		case "applicationID":
 			out.Values[i] = ec._APIDefinition_applicationID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "name":
 			out.Values[i] = ec._APIDefinition_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -20180,9 +20154,6 @@ func (ec *executionContext) _Document(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "applicationID":
 			out.Values[i] = ec._Document_applicationID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "title":
 			out.Values[i] = ec._Document_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -20284,9 +20255,6 @@ func (ec *executionContext) _EventDefinition(ctx context.Context, sel ast.Select
 			}
 		case "applicationID":
 			out.Values[i] = ec._EventDefinition_applicationID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "name":
 			out.Values[i] = ec._EventDefinition_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

@@ -4,6 +4,7 @@ query {
     apiDefinition(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
       id
       name
+      applicationID
       description
       spec {
         data

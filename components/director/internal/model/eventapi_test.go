@@ -32,7 +32,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 			Expected: &model.EventDefinition{
 				ID:            id,
 				Tenant:        tenant,
-				ApplicationID: appID,
+				ApplicationID: &appID,
 				Name:          name,
 				Description:   &desc,
 				Group:         &group,
@@ -49,7 +49,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToEventDefinition(id, appID, tenant)
+			result := testCase.Input.ToEventDefinition(id, &appID, tenant)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

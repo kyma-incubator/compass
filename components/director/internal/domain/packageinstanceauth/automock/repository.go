@@ -11,6 +11,20 @@ type Repository struct {
 	mock.Mock
 }
 
+// Create provides a mock function with given fields: ctx, item
+func (_m *Repository) Create(ctx context.Context, item *model.PackageInstanceAuth) error {
+	ret := _m.Called(ctx, item)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.PackageInstanceAuth) error); ok {
+		r0 = rf(ctx, item)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Delete provides a mock function with given fields: ctx, tenantID, id
 func (_m *Repository) Delete(ctx context.Context, tenantID string, id string) error {
 	ret := _m.Called(ctx, tenantID, id)
@@ -46,4 +60,64 @@ func (_m *Repository) GetByID(ctx context.Context, tenantID string, id string) (
 	}
 
 	return r0, r1
+}
+
+// GetForPackage provides a mock function with given fields: ctx, tenant, id, packageID
+func (_m *Repository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.PackageInstanceAuth, error) {
+	ret := _m.Called(ctx, tenant, id, packageID)
+
+	var r0 *model.PackageInstanceAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.PackageInstanceAuth); ok {
+		r0 = rf(ctx, tenant, id, packageID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.PackageInstanceAuth)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, tenant, id, packageID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByPackageID provides a mock function with given fields: ctx, tenantID, packageID
+func (_m *Repository) ListByPackageID(ctx context.Context, tenantID string, packageID string) ([]*model.PackageInstanceAuth, error) {
+	ret := _m.Called(ctx, tenantID, packageID)
+
+	var r0 []*model.PackageInstanceAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.PackageInstanceAuth); ok {
+		r0 = rf(ctx, tenantID, packageID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.PackageInstanceAuth)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenantID, packageID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Update provides a mock function with given fields: ctx, item
+func (_m *Repository) Update(ctx context.Context, item *model.PackageInstanceAuth) error {
+	ret := _m.Called(ctx, item)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.PackageInstanceAuth) error); ok {
+		r0 = rf(ctx, item)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }

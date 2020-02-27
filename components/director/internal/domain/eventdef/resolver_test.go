@@ -201,7 +201,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			converter := testCase.ConverterFn()
 			appSvc := testCase.AppServiceFn()
 
-			resolver := eventdef.NewResolver(tx, svc, appSvc, converter, nil)
+			resolver := eventdef.NewResolver(tx, svc, appSvc, nil, converter, nil)
 
 			// when
 			result, err := resolver.AddEventDefinition(context.TODO(), appId, *gqlAPIInput)
@@ -218,6 +218,207 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			tx.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			appSvc.AssertExpectations(t)
+			converter.AssertExpectations(t)
+		})
+	}
+}
+
+func TestResolver_AddEventAPIToPackage(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	id := "bar"
+	packageID := "1"
+
+	modelAPI := fixMinModelEventAPIDefinition(id, "placeholder")
+	gqlAPI := fixGQLEventDefinition(id, "placeholder")
+	gqlAPIInput := fixGQLEventDefinitionInput()
+	modelAPIInput := fixModelEventDefinitionInput()
+
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name             string
+		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn        func() *automock.EventDefService
+		PkgServiceFn     func() *automock.PackageService
+		ConverterFn      func() *automock.EventAPIConverter
+		ExpectedEventDef *graphql.EventDefinition
+		ExpectedErr      error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.EventDefService {
+				svc := &automock.EventDefService{}
+				svc.On("CreateInPackage", contextParam, packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Get", contextParam, id).Return(modelAPI, nil).Once()
+				return svc
+			},
+			PkgServiceFn: func() *automock.PackageService {
+				appSvc := &automock.PackageService{}
+				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
+				return appSvc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				conv.On("ToGraphQL", modelAPI).Return(gqlAPI).Once()
+				return conv
+			},
+			ExpectedEventDef: gqlAPI,
+			ExpectedErr:      nil,
+		},
+		{
+			Name:            "Return error when starting transaction fails",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			ServiceFn: func() *automock.EventDefService {
+				svc := &automock.EventDefService{}
+				return svc
+			},
+			PkgServiceFn: func() *automock.PackageService {
+				appSvc := &automock.PackageService{}
+				return appSvc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			ExpectedEventDef: nil,
+			ExpectedErr:      testErr,
+		},
+		{
+			Name:            "Returns error when application not exist",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.EventDefService {
+				svc := &automock.EventDefService{}
+				return svc
+			},
+			PkgServiceFn: func() *automock.PackageService {
+				appSvc := &automock.PackageService{}
+				appSvc.On("Exist", contextParam, packageID).Return(false, nil)
+				return appSvc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				return conv
+			},
+			ExpectedEventDef: nil,
+			ExpectedErr:      errors.New("Cannot add Event Definition to not existing Package"),
+		},
+		{
+			Name:            "Returns error when application existence check failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.EventDefService {
+				svc := &automock.EventDefService{}
+				return svc
+			},
+			PkgServiceFn: func() *automock.PackageService {
+				appSvc := &automock.PackageService{}
+				appSvc.On("Exist", contextParam, packageID).Return(false, testErr)
+				return appSvc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				return conv
+			},
+			ExpectedEventDef: nil,
+			ExpectedErr:      testErr,
+		},
+		{
+			Name:            "Returns error when Event Definition creation failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.EventDefService {
+				svc := &automock.EventDefService{}
+				svc.On("CreateInPackage", contextParam, packageID, *modelAPIInput).Return("", testErr).Once()
+				return svc
+			},
+			PkgServiceFn: func() *automock.PackageService {
+				appSvc := &automock.PackageService{}
+				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
+				return appSvc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				return conv
+			},
+			ExpectedEventDef: nil,
+			ExpectedErr:      testErr,
+		},
+		{
+			Name:            "Returns error when Event Definition retrieval failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.EventDefService {
+				svc := &automock.EventDefService{}
+				svc.On("CreateInPackage", contextParam, packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
+				return svc
+			},
+			PkgServiceFn: func() *automock.PackageService {
+				appSvc := &automock.PackageService{}
+				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
+				return appSvc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				return conv
+			},
+			ExpectedEventDef: nil,
+			ExpectedErr:      testErr,
+		},
+		{
+			Name:            "Return error when commit transaction fails",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.EventDefService {
+				svc := &automock.EventDefService{}
+				svc.On("CreateInPackage", contextParam, packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Get", contextParam, id).Return(modelAPI, nil).Once()
+				return svc
+			},
+			PkgServiceFn: func() *automock.PackageService {
+				appSvc := &automock.PackageService{}
+				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
+				return appSvc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				return conv
+			},
+			ExpectedEventDef: nil,
+			ExpectedErr:      testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// given
+			persistance, tx := testCase.TransactionerFn()
+			svc := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+			pkgSvc := testCase.PkgServiceFn()
+
+			resolver := eventdef.NewResolver(tx, svc, nil, pkgSvc, converter, nil)
+
+			// when
+			result, err := resolver.AddEventDefinitionToPackage(context.TODO(), packageID, *gqlAPIInput)
+
+			// then
+			assert.Equal(t, testCase.ExpectedEventDef, result)
+			if testCase.ExpectedErr != nil {
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				require.Nil(t, err)
+			}
+
+			persistance.AssertExpectations(t)
+			tx.AssertExpectations(t)
+			svc.AssertExpectations(t)
+			pkgSvc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
 	}
@@ -330,7 +531,7 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := eventdef.NewResolver(tx, svc, nil, converter, nil)
+			resolver := eventdef.NewResolver(tx, svc, nil, nil, converter, nil)
 
 			// when
 			result, err := resolver.DeleteEventDefinition(context.TODO(), id)
@@ -467,7 +668,7 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := eventdef.NewResolver(tx, svc, nil, converter, nil)
+			resolver := eventdef.NewResolver(tx, svc, nil, nil, converter, nil)
 
 			// when
 			result, err := resolver.UpdateEventDefinition(context.TODO(), id, *gqlAPIDefinitionInput)
@@ -585,7 +786,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
-			resolver := eventdef.NewResolver(transact, svc, nil, conv, nil)
+			resolver := eventdef.NewResolver(transact, svc, nil, nil, conv, nil)
 
 			// when
 			result, err := resolver.RefetchEventDefinitionSpec(context.TODO(), apiID)
@@ -727,7 +928,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := eventdef.NewResolver(transact, svc, nil, nil, converter)
+			resolver := eventdef.NewResolver(transact, svc, nil, nil, nil, converter)
 
 			// when
 			result, err := resolver.FetchRequest(context.TODO(), testCase.EventApiSpec)

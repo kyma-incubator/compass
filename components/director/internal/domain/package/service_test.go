@@ -33,7 +33,7 @@ func TestService_Create(t *testing.T) {
 	modelInput := model.PackageCreateInput{
 		Name:                           name,
 		Description:                    &desc,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.AuthInput{},
 	}
 
@@ -43,7 +43,7 @@ func TestService_Create(t *testing.T) {
 		ApplicationID:                  applicationID,
 		Name:                           name,
 		Description:                    &desc,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.Auth{},
 	}
 
@@ -133,7 +133,7 @@ func TestService_Update(t *testing.T) {
 	modelInput := model.PackageUpdateInput{
 		Name:                           name,
 		Description:                    &desc,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.AuthInput{},
 	}
 
@@ -147,7 +147,7 @@ func TestService_Update(t *testing.T) {
 		ApplicationID:                  "id",
 		Name:                           name,
 		Description:                    &desc,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.Auth{},
 	}
 
@@ -493,6 +493,81 @@ func TestService_GetForApplication(t *testing.T) {
 
 			// when
 			document, err := svc.GetForApplication(ctx, testCase.InputID, testCase.ApplicationID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedPackage, document)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := mp_package.NewService(nil, nil)
+		// WHEN
+		_, err := svc.GetForApplication(context.TODO(), "", "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_GetByInstanceAuthID(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	appID := "bar"
+	name := "foo"
+	desc := "bar"
+
+	pkg := fixPackageModel(t, name, desc)
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.PackageRepository
+		Input              model.PackageCreateInput
+		InstanceAuthID     string
+		ExpectedPackage    *model.Package
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.PackageRepository {
+				repo := &automock.PackageRepository{}
+				repo.On("GetByInstanceAuthID", ctx, tenantID, appID).Return(pkg, nil).Once()
+				return repo
+			},
+			InstanceAuthID:     appID,
+			ExpectedPackage:    pkg,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when Package retrieval failed",
+			RepositoryFn: func() *automock.PackageRepository {
+				repo := &automock.PackageRepository{}
+				repo.On("GetByInstanceAuthID", ctx, tenantID, appID).Return(nil, testErr).Once()
+				return repo
+			},
+			InstanceAuthID:     appID,
+			ExpectedPackage:    nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			svc := mp_package.NewService(repo, nil)
+
+			// when
+			document, err := svc.GetByInstanceAuthID(ctx, testCase.InstanceAuthID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

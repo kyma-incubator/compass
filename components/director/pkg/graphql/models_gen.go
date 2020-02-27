@@ -195,18 +195,6 @@ type DocumentPage struct {
 
 func (DocumentPage) IsPageable() {}
 
-type EventDefinition struct {
-	ID string `json:"id"`
-	// TODO: Modify APIDefinition, Document and EventDefinition GraphQL types: Make the applicationID field optional and packageID required
-	ApplicationID string  `json:"applicationID"`
-	Name          string  `json:"name"`
-	Description   *string `json:"description"`
-	// group allows you to find the same API but in different version
-	Group   *string    `json:"group"`
-	Spec    *EventSpec `json:"spec"`
-	Version *Version   `json:"version"`
-}
-
 type EventDefinitionInput struct {
 	Name        string          `json:"name"`
 	Description *string         `json:"description"`
@@ -375,17 +363,14 @@ type PackageInstanceAuthStatus struct {
 
 type PackageInstanceAuthStatusInput struct {
 	Condition PackageInstanceAuthSetStatusConditionInput `json:"condition"`
-	// Required, if condition is "FAILED". If empty for SUCCEEDED status, default message is set.
-	Message *string `json:"message"`
-	// Required, if condition is "FAILED". If empty for SUCCEEDED status, "CredentialsProvided" reason is set.
-	//
+	Message   string                                     `json:"message"`
 	// Example reasons:
 	// - PendingNotification
 	// - NotificationSent
 	// - CredentialsProvided
 	// - CredentialsNotProvided
 	// - PendingDeletion
-	Reason *string `json:"reason"`
+	Reason string `json:"reason"`
 }
 
 type PackagePage struct {

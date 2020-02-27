@@ -3,8 +3,6 @@ package eventdef
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
-
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
 	"github.com/pkg/errors"
@@ -17,6 +15,7 @@ import (
 //go:generate mockery -name=EventDefService -output=automock -outpkg=automock -case=underscore
 type EventDefService interface {
 	Create(ctx context.Context, applicationID string, in model.EventDefinitionInput) (string, error)
+	CreateInPackage(ctx context.Context, packageID string, in model.EventDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.EventDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
 	Delete(ctx context.Context, id string) error
@@ -43,19 +42,26 @@ type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
+//go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
+type PackageService interface {
+	Exist(ctx context.Context, id string) (bool, error)
+}
+
 type Resolver struct {
 	transact    persistence.Transactioner
 	svc         EventDefService
 	appSvc      ApplicationService
+	pkgSvc      PackageService
 	converter   EventDefConverter
 	frConverter FetchRequestConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc EventDefService, appSvc ApplicationService, converter EventDefConverter, frConverter FetchRequestConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc EventDefService, appSvc ApplicationService, pkgSvc PackageService, converter EventDefConverter, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		svc:         svc,
 		appSvc:      appSvc,
+		pkgSvc:      pkgSvc,
 		converter:   converter,
 		frConverter: frConverter,
 	}
@@ -220,7 +226,42 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 	return frGQL, nil
 }
 
-// TODO: Replace with real implementation
 func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
-	return mock.FixEventDefinition("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), nil
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	convertedIn := r.converter.InputFromGraphQL(&in)
+
+	found, err := r.pkgSvc.Exist(ctx, packageID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while checking existence of Package")
+	}
+
+	if !found {
+		return nil, errors.New("Cannot add Event Definition to not existing Package")
+	}
+
+	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
+	if err != nil {
+		return nil, err
+	}
+
+	api, err := r.svc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlAPI := r.converter.ToGraphQL(api)
+
+	return gqlAPI, nil
 }

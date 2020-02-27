@@ -3,6 +3,7 @@ module github.com/kyma-incubator/compass/tests/connectivity-adapter
 go 1.13
 
 require (
+	github.com/avast/retry-go v2.4.3+incompatible
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200204090111-0997ef97abfb
 	github.com/kyma-incubator/compass/tests/director v0.0.0-20200204090111-0997ef97abfb
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225

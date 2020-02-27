@@ -9,8 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -57,6 +55,16 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			},
 			Input:    fixModelPackageInstanceAuthWithoutContextAndInputParams(testID, testPackageID, testTenant, nil, fixModelStatusPending()),
 			Expected: fixGQLPackageInstanceAuthWithoutContextAndInputParams(testID, nil, fixGQLStatusPending()),
+		},
+		{
+			Name: "Success when context and input params empty",
+			AuthConverterFn: func() *automock.AuthConverter {
+				conv := &automock.AuthConverter{}
+				conv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil).Once()
+				return conv
+			},
+			Input:    fixModelPackageInstanceAuthWithoutContextAndInputParams(testID, testPackageID, testTenant, nil, nil),
+			Expected: fixGQLPackageInstanceAuthWithoutContextAndInputParams(testID, nil, nil),
 		},
 	}
 
@@ -133,57 +141,6 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 }
 
-func TestConverter_StatusToGraphQL(t *testing.T) {
-	// GIVEN
-	testCases := []struct {
-		Name     string
-		Input    *model.PackageInstanceAuthStatus
-		Expected *graphql.PackageInstanceAuthStatus
-	}{
-		{
-			Name:     "Success when nil",
-			Input:    nil,
-			Expected: nil,
-		},
-		{
-			Name:     "Success when status is Succeeded",
-			Input:    fixModelStatusSucceeded(),
-			Expected: fixGQLStatusSucceeded(),
-		},
-		{
-			Name:     "Success when status is Pending",
-			Input:    fixModelStatusPending(),
-			Expected: fixGQLStatusPending(),
-		},
-		{
-			Name: "Success when no message and reason",
-			Input: &model.PackageInstanceAuthStatus{
-				Condition: model.PackageInstanceAuthStatusConditionSucceeded,
-				Timestamp: testTime,
-				Message:   nil,
-				Reason:    nil,
-			},
-			Expected: &graphql.PackageInstanceAuthStatus{
-				Condition: graphql.PackageInstanceAuthStatusConditionSucceeded,
-				Timestamp: graphql.Timestamp(testTime),
-				Message:   "",
-				Reason:    "",
-			},
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			conv := packageinstanceauth.NewConverter(nil)
-			// WHEN
-			result := conv.StatusToGraphQL(testCase.Input)
-
-			// THEN
-			require.Equal(t, testCase.Expected, result)
-		})
-	}
-}
-
 func TestConverter_RequestInputFromGraphQL(t *testing.T) {
 	// GIVEN
 	testJSON := graphql.JSON("test")
@@ -251,11 +208,11 @@ func TestConverter_SetInputFromGraphQL(t *testing.T) {
 			},
 			Input: graphql.PackageInstanceAuthSetInput{
 				Auth:   authInputGQL,
-				Status: fixGQLStatusInput(graphql.PackageInstanceAuthSetStatusConditionInputSucceeded, str.Ptr("foo"), str.Ptr("bar")),
+				Status: fixGQLStatusInput(graphql.PackageInstanceAuthSetStatusConditionInputSucceeded, "foo", "bar"),
 			},
 			Expected: model.PackageInstanceAuthSetInput{
 				Auth:   authInputModel,
-				Status: fixModelStatusInput(model.PackageInstanceAuthSetStatusConditionInputSucceeded, str.Ptr("foo"), str.Ptr("bar")),
+				Status: fixModelStatusInput(model.PackageInstanceAuthSetStatusConditionInputSucceeded, "foo", "bar"),
 			},
 		},
 		{
@@ -283,11 +240,11 @@ func TestConverter_SetInputFromGraphQL(t *testing.T) {
 			},
 			Input: graphql.PackageInstanceAuthSetInput{
 				Auth:   nil,
-				Status: fixGQLStatusInput(graphql.PackageInstanceAuthSetStatusConditionInputFailed, str.Ptr("foo"), str.Ptr("bar")),
+				Status: fixGQLStatusInput(graphql.PackageInstanceAuthSetStatusConditionInputFailed, "foo", "bar"),
 			},
 			Expected: model.PackageInstanceAuthSetInput{
 				Auth:   nil,
-				Status: fixModelStatusInput(model.PackageInstanceAuthSetStatusConditionInputFailed, str.Ptr("foo"), str.Ptr("bar")),
+				Status: fixModelStatusInput(model.PackageInstanceAuthSetStatusConditionInputFailed, "foo", "bar"),
 			},
 		},
 	}

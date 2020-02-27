@@ -22,13 +22,13 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-865"
+      version: "PR-831"
     pairing_adapter:
       dir:
       version: "PR-867"
     director:
       dir:
-      version: "PR-862"
+      version: "PR-882"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -52,7 +52,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-792"
+        version: "PR-874"
       connector:
         dir:
         version: "02e8358c"

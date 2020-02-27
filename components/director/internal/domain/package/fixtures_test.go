@@ -3,16 +3,162 @@ package mp_package_test
 import (
 	"database/sql"
 	"database/sql/driver"
-	"encoding/json"
 	"testing"
+	"time"
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
+
+func fixModelAPIDefinition(id string, pkgID *string, name, description string, group string) *model.APIDefinition {
+	return &model.APIDefinition{
+		ID:          id,
+		PackageID:   pkgID,
+		Name:        name,
+		Description: &description,
+		Group:       &group,
+	}
+}
+
+func fixGQLAPIDefinition(id string, pkgID *string, name, description string, group string) *graphql.APIDefinition {
+	return &graphql.APIDefinition{
+		ID:          id,
+		PackageID:   pkgID,
+		Name:        name,
+		Description: &description,
+		Group:       &group,
+	}
+}
+
+func fixAPIDefinitionPage(apiDefinitions []*model.APIDefinition) *model.APIDefinitionPage {
+	return &model.APIDefinitionPage{
+		Data: apiDefinitions,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(apiDefinitions),
+	}
+}
+
+func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.APIDefinitionPage {
+	return &graphql.APIDefinitionPage{
+		Data: apiDefinitions,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(apiDefinitions),
+	}
+}
+
+func fixModelEventAPIDefinition(id string, appId, packageID *string, name, description string, group string) *model.EventDefinition {
+	return &model.EventDefinition{
+		ID:            id,
+		ApplicationID: appId,
+		PackageID:     packageID,
+		Name:          name,
+		Description:   &description,
+		Group:         &group,
+	}
+}
+func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
+	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
+		ApplicationID: str.Ptr("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), PackageID: str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"), Name: placeholder}
+}
+func fixGQLEventDefinition(id string, appId, packageID *string, name, description string, group string) *graphql.EventDefinition {
+	return &graphql.EventDefinition{
+		ID:            id,
+		ApplicationID: appId,
+		PackageID:     packageID,
+		Name:          name,
+		Description:   &description,
+		Group:         &group,
+	}
+}
+
+func fixEventAPIDefinitionPage(eventAPIDefinitions []*model.EventDefinition) *model.EventDefinitionPage {
+	return &model.EventDefinitionPage{
+		Data: eventAPIDefinitions,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(eventAPIDefinitions),
+	}
+}
+
+func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *graphql.EventDefinitionPage {
+	return &graphql.EventDefinitionPage{
+		Data: eventAPIDefinitions,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(eventAPIDefinitions),
+	}
+}
+
+var (
+	docKind  = "fookind"
+	docTitle = "footitle"
+	docData  = "foodata"
+	docCLOB  = graphql.CLOB(docData)
+)
+
+func fixModelDocument(packageID, applicationID, id string) *model.Document {
+	return &model.Document{
+		ApplicationID: &applicationID,
+		PackageID:     &packageID,
+		ID:            id,
+		Title:         docTitle,
+		Format:        model.DocumentFormatMarkdown,
+		Kind:          &docKind,
+		Data:          &docData,
+	}
+}
+
+func fixModelDocumentPage(documents []*model.Document) *model.DocumentPage {
+	return &model.DocumentPage{
+		Data: documents,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(documents),
+	}
+}
+
+func fixGQLDocument(id string) *graphql.Document {
+	return &graphql.Document{
+		ID:     id,
+		Title:  docTitle,
+		Format: graphql.DocumentFormatMarkdown,
+		Kind:   &docKind,
+		Data:   &docCLOB,
+	}
+}
+
+func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
+	return &graphql.DocumentPage{
+		Data: documents,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(documents),
+	}
+}
 
 const (
 	packageID = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
@@ -27,7 +173,7 @@ func fixPackageModel(t *testing.T, name, desc string) *model.Package {
 		ApplicationID:                  appID,
 		Name:                           name,
 		Description:                    &desc,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            fixModelAuth(),
 	}
 }
@@ -74,7 +220,7 @@ func fixModelPackageCreateInput(t *testing.T, name, description string) model.Pa
 	return model.PackageCreateInput{
 		Name:                           name,
 		Description:                    &description,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &authInput,
 	}
 }
@@ -110,7 +256,7 @@ func fixModelPackageUpdateInput(t *testing.T, name, description string) model.Pa
 	return model.PackageUpdateInput{
 		Name:                           name,
 		Description:                    &description,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &authInput,
 	}
 }
@@ -217,18 +363,53 @@ func fixBasicInputSchema() *graphql.JSONSchema {
 	return &jsonSchema
 }
 
-func fixBasicSchema(t *testing.T) *interface{} {
-	sch := fixBasicInputSchema()
-	require.NotNil(t, sch)
-	var obj map[string]interface{}
-
-	err := json.Unmarshal([]byte(*sch), &obj)
-	require.NoError(t, err)
-	var objTemp interface{}
-	objTemp = obj
-	return &objTemp
+func fixBasicSchema() *string {
+	sch := inputSchemaString()
+	return &sch
 }
 
 func fixSchema() string {
 	return `{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`
+}
+
+func fixModelPackageInstanceAuth(id string) *model.PackageInstanceAuth {
+	status := model.PackageInstanceAuthStatus{
+		Condition: model.PackageInstanceAuthStatusConditionPending,
+		Timestamp: time.Time{},
+		Message:   "test-message",
+		Reason:    "test-reason",
+	}
+
+	context := "ctx"
+	params := "test-param"
+	return &model.PackageInstanceAuth{
+		ID:          id,
+		PackageID:   packageID,
+		Tenant:      tenantID,
+		Context:     &context,
+		InputParams: &params,
+		Auth:        fixModelAuth(),
+		Status:      &status,
+	}
+}
+
+func fixGQLPackageInstanceAuth(id string) *graphql.PackageInstanceAuth {
+	msg := "test-message"
+	reason := "test-reason"
+	status := graphql.PackageInstanceAuthStatus{
+		Condition: graphql.PackageInstanceAuthStatusConditionPending,
+		Timestamp: graphql.Timestamp{},
+		Message:   msg,
+		Reason:    reason,
+	}
+
+	params := graphql.JSON("test-param")
+	ctx := graphql.JSON("ctx")
+	return &graphql.PackageInstanceAuth{
+		ID:          id,
+		Context:     &ctx,
+		InputParams: &params,
+		Auth:        fixGQLAuth(),
+		Status:      &status,
+	}
 }

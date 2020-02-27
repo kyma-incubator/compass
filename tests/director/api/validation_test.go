@@ -84,10 +84,8 @@ func TestUpdateLabelDefinition_Validation(t *testing.T) {
 	key := "test-validation-ld"
 	ld := createLabelDefinitionWithinTenant(t, ctx, key, map[string]string{"type": "string"}, defaultTenant)
 	defer deleteLabelDefinitionWithinTenant(t, ctx, ld.Key, true, defaultTenant)
-	invalidSchema := graphql.JSONSchema(`"{\"test\":}"`)
 	invalidInput := graphql.LabelDefinitionInput{
-		Key:    key,
-		Schema: &invalidSchema,
+		Key: "",
 	}
 	inputString, err := tc.graphqlizer.LabelDefinitionInputToGQL(invalidInput)
 	require.NoError(t, err)

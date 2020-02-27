@@ -6,38 +6,35 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 )
 
-func NewMapperForUser(staticUserRepo StaticUserRepository, tenantRepo TenantRepository) *mapperForUser {
+func NewMapperForUser(staticUserRepo StaticUserRepository, staticGroupRepo StaticGroupRepository, tenantRepo TenantRepository) *mapperForUser {
 	return &mapperForUser{
-		staticUserRepo: staticUserRepo,
-		tenantRepo:     tenantRepo,
+		staticUserRepo:  staticUserRepo,
+		staticGroupRepo: staticGroupRepo,
+		tenantRepo:      tenantRepo,
 	}
 }
 
 type mapperForUser struct {
-	staticUserRepo StaticUserRepository
-	tenantRepo     TenantRepository
+	staticUserRepo  StaticUserRepository
+	staticGroupRepo StaticGroupRepository
+	tenantRepo      TenantRepository
 }
 
 func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
 	var externalTenantID, scopes string
+	var staticUser *StaticUser
+	var err error
 
-	staticUser, err := m.staticUserRepo.Get(username)
-	if err != nil {
-		return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))
-	}
-
-	scopes, err = reqData.GetScopes()
-	if err != nil {
-		if !apperrors.IsKeyDoesNotExist(err) {
-			return ObjectContext{}, errors.Wrap(err, "while fetching scopes")
+	scopes = m.getScopesForUserGroups(reqData)
+	if !hasScopes(scopes) {
+		staticUser, scopes, err = m.getUserData(reqData, username)
+		if err != nil {
+			return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while getting user data"))
 		}
-
-		scopes = strings.Join(staticUser.Scopes, " ")
 	}
 
 	externalTenantID, err = reqData.GetExternalTenantID()
@@ -45,8 +42,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 		if !apperrors.IsKeyDoesNotExist(err) {
 			return ObjectContext{}, errors.Wrap(err, "while fetching external tenant")
 		}
-
-		return NewObjectContext(TenantContext{}, scopes, staticUser.Username, consumer.User), nil
+		return NewObjectContext(TenantContext{}, scopes, username, consumer.User), nil
 	}
 
 	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
@@ -54,11 +50,42 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
 
-	if !hasValidTenant(staticUser.Tenants, tenantMapping.ExternalTenant) {
+	if staticUser != nil && !hasValidTenant(staticUser.Tenants, tenantMapping.ExternalTenant) {
 		return ObjectContext{}, errors.New("tenant mismatch")
 	}
 
-	return NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, staticUser.Username, consumer.User), nil
+	return NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, username, consumer.User), nil
+}
+
+func (m *mapperForUser) getScopesForUserGroups(reqData ReqData) string {
+	userGroups := reqData.GetUserGroups()
+	if len(userGroups) == 0 {
+		return ""
+	}
+
+	staticGroups := m.staticGroupRepo.Get(userGroups)
+	if len(staticGroups) == 0 {
+		return ""
+	}
+
+	return staticGroups.GetGroupScopes()
+}
+
+func (m *mapperForUser) getUserData(reqData ReqData, username string) (*StaticUser, string, error) {
+	staticUser, err := m.staticUserRepo.Get(username)
+	if err != nil {
+		return nil, "", errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))
+	}
+
+	scopes, err := reqData.GetScopes()
+	if err != nil {
+		if !apperrors.IsKeyDoesNotExist(err) {
+			return nil, "", errors.Wrap(err, "while fetching scopes")
+		}
+		scopes = strings.Join(staticUser.Scopes, " ")
+	}
+
+	return &staticUser, scopes, nil
 }
 
 func hasValidTenant(assignedTenants []string, tenant string) bool {
@@ -69,4 +96,8 @@ func hasValidTenant(assignedTenants []string, tenant string) bool {
 	}
 
 	return false
+}
+
+func hasScopes(scopes string) bool {
+	return len(scopes) > 0
 }

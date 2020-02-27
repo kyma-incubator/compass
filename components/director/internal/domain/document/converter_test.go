@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/require"
@@ -24,8 +26,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixModelDocument("1", "foo"),
-			Expected: fixGQLDocument("1", "foo"),
+			Input:    fixModelDocument("1", "bar", "foo"),
+			Expected: fixGQLDocument("1", "bar", "foo"),
 		},
 		{
 			Name:     "Empty",
@@ -57,14 +59,14 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.Document{
-		fixModelDocument("1", "foo"),
-		fixModelDocument("2", "bar"),
+		fixModelDocument("1", "foo", "foo"),
+		fixModelDocument("2", "bar", "bar"),
 		{},
 		nil,
 	}
 	expected := []*graphql.Document{
-		fixGQLDocument("1", "foo"),
-		fixGQLDocument("2", "bar"),
+		fixGQLDocument("1", "foo", "foo"),
+		fixGQLDocument("2", "bar", "bar"),
 		{},
 	}
 	frConv := &automock.FetchRequestConverter{}
@@ -153,7 +155,8 @@ func TestToEntity(t *testing.T) {
 	modelWithRequiredFields := model.Document{
 		ID:            "givenID",
 		Tenant:        "givenTenant",
-		ApplicationID: "givenApplicationID",
+		ApplicationID: str.Ptr("givenApplicationID"),
+		PackageID:     str.Ptr("givenPackageID"),
 		Title:         "givenTitle",
 		Description:   "givenDescription",
 		DisplayName:   "givenDisplayName",
@@ -169,7 +172,8 @@ func TestToEntity(t *testing.T) {
 		assert.Equal(t, document.Entity{
 			ID:          "givenID",
 			TenantID:    "givenTenant",
-			AppID:       "givenApplicationID",
+			AppID:       repo.NewNullableString(str.Ptr("givenApplicationID")),
+			PkgID:       repo.NewNullableString(str.Ptr("givenPackageID")),
 			Title:       "givenTitle",
 			Description: "givenDescription",
 			DisplayName: "givenDisplayName",
@@ -196,7 +200,8 @@ func TestFromEntity(t *testing.T) {
 	entityWithRequiredFields := document.Entity{
 		ID:          "givenID",
 		TenantID:    "givenTenant",
-		AppID:       "givenAppID",
+		AppID:       repo.NewNullableString(str.Ptr("givenApplicationID")),
+		PkgID:       repo.NewNullableString(str.Ptr("givenPackageID")),
 		Title:       "givenTitle",
 		DisplayName: "givenDisplayName",
 		Description: "givenDescription",
@@ -212,7 +217,8 @@ func TestFromEntity(t *testing.T) {
 		assert.Equal(t, model.Document{
 			ID:            "givenID",
 			Tenant:        "givenTenant",
-			ApplicationID: "givenAppID",
+			ApplicationID: str.Ptr("givenApplicationID"),
+			PackageID:     str.Ptr("givenPackageID"),
 			Title:         "givenTitle",
 			DisplayName:   "givenDisplayName",
 			Description:   "givenDescription",

@@ -45,7 +45,11 @@ func TestConnector(t *testing.T) {
 	config, err := testkit.ReadConfiguration()
 	require.NoError(t, err)
 
-	client, err := director.NewClient(config.DirectorUrl, config.Tenant, []string{"application:read", "application:write", "runtime:write", "runtime:read", "eventing:manage"})
+	client, err := director.NewClient(
+		config.DirectorUrl,
+		config.DirectorHealthzUrl,
+		config.Tenant,
+		[]string{"application:read", "application:write", "runtime:write", "runtime:read", "eventing:manage"})
 	require.NoError(t, err)
 
 	appID, err := client.CreateApplication(appInput)
