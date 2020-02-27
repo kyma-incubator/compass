@@ -42,7 +42,6 @@ type Config struct {
 	Provisioning broker.ProvisioningConfig
 	Director     director.Config
 	Database     storage.Config
-	DirectorURL  string
 	Gardener     gardener.Config
 
 	ServiceManager internal.ServiceManagerOverride
@@ -126,7 +125,7 @@ func main() {
 
 	accountProvider := hyperscaler.NewAccountProvider(compassAccountPool, gardenerAccountPool)
 
-	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager, cfg.DirectorURL, accountProvider)
+	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager, cfg.Director.URL, accountProvider)
 
 	dumper, err := broker.NewDumper()
 	fatalOnError(err)
