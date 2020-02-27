@@ -27,5 +27,7 @@ type ApplicationExt struct {
 	EventDefinition       EventDefinition                  `json:"eventDefinition"`
 	Documents             DocumentPageExt                  `json:"documents"`
 	Auths                 []*SystemAuth                    `json:"auths"`
+	Package               PackageExt                       `json:"package"`
+	Packages              PackagePageExt                   `json:"packages"`
 	EventingConfiguration ApplicationEventingConfiguration `json:"eventingConfiguration"`
 }

@@ -3259,7 +3259,7 @@ input WebhookInput {
 
 type APIDefinition {
 	id: ID!
-	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
+	applicationID: ID @deprecated(reason: "Use ID field from parent object")
 	name: String!
 	description: String
 	spec: APISpec
@@ -3390,7 +3390,7 @@ type CredentialRequestAuth {
 
 type Document {
 	id: ID!
-	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
+	applicationID: ID @deprecated(reason: "Use ID field from parent object")
 	title: String!
 	displayName: String!
 	description: String!
@@ -3411,7 +3411,7 @@ type DocumentPage implements Pageable {
 
 type EventDefinition {
 	id: ID!
-	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
+	applicationID: ID @deprecated(reason: "Use ID field from parent object")
 	name: String!
 	description: String
 	"""
@@ -5956,15 +5956,12 @@ func (ec *executionContext) _APIDefinition_applicationID(ctx context.Context, fi
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_name(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
@@ -8291,15 +8288,12 @@ func (ec *executionContext) _Document_applicationID(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Document_title(ctx context.Context, field graphql.CollectedField, obj *Document) (ret graphql.Marshaler) {
@@ -8726,15 +8720,12 @@ func (ec *executionContext) _EventDefinition_applicationID(ctx context.Context, 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventDefinition_name(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
@@ -19508,9 +19499,6 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			}
 		case "applicationID":
 			out.Values[i] = ec._APIDefinition_applicationID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "name":
 			out.Values[i] = ec._APIDefinition_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -20166,9 +20154,6 @@ func (ec *executionContext) _Document(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "applicationID":
 			out.Values[i] = ec._Document_applicationID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "title":
 			out.Values[i] = ec._Document_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -20270,9 +20255,6 @@ func (ec *executionContext) _EventDefinition(ctx context.Context, sel ast.Select
 			}
 		case "applicationID":
 			out.Values[i] = ec._EventDefinition_applicationID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "name":
 			out.Values[i] = ec._EventDefinition_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -22915,24 +22897,6 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) unmarshalNID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNID2string(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalNID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec.marshalNID2string(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
