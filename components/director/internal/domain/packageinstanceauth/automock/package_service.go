@@ -11,6 +11,29 @@ type PackageService struct {
 	mock.Mock
 }
 
+// Get provides a mock function with given fields: ctx, id
+func (_m *PackageService) Get(ctx context.Context, id string) (*model.Package, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.Package
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Package); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Package)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByInstanceAuthID provides a mock function with given fields: ctx, instanceAuthID
 func (_m *PackageService) GetByInstanceAuthID(ctx context.Context, instanceAuthID string) (*model.Package, error) {
 	ret := _m.Called(ctx, instanceAuthID)

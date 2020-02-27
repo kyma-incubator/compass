@@ -25,8 +25,8 @@ func TestPackageInstanceAuthRequestInput_ToPackageInstanceAuth(t *testing.T) {
 	inputStatus := PackageInstanceAuthStatus{
 		Condition: PackageInstanceAuthStatusConditionPending,
 		Timestamp: timestamp,
-		Message:   str.Ptr("Credentials were not yet provided."),
-		Reason:    str.Ptr("CredentialsNotProvided"),
+		Message:   "Credentials were not yet provided.",
+		Reason:    "CredentialsNotProvided",
 	}
 	inputAuth := Auth{
 		Credential: CredentialData{
@@ -46,7 +46,7 @@ func TestPackageInstanceAuthRequestInput_ToPackageInstanceAuth(t *testing.T) {
 		Auth:        &inputAuth,
 		Status:      &inputStatus,
 	}
-	result := input.ToPackageInstanceAuth(testID, testPackageID, testTenant, &inputAuth, inputStatus)
+	result := input.ToPackageInstanceAuth(testID, testPackageID, testTenant, &inputAuth, &inputStatus)
 	// THEN
 	require.Equal(t, expected, result)
 
@@ -70,14 +70,14 @@ func TestPackageInstanceAuthStatusInput_ToPackageInstanceAuthStatus(t *testing.T
 			Name: "Success",
 			Input: &PackageInstanceAuthStatusInput{
 				Condition: PackageInstanceAuthSetStatusConditionInputSucceeded,
-				Message:   str.Ptr("foo"),
-				Reason:    str.Ptr("bar"),
+				Message:   "foo",
+				Reason:    "bar",
 			},
 			Expected: &PackageInstanceAuthStatus{
 				Condition: PackageInstanceAuthStatusConditionSucceeded,
 				Timestamp: timestamp,
-				Message:   str.Ptr("foo"),
-				Reason:    str.Ptr("bar"),
+				Message:   "foo",
+				Reason:    "bar",
 			},
 		},
 	}
@@ -144,8 +144,8 @@ func TestPackageInstanceAuth_SetDefaultStatus(t *testing.T) {
 				assert.Equal(t, &PackageInstanceAuthStatus{
 					Condition: testCase.InputCondition,
 					Timestamp: timestamp,
-					Message:   &testCase.ExpectedMessage,
-					Reason:    &testCase.ExpectedReason,
+					Message:   testCase.ExpectedMessage,
+					Reason:    testCase.ExpectedReason,
 				}, instanceAuth.Status)
 			} else {
 				require.Error(t, err)

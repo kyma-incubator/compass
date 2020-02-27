@@ -21,7 +21,7 @@ func (j *JSON) UnmarshalGQL(v interface{}) error {
 
 	err = json.Unmarshal([]byte(val), new(interface{}))
 	if err != nil {
-		return errors.New("input is not a valid JSON")
+		return errors.New("JSON input is not a valid JSON")
 	}
 
 	*j = JSON(val)

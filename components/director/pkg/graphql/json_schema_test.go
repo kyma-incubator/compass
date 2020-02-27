@@ -18,9 +18,9 @@ func TestUnmarshalGQLJSON(t *testing.T) {
 	}{
 		//given
 		"correct input": {
-			input:    `{"schema":"schema}"`,
+			input:    `{"schema":"schema"}`,
 			err:      false,
-			expected: JSONSchema(`{"schema":"schema}"`),
+			expected: JSONSchema(`{"schema":"schema"}`),
 		},
 		"error: input is nil": {
 			input:  nil,

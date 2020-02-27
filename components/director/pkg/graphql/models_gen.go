@@ -363,17 +363,14 @@ type PackageInstanceAuthStatus struct {
 
 type PackageInstanceAuthStatusInput struct {
 	Condition PackageInstanceAuthSetStatusConditionInput `json:"condition"`
-	// Required, if condition is "FAILED". If empty for SUCCEEDED status, default message is set.
-	Message *string `json:"message"`
-	// Required, if condition is "FAILED". If empty for SUCCEEDED status, "CredentialsProvided" reason is set.
-	//
+	Message   string                                     `json:"message"`
 	// Example reasons:
 	// - PendingNotification
 	// - NotificationSent
 	// - CredentialsProvided
 	// - CredentialsNotProvided
 	// - PendingDeletion
-	Reason *string `json:"reason"`
+	Reason string `json:"reason"`
 }
 
 type PackagePage struct {

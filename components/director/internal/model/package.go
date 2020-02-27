@@ -10,7 +10,7 @@ type Package struct {
 	ApplicationID                  string
 	Name                           string
 	Description                    *string
-	InstanceAuthRequestInputSchema *interface{}
+	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *Auth
 }
 
@@ -24,7 +24,7 @@ func (pkg *Package) SetFromUpdateInput(update PackageUpdateInput) {
 type PackageCreateInput struct {
 	Name                           string
 	Description                    *string
-	InstanceAuthRequestInputSchema *interface{}
+	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *AuthInput
 	APIDefinitions                 []*APIDefinitionInput
 	EventDefinitions               []*EventDefinitionInput
@@ -34,7 +34,7 @@ type PackageCreateInput struct {
 type PackageUpdateInput struct {
 	Name                           string
 	Description                    *string
-	InstanceAuthRequestInputSchema *interface{}
+	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *AuthInput
 }
 

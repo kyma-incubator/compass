@@ -60,13 +60,9 @@ func (i PackageInstanceAuthSetInput) Validate() error {
 }
 
 func (i PackageInstanceAuthStatusInput) Validate() error {
-	if i.Condition == PackageInstanceAuthSetStatusConditionInputFailed && (i.Reason == nil || i.Message == nil) {
-		return errors.New("reason and message are required for failed status")
-	}
-
 	return validation.ValidateStruct(&i,
-		validation.Field(&i.Reason, validation.NilOrNotEmpty),
-		validation.Field(&i.Message, validation.NilOrNotEmpty),
-		validation.Field(&i.Condition, validation.NilOrNotEmpty),
+		validation.Field(&i.Reason, validation.Required),
+		validation.Field(&i.Message, validation.Required),
+		validation.Field(&i.Condition, validation.Required),
 	)
 }

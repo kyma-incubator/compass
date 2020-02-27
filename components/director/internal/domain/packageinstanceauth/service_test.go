@@ -2,7 +2,6 @@ package packageinstanceauth_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -10,6 +9,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -225,6 +227,353 @@ func TestService_Delete(t *testing.T) {
 
 		// WHEN
 		err := svc.Delete(context.TODO(), id)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_SetAuth(t *testing.T) {
+	// GIVEN
+	ctx := tenant.SaveToContext(context.Background(), testTenant)
+
+	modelInstanceAuthFn := func() *model.PackageInstanceAuth {
+		return fixModelPackageInstanceAuth(testID, testPackageID, testTenant, nil, fixModelStatusPending())
+	}
+
+	modelSetInput := fixModelSetInput()
+	modelUpdatedInstanceAuth := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, nil, fixModelStatusPending())
+	modelUpdatedInstanceAuth.Auth = modelSetInput.Auth.ToAuth()
+	modelUpdatedInstanceAuth.Status = &model.PackageInstanceAuthStatus{
+		Condition: model.PackageInstanceAuthStatusConditionSucceeded,
+		Timestamp: testTime,
+		Message:   modelSetInput.Status.Message,
+		Reason:    modelSetInput.Status.Reason,
+	}
+
+	modelSetInputWithoutStatus := model.PackageInstanceAuthSetInput{
+		Auth:   fixModelAuthInput(),
+		Status: nil,
+	}
+	modelUpdatedInstanceAuthWithDefaultStatus := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, nil, fixModelStatusPending())
+	modelUpdatedInstanceAuthWithDefaultStatus.Auth = modelSetInputWithoutStatus.Auth.ToAuth()
+	err := modelUpdatedInstanceAuthWithDefaultStatus.SetDefaultStatus(model.PackageInstanceAuthStatusConditionSucceeded, testTime)
+	require.NoError(t, err)
+
+	testCases := []struct {
+		Name               string
+		InstanceAuthRepoFn func() *automock.Repository
+		Input              model.PackageInstanceAuthSetInput
+		ExpectedError      error
+	}{
+		{
+			Name: "Success",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(modelInstanceAuthFn(), nil).Once()
+				instanceAuthRepo.On("Update", contextThatHasTenant(testTenant), modelUpdatedInstanceAuth).Return(nil).Once()
+				return instanceAuthRepo
+			},
+			Input:         *modelSetInput,
+			ExpectedError: nil,
+		},
+		{
+			Name: "Success when new status not provided",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(modelInstanceAuthFn(), nil).Once()
+				instanceAuthRepo.On("Update", contextThatHasTenant(testTenant), modelUpdatedInstanceAuthWithDefaultStatus).Return(nil).Once()
+				return instanceAuthRepo
+			},
+			Input:         modelSetInputWithoutStatus,
+			ExpectedError: nil,
+		},
+		{
+			Name: "Error when Package Instance Auth retrieval failed",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(modelInstanceAuthFn(), testError).Once()
+				return instanceAuthRepo
+			},
+			Input:         *modelSetInput,
+			ExpectedError: testError,
+		},
+		{
+			Name: "Error when Package Instance Auth update failed",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(modelInstanceAuthFn(), nil).Once()
+				instanceAuthRepo.On("Update", contextThatHasTenant(testTenant), modelUpdatedInstanceAuth).Return(testError).Once()
+				return instanceAuthRepo
+			},
+			Input:         *modelSetInput,
+			ExpectedError: testError,
+		},
+		{
+			Name: "Error when Package Instance Auth status is nil",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(
+					&model.PackageInstanceAuth{
+						Status: nil,
+					}, nil).Once()
+				return instanceAuthRepo
+			},
+			Input:         *modelSetInput,
+			ExpectedError: errors.New("auth can be set only on Package Instance Auths in PENDING state"),
+		},
+		{
+			Name: "Error when Package Instance Auth status condition different from PENDING",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(
+					&model.PackageInstanceAuth{
+						Status: &model.PackageInstanceAuthStatus{
+							Condition: model.PackageInstanceAuthStatusConditionSucceeded,
+						},
+					}, nil).Once()
+				return instanceAuthRepo
+			},
+			Input:         *modelSetInput,
+			ExpectedError: errors.New("auth can be set only on Package Instance Auths in PENDING state"),
+		},
+		{
+			Name: "Error when retrieved Package Instance Auth is nil",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(nil, nil).Once()
+
+				return instanceAuthRepo
+			},
+			Input:         *modelSetInput,
+			ExpectedError: errors.Errorf("Package Instance Auth with ID %s not found", testID),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			instanceAuthRepo := testCase.InstanceAuthRepoFn()
+
+			svc := packageinstanceauth.NewService(instanceAuthRepo, nil)
+			svc.SetTimestampGen(func() time.Time { return testTime })
+
+			// WHEN
+			err := svc.SetAuth(ctx, testID, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, instanceAuthRepo)
+		})
+	}
+
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := packageinstanceauth.NewService(nil, nil)
+
+		// WHEN
+		err := svc.SetAuth(context.Background(), testID, model.PackageInstanceAuthSetInput{})
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_Create(t *testing.T) {
+	// GIVEN
+	ctx := tenant.SaveToContext(context.Background(), testTenant)
+
+	modelAuth := fixModelAuth()
+	modelExpectedInstanceAuth := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, modelAuth, fixModelStatusSucceeded())
+	modelExpectedInstanceAuthPending := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, nil, fixModelStatusPending())
+
+	modelRequestInput := fixModelRequestInput()
+
+	testCases := []struct {
+		Name               string
+		InstanceAuthRepoFn func() *automock.Repository
+		UIDSvcFn           func() *automock.UIDService
+		Input              model.PackageInstanceAuthRequestInput
+		InputAuth          *model.Auth
+		InputSchema        *string
+		ExpectedOutput     string
+		ExpectedError      error
+	}{
+		{
+			Name: "Success",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), modelExpectedInstanceAuth).Return(nil).Once()
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				svc.On("Generate").Return(testID).Once()
+				return &svc
+			},
+			Input:          *modelRequestInput,
+			InputAuth:      modelAuth,
+			InputSchema:    nil,
+			ExpectedOutput: testID,
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Success when input auth is nil",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), modelExpectedInstanceAuthPending).Return(nil).Once()
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				svc.On("Generate").Return(testID).Once()
+				return &svc
+			},
+			Input:          *modelRequestInput,
+			InputAuth:      nil,
+			InputSchema:    nil,
+			ExpectedOutput: testID,
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Success when schema provided",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), modelExpectedInstanceAuth).Return(nil).Once()
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				svc.On("Generate").Return(testID).Once()
+				return &svc
+			},
+			Input:          *modelRequestInput,
+			InputAuth:      modelAuth,
+			InputSchema:    str.Ptr("{\"type\": \"object\"}"),
+			ExpectedOutput: testID,
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Error when creating Package Instance Auth",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), modelExpectedInstanceAuth).Return(testError).Once()
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				svc.On("Generate").Return(testID).Once()
+				return &svc
+			},
+			Input:          *modelRequestInput,
+			InputAuth:      modelAuth,
+			InputSchema:    nil,
+			ExpectedOutput: "",
+			ExpectedError:  testError,
+		},
+		{
+			Name: "Error when schema defined but no input params provided",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				return &svc
+			},
+			Input:          model.PackageInstanceAuthRequestInput{},
+			InputAuth:      modelAuth,
+			InputSchema:    str.Ptr("{\"type\": \"string\"}"),
+			ExpectedOutput: "",
+			ExpectedError:  errors.New("json schema for input parameters was defined for the package but no input parameters were provided"),
+		},
+		{
+			Name: "Error when invalid schema provided",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				return &svc
+			},
+			Input:          *modelRequestInput,
+			InputAuth:      modelAuth,
+			InputSchema:    str.Ptr("error"),
+			ExpectedOutput: "",
+			ExpectedError:  errors.New("while creating JSON Schema validator for schema error: invalid character 'e' looking for beginning of value"),
+		},
+		{
+			Name: "Error when invalid input params",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				return &svc
+			},
+			Input: model.PackageInstanceAuthRequestInput{
+				InputParams: str.Ptr("{"),
+			},
+			InputAuth:      modelAuth,
+			InputSchema:    str.Ptr("{\"type\": \"string\"}"),
+			ExpectedOutput: "",
+			ExpectedError:  errors.New(`while validating value { against JSON Schema: {"type": "string"}: unexpected EOF`),
+		},
+		{
+			Name: "Error when input doesn't match schema",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				return &svc
+			},
+			Input:          *modelRequestInput,
+			InputAuth:      modelAuth,
+			InputSchema:    str.Ptr("{\"type\": \"string\"}"),
+			ExpectedOutput: "",
+			ExpectedError:  errors.New(`while validating value {"bar": "baz"} against JSON Schema: {"type": "string"}: (root): Invalid type. Expected: string, given: object`),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			instanceAuthRepo := testCase.InstanceAuthRepoFn()
+			uidSvc := testCase.UIDSvcFn()
+
+			svc := packageinstanceauth.NewService(instanceAuthRepo, uidSvc)
+			svc.SetTimestampGen(func() time.Time { return testTime })
+
+			// WHEN
+			result, err := svc.Create(ctx, testPackageID, testCase.Input, testCase.InputAuth, testCase.InputSchema)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, instanceAuthRepo, uidSvc)
+		})
+	}
+
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := packageinstanceauth.NewService(nil, nil)
+
+		// WHEN
+		_, err := svc.Create(context.Background(), testPackageID, model.PackageInstanceAuthRequestInput{}, nil, nil)
 
 		// THEN
 		require.Error(t, err)

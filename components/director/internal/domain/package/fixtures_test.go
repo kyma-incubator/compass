@@ -3,16 +3,15 @@ package mp_package_test
 import (
 	"database/sql"
 	"database/sql/driver"
-	"encoding/json"
 	"testing"
 	"time"
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/stretchr/testify/require"
 )
 
 func fixModelAPIDefinition(id string, pkgID *string, name, description string, group string) *model.APIDefinition {
@@ -174,7 +173,7 @@ func fixPackageModel(t *testing.T, name, desc string) *model.Package {
 		ApplicationID:                  appID,
 		Name:                           name,
 		Description:                    &desc,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            fixModelAuth(),
 	}
 }
@@ -221,7 +220,7 @@ func fixModelPackageCreateInput(t *testing.T, name, description string) model.Pa
 	return model.PackageCreateInput{
 		Name:                           name,
 		Description:                    &description,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &authInput,
 	}
 }
@@ -257,7 +256,7 @@ func fixModelPackageUpdateInput(t *testing.T, name, description string) model.Pa
 	return model.PackageUpdateInput{
 		Name:                           name,
 		Description:                    &description,
-		InstanceAuthRequestInputSchema: fixBasicSchema(t),
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &authInput,
 	}
 }
@@ -364,16 +363,9 @@ func fixBasicInputSchema() *graphql.JSONSchema {
 	return &jsonSchema
 }
 
-func fixBasicSchema(t *testing.T) *interface{} {
-	sch := fixBasicInputSchema()
-	require.NotNil(t, sch)
-	var obj map[string]interface{}
-
-	err := json.Unmarshal([]byte(*sch), &obj)
-	require.NoError(t, err)
-	var objTemp interface{}
-	objTemp = obj
-	return &objTemp
+func fixBasicSchema() *string {
+	sch := inputSchemaString()
+	return &sch
 }
 
 func fixSchema() string {
@@ -381,13 +373,11 @@ func fixSchema() string {
 }
 
 func fixModelPackageInstanceAuth(id string) *model.PackageInstanceAuth {
-	msg := "test-message"
-	reason := "test-reason"
 	status := model.PackageInstanceAuthStatus{
 		Condition: model.PackageInstanceAuthStatusConditionPending,
 		Timestamp: time.Time{},
-		Message:   &msg,
-		Reason:    &reason,
+		Message:   "test-message",
+		Reason:    "test-reason",
 	}
 
 	context := "ctx"
