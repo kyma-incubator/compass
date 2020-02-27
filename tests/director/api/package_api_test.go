@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,8 +31,10 @@ func TestAddAPIToPackage(t *testing.T) {
 	req := fixAddAPIToPackageRequest(pkg.ID, inStr)
 	err = tc.RunOperation(ctx, req, &actualApi)
 	require.NoError(t, err)
+
 	pack := getPackage(t, ctx, application.ID, pkg.ID)
 	require.Equal(t, pkg.ID, pack.ID)
+
 	assertAPI(t, []*graphql.APIDefinitionInput{&input}, []*graphql.APIDefinitionExt{&actualApi})
 	saveExample(t, req.Query(), "add api definition to package")
 }
@@ -81,7 +84,6 @@ func TestAddDocumentToPackage(t *testing.T) {
 	require.NoError(t, err)
 
 	assertDocuments(t, []*graphql.DocumentInput{&input}, []*graphql.DocumentExt{&actualDocument})
-
 	saveExample(t, req.Query(), "add document to package")
 }
 
@@ -96,7 +98,9 @@ func TestAPIDefinitionInPackage(t *testing.T) {
 	pkg := createPackage(t, ctx, application.ID, pkgName)
 	defer deletePackage(t, ctx, pkg.ID)
 
-	api := addAPIToPackage(t, ctx, pkg.ID)
+	apiInput := fixAPIDefinitionInput()
+	api := addAPIToPackage(t, ctx, pkg.ID, apiInput)
+
 	queryApiForPkg := gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
@@ -110,7 +114,9 @@ func TestAPIDefinitionInPackage(t *testing.T) {
 	app := graphql.ApplicationExt{}
 	err := tc.RunOperation(ctx, queryApiForPkg, &app)
 	require.NoError(t, err)
-	assert.Equal(t, api.ID, app.Package.APIDefinition.ID)
+
+	actualApi := app.Package.APIDefinition
+	assert.Equal(t, api.ID, actualApi.ID)
 }
 
 func TestEventDefinitionInPackage(t *testing.T) {
@@ -124,8 +130,10 @@ func TestEventDefinitionInPackage(t *testing.T) {
 	pkg := createPackage(t, ctx, application.ID, pkgName)
 	defer deletePackage(t, ctx, pkg.ID)
 
-	api := addEventToPackage(t, ctx, pkg.ID)
-	queryApiForPkg := gcli.NewRequest(
+	eventInput := fixEventAPIDefinitionInput()
+	event := addEventToPackage(t, ctx, pkg.ID, eventInput)
+
+	queryEventForPkg := gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
 						package(id: "%s"){
@@ -134,11 +142,13 @@ func TestEventDefinitionInPackage(t *testing.T) {
 						}					
 					}
 				}
-			}`, application.ID, pkg.ID, api.ID, tc.gqlFieldsProvider.ForEventDefinition()))
+			}`, application.ID, pkg.ID, event.ID, tc.gqlFieldsProvider.ForEventDefinition()))
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryApiForPkg, &app)
+	err := tc.RunOperation(ctx, queryEventForPkg, &app)
 	require.NoError(t, err)
-	assert.Equal(t, api.ID, app.Package.EventDefinition.ID)
+
+	actualEvent := app.Package.EventDefinition
+	assert.Equal(t, event.ID, actualEvent.ID)
 }
 
 func TestDocumentInPackage(t *testing.T) {
@@ -152,8 +162,10 @@ func TestDocumentInPackage(t *testing.T) {
 	pkg := createPackage(t, ctx, application.ID, pkgName)
 	defer deletePackage(t, ctx, pkg.ID)
 
-	api := addDocumentToPackage(t, ctx, pkg.ID)
-	queryApiForPkg := gcli.NewRequest(
+	docInput := fixDocumentInput()
+	doc := addDocumentToPackage(t, ctx, pkg.ID, docInput)
+
+	queryDocForPkg := gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
 						package(id: "%s"){
@@ -162,11 +174,13 @@ func TestDocumentInPackage(t *testing.T) {
 						}					
 					}
 				}
-			}`, application.ID, pkg.ID, api.ID, tc.gqlFieldsProvider.ForDocument()))
+			}`, application.ID, pkg.ID, doc.ID, tc.gqlFieldsProvider.ForDocument()))
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryApiForPkg, &app)
+	err := tc.RunOperation(ctx, queryDocForPkg, &app)
 	require.NoError(t, err)
-	assert.Equal(t, api.ID, app.Package.Document.ID)
+
+	actualDoc := app.Package.Document
+	assert.Equal(t, doc.ID, actualDoc.ID)
 }
 
 func TestAPIDefinitionsInPackage(t *testing.T) {
@@ -180,9 +194,13 @@ func TestAPIDefinitionsInPackage(t *testing.T) {
 	pkg := createPackage(t, ctx, application.ID, pkgName)
 	defer deletePackage(t, ctx, pkg.ID)
 
-	addAPIToPackage(t, ctx, pkg.ID)
+	inputA := fixAPIDefinitionInputWithName("foo")
+	addAPIToPackage(t, ctx, pkg.ID, inputA)
 
-	queryApiForPkg := gcli.NewRequest(
+	inputB := fixAPIDefinitionInputWithName("bar")
+	addAPIToPackage(t, ctx, pkg.ID, inputB)
+
+	queryApisForPkg := gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
 						package(id: "%s"){
@@ -194,12 +212,12 @@ func TestAPIDefinitionsInPackage(t *testing.T) {
 			}`, application.ID, pkg.ID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForAPIDefinition())))
 
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryApiForPkg, &app)
-
-	in := fixAPIDefinitionInput()
+	err := tc.RunOperation(ctx, queryApisForPkg, &app)
 	require.NoError(t, err)
-	require.Equal(t, 1, app.Package.APIDefinitions.TotalCount)
-	assertAPI(t, []*graphql.APIDefinitionInput{&in}, app.Package.APIDefinitions.Data)
+
+	apis := app.Package.APIDefinitions
+	require.Equal(t, 2, apis.TotalCount)
+	assertAPI(t, []*graphql.APIDefinitionInput{&inputA, &inputB}, apis.Data)
 
 }
 
@@ -214,9 +232,13 @@ func TestEventDefinitionsInPackage(t *testing.T) {
 	pkg := createPackage(t, ctx, application.ID, pkgName)
 	defer deletePackage(t, ctx, pkg.ID)
 
-	addEventToPackage(t, ctx, pkg.ID)
+	inputA := fixEventAPIDefinitionInputWithName("foo")
+	addEventToPackage(t, ctx, pkg.ID, inputA)
 
-	queryApiForPkg := gcli.NewRequest(
+	inputB := fixEventAPIDefinitionInputWithName("bar")
+	addEventToPackage(t, ctx, pkg.ID, inputB)
+
+	queryEventsForPkg := gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
 						package(id: "%s"){
@@ -228,12 +250,12 @@ func TestEventDefinitionsInPackage(t *testing.T) {
 			}`, application.ID, pkg.ID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForEventDefinition())))
 
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryApiForPkg, &app)
-
-	in := fixEventAPIDefinitionInput()
+	err := tc.RunOperation(ctx, queryEventsForPkg, &app)
 	require.NoError(t, err)
-	require.Equal(t, 1, app.Package.EventDefinitions.TotalCount)
-	assertEventsAPI(t, []*graphql.EventDefinitionInput{&in}, app.Package.EventDefinitions.Data)
+
+	events := app.Package.EventDefinitions
+	require.Equal(t, 2, events.TotalCount)
+	assertEventsAPI(t, []*graphql.EventDefinitionInput{&inputA, &inputB}, events.Data)
 
 }
 
@@ -248,9 +270,13 @@ func TestDocumentsInPackage(t *testing.T) {
 	pkg := createPackage(t, ctx, application.ID, pkgName)
 	defer deletePackage(t, ctx, pkg.ID)
 
-	addDocumentToPackage(t, ctx, pkg.ID)
+	inputA := fixDocumentInputWithName("foo")
+	addDocumentToPackage(t, ctx, pkg.ID, inputA)
 
-	queryApiForPkg := gcli.NewRequest(
+	inputB := fixDocumentInputWithName("bar")
+	addDocumentToPackage(t, ctx, pkg.ID, inputB)
+
+	queryDocsForPkg := gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
 						package(id: "%s"){
@@ -262,12 +288,12 @@ func TestDocumentsInPackage(t *testing.T) {
 			}`, application.ID, pkg.ID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForDocument())))
 
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryApiForPkg, &app)
-
-	in := fixDocumentInput()
+	err := tc.RunOperation(ctx, queryDocsForPkg, &app)
 	require.NoError(t, err)
-	require.Equal(t, 1, app.Package.Documents.TotalCount)
-	assertDocuments(t, []*graphql.DocumentInput{&in}, app.Package.Documents.Data)
+
+	docs := app.Package.Documents
+	require.Equal(t, 2, docs.TotalCount)
+	assertDocuments(t, []*graphql.DocumentInput{&inputA, &inputB}, docs.Data)
 
 }
 
@@ -306,8 +332,7 @@ func deletePackage(t *testing.T, ctx context.Context, id string) {
 	require.NoError(t, tc.RunOperation(context.Background(), req, nil))
 }
 
-func addAPIToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.APIDefinitionExt {
-	input := fixAPIDefinitionInput()
+func addAPIToPackage(t *testing.T, ctx context.Context, pkgID string, input graphql.APIDefinitionInput) graphql.APIDefinitionExt {
 	inStr, err := tc.graphqlizer.APIDefinitionInputToGQL(input)
 	require.NoError(t, err)
 
@@ -318,8 +343,7 @@ func addAPIToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.AP
 	return actualApi
 }
 
-func addEventToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.EventDefinition {
-	input := fixEventAPIDefinitionInput()
+func addEventToPackage(t *testing.T, ctx context.Context, pkgID string, input graphql.EventDefinitionInput) graphql.EventDefinition {
 	inStr, err := tc.graphqlizer.EventDefinitionInputToGQL(input)
 	require.NoError(t, err)
 
@@ -330,8 +354,7 @@ func addEventToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.
 	return event
 }
 
-func addDocumentToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.DocumentExt {
-	input := fixDocumentInput()
+func addDocumentToPackage(t *testing.T, ctx context.Context, pkgID string, input graphql.DocumentInput) graphql.DocumentExt {
 	inStr, err := tc.graphqlizer.DocumentInputToGQL(&input)
 	require.NoError(t, err)
 

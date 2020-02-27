@@ -22,4 +22,4 @@ require (
 	k8s.io/apimachinery v0.17.3 // indirect
 )
 
-replace github.com/kyma-incubator/compass/components/director => github.com/kjaksik/compass/components/director v0.0.0-20200226143954-13a970c4b8c1
+replace github.com/kyma-incubator/compass/components/director => github.com/kjaksik/compass/components/director v0.0.0-20200226145715-dbc53aca4e73
