@@ -31,19 +31,19 @@ func (_m *GraphQLizer) APIDefinitionInputToGQL(in graphql.APIDefinitionInput) (s
 	return r0, r1
 }
 
-// ApplicationRegisterInputToGQL provides a mock function with given fields: in
-func (_m *GraphQLizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegisterInput) (string, error) {
+// DocumentInputToGQL provides a mock function with given fields: in
+func (_m *GraphQLizer) DocumentInputToGQL(in *graphql.DocumentInput) (string, error) {
 	ret := _m.Called(in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(graphql.ApplicationRegisterInput) string); ok {
+	if rf, ok := ret.Get(0).(func(*graphql.DocumentInput) string); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(graphql.ApplicationRegisterInput) error); ok {
+	if rf, ok := ret.Get(1).(func(*graphql.DocumentInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)
@@ -65,6 +65,48 @@ func (_m *GraphQLizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(graphql.EventDefinitionInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PackageCreateInputToGQL provides a mock function with given fields: in
+func (_m *GraphQLizer) PackageCreateInputToGQL(in graphql.PackageCreateInput) (string, error) {
+	ret := _m.Called(in)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(graphql.PackageCreateInput) string); ok {
+		r0 = rf(in)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(graphql.PackageCreateInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PackageUpdateInputToGQL provides a mock function with given fields: in
+func (_m *GraphQLizer) PackageUpdateInputToGQL(in graphql.PackageUpdateInput) (string, error) {
+	ret := _m.Called(in)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(graphql.PackageUpdateInput) string); ok {
+		r0 = rf(in)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(graphql.PackageUpdateInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)
