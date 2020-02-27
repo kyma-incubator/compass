@@ -25,10 +25,10 @@ global:
       version: "PR-831"
     pairing_adapter:
       dir:
-      version: "PR-798"
+      version: "PR-867"
     director:
       dir:
-      version: "PR-874"
+      version: "PR-824"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -48,7 +48,7 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-842"
+      version: "PR-830"
     tests:
       director:
         dir:
@@ -61,7 +61,7 @@ global:
         version: "PR-552"
       connectivity_adapter:
         dir:
-        version: "PR-875"
+        version: "PR-831"
   isLocalEnv: false
   oauth2:
     host: oauth2
