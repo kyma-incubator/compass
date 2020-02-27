@@ -43,6 +43,7 @@ func (m *Manager) AddStep(weight int, step Step) {
 func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	operation, err := m.operationStorage.GetProvisioningOperationByID(operationID)
 	if err != nil {
+		m.log.Errorf("Cannot fetch operation from storage: %s", err)
 		return 3 * time.Second, nil
 	}
 

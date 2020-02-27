@@ -55,7 +55,7 @@ type ProvisioningOperation struct {
 	ProvisioningParameters string `json:"provisioning_parameters"`
 
 	// following fields are not stored in the storage
-	InputCreator ProvisionInputCreator
+	InputCreator ProvisionInputCreator `json:"-"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation

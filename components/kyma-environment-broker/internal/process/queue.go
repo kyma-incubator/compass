@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -57,12 +58,21 @@ func worker(queue workqueue.RateLimitingInterface, process func(key string) (tim
 				if quit {
 					return true
 				}
-				defer queue.Done(key)
+				defer func() {
+					if err := recover(); err != nil {
+						logrus.Errorf("panic error from process: %s", err)
+					}
+					queue.Done(key)
+				}()
 
 				when, err := process(key.(string))
 				if err == nil && when != 0 {
+					logrus.Infof("Adding %q item after %s", key.(string), when)
 					queue.AddAfter(key, when)
 					return false
+				}
+				if err != nil {
+					logrus.Errorf("Error from process: %s", err)
 				}
 
 				queue.Forget(key)
