@@ -118,7 +118,6 @@ func fixAPIDefinitionInputWithName(name string) graphql.APIDefinitionInput {
 			},
 		},
 	}
-
 }
 
 func fixEventAPIDefinitionInputWithName(name string) graphql.EventDefinitionInput {
