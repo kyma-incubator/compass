@@ -2,6 +2,8 @@ package director
 
 import (
 	"bytes"
+	"encoding/json"
+	"strconv"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -25,14 +27,12 @@ func (g graphqlizer) RuntimeInputToGraphQL(in gqlschema.RuntimeInput) (string, e
 }
 
 func (g graphqlizer) labelsToGQL(in gqlschema.Labels) (string, error) {
-	return g.genericToGraphQL(in, `{
-		{{- range $k,$v := . }}
-			{{$k}}: [
-				{{- range $i,$j := $v }}
-					{{- if $i}},{{- end}}"{{$j}}"
-				{{- end }}],
-		{{- end}}
-	}`)
+	out, err := json.Marshal(in)
+	if err != nil {
+		return "", err
+	}
+
+	return strconv.Quote(string(out)), nil
 }
 
 func (g graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, error) {

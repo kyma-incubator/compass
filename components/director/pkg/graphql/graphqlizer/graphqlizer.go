@@ -3,7 +3,6 @@ package graphqlizer
 import (
 	"bytes"
 	"encoding/json"
-	"reflect"
 	"strconv"
 	"text/template"
 
@@ -192,7 +191,12 @@ func (g *Graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
 }
 
 func (g *Graphqlizer) LabelsToGQL(in graphql.Labels) (string, error) {
-	return g.marshal(in), nil
+	out, err := json.Marshal(in)
+	if err != nil {
+		return "", err
+	}
+
+	return strconv.Quote(string(out)), nil
 }
 
 func (g *Graphqlizer) HTTPHeadersToGQL(in graphql.HttpHeaders) (string, error) {
@@ -460,31 +464,8 @@ func (g *Graphqlizer) PackageInstanceAuthSetInputToGQL(in graphql.PackageInstanc
 	}`)
 }
 
-func (g *Graphqlizer) marshal(obj interface{}) string {
-	var out string
-
-	val := reflect.ValueOf(obj)
-
-	if val.Kind() == reflect.Map {
-		s, err := g.genericToGQL(obj, `{ {{- range $k,$v := . }}{{ $k }}:{{ marshal $v }},{{ end -}} }`)
-		if err != nil {
-			return ""
-		}
-		out = s
-	} else {
-		marshalled, err := json.Marshal(obj)
-		if err != nil {
-			return ""
-		}
-		out = string(marshalled)
-	}
-
-	return out
-}
-
 func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
-	fm["marshal"] = g.marshal
 	fm["ApplicationRegisterInputToGQL"] = g.ApplicationRegisterInputToGQL
 	fm["DocumentInputToGQL"] = g.DocumentInputToGQL
 	fm["FetchRequesstInputToGQL"] = g.FetchRequestInputToGQL

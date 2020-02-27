@@ -19,7 +19,7 @@ type ApplicationPageExt struct {
 
 type ApplicationExt struct {
 	Application
-	Labels                Labels                           `json:"labels"`
+	Labels                *string                          `json:"labels"`
 	Webhooks              []Webhook                        `json:"webhooks"`
 	APIDefinitions        APIDefinitionPageExt             `json:"apiDefinitions"`
 	EventDefinitions      EventAPIDefinitionPageExt        `json:"eventDefinitions"`

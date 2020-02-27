@@ -7,13 +7,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,7 +25,7 @@ const (
 	testPageSize       = 3
 	testCursor         = ""
 	appInputJSONString = `{"Name":"foo","ProviderName":"compass","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"ApiDefinitions":[{"Name":"api1","Description":null,"TargetURL":"foo.bar","Group":null,"Spec":null,"Version":null,"DefaultAuth":null},{"Name":"api2","Description":null,"TargetURL":"foo.bar2","Group":null,"Spec":null,"Version":null,"DefaultAuth":null}],"EventDefinitions":[{"Name":"event1","Description":"Sample","Spec":{"Data":"data","Type":"ASYNC_API","Format":"JSON"},"Group":null,"Version":null},{"Name":"event2","Description":"Sample","Spec":{"Data":"data2","Type":"ASYNC_API","Format":"JSON"},"Group":null,"Version":null}],"Documents":[{"Title":"","DisplayName":"doc1","Description":"","Format":"","Kind":"test","Data":null,"FetchRequest":null},{"Title":"","DisplayName":"doc2","Description":"","Format":"","Kind":"test","Data":null,"FetchRequest":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-	appInputGQLString  = `{name: "foo",providerName: "compass",description: "Lorem ipsum",labels: {test:["val","val2"],},webhooks: [ {type: ,url: "webhook1.foo.bar",}, {type: ,url: "webhook2.foo.bar",} ],healthCheckURL: "https://foo.bar",apiDefinitions: [ {name: "api1",targetURL: "foo.bar",}, {name: "api2",targetURL: "foo.bar2",}],eventDefinitions: [ {name: "event1",description: "Sample",spec: {data: "data",type: ASYNC_API,format: JSON,},}, {name: "event2",description: "Sample",spec: {data: "data2",type: ASYNC_API,format: JSON,},}], documents: [{title: "",displayName: "doc1",description: "",format: ,kind: "test",},{title: "",displayName: "doc2",description: "",format: ,kind: "test",} ],integrationSystemID: "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii",}`
+	appInputGQLString  = `{name: "foo",providerName: "compass",description: "Lorem ipsum",labels: "{\"test\":[\"val\",\"val2\"]}",webhooks: [ {type: ,url: "webhook1.foo.bar",}, {type: ,url: "webhook2.foo.bar",} ],healthCheckURL: "https://foo.bar",apiDefinitions: [ {name: "api1",targetURL: "foo.bar",}, {name: "api2",targetURL: "foo.bar2",}],eventDefinitions: [ {name: "event1",description: "Sample",spec: {data: "data",type: ASYNC_API,format: JSON,},}, {name: "event2",description: "Sample",spec: {data: "data2",type: ASYNC_API,format: JSON,},}], documents: [{title: "",displayName: "doc1",description: "",format: ,kind: "test",},{title: "",displayName: "doc2",description: "",format: ,kind: "test",} ],integrationSystemID: "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii",}`
 )
 
 var (

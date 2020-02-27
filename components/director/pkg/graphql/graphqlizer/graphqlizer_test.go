@@ -25,7 +25,7 @@ func TestGraphqlizer_LabelsToGQL(t *testing.T) {
 			Input: graphql.Labels{
 				"foo": []string{"test", "best", "asdf"},
 			},
-			Expected:      "{foo:[\"test\",\"best\",\"asdf\"],}",
+			Expected:      `"{\"foo\":[\"test\",\"best\",\"asdf\"]}"`,
 			ExpectedError: nil,
 		},
 		{
@@ -33,7 +33,7 @@ func TestGraphqlizer_LabelsToGQL(t *testing.T) {
 			Input: graphql.Labels{
 				"bar": "test",
 			},
-			Expected:      "{bar:\"test\",}",
+			Expected:      `"{\"bar\":\"test\"}"`,
 			ExpectedError: nil,
 		},
 		{
@@ -41,7 +41,7 @@ func TestGraphqlizer_LabelsToGQL(t *testing.T) {
 			Input: graphql.Labels{
 				"baz": true,
 			},
-			Expected:      "{baz:true,}",
+			Expected:      `"{\"baz\":true}"`,
 			ExpectedError: nil,
 		},
 		{
@@ -49,7 +49,7 @@ func TestGraphqlizer_LabelsToGQL(t *testing.T) {
 			Input: graphql.Labels{
 				"biz": map[string]string{"test": "a", "best": "b", "asdf": "c"},
 			},
-			Expected:      "{biz:{asdf:\"c\",best:\"b\",test:\"a\",},}",
+			Expected:      `"{\"biz\":{\"asdf\":\"c\",\"best\":\"b\",\"test\":\"a\"}}"`,
 			ExpectedError: nil,
 		},
 		{
@@ -57,7 +57,7 @@ func TestGraphqlizer_LabelsToGQL(t *testing.T) {
 			Input: graphql.Labels{
 				"buz": 10,
 			},
-			Expected:      "{buz:10,}",
+			Expected:      `"{\"buz\":10}"`,
 			ExpectedError: nil,
 		},
 		{
@@ -69,7 +69,7 @@ func TestGraphqlizer_LabelsToGQL(t *testing.T) {
 				"biz": map[string]string{"test": "a", "best": "b", "asdf": "c"},
 				"buz": 10,
 			},
-			Expected:      "{bar:\"test\",baz:true,biz:{asdf:\"c\",best:\"b\",test:\"a\",},buz:10,foo:[\"test\",\"best\",\"asdf\"],}",
+			Expected:      `"{\"bar\":\"test\",\"baz\":true,\"biz\":{\"asdf\":\"c\",\"best\":\"b\",\"test\":\"a\"},\"buz\":10,\"foo\":[\"test\",\"best\",\"asdf\"]}"`,
 			ExpectedError: nil,
 		},
 	}

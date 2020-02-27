@@ -5,7 +5,7 @@ mutation {
       name: "wordpress"
       providerName: "provider name"
       description: "my first wordpress application"
-      labels: { group: ["production", "experimental"], scenarios: ["DEFAULT"] }
+      labels: "{\"group\":[\"production\",\"experimental\"],\"scenarios\":[\"DEFAULT\"]}"
       healthCheckURL: "http://mywordpress.com/health"
     }
   ) {

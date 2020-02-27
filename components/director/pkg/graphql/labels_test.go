@@ -18,28 +18,28 @@ func TestLabels_UnmarshalGQL(t *testing.T) {
 	}{
 		//given
 		"correct input map[string]string": {
-			input:    map[string]interface{}{"annotation": "val1"},
+			input:    `{"annotation": "val1"}`,
 			err:      false,
 			expected: graphql.Labels{"annotation": "val1"},
 		},
 		"correct input map[string]int": {
-			input:    map[string]interface{}{"annotation": 123},
+			input:    `{"annotation": 123}`,
 			err:      false,
-			expected: graphql.Labels{"annotation": 123},
+			expected: graphql.Labels{"annotation": float64(123)},
 		},
 		"correct input map[string][]string": {
-			input:    map[string]interface{}{"annotation": []string{"val1", "val2"}},
+			input:    `{"annotation": ["val1", "val2"]}`,
 			err:      false,
-			expected: graphql.Labels{"annotation": []string{"val1", "val2"}},
+			expected: graphql.Labels{"annotation": []interface{}{"val1", "val2"}},
 		},
 		"error: input is nil": {
 			input:  nil,
 			err:    true,
 			errMsg: "input should not be nil"},
 		"error: invalid input type": {
-			input:  map[int]interface{}{123: "invalid map"},
+			input:  `{123: "invalid map"}`,
 			err:    true,
-			errMsg: "unexpected Labels type: map[int]interface {}, should be map[string]interface{}"},
+			errMsg: "Label input is not a valid JSON"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			//when
@@ -67,8 +67,8 @@ func TestLabels_MarshalGQL(t *testing.T) {
 		expected string
 	}{
 		//given
-		{graphql.Labels{"annotation": 123}, `{"annotation":123}`},
-		{graphql.Labels{"annotation": []string{"val1", "val2"}}, `{"annotation":["val1","val2"]}`},
+		{graphql.Labels{"annotation": 123}, `"{\"annotation\":123}"`},
+		{graphql.Labels{"annotation": []string{"val1", "val2"}}, `"{\"annotation\":[\"val1\",\"val2\"]}"`},
 	}
 
 	for _, test := range tests {

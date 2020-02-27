@@ -2,6 +2,8 @@ package provisioner
 
 import (
 	"bytes"
+	"encoding/json"
+	"strconv"
 	"text/template"
 
 	"fmt"
@@ -52,14 +54,12 @@ func (g *Graphqlizer) RuntimeInputToGraphQL(in gqlschema.RuntimeInput) (string, 
 }
 
 func (g Graphqlizer) LabelsToGQL(in gqlschema.Labels) (string, error) {
-	return g.genericToGraphQL(in, `{
-		{{- range $k,$v := . }}
-			{{$k}}: [
-				{{- range $i,$j := $v }}
-					{{- if $i}},{{- end}}"{{$j}}"
-				{{- end }}],
-		{{- end}}
-	}`)
+	out, err := json.Marshal(in)
+	if err != nil {
+		return "", err
+	}
+
+	return strconv.Quote(string(out)), nil
 }
 
 func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (string, error) {

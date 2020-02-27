@@ -2,8 +2,9 @@ package apptemplate_test
 
 import (
 	"context"
-	"errors"
 	"testing"
+
+	"errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 

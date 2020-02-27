@@ -3,6 +3,7 @@ package scalar
 import (
 	"encoding/json"
 	"io"
+	"strconv"
 
 	"github.com/pkg/errors"
 )
@@ -14,6 +15,20 @@ func WriteMarshalled(in interface{}, w io.Writer) error {
 	}
 
 	_, err = w.Write(bytes)
+	if err != nil {
+		return errors.Errorf("error with writing %T", in)
+	}
+	return nil
+}
+
+func WriteMarshalledAndStringified(in interface{}, w io.Writer) error {
+	bytes, err := json.Marshal(in)
+	if err != nil {
+		return errors.Errorf("error with marshalling %T", in)
+	}
+
+	quotedIn := strconv.Quote(string(bytes))
+	_, err = w.Write([]byte(quotedIn))
 	if err != nil {
 		return errors.Errorf("error with writing %T", in)
 	}

@@ -21,9 +21,7 @@ func TestGraphqlizer_RuntimeInputToGraphQL(t *testing.T) {
 		expectedGraphlizedInput := `{
 		name: "test runtime",
 		description: "wow, this is nice description!",
-		labels: {
-			Label: ["yup","indeed"],
-	},
+		labels: "{\"Label\":[\"yup\",\"indeed\"]}",
 	}`
 
 		var graph graphqlizer
