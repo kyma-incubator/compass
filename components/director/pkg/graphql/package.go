@@ -21,5 +21,5 @@ type PackageExt struct {
 
 type PackagePageExt struct {
 	PackagePage
-	Data       []*PackageExt `json:"data"`
+	Data []*PackageExt `json:"data"`
 }
