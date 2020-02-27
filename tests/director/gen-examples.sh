@@ -83,11 +83,13 @@ echo -e "${GREEN}Running Director...${NC}"
 
 SCOPES_CONFIGURATION_FILE_PATH="${HOST_ROOT_PATH}/components/director/hack/config-local.yaml"
 STATIC_USERS_PATH="${HOST_ROOT_PATH}/components/director/hack/static-users-local.yaml"
+STATIC_GROUPS_PATH="${HOST_ROOT_PATH}/components/director/hack/static-groups-local.yaml"
 
-docker run --name ${DIRECTOR_CONTAINER} -d --rm --network=${NETWORK} \
+docker run --name ${DIRECTOR_CONTAINER} -d --network=${NETWORK} \
     -p ${APP_PORT}:${APP_PORT} \
     -v "${SCOPES_CONFIGURATION_FILE_PATH}:/app/config.yaml" \
     -v "${STATIC_USERS_PATH}:/data/static-users.yaml" \
+    -v "${STATIC_GROUPS_PATH}:/data/static-groups.yaml" \
     -v "${HOST_ROOT_PATH}/components/director/hack/default-jwks.json:/app/default-jwks.json" \
     -e APP_ADDRESS=0.0.0.0:${APP_PORT} \
     -e APP_DB_USER=${DB_USER} \

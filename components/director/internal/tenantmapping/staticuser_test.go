@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var validFileContent string = `
+var validUserNameFileContent string = `
 - username: "admin"
   scopes:
   - "application:write"
@@ -23,7 +23,7 @@ var validFileContent string = `
   - "555d9157-a1bf-4aa2-9a22-f5d6f9730aaf"
 `
 
-var unknownFieldsFileContent string = `
+var unknownUserNameFieldsFileContent string = `
 - username: "admin"
   scope:
   - "application:write"
@@ -34,7 +34,7 @@ var unknownFieldsFileContent string = `
 func TestStaticUserRepository(t *testing.T) {
 	t.Run("NewStaticUserRepository returns repository instance populated from valid file", func(t *testing.T) {
 		filePath := "static-users.tmp.json"
-		err := ioutil.WriteFile(filePath, []byte(validFileContent), 0644)
+		err := ioutil.WriteFile(filePath, []byte(validUserNameFileContent), 0644)
 		require.NoError(t, err)
 		defer func(t *testing.T) {
 			err := os.Remove(filePath)
@@ -71,7 +71,7 @@ func TestStaticUserRepository(t *testing.T) {
 
 	t.Run("NewStaticUserRepository should fail when file content contains unknown fields", func(t *testing.T) {
 		filePath := "static-users.tmp.json"
-		err := ioutil.WriteFile(filePath, []byte(unknownFieldsFileContent), 0644)
+		err := ioutil.WriteFile(filePath, []byte(unknownUserNameFieldsFileContent), 0644)
 		require.NoError(t, err)
 		defer func(t *testing.T) {
 			err := os.Remove(filePath)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // AuthFlow wraps possible flows of auth like OAuth2, JWT and certificate
@@ -42,6 +43,7 @@ const (
 	ClientIDTokenKey  = "client-id-from-token"
 	ExternalTenantKey = "tenant"
 	ScopesKey         = "scope"
+	GroupsKey         = "groups"
 
 	clientCredentialScopesPrefix = "clientCredentialsRegistrationScopes"
 )
@@ -134,6 +136,29 @@ func (d *ReqData) GetScopes() (string, error) {
 	}
 
 	return "", apperrors.NewKeyDoesNotExistError(ScopesKey)
+}
+
+// GetUserGroups returns group name or empty string if there's no group
+func (d *ReqData) GetUserGroups() []string {
+	userGroups := []string{}
+	groupsVal, ok := d.Body.Extra[GroupsKey]
+	if !ok {
+		return userGroups
+	}
+
+	if groupsArray, ok := groupsVal.([]interface{}); ok {
+		for _, group := range groupsArray {
+			groupString, err := str.Cast(group)
+			if err != nil {
+				log.Infof("%+v skipped because string conversion failed", group)
+				continue
+			}
+
+			userGroups = append(userGroups, groupString)
+		}
+	}
+
+	return userGroups
 }
 
 type TenantContext struct {
