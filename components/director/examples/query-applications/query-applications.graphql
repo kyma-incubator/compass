@@ -4,11 +4,10 @@ query {
     data {
       id
       name
+      providerName
       description
+      integrationSystemID
       labels
-      eventingConfiguration {
-        defaultURL
-      }
       status {
         condition
         timestamp
@@ -53,7 +52,6 @@ query {
         }
       }
       healthCheckURL
-      providerName
       apiDefinitions {
         data {
           id
@@ -320,6 +318,97 @@ query {
         }
         totalCount
       }
+      packages {
+        data {
+          id
+          name
+          description
+          instanceAuthRequestInputSchema
+          instanceAuths {
+            id
+            context
+            inputParams
+            auth {
+              credential {
+                ... on BasicCredentialData {
+                  username
+                  password
+                }
+                ... on OAuthCredentialData {
+                  clientId
+                  clientSecret
+                  url
+                }
+              }
+              additionalHeaders
+              additionalQueryParams
+              requestAuth {
+                csrf {
+                  tokenEndpointURL
+                  credential {
+                    ... on BasicCredentialData {
+                      username
+                      password
+                    }
+                    ... on OAuthCredentialData {
+                      clientId
+                      clientSecret
+                      url
+                    }
+                  }
+                  additionalHeaders
+                  additionalQueryParams
+                }
+              }
+            }
+            status {
+              condition
+              timestamp
+              message
+              reason
+            }
+          }
+          defaultInstanceAuth {
+            credential {
+              ... on BasicCredentialData {
+                username
+                password
+              }
+              ... on OAuthCredentialData {
+                clientId
+                clientSecret
+                url
+              }
+            }
+            additionalHeaders
+            additionalQueryParams
+            requestAuth {
+              csrf {
+                tokenEndpointURL
+                credential {
+                  ... on BasicCredentialData {
+                    username
+                    password
+                  }
+                  ... on OAuthCredentialData {
+                    clientId
+                    clientSecret
+                    url
+                  }
+                }
+                additionalHeaders
+                additionalQueryParams
+              }
+            }
+          }
+        }
+        pageInfo {
+          startCursor
+          endCursor
+          hasNextPage
+        }
+        totalCount
+      }
       auths {
         id
         auth {
@@ -355,6 +444,9 @@ query {
             }
           }
         }
+      }
+      eventingConfiguration {
+        defaultURL
       }
     }
     pageInfo {

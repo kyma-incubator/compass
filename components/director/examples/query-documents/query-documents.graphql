@@ -2,16 +2,16 @@
 query {
   result: application(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
     package(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
-      eventDefinition(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
-        id
-        applicationID
-        name
-        description
-        group
-        spec {
-          data
-          type
+      documents {
+        data {
+          id
+          applicationID
+          title
+          displayName
+          description
           format
+          kind
+          data
           fetchRequest {
             url
             auth {
@@ -55,12 +55,12 @@ query {
             }
           }
         }
-        version {
-          value
-          deprecated
-          deprecatedSince
-          forRemoval
+        pageInfo {
+          startCursor
+          endCursor
+          hasNextPage
         }
+        totalCount
       }
     }
   }
