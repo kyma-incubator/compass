@@ -100,3 +100,58 @@ package hyperscaler
 //
 //	return operation, 0, nil
 //}
+
+/* Code from lms step
+
+package lms
+import (
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"time"
+	"github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+)
+type TenantProvider interface {
+	ProvideLMSTenantID(name, region string) (string, error)
+}
+// provideTenantStep creates (if not exists) LMS tenant and provides its ID.
+// The step does not breaks the provisioning flow.
+type provideTenantStep struct {
+	tenantProvider TenantProvider
+	repo           storage.Operations
+}
+func NewProvideTenantStep(tp TenantProvider, repo storage.Operations) *provideTenantStep {
+	return &provideTenantStep{
+		tenantProvider: tp,
+		repo:           repo,
+	}
+}
+func (s *provideTenantStep) Name() string {
+	return "Create LMS tenant"
+}
+func (s *provideTenantStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	if operation.Lms.TenantID != "" {
+		return operation, 0, nil
+	}
+	region := "eu"                 //todo: take region from provisioning parameters (PP)
+	tenant := "todo-global-acc-id" // todo: extract from PP
+	lmsTenantID, err := s.tenantProvider.ProvideLMSTenantID(tenant, region)
+	operation.Lms.TenantID = lmsTenantID
+	if operation.Lms.RequestedAt.IsZero() {
+		operation.Lms.RequestedAt = time.Now()
+	}
+	op, updateErr := s.repo.UpdateProvisioningOperation(operation)
+	if updateErr != nil {
+		return operation, time.Second, nil
+	}
+	operation = *op
+	if err != nil {
+		logger.Errorf("Unable to get LMS tenant ID: %s", err.Error())
+		return operation, 5 * time.Second, nil
+	}
+	return operation, 0, nil
+}
+
+
+*/

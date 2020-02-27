@@ -39,11 +39,11 @@ type Config struct {
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
-	Provisioning       broker.ProvisioningConfig
-	Director           director.Config
-	Database           storage.Config
-	ManagementPlaneURL string
-	Gardener           gardener.Config
+	Provisioning broker.ProvisioningConfig
+	Director     director.Config
+	Database     storage.Config
+	DirectorURL  string
+	Gardener     gardener.Config
 
 	ServiceManager internal.ServiceManagerOverride
 
@@ -126,7 +126,7 @@ func main() {
 
 	accountProvider := hyperscaler.NewAccountProvider(compassAccountPool, gardenerAccountPool)
 
-	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager, cfg.ManagementPlaneURL, accountProvider)
+	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager, cfg.DirectorURL, accountProvider)
 
 	dumper, err := broker.NewDumper()
 	fatalOnError(err)

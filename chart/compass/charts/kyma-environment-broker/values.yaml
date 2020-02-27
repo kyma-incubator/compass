@@ -64,7 +64,7 @@ gardener:
   project: "" # Gardener project connected to SA
   kubeconfigPath: "/gardener/kubeconfig/kubeconfig"
   kubeconfig: "" # Base64 encoded Gardener SA key
-  secretName: "gardener-credentials"
+  secretName: "gardener-credentials-keb"
 
 # It is used to provide own creds for Service Manager instead of using the one provided by external system
 # who execute provision call on Kyma Environment Broker. You can turn that off by setting *credentialsOverride* to `false`
