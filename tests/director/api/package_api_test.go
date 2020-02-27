@@ -129,7 +129,7 @@ func TestEventDefinitionInPackage(t *testing.T) {
 
 	actualEvent := app.Package.EventDefinition
 	assert.Equal(t, event.ID, actualEvent.ID)
-	saveExample(t, queryEventForPkg.Query(), "query-event-definition")
+	saveExample(t, queryEventForPkg.Query(), "query event definition")
 
 }
 
@@ -181,7 +181,7 @@ func TestAPIDefinitionsInPackage(t *testing.T) {
 	apis := app.Package.APIDefinitions
 	require.Equal(t, 2, apis.TotalCount)
 	assertAPI(t, []*graphql.APIDefinitionInput{&inputA, &inputB}, apis.Data)
-
+	saveExample(t, queryApisForPkg.Query(), "query api definitions")
 }
 
 func TestEventDefinitionsInPackage(t *testing.T) {
@@ -210,7 +210,7 @@ func TestEventDefinitionsInPackage(t *testing.T) {
 	events := app.Package.EventDefinitions
 	require.Equal(t, 2, events.TotalCount)
 	assertEventsAPI(t, []*graphql.EventDefinitionInput{&inputA, &inputB}, events.Data)
-
+	saveExample(t, queryEventsForPkg.Query(), "query event definitions")
 }
 
 func TestDocumentsInPackage(t *testing.T) {
@@ -239,5 +239,5 @@ func TestDocumentsInPackage(t *testing.T) {
 	docs := app.Package.Documents
 	require.Equal(t, 2, docs.TotalCount)
 	assertDocuments(t, []*graphql.DocumentInput{&inputA, &inputB}, docs.Data)
-
+	saveExample(t, queryDocsForPkg.Query(), "query documents")
 }
