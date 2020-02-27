@@ -469,11 +469,12 @@ func TestUpdateApplication(t *testing.T) {
 	defer unregisterApplication(t, actualApp.ID)
 
 	expectedApp := actualApp
-	expectedApp.Name = "before"
+	expectedApp.Name = "after"
 	expectedApp.ProviderName = ptr.String("after")
 	expectedApp.Description = ptr.String("after")
 	expectedApp.HealthCheckURL = ptr.String(webhookURL)
-	expectedApp.Labels["name"] = "before"
+	labels := `{"first":["first"],"integration-system-id":"","name":"after","scenarios":["DEFAULT"]}`
+	expectedApp.Labels = &labels
 
 	updateInput := fixSampleApplicationUpdateInput("after")
 	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
@@ -606,8 +607,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, &expectedLabel, createdLabel)
 		actualApp := getApplication(t, ctx, actualApp.ID)
-		assert.Contains(t, actualApp.Labels[expectedLabel.Key], "aaa")
-		assert.Contains(t, actualApp.Labels[expectedLabel.Key], "bbb")
+		assertLabel(t, actualApp.Labels, expectedLabel.Key, []interface{}{"aaa", "bbb"})
 
 		// delete label value
 		deletedLabel := graphql.Label{}
@@ -623,7 +623,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, expectedLabel, deletedLabel)
 		actualApp = getApplication(t, ctx, actualApp.ID)
-		assert.Nil(t, actualApp.Labels[expectedLabel.Key])
+		assertLabel(t, actualApp.Labels, expectedLabel.Key, nil)
 
 	})
 

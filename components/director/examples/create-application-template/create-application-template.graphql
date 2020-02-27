@@ -8,7 +8,7 @@ mutation {
         name: "app"
         providerName: "compass-tests"
         description: "test {{new-placeholder}}"
-        labels: { a: ["b", "c"], d: ["e", "f"] }
+        labels: "{\"a\":[\"b\",\"c\"],\"d\":[\"e\",\"f\"]}"
         webhooks: [{ type: CONFIGURATION_CHANGED, url: "http://url.com" }]
         healthCheckURL: "http://url.valid"
       }

@@ -22,3 +22,5 @@ require (
 	golang.org/x/sys v0.0.0-20200212091648-12a6c2dcc1e4 // indirect
 	k8s.io/apimachinery v0.17.3 // indirect
 )
+
+replace github.com/kyma-incubator/compass/components/director => github.com/kfurgol/compass/components/director fix-special-characters-in-label-name

@@ -148,7 +148,8 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		//THEN
 		require.NoError(t, err)
 		require.NotEmpty(t, application.Labels)
-		assert.Equal(t, label.Value, application.Labels[labelKey])
+		//assert.Equal(t, label.Value, application.Labels[labelKey])
+		assertLabel(t, application.Labels, labelKey, map[string]interface{}{"foo": "bar"})
 	})
 }
 
@@ -331,17 +332,7 @@ func TestCreateScenariosLabel(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, app)
-	assert.Contains(t, app.Labels, labelKey)
-
-	scenariosLabel, ok := app.Labels[labelKey].([]interface{})
-	require.True(t, ok)
-
-	var scenariosEnum []string
-	for _, v := range scenariosLabel {
-		scenariosEnum = append(scenariosEnum, v.(string))
-	}
-
-	assert.Contains(t, scenariosEnum, "DEFAULT")
+	assertLabel(t, app.Labels, labelKey, []interface{}{"DEFAULT"})
 }
 
 func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
@@ -395,14 +386,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	err = tc.RunOperation(ctx, appRequest, &app)
 	require.NoError(t, err)
 
-	scenariosLabel, ok := app.Labels[labelKey].([]interface{})
-	require.True(t, ok)
-
-	var actualScenariosEnum []string
-	for _, v := range scenariosLabel {
-		actualScenariosEnum = append(actualScenariosEnum, v.(string))
-	}
-	assert.Equal(t, scenarios, actualScenariosEnum)
+	assertLabel(t, app.Labels, labelKey, []interface{}{defaultValue, additionalValue})
 }
 
 func TestDeleteLabelDefinition(t *testing.T) {
@@ -495,8 +479,8 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		app = getApplication(t, ctx, app.ID)
 		runtime := getRuntime(t, ctx, rtm.ID)
 
-		assert.Empty(t, app.Labels[labelKey])
-		assert.Empty(t, runtime.Labels[labelKey])
+		assertLabel(t, app.Labels, labelKey, nil)
+		assertLabel(t, runtime.Labels, labelKey, nil)
 
 		t.Log("Assert Label definition was deleted")
 		ldRequest := fixLabelDefinitionRequest(labelKey)
@@ -656,10 +640,8 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	//THEN
 	require.NotEmpty(t, applicationPage)
 	assert.Equal(t, applicationPage.TotalCount, 2)
-	assert.Contains(t, applicationPage.Data[0].Labels, labelKeyFoo)
-	assert.Equal(t, applicationPage.Data[0].Labels[labelKeyFoo], labelValueFoo)
-	assert.Contains(t, applicationPage.Data[1].Labels, labelKeyFoo)
-	assert.Equal(t, applicationPage.Data[1].Labels[labelKeyFoo], labelValueFoo)
+	assertLabel(t, applicationPage.Data[0].Labels, labelKeyFoo, labelValueFoo)
+	assertLabel(t, applicationPage.Data[1].Labels, labelKeyFoo, labelValueFoo)
 
 	// Query for application with LabelFilter "bar"
 	labelFilter = graphql.LabelFilter{
@@ -679,8 +661,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, applicationPage)
 	assert.Equal(t, applicationPage.TotalCount, 1)
-	assert.Contains(t, applicationPage.Data[0].Labels, labelKeyBar)
-	assert.Equal(t, applicationPage.Data[0].Labels[labelKeyBar], labelValueBar)
+	assertLabel(t, applicationPage.Data[0].Labels, labelKeyBar, labelValueBar)
 	saveExampleInCustomDir(t, applicationRequest.Query(), queryApplicationsCategory, "query applications with label filter")
 }
 
@@ -735,10 +716,8 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	//THEN
 	require.NotEmpty(t, runtimePage)
 	assert.Equal(t, runtimePage.TotalCount, 2)
-	assert.Contains(t, runtimePage.Data[0].Labels, labelKeyFoo)
-	assert.Equal(t, runtimePage.Data[0].Labels[labelKeyFoo], labelValueFoo)
-	assert.Contains(t, runtimePage.Data[1].Labels, labelKeyFoo)
-	assert.Equal(t, runtimePage.Data[1].Labels[labelKeyFoo], labelValueFoo)
+	assertLabel(t, runtimePage.Data[0].Labels, labelKeyFoo, labelValueFoo)
+	assertLabel(t, runtimePage.Data[1].Labels, labelKeyFoo, labelValueFoo)
 
 	// Query for runtime with LabelFilter "bar"
 	labelFilter = graphql.LabelFilter{
@@ -758,8 +737,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, runtimePage)
 	assert.Equal(t, runtimePage.TotalCount, 1)
-	assert.Contains(t, runtimePage.Data[0].Labels, labelKeyBar)
-	assert.Equal(t, runtimePage.Data[0].Labels[labelKeyBar], labelValueBar)
+	assertLabel(t, runtimePage.Data[0].Labels, labelKeyBar, labelValueBar)
 	saveExampleInCustomDir(t, runtimesRequest.Query(), queryRuntimesCategory, "query runtimes with label filter")
 }
 

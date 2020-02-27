@@ -192,7 +192,12 @@ func (g *Graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
 }
 
 func (g *Graphqlizer) LabelsToGQL(in graphql.Labels) (string, error) {
-	return g.marshal(in), nil
+	out, err := json.Marshal(in)
+	if err != nil {
+		return "", err
+	}
+
+	return strconv.Quote(string(out)), nil
 }
 
 func (g *Graphqlizer) HTTPHeadersToGQL(in graphql.HttpHeaders) (string, error) {

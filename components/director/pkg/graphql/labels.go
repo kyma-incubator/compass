@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"encoding/json"
 	"io"
 
 	log "github.com/sirupsen/logrus"
@@ -17,18 +18,24 @@ func (y *Labels) UnmarshalGQL(v interface{}) error {
 		return errors.New("input should not be nil")
 	}
 
-	value, ok := v.(map[string]interface{})
-	if !ok {
-		return errors.Errorf("unexpected Labels type: %T, should be map[string]interface{}", v)
+	val, err := scalar.ConvertToString(v)
+	if err != nil {
+		return err
 	}
 
-	*y = value
+	var labels map[string]interface{}
+	err = json.Unmarshal([]byte(val), &labels)
+	if err != nil {
+		return errors.New("Label input is not a valid JSON")
+	}
+
+	*y = labels
 
 	return nil
 }
 
 func (y Labels) MarshalGQL(w io.Writer) {
-	err := scalar.WriteMarshalled(y, w)
+	err := scalar.WriteMarshalledAndStringified(y, w)
 	if err != nil {
 		log.Errorf("while writing %T: %s", y, err)
 		return

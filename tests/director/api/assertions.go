@@ -27,8 +27,12 @@ func assertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 }
 
 //TODO: After fixing the 'Labels' scalar turn this back into regular assertion
-func assertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, app graphql.ApplicationExt) {
-	for key, value := range actual {
+func assertLabels(t *testing.T, in graphql.Labels, actual *string, app graphql.ApplicationExt) {
+	var labels graphql.Labels
+	err := json.Unmarshal([]byte(*actual), &labels)
+	require.NoError(t, err)
+
+	for key, value := range labels {
 		if key == "integration-system-id" {
 			if app.IntegrationSystemID == nil {
 				continue
@@ -231,12 +235,16 @@ func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.
 	assertRuntimeLabels(t, in.Labels, actualRuntime.Labels)
 }
 
-func assertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels) {
+func assertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels *string) {
 	const scenariosKey = "scenarios"
+
+	var labels graphql.Labels
+	err := json.Unmarshal([]byte(*actualLabels), &labels)
+	require.NoError(t, err)
 
 	if inLabels == nil {
 		assertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
-		assert.Equal(t, 1, len(actualLabels))
+		assert.Equal(t, 1, len(labels))
 		return
 	}
 
@@ -250,10 +258,17 @@ func assertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels gr
 	}
 }
 
-func assertLabel(t *testing.T, actualLabels graphql.Labels, key string, values interface{}) {
-	labelValues, ok := actualLabels[key]
-	assert.True(t, ok)
-	assert.Equal(t, values, labelValues)
+func assertLabel(t *testing.T, actualLabels *string, key string, values interface{}) {
+	var labels graphql.Labels
+	err := json.Unmarshal([]byte(*actualLabels), &labels)
+	require.NoError(t, err)
+
+	labelValues, ok := labels[key]
+	if ok {
+		assert.Equal(t, values, labelValues)
+	} else {
+		assert.Nil(t, values, labelValues)
+	}
 }
 
 func assertIntegrationSystem(t *testing.T, in graphql.IntegrationSystemInput, actualIntegrationSystem graphql.IntegrationSystemExt) {

@@ -4,7 +4,7 @@ mutation {
     in: {
       name: "wordpress"
       providerName: "compass"
-      labels: { scenarios: ["DEFAULT"] }
+      labels: "{\"scenarios\":[\"DEFAULT\"]}"
       webhooks: [
         {
           type: CONFIGURATION_CHANGED
