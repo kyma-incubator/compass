@@ -80,7 +80,7 @@ func TestBrokerProvisioningScenario(t *testing.T) {
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
 	accountProviderMock.On("GardenerSecretName", mock.Anything, mock.Anything).Return("", nil)
 
-	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, kymaVersion, sm, directorUrl, accountProviderMock)
+	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, kymaVersion, sm, accountProviderMock, directorUrl)
 
 	brokerCfg := broker.Config{EnablePlans: []string{"gcp", "azure"}}
 	dumper := &broker.DumyDumper{}
