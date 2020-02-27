@@ -3732,9 +3732,6 @@ type Query {
 type Mutation {
 	"""
 	**Examples**
-	- [register application with api definitions](examples/register-application/register-application-with-api-definitions.graphql)
-	- [register application with documents](examples/register-application/register-application-with-documents.graphql)
-	- [register application with event definitions](examples/register-application/register-application-with-event-definitions.graphql)
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""
@@ -3814,10 +3811,6 @@ type Mutation {
 	- [delete application webhook](examples/delete-webhook/delete-application-webhook.graphql)
 	"""
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
-	"""
-	**Examples**
-	- [add api definition](examples/add-api-definition/add-api-definition.graphql)
-	"""
 	addAPIDefinition(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinition")
 	"""
 	Temporary name before doing breaking change. Eventually the ` + "`" + `addAPIDefinition` + "`" + ` mutation will be changed and there will be just one mutation: ` + "`" + `addAPIDefinitionToPackage` + "`" + `.
@@ -3850,10 +3843,6 @@ type Mutation {
 	"""
 	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth") @deprecated(reason: "Use setPackageInstanceAuthForPackage")
 	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth") @deprecated(reason: "Use deletePackageInstanceAuthForPackage")
-	"""
-	**Examples**
-	- [add event definition](examples/add-event-definition/add-event-definition.graphql)
-	"""
 	addEventDefinition(applicationID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
 	"""
 	Temporary name before doing breaking change. Eventually the ` + "`" + `addEventDefinition` + "`" + ` mutation will be changed and there will be just one mutation: ` + "`" + `addEventDefinitionToPackage` + "`" + `.
@@ -3873,10 +3862,6 @@ type Mutation {
 	"""
 	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
 	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
-	"""
-	**Examples**
-	- [add document](examples/add-document/add-document.graphql)
-	"""
 	addDocument(applicationID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
 	"""
 	Temporary name before doing breaking change
