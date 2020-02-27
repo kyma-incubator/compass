@@ -570,7 +570,7 @@ func fixAddPackageRequest(appID, in string) *gcli.Request {
 func fixDeletePackageRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			deletePackage(id: "%s") {
+			result: deletePackage(id: "%s") {
 				id
 			}}`, id))
 }
