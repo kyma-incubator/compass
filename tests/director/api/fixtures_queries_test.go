@@ -355,7 +355,6 @@ func addAPIToPackageWithInput(t *testing.T, ctx context.Context, pkgID string, i
 
 func addAPIToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.APIDefinitionExt {
 	return addAPIToPackageWithInput(t, ctx, pkgID, fixAPIDefinitionInput())
-
 }
 
 func addEventToPackageWithInput(t *testing.T, ctx context.Context, pkgID string, input graphql.EventDefinitionInput) graphql.EventDefinition {
