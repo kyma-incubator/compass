@@ -227,10 +227,9 @@ Scopes are added to the authentication session in Tenant Mapping Handler. The ha
 
 1. Runtime/Application makes a call to the Connector's internal API.
 2. The OathKeeper uses the Token Resolver as a mutator. 
-3. The Client ID is extracted from the one-time token's `Connector-Token` header or from the `token` query parameter.
-4. The Client ID is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
-5. The OathKeeper proxies the request further to the Compass Gateway.
-6. The request is forwarded to the Connector.
+The Client ID is extracted from the one-time token's `Connector-Token` header or from the `token` query parameter, and is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
+3. The OathKeeper proxies the request further to the Compass Gateway.
+4. The request is forwarded to the Connector.
 
 ![Auth](./assets/token-security-diagram-connector.svg)
 
