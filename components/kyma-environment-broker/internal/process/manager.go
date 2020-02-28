@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 )
 
@@ -51,7 +52,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	processedOperation := *operation
 	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID})
 
-	logOperation.Info("Start steps")
+	logOperation.Info("Start process operation steps")
 	for _, weightStep := range m.sortWeight() {
 		steps := m.steps[weightStep]
 		for _, step := range steps {
@@ -60,19 +61,24 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 
 			processedOperation, when, err = step.Run(processedOperation, logStep)
 			if err != nil {
-				logStep.Errorf("Step failed: %s", err)
+				logStep.Errorf("Process operation failed: %s", err)
 				return 0, err
 			}
+			if processedOperation.State != domain.InProgress {
+				logrus.Infof("Operation %q got status %s. Process finished.", operation.ID, processedOperation.State)
+				return 0, nil
+			}
 			if when == 0 {
-				logStep.Info("Step successful")
+				logStep.Info("Process operation successful")
 				continue
 			}
 
-			logStep.Infof("Step will be repeated in %s ...", when)
+			logStep.Infof("Process operation will be repeated in %s ...", when)
 			return when, nil
 		}
 	}
 
+	logrus.Infof("Operation %q got status %s. Process finished.", operation.ID, processedOperation.State)
 	return 0, nil
 }
 

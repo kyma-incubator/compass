@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -84,6 +85,7 @@ func fixOperation(ID string) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ID:          ID,
+			State:       domain.InProgress,
 			InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
 			Description: "",
 		},
