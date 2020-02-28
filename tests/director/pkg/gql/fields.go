@@ -281,13 +281,14 @@ func (fp *GqlFieldsProvider) ForTenant() string {
 }
 
 func (fp *GqlFieldsProvider) ForPackage(ctx ...FieldCtx) string {
-	return fmt.Sprintf(`
+	return addFieldsFromContext(fmt.Sprintf(`
 		id
 		name
 		description
 		instanceAuthRequestInputSchema
 		instanceAuths {%s}
-		defaultInstanceAuth {%s}`, fp.ForPackageInstanceAuth(), fp.ForAuth())
+		defaultInstanceAuth {%s}`, fp.ForPackageInstanceAuth(), fp.ForAuth()),
+		ctx, []string{"Package.instanceAuth"})
 }
 
 func (fp *GqlFieldsProvider) ForPackageInstanceAuth() string {

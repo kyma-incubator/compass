@@ -3918,19 +3918,44 @@ type Mutation {
 	When PackageInstanceAuth is not in pending state, the operation returns error.
 	
 	When used without error, the status of pending auth is set to success.
+	
+	**Examples**
+	- [set package instance auth](examples/set-package-instance-auth/set-package-instance-auth.graphql)
 	"""
 	setPackageInstanceAuth(authID: ID!, in: PackageInstanceAuthSetInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
+	"""
+	**Examples**
+	- [delete package instance auth](examples/delete-package-instance-auth/delete-package-instance-auth.graphql)
+	"""
 	deletePackageInstanceAuth(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
 	"""
 	When defaultInstanceAuth is set, it fires "createPackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to PENDING.
+	
+	**Examples**
+	- [request package instance auth creation](examples/request-package-instance-auth-creation/request-package-instance-auth-creation.graphql)
 	"""
 	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
 	"""
 	When defaultInstanceAuth is set, it fires "deletePackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to UNUSED.
+	
+	**Examples**
+	- [request package instance auth deletion](examples/request-package-instance-auth-deletion/request-package-instance-auth-deletion.graphql)
 	"""
 	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
+	"""
+	**Examples**
+	- [add package](examples/add-package/add-package.graphql)
+	"""
 	addPackage(applicationID: ID!, in: PackageCreateInput! @validate): Package! @hasScopes(path: "graphql.mutation.addPackage")
+	"""
+	**Examples**
+	- [update package](examples/update-package/update-package.graphql)
+	"""
 	updatePackage(id: ID!, in: PackageUpdateInput! @validate): Package! @hasScopes(path: "graphql.mutation.updatePackage")
+	"""
+	**Examples**
+	- [delete package](examples/delete-package/delete-package.graphql)
+	"""
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
 }
 

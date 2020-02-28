@@ -2,11 +2,7 @@ package packageinstanceauth
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -52,58 +48,6 @@ func NewResolver(transact persistence.Transactioner, svc Service, pkgSvc Package
 
 var mockRequestTypeKey = "type"
 var mockPackageID = "db5d3b2a-cf30-498b-9a66-29e60247c66b"
-
-// TODO: Remove mock
-func (r *Resolver) SetPackageInstanceAuthMock(ctx context.Context, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
-	return mock.FixPackageInstanceAuth(mockPackageID, graphql.PackageInstanceAuthStatusConditionSucceeded), nil
-}
-
-// TODO: Remove mock
-func (r *Resolver) DeletePackageInstanceAuthMock(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
-	return mock.FixPackageInstanceAuth(mockPackageID, graphql.PackageInstanceAuthStatusConditionUnused), nil
-}
-
-// TODO: Remove mock
-func (r *Resolver) RequestPackageInstanceAuthCreationMock(ctx context.Context, packageID string, in graphql.PackageInstanceAuthRequestInput) (*graphql.PackageInstanceAuth, error) {
-	id := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	if in.Context == nil {
-		return mock.FixPackageInstanceAuth(id, graphql.PackageInstanceAuthStatusConditionPending), nil
-	}
-
-	var data map[string]interface{}
-	err := json.Unmarshal([]byte(*in.Context), &data)
-	if err != nil {
-		return nil, fmt.Errorf("invalid context type: expected JSON object, actual %+v", *in.Context)
-	}
-
-	if _, exists := data[mockRequestTypeKey]; !exists {
-		return mock.FixPackageInstanceAuth(id, graphql.PackageInstanceAuthStatusConditionPending), nil
-	}
-
-	reqType, ok := data[mockRequestTypeKey].(string)
-	if !ok {
-		return nil, errors.New("invalid mock request type: expected string value (`success` or `error`)")
-	}
-
-	switch reqType {
-	case "success":
-		id = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
-	case "error":
-		id = "cccccccc-cccc-cccc-cccc-cccccccccccc"
-	}
-
-	out := mock.FixPackageInstanceAuth(id, graphql.PackageInstanceAuthStatusConditionPending)
-
-	out.Context = in.Context
-	out.InputParams = in.InputParams
-
-	return out, nil
-}
-
-// TODO: Remove mock
-func (r *Resolver) RequestPackageInstanceAuthDeletionMock(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
-	return mock.FixPackageInstanceAuth(mockPackageID, graphql.PackageInstanceAuthStatusConditionUnused), nil
-}
 
 func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
 	tx, err := r.transact.Begin()
