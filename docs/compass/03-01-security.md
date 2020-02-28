@@ -43,12 +43,12 @@ The table is used by the Director and Tenant Mapping Handler. It contains the fo
 
 ### GraphQL security
 
-The Gateway passes the request to Compass GraphQL services, such as the Director or the Connector. Additionally, the request contains authentication data. In the Director it is a JWT token, in the Connector it is a one-time token and the `Clinet-Id-From-Token` or `Client-Id-From-Certificate` header. The GraphQL components have authentication middleware and GraphQL [directives](https://graphql.org/learn/queries/#directives) set up for all GraphQL operations (and some specific type fields, if necessary). 
+The Gateway passes the request to Compass GraphQL services, such as the Director or the Connector. Additionally, the request contains authentication data. In the Director it is a JWT token, in the Connector it is the `Client-Id-From-Token` or `Client-Id-From-Certificate` header. The GraphQL components have authentication middleware and GraphQL [directives](https://graphql.org/learn/queries/#directives) set up for all GraphQL operations (and some specific type fields, if necessary). 
 
 #### HTTP middleware
 
 In GraphQL servers, such as the Director or the Connector, there is an HTTP authentication middleware set up. In the Director, it validates and decodes the JWT token, and it puts user scopes and tenant in the request context
-(`context.Context`). In the Connector, it verifies the `Clinet-Id-From-Token` or `Client-Id-From-Certificate` header.
+(`context.Context`). In the Connector, it verifies the `Client-Id-From-Token` header or the `Client-Id-From-Certificate` and `Client-Certificate-Hash` headers.
 
 ![](./assets/graphql-security.svg)
 
@@ -225,11 +225,12 @@ Scopes are added to the authentication session in Tenant Mapping Handler. The ha
 
 **Connector flow:**
 
-1. Runtime/Application makes a call to the Connector to the certificate-secured subdomain.
-2. The Hydrator verifies the one-time token. If the one-time token is invalid, the request is rejected.
-3. The Hydrator writes the Client ID to the `Client-Id-From-Token` header.
-4. The OathKeeper uses the Token Resolver as a mutator. In the case of failure, the header is empty.
-5. The request is forwarded to the Connector through the Compass Gateway.
+1. Runtime/Application makes a call to the Connector's internal API.
+2. The OathKeeper uses the Token Resolver as a mutator. 
+3. The Client ID is extracted from the one-time token's `Connector-Token` header or from the `token` query parameter.
+4. The Client ID is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
+5. The OathKeeper proxies the request further to the Compass Gateway.
+6. The request is forwarded to the Connector.
 
 ![Auth](./assets/token-security-diagram-connector.svg)
 
@@ -237,7 +238,7 @@ Scopes are added to the authentication session in Tenant Mapping Handler. The ha
 
 1. Runtime/Application makes a call to the Director.
 1. The OathKeeper uses the Token Resolver as a mutator. 
-1. The Client ID is extracted from the one-time token's `Conector-Token` header or from the `token` query parameter. 
+1. The Client ID is extracted from the one-time token's `Connector-Token` header or from the `token` query parameter. 
 1. The Client ID is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
 1. The call is then proxied to the Tenant mapping handler mutator, where the Client ID is mapped onto the `tenant` and returned to the OathKeeper. 
 1. Hydrator passes the response to ID_Token mutator which constructs a JWT token with scopes and tenant in the payload.
