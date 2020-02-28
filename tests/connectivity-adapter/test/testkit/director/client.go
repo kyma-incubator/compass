@@ -24,8 +24,6 @@ type Client interface {
 	GetOneTimeTokenUrl(appID string) (string, string, error)
 }
 
-const retryNumber = 10
-
 type client struct {
 	scopes       []string
 	tenant       string
@@ -94,7 +92,7 @@ func waitUntilDirectorIsReady(directorHealthzURL string) error {
 
 		res, err := httpClient.Do(req)
 		if err != nil {
-			logrus.Warningf("Failed to executeWithRetries request while waiting for Director: %s", err)
+			logrus.Warningf("Failed to execute request while waiting for Director: %s", err)
 			return err
 		}
 
@@ -108,9 +106,7 @@ func waitUntilDirectorIsReady(directorHealthzURL string) error {
 		}
 
 		return nil
-	},
-		retry.Delay(time.Second),
-		retry.Attempts(10), retry.DelayType(retry.FixedDelay))
+	}, defaultRetryOptions()...)
 }
 
 func (c client) CreateApplication(in schema.ApplicationRegisterInput) (string, error) {
@@ -252,8 +248,7 @@ func (c client) executeWithRetries(query string, res interface{}) error {
 		err := c.client.Run(ctx, req, res)
 
 		return err
-	}, retry.Delay(time.Second),
-		retry.Attempts(10), retry.DelayType(retry.FixedDelay))
+	}, defaultRetryOptions()...)
 
 }
 
@@ -274,4 +269,8 @@ func getToken(tenant string, scopes []string) (string, error) {
 	}
 
 	return token, nil
+}
+
+func defaultRetryOptions() []retry.Option {
+	return []retry.Option{retry.Attempts(20), retry.DelayType(retry.FixedDelay), retry.Delay(time.Second)}
 }
