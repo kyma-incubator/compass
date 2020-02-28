@@ -5,9 +5,9 @@ import (
 )
 
 const (
-	gcpPlanID   = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
-	azurePlanID = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-	awsPlanID   = "badf964a-8908-46e3-bbfd-db2eefe35836"
+	GcpPlanID   = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+	AzurePlanID = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	AwsPlanID   = "badf964a-8908-46e3-bbfd-db2eefe35836"
 )
 
 var instanceCreateSchema = []byte(`{
@@ -31,9 +31,9 @@ var plans = map[string]struct {
 	planDefinition        domain.ServicePlan
 	provisioningRawSchema []byte
 }{
-	gcpPlanID: {
+	GcpPlanID: {
 		planDefinition: domain.ServicePlan{
-			ID:          gcpPlanID,
+			ID:          GcpPlanID,
 			Name:        "gcp",
 			Description: "GCP",
 			Metadata: &domain.ServicePlanMetadata{
@@ -101,9 +101,9 @@ var plans = map[string]struct {
 			"name"
 		  ]
 		}`)},
-	azurePlanID: {
+	AzurePlanID: {
 		planDefinition: domain.ServicePlan{
-			ID:          azurePlanID,
+			ID:          AzurePlanID,
 			Name:        "azure",
 			Description: "Azure",
 			Metadata: &domain.ServicePlanMetadata{
@@ -162,9 +162,9 @@ var plans = map[string]struct {
 			"name"
 		  ]
 		}`)},
-	awsPlanID: {
+	AwsPlanID: {
 		planDefinition: domain.ServicePlan{
-			ID:          awsPlanID,
+			ID:          AwsPlanID,
 			Name:        "aws",
 			Description: "AWS",
 			Metadata: &domain.ServicePlanMetadata{

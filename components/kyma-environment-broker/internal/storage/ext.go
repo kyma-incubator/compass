@@ -13,6 +13,7 @@ type Instances interface {
 type Operations interface {
 	InsertProvisioningOperation(operation internal.ProvisioningOperation) error
 	GetProvisioningOperationByID(operationID string) (*internal.ProvisioningOperation, error)
+	GetProvisioningOperationByInstanceID(instanceID string) (*internal.ProvisioningOperation, error)
 	UpdateProvisioningOperation(operation internal.ProvisioningOperation) (*internal.ProvisioningOperation, error)
 	GetOperation(operationID string) (*internal.Operation, error)
 }

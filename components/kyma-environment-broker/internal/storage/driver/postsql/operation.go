@@ -1,15 +1,15 @@
 package postsql
 
 import (
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+
 	"github.com/pkg/errors"
 )
 
@@ -39,6 +39,25 @@ func (s *operations) GetProvisioningOperationByID(operationID string) (*internal
 	session := s.NewReadSession()
 	dto, dbErr := session.GetOperationByID(operationID)
 	if dbErr != nil {
+		return nil, errors.Wrapf(dbErr, "while reading Operation from the storage")
+	}
+
+	ret, err := toProvisioningOperation(&dto)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return ret, nil
+}
+
+// GetProvisioningOperationByInstanceID fetches the ProvisioningOperation by given instanceID, returns error if not found
+func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*internal.ProvisioningOperation, error) {
+	session := s.NewReadSession()
+	dto, dbErr := session.GetOperationByInstanceID(instanceID)
+	if dbErr != nil {
+		if dbErr.Code() == dberr.CodeNotFound {
+			return nil, dberr.NotFound("operation does not exist")
+		}
 		return nil, errors.Wrapf(dbErr, "while reading Operation from the storage")
 	}
 
