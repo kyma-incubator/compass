@@ -217,7 +217,7 @@ foo@bar.com:
 
 **Scopes**
 
-Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are defined per object type (Application / Runtime). Application and Runtime are always have the same scopes defined.
+Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are defined per object type (Application / Runtime). 
 
 ### One-time token
 
@@ -245,4 +245,4 @@ Scopes are added to the authentication session in Tenant Mapping Handler. The ha
 
 **Scopes**
 
-Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are defined per object type (Application/Runtime). Application and Runtime always have the same scopes defined.
+Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are defined per object type (Application/Runtime).
