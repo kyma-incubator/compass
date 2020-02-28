@@ -2,7 +2,7 @@
 
 Compass is secured with ORY [Hydra](https://www.ory.sh/hydra/) and [OathKeeper](https://github.com/ory/oathkeeper). There are the following ways of authentication: 
  - OAuth 2.0
- - Client Certificates (mTLS)
+ - Client certificates (mTLS)
  - JWT token issued by identity service
  - One-time token
 
@@ -16,18 +16,18 @@ The following diagram represents the architecture of the security in Compass:
 
 ### Tenant Mapping Handler
 
-It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler responsible for mapping authentication session data to tenant. It is built into the Director itself, as it uses the same database. It is implemented as a separate endpoint, such as `/tenant-mapping`.
+It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler responsible for mapping authentication session data to the tenant. It is built into the Director itself, as it uses the same database. It is implemented as a separate endpoint, such as `/tenant-mapping`.
 
 To unify the approach for mapping, we introduce `authorization_id`, widely used by multiple authentication flows.
 The `authorization_id` is equal to:
 - `client_id` in the OAuth 2.0 authentication flow
 - `username` in the Basic authentication flow
-- Common Name (CN) in the Certificates authentication flow
+- Common Name (CN) in the certificates authentication flow
 - Client ID in the one-time token authentication flow
 
-While generating one-time token, `client_id`/`client_secret` pair or basic authentication details for Runtime/Application/Integration System (using proper GraphQL mutation on the Director), an entry in `system_auths` table in the Director database is created. The `system_auths` table is used for tenant mapping.
+While generating the one-time token, the `client_id`/`client_secret` pair, or basic authentication details for Runtime/Application/Integration System (using proper GraphQL mutation on the Director), an entry in the `system_auths` table in the Director database is created. The `system_auths` table is used for tenant mapping.
 
-In certificates authentication flow, Tenant Mapping Handler puts fixed `scopes` into authentication session. The `scopes` are fixed in code, and they depend on the type of the object (Application/Runtime/Integration System). In the future we may introduce another database table for storing generic Application/Runtime/Integration System scopes.
+In the certificates authentication flow, Tenant Mapping Handler puts fixed `scopes` into an authentication session. The `scopes` are fixed in code, and they depend on the type of the object (Application/Runtime/Integration System). In the future we may introduce another database table for storing generic Application/Runtime/Integration System scopes.
 
 In JWT token from identity service flow, for local development, user `tenant` and `scopes` are loaded from ConfigMap for given user (email), where static `user: tenant and scopes` mapping is done.
 
@@ -39,15 +39,15 @@ The table is used by the Director and Tenant Mapping Handler. It contains the fo
 - `app_id` foreign key of type UUID
 - `runtime_id` foreign key of type UUID
 - `integration_system_id` foreign key of type UUID
-- `value` of type JSON (with authentication details, such as `client_id/client_secret` in OAuth 2.0 authentication flow, `username/password` in Basic authentication flow; in the case of certificates flow it is empty)
+- `value` of type JSON, with authentication details, such as `client_id/client_secret` in the OAuth 2.0 authentication flow, or `username/password` in the Basic authentication flow. In the case of the certificates flow it is empty.
 
 ### GraphQL security
 
-The Gateway passes the request to Compass GraphQL services, such as the Director or the Connector. Additionally, the request contains authentication data. In the Director it is a JWT token, in the Connector it is the `Client-Id-From-Token` or the `Client-Id-From-Certificate` and `Client-Certificate-Hash` headers. The GraphQL components have authentication middleware and GraphQL [directives](https://graphql.org/learn/queries/#directives) set up for all GraphQL operations (and some specific type fields, if necessary). 
+The Gateway passes the request to Compass GraphQL services, such as the Director or the Connector. Additionally, the request contains authentication data. In the Director it is a JWT token, in the Connector it is the `Client-Id-From-Token` header or the `Client-Id-From-Certificate` and `Client-Certificate-Hash` headers. The GraphQL components have authentication middleware and GraphQL [directives](https://graphql.org/learn/queries/#directives) set up for all GraphQL operations (and some specific type fields, if necessary). 
 
 #### HTTP middleware
 
-In GraphQL servers, such as the Director or the Connector, there is an HTTP authentication middleware set up. In the Director, it validates and decodes the JWT token, and it puts user scopes and tenant in the request context
+In GraphQL servers, such as the Director or the Connector, there is an HTTP authentication middleware set up. In the Director, it validates and decodes the JWT token, and puts user scopes and the tenant in the request context
 (`context.Context`). In the Connector, it verifies the `Client-Id-From-Token` header or the `Client-Id-From-Certificate` and `Client-Certificate-Hash` headers.
 
 ![](./assets/graphql-security.svg)
@@ -131,9 +131,9 @@ There are two ways of creating a `client_id` and `client_secret` pair in the Hyd
 
 **Obtaining token:**
 
-1. Runtime/Application/IntegrationSystem requests `client_id` and `client_credentials` pair from the Director by a separate GraphQL mutation. Director generates the pair, registers it in Hydra with proper scopes (defined by object type), and writes it in database.
-1. Runtime/Application/IntegrationSystem calls Hydra with encoded credentials (`client_id` is the ID of `SystemAuth` entry related to the given Runtime/Application/IntegrationSystem) and requested scopes.
-1. If the requested scopes are valid, Runtime/Application/IntegrationSystem receives in response an access token, otherwise it receives an error.
+1. Runtime/Application/IntegrationSystem requests the `client_id` and `client_credentials` pair from the Director by a separate GraphQL mutation. the Director generates the pair, registers it in Hydra with proper scopes (defined by object type), and writes it to the database.
+1. Runtime/Application/IntegrationSystem calls Hydra with encoded credentials (`client_id` is the ID of the `SystemAuth` entry related to the given Runtime/Application/IntegrationSystem) and requested scopes.
+1. If the requested scopes are valid, Runtime/Application/IntegrationSystem receives an access token in response. Otherwise, it receives an error.
 
 **Request flow:**
 
@@ -161,7 +161,7 @@ User logs in to Compass UI
 
 **Request flow:**
 
-1. Authenticator validates the token using keys provided by identity service. In production environment, tenant **must be** included in the token payload. For local development, the `tenant` property is missing from token issued by Dex.
+1. Authenticator validates the token using keys provided by the identity service. In the production environment, the tenant **must be** included in the token payload. For local development, the `tenant` property is missing from the token issued by Dex.
 1. If the token is valid, OathKeeper sends the request to Hydrator.
 1. Hydrator calls Tenant Mapping Handler hosted by `Director`, which, in production environment, returns **the same** authentication session (as the `tenant` is already in place). For local development, user `tenant` and `scopes` are loaded from ConfigMap, where static `user - tenant and scopes` mapping is done.
 1. Hydrator passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
@@ -208,7 +208,7 @@ foo@bar.com:
 2. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request.
 3. The certificate info (subject and certificate hash) is added to the `Certificate-Data` header.
 4. The OathKeeper uses the Certificate Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has been revoked, the two headers are empty.
-5. The call is then proxied to the Tenant mapping handler, where the `client_id` is mapped onto the `tenant` and returned to the OathKeeper. If the Common Name is invalid, the `tenant` will be empty.
+5. The call is then proxied to Tenant Mapping Handler, where the `client_id` is mapped onto the `tenant` and returned to the OathKeeper. If the Common Name is invalid, the `tenant` will be empty.
 6. Hydrator passes the response to ID_Token mutator which constructs a JWT token with scopes and tenant in the payload.
 7. The OathKeeper proxies the request further to the Compass Gateway.
 8. The request is forwarded to the Director.
@@ -217,7 +217,7 @@ foo@bar.com:
 
 **Scopes**
 
-Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are fixed regarding of type of the object (Application / Runtime). Application and Runtime are always have the same scopes defined.
+Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are defined per object type (Application / Runtime). Application and Runtime are always have the same scopes defined.
 
 ### One-time token
 
@@ -226,8 +226,7 @@ Scopes are added to the authentication session in Tenant Mapping Handler. The ha
 **Connector flow:**
 
 1. Runtime/Application makes a call to the Connector's internal API.
-1. The OathKeeper uses the Token Resolver as a mutator. 
-The Client ID is extracted from the one-time token's `Connector-Token` header or from the `token` query parameter, and is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
+1. The OathKeeper uses the Token Resolver as a mutator. The Token Resolver extracts the Client ID from the one-time token's `Connector-Token` header or from the `token` query parameter, and writes it to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
 1. The OathKeeper proxies the request further to the Compass Gateway.
 1. The request is forwarded to the Connector.
 
@@ -237,7 +236,7 @@ The Client ID is extracted from the one-time token's `Connector-Token` header or
 
 1. Runtime/Application makes a call to the Director.
 1. The OathKeeper uses the Token Resolver as a mutator. The Client ID is extracted from the one-time token's `Connector-Token` header or from the `token` query parameter, and is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
-1. The call is then proxied to the Tenant mapping handler mutator, where the Client ID is mapped onto the `tenant` and returned to the OathKeeper. 
+1. The call is then proxied to the Tenant Mapping Handler mutator, where the Client ID is mapped onto the `tenant` and returned to the OathKeeper. 
 1. Hydrator passes the response to ID_Token mutator which constructs a JWT token with scopes and tenant in the payload.
 1. The OathKeeper proxies the request further to the Compass Gateway.
 1. The request is forwarded to the Director.
@@ -246,4 +245,4 @@ The Client ID is extracted from the one-time token's `Connector-Token` header or
 
 **Scopes**
 
-Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are fixed regarding of type of the object (Application/Runtime). Application and Runtime always have the same scopes defined.
+Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are defined per object type (Application/Runtime). Application and Runtime always have the same scopes defined.
