@@ -43,7 +43,7 @@ The table is used by the Director and Tenant Mapping Handler. It contains the fo
 
 ### GraphQL security
 
-The Gateway passes the request to Compass GraphQL services, such as the Director or the Connector. Additionally, the request contains authentication data. In the Director it is a JWT token, in the Connector it is the `Client-Id-From-Token` or `Client-Id-From-Certificate` header. The GraphQL components have authentication middleware and GraphQL [directives](https://graphql.org/learn/queries/#directives) set up for all GraphQL operations (and some specific type fields, if necessary). 
+The Gateway passes the request to Compass GraphQL services, such as the Director or the Connector. Additionally, the request contains authentication data. In the Director it is a JWT token, in the Connector it is the `Client-Id-From-Token` or the `Client-Id-From-Certificate` and `Client-Certificate-Hash` headers. The GraphQL components have authentication middleware and GraphQL [directives](https://graphql.org/learn/queries/#directives) set up for all GraphQL operations (and some specific type fields, if necessary). 
 
 #### HTTP middleware
 
