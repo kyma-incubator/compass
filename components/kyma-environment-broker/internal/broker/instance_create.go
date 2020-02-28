@@ -56,7 +56,7 @@ func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, bui
 //   PUT /v2/service_instances/{instance_id}
 func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
 	// validation of incoming input
-	ersContext, parameters, err := b.validate(details)
+	ersContext, parameters, err := b.validateAndExtract(details)
 	if err != nil {
 		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
@@ -101,7 +101,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}, nil
 }
 
-func (b *ProvisionEndpoint) validate(details domain.ProvisionDetails) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
+func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
 	var ersContext internal.ERSContext
 	var parameters internal.ProvisioningParametersDTO
 
