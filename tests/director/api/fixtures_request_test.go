@@ -567,12 +567,39 @@ func fixAddPackageRequest(appID, in string) *gcli.Request {
 			}}`, appID, in))
 }
 
+func fixUpdatePackageRequest(packageID, pkgUpdateInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: updatePackage(id: "%s", in: %s) {
+				%s
+			}
+		}`, packageID, pkgUpdateInput, tc.gqlFieldsProvider.ForPackage()))
+}
+
 func fixDeletePackageRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: deletePackage(id: "%s") {
 				id
 			}}`, id))
+}
+
+func fixSetPackageInstanceAuthRequest(authID, apiAuthInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: setPackageInstanceAuth(authID: "%s", in: %s) {
+				%s
+			}
+		}`, authID, apiAuthInput, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+}
+
+func fixRequestPackageInstanceAuthCreationRequest(packageID, pkgInstanceAuthRequestInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: requestPackageInstanceAuthCreation(packageID: "%s", in: %s) {
+				%s
+			}
+		}`, packageID, pkgInstanceAuthRequestInput, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
 }
 
 func fixAPIDefinitionInPackageRequest(appID, pkgID, apiID string) *gcli.Request {
