@@ -52,6 +52,8 @@ func (d *Dumper) Dump(value ...interface{}) {
 		case domain.BindDetails:
 			b.WriteString(fmt.Sprintf("\nRawContext: %s", d.RawContext))
 			b.WriteString(fmt.Sprintf("\nRawParameters: %s", d.RawParameters))
+		case error:
+			b.WriteString(fmt.Sprintf("\nError: %s", d.Error()))
 		}
 	}
 

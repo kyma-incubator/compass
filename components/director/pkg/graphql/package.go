@@ -8,3 +8,18 @@ type Package struct {
 	// When defined, all Auth requests fallback to defaultAuth.
 	DefaultInstanceAuth *Auth `json:"defaultInstanceAuth"`
 }
+
+type PackageExt struct {
+	Package
+	APIDefinitions   APIDefinitionPageExt      `json:"apiDefinitions"`
+	EventDefinitions EventAPIDefinitionPageExt `json:"eventDefinitions"`
+	Documents        DocumentPageExt           `json:"documents"`
+	APIDefinition    APIDefinitionExt          `json:"apiDefinition"`
+	EventDefinition  EventDefinition           `json:"eventDefinition"`
+	Document         Document                  `json:"document"`
+}
+
+type PackagePageExt struct {
+	PackagePage
+	Data []*PackageExt `json:"data"`
+}

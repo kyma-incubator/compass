@@ -40,20 +40,24 @@ func (fp *GqlFieldsProvider) Page(item string) string {
 }
 
 func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
-	return fmt.Sprintf(`id
+	return addFieldsFromContext(fmt.Sprintf(`
+		id
 		name
+		providerName
 		description
+		integrationSystemID
 		labels
-		eventingConfiguration { defaultURL }
 		status {condition timestamp}
 		webhooks {%s}
 		healthCheckURL
-		providerName
 		apiDefinitions {%s}
 		eventDefinitions {%s}
 		documents {%s}
+		packages {%s}
 		auths {%s}
-	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventDefinition()), fp.Page(fp.ForDocument()), fp.ForSystemAuth())
+		eventingConfiguration { defaultURL }
+	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventDefinition()), fp.Page(fp.ForDocument()), fp.Page(fp.ForPackage()), fp.ForSystemAuth()),
+		ctx, []string{"Application.package"})
 }
 
 func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
@@ -78,7 +82,7 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 }
 
 func (fp *GqlFieldsProvider) ForAPIDefinition(ctx ...FieldCtx) string {
-	return addFieldsFromContext(fmt.Sprintf(`		id
+	return addFieldsFromContext(fmt.Sprintf(`id
 		name
 		applicationID
 		description
@@ -274,4 +278,31 @@ func (fp *GqlFieldsProvider) ForTenant() string {
 	return `
 		id
 		name`
+}
+
+func (fp *GqlFieldsProvider) ForPackage(ctx ...FieldCtx) string {
+	return fmt.Sprintf(`
+		id
+		name
+		description
+		instanceAuthRequestInputSchema
+		instanceAuths {%s}
+		defaultInstanceAuth {%s}`, fp.ForPackageInstanceAuth(), fp.ForAuth())
+}
+
+func (fp *GqlFieldsProvider) ForPackageInstanceAuth() string {
+	return fmt.Sprintf(`
+		id
+		context
+		inputParams
+		auth {%s}
+		status {%s}`, fp.ForAuth(), fp.ForPackageInstanceAuthStatus())
+}
+
+func (fp *GqlFieldsProvider) ForPackageInstanceAuthStatus() string {
+	return `
+		condition
+		timestamp
+		message
+		reason`
 }

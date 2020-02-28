@@ -71,6 +71,15 @@ func fixAddDocumentRequest(appID, documentInputInGQL string) *gcli.Request {
 		}`, appID, documentInputInGQL, tc.gqlFieldsProvider.ForDocument()))
 }
 
+func fixAddDocumentToPackageRequest(packageID, documentInputInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: addDocumentToPackage(packageID: "%s", in: %s) {
+ 				%s
+			}				
+		}`, packageID, documentInputInGQL, tc.gqlFieldsProvider.ForDocument()))
+}
+
 func fixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -91,6 +100,16 @@ func fixAddAPIRequest(appID, APIInputGQL string) *gcli.Request {
 		`, appID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
 }
 
+func fixAddAPIToPackageRequest(pkgID, APIInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: addAPIDefinitionToPackage(packageID: "%s", in: %s) {
+				%s
+			}
+		}
+		`, pkgID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+}
+
 func fixUpdateAPIRequest(appID, APIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -109,6 +128,16 @@ func fixAddEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
 			}
 		}
 		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
+}
+
+func fixAddEventAPIToPackageRequest(pkgID, eventAPIInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: addEventDefinitionToPackage(packageID: "%s", in: %s) {
+				%s
+			}
+		}
+		`, pkgID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
 func fixUpdateEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
@@ -517,4 +546,110 @@ func fixSetDefaultEventingForApplication(appID string, runtimeID string) *gcli.R
 				}
 			}`,
 			runtimeID, appID, tc.gqlFieldsProvider.ForEventingConfiguration()))
+}
+
+func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+				%s
+				}
+			}`, applicationID, tc.gqlFieldsProvider.ForApplication(gql.FieldCtx{
+			"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`, packageID, tc.gqlFieldsProvider.ForPackage()),
+		})))
+}
+
+func fixAddPackageRequest(appID, in string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addPackage(applicationID: "%s", in: %s) {
+				id
+			}}`, appID, in))
+}
+
+func fixDeletePackageRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deletePackage(id: "%s") {
+				id
+			}}`, id))
+}
+
+func fixAPIDefinitionInPackageRequest(appID, pkgID, apiID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+						package(id: "%s"){
+							apiDefinition(id: "%s"){
+						%s
+						}					
+					}
+				}
+			}`, appID, pkgID, apiID, tc.gqlFieldsProvider.ForAPIDefinition()))
+}
+
+func fixEventDefinitionInPackageRequest(appID, pkgID, eventID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+						package(id: "%s"){
+							eventDefinition(id: "%s"){
+						%s
+						}					
+					}
+				}
+			}`, appID, pkgID, eventID, tc.gqlFieldsProvider.ForEventDefinition()))
+}
+
+func fixDocumentInPackageRequest(appID, pkgID, docID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+						package(id: "%s"){
+							document(id: "%s"){
+						%s
+						}					
+					}
+				}
+			}`, appID, pkgID, docID, tc.gqlFieldsProvider.ForDocument()))
+}
+
+func fixAPIDefinitionsInPackageRequest(appID, pkgID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+						package(id: "%s"){
+							apiDefinitions{
+						%s
+						}					
+					}
+				}
+			}`, appID, pkgID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForAPIDefinition())))
+
+}
+
+func fixEventDefinitionsInPackageRequest(appID, pkgID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+						package(id: "%s"){
+							eventDefinitions{
+						%s
+						}					
+					}
+				}
+			}`, appID, pkgID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForEventDefinition())))
+}
+
+func fixDocumentsInPackageRequest(appID, pkgID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+						package(id: "%s"){
+							documents{
+						%s
+						}					
+					}
+				}
+			}`, appID, pkgID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForDocument())))
 }

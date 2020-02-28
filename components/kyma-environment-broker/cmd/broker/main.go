@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -17,11 +18,15 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pivotal-cf/brokerapi"
+	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -39,7 +44,7 @@ type Config struct {
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
-	Provisioning broker.ProvisioningConfig
+	Provisioning input.Config
 	Director     director.Config
 	Database     storage.Config
 	Gardener     gardener.Config
@@ -53,6 +58,9 @@ type Config struct {
 }
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// create and fill config
 	var cfg Config
 	err := envconfig.InitWithPrefix(&cfg, "APP")
@@ -71,6 +79,7 @@ func main() {
 		Password: cfg.Auth.Password,
 	}
 
+	// create provisioner client
 	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 
 	// create kubernetes client
@@ -82,8 +91,6 @@ func main() {
 	// create director client on the base of graphQL client and OAuth client
 	httpClient := http_client.NewHTTPClient(30, cfg.Director.SkipCertVerification)
 	graphQLClient := gcli.NewClient(cfg.Director.URL, gcli.WithHTTPClient(httpClient))
-	// TODO: remove after debug mode
-	graphQLClient.Log = func(s string) { log.Println(s) }
 	oauthClient := oauth.NewOauthClient(httpClient, cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
 	fatalOnError(oauthClient.WaitForCredentials())
 	directorClient := director.NewDirectorClient(oauthClient, graphQLClient)
@@ -125,18 +132,37 @@ func main() {
 
 	accountProvider := hyperscaler.NewAccountProvider(compassAccountPool, gardenerAccountPool)
 
-	inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager, cfg.Director.URL, accountProvider)
+	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion, accountProvider)
 
+	// master code
+	// inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager, cfg.Director.URL, accountProvider)
+
+	// create log dumper
 	dumper, err := broker.NewDumper()
 	fatalOnError(err)
 
+	// create and run queue, steps provisioning
+	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
+
+	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
+
+	logs := logrus.New()
+	stepManager := process.NewManager(db.Operations(), logs)
+	stepManager.InitStep(initialisation)
+
+	stepManager.AddStep(1, runtimeStep)
+
+	queue := process.NewQueue(stepManager)
+	queue.Run(ctx.Done())
+
+	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
 		broker.NewServices(cfg.Broker, optComponentsSvc, dumper),
-		broker.NewProvision(cfg.Broker, db.Instances(), inputFactory, cfg.Provisioning, provisionerClient, dumper),
+		broker.NewProvision(cfg.Broker, db.Operations(), queue, inputFactory, dumper),
 		broker.NewDeprovision(db.Instances(), provisionerClient, dumper),
 		broker.NewUpdate(dumper),
 		broker.NewGetInstance(db.Instances(), dumper),
-		broker.NewLastOperation(db.Instances(), provisionerClient, directorClient, dumper),
+		broker.NewLastOperation(db.Operations(), dumper),
 		broker.NewBind(dumper),
 		broker.NewUnbind(dumper),
 		broker.NewGetBinding(dumper),

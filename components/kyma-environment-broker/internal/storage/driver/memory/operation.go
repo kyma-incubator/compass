@@ -41,6 +41,16 @@ func (s *operations) GetProvisioningOperationByID(operationID string) (*internal
 	return &op, nil
 }
 
+func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*internal.ProvisioningOperation, error) {
+	for _, op := range s.provisioningOperations {
+		if op.InstanceID == instanceID {
+			return &op, nil
+		}
+	}
+
+	return nil, dberr.NotFound("instance provisioning operation with instanceID %s not found", instanceID)
+}
+
 func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperation) (*internal.ProvisioningOperation, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
