@@ -133,7 +133,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 
 	// then
 	assert.NoError(t, err)
-	assert.Equal(t, time.Duration(0), repeat)
+	assert.Equal(t, 1*time.Second, repeat)
 	assert.Equal(t, provisionerOperationID, operation.ProvisionerOperationID)
 
 	instance, err := memoryStorage.Instances().GetByID(operation.InstanceID)

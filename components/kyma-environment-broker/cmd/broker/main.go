@@ -116,17 +116,15 @@ func main() {
 	fatalOnError(err)
 
 	// create and run queue, steps provisioning
-	inputInitialisation := provisioning.NewInputInitialisationStep(db.Operations(), inputFactory, cfg.ManagementPlaneURL)
+	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
-	runtimeStatusStep := provisioning.NewRuntimeStatusStep(db.Operations(), db.Instances(), provisionerClient, directorClient)
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
-	stepManager.InitStep(inputInitialisation)
+	stepManager.InitStep(initialisation)
 
 	stepManager.AddStep(1, runtimeStep)
-	stepManager.AddStep(2, runtimeStatusStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())

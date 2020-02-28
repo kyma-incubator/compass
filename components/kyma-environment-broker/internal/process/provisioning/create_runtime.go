@@ -113,7 +113,8 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return operation, 10 * time.Second, nil
 	}
 
-	return operation, 0, nil
+	// return repeat mode (1 sec) to start the initialization step which will now check the runtime status
+	return operation, 1 * time.Second, nil
 }
 
 func (s *CreateRuntimeStep) createProvisionInput(operation internal.ProvisioningOperation, parameters internal.ProvisioningParameters) (gqlschema.ProvisionRuntimeInput, error) {

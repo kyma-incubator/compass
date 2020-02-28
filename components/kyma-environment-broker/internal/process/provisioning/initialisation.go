@@ -8,8 +8,10 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	"github.com/pkg/errors"
@@ -27,27 +29,78 @@ type DirectorClient interface {
 	GetConsoleURL(accountID, runtimeID string) (string, error)
 }
 
-type RuntimeStatusStep struct {
+type InitialisationStep struct {
 	operationManager  *process.OperationManager
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
-	DirectorClient    DirectorClient
+	directorClient    DirectorClient
+	directorURL       string
+	inputBuilder      input.CreatorForPlan
 }
 
-func NewRuntimeStatusStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient) *RuntimeStatusStep {
-	return &RuntimeStatusStep{
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan, dURL string) *InitialisationStep {
+	return &InitialisationStep{
 		operationManager:  process.NewOperationManager(os),
 		instanceStorage:   is,
 		provisionerClient: pc,
-		DirectorClient:    dc,
+		directorClient:    dc,
+		directorURL:       dURL,
+		inputBuilder:      b,
 	}
 }
 
-func (s *RuntimeStatusStep) Name() string {
-	return "Check_Runtime_Status"
+func (s *InitialisationStep) Name() string {
+	return "Initialization"
 }
 
-func (s *RuntimeStatusStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	_, err := s.instanceStorage.GetByID(operation.InstanceID)
+	switch {
+	case err == nil:
+		log.Info("instance exist, check instance status")
+		return s.checkRuntimeStatus(operation, log)
+	case dberr.IsNotFound(err):
+		log.Info("instance not exist, initialize runtime input request")
+		return s.initializeRuntimeInputRequest(operation, log)
+	default:
+		log.Errorf("unable to get instance from storage: %s", err)
+		return operation, 1 * time.Second, nil
+	}
+}
+
+func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	pp, err := operation.GetProvisioningParameters()
+	if err != nil {
+		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
+		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
+	}
+
+	log.Infof("create input creator for %q plan ID", pp.PlanID)
+	creator, found := s.inputBuilder.ForPlan(pp.PlanID)
+	if !found {
+		log.Error("input creator does not exist")
+		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
+	}
+
+	log.Info("set overrides for 'core' and 'compass-runtime-agent' components")
+	creator.SetOverrides("core", []*gqlschema.ConfigEntryInput{
+		{
+			Key:   "console.managementPlane.url",
+			Value: s.directorURL,
+		},
+	})
+	creator.SetOverrides("compass-runtime-agent", []*gqlschema.ConfigEntryInput{
+		{
+			Key:   "managementPlane.url",
+			Value: s.directorURL,
+		},
+	})
+
+	operation.InputCreator = creator
+	return operation, 0, nil
+}
+
+func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout))
@@ -67,7 +120,7 @@ func (s *RuntimeStatusStep) Run(operation internal.ProvisioningOperation, log lo
 	if err != nil {
 		return operation, 1 * time.Minute, nil
 	}
-	log.Infof("Call to provisioner returned %s status", status.State.String())
+	log.Infof("call to provisioner returned %s status", status.State.String())
 
 	var msg string
 	if status.Message != nil {
@@ -92,8 +145,8 @@ func (s *RuntimeStatusStep) Run(operation internal.ProvisioningOperation, log lo
 	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()))
 }
 
-func (s *RuntimeStatusStep) handleDashboardURL(instance *internal.Instance) (time.Duration, error) {
-	dashboardURL, err := s.DirectorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
+func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance) (time.Duration, error) {
+	dashboardURL, err := s.directorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
 	if director.IsTemporaryError(err) {
 		return 3 * time.Minute, nil
 	}

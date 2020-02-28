@@ -28,7 +28,7 @@ const (
 	dashboardURL = "http://runtime.com"
 )
 
-func TestRuntimeStatusStep_Run(t *testing.T) {
+func TestInitialisationStep_Run(t *testing.T) {
 	// given
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
@@ -53,7 +53,7 @@ func TestRuntimeStatusStep_Run(t *testing.T) {
 	directorClient := &automock.DirectorClient{}
 	directorClient.On("GetConsoleURL", statusGlobalAccountID, statusRuntimeID).Return(dashboardURL, nil)
 
-	step := NewRuntimeStatusStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient)
+	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient, nil, "")
 
 	// when
 	operation, repeat, err := step.Run(operation, log)
