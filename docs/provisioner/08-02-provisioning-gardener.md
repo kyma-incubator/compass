@@ -86,9 +86,9 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     
   4. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on GCP. 
     
-  > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
+     > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
                                                                           
-      ```graphql
+   ```graphql
       mutation {
         provisionRuntime(
           config: {
@@ -158,7 +158,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
             }
           }
         }
-      ``` 
+   ``` 
     
   </details>
 
@@ -177,9 +177,9 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
 
   4. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on Azure.
   
-  > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
+     > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
                                                                           
-      ```graphql
+   ```graphql
       mutation {
         provisionRuntime(
           config: {
@@ -249,7 +249,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
           }
         }
       }
-      ```
+   ```
     
   </details>
   
@@ -268,9 +268,9 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
 
   4. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on AWS. 
   
-  > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
+     > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
                                                                           
-      ```graphql
+   ```graphql
       mutation {
         provisionRuntime(
           config: {
@@ -347,7 +347,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
           }
         }
       }
-      ```
+   ```
   </details>
     
 </div>
