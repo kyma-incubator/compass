@@ -226,19 +226,17 @@ Scopes are added to the authentication session in Tenant Mapping Handler. The ha
 **Connector flow:**
 
 1. Runtime/Application makes a call to the Connector's internal API.
-2. The OathKeeper uses the Token Resolver as a mutator. 
+1. The OathKeeper uses the Token Resolver as a mutator. 
 The Client ID is extracted from the one-time token's `Connector-Token` header or from the `token` query parameter, and is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
-3. The OathKeeper proxies the request further to the Compass Gateway.
-4. The request is forwarded to the Connector.
+1. The OathKeeper proxies the request further to the Compass Gateway.
+1. The request is forwarded to the Connector.
 
 ![Auth](./assets/token-security-diagram-connector.svg)
 
 **Director Flow:**
 
 1. Runtime/Application makes a call to the Director.
-1. The OathKeeper uses the Token Resolver as a mutator. 
-1. The Client ID is extracted from the one-time token's `Connector-Token` header or from the `token` query parameter. 
-1. The Client ID is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
+1. The OathKeeper uses the Token Resolver as a mutator. The Client ID is extracted from the one-time token's `Connector-Token` header or from the `token` query parameter, and is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
 1. The call is then proxied to the Tenant mapping handler mutator, where the Client ID is mapped onto the `tenant` and returned to the OathKeeper. 
 1. Hydrator passes the response to ID_Token mutator which constructs a JWT token with scopes and tenant in the payload.
 1. The OathKeeper proxies the request further to the Compass Gateway.
