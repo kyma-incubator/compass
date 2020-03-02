@@ -19,7 +19,6 @@ This section presents how to add or remove the possibility to disable components
 - Loki
 - Kiali
 - Jaeger
-- Monitoring
 
 ### Add the option to disable components
 
@@ -54,7 +53,6 @@ optionalComponentsDisablers := runtime.ComponentsDisablers{
 		"Loki":       runtime.NewLokiDisabler(),
 		"Kiali":      runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
 		"Jaeger":     runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
-		"Monitoring": runtime.NewGenericComponentDisabler("monitoring", "kyma-system"),
 }
 ```
 
