@@ -11,7 +11,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *ProvisioningOperator) ProceedToInstallation(log *logrus.Entry, shoot gardener_types.Shoot) error {
+func (r *ProvisioningOperator) ProceedToInstallation(log *logrus.Entry, shoot gardener_types.Shoot, operationId string) error {
 	// Provisioning is finished. Start installation.
 	log.Infof("Provisioning finished. Starting installation...")
 
@@ -40,8 +40,9 @@ func (r *ProvisioningOperator) ProceedToInstallation(log *logrus.Entry, shoot ga
 	log.Infof("Triggering installation")
 	err = r.installationService.TriggerInstallation(kubeconfig, cluster.KymaConfig.Release, cluster.KymaConfig.GlobalConfiguration, cluster.KymaConfig.Components)
 	if err != nil {
-		log.Errorf("Error triggering Kyma installation: %s", err.Error())
-		return err
+		errorMsg := fmt.Sprintf("Error triggering Kyma installation: %s", err.Error())
+		log.Errorf(errorMsg)
+		return r.ProceedToFailedStep(log, shoot, operationId, errorMsg)
 	}
 
 	log.Infof("Updating Shoot...")
@@ -139,5 +140,5 @@ func (r *ProvisioningOperator) proceedToFailedStepIfTimeoutReached(log *logrus.E
 		}
 	}
 
-	return ctrl.Result{}, nil // TODO: consider to requeue after - time left for installation timeout?
+	return ctrl.Result{}, nil
 }
