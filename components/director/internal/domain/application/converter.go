@@ -15,10 +15,11 @@ type converter struct {
 	api      APIConverter
 	eventAPI EventAPIConverter
 	document DocumentConverter
+	pkg      PackageConverter
 }
 
-func NewConverter(webhook WebhookConverter, api APIConverter, eventAPI EventAPIConverter, document DocumentConverter) *converter {
-	return &converter{webhook: webhook, api: api, eventAPI: eventAPI, document: document}
+func NewConverter(webhook WebhookConverter, api APIConverter, eventAPI EventAPIConverter, document DocumentConverter, pkgConverter PackageConverter) *converter {
+	return &converter{webhook: webhook, api: api, eventAPI: eventAPI, document: document, pkg: pkgConverter}
 }
 
 func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
@@ -109,6 +110,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 		Documents:           c.document.MultipleInputFromGraphQL(in.Documents),
 		EventDefinitions:    c.eventAPI.MultipleInputFromGraphQL(in.EventDefinitions),
 		APIDefinitions:      c.api.MultipleInputFromGraphQL(in.APIDefinitions),
+		Packages:            c.pkg.MultipleCreateInputFromGraphQL(in.Packages),
 	}
 }
 

@@ -37,19 +37,25 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		{{- if .APIDefinitions }}
 		apiDefinitions: [
 			{{- range $i, $e := .APIDefinitions }}
-			{{- if $i}}, {{- end}} {{ APIDefinitionInputToGQL $e }}
+				{{- if $i}}, {{- end}} {{ APIDefinitionInputToGQL $e }}
 			{{- end }}],
 		{{- end }}
 		{{- if .EventDefinitions }}
 		eventDefinitions: [
 			{{- range $i, $e := .EventDefinitions }}
-			{{- if $i}}, {{- end}} {{ EventDefinitionInputToGQL $e }}
+				{{- if $i}}, {{- end}} {{ EventDefinitionInputToGQL $e }}
 			{{- end }}],
 		{{- end }}
 		{{- if .Documents }} 
 		documents: [
 			{{- range $i, $e := .Documents }} 
 				{{- if $i}}, {{- end}} {{- DocumentInputToGQL $e }}
+			{{- end }} ],
+		{{- end }}
+		{{- if .Packages }} 
+		packages: [
+			{{- range $i, $e := .Packages }} 
+				{{- if $i}}, {{- end}} {{- PackageCreateInputToGQL $e }}
 			{{- end }} ],
 		{{- end }}
 		{{- if .IntegrationSystemID }}
@@ -387,13 +393,22 @@ func (g *Graphqlizer) PackageCreateInputToGQL(in graphql.PackageCreateInput) (st
 		defaultInstanceAuth: {{- AuthInputToGQL .DefaultInstanceAuth }}
 		{{- end }}
 		{{- if .APIDefinitions }}
-		apiDefinitions: {{- APIDefinitionInputToGQL .APIDefinitions }}
+		apiDefinitions: [
+			{{- range $i, $e := .APIDefinitions }}
+				{{- if $i}}, {{- end}} {{ APIDefinitionInputToGQL $e }}
+			{{- end }}],
 		{{- end }}
 		{{- if .EventDefinitions }}
-		eventDefinitions: {{- EventDefinitionInputToGQL .EventDefinitions }}
+		eventDefinitions: [
+			{{- range $i, $e := .EventDefinitions }}
+				{{- if $i}}, {{- end}} {{ EventDefinitionInputToGQL $e }}
+			{{- end }}],
 		{{- end }}
-		{{- if .Documents }}
-		documents: {{- DocumentInputToGQL .Documents }}
+		{{- if .Documents }} 
+		documents: [
+			{{- range $i, $e := .Documents }} 
+				{{- if $i}}, {{- end}} {{- DocumentInputToGQL $e }}
+			{{- end }} ],
 		{{- end }}
 	}`)
 }
@@ -468,6 +483,7 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["PlaceholderDefinitionInputToGQL"] = g.PlaceholderDefinitionInputToGQL
 	fm["TemplateValueInput"] = g.TemplateValueInputToGQL
 	fm["PackageInstanceAuthStatusInputToGQL"] = g.PackageInstanceAuthStatusInputToGQL
+	fm["PackageCreateInputToGQL"] = g.PackageCreateInputToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {

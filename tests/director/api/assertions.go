@@ -23,6 +23,7 @@ func assertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 	assertDocuments(t, in.Documents, actualApp.Documents.Data)
 	assertAPI(t, in.APIDefinitions, actualApp.APIDefinitions.Data)
 	assertEventsAPI(t, in.EventDefinitions, actualApp.EventDefinitions.Data)
+	assertPackages(t, in.Packages, actualApp.Packages.Data)
 }
 
 //TODO: After fixing the 'Labels' scalar turn this back into regular assertion
@@ -121,6 +122,22 @@ func assertDocuments(t *testing.T, in []*graphql.DocumentInput, actual []*graphq
 			assert.Equal(t, inDocu.Kind, actDocu.Kind)
 			assert.Equal(t, inDocu.Format, actDocu.Format)
 			assertFetchRequest(t, inDocu.FetchRequest, actDocu.FetchRequest)
+		}
+		assert.True(t, found)
+	}
+}
+
+func assertPackages(t *testing.T, in []*graphql.PackageCreateInput, actual []*graphql.PackageExt) {
+	assert.Equal(t, len(in), len(actual))
+	for _, inPkg := range in {
+		found := false
+		for _, actPkg := range actual {
+			if inPkg.Name != actPkg.Name {
+				continue
+			}
+			found = true
+
+			assertPackage(t, inPkg, actPkg)
 		}
 		assert.True(t, found)
 	}
@@ -266,10 +283,15 @@ func assertApplicationTemplatePlaceholder(t *testing.T, in []*graphql.Placeholde
 	}
 }
 
-func assertPackage(t *testing.T, in graphql.PackageCreateInput, actual graphql.Package) {
+func assertPackage(t *testing.T, in *graphql.PackageCreateInput, actual *graphql.PackageExt) {
 	assert.Equal(t, in.Name, actual.Name)
 	assert.Equal(t, in.Description, actual.Description)
 	assert.Equal(t, in.InstanceAuthRequestInputSchema, actual.InstanceAuthRequestInputSchema)
+
+	assertAuth(t, in.DefaultInstanceAuth, actual.DefaultInstanceAuth)
+	assertDocuments(t, in.Documents, actual.Documents.Data)
+	assertAPI(t, in.APIDefinitions, actual.APIDefinitions.Data)
+	assertEventsAPI(t, in.EventDefinitions, actual.EventDefinitions.Data)
 
 	assertAuth(t, in.DefaultInstanceAuth, actual.DefaultInstanceAuth)
 }

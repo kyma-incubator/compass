@@ -106,6 +106,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+// TODO: Remove; deprecated
 func TestRegisterApplicationWithAPIs(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -190,6 +191,7 @@ func TestRegisterApplicationWithAPIs(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+// TODO: Remove; deprecated
 func TestRegisterApplicationWithEventDefinitions(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -253,6 +255,7 @@ func TestRegisterApplicationWithEventDefinitions(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+// TODO: Remove; deprecated
 func TestRegisterApplicationWithDocuments(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -303,6 +306,36 @@ func TestRegisterApplicationWithDocuments(t *testing.T) {
 	err = tc.RunOperation(ctx, request, &actualApp)
 
 	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+	defer unregisterApplication(t, actualApp.ID)
+	assertApplication(t, in, actualApp)
+}
+
+func TestRegisterApplicationWithPackages(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	in := fixApplicationRegisterInputWithPackages()
+	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+	actualApp := graphql.ApplicationExt{}
+
+	// WHEN
+	request := gcli.NewRequest(
+		fmt.Sprintf(
+			`mutation {
+				result: registerApplication(in: %s) { 
+						%s 
+					}
+				}`,
+			appInputGQL,
+			tc.gqlFieldsProvider.ForApplication(),
+		))
+
+	err = tc.RunOperation(ctx, request, &actualApp)
+
+	//THEN
+	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with packages")
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer unregisterApplication(t, actualApp.ID)
