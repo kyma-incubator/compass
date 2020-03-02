@@ -56,21 +56,17 @@ func (f *InputBuilderFactory) ForPlan(planID string) (internal.ProvisionInputCre
 	}
 
 	var provider HyperscalerInputProvider
-	var secret string
 	switch planID {
 	case broker.GcpPlanID:
 		provider = &cloudProvider.GcpInput{}
-		secret = f.config.GCPSecretName
 	case broker.AzurePlanID:
 		provider = &cloudProvider.AzureInput{}
-		secret = f.config.AzureSecretName
 	// insert cases for other providers like AWS or GCP
 	default:
 		return nil, false
 	}
 
 	initInput := f.initInput(provider)
-	initInput.ClusterConfig.GardenerConfig.TargetSecret = secret
 
 	return &RuntimeInput{
 		input:                     initInput,

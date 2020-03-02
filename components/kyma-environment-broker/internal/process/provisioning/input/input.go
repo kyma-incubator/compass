@@ -15,9 +15,6 @@ const (
 
 type Config struct {
 	URL             string
-	GCPSecretName   string
-	AzureSecretName string
-	AWSSecretName   string
 }
 
 type RuntimeInput struct {
@@ -46,6 +43,11 @@ func (r *RuntimeInput) SetRuntimeLabels(instanceID, subAccountID string) interna
 		globalKeyPrefix + "subaccount_id": []string{subAccountID},
 	}
 
+	return r
+}
+
+func (r *RuntimeInput) SetGardenerTargetSecretName (secretName string) internal.ProvisionInputCreator {
+	r.input.ClusterConfig.GardenerConfig.TargetSecret = secretName
 	return r
 }
 

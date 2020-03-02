@@ -15,6 +15,7 @@ import (
 type ProvisionInputCreator interface {
 	SetProvisioningParameters(params ProvisioningParametersDTO) ProvisionInputCreator
 	SetRuntimeLabels(instanceID, SubAccountID string) ProvisionInputCreator
+	SetGardenerTargetSecretName(secretName string) ProvisionInputCreator
 	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
 	Create() (gqlschema.ProvisionRuntimeInput, error)
 }

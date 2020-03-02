@@ -37,15 +37,9 @@ type ProvisionEndpoint struct {
 }
 /* old code
 func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory PlanValidator, dumper StructDumper) *ProvisionEndpoint {
-// ProvisioningConfig holds all configurations connected with Provisioner API
-type ProvisioningConfig struct {
-	URL string
-	//GCPSecretName   string
-	//AzureSecretName string
-	//AWSSecretName   string
-}*/
+func NewProvision(cfg Config, instancesStorage storage.Instances, builderFactory InputBuilderForPlan, provisioningCfg ProvisioningConfig, provisionerClient provisioner.Client, dumper StructDumper) *ProvisionEndpoint { */
 
-func NewProvision(cfg Config, instancesStorage storage.Instances, builderFactory InputBuilderForPlan, provisioningCfg ProvisioningConfig, provisionerClient provisioner.Client, dumper StructDumper) *ProvisionEndpoint {
+func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory PlanValidator, dumper StructDumper) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
 		id := planIDsMapping[planName]

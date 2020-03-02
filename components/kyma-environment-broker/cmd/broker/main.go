@@ -1,15 +1,15 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
 	"context"
+	"fmt"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
@@ -44,10 +44,11 @@ type Config struct {
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
-	Provisioning input.Config
-	Director     director.Config
-	Database     storage.Config
-	Gardener     gardener.Config
+	Provisioning       input.Config
+	Director           director.Config
+	Database           storage.Config
+	Gardener           gardener.Config
+	ManagementPlaneURL string
 
 	ServiceManager internal.ServiceManagerOverride
 
@@ -118,24 +119,14 @@ func main() {
 
 	gardenerClusterConfig, err := newGardenerClusterConfig(cfg)
 	fatalOnError(err)
-
+	//
 	gardenerSecrets, err := newGardenerSecretsInterface(gardenerClusterConfig, cfg)
 	fatalOnError(err)
 
-	// TODO: check if is it possible to use compass account pool someday?
-	var compassAccountPool hyperscaler.AccountPool = nil
-	var gardenerAccountPool hyperscaler.AccountPool = nil
+	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
+	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
 
-	if gardenerSecrets != nil {
-		gardenerAccountPool = hyperscaler.NewAccountPool(gardenerSecrets)
-	}
-
-	accountProvider := hyperscaler.NewAccountProvider(compassAccountPool, gardenerAccountPool)
-
-	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion, accountProvider)
-
-	// master code
-	// inputFactory := broker.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.KymaVersion, cfg.ServiceManager, cfg.Director.URL, accountProvider)
+	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion)
 
 	// create log dumper
 	dumper, err := broker.NewDumper()
@@ -144,13 +135,15 @@ func main() {
 	// create and run queue, steps provisioning
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 
+	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
+
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
 	stepManager.InitStep(initialisation)
-
-	stepManager.AddStep(1, runtimeStep)
+	stepManager.AddStep(1, resolveCredentialsStep)
+	stepManager.AddStep(2, runtimeStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
