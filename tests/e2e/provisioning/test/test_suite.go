@@ -11,8 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/runtime"
 	gcli "github.com/machinebox/graphql"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/broker"
 	"github.com/sirupsen/logrus"
@@ -52,7 +50,7 @@ type Suite struct {
 func (ts *Suite) TearDown() {
 	ts.log.Info("Cleaning up...")
 	err := ts.runtimeClient.EnsureUAAInstanceRemoved()
-	assert.NoError(ts.t, err)
+	require.NoError(ts.t, err)
 	_, err = ts.brokerClient.DeprovisionRuntime()
 	require.NoError(ts.t, err)
 }
