@@ -97,10 +97,9 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Loki":       runtime.NewLokiDisabler(),
-		"Kiali":      runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"Jaeger":     runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
-		"Monitoring": runtime.NewGenericComponentDisabler("monitoring", "kyma-system"),
+		"Loki":   runtime.NewLokiDisabler(),
+		"Kiali":  runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
+		"Jaeger": runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
 	}
 
 	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
