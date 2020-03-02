@@ -5,7 +5,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  revision = "1d08c3c107ecee32dbffb40a466839636162b7d7"
+  revision = "fb6306fe65c818e9cf5462a73f9681344ab40438"
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"

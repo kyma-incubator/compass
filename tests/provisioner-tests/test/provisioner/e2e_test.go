@@ -158,8 +158,8 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 		t.FailNow()
 	}
 
-	assert.NotEmpty(t, clusterConfig.Name)
-	assert.NotEmpty(t, clusterConfig.Seed)
+	assertions.AssertNotNilAndNotEmptyString(t, clusterConfig.Name)
+	assertions.AssertNotNilAndNotEmptyString(t, clusterConfig.Seed)
 
 	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Region, clusterConfig.Region)
 	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.KubernetesVersion, clusterConfig.KubernetesVersion)
