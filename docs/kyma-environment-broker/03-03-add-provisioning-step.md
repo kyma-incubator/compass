@@ -1,16 +1,16 @@
 # Provisioning runtime details
 
-The provisioning Runtime operation consists of individual steps. Each step is responsible for its part of preparation
-the Runtime's parameters. Prepared parameters are saved in the "input object" (in the form of overrides) which 
-transforms them into a request sent to the provisioning component to run the Runtime. 
+You can configure Runtime provisioning process by providing additional input parameters in the form of overrides. For example, you may want to provide tokens/credentials/URLs... <example here>. 
 
-Each step is a separate entity that can be lunch multiples of times even if it has already done its job before.
+The operation of provisioning a Runtime consists of steps. Each step is represented by a file that is responsible for a separate part of preparing Runtime parameters. The last step is [`create_runtime`](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms all steps into a request to provision a Runtime that is sent to the Runtime Provisioner component.
 
-Each step should determine whether it should return the error (returning the error interrupts the entire 
-provisioning process) or the period after which the entire operation should be repeated (e.g. saving the state 
-of the operation to the database may fail due to a temporary lack of connection, this operation should be repeated). 
+In case of an error, every step can be re-launched multiple times even if it has already been processed before.
 
-## Add custom step
+For each step, you should determine a behavior in case of a processing failure. It can either:
+- Return an error, which interrupts the entire provisioning process, or 
+- Repeat the entire operation after the specified period. 
+
+## Add a custom step
 
 1. Each step has to implement the interface
 
