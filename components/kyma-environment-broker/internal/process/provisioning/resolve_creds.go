@@ -2,6 +2,8 @@ package provisioning
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
@@ -9,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 type ResolveCredentialsStep struct {
@@ -36,8 +37,8 @@ func NewResolveCredentialsStep(os storage.Operations, accountProvider hyperscale
 
 	return &ResolveCredentialsStep{
 		operationManager: process.NewOperationManager(os),
-		opStorage:       os,
-		accountProvider: accountProvider,
+		opStorage:        os,
+		accountProvider:  accountProvider,
 	}
 }
 
@@ -76,6 +77,7 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 
 	return s.operationManager.OperationSucceeded(operation, "Resolved provisioning credentials secret name with HAP")
 }
+
 //
 //		//type ERSContext struct {
 //		//	TenantID        string                 `json:"tenant_id"`

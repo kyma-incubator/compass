@@ -35,9 +35,6 @@ type ProvisionEndpoint struct {
 	dumper            StructDumper
 	enabledPlanIDs    map[string]struct{}
 }
-/* old code
-func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory PlanValidator, dumper StructDumper) *ProvisionEndpoint {
-func NewProvision(cfg Config, instancesStorage storage.Instances, builderFactory InputBuilderForPlan, provisioningCfg ProvisioningConfig, provisionerClient provisioner.Client, dumper StructDumper) *ProvisionEndpoint { */
 
 func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory PlanValidator, dumper StructDumper) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}

@@ -14,7 +14,7 @@ const (
 )
 
 type Config struct {
-	URL             string
+	URL string
 }
 
 type RuntimeInput struct {
@@ -46,7 +46,7 @@ func (r *RuntimeInput) SetRuntimeLabels(instanceID, subAccountID string) interna
 	return r
 }
 
-func (r *RuntimeInput) SetGardenerTargetSecretName (secretName string) internal.ProvisionInputCreator {
+func (r *RuntimeInput) SetGardenerTargetSecretName(secretName string) internal.ProvisionInputCreator {
 	r.input.ClusterConfig.GardenerConfig.TargetSecret = secretName
 	return r
 }

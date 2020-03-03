@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
 

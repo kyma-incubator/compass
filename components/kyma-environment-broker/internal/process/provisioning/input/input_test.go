@@ -31,7 +31,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	optComponentsSvc.On("ExecuteDisablers", mappedComponentList, toDisableComponents[0]).Return(mappedComponentList, nil)
 
 	config := Config{
-		URL:             "",
+		URL: "",
 	}
 	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, config, "1.10.0")
 

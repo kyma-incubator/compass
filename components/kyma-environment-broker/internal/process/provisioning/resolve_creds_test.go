@@ -1,16 +1,16 @@
 package provisioning
 
 import (
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	hyperscalerMocks "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/mocks"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
-
 
 func TestResolveCredentialsStep_Run(t *testing.T) {
 	// given
@@ -45,6 +45,3 @@ func TestResolveCredentialsStep_Run(t *testing.T) {
 	assert.Equal(t, domain.Succeeded, operation.State)
 	assert.Equal(t, "gardener-secret-gcp", operation.TargetSecret)
 }
-
-
-
