@@ -9,8 +9,8 @@ import (
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 
-	persistenceautomock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
+	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
