@@ -55,6 +55,27 @@ func (_m *AccountProvider) CompassSecretName(input *gqlschema.ProvisionRuntimeIn
 	return r0, r1
 }
 
+// GardenerCredentials provides a mock function with given fields: hyperscalerType, tenantName
+func (_m *AccountProvider) GardenerCredentials(hyperscalerType hyperscaler.HyperscalerType, tenantName string) (hyperscaler.Credentials, error) {
+	ret := _m.Called(hyperscalerType, tenantName)
+
+	var r0 hyperscaler.Credentials
+	if rf, ok := ret.Get(0).(func(hyperscaler.HyperscalerType, string) hyperscaler.Credentials); ok {
+		r0 = rf(hyperscalerType, tenantName)
+	} else {
+		r0 = ret.Get(0).(hyperscaler.Credentials)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(hyperscaler.HyperscalerType, string) error); ok {
+		r1 = rf(hyperscalerType, tenantName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GardenerSecretName provides a mock function with given fields: input, tenantName
 func (_m *AccountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error) {
 	ret := _m.Called(input, tenantName)
@@ -69,27 +90,6 @@ func (_m *AccountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInp
 	var r1 error
 	if rf, ok := ret.Get(1).(func(*gqlschema.GardenerConfigInput, string) error); ok {
 		r1 = rf(input, tenantName)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GardnerCredentials provides a mock function with given fields: hyperscalerType, tenantName
-func (_m *AccountProvider) GardnerCredentials(hyperscalerType hyperscaler.HyperscalerType, tenantName string) (hyperscaler.Credentials, error) {
-	ret := _m.Called(hyperscalerType, tenantName)
-
-	var r0 hyperscaler.Credentials
-	if rf, ok := ret.Get(0).(func(hyperscaler.HyperscalerType, string) hyperscaler.Credentials); ok {
-		r0 = rf(hyperscalerType, tenantName)
-	} else {
-		r0 = ret.Get(0).(hyperscaler.Credentials)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(hyperscaler.HyperscalerType, string) error); ok {
-		r1 = rf(hyperscalerType, tenantName)
 	} else {
 		r1 = ret.Error(1)
 	}

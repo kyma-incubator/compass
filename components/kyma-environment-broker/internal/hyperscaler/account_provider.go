@@ -8,7 +8,7 @@ import (
 //go:generate mockery -name=AccountProvider
 type AccountProvider interface {
 	CompassCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
-	GardnerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
+	GardenerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
 	CompassSecretName(input *gqlschema.ProvisionRuntimeInput, tenantName string) (string, error)
 	GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error)
 }
@@ -51,7 +51,7 @@ func (p *accountProvider) CompassCredentials(hyperscalerType HyperscalerType, te
 	return p.compassPool.Credentials(hyperscalerType, tenantName)
 }
 
-func (p *accountProvider) GardnerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
+func (p *accountProvider) GardenerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
 
 	if p.gardenerPool == nil {
 		return Credentials{},
@@ -93,7 +93,7 @@ func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInpu
 		return "", err
 	}
 
-	credential, err := p.GardnerCredentials(hyperscalerType, tenantName)
+	credential, err := p.GardenerCredentials(hyperscalerType, tenantName)
 
 	if err != nil {
 		return "", err

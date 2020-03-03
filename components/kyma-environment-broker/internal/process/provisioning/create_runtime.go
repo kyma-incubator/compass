@@ -124,6 +124,7 @@ func (s *CreateRuntimeStep) createProvisionInput(operation internal.Provisioning
 	operation.InputCreator.SetOverrides(input.ServiceManagerComponentName, s.serviceManagerOverride(parameters.ErsContext))
 	operation.InputCreator.SetProvisioningParameters(parameters.Parameters)
 	operation.InputCreator.SetRuntimeLabels(operation.InstanceID, parameters.ErsContext.SubAccountID)
+	operation.InputCreator.SetGardenerTargetSecretName(operation.TargetSecret)
 	request, err := operation.InputCreator.Create()
 	if err != nil {
 		return request, errors.Wrap(err, "while building input for provisioner")

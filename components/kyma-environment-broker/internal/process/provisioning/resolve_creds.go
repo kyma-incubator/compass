@@ -48,7 +48,6 @@ func (s *ResolveCredentialsStep) Name() string {
 func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
 	if operation.TargetSecret != "" {
-		operation.InputCreator.SetGardenerTargetSecretName(operation.TargetSecret)
 		return operation, 0, nil
 	}
 
@@ -66,7 +65,7 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 
 	logger.Infof("HAP lookup for credentials to provision cluster for global account ID %s on hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
-	credentials, err := s.accountProvider.GardnerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	credentials, err := s.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
 
 	if err != nil {
 		errMsg := fmt.Sprintf("HAP lookup for credentials to provision cluster for global account ID %s for hyperscaler %s has failed: %s", pp.ErsContext.GlobalAccountID, hypType, err)
@@ -74,8 +73,6 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 	}
 
 	operation.TargetSecret = credentials.CredentialName
-
-	operation.InputCreator.SetGardenerTargetSecretName(operation.TargetSecret)
 
 	return s.operationManager.OperationSucceeded(operation, "Resolved provisioning credentials secret name with HAP")
 }
