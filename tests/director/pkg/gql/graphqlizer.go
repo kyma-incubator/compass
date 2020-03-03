@@ -252,7 +252,9 @@ func (g *Graphqlizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput)
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end }}
+		{{- if .Spec }}
 		spec: {{ EventAPISpecInputToGQL .Spec }},
+		{{- end }}
 		{{- if .Group }}
 		group: "{{.Group}}", 
 		{{- end }}
@@ -411,6 +413,18 @@ func (g *Graphqlizer) PackageUpdateInputToGQL(in graphql.PackageUpdateInput) (st
 	}`)
 }
 
+func (g *Graphqlizer) PackageInstanceAuthStatusInputToGQL(in graphql.PackageInstanceAuthStatusInput) (string, error) {
+	return g.genericToGQL(in, `{
+		condition: {{ .Condition }}
+		{{- if .Message }}
+		message: "{{ .Message }}"
+		{{- end }}
+		{{- if .Reason }}
+		reason: "{{ .Reason }}"
+		{{- end }}
+	}`)
+}
+
 func (g *Graphqlizer) PackageInstanceAuthRequestInputToGQL(in graphql.PackageInstanceAuthRequestInput) (string, error) {
 	return g.genericToGQL(in, `{
 		{{- if .Context }}
@@ -418,6 +432,17 @@ func (g *Graphqlizer) PackageInstanceAuthRequestInputToGQL(in graphql.PackageIns
 		{{- end }}
 		{{- if .InputParams }}
 		inputParams: {{ .InputParams }}
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) PackageInstanceAuthSetInputToGQL(in graphql.PackageInstanceAuthSetInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .Auth }}
+		auth: {{- AuthInputToGQL .Auth}}
+		{{- end }}
+		{{- if .Status }}
+		status: {{- PackageInstanceAuthStatusInputToGQL .Status }}
 		{{- end }}
 	}`)
 }
@@ -442,6 +467,7 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["CredentialRequestAuthInputToGQL"] = g.CredentialRequestAuthInputToGQL
 	fm["PlaceholderDefinitionInputToGQL"] = g.PlaceholderDefinitionInputToGQL
 	fm["TemplateValueInput"] = g.TemplateValueInputToGQL
+	fm["PackageInstanceAuthStatusInputToGQL"] = g.PackageInstanceAuthStatusInputToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {

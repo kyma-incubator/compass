@@ -2,9 +2,11 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 )
 
@@ -170,7 +172,7 @@ func deleteSystemAuthForRuntime(t *testing.T, ctx context.Context, id string) {
 func createLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
 	input := graphql.LabelDefinitionInput{
 		Key:    key,
-		Schema: marshallJSONSchema(t, schema),
+		Schema: marshalJSONSchema(t, schema),
 	}
 
 	in, err := tc.graphqlizer.LabelDefinitionInputToGQL(input)
@@ -385,4 +387,40 @@ func addDocumentToPackageWithInput(t *testing.T, ctx context.Context, pkgID stri
 
 func addDocumentToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.DocumentExt {
 	return addDocumentToPackageWithInput(t, ctx, pkgID, fixDocumentInput())
+}
+
+func createPackageInstanceAuth(t *testing.T, ctx context.Context, pkgID string) graphql.PackageInstanceAuth {
+	authCtx, inputParams := fixPackageInstanceAuthContextAndInputParams(t)
+	in, err := tc.graphqlizer.PackageInstanceAuthRequestInputToGQL(fixPackageInstanceAuthRequestInput(authCtx, inputParams))
+	require.NoError(t, err)
+
+	req := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: requestPackageInstanceAuthCreation(packageID: "%s", in: %s) {
+				id
+			}}`, pkgID, in))
+
+	var resp graphql.PackageInstanceAuth
+
+	err = tc.RunOperation(ctx, req, &resp)
+	require.NoError(t, err)
+
+	return resp
+}
+
+func fixPackageInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *graphql.JSON) {
+	authCtxPayload := map[string]interface{}{
+		"ContextData": "ContextValue",
+	}
+	var authCtxData interface{} = authCtxPayload
+
+	inputParamsPayload := map[string]interface{}{
+		"InKey": "InValue",
+	}
+	var inputParamsData interface{} = inputParamsPayload
+
+	authCtx := marshalJSON(t, authCtxData)
+	inputParams := marshalJSON(t, inputParamsData)
+
+	return authCtx, inputParams
 }

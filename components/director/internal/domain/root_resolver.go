@@ -405,16 +405,16 @@ func (r *mutationResolver) AddDocumentToPackage(ctx context.Context, packageID s
 	return r.doc.AddDocumentToPackage(ctx, packageID, in)
 }
 func (r *mutationResolver) SetPackageInstanceAuth(ctx context.Context, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.SetPackageInstanceAuthMock(ctx, authID, in) // TODO: Replace with real implementation
+	return r.packageInstanceAuth.SetPackageInstanceAuth(ctx, authID, in)
 }
 func (r *mutationResolver) DeletePackageInstanceAuth(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.DeletePackageInstanceAuthMock(ctx, authID) // TODO: Replace with real implementation
+	return r.packageInstanceAuth.DeletePackageInstanceAuth(ctx, authID)
 }
 func (r *mutationResolver) RequestPackageInstanceAuthCreation(ctx context.Context, packageID string, in graphql.PackageInstanceAuthRequestInput) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.RequestPackageInstanceAuthCreationMock(ctx, packageID, in) // TODO: Replace with real implementation
+	return r.packageInstanceAuth.RequestPackageInstanceAuthCreation(ctx, packageID, in)
 }
 func (r *mutationResolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.RequestPackageInstanceAuthDeletionMock(ctx, authID) // TODO: Replace with real implementation
+	return r.packageInstanceAuth.RequestPackageInstanceAuthDeletion(ctx, authID)
 }
 
 func (r *mutationResolver) AddPackage(ctx context.Context, applicationID string, in graphql.PackageCreateInput) (*graphql.Package, error) {
@@ -540,10 +540,10 @@ func (r *oneTimeTokenForRuntimeResolver) Raw(ctx context.Context, obj *graphql.O
 type PackageResolver struct{ *RootResolver }
 
 func (r *PackageResolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id string) (*graphql.PackageInstanceAuth, error) {
-	return r.mpPackage.InstanceAuthMock(ctx, obj, id)
+	return r.mpPackage.InstanceAuth(ctx, obj, id)
 }
 func (r *PackageResolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*graphql.PackageInstanceAuth, error) {
-	return r.mpPackage.InstanceAuthsMock(ctx, obj)
+	return r.mpPackage.InstanceAuths(ctx, obj)
 }
 func (r *PackageResolver) APIDefinitions(ctx context.Context, obj *graphql.Package, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	return r.mpPackage.APIDefinitions(ctx, obj, group, first, after)

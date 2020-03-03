@@ -11,9 +11,9 @@ func (r *ProvisioningOperator) ProvisioningInProgress(log *logrus.Entry, shoot g
 	lastOperation := shoot.Status.LastOperation
 
 	if lastOperation.State == gardencorev1alpha1.LastOperationStateSucceeded {
-		err := r.ProceedToInstallation(log, shoot)
+		err := r.ProceedToInstallation(log, shoot, operationId)
 		if err != nil {
-			log.Errorf("Error finishing provisioning: %s", err.Error())
+			log.Errorf("Error proceeding to installation: %s", err.Error())
 			return ctrl.Result{}, err
 		}
 

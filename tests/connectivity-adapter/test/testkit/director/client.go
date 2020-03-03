@@ -106,9 +106,7 @@ func waitUntilDirectorIsReady(directorHealthzURL string) error {
 		}
 
 		return nil
-	},
-		retry.Delay(time.Second*20),
-		retry.Attempts(10))
+	}, defaultRetryOptions()...)
 }
 
 func (c client) CreateApplication(in schema.ApplicationRegisterInput) (string, error) {
@@ -121,7 +119,7 @@ func (c client) CreateApplication(in schema.ApplicationRegisterInput) (string, e
 	var result ApplicationResponse
 	query := createApplicationQuery(appGraphql)
 
-	err = c.execute(query, &result)
+	err = c.executeWithRetries(query, &result)
 	if err != nil {
 		return "", err
 	}
@@ -134,7 +132,7 @@ func (c client) DeleteApplication(appID string) error {
 	var result ApplicationResponse
 	query := deleteApplicationQuery(appID)
 
-	err := c.execute(query, &result)
+	err := c.executeWithRetries(query, &result)
 	if err != nil {
 		return err
 	}
@@ -149,7 +147,7 @@ func (c client) CreateRuntime(in schema.RuntimeInput) (string, error) {
 	var result RuntimeResponse
 	query := createRuntimeQuery(runtimeGraphQL)
 
-	err = c.execute(query, &result)
+	err = c.executeWithRetries(query, &result)
 	if err != nil {
 		return "", err
 	}
@@ -162,7 +160,7 @@ func (c client) DeleteRuntime(runtimeID string) error {
 	var result RuntimeResponse
 	query := deleteRuntimeQuery(runtimeID)
 
-	err := c.execute(query, &result)
+	err := c.executeWithRetries(query, &result)
 	if err != nil {
 		return err
 	}
@@ -176,7 +174,7 @@ func (c client) SetDefaultEventing(runtimeID string, appID string, eventsBaseURL
 		query := setEventBaseURLQuery(runtimeID, eventsBaseURL)
 		var response SetLabelResponse
 
-		err := c.execute(query, &response)
+		err := c.executeWithRetries(query, &response)
 		if err != nil {
 			return err
 		}
@@ -186,7 +184,7 @@ func (c client) SetDefaultEventing(runtimeID string, appID string, eventsBaseURL
 		query := setDefaultEventingQuery(runtimeID, appID)
 		var response SetDefaultAppEventingResponse
 
-		err := c.execute(query, &response)
+		err := c.executeWithRetries(query, &response)
 		if err != nil {
 			return err
 		}
@@ -200,7 +198,7 @@ func (c client) GetOneTimeTokenUrl(appID string) (string, string, error) {
 	query := getOneTimeTokenQuery(appID)
 	var response OneTimeTokenResponse
 
-	err := c.execute(query, &response)
+	err := c.executeWithRetries(query, &response)
 	if err != nil {
 		return "", "", err
 	}
@@ -239,17 +237,19 @@ func getInternalTenantID(directorURL string, externalTenantID string) (string, e
 	return "", errors.New("Cannot find test tenant.")
 }
 
-func (c client) execute(query string, res interface{}) error {
+func (c client) executeWithRetries(query string, res interface{}) error {
+	return retry.Do(func() error {
+		req := gcli.NewRequest(query)
+		req.Header.Set("Tenant", c.tenant)
 
-	req := gcli.NewRequest(query)
-	req.Header.Set("Tenant", c.tenant)
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+		err := c.client.Run(ctx, req, res)
 
-	err := c.client.Run(ctx, req, res)
+		return err
+	}, defaultRetryOptions()...)
 
-	return err
 }
 
 func getClient(url string, tenant string, scopes []string) (*gcli.Client, error) {
@@ -269,4 +269,8 @@ func getToken(tenant string, scopes []string) (string, error) {
 	}
 
 	return token, nil
+}
+
+func defaultRetryOptions() []retry.Option {
+	return []retry.Option{retry.Attempts(20), retry.DelayType(retry.FixedDelay), retry.Delay(time.Second)}
 }

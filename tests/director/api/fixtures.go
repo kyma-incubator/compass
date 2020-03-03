@@ -100,6 +100,13 @@ func fixPackageCreateInput(name string) graphql.PackageCreateInput {
 	}
 }
 
+func fixPackageCreateInputWithDefaultAuth(name string, authInput *graphql.AuthInput) graphql.PackageCreateInput {
+	return graphql.PackageCreateInput{
+		Name:                name,
+		DefaultInstanceAuth: authInput,
+	}
+}
+
 func fixPackageUpdateInput(name string) graphql.PackageUpdateInput {
 	return graphql.PackageUpdateInput{
 		Name: name,
@@ -142,5 +149,18 @@ func fixDocumentInputWithName(name string) graphql.DocumentInput {
 			Filter: ptr.String("/docs/README.md"),
 			Auth:   fixBasicAuth(),
 		},
+	}
+}
+
+func fixPackageInstanceAuthRequestInput(ctx, inputParams *graphql.JSON) graphql.PackageInstanceAuthRequestInput {
+	return graphql.PackageInstanceAuthRequestInput{
+		Context:     ctx,
+		InputParams: inputParams,
+	}
+}
+
+func fixPackageInstanceAuthSetInputSucceeded(auth *graphql.AuthInput) graphql.PackageInstanceAuthSetInput {
+	return graphql.PackageInstanceAuthSetInput{
+		Auth: auth,
 	}
 }
