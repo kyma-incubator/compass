@@ -89,7 +89,7 @@ func (c *Client) ProvisionRuntime() (string, error) {
 	provisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.instanceID)
 	response := provisionResponse{}
 	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
-		err := c.executeRequest(http.MethodPut, provisionURL, bytes.NewReader(requestByte), &response)
+		err := c.executeRequest(http.MethodPut, provisionURL, http.StatusAccepted, bytes.NewReader(requestByte), &response)
 		if err != nil {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil
@@ -118,7 +118,7 @@ func (c *Client) DeprovisionRuntime() (string, error) {
 	response := provisionResponse{}
 	c.log.Infof("Deprovisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
 	err := wait.Poll(time.Second, time.Second*5, func() (bool, error) {
-		err := c.executeRequest(http.MethodDelete, deprovisionURL, nil, &response)
+		err := c.executeRequest(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
 		if err != nil {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil
@@ -138,7 +138,7 @@ func (c *Client) AwaitOperationSucceeded(operationID string, timeout time.Durati
 
 	response := lastOperationResponse{}
 	err := wait.Poll(5*time.Minute, timeout, func() (bool, error) {
-		err := c.executeRequest(http.MethodGet, lastOperationURL, nil, &response)
+		err := c.executeRequest(http.MethodGet, lastOperationURL, http.StatusOK, nil, &response)
 		if err != nil {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil
@@ -173,7 +173,7 @@ func (c *Client) FetchDashboardURL() (string, error) {
 	c.log.Info("Fetching the Runtime's dashboard URL")
 	response := instanceDetailsResponse{}
 	err := wait.Poll(time.Second, time.Second*5, func() (bool, error) {
-		err := c.executeRequest(http.MethodGet, instanceDetailsURL, nil, &response)
+		err := c.executeRequest(http.MethodGet, instanceDetailsURL, http.StatusOK, nil, &response)
 		if err != nil {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil
@@ -232,7 +232,7 @@ func (c *Client) prepareProvisionDetails() ([]byte, error) {
 	return requestByte, nil
 }
 
-func (c *Client) executeRequest(method, url string, body io.Reader, responseBody interface{}) error {
+func (c *Client) executeRequest(method, url string, expectedStatus int, body io.Reader, responseBody interface{}) error {
 	request, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return errors.Wrap(err, "while creating request for provisioning")
@@ -245,8 +245,8 @@ func (c *Client) executeRequest(method, url string, body io.Reader, responseBody
 		return errors.Wrapf(err, "while executing request URL: %s", url)
 	}
 	defer c.warnOnError(resp.Body.Close)
-	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("got unexpected status code while calling Kyma Environment Broker: want: %d, got: %d", http.StatusOK, resp.StatusCode)
+	if resp.StatusCode != expectedStatus {
+		return errors.Errorf("got unexpected status code while calling Kyma Environment Broker: want: %d, got: %d", expectedStatus, resp.StatusCode)
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(responseBody)
