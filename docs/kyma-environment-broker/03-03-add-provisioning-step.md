@@ -25,6 +25,7 @@ To add a new provisioning step, follow these steps:
 
     - `Name()` method returns the name of the step that is used in logs.
     - `Run()` method implements the functionality of the step. The method receives operations as an argument to which it can add appropriate overrids or save other used variables.
+    
 
     ```go
     operation.InputCreator.SetOverrides(COMPONENT_NAME, []*gqlschema.ConfigEntryInput{
@@ -40,8 +41,8 @@ To add a new provisioning step, follow these steps:
     })
     ```
 
-    If your functionality contains long-term processes, you can store data in the storage in a specific operation.
-    To do this, add a field to the operation to which you want to save data:
+    If your functionality contains long-term processes, you can store data in the storage.
+    To do this, add this field to the provisioning operation in which you want to save data:
 
     ```go
     type ProvisioningOperation struct {
@@ -58,13 +59,9 @@ To add a new provisioning step, follow these steps:
     }
     ```
 
-    Thanks to this approach, when performing your operation again you can check if you already have the 
-    necessary data and avoid time-consuming processes.
+    By saving data in the storage, you can check if you already have the necessary data and avoid time-consuming processes.       You should always return the modified operation from the method. 
 
-    The modified operation should be returned from the method. 
-    If the operation (not the step) is interrupted, the method returns an error.
-
-    See the example of this implementation:
+    See the example of the step implementation:
 
     ```go
     package provisioning
@@ -102,20 +99,20 @@ To add a new provisioning step, follow these steps:
         return "Hello_World"
     }
     
-    // Your step can be repeated in case any other step will fail, even if your step has already done its job
+    // Your step can be repeated in case any other step fails, even if your step has already done its job
     func (s *HelloWorldStep) Run(operation internal.ProvisioningOperation, log *logrus.Entry) (internal.ProvisioningOperation, time.Duration, error) {
         log.Info("Start step")
    
         // check if step should run or his job is done in the previous iteration
-        // All non-save in storage operation data are empty (e.g. InputCreator overrides)
+        // All non-save operation data are empty (e.g. InputCreator overrides)
     
-        // Prepare data ?
+        // Add your logic here
     
-        // A call to external services
+        // Add a call to an external service
         response, err := s.client.Get("http://example.com")
         if err != nil {
-            // err during call to external service may be temporary so time.Duration should be returned
-            // All operation process (all steps) will be repeated in X second/minute...
+            // Error during a call to an external service may be temporary so you should return time.Duration 
+            // All steps will be repeated in X seconds/minutes
             return operation, 1 * time.Second, nil
         }
         defer response.Body.Close()
@@ -124,21 +121,21 @@ To add a new provisioning step, follow these steps:
         err = json.NewDecoder(response.Body).Decode(&body)
         if err != nil {
             log.Errorf("error: %s", err)
-            // handle error by returning error or time.Duration
+            // Handle a process failure by returning an error or time.Duration
         }
     
-        // if call or any other action is time-consuming then result can be saved in operation
-        // if you need extra field in ProvisioningOperation struct, add it first
-        // in step below first you can check if value already exist in operation
+        // If a call or any other action is time-consuming, you can save the result in the operation
+        // If you need an extra field in the ProvisioningOperation structure, add it first
+        // in the step below; beforehand, you can check if a given value already exists in the operation
         operation.HelloWorlds = body.data
         updatedOperation, err := s.operationStorage.UpdateProvisioningOperation(operation)
         if err != nil {
             log.Errorf("error: %s", err)
-            // handle error by returning error or time.Duration
+            // Handle a process failure by returning an error or time.Duration
         }
     
-        // if your step finish with data wich should be add to override which will be used during runtime provisioning
-        // add extra value to operation.InputCreator, then return updated version of application
+        // If your step finishes with data which should be added to override used during the Runtime provisioning,
+        // add an extra value to operation.InputCreator, then return the updated version of the Application
         updatedOperation.InputCreator.SetOverrides("component-name", []*gqlschema.ConfigEntryInput{
             {
                 Key:   "some.key",
@@ -146,7 +143,7 @@ To add a new provisioning step, follow these steps:
             },
         })
     
-        // return updated version of application
+        // Return the updated version of the Application
         return *updatedOperation, 0, nil
     }
     ```
