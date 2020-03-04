@@ -3,7 +3,6 @@ package director
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director/oauth"
@@ -37,7 +36,6 @@ type Client struct {
 	queryProvider queryProvider
 	token         oauth.Token
 	log           logrus.FieldLogger
-	lock          sync.Mutex
 }
 
 type successResponse struct {
@@ -67,7 +65,6 @@ func (dc *Client) GetRuntimeID(accountID, instanceID string) (string, error) {
 	dc.log.Info("Send request to director")
 	response, err := dc.callDirector(req)
 	if err != nil {
-		// do not wrap error, because type of error (TemporaryError) is important
 		return "", err
 	}
 
@@ -112,14 +109,12 @@ func (dc *Client) call(req *machineGraph.Request) (*successResponse, error) {
 	var response successResponse
 	err := dc.graphQLClient.Run(context.Background(), req, &response)
 	if err != nil {
-		return nil, TemporaryError{fmt.Sprintf("while requesting to director client: %s", err)}
+		return nil, errors.Wrap(err, "while requesting to director client")
 	}
 	return &response, nil
 }
 
 func (dc *Client) setToken() error {
-	dc.lock.Lock()
-	defer dc.lock.Unlock()
 	if !dc.token.EmptyOrExpired() {
 		return nil
 	}

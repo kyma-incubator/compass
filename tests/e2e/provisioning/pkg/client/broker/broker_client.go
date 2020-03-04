@@ -244,17 +244,21 @@ func (c *Client) executeRequest(method, url string, body io.Reader, responseBody
 	if err != nil {
 		return errors.Wrapf(err, "while executing request URL: %s", url)
 	}
+	defer c.warnOnError(resp.Body.Close)
+	if resp.StatusCode != http.StatusOK {
+		return errors.Errorf("got unexpected status code while calling Kyma Environment Broker: want: %s, got: %s", http.StatusOK, resp.StatusCode)
+	}
 
 	err = json.NewDecoder(resp.Body).Decode(responseBody)
 	if err != nil {
 		return errors.Wrapf(err, "while decoding body")
 	}
-	c.warnOnError(resp.Body.Close())
+
 	return nil
 }
 
-func (c *Client) warnOnError(err error) {
-	if err != nil {
+func (c *Client) warnOnError(do func() error) {
+	if err := do(); err != nil {
 		c.log.Warn(err.Error())
 	}
 }
