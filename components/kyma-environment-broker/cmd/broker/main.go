@@ -49,7 +49,6 @@ type Config struct {
 	Director           director.Config
 	Database           storage.Config
 	Gardener           gardener.Config
-	ManagementPlaneURL string
 
 	ServiceManager internal.ServiceManagerOverride
 
@@ -133,7 +132,7 @@ func main() {
 	fatalOnError(err)
 
 	// create and run queue, steps provisioning
-	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
+	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.Director.URL)
 
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
 
