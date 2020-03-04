@@ -1,18 +1,20 @@
-# Provisioning runtime details
+# Configure Runtime provisioning
 
-You can configure Runtime provisioning process by providing additional input parameters in the form of overrides. For example, you may want to provide tokens/credentials/URLs... <example here>. 
+You can configure Runtime provisioning process by providing additional input objects in the form of overrides. For example, you may want to provide tokens/credentials/URLs to integrate Kyma Runtime with external systems. 
 
-The operation of provisioning a Runtime consists of steps. Each step is represented by a file that is responsible for a separate part of preparing Runtime parameters. The last step is [`create_runtime`](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms all steps into a request to provision a Runtime that is sent to the Runtime Provisioner component.
+The operation of provisioning a Runtime consists of several steps. Each step is represented by a file that is responsible for a separate part of preparing Runtime parameters. The last step is called [`create_runtime`](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go). It transforms all steps into a request to provision a Runtime. The request is sent to the Runtime Provisioner component.
 
-In case of an error, every step can be re-launched multiple times even if it has already been processed before.
-
-For each step, you should determine a behavior in case of a processing failure. It can either:
+In case of a processing failure, every step can be re-launched multiple times. That is why, for each step you should determine a behavior in case of a processing failure. It can either:
 - Return an error, which interrupts the entire provisioning process, or 
 - Repeat the entire operation after the specified period. 
 
-## Add a custom step
+## Add provisioning step
 
-1. Each step has to implement the interface
+To add a new provisioning step, follow these steps:
+
+1. Create a new file in [this](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/provisioning) directory. 
+
+2. Implement this interface in your provisioning step:
 
     ```go
     type Step interface {
@@ -21,10 +23,8 @@ For each step, you should determine a behavior in case of a processing failure. 
     }
     ```
 
-2. `Name()` method should return step name which will be use in logs.
-
-3. `Run()` method has to implement all step functionality. The method receives 
-operations as an argument to which it can add appropriate overrids or save other used variables.
+    - `Name()` method returns the name of the step that is used in logs.
+    - `Run()` method implements the functionality of the step. The method receives operations as an argument to which it can add appropriate overrids or save other used variables.
 
     ```go
     operation.InputCreator.SetOverrides(COMPONENT_NAME, []*gqlschema.ConfigEntryInput{
@@ -40,20 +40,20 @@ operations as an argument to which it can add appropriate overrids or save other
     })
     ```
 
-    If your functionality contains long-term processes, some data can be stored in the storage in a specific operation.
-    To do this you need to add a field to the operation to which you will be saving data.
+    If your functionality contains long-term processes, you can store data in the storage in a specific operation.
+    To do this, add a field to the operation to which you want to save data:
 
     ```go
     type ProvisioningOperation struct {
         Operation `json:"-"`
     
-        // following fields are serialized to JSON and stored in the storage
+        // These fields are serialized to JSON and stored in the storage
         LmsTenantID            string `json:"lms_tenant_id"`
         ProvisioningParameters string `json:"provisioning_parameters"`
     
         NewFieldFromCustomStep string `json:"new_field_from_custom_step"`    
     
-        // following fields are not stored in the storage
+        // These fields are not stored in the storage
         InputCreator ProvisionInputCreator `json:"-"`
     }
     ```
@@ -62,9 +62,9 @@ operations as an argument to which it can add appropriate overrids or save other
     necessary data and avoid time-consuming processes.
 
     The modified operation should be returned from the method. 
-    If the operation (not the step) should be interrupted, the method should return an error.
+    If the operation (not the step) is interrupted, the method returns an error.
 
-    Below is an example of a step implementation:
+    See the example of this implementation:
 
     ```go
     package provisioning
@@ -102,20 +102,20 @@ operations as an argument to which it can add appropriate overrids or save other
         return "Hello_World"
     }
     
-    // remember your step could be repeated if any other step will fail even if your step done his job
+    // Your step can be repeated in case any other step will fail, even if your step has already done its job
     func (s *HelloWorldStep) Run(operation internal.ProvisioningOperation, log *logrus.Entry) (internal.ProvisioningOperation, time.Duration, error) {
         log.Info("Start step")
    
         // check if step should run or his job is done in the previous iteration
-        // remember all non save in storage operation data are empty (e.g. InputCreator overrides)
+        // All non-save in storage operation data are empty (e.g. InputCreator overrides)
     
-        // prepare data
+        // Prepare data ?
     
-        // call to external services
+        // A call to external services
         response, err := s.client.Get("http://example.com")
         if err != nil {
             // err during call to external service may be temporary so time.Duration should be returned
-            // what means all operation process (all steps) will be repeated in X second/minute...
+            // All operation process (all steps) will be repeated in X second/minute...
             return operation, 1 * time.Second, nil
         }
         defer response.Body.Close()
@@ -151,7 +151,7 @@ operations as an argument to which it can add appropriate overrids or save other
     }
     ```
 
-4. Add the finished step to the `/cmd/broker/main.go` file.
+3. Add the step to the [`/cmd/broker/main.go`](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/cmd/broker/main.go) file:
 
     ```go
     helloWorldStep := provisioning.NewHelloWorldStep(db.Operations(), &http.Client{})
@@ -159,6 +159,4 @@ operations as an argument to which it can add appropriate overrids or save other
     stepManager.AddStep(1, helloWorldStep)
     ```
 
-    The weight of the step should be greater than or equal to 1.
-    If the step should be made before call to the provisioner (which runs the Runtime process creation) 
-    its weight should be lower than `runtimeStep`
+    The weight of the step should be greater than or equal to 1. If you want the step to be performed before a call to the Runtime Provisioner, its weight must be lower than `runtimeStep`.
