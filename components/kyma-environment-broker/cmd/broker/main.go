@@ -45,10 +45,10 @@ type Config struct {
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
-	Provisioning       input.Config
-	Director           director.Config
-	Database           storage.Config
-	Gardener           gardener.Config
+	Provisioning input.Config
+	Director     director.Config
+	Database     storage.Config
+	Gardener     gardener.Config
 
 	ServiceManager internal.ServiceManagerOverride
 
