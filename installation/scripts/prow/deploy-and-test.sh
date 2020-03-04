@@ -9,5 +9,8 @@ set -o errexit
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INSTALLATION_DIR=${CURRENT_DIR}/../../
 
+export ARTIFACTS="/var/log/prow_artifacts"
+mkdir -p "${ARTIFACTS}"
+
 sudo ${INSTALLATION_DIR}/cmd/run.sh
 sudo ${INSTALLATION_DIR}/scripts/testing.sh
