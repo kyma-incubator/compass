@@ -246,7 +246,7 @@ func (c *Client) executeRequest(method, url string, body io.Reader, responseBody
 	}
 	defer c.warnOnError(resp.Body.Close)
 	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("got unexpected status code while calling Kyma Environment Broker: want: %s, got: %s", http.StatusOK, resp.StatusCode)
+		return errors.Errorf("got unexpected status code while calling Kyma Environment Broker: want: %d, got: %d", http.StatusOK, resp.StatusCode)
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(responseBody)
