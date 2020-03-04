@@ -79,6 +79,9 @@ func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateIn
 func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTemplateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
+		{{- if .DisplayName }}
+		displayName: "{{.DisplayName}}",
+		{{- end }}
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end }}

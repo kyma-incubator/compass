@@ -66,8 +66,10 @@ func fixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 	appTemplateDesc := "app-template-desc"
 	placeholderDesc := "new-placeholder-desc"
 	providerName := "compass-tests"
+	displayName := fmt.Sprintf("Display %s", name)
 	appTemplateInput := graphql.ApplicationTemplateInput{
 		Name:        name,
+		DisplayName: &displayName,
 		Description: &appTemplateDesc,
 		ApplicationInput: &graphql.ApplicationRegisterInput{
 			Name:         "app",
