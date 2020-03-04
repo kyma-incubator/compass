@@ -4,6 +4,8 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source ${ROOT_PATH}/kyma-scripts/testing-common.sh
 
 readonly TMP_DIR=$(mktemp -d)
+
+echo "ARTIFACTS ${ARTIFACTS}"
 readonly JUNIT_REPORT_PATH="${ARTIFACTS:-${TMP_DIR}}/junit_compass_octopus-test-suite.xml"
 
 suiteName="testsuite-all"
