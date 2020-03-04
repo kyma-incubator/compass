@@ -71,24 +71,34 @@ func TestApplicationTemplateInput_Validate_Rule_ValidPlaceholders(t *testing.T) 
 
 func TestApplicationTemplateInput_Validate_Name(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: inputvalidationtest.ValidName,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "name-123.com",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Empty",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Valid Printable ASCII",
+			Value:         "V1 +=_-)(*&^%$#@!?/>.<,|\\\"':;}{][",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Invalid Name",
-			Value: inputvalidationtest.InvalidName,
-			Valid: false,
+			Name:          "Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
+		},
+		{
+			Name:          "String longer than 100 chars",
+			Value:         inputvalidationtest.String129Long,
+			ExpectedValid: false,
+		},
+		{
+			Name:          "String contains invalid ASCII",
+			Value:         "ąćńłóęǖǘǚǜ",
+			ExpectedValid: false,
 		},
 	}
 
@@ -100,7 +110,7 @@ func TestApplicationTemplateInput_Validate_Name(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -390,24 +400,34 @@ func TestApplicationFromTemplateInput_Validate_Rule_UniquePlaceholders(t *testin
 
 func TestApplicationFromTemplateInput_Validate_TemplateName(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: inputvalidationtest.ValidName,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "name-123.com",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Empty",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Valid Printable ASCII",
+			Value:         "V1 +=_-)(*&^%$#@!?/>.<,|\\\"':;}{][",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Invalid Name",
-			Value: inputvalidationtest.InvalidName,
-			Valid: false,
+			Name:          "Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
+		},
+		{
+			Name:          "String longer than 100 chars",
+			Value:         inputvalidationtest.String129Long,
+			ExpectedValid: false,
+		},
+		{
+			Name:          "String contains invalid ASCII",
+			Value:         "ąćńłóęǖǘǚǜ",
+			ExpectedValid: false,
 		},
 	}
 
@@ -419,7 +439,7 @@ func TestApplicationFromTemplateInput_Validate_TemplateName(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)

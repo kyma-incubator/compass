@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-ozzo/ozzo-validation/is"
+
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/pkg/errors"
@@ -13,7 +15,7 @@ import (
 func (i ApplicationTemplateInput) Validate() error {
 	return validation.Errors{
 		"Rule.ValidPlaceholders": i.validPlaceholders(),
-		"Name":                   validation.Validate(i.Name, validation.Required, inputvalidation.DNSName),
+		"Name":                   validation.Validate(i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
 		"Description":            validation.Validate(i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		"Placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),
 		"AccessLevel":            validation.Validate(i.AccessLevel, validation.Required, validation.In(ApplicationTemplateAccessLevelGlobal)),
@@ -76,7 +78,7 @@ func (i PlaceholderDefinitionInput) Validate() error {
 func (i ApplicationFromTemplateInput) Validate() error {
 	return validation.Errors{
 		"Rule.UniquePlaceholders": i.ensureUniquePlaceholders(),
-		"TemplateName":            validation.Validate(i.TemplateName, validation.Required, inputvalidation.DNSName),
+		"TemplateName":            validation.Validate(i.TemplateName, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
 		"Values":                  validation.Validate(i.Values, validation.Each(validation.Required)),
 	}.Filter()
 }
