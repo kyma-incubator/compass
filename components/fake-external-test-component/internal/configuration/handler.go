@@ -3,10 +3,11 @@ package configuration
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/fake-external-test-component/pkg/model"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 //go:generate mockery -name=ConfigChangeService -output=automock -outpkg=automock -case=underscore

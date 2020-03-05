@@ -1,13 +1,14 @@
 package main
 
 import (
+	"log"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/fake-external-test-component/internal/configuration"
 	"github.com/kyma-incubator/compass/components/fake-external-test-component/pkg/health"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
-	"log"
-	"net/http"
 )
 
 type config struct {
