@@ -15,7 +15,6 @@ COPY ./go.sum ${BASE_APP_DIR}/go.sum
 # Run go mod download first to take advantage of Docker caching
 RUN apk add git && go mod download
 
-COPY ./assets/ /assets/
 COPY ./internal/ ${BASE_APP_DIR}/internal/
 COPY ./pkg/ ${BASE_APP_DIR}/pkg/
 COPY ./cmd/ ${BASE_APP_DIR}/cmd
@@ -45,7 +44,6 @@ WORKDIR /app
 # Copy binary
 #
 
-COPY --from=builder /assets /assets
 COPY --from=builder /app /app
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/components/provisioner/terraform-provider-gardener-linux-amd64 /.terraform.d/plugins/linux_amd64/terraform-provider-gardener
