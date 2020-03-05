@@ -2,10 +2,11 @@ package gardener
 
 import (
 	"fmt"
+	"time"
+
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/sirupsen/logrus"
 	v12 "k8s.io/api/core/v1"
-	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
