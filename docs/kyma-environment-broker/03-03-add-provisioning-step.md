@@ -2,7 +2,7 @@
 
 You can configure Runtime provisioning process by providing additional input objects in the form of overrides. For example, you may want to provide tokens/credentials/URLs to integrate Kyma Runtime with external systems. 
 
-The operation of provisioning a Runtime consists of several steps. Each step is represented by a file that is responsible for a separate part of preparing Runtime parameters. The last step is called [`create_runtime`](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go). It transforms all steps into a request to provision a Runtime. The request is sent to the Runtime Provisioner component.
+The operation of provisioning a Runtime consists of several steps. Each step is represented by a file that is responsible for a separate part of preparing Runtime parameters. All data callected in steps are used in the step called [`create_runtime`](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
 
 In case of a processing failure, every step can be re-launched multiple times. That is why, for each step you should determine a behavior in case of a processing failure. It can either:
 - Return an error, which interrupts the entire provisioning process, or 
@@ -24,7 +24,7 @@ To add a new provisioning step, follow these steps:
     ```
 
     - `Name()` method returns the name of the step that is used in logs.
-    - `Run()` method implements the functionality of the step. The method receives operations as an argument to which it can add appropriate overrids or save other used variables.
+    - `Run()` method implements the functionality of the step. The method receives operations as an argument to which it can add appropriate overrides or save other used variables.
     
 
     ```go
