@@ -103,12 +103,12 @@ To add a new provisioning step, follow these steps:
     func (s *HelloWorldStep) Run(operation internal.ProvisioningOperation, log *logrus.Entry) (internal.ProvisioningOperation, time.Duration, error) {
         log.Info("Start step")
    
-        // check if step should run or his job is done in the previous iteration
+        // Check whether your step should be run or if its job has been done in the previous iteration
         // All non-save operation data are empty (e.g. InputCreator overrides)
     
         // Add your logic here
     
-        // Add a call to an external service
+        // Add a call to an external service (optional)
         response, err := s.client.Get("http://example.com")
         if err != nil {
             // Error during a call to an external service may be temporary so you should return time.Duration 
