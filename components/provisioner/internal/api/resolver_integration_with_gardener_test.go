@@ -272,8 +272,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			// when
 			readSession := dbsFactory.NewReadSession()
 			runtimeFromDb, err := readSession.GetCluster(config.runtimeID)
-			require.NoError(t, err)
 
+			// then
+			require.NoError(t, err)
 			assert.Equal(t, tenant, runtimeFromDb.Tenant)
 			assert.Equal(t, subAccountId, runtimeFromDb.SubAccountId)
 			assert.Equal(t, true, runtimeFromDb.Deleted)
