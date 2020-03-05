@@ -56,6 +56,8 @@ type ProvisioningOperation struct {
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionInputCreator `json:"-"`
+
+	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation

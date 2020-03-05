@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"log"
 	"net/http"
 	"os"
@@ -58,6 +59,8 @@ type Config struct {
 	ManagedRuntimeComponentsYAMLFilePath string
 
 	Broker broker.Config
+
+	Avs avs.Config
 }
 
 func main() {
@@ -143,6 +146,9 @@ func main() {
 	stepManager.AddStep(2, provisionAzureEventHub)
 	stepManager.AddStep(2, smOverrideStep)
 	stepManager.AddStep(10, runtimeStep)
+
+	evaluationStep := avs.NewInternalEvaluationStep(cfg.Avs, db.Operations())
+	stepManager.AddStep(1, evaluationStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
