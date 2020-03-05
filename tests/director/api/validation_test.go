@@ -354,7 +354,7 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 
 	appCreateInput := fixSampleApplicationRegisterInput("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
-		Name:             "0invalid",
+		Name:             "",
 		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
 		ApplicationInput: &appCreateInput,
 		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
@@ -380,7 +380,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 
 	appCreateInput := fixSampleApplicationRegisterInput("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
-		Name:             "0invalid",
+		Name:             "",
 		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
 		ApplicationInput: &appCreateInput,
 		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
