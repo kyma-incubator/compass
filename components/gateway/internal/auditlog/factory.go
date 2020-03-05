@@ -3,7 +3,7 @@ package auditlog
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
+	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 )
 
 const (

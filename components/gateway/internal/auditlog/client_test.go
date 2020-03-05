@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog"
-	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
+	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 )
 
 const (

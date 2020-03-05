@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
+	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy/automock"
