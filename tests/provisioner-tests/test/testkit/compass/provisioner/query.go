@@ -64,6 +64,7 @@ func runtimeStatusData() string {
 func clusterConfig() string {
 	return fmt.Sprintf(`
 		... on GardenerConfig {
+			name
 			kubernetesVersion
 			nodeCount 
 			volumeSizeGB
