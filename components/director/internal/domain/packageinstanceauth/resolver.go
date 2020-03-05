@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
