@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=AccountProvider
+//go:generate mockery -name=AccountProvider -output=automock -outpkg=automock -case=underscore
 type AccountProvider interface {
 	CompassCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
 	GardenerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)

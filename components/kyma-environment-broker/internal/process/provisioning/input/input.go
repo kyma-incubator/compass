@@ -46,11 +46,6 @@ func (r *RuntimeInput) SetRuntimeLabels(instanceID, subAccountID string) interna
 	return r
 }
 
-func (r *RuntimeInput) SetGardenerTargetSecretName(secretName string) internal.ProvisionInputCreator {
-	r.input.ClusterConfig.GardenerConfig.TargetSecret = secretName
-	return r
-}
-
 func (r *RuntimeInput) Create() (gqlschema.ProvisionRuntimeInput, error) {
 	for _, step := range []struct {
 		name    string
@@ -88,6 +83,7 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 	updateInt(&r.input.ClusterConfig.GardenerConfig.VolumeSizeGb, r.provisioningParameters.VolumeSizeGb)
 	updateString(&r.input.ClusterConfig.GardenerConfig.Region, r.provisioningParameters.Region)
 	updateString(&r.input.ClusterConfig.GardenerConfig.MachineType, r.provisioningParameters.MachineType)
+	updateString(&r.input.ClusterConfig.GardenerConfig.TargetSecret, r.provisioningParameters.TargetSecret)
 
 	r.hyperscalerInputProvider.ApplyParameters(r.input.ClusterConfig, r.provisioningParameters)
 

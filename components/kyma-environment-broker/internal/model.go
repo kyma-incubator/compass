@@ -15,7 +15,6 @@ import (
 type ProvisionInputCreator interface {
 	SetProvisioningParameters(params ProvisioningParametersDTO) ProvisionInputCreator
 	SetRuntimeLabels(instanceID, SubAccountID string) ProvisionInputCreator
-	SetGardenerTargetSecretName(secretName string) ProvisionInputCreator
 	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
 	Create() (gqlschema.ProvisionRuntimeInput, error)
 }
@@ -54,7 +53,6 @@ type ProvisioningOperation struct {
 	// following fields are serialized to JSON and stored in the storage
 	LmsTenantID            string `json:"lms_tenant_id"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
-	TargetSecret           string `json:"target_secret"`
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionInputCreator `json:"-"`
@@ -90,6 +88,16 @@ func (po *ProvisioningOperation) GetProvisioningParameters() (ProvisioningParame
 	}
 
 	return pp, nil
+}
+
+func (po *ProvisioningOperation) SetProvisioningParameters(parameters ProvisioningParameters) error {
+	params, err := json.Marshal(parameters)
+	if err != nil {
+		return errors.Wrap(err, "while marshaling provisioning parameters")
+	}
+
+	po.ProvisioningParameters = string(params)
+	return nil
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput

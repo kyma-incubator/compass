@@ -44,11 +44,11 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	// when
 	input, err := builder.
 		SetProvisioningParameters(internal.ProvisioningParametersDTO{
-			Name:      "azure-cluster",
-			NodeCount: ptr.Integer(4),
+			Name:         "azure-cluster",
+			NodeCount:    ptr.Integer(4),
+			TargetSecret: ptr.String("azure-secret"),
 		}).
 		SetRuntimeLabels(fixID, fixID).
-		SetGardenerTargetSecretName("azure-secret").
 		SetOverrides(ServiceManagerComponentName, []*gqlschema.ConfigEntryInput{
 			{
 				Key:   "config.sm.url",

@@ -48,32 +48,56 @@ func (s *ResolveCredentialsStep) Name() string {
 
 func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
-	if operation.TargetSecret != "" {
-		return operation, 0, nil
-	}
-
 	pp, err := operation.GetProvisioningParameters()
 
 	if err != nil {
+		logger.Error("Aborting after failing to get valid operation provisioning parameters")
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
+	}
+
+	if pp.Parameters.TargetSecret != nil {
+		return operation, 0, nil
 	}
 
 	hypType, err := getHyperscalerTypeForPlanID(pp.PlanID)
 
 	if err != nil {
+		logger.Error("Aborting after failing to determine the type of Hyperscaler to use for planID: %s", pp.PlanID)
 		return s.operationManager.OperationFailed(operation, err.Error())
 	}
 
-	logger.Infof("HAP lookup for credentials to provision cluster for global account ID %s on hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
+	logger.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
 	credentials, err := s.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
 
 	if err != nil {
-		errMsg := fmt.Sprintf("HAP lookup for credentials to provision cluster for global account ID %s for hyperscaler %s has failed: %s", pp.ErsContext.GlobalAccountID, hypType, err)
+		errMsg := fmt.Sprintf("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s has failed: %s", pp.ErsContext.GlobalAccountID, hypType, err)
+		logger.Info(errMsg)
+
+		dur := time.Since(operation.UpdatedAt).Round(time.Second)
+
+		if dur < 3*time.Second {
+			logger.Info("will retry in 2 seconds")
+			return operation, 2 * time.Second, nil
+		}
+
+		logger.Errorf("Aborting after failing to resolve provisioning credentials for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 		return s.operationManager.OperationFailed(operation, errMsg)
 	}
 
-	operation.TargetSecret = credentials.CredentialName
+	pp.Parameters.TargetSecret = &credentials.CredentialName
+	err = operation.SetProvisioningParameters(pp)
 
-	return s.operationManager.OperationSucceeded(operation, "Resolved provisioning credentials secret name with HAP")
+	if err != nil {
+		logger.Error("Aborting after failing to save provisioning parameters for operation")
+		return s.operationManager.OperationFailed(operation, err.Error())
+	}
+
+	updatedOperation, err := s.opStorage.UpdateProvisioningOperation(operation)
+
+	if err != nil {
+		return operation, 1 * time.Minute, nil
+	}
+
+	return *updatedOperation, 0, nil
 }
