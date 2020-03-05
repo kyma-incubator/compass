@@ -1,27 +1,25 @@
-package configuration
+package security
 
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/fake-external-test-component/pkg/model"
 	"github.com/pkg/errors"
+	"net/http"
 )
 
-//go:generate mockery -name=ConfigChangeService -output=automock -outpkg=automock -case=underscore
-type ConfigChangeService interface {
-	Save(change model.ConfigurationChange) (string, error)
-	Get(id string) *model.ConfigurationChange
+type SecurityEventService interface {
+	Save(change model.SecuritEvent) (string, error)
+	Get(id string) *model.SecuritEvent
 	Delete(id string)
 }
 
 type ConfigChangeHandler struct {
-	service ConfigChangeService
+	service SecurityEventService
 }
 
-func NewConfigurationHandler(service ConfigChangeService) *ConfigChangeHandler {
+func NewSecurityEventHandler(service SecurityEventService) *ConfigChangeHandler {
 	return &ConfigChangeHandler{service: service}
 }
 
@@ -32,7 +30,7 @@ const (
 
 func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-	var log model.ConfigurationChange
+	var log model.SecuritEvent
 	err := json.NewDecoder(req.Body).Decode(&log)
 	if err != nil {
 		WriteError(writer, errors.Wrap(err, "while decoding input"), http.StatusInternalServerError)
@@ -41,7 +39,7 @@ func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request
 
 	id, err := h.service.Save(log)
 	if err != nil {
-		WriteError(writer, errors.Wrap(err, "while saving configuration change log"), http.StatusInternalServerError)
+		WriteError(writer, errors.Wrap(err, "while saving security event log"), http.StatusInternalServerError)
 		return
 	}
 
