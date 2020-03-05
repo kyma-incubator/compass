@@ -23,3 +23,5 @@ require (
 	golang.org/x/sys v0.0.0-20200212091648-12a6c2dcc1e4 // indirect
 	k8s.io/apimachinery v0.17.3 // indirect
 )
+
+replace github.com/kyma-incubator/compass/components/director v0.0.0-20200228131107-650ca2e25748 => github.com/kjaksik/compass/components/director v0.0.0-20200303144524-f0c7460d3a52

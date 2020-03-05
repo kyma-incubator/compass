@@ -22,10 +22,10 @@ import (
 
 const (
 	emptyTenant = ""
-	testTenant  = "test-default-tenant"
+	testTenant  = "foo"
 )
 
-var defaultTenant = "af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e"
+var defaultTenant = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
 
 var tenants = make(map[string]string)
 

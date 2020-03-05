@@ -1096,7 +1096,7 @@ func TestTenantSeparation(t *testing.T) {
 			}
 		}`,
 		tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
-	customTenant := tenants["foo"]
+	customTenant := tenants["Test1"]
 	anotherTenantsApps := graphql.ApplicationPage{}
 	// THEN
 	err = tc.RunOperationWithCustomTenant(ctx, customTenant, getAppReq, &anotherTenantsApps)

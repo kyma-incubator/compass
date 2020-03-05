@@ -455,8 +455,8 @@ func TestQuerySpecificRuntime(t *testing.T) {
 func TestApplicationsForRuntime(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-	tenantID := tenants["foo"]
-	otherTenant := tenants["bar"]
+	tenantID := tenants["Test1"]
+	otherTenant := tenants["Test2"]
 	tenantApplications := []*graphql.Application{}
 	defaultValue := "DEFAULT"
 	scenarios := []string{defaultValue, "black-friday-campaign", "christmas-campaign", "summer-campaign"}
