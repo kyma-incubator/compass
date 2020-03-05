@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -29,9 +27,6 @@ import (
 	"github.com/pivotal-cf/brokerapi"
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
-	"k8s.io/client-go/kubernetes"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	restclient "k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
@@ -49,6 +44,8 @@ type Config struct {
 	Director     director.Config
 	Database     storage.Config
 	Gardener     gardener.Config
+
+	ManagementPlaneURL string
 
 	ServiceManager internal.ServiceManagerOverride
 
@@ -116,10 +113,10 @@ func main() {
 	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
 	fatalOnError(err)
 
-	gardenerClusterConfig, err := newGardenerClusterConfig(cfg)
+	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	fatalOnError(err)
 	//
-	gardenerSecrets, err := newGardenerSecretsInterface(gardenerClusterConfig, cfg)
+	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
@@ -132,7 +129,7 @@ func main() {
 	fatalOnError(err)
 
 	// create and run queue, steps provisioning
-	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.Director.URL)
+	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
 
@@ -166,33 +163,6 @@ func main() {
 	r := handlers.LoggingHandler(os.Stdout, brokerAPI)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
-}
-
-func newGardenerClusterConfig(cfg Config) (*restclient.Config, error) {
-
-	rawKubeconfig, err := ioutil.ReadFile(cfg.Gardener.KubeconfigPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read Gardener Kubeconfig from path %s: %s", cfg.Gardener.KubeconfigPath, err.Error())
-	}
-
-	gardenerClusterConfig, err := gardener.RESTConfig(rawKubeconfig)
-	if err != nil {
-		return nil, fmt.Errorf("")
-	}
-
-	return gardenerClusterConfig, nil
-}
-
-func newGardenerSecretsInterface(gardenerClusterCfg *restclient.Config, cfg Config) (corev1.SecretInterface, error) {
-
-	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
-
-	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return gardenerClusterClient.CoreV1().Secrets(gardenerNamespace), nil
 }
 
 func fatalOnError(err error) {
