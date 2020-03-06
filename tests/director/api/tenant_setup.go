@@ -34,7 +34,6 @@ func insertTenants(transact persistence.Transactioner) {
 	testTenants := fixTestTenants()
 
 	tx, err := transact.Begin()
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -75,6 +74,24 @@ func getTenants(transact persistence.Transactioner) {
 	}
 }
 
+func deleteTenants(transact persistence.Transactioner) {
+
+	tx, err := transact.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = tx.Exec(deleteQuery, testProvider)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 type TestTenants struct {
 	allTenantIDs map[string]string
 }
@@ -98,24 +115,6 @@ func (t *TestTenants) mapTenants(tenants []Tenant) {
 
 	for _, v := range tenants {
 		t.allTenantIDs[v.Name] = v.ExternalTenant
-	}
-}
-
-func deleteTenants(transact persistence.Transactioner) {
-
-	tx, err := transact.Begin()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = tx.Exec(deleteQuery, testProvider)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		log.Fatal(err)
 	}
 }
 
