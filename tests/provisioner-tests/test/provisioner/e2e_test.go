@@ -153,10 +153,7 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 	assertRuntimeConfiguration(t, status)
 
 	clusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(*gqlschema.GardenerConfig)
-	if !ok {
-		t.Error("Cluster Config does not match GardenerConfig type")
-		t.FailNow()
-	}
+	require.True(t, ok, "Cluster Config does not match GardenerConfig type")
 
 	assertions.AssertNotNilAndNotEmptyString(t, clusterConfig.Name)
 	assertions.AssertNotNilAndNotEmptyString(t, clusterConfig.Seed)
@@ -188,25 +185,21 @@ func assertRuntimeConfiguration(t *testing.T, status gqlschema.RuntimeStatus) {
 
 func verifyProviderConfig(t *testing.T, input gqlschema.ProviderSpecificInput, config interface{}) {
 	gardenerConfig, ok := config.(gqlschema.GardenerConfig)
-	if !ok {
-		t.FailNow()
-	}
+	require.True(t, ok)
 
 	providerSpecificConfig := gardenerConfig.ProviderSpecificConfig
 
 	if input.AzureConfig != nil {
 		azureConfig, ok := providerSpecificConfig.(gqlschema.AzureProviderConfig)
-		if !ok {
-			t.FailNow()
-		}
+		require.True(t, ok)
+
 		assertions.AssertNotNilAndEqualString(t, input.AzureConfig.VnetCidr, azureConfig.VnetCidr)
 	}
 
 	if input.AwsConfig != nil {
 		awsConfig, ok := providerSpecificConfig.(gqlschema.AWSProviderConfig)
-		if !ok {
-			t.FailNow()
-		}
+		require.True(t, ok)
+
 		assertions.AssertNotNilAndEqualString(t, input.AwsConfig.VpcCidr, awsConfig.VpcCidr)
 		assertions.AssertNotNilAndEqualString(t, input.AwsConfig.Zone, awsConfig.Zone)
 		assertions.AssertNotNilAndEqualString(t, input.AwsConfig.InternalCidr, awsConfig.InternalCidr)
@@ -215,9 +208,8 @@ func verifyProviderConfig(t *testing.T, input gqlschema.ProviderSpecificInput, c
 
 	if input.GcpConfig != nil {
 		gcpConfig, ok := providerSpecificConfig.(gqlschema.GCPProviderConfig)
-		if !ok {
-			t.FailNow()
-		}
+		require.True(t, ok)
+
 		assertions.AssertNotNilAndEqualString(t, input.GcpConfig.Zone, gcpConfig.Zone)
 	}
 }
