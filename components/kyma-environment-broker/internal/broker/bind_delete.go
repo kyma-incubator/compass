@@ -5,22 +5,23 @@ import (
 	"errors"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
 )
 
 type UnbindEndpoint struct {
-	dumper StructDumper
+	log logrus.FieldLogger
 }
 
-func NewUnbind(dumper StructDumper) *UnbindEndpoint {
-	return &UnbindEndpoint{dumper: dumper}
+func NewUnbind(log logrus.FieldLogger) *UnbindEndpoint {
+	return &UnbindEndpoint{log: log.WithField("service", "UnbindEndpoint")}
 }
 
 // Unbind deletes an existing service binding
 //   DELETE /v2/service_instances/{instance_id}/service_bindings/{binding_id}
 func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID string, details domain.UnbindDetails, asyncAllowed bool) (domain.UnbindSpec, error) {
-	b.dumper.Dump("Unbind instanceID:", instanceID)
-	b.dumper.Dump("Unbind details:", details)
-	b.dumper.Dump("Unbind asyncAllowed:", asyncAllowed)
+	b.log.Infof("Unbind instanceID: %s", instanceID)
+	b.log.Infof("Unbind details: %+v", details)
+	b.log.Infof("Unbind asyncAllowed: %v", asyncAllowed)
 
 	return domain.UnbindSpec{}, errors.New("not supported")
 }

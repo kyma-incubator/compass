@@ -123,10 +123,6 @@ func main() {
 
 	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion)
 
-	// create log dumper
-	dumper, err := broker.NewDumper()
-	fatalOnError(err)
-
 	// create and run queue, steps provisioning
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
@@ -149,16 +145,16 @@ func main() {
 
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
-		broker.NewServices(cfg.Broker, optComponentsSvc, dumper),
-		broker.NewProvision(cfg.Broker, db.Operations(), queue, inputFactory, plansValidator, dumper),
-		broker.NewDeprovision(db.Instances(), provisionerClient, dumper),
-		broker.NewUpdate(dumper),
-		broker.NewGetInstance(db.Instances(), dumper),
-		broker.NewLastOperation(db.Operations(), dumper),
-		broker.NewBind(dumper),
-		broker.NewUnbind(dumper),
-		broker.NewGetBinding(dumper),
-		broker.NewLastBindingOperation(dumper),
+		broker.NewServices(cfg.Broker, optComponentsSvc, logs),
+		broker.NewProvision(cfg.Broker, db.Operations(), queue, inputFactory, plansValidator, logs),
+		broker.NewDeprovision(db.Instances(), provisionerClient, logs),
+		broker.NewUpdate(logs),
+		broker.NewGetInstance(db.Instances(), logs),
+		broker.NewLastOperation(db.Operations(), logs),
+		broker.NewBind(logs),
+		broker.NewUnbind(logs),
+		broker.NewGetBinding(logs),
+		broker.NewLastBindingOperation(logs),
 	}
 
 	// create and run broker OSB API
