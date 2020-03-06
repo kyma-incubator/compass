@@ -83,27 +83,6 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 					Namespace:     "kyma-system",
 					Configuration: nil,
 				},
-				{
-					Component: input.ServiceManagerComponentName,
-					Namespace: "kyma-system",
-					Configuration: []*gqlschema.ConfigEntryInput{
-						{
-							Key:    "config.sm.url",
-							Value:  serviceManagerURL,
-							Secret: nil,
-						},
-						{
-							Key:    "sm.user",
-							Value:  serviceManagerUser,
-							Secret: nil,
-						},
-						{
-							Key:    "sm.password",
-							Value:  serviceManagerPassword,
-							Secret: ptr.Bool(true),
-						},
-					},
-				},
 			},
 			Configuration: nil,
 		},
@@ -124,7 +103,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		RuntimeID: ptr.String(runtimeID),
 	}, nil)
 
-	step := NewCreateRuntimeStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, internal.ServiceManagerOverride{})
+	step := NewCreateRuntimeStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
 
 	// when
 	entry := log.WithFields(logrus.Fields{"step": "TEST"})
@@ -160,7 +139,7 @@ func fixProvisioningParameters(t *testing.T) string {
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    subAccountID,
-			ServiceManager: internal.ServiceManagerEntryDTO{
+			ServiceManager: &internal.ServiceManagerEntryDTO{
 				Credentials: internal.ServiceManagerCredentials{
 					BasicAuth: internal.ServiceManagerBasicAuth{
 						Username: serviceManagerUser,
@@ -198,19 +177,9 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Namespace:     "kyma-system",
 			Configuration: nil,
 		},
-		{
-			Component:     input.ServiceManagerComponentName,
-			Namespace:     "kyma-system",
-			Configuration: nil,
-		},
 	}).Return(internal.ComponentConfigurationInputList{
 		{
 			Component:     "keb",
-			Namespace:     "kyma-system",
-			Configuration: nil,
-		},
-		{
-			Component:     input.ServiceManagerComponentName,
 			Namespace:     "kyma-system",
 			Configuration: nil,
 		},
@@ -223,10 +192,6 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 		},
 		{
 			Name:      "keb",
-			Namespace: "kyma-system",
-		},
-		{
-			Name:      input.ServiceManagerComponentName,
 			Namespace: "kyma-system",
 		},
 	}

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
@@ -42,7 +41,7 @@ type Config struct {
 	Database           storage.Config
 	ManagementPlaneURL string
 
-	ServiceManager internal.ServiceManagerOverride
+	ServiceManager provisioning.ServiceManagerOverrideConfig
 
 	KymaVersion                          string
 	ManagedRuntimeComponentsYAMLFilePath string
@@ -115,14 +114,15 @@ func main() {
 
 	// create and run queue, steps provisioning
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
-
-	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
+	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
+	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
 	stepManager.InitStep(initialisation)
 
 	stepManager.AddStep(1, runtimeStep)
+	stepManager.AddStep(1, smOverrideStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
