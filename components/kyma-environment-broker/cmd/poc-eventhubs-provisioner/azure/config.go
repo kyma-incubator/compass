@@ -21,8 +21,7 @@ type Config struct {
 
 func NewDefaultConfig() *Config {
 	return &Config{
-		location:      "westeurope",
-		userAgent:     "test-agent",
+		userAgent:     "kyma-environment-broker",
 		cloudName:     "AzurePublicCloud",
 		keepResources: false,
 	}
