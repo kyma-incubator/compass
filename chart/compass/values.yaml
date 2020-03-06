@@ -28,7 +28,7 @@ global:
       version: "PR-798"
     director:
       dir:
-      version: "PR-855"
+      version: "PR-871"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -48,7 +48,7 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-830"
+      version: "PR-842"
     tests:
       director:
         dir:

@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth/automock"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
@@ -18,8 +21,8 @@ func TestResolver_DeletePackageInstanceAuth(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	modelInstanceAuth := fixModelPackageInstanceAuth(id)
-	gqlInstanceAuth := fixGQLPackageInstanceAuth(id)
+	modelInstanceAuth := fixSimpleModelPackageInstanceAuth(id)
+	gqlInstanceAuth := fixSimpleGQLPackageInstanceAuth(id)
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -118,7 +121,7 @@ func TestResolver_DeletePackageInstanceAuth(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := packageinstanceauth.NewResolver(transact, svc, converter)
+			resolver := packageinstanceauth.NewResolver(transact, svc, nil, converter)
 
 			// when
 			result, err := resolver.DeletePackageInstanceAuth(context.TODO(), id)
@@ -135,8 +138,203 @@ func TestResolver_DeletePackageInstanceAuth(t *testing.T) {
 	}
 }
 
-func fixGQLPackageInstanceAuth(id string) *graphql.PackageInstanceAuth {
-	return &graphql.PackageInstanceAuth{
-		ID: id,
+func TestResolver_RequestPackageInstanceAuthDeletion(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	id := "bar"
+	modelInstanceAuth := fixSimpleModelPackageInstanceAuth(id)
+	gqlInstanceAuth := fixSimpleGQLPackageInstanceAuth(id)
+
+	modelPkg := &model.Package{DefaultInstanceAuth: fixModelAuth()}
+
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name             string
+		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn        func() *automock.Service
+		PackageServiceFn func() *automock.PackageService
+		ConverterFn      func() *automock.Converter
+		ExpectedResult   *graphql.PackageInstanceAuth
+		ExpectedErr      error
+	}{
+		{
+			Name:            "Success - Deleted",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelInstanceAuth, nil).Once()
+				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelPkg.DefaultInstanceAuth).Return(true, nil).Once()
+				return svc
+			},
+			PackageServiceFn: func() *automock.PackageService {
+				svc := &automock.PackageService{}
+				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelPkg, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth).Once()
+				return conv
+			},
+			ExpectedResult: gqlInstanceAuth,
+			ExpectedErr:    nil,
+		},
+		{
+			Name:            "Success - Not Deleted",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelInstanceAuth, nil).Twice()
+				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelPkg.DefaultInstanceAuth).Return(false, nil).Once()
+				return svc
+			},
+			PackageServiceFn: func() *automock.PackageService {
+				svc := &automock.PackageService{}
+				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelPkg, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth).Once()
+				return conv
+			},
+			ExpectedResult: gqlInstanceAuth,
+			ExpectedErr:    nil,
+		},
+		{
+			Name:            "Error - Get Instance Auth",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
+				return svc
+			},
+			PackageServiceFn: func() *automock.PackageService {
+				return &automock.PackageService{}
+			},
+			ConverterFn: func() *automock.Converter {
+				return &automock.Converter{}
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Error - Get Package",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelInstanceAuth, nil).Once()
+				return svc
+			},
+			PackageServiceFn: func() *automock.PackageService {
+				svc := &automock.PackageService{}
+				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.Converter {
+				return &automock.Converter{}
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Error - Request Deletion",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelInstanceAuth, nil).Once()
+				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelPkg.DefaultInstanceAuth).Return(false, testErr).Once()
+				return svc
+			},
+			PackageServiceFn: func() *automock.PackageService {
+				svc := &automock.PackageService{}
+				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelPkg, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.Converter {
+				return &automock.Converter{}
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Error - Get After Setting Status",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelInstanceAuth, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
+				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelPkg.DefaultInstanceAuth).Return(false, nil).Once()
+				return svc
+			},
+			PackageServiceFn: func() *automock.PackageService {
+				svc := &automock.PackageService{}
+				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelPkg, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.Converter {
+				return &automock.Converter{}
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Error - Transaction Begin",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			ServiceFn: func() *automock.Service {
+				return &automock.Service{}
+			},
+			PackageServiceFn: func() *automock.PackageService {
+				return &automock.PackageService{}
+			},
+			ConverterFn: func() *automock.Converter {
+				return &automock.Converter{}
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Error - Transaction Commit",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelInstanceAuth, nil).Once()
+				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelPkg.DefaultInstanceAuth).Return(true, nil).Once()
+				return svc
+			},
+			PackageServiceFn: func() *automock.PackageService {
+				svc := &automock.PackageService{}
+				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelPkg, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.Converter {
+				return &automock.Converter{}
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// given
+			persist, transact := testCase.TransactionerFn()
+			svc := testCase.ServiceFn()
+			packageSvc := testCase.PackageServiceFn()
+			converter := testCase.ConverterFn()
+
+			resolver := packageinstanceauth.NewResolver(transact, svc, packageSvc, converter)
+
+			// when
+			result, err := resolver.RequestPackageInstanceAuthDeletion(context.TODO(), id)
+
+			// then
+			assert.Equal(t, testCase.ExpectedResult, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			mock.AssertExpectationsForObjects(t, svc, converter, transact, persist, packageSvc)
+		})
 	}
 }

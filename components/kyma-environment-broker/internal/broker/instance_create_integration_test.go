@@ -1,3 +1,5 @@
+// +build integration
+
 package broker_test
 
 import (
@@ -37,6 +39,7 @@ func TestBrokerProvisioningScenario(t *testing.T) {
 		serviceID       = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
 		planID          = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 		globalAccountID = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
+		subAccountID    = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb666"
 	)
 
 	var (
@@ -91,7 +94,7 @@ func TestBrokerProvisioningScenario(t *testing.T) {
 		ServiceID:     serviceID,
 		PlanID:        planID,
 		RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-		RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s"}`, globalAccountID)),
+		RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, globalAccountID, subAccountID)),
 	}, true)
 
 	// then

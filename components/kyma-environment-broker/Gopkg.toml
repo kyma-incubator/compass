@@ -46,7 +46,7 @@
   version = "1.4.2"
 
 [[constraint]]
-  revision = "dc5e1435a3b74406b75faf19a51347985e2c43ad"
+  revision = "ad250cc742673ef5b628cc806841182bafe9750a"
   name = "github.com/kyma-incubator/compass"
 
 [[constraint]]
@@ -85,6 +85,14 @@
   name = "github.com/vrischmann/envconfig"
   version = "1.2.0"
 
+# Azure
+[[constraint]]
+  name = "github.com/Azure/azure-sdk-for-go"
+  version = "39.3.0"
+
+[[constraint]]
+  name = "github.com/Azure/go-autorest"
+  version = "13.4.0"
 
 [prune]
   go-tests = true

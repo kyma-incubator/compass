@@ -17,6 +17,7 @@ type PackageRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Package, error)
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Package, error)
+	GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Package, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.PackagePage, error)
 }
 
@@ -115,6 +116,20 @@ func (s *service) Get(ctx context.Context, id string) (*model.Package, error) {
 	pkg, err := s.pkgRepo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Package with ID: [%s]", id)
+	}
+
+	return pkg, nil
+}
+
+func (s *service) GetByInstanceAuthID(ctx context.Context, instanceAuthID string) (*model.Package, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	pkg, err := s.pkgRepo.GetByInstanceAuthID(ctx, tnt, instanceAuthID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Package by Instance Auth ID: [%s]", instanceAuthID)
 	}
 
 	return pkg, nil

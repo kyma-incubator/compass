@@ -2,7 +2,8 @@ package graphql
 
 type Document struct {
 	ID            string         `json:"id"`
-	ApplicationID string         `json:"applicationID"`
+	ApplicationID *string        `json:"applicationID"`
+	PackageID     *string        `json:"packageID"`
 	Title         string         `json:"title"`
 	DisplayName   string         `json:"displayName"`
 	Description   string         `json:"description"`
