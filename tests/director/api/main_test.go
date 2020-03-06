@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 
 	insertTenants(transact)
 
-	setDefaultTenant()
+	setTestContext()
 
 	exitVal := m.Run()
 

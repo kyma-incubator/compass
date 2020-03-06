@@ -1,13 +1,23 @@
 package api
 
 import (
+	"context"
 	"log"
+
+	gcli "github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
+var defaultTenant = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
+
+var tenants = make(map[string]string)
+
 const (
+	emptyTenant  = ""
+	testTenant   = "Test Default"
 	insertQuery  = `INSERT INTO public.business_tenant_mappings (id, external_name, external_tenant, provider_name, status) VALUES ($1, $2, $3, $4, $5)`
 	deleteQuery  = `DELETE FROM public.business_tenant_mappings WHERE provider_name = $1`
 	testProvider = "Compass Tests"
@@ -63,6 +73,13 @@ func deleteTenants(transact persistence.Transactioner) {
 func fixTestTenants() []Tenant {
 	return []Tenant{
 		{
+			ID:             "5577cf46-4f78-45fa-b55f-a42a3bdba868",
+			Name:           "Test Default",
+			ExternalTenant: "5577cf46-4f78-45fa-b55f-a42a3bdba868",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
+		{
 			ID:             "f1c4b5be-b0e1-41f9-b0bc-b378200dcca0",
 			Name:           "Test1",
 			ExternalTenant: "f1c4b5be-b0e1-41f9-b0bc-b378200dcca0",
@@ -101,4 +118,28 @@ func tenantsToGraphql(tenants []Tenant) []*graphql.Tenant {
 	}
 
 	return toReturn
+}
+
+func setDefaultTenant() {
+	request := gcli.NewRequest(
+		`query {
+				result: tenants {
+				id
+				name
+				internalID
+					}
+				}`)
+
+	output := []*graphql.Tenant{}
+	err := tc.RunOperation(context.TODO(), request, &output)
+	if err != nil {
+		panic(errors.Wrap(err, "while getting default tenant"))
+	}
+
+	for _, v := range output {
+		tenants[*v.Name] = v.InternalID
+		if *v.Name == testTenant {
+			defaultTenant = v.InternalID
+		}
+	}
 }

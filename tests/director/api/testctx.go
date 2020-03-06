@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
 
 	"github.com/sirupsen/logrus"
@@ -20,19 +18,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	emptyTenant = ""
-	testTenant  = "foo"
-)
-
-var defaultTenant = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
-
-var tenants = make(map[string]string)
-
 var tc *testContext
 
-func init() {
+// testContext contains dependencies that help executing tests
+type testContext struct {
+	graphqlizer       gql.Graphqlizer
+	gqlFieldsProvider gql.GqlFieldsProvider
+	currentScopes     []string
+	cli               *gcli.Client
+}
+
+const defaultScopes = "runtime:write application:write tenant:read label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage"
+
+func setTestContext() {
 	var err error
+
 	tc, err = newTestContext()
 	if err != nil {
 		panic(errors.Wrap(err, "while test context setup"))
@@ -44,41 +44,8 @@ func init() {
 	if err != nil {
 		panic(errors.Wrap(err, "while test context with internal tenant setup"))
 	}
+
 }
-
-func setDefaultTenant() {
-	request := gcli.NewRequest(
-		`query {
-				result: tenants {
-				id
-				name
-				internalID
-					}
-				}`)
-
-	output := []*graphql.Tenant{}
-	err := tc.RunOperation(context.TODO(), request, &output)
-	if err != nil {
-		panic(errors.Wrap(err, "while getting default tenant"))
-	}
-
-	for _, v := range output {
-		tenants[*v.Name] = v.InternalID
-		if *v.Name == testTenant {
-			defaultTenant = v.InternalID
-		}
-	}
-}
-
-// testContext contains dependencies that help executing tests
-type testContext struct {
-	graphqlizer       gql.Graphqlizer
-	gqlFieldsProvider gql.GqlFieldsProvider
-	currentScopes     []string
-	cli               *gcli.Client
-}
-
-const defaultScopes = "runtime:write application:write tenant:read label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage"
 
 func newTestContext() (*testContext, error) {
 	scopesStr := os.Getenv("ALL_SCOPES")
