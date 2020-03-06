@@ -25,7 +25,7 @@ type PackageService interface {
 //go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
 type PackageConverter interface {
 	ToGraphQL(in *model.Package) (*graphql.Package, error)
-	CreateInputFromGraphQL(in graphql.PackageCreateInput) (*model.PackageCreateInput, error)
+	CreateInputFromGraphQL(in graphql.PackageCreateInput) model.PackageCreateInput
 	UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error)
 }
 
@@ -51,6 +51,7 @@ type APIService interface {
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition
 	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
+	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput
 }
 
 //go:generate mockery -name=EventService -output=automock -outpkg=automock -case=underscore
@@ -63,6 +64,7 @@ type EventService interface {
 type EventConverter interface {
 	ToGraphQL(in *model.EventDefinition) *graphql.EventDefinition
 	MultipleToGraphQL(in []*model.EventDefinition) []*graphql.EventDefinition
+	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventDefinitionInput
 }
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
@@ -75,6 +77,7 @@ type DocumentService interface {
 type DocumentConverter interface {
 	ToGraphQL(in *model.Document) *graphql.Document
 	MultipleToGraphQL(in []*model.Document) []*graphql.Document
+	MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*model.DocumentInput
 }
 
 type Resolver struct {
@@ -129,12 +132,8 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn, err := r.packageConverter.CreateInputFromGraphQL(in)
-	if err != nil {
-		return nil, err
-	}
-
-	id, err := r.packageSvc.Create(ctx, applicationID, *convertedIn)
+	convertedIn := r.packageConverter.CreateInputFromGraphQL(in)
+	id, err := r.packageSvc.Create(ctx, applicationID, convertedIn)
 	if err != nil {
 		return nil, err
 	}

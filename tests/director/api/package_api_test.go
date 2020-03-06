@@ -248,12 +248,12 @@ func TestAddPackage(t *testing.T) {
 	application := registerApplication(t, ctx, "app-test-package")
 	defer unregisterApplication(t, application.ID)
 
-	pkgInput := fixPackageCreateInput("pkg-app-1")
+	pkgInput := fixPackageCreateInputWithRelatedObjects("pkg-app-1")
 	pkg, err := tc.graphqlizer.PackageCreateInputToGQL(pkgInput)
 	require.NoError(t, err)
 
 	addPkgRequest := fixAddPackageRequest(application.ID, pkg)
-	output := graphql.Package{}
+	output := graphql.PackageExt{}
 
 	// WHEN
 	t.Log("Create package")
@@ -262,9 +262,9 @@ func TestAddPackage(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
+	assertPackage(t, &pkgInput, &output)
 	defer deletePackage(t, ctx, output.ID)
 
-	require.NotEmpty(t, output.Name)
 	saveExample(t, addPkgRequest.Query(), "add package")
 
 	packageRequest := fixPackageRequest(application.ID, output.ID)
@@ -273,6 +273,7 @@ func TestAddPackage(t *testing.T) {
 	err = tc.RunOperation(ctx, packageRequest, &pkgFromAPI)
 	require.NoError(t, err)
 
+	assertPackage(t, &pkgInput, &output)
 	saveExample(t, packageRequest.Query(), "query package")
 }
 

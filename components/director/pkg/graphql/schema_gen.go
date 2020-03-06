@@ -3732,6 +3732,7 @@ type Query {
 type Mutation {
 	"""
 	**Examples**
+	- [register application with packages](examples/register-application/register-application-with-packages.graphql)
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""

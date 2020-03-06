@@ -737,7 +737,7 @@ func TestResolver_AddPackage(t *testing.T) {
 	modelPackage := fixPackageModel(t, name, desc)
 	gqlPackage := fixGQLPackage(id, name, desc)
 	gqlPackageInput := fixGQLPackageCreateInput(name, desc)
-	modelPackageInput := fixModelPackageCreateInput(t, name, desc)
+	modelPackageInput := fixModelPackageCreateInput(name, desc)
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -760,7 +760,7 @@ func TestResolver_AddPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.PackageConverter {
 				conv := &automock.PackageConverter{}
-				conv.On("CreateInputFromGraphQL", gqlPackageInput).Return(&modelPackageInput, nil).Once()
+				conv.On("CreateInputFromGraphQL", gqlPackageInput).Return(modelPackageInput, nil).Once()
 				conv.On("ToGraphQL", modelPackage).Return(gqlPackage, nil).Once()
 				return conv
 			},
@@ -782,21 +782,6 @@ func TestResolver_AddPackage(t *testing.T) {
 			ExpectedErr:     testErr,
 		},
 		{
-			Name:            "Returns error when converting input from GraphQL failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
-				return svc
-			},
-			ConverterFn: func() *automock.PackageConverter {
-				conv := &automock.PackageConverter{}
-				conv.On("CreateInputFromGraphQL", gqlPackageInput).Return(&model.PackageCreateInput{}, testErr).Once()
-				return conv
-			},
-			ExpectedPackage: nil,
-			ExpectedErr:     testErr,
-		},
-		{
 			Name:            "Returns error when adding Package failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.PackageService {
@@ -806,7 +791,7 @@ func TestResolver_AddPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.PackageConverter {
 				conv := &automock.PackageConverter{}
-				conv.On("CreateInputFromGraphQL", gqlPackageInput).Return(&modelPackageInput, nil).Once()
+				conv.On("CreateInputFromGraphQL", gqlPackageInput).Return(modelPackageInput).Once()
 				return conv
 			},
 			ExpectedPackage: nil,
@@ -823,7 +808,7 @@ func TestResolver_AddPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.PackageConverter {
 				conv := &automock.PackageConverter{}
-				conv.On("CreateInputFromGraphQL", gqlPackageInput).Return(&modelPackageInput, nil).Once()
+				conv.On("CreateInputFromGraphQL", gqlPackageInput).Return(modelPackageInput).Once()
 				return conv
 			},
 			ExpectedPackage: nil,
@@ -840,7 +825,7 @@ func TestResolver_AddPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.PackageConverter {
 				conv := &automock.PackageConverter{}
-				conv.On("CreateInputFromGraphQL", gqlPackageInput).Return(&modelPackageInput, nil).Once()
+				conv.On("CreateInputFromGraphQL", gqlPackageInput).Return(modelPackageInput).Once()
 				return conv
 			},
 			ExpectedPackage: nil,
@@ -857,7 +842,7 @@ func TestResolver_AddPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.PackageConverter {
 				conv := &automock.PackageConverter{}
-				conv.On("CreateInputFromGraphQL", gqlPackageInput).Return(&modelPackageInput, nil).Once()
+				conv.On("CreateInputFromGraphQL", gqlPackageInput).Return(modelPackageInput).Once()
 				conv.On("ToGraphQL", modelPackage).Return(nil, testErr).Once()
 				return conv
 			},
