@@ -1,20 +1,10 @@
 # Labels
 
-You can add a label to every top-level entity, such as Application or Runtime. A label consists of a key-value pair that allows you to search for an Application/Runtime. You can find out about all label keys used in the given tenant
-You can also define validation rules for a label with a given key but it is optional.
+A label is a key-value pair that you can add to every top-level entity, such as an Application or a Runtime. It allows you to search for and find out about all Applications and Runtimes label keys used in a given tenant. You can also define validation rules for labels with a given key using LabelDefinitions.
 
 ## LabelDefinitions
 
-For every label, you can create a LabelDefinition to set validation rules for values. For the given label, you can provide only one value, however, it can also be a JSON array, depending on the LabelDefintions schema.
-
->**NOTE:** LabelDefinitions are optional, but they are created automatically if the user adds labels for which LabelDefinitions do not exist.
-
-1. A label can have related LabelDefinition when a user can define JSON schema for validation of values.
-
-
-### API
-
-1. Extend the Director's GraphQL API to manage LabelDefinitions using mutations and queries for a new type: **LabelDefinition**
+For every label, you can create a LabelDefinition to set validation rules for values. LabelDefinitions are optional, but they are created automatically if the user adds labels for which LabelDefinitions do not exist. You can manage LabelDefinitions using mutations and queries. See the examples:
 
 ```graphql
 scalar JSONSchema # the same as Any
@@ -42,28 +32,19 @@ type Mutation {
 }
 ```
 
-The LabelsDefinition key has to be unique for a given tenant. A schema defines JSON schema used when a user adds a label
-to the Application or Runtime.
+LabelDefinition key has to be unique for a given tenant. For the given label, you can provide only one value, however, this label can contain many elements, depending on the LabelDefinition schema. In the following example, the type of label's value is `Any`, which means that the value can be of any type, such as `JSON`, `string`, `int`:
 
-1. In JSON schema user can define if given label accepts one or many values. Because of that, we have to change
-or API and allow to specify only one value for a given label. This value can contain many elements, depending on LabelDefinition's schema.  
-Change from
-```graphql
-addApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label!
-```
-to:
 ```graphql
 setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label!
 ```
-As you can see, type of label's value is `Any`, it can by `JSON`, `string`, `int`, etc.
 
+### Label Applications without creating LabelDefinitions
 
-### Label an Application without creating a LabelDefinition
+You can label an Application or a Runtime without providing validation rules. Adding LabelDefinitions is optional, however, they are created automatically if you add labels for which LabelDefinitions do not exist. In such a case, the schema is empty and labels validation is not performed, which means that the user can provide any value.
 
-You can label an Application or Runtime without providing validation rules. Adding LabelDefinitions is optional, and will be created internally.
-Schema in such case will empty, validation for label is not be performed and user is able to specify any value.
+### Define and set LabelDefinitions
 
-### Define a LabelDefinition and use that label
+See the example of how you can create and set a LabelDefinition:
 
 ```
 createLabelDefinition(in: {
@@ -82,10 +63,13 @@ setApplicationLabel(applicationID: "123", key: "supportedLanguages", value:["Go"
 
 ```
 
-### Edit LabelDefinition
+### Edit LabelDefinitions
 
-Label definition can be edited. This will be used for example for label **Scenarios**.
-Let assume that we have the following label definition:
+You can edit LabelDefinitions using a mutation. When editing a LabelDefinition, make sure that all labels are compatible with the new definition. Otherwise, the mutation is rejected with a clear message that there are Applications or Runtimes that have an invalid label according to the new LabelDefinition. In such a case, you must either:
+- Remove incompatible labels from specific Applications and Runtimes, or
+- Remove the old LabelDefinition from all labels using cascading deletion.
+
+For example, let's assume we have the following LabelDefinition:
 
 ```graphql
  key:"supportedLanguages",
@@ -98,7 +82,8 @@ Let assume that we have the following label definition:
           }
 ```
 
-If you want to add new language to this list, you have to provide a full definition:
+If you want to add a new language to the list, provide such a mutation:
+
 ```
 updateLabelDefinition(in: {
                         key:"supportedLanguages",
@@ -112,76 +97,59 @@ updateLabelDefinition(in: {
                       }) {...}
 ```
 
-When editing definition, we need to ensure that all labels are compatible with the new definition.
-If this is not a case, such mutation has to be rejected, with a clear message that there are Applications or Runtimes that
-have invalid label according to the new LabelDefinition.
-In such case a user has two possibilities:
-- remove offending labels from specific App/Runtimes  
-- remove old LabelDefinition with cascading deletion of all Labels
+### Remove LabelDefinitions
 
-### Remove LabelDefinition
+Use this mutation to remove a LabelDefinition:
+
 ```graphql
 deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean=false): LabelDefinition
 
 ```
-By default, the above mutation allows removing only definitions that it is not used. If you want to delete definition and all values, set the `deleteRelatedLabels` parameter to `true`.
+This mutation allows you to remove only definitions that are not used. If you want to delete a LabelDefinition with all values, set the **deleteRelatedLabels** parameter to `true`.
 
-### Get the list of possible labels
-Label definitions are created every time, even when a user directly label Application or Runtime with a new key.
-Thanks to that, to provide a list of possible label keys, we need to return all Label Definition for a specific tenant.
-This functionality can be used in UI, for suggesting already existing label's key.
+### Search for objects using LabelFilters
 
-### Search
-There are queries for Applications/Runtimes where user can define LabelFilter:
+You can define a LabelFilter to list the objects according to their labels. To search for a given Application or Runtime, use this query:
+
 ```graphql
  applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
 ```
 
-Because now every label is defined by JSON Schema, LabelFilter needs to be changed, from:
+To search for all objects with a given label despite their values, use this query:
+
 ```graphql
-input LabelFilter {
-    label: String!
-    values: [String!]!
-    operator: FilterOperator = ALL
+query {
+  applications(filter:[{key:"scenarios"
+    }]) {
+    data {
+      name
+      labels
+    }
+    totalCount
+  }
 }
 ```
-to:
+
+To search for all objects assigned to the `default` scenario, use this query:
+
 ```graphql
-input LabelFilter {
-    label: String!
-    query: String # optional, if not provided returns every object with given label regardless of its value.
+query {
+  applications(filter:[{key:"scenarios",
+    # This field is optional. If not provided, the query returns every object with the given label, regardless its value.
+    query:"$[*] ? (@ == \"DEFAULT\")"}]) {
+    data {
+      name
+      labels
+    }
+    totalCount
+  }
 }
 ```
 
-Challenging part is how the user will provide **query** field.
-There is no standard query language for JSON, see [discussion](https://stackoverflow.com/questions/777455/is-there-a-query-language-for-json).
-We have many alternatives:
+In the **query** field, use only the limited SQL/JSON path expressions. The supported syntax is `$[*] ? (@ == "{VALUE}" )`.
 
-- SQL/JSON Path Expressions (part of SQL-2016 specification http://www.sai.msu.su/~megera/postgres/talks/jsonpath-pgday.it-2019.pdf, https://news.ycombinator.com/item?id=19949240).
+## **Scenarios** label
 
-The simplest solution will be to use SQL/JSON Path, then we can propagate that value directly to the PostgreSQL.
-See [this section](#database-schema) to learn how it can be implemented.
-Unfortunately, this functionality is planned for PostgreSQL 12, which is going to be released in Q3 2019, see [roadmap](https://www.postgresql.org/developer/roadmap/) and [features highlights](https://www.postgresql.org/about/news/1943/).
-We don't know when this version will be available on GCP or AWS, so, for now, we will be forced to use Postgres running inside the cluster.
-Also, not all relational databases support JSON Path Expressions, other than Postgres is [SQL Server](https://docs.microsoft.com/en-us/sql/relational-databases/json/json-path-expressions-sql-server?view=sql-server-2017)
-Because of that, the safest approach will be to use limited SQL/JSON Path Expressions syntax, that supports currently only **Scenarios** label (`$[*] ? (@ == "default" )`) and internally translate it to PostgreSQL 11 JSON syntax.
+Every Application is labeled with the special **Scenarios** label which by default has the `default` value assigned. As every Application has to be assigned to at least one scenario, if not specified explicitly, the `default` scenario is used.
 
-
-## `Scenario` label
-
-- There is one special label: **Scenarios**, that has additional requirements:
-    - Every Application is labeled with **Scenarios**
-    - By default, **Scenarios** has one possible value: **default**
-
-
-For scenario label we have additional requirements:
-
-- there is always a `default` scenario
-- every Application has to be assigned to at least one scenario. If not specified explicitly, the `default` scenario is used.
-
-1. On creation of a new tenant, a Label Definition `Scenario` is created. Because right now we don't have a mutation for creating tenant, we need to
-perform that on every Runtime/Application creation.
-2. Label `Scenario` cannot be removed. This requires additional custom validation.
-3. `Scenario` is implemented as a list of enums.
-4. For `Scenario` label definition, new enum values can be added or removed, but `default` value cannot be removed. This requires additional custom validation.
-5. On creation/modification of Application, there is a step that ensures that `Scenario` label exists.
+When you create a new tenant, the **Scenarios** LabelDefinition is created. It defines a list of possible values that can be used for the **Scenarios** label. Every time you create or modify an Application, there is a step that ensures that **Scenarios** label exists. You can add or remove values from the **Scenarios** LabelDefinition list, but neither the `default` value, nor the **Scenarios** label can be removed.
