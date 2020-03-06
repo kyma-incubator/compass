@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	event_hub "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
 	"log"
 	"net/http"
 	"os"
@@ -47,7 +49,8 @@ type Config struct {
 	KymaVersion                          string
 	ManagedRuntimeComponentsYAMLFilePath string
 
-	Broker broker.Config
+	EventHubConfig azure.Config
+	Broker         broker.Config
 }
 
 func main() {
@@ -117,13 +120,15 @@ func main() {
 	// create and run queue, steps provisioning
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 
+	provisionAzureEventHub := event_hub.NewProvisionAzureEventHubStep(db.Operations(), cfg.EventHubConfig, ctx)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
 	stepManager.InitStep(initialisation)
 
-	stepManager.AddStep(1, runtimeStep)
+	stepManager.AddStep(1, provisionAzureEventHub)
+	stepManager.AddStep(2, runtimeStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())

@@ -6,17 +6,15 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/cmd/poc-eventhubs-provisioner/azure"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/cmd/poc-eventhubs-provisioner/k8s"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/k8s"
 )
 
 // Hardcoded values for the PoC
 const (
-	groupName             = "poc-sample-resource-group"
-	eventHubsNamespace    = "poc-sample-eventhubs-namespace"
 	authorizationRuleName = "RootManageSharedAccessKey"
 
 	kafkaPort = 9093
@@ -25,43 +23,42 @@ const (
 	k8sSecretNamespace = "secret-namespace"
 )
 
+// This example code shows how an unused EventHub can be retrieved from a given Azure subscription
+// the EventHub Namespace is marked as used after one run
+// to rerun set the in_use tag of the Namespace to false
 func main() {
-	cfg, err := azure.GetConfigFromEnvironment("test.env")
+	cfg, err := azure.GetConfigFromEnvironment("/Users/i512777/tickets/7242-poc-azure-eventhubs-namespace-provisioner/test.env")
 	if err != nil {
 		log.Fatalf("Failed to get config from env: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
-	defer cancel()
-	defer func() {
-		if err := azure.Cleanup(context.Background(), cfg, groupName); err != nil {
-			log.Fatalf("Failed to cleanup resources with error: %v", err)
-		}
-	}()
+	ctx := context.Background()
 
-	if _, err = azure.PersistResourceGroup(ctx, cfg, groupName); err != nil {
-		log.Fatalf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
-	}
-	log.Printf("Persisted Azure Resource Group [%s]", groupName)
-
-	if _, err = azure.PersistEventHubsNamespace(ctx, cfg, groupName, eventHubsNamespace); err != nil {
-		log.Fatalf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
-	}
-	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
-
-	log.Printf("Get Access Keys for Azure EventHubs Namespace [%s]", eventHubsNamespace)
-	accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(ctx, cfg, groupName, eventHubsNamespace, authorizationRuleName)
+	unusedEventHubNamespace, err := azure.GetFirstUnusedNamespaces(ctx, cfg)
 	if err != nil {
-		log.Fatalf("Failed to get Access Keys for Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
+		panic("no ready EventHubs Namespace found")
+	}
+	log.Printf("Get Access Keys for Azure EventHubs Namespace [%s]\n", unusedEventHubNamespace)
+	resourceGroup := azure.GetResourceGroup(unusedEventHubNamespace)
+
+	log.Printf("Found unused EventHubs Namespace, name: %v, resourceGroup: %v", unusedEventHubNamespace.Name, resourceGroup)
+
+	accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(ctx, cfg, resourceGroup, *unusedEventHubNamespace.Name, authorizationRuleName)
+	if err != nil {
+		log.Fatalf("Failed to get Access Keys for Azure EventHubs Namespace [%s] with error: %v\n", unusedEventHubNamespace, err)
 	}
 
 	kafkaEndpoint := extractEndpoint(accessKeys)
 	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
-	secret := k8s.SecretFrom(k8sSecretName, k8sSecretNamespace, kafkaEndpoint, kafkaPassword, eventHubsNamespace)
+	secret := k8s.SecretFrom(k8sSecretName, k8sSecretNamespace, kafkaEndpoint, kafkaPassword, *unusedEventHubNamespace.Name)
 	secretBytes, _ := json.MarshalIndent(secret, "", "    ")
 	log.Printf("Kubernetes secret:\n%s", secretBytes)
+
+	if _, err := azure.MarkNamespaceAsUsed(ctx, cfg, resourceGroup, unusedEventHubNamespace); err != nil {
+		panic(err)
+	}
 
 	// Note: At this point, the PoC is completed:
 	// - Provision an Azure EventHubs Namespace inside a new or existing Azure Resource Group.
