@@ -34,7 +34,7 @@ global:
       version: "PR-913"
     provisioner:
       dir:
-      version: "PR-913"
+      version: "PR-912"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -42,11 +42,11 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-913"
+      version: "PR-912"
     tests:
       director:
         dir:
-        version: "PR-912"
+        version: "PR-923"
       connector:
         dir:
         version: "02e8358c"
