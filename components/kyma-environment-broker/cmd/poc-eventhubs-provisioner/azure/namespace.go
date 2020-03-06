@@ -2,7 +2,9 @@ package azure
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -44,4 +46,26 @@ func getNamespacesClientOrDie(config *Config) eventhub.NamespacesClient {
 	}
 
 	return nsClient
+}
+
+func ListReadyNamespaces(ctx context.Context, config *Config) (eventhub.EHNamespace, error) {
+	nsClient := getNamespacesClientOrDie(config)
+	ehNamespaceIterator, err := nsClient.ListComplete(ctx)
+	if err != nil {
+		return eventhub.EHNamespace{}, err
+	}
+	for ehNamespaceIterator.NotDone() {
+		ehNamespace := ehNamespaceIterator.Value()
+		if val, ok := ehNamespace.Tags["ready"]; ok {
+			isReady, err := strconv.ParseBool(*val)
+			if err == nil && isReady {
+				return ehNamespace, nil
+			}
+		}
+		log.Printf("EHNamespace: %+v", ehNamespace)
+		if err := ehNamespaceIterator.NextWithContext(ctx); err != nil {
+			return eventhub.EHNamespace{}, err
+		}
+	}
+	return eventhub.EHNamespace{}, fmt.Errorf("no ready EHNamespace found")
 }

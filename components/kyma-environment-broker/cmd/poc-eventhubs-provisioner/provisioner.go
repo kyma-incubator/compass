@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -26,13 +27,23 @@ const (
 )
 
 func main() {
-	cfg, err := azure.GetConfigFromEnvironment("test.env")
+	cfg, err := azure.GetConfigFromEnvironment("/Users/i512777/tickets/7242-poc-azure-eventhubs-namespace-provisioner/test.env")
 	if err != nil {
 		log.Fatalf("Failed to get config from env: %v", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()
+
+	ehNamespaceReady, err := azure.ListReadyNamespaces(ctx, cfg)
+	if err != nil {
+		log.Println("no ready EHNamespace found")
+
+	}
+	log.Printf("this is a ready EHNamespace: %q\n", *ehNamespaceReady.Name)
+
+	os.Exit(1)
+
 	defer func() {
 		if err := azure.Cleanup(context.Background(), cfg, groupName); err != nil {
 			log.Fatalf("Failed to cleanup resources with error: %v", err)
