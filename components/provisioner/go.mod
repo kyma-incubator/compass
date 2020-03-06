@@ -16,7 +16,7 @@ require (
 	github.com/kubernetes/client-go v11.0.0+incompatible
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200123101435-9cd00b2924b8
 	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
-	github.com/kyma-incubator/hydroform/install v0.0.0-20191212125252-7afdb02ac964
+	github.com/kyma-incubator/hydroform/install v0.0.0-20200302090055-3f3b00d9799c
 	github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0
 	github.com/lib/pq v1.2.0
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
@@ -44,7 +44,5 @@ require (
 replace github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
 
 replace k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.15.8-beta.1
-
-replace github.com/kyma-incubator/hydroform/install => github.com/Szymongib/hydroform/install v0.0.0-20200115095213-f3daeb2c4886
 
 replace github.com/Azure/go-autorest v11.5.0+incompatible => github.com/Azure/go-autorest v13.3.2+incompatible
