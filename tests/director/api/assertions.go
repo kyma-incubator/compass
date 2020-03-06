@@ -1,6 +1,8 @@
 package api
 
 import (
+	"encoding/json"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -21,6 +23,7 @@ func assertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 	assertDocuments(t, in.Documents, actualApp.Documents.Data)
 	assertAPI(t, in.APIDefinitions, actualApp.APIDefinitions.Data)
 	assertEventsAPI(t, in.EventDefinitions, actualApp.EventDefinitions.Data)
+	assertPackages(t, in.Packages, actualApp.Packages.Data)
 }
 
 //TODO: After fixing the 'Labels' scalar turn this back into regular assertion
@@ -119,6 +122,22 @@ func assertDocuments(t *testing.T, in []*graphql.DocumentInput, actual []*graphq
 			assert.Equal(t, inDocu.Kind, actDocu.Kind)
 			assert.Equal(t, inDocu.Format, actDocu.Format)
 			assertFetchRequest(t, inDocu.FetchRequest, actDocu.FetchRequest)
+		}
+		assert.True(t, found)
+	}
+}
+
+func assertPackages(t *testing.T, in []*graphql.PackageCreateInput, actual []*graphql.PackageExt) {
+	assert.Equal(t, len(in), len(actual))
+	for _, inPkg := range in {
+		found := false
+		for _, actPkg := range actual {
+			if inPkg.Name != actPkg.Name {
+				continue
+			}
+			found = true
+
+			assertPackage(t, inPkg, actPkg)
 		}
 		assert.True(t, found)
 	}
@@ -262,4 +281,86 @@ func assertApplicationTemplatePlaceholder(t *testing.T, in []*graphql.Placeholde
 		assert.Equal(t, in[i].Name, actualPlaceholders[i].Name)
 		assert.Equal(t, in[i].Description, actualPlaceholders[i].Description)
 	}
+}
+
+func assertPackage(t *testing.T, in *graphql.PackageCreateInput, actual *graphql.PackageExt) {
+	assert.Equal(t, in.Name, actual.Name)
+	assert.Equal(t, in.Description, actual.Description)
+	assert.Equal(t, in.InstanceAuthRequestInputSchema, actual.InstanceAuthRequestInputSchema)
+
+	assertAuth(t, in.DefaultInstanceAuth, actual.DefaultInstanceAuth)
+	assertDocuments(t, in.Documents, actual.Documents.Data)
+	assertAPI(t, in.APIDefinitions, actual.APIDefinitions.Data)
+	assertEventsAPI(t, in.EventDefinitions, actual.EventDefinitions.Data)
+
+	assertAuth(t, in.DefaultInstanceAuth, actual.DefaultInstanceAuth)
+}
+
+func assertPackageInstanceAuth(t *testing.T, expectedAuth graphql.PackageInstanceAuthRequestInput, actualAuth graphql.PackageInstanceAuth) {
+	assertGraphQLJSON(t, expectedAuth.Context, actualAuth.Context)
+	assertGraphQLJSON(t, expectedAuth.InputParams, actualAuth.InputParams)
+}
+
+func assertGraphQLJSON(t *testing.T, inExpected *graphql.JSON, inActual *graphql.JSON) {
+	inExpectedStr, ok := unmarshalJSON(t, inExpected).(string)
+	assert.True(t, ok)
+
+	var expected map[string]interface{}
+	err := json.Unmarshal([]byte(inExpectedStr), &expected)
+	require.NoError(t, err)
+
+	var actual map[string]interface{}
+	err = json.Unmarshal([]byte(*inActual), &actual)
+	require.NoError(t, err)
+
+	assert.Equal(t, expected, actual)
+}
+
+func assertGraphQLJSONSchema(t *testing.T, inExpected *graphql.JSONSchema, inActual *graphql.JSONSchema) {
+	inExpectedStr, ok := unmarshalJSONSchema(t, inExpected).(string)
+	assert.True(t, ok)
+
+	var expected map[string]interface{}
+	err := json.Unmarshal([]byte(inExpectedStr), &expected)
+	require.NoError(t, err)
+
+	var actual map[string]interface{}
+	err = json.Unmarshal([]byte(*inActual), &actual)
+	require.NoError(t, err)
+
+	assert.Equal(t, expected, actual)
+}
+
+func marshalJSON(t *testing.T, data interface{}) *graphql.JSON {
+	out, err := json.Marshal(data)
+	require.NoError(t, err)
+	output := strconv.Quote(string(out))
+	j := graphql.JSON(output)
+	return &j
+}
+
+func unmarshalJSON(t *testing.T, j *graphql.JSON) interface{} {
+	require.NotNil(t, j)
+	var output interface{}
+	err := json.Unmarshal([]byte(*j), &output)
+	require.NoError(t, err)
+
+	return output
+}
+
+func marshalJSONSchema(t *testing.T, schema interface{}) *graphql.JSONSchema {
+	out, err := json.Marshal(schema)
+	require.NoError(t, err)
+	output := strconv.Quote(string(out))
+	jsonSchema := graphql.JSONSchema(output)
+	return &jsonSchema
+}
+
+func unmarshalJSONSchema(t *testing.T, schema *graphql.JSONSchema) interface{} {
+	require.NotNil(t, schema)
+	var output interface{}
+	err := json.Unmarshal([]byte(*schema), &output)
+	require.NoError(t, err)
+
+	return output
 }

@@ -112,6 +112,7 @@ var (
 	docTitle = "footitle"
 	docData  = "foodata"
 	docCLOB  = graphql.CLOB(docData)
+	desc     = "Lorem Ipsum"
 )
 
 func fixModelDocument(packageID, applicationID, id string) *model.Document {
@@ -205,10 +206,22 @@ func fixGQLPackageCreateInput(name, description string) graphql.PackageCreateInp
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicInputSchema(),
 		DefaultInstanceAuth:            &defaultAuth,
+		APIDefinitions: []*graphql.APIDefinitionInput{
+			{Name: "api1", TargetURL: "foo.bar"},
+			{Name: "api2", TargetURL: "foo.bar2"},
+		},
+		EventDefinitions: []*graphql.EventDefinitionInput{
+			{Name: "event1", Description: &desc},
+			{Name: "event2", Description: &desc},
+		},
+		Documents: []*graphql.DocumentInput{
+			{DisplayName: "doc1", Kind: &docKind},
+			{DisplayName: "doc2", Kind: &docKind},
+		},
 	}
 }
 
-func fixModelPackageCreateInput(t *testing.T, name, description string) model.PackageCreateInput {
+func fixModelPackageCreateInput(name, description string) model.PackageCreateInput {
 	basicCredentialDataInput := model.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
@@ -222,6 +235,18 @@ func fixModelPackageCreateInput(t *testing.T, name, description string) model.Pa
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &authInput,
+		APIDefinitions: []*model.APIDefinitionInput{
+			{Name: "api1", TargetURL: "foo.bar"},
+			{Name: "api2", TargetURL: "foo.bar2"},
+		},
+		EventDefinitions: []*model.EventDefinitionInput{
+			{Name: "event1", Description: &desc},
+			{Name: "event2", Description: &desc},
+		},
+		Documents: []*model.DocumentInput{
+			{DisplayName: "doc1", Kind: &docKind},
+			{DisplayName: "doc2", Kind: &docKind},
+		},
 	}
 }
 
@@ -411,5 +436,22 @@ func fixGQLPackageInstanceAuth(id string) *graphql.PackageInstanceAuth {
 		InputParams: &params,
 		Auth:        fixGQLAuth(),
 		Status:      &status,
+	}
+}
+
+func fixFetchRequest(url string, objectType model.FetchRequestReferenceObjectType, timestamp time.Time) *model.FetchRequest {
+	return &model.FetchRequest{
+		ID:     "foo",
+		Tenant: tenantID,
+		URL:    url,
+		Auth:   nil,
+		Mode:   "SINGLE",
+		Filter: nil,
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionInitial,
+			Timestamp: timestamp,
+		},
+		ObjectType: objectType,
+		ObjectID:   "foo",
 	}
 }

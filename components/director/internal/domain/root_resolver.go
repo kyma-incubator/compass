@@ -38,9 +38,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/graphql_client"
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}
@@ -76,15 +76,15 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	webhookConverter := webhook.NewConverter(authConverter)
 	apiConverter := api.NewConverter(authConverter, frConverter, versionConverter)
 	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
-	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
 	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	intSysConverter := integrationsystem.NewConverter()
-	appTemplateConverter := apptemplate.NewConverter(appConverter)
 	tenantConverter := tenant.NewConverter()
-	packageConverter := mp_package.NewConverter(authConverter)
+	packageConverter := mp_package.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter, packageConverter)
+	appTemplateConverter := apptemplate.NewConverter(appConverter)
 	packageInstanceAuthConv := packageinstanceauth.NewConverter(authConverter)
 
 	healthcheckRepo := healthcheck.NewRepository()
@@ -111,7 +111,6 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	apiRtmAuthSvc := apiruntimeauth.NewService(apiRtmAuthRepo, uidSvc)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc)
-	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, intSysRepo, labelUpsertSvc, scenariosSvc, uidSvc)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
@@ -123,11 +122,12 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 	httpClient := getHttpClient()
-	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
 	oAuth20Svc := oauth20.NewService(scopeCfgProvider, uidSvc, oAuth20Cfg)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
-	packageSvc := mp_package.NewService(packageRepo, uidSvc)
+	packageSvc := mp_package.NewService(packageRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc)
+	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
+	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
 	packageInstanceAuthSvc := packageinstanceauth.NewService(packageInstanceAuthRepo, uidSvc)
 
 	return &RootResolver{
@@ -405,16 +405,16 @@ func (r *mutationResolver) AddDocumentToPackage(ctx context.Context, packageID s
 	return r.doc.AddDocumentToPackage(ctx, packageID, in)
 }
 func (r *mutationResolver) SetPackageInstanceAuth(ctx context.Context, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.SetPackageInstanceAuthMock(ctx, authID, in) // TODO: Replace with real implementation
+	return r.packageInstanceAuth.SetPackageInstanceAuth(ctx, authID, in)
 }
 func (r *mutationResolver) DeletePackageInstanceAuth(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.DeletePackageInstanceAuthMock(ctx, authID) // TODO: Replace with real implementation
+	return r.packageInstanceAuth.DeletePackageInstanceAuth(ctx, authID)
 }
 func (r *mutationResolver) RequestPackageInstanceAuthCreation(ctx context.Context, packageID string, in graphql.PackageInstanceAuthRequestInput) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.RequestPackageInstanceAuthCreationMock(ctx, packageID, in) // TODO: Replace with real implementation
+	return r.packageInstanceAuth.RequestPackageInstanceAuthCreation(ctx, packageID, in)
 }
 func (r *mutationResolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
-	return r.packageInstanceAuth.RequestPackageInstanceAuthDeletionMock(ctx, authID) // TODO: Replace with real implementation
+	return r.packageInstanceAuth.RequestPackageInstanceAuthDeletion(ctx, authID)
 }
 
 func (r *mutationResolver) AddPackage(ctx context.Context, applicationID string, in graphql.PackageCreateInput) (*graphql.Package, error) {
@@ -540,10 +540,10 @@ func (r *oneTimeTokenForRuntimeResolver) Raw(ctx context.Context, obj *graphql.O
 type PackageResolver struct{ *RootResolver }
 
 func (r *PackageResolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id string) (*graphql.PackageInstanceAuth, error) {
-	return r.mpPackage.InstanceAuthMock(ctx, obj, id)
+	return r.mpPackage.InstanceAuth(ctx, obj, id)
 }
 func (r *PackageResolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*graphql.PackageInstanceAuth, error) {
-	return r.mpPackage.InstanceAuthsMock(ctx, obj)
+	return r.mpPackage.InstanceAuths(ctx, obj)
 }
 func (r *PackageResolver) APIDefinitions(ctx context.Context, obj *graphql.Package, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	return r.mpPackage.APIDefinitions(ctx, obj, group, first, after)

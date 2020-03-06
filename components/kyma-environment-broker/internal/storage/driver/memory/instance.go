@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 )
 
 type Instance struct {
@@ -21,7 +21,7 @@ func NewInstance() *Instance {
 func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	inst, ok := s.instances[instanceID]
 	if !ok {
-		return nil, errors.Errorf("instance with id %s not exist", instanceID)
+		return nil, dberr.NotFound("instance with id %s not exist", instanceID)
 	}
 
 	return &inst, nil

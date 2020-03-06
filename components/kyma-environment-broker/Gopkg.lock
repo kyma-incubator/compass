@@ -245,19 +245,6 @@
   version = "v1.3.2"
 
 [[projects]]
-  digest = "1:2e3c336fc7fde5c984d2841455a658a6d626450b1754a854b3b32e7a8f49a07a"
-  name = "github.com/google/go-cmp"
-  packages = [
-    "cmp",
-    "cmp/internal/diff",
-    "cmp/internal/function",
-    "cmp/internal/value",
-  ]
-  pruneopts = "UT"
-  revision = "3af367b6b30c263d47e8895973edcca9a49cf029"
-  version = "v0.2.0"
-
-[[projects]]
   digest = "1:a6181aca1fd5e27103f9a920876f29ac72854df7345a39f3b01e61c8c94cc8af"
   name = "github.com/google/gofuzz"
   packages = ["."]
@@ -764,21 +751,6 @@
   version = "v2.2.7"
 
 [[projects]]
-  digest = "1:171ae0a98929d888864c28200d537c3032f85107286ab63063e7d732f5dc0b04"
-  name = "gotest.tools"
-  packages = [
-    "assert",
-    "assert/cmp",
-    "golden",
-    "internal/difflib",
-    "internal/format",
-    "internal/source",
-  ]
-  pruneopts = "UT"
-  revision = "1083505acf35a0bd8a696b26837e1fb3187a7a83"
-  version = "v2.3.0"
-
-[[projects]]
   digest = "1:57858c910b7c29c64f742c34df7bc6ce76ea72e561276c80c0eda16980443736"
   name = "k8s.io/api"
   packages = [
@@ -874,7 +846,7 @@
   version = "v0.17.1"
 
 [[projects]]
-  digest = "1:d15037d80d60d48c1b94aa84baebe1bdf3a1990df0eb0978b372c976cababa11"
+  digest = "1:e0ce2f07c93aa1fdfcc220a8dbe183a28bfa4fdb4f893301795f1f1ac3a3bc63"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -901,6 +873,7 @@
     "util/flowcontrol",
     "util/homedir",
     "util/keyutil",
+    "util/workqueue",
   ]
   pruneopts = "UT"
   revision = "78d2af792babf2dd937ba2e2a8d99c753a5eda89"
@@ -984,11 +957,11 @@
     "github.com/testcontainers/testcontainers-go/wait",
     "github.com/vrischmann/envconfig",
     "gopkg.in/yaml.v2",
-    "gotest.tools/golden",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/util/wait",
+    "k8s.io/client-go/util/workqueue",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
     "sigs.k8s.io/controller-runtime/pkg/client/fake",

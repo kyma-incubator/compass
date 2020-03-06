@@ -106,6 +106,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+// TODO: Remove; deprecated
 func TestRegisterApplicationWithAPIs(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -180,7 +181,6 @@ func TestRegisterApplicationWithAPIs(t *testing.T) {
 			appInputGQL,
 			tc.gqlFieldsProvider.ForApplication(),
 		))
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with API definitions")
 
 	err = tc.RunOperation(ctx, request, &actualApp)
 
@@ -191,6 +191,7 @@ func TestRegisterApplicationWithAPIs(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+// TODO: Remove; deprecated
 func TestRegisterApplicationWithEventDefinitions(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -245,7 +246,6 @@ func TestRegisterApplicationWithEventDefinitions(t *testing.T) {
 			tc.gqlFieldsProvider.ForApplication(),
 		))
 
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with event definitions")
 	err = tc.RunOperation(ctx, request, &actualApp)
 
 	//THEN
@@ -255,6 +255,7 @@ func TestRegisterApplicationWithEventDefinitions(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+// TODO: Remove; deprecated
 func TestRegisterApplicationWithDocuments(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -302,10 +303,39 @@ func TestRegisterApplicationWithDocuments(t *testing.T) {
 			tc.gqlFieldsProvider.ForApplication(),
 		))
 
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with documents")
 	err = tc.RunOperation(ctx, request, &actualApp)
 
 	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+	defer unregisterApplication(t, actualApp.ID)
+	assertApplication(t, in, actualApp)
+}
+
+func TestRegisterApplicationWithPackages(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	in := fixApplicationRegisterInputWithPackages()
+	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+	actualApp := graphql.ApplicationExt{}
+
+	// WHEN
+	request := gcli.NewRequest(
+		fmt.Sprintf(
+			`mutation {
+				result: registerApplication(in: %s) { 
+						%s 
+					}
+				}`,
+			appInputGQL,
+			tc.gqlFieldsProvider.ForApplication(),
+		))
+
+	err = tc.RunOperation(ctx, request, &actualApp)
+
+	//THEN
+	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with packages")
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer unregisterApplication(t, actualApp.ID)
@@ -703,7 +733,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 					%s
 				}
 			}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForAPIDefinition()))
-		saveExample(t, addReq.Query(), "add API Definition")
 		err = tc.RunOperation(ctx, addReq, &actualAPI)
 
 		//THEN
@@ -797,7 +826,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 						%s	
 					}
 				}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForEventDefinition()))
-		saveExample(t, addReq.Query(), "add Event Definition")
 		err = tc.RunOperation(ctx, addReq, &actualEventAPI)
 		// THEN
 		require.NoError(t, err)
@@ -870,7 +898,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 					}
 			}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForDocument()))
 		err = tc.RunOperation(ctx, addReq, &actualDoc)
-		saveExample(t, addReq.Query(), "add Document")
 
 		//THEN
 		require.NoError(t, err)
@@ -1237,7 +1264,6 @@ func TestQuerySpecificAPIDefinition(t *testing.T) {
 				}
 			}`, applicationID, actualAPI.ID, tc.gqlFieldsProvider.ForAPIDefinition()))
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualAPI)
-	saveExample(t, queryAppReq.Query(), "query api definition")
 
 	//THEN
 	require.NoError(t, err)
@@ -1283,7 +1309,6 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 				}
 			}`, applicationID, actualEventAPI.ID, tc.gqlFieldsProvider.ForEventDefinition()))
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualEventAPI)
-	saveExample(t, queryAppReq.Query(), "query event definition")
 
 	//THEN
 	require.NoError(t, err)

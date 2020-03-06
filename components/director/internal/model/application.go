@@ -55,6 +55,7 @@ type ApplicationRegisterInput struct {
 	APIDefinitions      []*APIDefinitionInput
 	EventDefinitions    []*EventDefinitionInput
 	Documents           []*DocumentInput
+	Packages            []*PackageCreateInput
 	IntegrationSystemID *string
 }
 

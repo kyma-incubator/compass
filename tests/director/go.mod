@@ -9,8 +9,10 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.1.1
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200212140521-ad250cc74267
+	github.com/huandu/xstrings v1.3.0 // indirect
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200228131107-650ca2e25748
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
+	github.com/matryer/is v1.3.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0

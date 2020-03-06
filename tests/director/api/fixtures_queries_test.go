@@ -2,9 +2,11 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 )
 
@@ -170,7 +172,7 @@ func deleteSystemAuthForRuntime(t *testing.T, ctx context.Context, id string) {
 func createLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
 	input := graphql.LabelDefinitionInput{
 		Key:    key,
-		Schema: marshallJSONSchema(t, schema),
+		Schema: marshalJSONSchema(t, schema),
 	}
 
 	in, err := tc.graphqlizer.LabelDefinitionInputToGQL(input)
@@ -314,4 +316,111 @@ func setDefaultEventingForApplication(t *testing.T, ctx context.Context, appID s
 	req := fixSetDefaultEventingForApplication(appID, runtimeID)
 	err := tc.RunOperation(ctx, req, nil)
 	require.NoError(t, err)
+}
+
+func createPackage(t *testing.T, ctx context.Context, appID, pkgName string) graphql.PackageExt {
+	in, err := tc.graphqlizer.PackageCreateInputToGQL(fixPackageCreateInput(pkgName))
+	require.NoError(t, err)
+
+	req := fixAddPackageRequest(appID, in)
+	var resp graphql.PackageExt
+
+	err = tc.RunOperation(ctx, req, &resp)
+	require.NoError(t, err)
+
+	return resp
+}
+
+func getPackage(t *testing.T, ctx context.Context, appID, pkgID string) graphql.PackageExt {
+	req := fixPackageRequest(appID, pkgID)
+	pkg := graphql.ApplicationExt{}
+	require.NoError(t, tc.RunOperation(ctx, req, &pkg))
+	return pkg.Package
+}
+
+func deletePackage(t *testing.T, ctx context.Context, id string) {
+	req := fixDeletePackageRequest(id)
+
+	require.NoError(t, tc.RunOperation(ctx, req, nil))
+}
+
+func addAPIToPackageWithInput(t *testing.T, ctx context.Context, pkgID string, input graphql.APIDefinitionInput) graphql.APIDefinitionExt {
+	inStr, err := tc.graphqlizer.APIDefinitionInputToGQL(input)
+	require.NoError(t, err)
+
+	actualApi := graphql.APIDefinitionExt{}
+	req := fixAddAPIToPackageRequest(pkgID, inStr)
+	err = tc.RunOperation(ctx, req, &actualApi)
+	require.NoError(t, err)
+	return actualApi
+}
+
+func addAPIToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.APIDefinitionExt {
+	return addAPIToPackageWithInput(t, ctx, pkgID, fixAPIDefinitionInput())
+}
+
+func addEventToPackageWithInput(t *testing.T, ctx context.Context, pkgID string, input graphql.EventDefinitionInput) graphql.EventDefinition {
+	inStr, err := tc.graphqlizer.EventDefinitionInputToGQL(input)
+	require.NoError(t, err)
+
+	event := graphql.EventDefinition{}
+	req := fixAddEventAPIToPackageRequest(pkgID, inStr)
+	err = tc.RunOperation(ctx, req, &event)
+	require.NoError(t, err)
+	return event
+}
+
+func addEventToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.EventDefinition {
+	return addEventToPackageWithInput(t, ctx, pkgID, fixEventAPIDefinitionInput())
+}
+
+func addDocumentToPackageWithInput(t *testing.T, ctx context.Context, pkgID string, input graphql.DocumentInput) graphql.DocumentExt {
+	inStr, err := tc.graphqlizer.DocumentInputToGQL(&input)
+	require.NoError(t, err)
+
+	actualDoc := graphql.DocumentExt{}
+	req := fixAddDocumentToPackageRequest(pkgID, inStr)
+	err = tc.RunOperation(ctx, req, &actualDoc)
+	require.NoError(t, err)
+	return actualDoc
+}
+
+func addDocumentToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.DocumentExt {
+	return addDocumentToPackageWithInput(t, ctx, pkgID, fixDocumentInput())
+}
+
+func createPackageInstanceAuth(t *testing.T, ctx context.Context, pkgID string) graphql.PackageInstanceAuth {
+	authCtx, inputParams := fixPackageInstanceAuthContextAndInputParams(t)
+	in, err := tc.graphqlizer.PackageInstanceAuthRequestInputToGQL(fixPackageInstanceAuthRequestInput(authCtx, inputParams))
+	require.NoError(t, err)
+
+	req := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: requestPackageInstanceAuthCreation(packageID: "%s", in: %s) {
+				id
+			}}`, pkgID, in))
+
+	var resp graphql.PackageInstanceAuth
+
+	err = tc.RunOperation(ctx, req, &resp)
+	require.NoError(t, err)
+
+	return resp
+}
+
+func fixPackageInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *graphql.JSON) {
+	authCtxPayload := map[string]interface{}{
+		"ContextData": "ContextValue",
+	}
+	var authCtxData interface{} = authCtxPayload
+
+	inputParamsPayload := map[string]interface{}{
+		"InKey": "InValue",
+	}
+	var inputParamsData interface{} = inputParamsPayload
+
+	authCtx := marshalJSON(t, authCtxData)
+	inputParams := marshalJSON(t, inputParamsData)
+
+	return authCtx, inputParams
 }

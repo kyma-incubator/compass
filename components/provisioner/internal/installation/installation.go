@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	tillerWaitTime = 4 * time.Minute
+	tillerWaitTime = 5 * time.Minute
 )
 
 type InstallationHandler func(*rest.Config, ...installation.InstallationOption) (installation.Installer, error)
@@ -68,7 +68,7 @@ func (s *installationService) TriggerInstallation(kubeconfigRaw []byte, release 
 }
 
 func (s *installationService) deployInstaller(kubeconfigRaw []byte, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) (installation.Installer, error) {
-	kubeconfig, err := clientcmd.NewClientConfigFromBytes((kubeconfigRaw))
+	kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigRaw)
 	if err != nil {
 		return nil, fmt.Errorf("error constructing kubeconfig from raw config: %s", err.Error())
 	}

@@ -113,10 +113,11 @@ type service struct {
 	labelUpsertService LabelUpsertService
 	scenariosService   ScenariosService
 	uidService         UIDService
+	pkgService         PackageService
 	timestampGen       timestamp.Generator
 }
 
-func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, documentRepo DocumentRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, fetchRequestRepo FetchRequestRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, uidService UIDService) *service {
+func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, documentRepo DocumentRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, fetchRequestRepo FetchRequestRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService PackageService, uidService UIDService) *service {
 	return &service{
 		appRepo:            app,
 		webhookRepo:        webhook,
@@ -128,6 +129,7 @@ func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRep
 		intSystemRepo:      intSystemRepo,
 		labelUpsertService: labelUpsertService,
 		scenariosService:   scenariosService,
+		pkgService:         pkgService,
 		uidService:         uidService,
 		fetchRequestRepo:   fetchRequestRepo,
 		timestampGen:       timestamp.DefaultGenerator(),
@@ -272,9 +274,18 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	if err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Application")
 	}
+
+	// TODO: Deprecated; Remove after breaking change in API
 	err = s.createRelatedResources(ctx, in, app.Tenant, app.ID)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating related Application resources")
+	}
+
+	if in.Packages != nil {
+		err = s.pkgService.CreateMultiple(ctx, id, in.Packages)
+		if err != nil {
+			return "", errors.Wrap(err, "while creating Packages for Application")
+		}
 	}
 
 	return id, nil
@@ -509,32 +520,6 @@ func (s *service) createDocuments(ctx context.Context, appID, tenant string, eve
 			}
 		}
 	}
-	return nil
-}
-
-func (s *service) deleteRelatedResources(ctx context.Context, tenant, applicationID string) error {
-	var err error
-
-	err = s.webhookRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting Webhooks for application %s", applicationID)
-	}
-
-	err = s.apiRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting APIDefinitions for application %s", applicationID)
-	}
-
-	err = s.eventAPIRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting EventDefinitions for application %s", applicationID)
-	}
-
-	err = s.documentRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting Documents for application %s", applicationID)
-	}
-
 	return nil
 }
 

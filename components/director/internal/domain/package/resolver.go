@@ -7,11 +7,10 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package/mock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
@@ -26,7 +25,7 @@ type PackageService interface {
 //go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
 type PackageConverter interface {
 	ToGraphQL(in *model.Package) (*graphql.Package, error)
-	CreateInputFromGraphQL(in graphql.PackageCreateInput) (*model.PackageCreateInput, error)
+	CreateInputFromGraphQL(in graphql.PackageCreateInput) model.PackageCreateInput
 	UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error)
 }
 
@@ -52,6 +51,7 @@ type APIService interface {
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition
 	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
+	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput
 }
 
 //go:generate mockery -name=EventService -output=automock -outpkg=automock -case=underscore
@@ -64,6 +64,7 @@ type EventService interface {
 type EventConverter interface {
 	ToGraphQL(in *model.EventDefinition) *graphql.EventDefinition
 	MultipleToGraphQL(in []*model.EventDefinition) []*graphql.EventDefinition
+	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventDefinitionInput
 }
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
@@ -76,6 +77,7 @@ type DocumentService interface {
 type DocumentConverter interface {
 	ToGraphQL(in *model.Document) *graphql.Document
 	MultipleToGraphQL(in []*model.Document) []*graphql.Document
+	MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*model.DocumentInput
 }
 
 type Resolver struct {
@@ -130,12 +132,8 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn, err := r.packageConverter.CreateInputFromGraphQL(in)
-	if err != nil {
-		return nil, err
-	}
-
-	id, err := r.packageSvc.Create(ctx, applicationID, *convertedIn)
+	convertedIn := r.packageConverter.CreateInputFromGraphQL(in)
+	id, err := r.packageSvc.Create(ctx, applicationID, convertedIn)
 	if err != nil {
 		return nil, err
 	}
@@ -257,21 +255,6 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id st
 
 }
 
-//TODO Remove mock
-func (r *Resolver) InstanceAuthMock(ctx context.Context, obj *graphql.Package, id string) (*graphql.PackageInstanceAuth, error) {
-	var condition graphql.PackageInstanceAuthStatusCondition
-	switch id {
-	case "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb":
-		condition = graphql.PackageInstanceAuthStatusConditionSucceeded
-	case "cccccccc-cccc-cccc-cccc-cccccccccccc":
-		condition = graphql.PackageInstanceAuthStatusConditionFailed
-	default:
-		condition = graphql.PackageInstanceAuthStatusConditionPending
-	}
-
-	return mock.FixPackageInstanceAuth(id, condition), nil
-}
-
 func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*graphql.PackageInstanceAuth, error) {
 	if obj == nil {
 		return nil, errors.New("Package cannot be empty")
@@ -298,17 +281,6 @@ func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*
 
 	return out, nil
 }
-
-//TODO Remove mock
-func (r *Resolver) InstanceAuthsMock(ctx context.Context, obj *graphql.Package) ([]*graphql.PackageInstanceAuth, error) {
-	return []*graphql.PackageInstanceAuth{
-		mock.FixPackageInstanceAuth("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", graphql.PackageInstanceAuthStatusConditionPending),
-		mock.FixPackageInstanceAuth("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", graphql.PackageInstanceAuthStatusConditionSucceeded),
-		mock.FixPackageInstanceAuth("cccccccc-cccc-cccc-cccc-cccccccccccc", graphql.PackageInstanceAuthStatusConditionFailed),
-	}, nil
-}
-
-var packageID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
 func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Package, id string) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()

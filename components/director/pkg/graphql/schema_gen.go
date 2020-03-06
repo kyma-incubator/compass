@@ -3732,9 +3732,7 @@ type Query {
 type Mutation {
 	"""
 	**Examples**
-	- [register application with api definitions](examples/register-application/register-application-with-api-definitions.graphql)
-	- [register application with documents](examples/register-application/register-application-with-documents.graphql)
-	- [register application with event definitions](examples/register-application/register-application-with-event-definitions.graphql)
+	- [register application with packages](examples/register-application/register-application-with-packages.graphql)
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""
@@ -3814,13 +3812,12 @@ type Mutation {
 	- [delete application webhook](examples/delete-webhook/delete-application-webhook.graphql)
 	"""
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
-	"""
-	**Examples**
-	- [add api definition](examples/add-api-definition/add-api-definition.graphql)
-	"""
 	addAPIDefinition(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinition")
 	"""
 	Temporary name before doing breaking change. Eventually the ` + "`" + `addAPIDefinition` + "`" + ` mutation will be changed and there will be just one mutation: ` + "`" + `addAPIDefinitionToPackage` + "`" + `.
+	
+	**Examples**
+	- [add api definition to package](examples/add-api-definition-to-package/add-api-definition-to-package.graphql)
 	"""
 	addAPIDefinitionToPackage(packageID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToPackage")
 	"""
@@ -3847,13 +3844,12 @@ type Mutation {
 	"""
 	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth") @deprecated(reason: "Use setPackageInstanceAuthForPackage")
 	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth") @deprecated(reason: "Use deletePackageInstanceAuthForPackage")
-	"""
-	**Examples**
-	- [add event definition](examples/add-event-definition/add-event-definition.graphql)
-	"""
 	addEventDefinition(applicationID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
 	"""
 	Temporary name before doing breaking change. Eventually the ` + "`" + `addEventDefinition` + "`" + ` mutation will be changed and there will be just one mutation: ` + "`" + `addEventDefinitionToPackage` + "`" + `.
+	
+	**Examples**
+	- [add event definition to package](examples/add-event-definition-to-package/add-event-definition-to-package.graphql)
 	"""
 	addEventDefinitionToPackage(packageID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToPackage")
 	"""
@@ -3867,13 +3863,12 @@ type Mutation {
 	"""
 	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
 	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
-	"""
-	**Examples**
-	- [add document](examples/add-document/add-document.graphql)
-	"""
 	addDocument(applicationID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
 	"""
 	Temporary name before doing breaking change
+	
+	**Examples**
+	- [add document to package](examples/add-document-to-package/add-document-to-package.graphql)
 	"""
 	addDocumentToPackage(packageID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocumentToPackage")
 	"""
@@ -3924,19 +3919,44 @@ type Mutation {
 	When PackageInstanceAuth is not in pending state, the operation returns error.
 	
 	When used without error, the status of pending auth is set to success.
+	
+	**Examples**
+	- [set package instance auth](examples/set-package-instance-auth/set-package-instance-auth.graphql)
 	"""
 	setPackageInstanceAuth(authID: ID!, in: PackageInstanceAuthSetInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
+	"""
+	**Examples**
+	- [delete package instance auth](examples/delete-package-instance-auth/delete-package-instance-auth.graphql)
+	"""
 	deletePackageInstanceAuth(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
 	"""
 	When defaultInstanceAuth is set, it fires "createPackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to PENDING.
+	
+	**Examples**
+	- [request package instance auth creation](examples/request-package-instance-auth-creation/request-package-instance-auth-creation.graphql)
 	"""
 	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
 	"""
 	When defaultInstanceAuth is set, it fires "deletePackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to UNUSED.
+	
+	**Examples**
+	- [request package instance auth deletion](examples/request-package-instance-auth-deletion/request-package-instance-auth-deletion.graphql)
 	"""
 	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
+	"""
+	**Examples**
+	- [add package](examples/add-package/add-package.graphql)
+	"""
 	addPackage(applicationID: ID!, in: PackageCreateInput! @validate): Package! @hasScopes(path: "graphql.mutation.addPackage")
+	"""
+	**Examples**
+	- [update package](examples/update-package/update-package.graphql)
+	"""
 	updatePackage(id: ID!, in: PackageUpdateInput! @validate): Package! @hasScopes(path: "graphql.mutation.updatePackage")
+	"""
+	**Examples**
+	- [delete package](examples/delete-package/delete-package.graphql)
+	"""
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
 }
 

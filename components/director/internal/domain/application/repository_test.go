@@ -17,7 +17,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -376,7 +376,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 
 	countQuery := fmt.Sprintf(`SELECT COUNT\(\*\) FROM public\.applications WHERE tenant_id=\$1 AND "id" IN \(%s\)$`, applicationScenarioQuery)
 
-	conv := application.NewConverter(nil, nil, nil, nil)
+	conv := application.NewConverter(nil, nil, nil, nil, nil)
 	intSysID := repo.NewValidNullableString("iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii")
 
 	testCases := []struct {

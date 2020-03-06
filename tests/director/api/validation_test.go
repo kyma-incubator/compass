@@ -331,6 +331,21 @@ func fixEventAPIDefinitionInput() graphql.EventDefinitionInput {
 		}}
 }
 
+func fixAPIDefinitionInput() graphql.APIDefinitionInput {
+	return graphql.APIDefinitionInput{
+		Name:      "new-api-name",
+		TargetURL: "https://target.url",
+		Spec: &graphql.APISpecInput{
+			Format: graphql.SpecFormatJSON,
+			Type:   graphql.APISpecTypeOpenAPI,
+			FetchRequest: &graphql.FetchRequestInput{
+				URL: "https://foo.bar",
+			},
+		},
+	}
+
+}
+
 // Application Template
 
 func TestCreateApplicationTemplate_Validation(t *testing.T) {
@@ -339,7 +354,7 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 
 	appCreateInput := fixSampleApplicationRegisterInput("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
-		Name:             "0invalid",
+		Name:             "",
 		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
 		ApplicationInput: &appCreateInput,
 		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
@@ -365,7 +380,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 
 	appCreateInput := fixSampleApplicationRegisterInput("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
-		Name:             "0invalid",
+		Name:             "",
 		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
 		ApplicationInput: &appCreateInput,
 		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
@@ -414,4 +429,110 @@ func fixDocumentInput() graphql.DocumentInput {
 			Auth:   fixBasicAuth(),
 		},
 	}
+}
+
+// PACKAGE API
+
+func TestAddPackage_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	invalidInput := graphql.PackageCreateInput{}
+	inputString, err := tc.graphqlizer.PackageCreateInputToGQL(invalidInput)
+	require.NoError(t, err)
+	var result graphql.PackageExt
+	request := fixAddPackageRequest("", inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type PackageCreateInput")
+}
+
+func TestUpdatePackage_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	invalidInput := graphql.PackageUpdateInput{}
+	inputString, err := tc.graphqlizer.PackageUpdateInputToGQL(invalidInput)
+	require.NoError(t, err)
+	var result graphql.PackageExt
+	request := fixUpdatePackageRequest("", inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type PackageUpdateInput")
+}
+
+func TestSetPackageInstanceAuth_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	invalidInput := graphql.PackageInstanceAuthSetInput{}
+	inputString, err := tc.graphqlizer.PackageInstanceAuthSetInputToGQL(invalidInput)
+	require.NoError(t, err)
+	var result graphql.PackageInstanceAuth
+	request := fixSetPackageInstanceAuthRequest("", inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type PackageInstanceAuthSetInput")
+}
+
+func TestAddAPIDefinitionToPackage_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	invalidInput := graphql.APIDefinitionInput{}
+	inputString, err := tc.graphqlizer.APIDefinitionInputToGQL(invalidInput)
+	require.NoError(t, err)
+	var result graphql.APIDefinitionExt
+	request := fixAddAPIToPackageRequest("", inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type APIDefinitionInput")
+}
+
+func TestAddEventDefinitionToPackage_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	invalidInput := graphql.EventDefinitionInput{}
+	inputString, err := tc.graphqlizer.EventDefinitionInputToGQL(invalidInput)
+	require.NoError(t, err)
+	var result graphql.EventAPIDefinitionExt
+	request := fixAddEventAPIToPackageRequest("", inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type EventDefinitionInput")
+}
+
+func TestAddDocumentToPackage_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	invalidInput := graphql.DocumentInput{
+		Format: graphql.DocumentFormatMarkdown,
+	}
+	inputString, err := tc.graphqlizer.DocumentInputToGQL(&invalidInput)
+	require.NoError(t, err)
+	var result graphql.DocumentExt
+	request := fixAddDocumentToPackageRequest("", inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type DocumentInput")
 }

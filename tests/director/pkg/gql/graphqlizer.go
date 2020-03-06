@@ -37,19 +37,25 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		{{- if .APIDefinitions }}
 		apiDefinitions: [
 			{{- range $i, $e := .APIDefinitions }}
-			{{- if $i}}, {{- end}} {{ APIDefinitionInputToGQL $e }}
+				{{- if $i}}, {{- end}} {{ APIDefinitionInputToGQL $e }}
 			{{- end }}],
 		{{- end }}
 		{{- if .EventDefinitions }}
 		eventDefinitions: [
 			{{- range $i, $e := .EventDefinitions }}
-			{{- if $i}}, {{- end}} {{ EventDefinitionInputToGQL $e }}
+				{{- if $i}}, {{- end}} {{ EventDefinitionInputToGQL $e }}
 			{{- end }}],
 		{{- end }}
 		{{- if .Documents }} 
 		documents: [
 			{{- range $i, $e := .Documents }} 
 				{{- if $i}}, {{- end}} {{- DocumentInputToGQL $e }}
+			{{- end }} ],
+		{{- end }}
+		{{- if .Packages }} 
+		packages: [
+			{{- range $i, $e := .Packages }} 
+				{{- if $i}}, {{- end}} {{- PackageCreateInputToGQL $e }}
 			{{- end }} ],
 		{{- end }}
 		{{- if .IntegrationSystemID }}
@@ -252,7 +258,9 @@ func (g *Graphqlizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput)
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end }}
+		{{- if .Spec }}
 		spec: {{ EventAPISpecInputToGQL .Spec }},
+		{{- end }}
 		{{- if .Group }}
 		group: "{{.Group}}", 
 		{{- end }}
@@ -372,6 +380,88 @@ func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFr
 	}`)
 }
 
+func (g *Graphqlizer) PackageCreateInputToGQL(in graphql.PackageCreateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{ .Name }}"
+		{{- if .Description }}
+		description: "{{ .Description }}"
+		{{- end }}
+		{{- if .InstanceAuthRequestInputSchema }}
+		instanceAuthRequestInputSchema: {{ .InstanceAuthRequestInputSchema }}
+		{{- end }}
+		{{- if .DefaultInstanceAuth }}
+		defaultInstanceAuth: {{- AuthInputToGQL .DefaultInstanceAuth }}
+		{{- end }}
+		{{- if .APIDefinitions }}
+		apiDefinitions: [
+			{{- range $i, $e := .APIDefinitions }}
+				{{- if $i}}, {{- end}} {{ APIDefinitionInputToGQL $e }}
+			{{- end }}],
+		{{- end }}
+		{{- if .EventDefinitions }}
+		eventDefinitions: [
+			{{- range $i, $e := .EventDefinitions }}
+				{{- if $i}}, {{- end}} {{ EventDefinitionInputToGQL $e }}
+			{{- end }}],
+		{{- end }}
+		{{- if .Documents }} 
+		documents: [
+			{{- range $i, $e := .Documents }} 
+				{{- if $i}}, {{- end}} {{- DocumentInputToGQL $e }}
+			{{- end }} ],
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) PackageUpdateInputToGQL(in graphql.PackageUpdateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{ .Name }}"
+		{{- if .Description }}
+		description: "{{ .Description }}"
+		{{- end }}
+		{{- if .InstanceAuthRequestInputSchema }}
+		instanceAuthRequestInputSchema: {{ .InstanceAuthRequestInputSchema }}
+		{{- end }}
+		{{- if .DefaultInstanceAuth }}
+		defaultInstanceAuth: {{- AuthInputToGQL .DefaultInstanceAuth }}
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) PackageInstanceAuthStatusInputToGQL(in graphql.PackageInstanceAuthStatusInput) (string, error) {
+	return g.genericToGQL(in, `{
+		condition: {{ .Condition }}
+		{{- if .Message }}
+		message: "{{ .Message }}"
+		{{- end }}
+		{{- if .Reason }}
+		reason: "{{ .Reason }}"
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) PackageInstanceAuthRequestInputToGQL(in graphql.PackageInstanceAuthRequestInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .Context }}
+		context: {{ .Context }}
+		{{- end }}
+		{{- if .InputParams }}
+		inputParams: {{ .InputParams }}
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) PackageInstanceAuthSetInputToGQL(in graphql.PackageInstanceAuthSetInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .Auth }}
+		auth: {{- AuthInputToGQL .Auth}}
+		{{- end }}
+		{{- if .Status }}
+		status: {{- PackageInstanceAuthStatusInputToGQL .Status }}
+		{{- end }}
+	}`)
+}
+
 func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
 	fm["ApplicationRegisterInputToGQL"] = g.ApplicationRegisterInputToGQL
@@ -392,6 +482,8 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["CredentialRequestAuthInputToGQL"] = g.CredentialRequestAuthInputToGQL
 	fm["PlaceholderDefinitionInputToGQL"] = g.PlaceholderDefinitionInputToGQL
 	fm["TemplateValueInput"] = g.TemplateValueInputToGQL
+	fm["PackageInstanceAuthStatusInputToGQL"] = g.PackageInstanceAuthStatusInputToGQL
+	fm["PackageCreateInputToGQL"] = g.PackageCreateInputToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {
