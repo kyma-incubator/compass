@@ -184,20 +184,20 @@ func assertRuntimeConfiguration(t *testing.T, status gqlschema.RuntimeStatus) {
 }
 
 func verifyProviderConfig(t *testing.T, input gqlschema.ProviderSpecificInput, config interface{}) {
-	gardenerConfig, ok := config.(gqlschema.GardenerConfig)
+	gardenerConfig, ok := config.(*gqlschema.GardenerConfig)
 	require.True(t, ok)
 
 	providerSpecificConfig := gardenerConfig.ProviderSpecificConfig
 
 	if input.AzureConfig != nil {
-		azureConfig, ok := providerSpecificConfig.(gqlschema.AzureProviderConfig)
+		azureConfig, ok := providerSpecificConfig.(*gqlschema.AzureProviderConfig)
 		require.True(t, ok)
 
 		assertions.AssertNotNilAndEqualString(t, input.AzureConfig.VnetCidr, azureConfig.VnetCidr)
 	}
 
 	if input.AwsConfig != nil {
-		awsConfig, ok := providerSpecificConfig.(gqlschema.AWSProviderConfig)
+		awsConfig, ok := providerSpecificConfig.(*gqlschema.AWSProviderConfig)
 		require.True(t, ok)
 
 		assertions.AssertNotNilAndEqualString(t, input.AwsConfig.VpcCidr, awsConfig.VpcCidr)
@@ -207,7 +207,7 @@ func verifyProviderConfig(t *testing.T, input gqlschema.ProviderSpecificInput, c
 	}
 
 	if input.GcpConfig != nil {
-		gcpConfig, ok := providerSpecificConfig.(gqlschema.GCPProviderConfig)
+		gcpConfig, ok := providerSpecificConfig.(*gqlschema.GCPProviderConfig)
 		require.True(t, ok)
 
 		assertions.AssertNotNilAndEqualString(t, input.GcpConfig.Zone, gcpConfig.Zone)
