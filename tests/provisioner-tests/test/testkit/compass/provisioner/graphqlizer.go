@@ -27,7 +27,6 @@ func (g *graphqlizer) ProvisionRuntimeInputToGraphQL(in gqlschema.ProvisionRunti
 }
 
 func (g *graphqlizer) RuntimeInputToGraphQL(in gqlschema.RuntimeInput) (string, error) {
-	// TODO: Check if labels are converted correctly
 	return g.genericToGraphQL(in, `{
 		name: "{{ .Name }}"	
 		{{- if .Description }}

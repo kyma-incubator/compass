@@ -40,7 +40,6 @@ func Test_E2E_Gardener(t *testing.T) {
 
 				runtimeName := fmt.Sprintf("provisioner-test-%s-%s", strings.ToLower(provider), uuid.New().String()[:4])
 				provisioningInput.RuntimeInput.Name = runtimeName
-				//runtime := NewRuntime(provisioningInput)
 
 				// Provision runtime
 				log.Log("Starting provisioning...")
