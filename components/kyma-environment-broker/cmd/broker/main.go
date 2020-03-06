@@ -39,6 +39,9 @@ type Config struct {
 		Username string
 		Password string
 	}
+
+	DbInMemory bool `envconfig:"default=false"`
+
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
@@ -90,8 +93,13 @@ func main() {
 	directorClient := director.NewDirectorClient(oauthClient, graphQLClient)
 
 	// create storage
-	db, err := storage.New(cfg.Database.ConnectionURL())
-	fatalOnError(err)
+	var db storage.BrokerStorage
+	if cfg.DbInMemory {
+		db = storage.NewMemoryStorage()
+	} else {
+		db, err = storage.New(cfg.Database.ConnectionURL())
+		fatalOnError(err)
+	}
 
 	// Register disabler. Convention:
 	// {component-name} : {component-disabler-service}
