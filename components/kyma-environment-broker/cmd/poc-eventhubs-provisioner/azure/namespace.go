@@ -5,26 +5,12 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
-	"github.com/Azure/go-autorest/autorest/to"
 )
 
-func PersistEventHubsNamespace(ctx context.Context, config *Config, groupName, namespace string) (*eventhub.EHNamespace, error) {
-	nsClient := getNamespacesClientOrDie(config)
-	future, err := nsClient.CreateOrUpdate(ctx, groupName, namespace, eventhub.EHNamespace{Location: to.StringPtr(config.location)})
-	if err != nil {
-		return nil, err
-	}
-
-	err = future.WaitForCompletionRef(ctx, nsClient.Client)
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := future.Result(nsClient)
-	return &result, err
-}
+const EHNamespaceTagInUse = "in_use"
 
 func GetEventHubsNamespaceAccessKeys(ctx context.Context, config *Config, resourceGroupName, namespaceName, authorizationRuleName string) (*eventhub.AccessKeys, error) {
 	nsClient := getNamespacesClientOrDie(config)
@@ -48,21 +34,37 @@ func getNamespacesClientOrDie(config *Config) eventhub.NamespacesClient {
 	return nsClient
 }
 
-func ListReadyNamespaces(ctx context.Context, config *Config) (eventhub.EHNamespace, error) {
+// MarkNamespaceAsUsed sets a tag to indicate that the Namespace is used
+func MarkNamespaceAsUsed(ctx context.Context, config *Config, resourceGroupName string, namespace eventhub.EHNamespace) (eventhub.EHNamespace, error) {
 	nsClient := getNamespacesClientOrDie(config)
+	trueVal := strconv.FormatBool(true)
+	namespace.Tags[EHNamespaceTagInUse] = &trueVal
+	updatedEHNamespace, err := nsClient.Update(ctx, resourceGroupName, *namespace.Name, namespace)
+	return updatedEHNamespace, err
+}
+
+// GetResourceGroup extract the ResouceGroup from a given EventHub Namespace
+func GetResourceGroup(namespace eventhub.EHNamespace) string {
+	// id has the following format "/subscriptions/<subscription>/resourceGroups/<resource-group>/providers/Microsoft.EventHub/namespaces/<namespace-name>"
+	// the code extract <resource-group> from the string
+	return strings.Split(strings.Split(*namespace.ID, "resourceGroups/")[1], "/")[0]
+}
+
+func GetFirstUnusedNamespaces(ctx context.Context, config *Config) (eventhub.EHNamespace, error) {
+	nsClient := getNamespacesClientOrDie(config)
+	// TODO(nachtmaar): optimize ?
 	ehNamespaceIterator, err := nsClient.ListComplete(ctx)
 	if err != nil {
 		return eventhub.EHNamespace{}, err
 	}
 	for ehNamespaceIterator.NotDone() {
 		ehNamespace := ehNamespaceIterator.Value()
-		if val, ok := ehNamespace.Tags["ready"]; ok {
-			isReady, err := strconv.ParseBool(*val)
-			if err == nil && isReady {
+		if val, ok := ehNamespace.Tags[EHNamespaceTagInUse]; ok {
+			inUse, err := strconv.ParseBool(*val)
+			if err == nil && !inUse {
 				return ehNamespace, nil
 			}
 		}
-		log.Printf("EHNamespace: %+v", ehNamespace)
 		if err := ehNamespaceIterator.NextWithContext(ctx); err != nil {
 			return eventhub.EHNamespace{}, err
 		}

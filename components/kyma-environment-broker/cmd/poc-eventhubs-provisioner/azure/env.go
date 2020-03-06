@@ -9,6 +9,19 @@ import (
 	"github.com/gobuffalo/envy"
 )
 
+func GetConfig(clientID, clientSecret, tenantID, subscriptionID string) *Config {
+	config := NewDefaultConfig()
+
+	azureEnv, _ := azure.EnvironmentFromName("AzurePublicCloud") // shouldn't fail
+	config.authorizationServerURL = azureEnv.ActiveDirectoryEndpoint
+	config.clientID = clientID
+	config.clientSecret = clientSecret
+	config.tenantID = tenantID
+	config.subscriptionID = subscriptionID
+	return config
+}
+
+// TODO(nachtmaar): delete me since GetConfig should be used in KEB later
 func GetConfigFromEnvironment(files ...string) (*Config, error) {
 	config := NewDefaultConfig()
 
@@ -26,25 +39,25 @@ func GetConfigFromEnvironment(files ...string) (*Config, error) {
 		config.keepResources = false
 	}
 
-	config.clientID, err = envy.MustGet("AZURE_CLIENT_ID")
+	clientID, err := envy.MustGet("AZURE_CLIENT_ID")
 	if err != nil {
 		return nil, fmt.Errorf("expected env vars not provided: %s", err)
 	}
 
-	config.clientSecret, err = envy.MustGet("AZURE_CLIENT_SECRET")
+	clientSecret, err := envy.MustGet("AZURE_CLIENT_SECRET")
 	if err != nil {
 		return nil, fmt.Errorf("expected env vars not provided: %s", err)
 	}
 
-	config.tenantID, err = envy.MustGet("AZURE_TENANT_ID")
+	tenantID, err := envy.MustGet("AZURE_TENANT_ID")
 	if err != nil {
 		return nil, fmt.Errorf("expected env vars not provided: %s", err)
 	}
 
-	config.subscriptionID, err = envy.MustGet("AZURE_SUBSCRIPTION_ID")
+	subscriptionID, err := envy.MustGet("AZURE_SUBSCRIPTION_ID")
 	if err != nil {
 		return nil, fmt.Errorf("expected env vars not provided: %s", err)
 	}
 
-	return config, nil
+	return GetConfig(clientID, clientSecret, tenantID, subscriptionID), nil
 }
