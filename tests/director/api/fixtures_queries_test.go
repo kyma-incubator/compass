@@ -20,7 +20,7 @@ func getApplication(t *testing.T, ctx context.Context, id string) graphql.Applic
 
 func registerApplication(t *testing.T, ctx context.Context, name string) graphql.ApplicationExt {
 	in := fixSampleApplicationRegisterInputWithName("first", name)
-	return registerApplicationFromInputWithinTenant(t, ctx, in, defaultTenant)
+	return registerApplicationFromInputWithinTenant(t, ctx, in, testTenants.defaultTenant())
 }
 
 func registerApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, in graphql.ApplicationRegisterInput, tenantID string) graphql.ApplicationExt {
@@ -104,7 +104,7 @@ func registerRuntime(t *testing.T, ctx context.Context, placeholder string) *gra
 }
 
 func registerRuntimeFromInput(t *testing.T, ctx context.Context, input *graphql.RuntimeInput) *graphql.RuntimeExt {
-	return createRuntimeFromInputWithinTenant(t, ctx, input, defaultTenant)
+	return createRuntimeFromInputWithinTenant(t, ctx, input, testTenants.defaultTenant())
 }
 
 func createRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, input *graphql.RuntimeInput, tenant string) *graphql.RuntimeExt {
@@ -121,7 +121,7 @@ func createRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, input
 }
 
 func getRuntime(t *testing.T, ctx context.Context, runtimeID string) *graphql.RuntimeExt {
-	return getRuntimeWithinTenant(t, ctx, runtimeID, defaultTenant)
+	return getRuntimeWithinTenant(t, ctx, runtimeID, testTenants.defaultTenant())
 }
 
 func getRuntimeWithinTenant(t *testing.T, ctx context.Context, runtimeID string, tenant string) *graphql.RuntimeExt {
@@ -144,7 +144,7 @@ func setRuntimeLabel(t *testing.T, ctx context.Context, runtimeID string, labelK
 }
 
 func unregisterRuntime(t *testing.T, id string) {
-	unregisterRuntimeWithinTenant(t, id, defaultTenant)
+	unregisterRuntimeWithinTenant(t, id, testTenants.defaultTenant())
 }
 
 func unregisterRuntimeWithinTenant(t *testing.T, id string, tenantID string) {
@@ -190,7 +190,7 @@ func createLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, key st
 }
 
 func deleteLabelDefinition(t *testing.T, ctx context.Context, labelDefinitionKey string, deleteRelatedResources bool) {
-	deleteLabelDefinitionWithinTenant(t, ctx, labelDefinitionKey, deleteRelatedResources, defaultTenant)
+	deleteLabelDefinitionWithinTenant(t, ctx, labelDefinitionKey, deleteRelatedResources, testTenants.defaultTenant())
 }
 
 func deleteLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, labelDefinitionKey string, deleteRelatedResources bool, tenantID string) {

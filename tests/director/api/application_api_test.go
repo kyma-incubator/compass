@@ -1096,7 +1096,7 @@ func TestTenantSeparation(t *testing.T) {
 			}
 		}`,
 		tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
-	customTenant := tenants["Test1"]
+	customTenant := testTenants.get("Test1")
 	anotherTenantsApps := graphql.ApplicationPage{}
 	// THEN
 	err = tc.RunOperationWithCustomTenant(ctx, customTenant, getAppReq, &anotherTenantsApps)
@@ -1159,7 +1159,7 @@ func TestQueryAPIRuntimeAuths(t *testing.T) {
 				},
 			}
 
-			app := registerApplicationFromInputWithinTenant(t, ctx, appInput, defaultTenant)
+			app := registerApplicationFromInputWithinTenant(t, ctx, appInput, testTenants.defaultTenant())
 			defer unregisterApplication(t, app.ID)
 
 			var rtmIDs []string

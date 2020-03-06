@@ -480,7 +480,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 
 		t.Log("Create runtime")
 		rtm := registerRuntime(t, ctx, "rtm")
-		defer unregisterRuntimeWithinTenant(t, rtm.ID, defaultTenant)
+		defer unregisterRuntimeWithinTenant(t, rtm.ID, testTenants.defaultTenant())
 
 		t.Log("Set labels on application and runtime")
 		setApplicationLabel(t, ctx, app.ID, labelKey, map[string]interface{}{labelKey: "app"})
@@ -765,7 +765,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 
 func TestListLabelDefinitions(t *testing.T) {
 	//GIVEN
-	tenantID := tenants["Test3"]
+	tenantID := testTenants.get("Test3")
 	ctx := context.TODO()
 	firstSchema := map[string]interface{}{
 		"test": "test",
@@ -792,7 +792,7 @@ func TestListLabelDefinitions(t *testing.T) {
 func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	tenantID := tenants["Test4"]
+	tenantID := testTenants.get("Test4")
 	name := "deleting-last-scenario-for-app-fail"
 	scenarios := []string{"DEFAULT", "Christmas", "New Year"}
 

@@ -30,24 +30,8 @@ type testContext struct {
 
 const defaultScopes = "runtime:write application:write tenant:read label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage"
 
-func setTestContext() {
-	var err error
-
-	tc, err = newTestContext()
-	if err != nil {
-		panic(errors.Wrap(err, "while test context setup"))
-	}
-
-	setDefaultTenant()
-
-	tc, err = newTestContext()
-	if err != nil {
-		panic(errors.Wrap(err, "while test context with internal tenant setup"))
-	}
-
-}
-
 func newTestContext() (*testContext, error) {
+
 	scopesStr := os.Getenv("ALL_SCOPES")
 	if scopesStr == "" {
 		scopesStr = defaultScopes
@@ -55,7 +39,7 @@ func newTestContext() (*testContext, error) {
 
 	currentScopes := strings.Split(scopesStr, " ")
 
-	bearerToken, err := jwtbuilder.Do(defaultTenant, currentScopes)
+	bearerToken, err := jwtbuilder.Do(testTenants.defaultTenant(), currentScopes)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building JWT token")
 	}
@@ -91,11 +75,11 @@ func (tc *testContext) RunOperationWithCustomTenant(ctx context.Context, tenant 
 }
 
 func (tc *testContext) RunOperationWithCustomScopes(ctx context.Context, scopes []string, req *gcli.Request, resp interface{}) error {
-	return tc.runCustomOperation(ctx, defaultTenant, scopes, req, resp)
+	return tc.runCustomOperation(ctx, testTenants.defaultTenant(), scopes, req, resp)
 }
 
 func (tc *testContext) RunOperationWithoutTenant(ctx context.Context, req *gcli.Request, resp interface{}) error {
-	return tc.runCustomOperation(ctx, emptyTenant, tc.currentScopes, req, resp)
+	return tc.runCustomOperation(ctx, testTenants.emptyTenant(), tc.currentScopes, req, resp)
 }
 
 func (tc *testContext) runCustomOperation(ctx context.Context, tenant string, scopes []string, req *gcli.Request, resp interface{}) error {

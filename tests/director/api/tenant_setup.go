@@ -1,26 +1,18 @@
 package api
 
 import (
-	"context"
 	"log"
-
-	gcli "github.com/machinebox/graphql"
-	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
-var defaultTenant = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
-
-var tenants = make(map[string]string)
-
 const (
-	emptyTenant  = ""
-	testTenant   = "Test Default"
-	insertQuery  = `INSERT INTO public.business_tenant_mappings (id, external_name, external_tenant, provider_name, status) VALUES ($1, $2, $3, $4, $5)`
-	deleteQuery  = `DELETE FROM public.business_tenant_mappings WHERE provider_name = $1`
-	testProvider = "Compass Tests"
+	insertQuery       = `INSERT INTO public.business_tenant_mappings (id, external_name, external_tenant, provider_name, status) VALUES ($1, $2, $3, $4, $5)`
+	selectQuery       = `SELECT external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings`
+	deleteQuery       = `DELETE FROM public.business_tenant_mappings WHERE provider_name = $1`
+	testProvider      = "Compass Tests"
+	testDefaultTenant = "Test Default"
 )
 
 type Tenant struct {
@@ -42,6 +34,7 @@ func insertTenants(transact persistence.Transactioner) {
 	testTenants := fixTestTenants()
 
 	tx, err := transact.Begin()
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,6 +50,54 @@ func insertTenants(transact persistence.Transactioner) {
 	err = tx.Commit()
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func getTenants(transact persistence.Transactioner) {
+
+	tx, err := transact.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var allTenants []Tenant
+
+	err = tx.Select(&allTenants, selectQuery)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	testTenants.mapTenants(allTenants)
+
+	err = tx.Commit()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+type TestTenants struct {
+	allTenantIDs map[string]string
+}
+
+var testTenants TestTenants
+
+func (t TestTenants) get(name string) string {
+	return t.allTenantIDs[name]
+}
+
+func (t TestTenants) defaultTenant() string {
+	return t.allTenantIDs[testDefaultTenant]
+}
+
+func (t TestTenants) emptyTenant() string {
+	return ""
+}
+
+func (t *TestTenants) mapTenants(tenants []Tenant) {
+	t.allTenantIDs = make(map[string]string)
+
+	for _, v := range tenants {
+		t.allTenantIDs[v.Name] = v.ExternalTenant
 	}
 }
 
@@ -126,28 +167,4 @@ func tenantsToGraphql(tenants []Tenant) []*graphql.Tenant {
 	}
 
 	return toReturn
-}
-
-func setDefaultTenant() {
-	request := gcli.NewRequest(
-		`query {
-				result: tenants {
-				id
-				name
-				internalID
-					}
-				}`)
-
-	var output []*graphql.Tenant
-	err := tc.RunOperation(context.TODO(), request, &output)
-	if err != nil {
-		panic(errors.Wrap(err, "while getting default tenant"))
-	}
-
-	for _, v := range output {
-		tenants[*v.Name] = v.InternalID
-		if *v.Name == testTenant {
-			defaultTenant = v.InternalID
-		}
-	}
 }

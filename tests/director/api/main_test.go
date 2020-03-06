@@ -30,7 +30,12 @@ func TestMain(m *testing.M) {
 
 	insertTenants(transact)
 
-	setTestContext()
+	getTenants(transact)
+
+	tc, err = newTestContext()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	exitVal := m.Run()
 

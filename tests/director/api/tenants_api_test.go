@@ -21,7 +21,7 @@ func TestQueryTenants(t *testing.T) {
 	defaultTenants := fixDefaultTenants()
 
 	// WHEN
-	t.Log("List tenants")
+	t.Log("List tenant")
 	err := tc.RunOperationWithoutTenant(ctx, getTenantsRequest, &output)
 	require.NoError(t, err)
 
