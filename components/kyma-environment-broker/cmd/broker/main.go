@@ -132,6 +132,9 @@ func main() {
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
+	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
+
+	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
@@ -140,6 +143,8 @@ func main() {
 
 	stepManager.AddStep(10, runtimeStep)
 	stepManager.AddStep(2, smOverrideStep)
+	stepManager.AddStep(1, backupSetupStep)
+	stepManager.AddStep(2, runtimeStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())

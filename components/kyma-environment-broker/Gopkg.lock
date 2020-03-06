@@ -21,6 +21,32 @@
   version = "v0.10.2"
 
 [[projects]]
+  digest = "1:ad48768288ddee76647e7ce9bca75b45fbb2f815baea259d5160fb7985af6aa3"
+  name = "github.com/Azure/azure-sdk-for-go"
+  packages = [
+    "storage",
+    "version",
+  ]
+  pruneopts = "UT"
+  revision = "5bc8dc19c0b2d23c0d0c0fe40e1d13a6ec4c12ce"
+  version = "v40.1.0"
+
+[[projects]]
+  digest = "1:fda5705be78a1ff2d0b25c6e930141182ae71d2e4f145d67c6f2eaf4fad34d62"
+  name = "github.com/Azure/go-autorest"
+  packages = [
+    "autorest",
+    "autorest/adal",
+    "autorest/azure",
+    "autorest/date",
+    "logger",
+    "tracing",
+  ]
+  pruneopts = "UT"
+  revision = "327ff6ce8b902f9afe648d5ea8ff6dc26c26f150"
+  version = "v13.4.0"
+
+[[projects]]
   digest = "1:3b10c6fd33854dc41de2cf78b7bae105da94c2789b6fa5b9ac9e593ea43484ac"
   name = "github.com/Masterminds/goutils"
   packages = ["."]
@@ -113,6 +139,14 @@
   pruneopts = "UT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
+
+[[projects]]
+  digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
 
 [[projects]]
   digest = "1:5d7f88f9487f370e3ae52155465156370fc5798102d811d2d4448d2385ccaf67"
@@ -1027,6 +1061,7 @@
   analyzer-version = 1
   input-imports = [
     "code.cloudfoundry.org/lager",
+    "github.com/Azure/azure-sdk-for-go/storage",
     "github.com/Masterminds/sprig",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
     "github.com/gocraft/dbr",
