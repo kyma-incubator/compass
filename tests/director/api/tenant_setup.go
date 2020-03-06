@@ -42,6 +42,10 @@ func insertTenants(transact persistence.Transactioner) {
 	testTenants := fixTestTenants()
 
 	tx, err := transact.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	for _, v := range testTenants {
 		_, err := tx.Exec(insertQuery, v.ID, v.Name, v.ExternalTenant, v.ProviderName, v.Status)
 
@@ -49,25 +53,29 @@ func insertTenants(transact persistence.Transactioner) {
 			log.Fatal(err)
 		}
 	}
+
 	err = tx.Commit()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func deleteTenants(transact persistence.Transactioner) {
 
 	tx, err := transact.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	_, err = tx.Exec(deleteQuery, testProvider)
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	err = tx.Commit()
-
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func fixTestTenants() []Tenant {
@@ -130,7 +138,7 @@ func setDefaultTenant() {
 					}
 				}`)
 
-	output := []*graphql.Tenant{}
+	var output []*graphql.Tenant
 	err := tc.RunOperation(context.TODO(), request, &output)
 	if err != nil {
 		panic(errors.Wrap(err, "while getting default tenant"))
