@@ -40,13 +40,6 @@ provisioner:
     secretName: "gopher-canary-gardener"
     # name of the gardener project
     projectName: "gopher"
-  gcp:
-    # name of the secret in the gardener which holds the GCP Service Account key
-    secretName: "gardener-canary-gopher"
-  azure:
-    secretName: "my-azure-secret"
-  aws:
-    secretName: "aws-secret-name"
 
 additionalRuntimeComponents:
   - name: "service-manager-proxy"

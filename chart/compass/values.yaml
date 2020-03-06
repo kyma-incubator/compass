@@ -59,6 +59,9 @@ global:
       provisioner:
         dir:
         version: "PR-565"
+      e2e_provisioning:
+        dir:
+        version: "PR-736"
       connectivity_adapter:
         dir:
         version: "PR-891"

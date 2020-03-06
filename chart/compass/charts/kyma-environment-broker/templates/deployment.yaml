@@ -44,12 +44,6 @@ spec:
               value: "{{ .Values.enablePlans }}"
             - name: APP_PROVISIONING_URL
               value: "{{ .Values.provisioner.URL }}"
-            - name: APP_PROVISIONING_GCP_SECRET_NAME
-              value: "{{ .Values.provisioner.gcp.secretName }}"
-            - name: APP_PROVISIONING_AWS_SECRET_NAME
-              value: "{{ .Values.provisioner.aws.secretName }}"
-            - name: APP_PROVISIONING_AZURE_SECRET_NAME
-              value: "{{ .Values.provisioner.azure.secretName }}"
             - name: APP_PORT
               value: "{{ .Values.broker.port }}"
             - name: APP_AUTH_USERNAME
