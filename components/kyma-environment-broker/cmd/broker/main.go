@@ -132,17 +132,17 @@ func main() {
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
-	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
+	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager, accountProvider)
 
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
 	stepManager.InitStep(initialisation)
-	stepManager.AddStep(1, resolveCredentialsStep)
 
-	stepManager.AddStep(1, backupSetupStep)
-	stepManager.AddStep(2, runtimeStep)
+	stepManager.AddStep(1, resolveCredentialsStep)
+	stepManager.AddStep(2, backupSetupStep)
+	stepManager.AddStep(3, runtimeStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
