@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	event_hub "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
 	"log"
 	"net/http"
 	"os"
+
+	event_hub "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
