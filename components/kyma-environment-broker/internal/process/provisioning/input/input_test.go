@@ -43,7 +43,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	// when
 	input, err := builder.
 		SetProvisioningParameters(internal.ProvisioningParametersDTO{
-			Name: "azure-cluster",
+			Name:         "azure-cluster",
 			TargetSecret: ptr.String("azure-secret"),
 		}).
 		SetRuntimeLabels(fixID, fixID).
