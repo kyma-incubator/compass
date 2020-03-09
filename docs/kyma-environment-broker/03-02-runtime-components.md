@@ -16,7 +16,6 @@
 ## Optional components
 
 This section presents how to add or remove the possibility to disable components, which makes them either optional or required during the Kyma installation. Currently, the optional components are as follows:
-- Loki
 - Kiali
 - Jaeger
 
@@ -38,7 +37,7 @@ type OptionalComponentDisabler interface {
 	Disable(components internal.ComponentConfigurationInputList) internal.ComponentConfigurationInputList
 ```
 
->**NOTE**: Check the [LokiDisabler](../../components/kyma-environment-broker/internal/runtime/loki_disabler.go) as an example of custom service for disabling components.
+>**NOTE**: Check the [CustomDisablerExample](../../components/kyma-environment-broker/internal/runtime/custom_disabler_example.go) as an example of custom service for disabling components.
 
 In each method, the framework injects the  **components** parameter which is a list of components that are sent to the Runtime Provisioner. The implemented method is responsible for disabling component and as a result, returns a modified list. 
   
@@ -50,7 +49,6 @@ This interface allows you to easily register the disabler in the [`cmd/broker/ma
 //
 // Using map is intentional - we ensure that component name is not duplicated.
 optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Loki":       runtime.NewLokiDisabler(),
 		"Kiali":      runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
 		"Jaeger":     runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
 }

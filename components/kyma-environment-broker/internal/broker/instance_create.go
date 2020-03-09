@@ -29,14 +29,15 @@ type (
 )
 
 type ProvisionEndpoint struct {
-	operationsStorage storage.Operations
-	queue             Queue
-	builderFactory    PlanValidator
-	dumper            StructDumper
-	enabledPlanIDs    map[string]struct{}
+	operationsStorage    storage.Operations
+	queue                Queue
+	builderFactory       PlanValidator
+	dumper               StructDumper
+	enabledPlanIDs       map[string]struct{}
+	plansSchemaValidator PlansSchemaValidator
 }
 
-func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory PlanValidator, dumper StructDumper) *ProvisionEndpoint {
+func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory PlanValidator, validator PlansSchemaValidator, dumper StructDumper) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
 		id := planIDsMapping[planName]
@@ -44,11 +45,12 @@ func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, bui
 	}
 
 	return &ProvisionEndpoint{
-		operationsStorage: operationsStorage,
-		queue:             q,
-		builderFactory:    builderFactory,
-		dumper:            dumper,
-		enabledPlanIDs:    enabledPlanIDs,
+		plansSchemaValidator: validator,
+		operationsStorage:    operationsStorage,
+		queue:                q,
+		builderFactory:       builderFactory,
+		dumper:               dumper,
+		enabledPlanIDs:       enabledPlanIDs,
 	}
 }
 
@@ -112,7 +114,16 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails) 
 		return ersContext, parameters, errors.Errorf("plan ID %q is not recognized", details.PlanID)
 	}
 
-	ersContext, err := b.extractERSContext(details)
+	result, err := b.plansSchemaValidator[details.PlanID].ValidateString(string(details.RawParameters))
+	if err != nil {
+		return ersContext, parameters, errors.Wrap(err, "while executing JSON schema validator")
+	}
+
+	if !result.Valid {
+		return ersContext, parameters, errors.Wrapf(result.Error, "while validating input parameters")
+	}
+
+	ersContext, err = b.extractERSContext(details)
 	if err != nil {
 		return ersContext, parameters, errors.Wrap(err, "while extracting ers context")
 	}

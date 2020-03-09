@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -45,6 +46,7 @@ func TestProvision_Provision(t *testing.T) {
 			memoryStorage.Operations(),
 			queue,
 			factoryBuilder,
+			fixAlwaysPassJSONValidator(),
 			&broker.DumyDumper{},
 		)
 
@@ -88,6 +90,7 @@ func TestProvision_Provision(t *testing.T) {
 			memoryStorage.Operations(),
 			nil,
 			factoryBuilder,
+			fixAlwaysPassJSONValidator(),
 			&broker.DumyDumper{},
 		)
 
@@ -121,6 +124,7 @@ func TestProvision_Provision(t *testing.T) {
 			memoryStorage.Operations(),
 			nil,
 			factoryBuilder,
+			fixAlwaysPassJSONValidator(),
 			&broker.DumyDumper{},
 		)
 
@@ -136,6 +140,46 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Error(t, err)
 		assert.Empty(t, response.OperationData)
 	})
+
+	t.Run("return error on wrong input parameters", func(t *testing.T) {
+		// given
+		// #setup memory storage
+		memoryStorage := storage.NewMemoryStorage()
+		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
+		require.NoError(t, err)
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", planID).Return(true)
+
+		fixValidator, err := broker.NewPlansSchemaValidator()
+		require.NoError(t, err)
+
+		// #create provisioner endpoint
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			memoryStorage.Operations(),
+			nil,
+			factoryBuilder,
+			fixValidator,
+			&broker.DumyDumper{},
+		)
+
+		// when
+		response, err := provisionEndpoint.Provision(context.TODO(), instanceID, domain.ProvisionDetails{
+			ServiceID: serviceID,
+			PlanID:    planID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{
+							"name": "%s", 
+							"components": ["wrong component name"] 
+							}`, clusterName)),
+			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4")),
+		}, true)
+
+		// then
+		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Jaeger"`)
+		assert.False(t, response.IsAsync)
+		assert.Empty(t, response.OperationData)
+	})
 }
 
 func fixExistOperation() internal.ProvisioningOperation {
@@ -148,4 +192,16 @@ func fixExistOperation() internal.ProvisioningOperation {
 			`{"plan_id":"%s", "service_id": "%s", "ers_context":{"globalaccount_id": "%s"}, "parameters":{"name": "%s"}}`,
 			planID, serviceID, globalAccountID, clusterName),
 	}
+}
+
+func fixAlwaysPassJSONValidator() broker.PlansSchemaValidator {
+	validatorMock := &automock.JSONSchemaValidator{}
+	validatorMock.On("ValidateString", mock.Anything).Return(jsonschema.ValidationResult{Valid: true}, nil)
+
+	fixValidator := broker.PlansSchemaValidator{
+		broker.GcpPlanID:   validatorMock,
+		broker.AzurePlanID: validatorMock,
+	}
+
+	return fixValidator
 }

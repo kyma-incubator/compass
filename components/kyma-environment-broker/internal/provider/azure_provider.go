@@ -14,7 +14,7 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			DiskType:          "Standard_LRS",
 			VolumeSizeGb:      50,
 			NodeCount:         3,
-			MachineType:       "Standard_D2_v3",
+			MachineType:       "Standard_D8_v3",
 			Region:            "westeurope",
 			Provider:          "azure",
 			WorkerCidr:        "10.250.0.0/19",
