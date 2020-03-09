@@ -97,7 +97,7 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 		return operation, 1 * time.Minute, nil
 	}
 
-	logger.Infof("Resolved %s as target secret name to use for cluster provisioning for global account ID %s on Hyperscaler %s", pp.Parameters.TargetSecret, pp.ErsContext.GlobalAccountID, hypType)
+	logger.Infof("Resolved %s as target secret name to use for cluster provisioning for global account ID %s on Hyperscaler %s", *pp.Parameters.TargetSecret, pp.ErsContext.GlobalAccountID, hypType)
 
 	return *updatedOperation, 0, nil
 }
