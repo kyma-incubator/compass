@@ -85,7 +85,7 @@ func (s *ServiceManagerOverridesStep) shouldOverride(reqCreds *internal.ServiceM
 		return true
 	}
 
-	if s.serviceManager.OverrideMode == SMOverrideModeWhenNotSendInRequest && reqCreds == nil {
+	if s.serviceManager.OverrideMode == SMOverrideModeWhenNotSentInRequest && reqCreds == nil {
 		return true
 	}
 

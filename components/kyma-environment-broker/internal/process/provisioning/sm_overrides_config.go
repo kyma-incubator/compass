@@ -19,13 +19,13 @@ type ServiceManagerOverrideMode string
 
 const (
 	SMOverrideModeAlways               ServiceManagerOverrideMode = "Always"
-	SMOverrideModeWhenNotSendInRequest ServiceManagerOverrideMode = "WhenNotSendInRequest"
+	SMOverrideModeWhenNotSentInRequest ServiceManagerOverrideMode = "WhenNotSentInRequest"
 	SMOverrideModeNever                ServiceManagerOverrideMode = "Never"
 )
 
 func (m ServiceManagerOverrideMode) IsUnknown() bool {
 	switch m {
-	case SMOverrideModeAlways, SMOverrideModeWhenNotSendInRequest, SMOverrideModeNever:
+	case SMOverrideModeAlways, SMOverrideModeWhenNotSentInRequest, SMOverrideModeNever:
 		return false
 	default:
 		return true
@@ -33,11 +33,11 @@ func (m ServiceManagerOverrideMode) IsUnknown() bool {
 }
 
 func (m ServiceManagerOverrideMode) Names() string {
-	all := []string{string(SMOverrideModeAlways), string(SMOverrideModeWhenNotSendInRequest), string(SMOverrideModeNever)}
+	all := []string{string(SMOverrideModeAlways), string(SMOverrideModeWhenNotSentInRequest), string(SMOverrideModeNever)}
 	return strings.Join(all, ",")
 }
 
-// Unmarshal provides custom parsing of Log Level.
+// Unmarshal provides custom parsing of service manager credential mode.
 // Implements envconfig.Unmarshal interface.
 func (m *ServiceManagerOverrideMode) Unmarshal(in string) error {
 	*m = ServiceManagerOverrideMode(in)

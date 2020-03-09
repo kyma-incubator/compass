@@ -121,7 +121,7 @@ func main() {
 	stepManager := process.NewManager(db.Operations(), logs)
 	stepManager.InitStep(initialisation)
 
-	stepManager.AddStep(1, runtimeStep)
+	stepManager.AddStep(10, runtimeStep)
 	stepManager.AddStep(1, smOverrideStep)
 
 	queue := process.NewQueue(stepManager)

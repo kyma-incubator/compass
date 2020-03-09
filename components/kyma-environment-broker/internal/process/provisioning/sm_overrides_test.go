@@ -49,7 +49,7 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 		},
 		"apply override for Service Manager credentials because they are not present in request": {
 			requestParams:  "{}",
-			overrideParams: ts.SMOverrideConfig(SMOverrideModeWhenNotSendInRequest, "over-url", "over-user", "over-pass"),
+			overrideParams: ts.SMOverrideConfig(SMOverrideModeWhenNotSentInRequest, "over-url", "over-user", "over-pass"),
 
 			expCredentialsValues: []*gqlschema.ConfigEntryInput{
 				{Key: "config.sm.url", Value: "over-url"},
@@ -59,7 +59,7 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 		},
 		"do not apply override for Service Manager credentials because they are present in request": {
 			requestParams:  ts.SMRequestParameters("req-url", "req-user", "req-pass"),
-			overrideParams: ts.SMOverrideConfig(SMOverrideModeWhenNotSendInRequest, "over-url", "over-user", "over-pass"),
+			overrideParams: ts.SMOverrideConfig(SMOverrideModeWhenNotSentInRequest, "over-url", "over-user", "over-pass"),
 
 			expCredentialsValues: []*gqlschema.ConfigEntryInput{
 				{Key: "config.sm.url", Value: "req-url"},
