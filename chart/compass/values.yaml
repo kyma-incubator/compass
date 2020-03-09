@@ -22,7 +22,7 @@ global:
       version: "PR-867"
     director:
       dir:
-      version: "PR-902"
+      version: "PR-911"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -31,7 +31,7 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-917"
+      version: "PR-911"
     provisioner:
       dir:
       version: "PR-802"
@@ -46,7 +46,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-917"
+        version: "PR-935"
       connector:
         dir:
         version: "02e8358c"

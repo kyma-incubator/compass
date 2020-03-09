@@ -1,11 +1,13 @@
-package apptemplate
+package graphqlizer
 
 import (
 	"bytes"
+	"encoding/json"
+	"reflect"
+	"strconv"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
 )
@@ -13,14 +15,14 @@ import (
 // Graphqlizer is responsible for converting Go objects to input arguments in graphql format
 type Graphqlizer struct{}
 
-func (g *Graphqlizer) ApplicationCreateInputToGQL(in graphql.ApplicationRegisterInput) (string, error) {
+func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegisterInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
 		{{- if .ProviderName }}
-		providerName: "{{.ProviderName}}",
+		providerName: "{{ .ProviderName }}",
 		{{- end }}
 		{{- if .Description }}
-		description: "{{.Description}}",
+		description: "{{ .Description }}",
 		{{- end }}
         {{- if .Labels }}
 		labels: {{ LabelsToGQL .Labels}},
@@ -37,13 +39,13 @@ func (g *Graphqlizer) ApplicationCreateInputToGQL(in graphql.ApplicationRegister
 		{{- if .APIDefinitions }}
 		apiDefinitions: [
 			{{- range $i, $e := .APIDefinitions }}
-			{{- if $i}}, {{- end}} {{ APIDefinitionInputToGQL $e }}
+				{{- if $i}}, {{- end}} {{ APIDefinitionInputToGQL $e }}
 			{{- end }}],
 		{{- end }}
 		{{- if .EventDefinitions }}
 		eventDefinitions: [
 			{{- range $i, $e := .EventDefinitions }}
-			{{- if $i}}, {{- end}} {{ EventDefinitionInputToGQL $e }}
+				{{- if $i}}, {{- end}} {{ EventDefinitionInputToGQL $e }}
 			{{- end }}],
 		{{- end }}
 		{{- if .Documents }} 
@@ -52,9 +54,50 @@ func (g *Graphqlizer) ApplicationCreateInputToGQL(in graphql.ApplicationRegister
 				{{- if $i}}, {{- end}} {{- DocumentInputToGQL $e }}
 			{{- end }} ],
 		{{- end }}
+		{{- if .Packages }} 
+		packages: [
+			{{- range $i, $e := .Packages }} 
+				{{- if $i}}, {{- end}} {{- PackageCreateInputToGQL $e }}
+			{{- end }} ],
+		{{- end }}
 		{{- if .IntegrationSystemID }}
 		integrationSystemID: "{{ .IntegrationSystemID }}",
 		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .ProviderName }}
+		providerName: "{{ .ProviderName }}",
+		{{- end }}
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+		{{- if .HealthCheckURL }}
+		healthCheckURL: "{{ .HealthCheckURL }}",
+		{{- end }}
+		{{- if .IntegrationSystemID }}
+		integrationSystemID: "{{ .IntegrationSystemID }}",
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTemplateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+		applicationInput: {{ ApplicationRegisterInputToGQL .ApplicationInput}},
+		{{- if .Placeholders }}
+		placeholders: [
+			{{- range $i, $e := .Placeholders }} 
+				{{- if $i}}, {{- end}} {{ PlaceholderDefinitionInputToGQL $e }}
+			{{- end }} ],
+		{{- end }}
+		accessLevel: {{.AccessLevel}},
 	}`)
 }
 
@@ -146,14 +189,7 @@ func (g *Graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
 }
 
 func (g *Graphqlizer) LabelsToGQL(in graphql.Labels) (string, error) {
-	return g.genericToGQL(in, `{
-		{{- range $k,$v := . }}
-			{{$k}}: [
-				{{- range $i,$j := $v }}
-					{{- if $i}},{{- end}}"{{$j}}"
-				{{- end }} ],
-		{{- end}}
-	}`)
+	return g.marshal(in), nil
 }
 
 func (g *Graphqlizer) HTTPHeadersToGQL(in graphql.HttpHeaders) (string, error) {
@@ -217,7 +253,9 @@ func (g *Graphqlizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput)
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end }}
+		{{- if .Spec }}
 		spec: {{ EventAPISpecInputToGQL .Spec }},
+		{{- end }}
 		{{- if .Group }}
 		group: "{{.Group}}", 
 		{{- end }}
@@ -228,9 +266,10 @@ func (g *Graphqlizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput)
 }
 
 func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string, error) {
+	in.Data = quoteString(in.Data)
 	return g.genericToGQL(in, `{
 		{{- if .Data }}
-		data: "{{.Data}}",
+		data: {{.Data}},
 		{{- end }}
 		type: {{.Type}},
 		{{- if .FetchRequest }}
@@ -241,9 +280,10 @@ func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string,
 }
 
 func (g *Graphqlizer) ApiSpecInputToGQL(in graphql.APISpecInput) (string, error) {
+	in.Data = quoteString(in.Data)
 	return g.genericToGQL(in, `{
 		{{- if .Data}}
-		data: "{{.Data}}",
+		data: {{.Data}},
 		{{- end}}	
 		type: {{.Type}},
 		format: {{.Format}},
@@ -268,8 +308,181 @@ func (g *Graphqlizer) VersionInputToGQL(in graphql.VersionInput) (string, error)
 	}`)
 }
 
+func (g *Graphqlizer) RuntimeInputToGQL(in graphql.RuntimeInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+		{{- if .Labels }}
+		labels: {{ LabelsToGQL .Labels}},
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) LabelDefinitionInputToGQL(in graphql.LabelDefinitionInput) (string, error) {
+	return g.genericToGQL(in, `{
+		key: "{{.Key}}",
+		{{- if .Schema }}
+		schema: {{.Schema}},
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) LabelFilterToGQL(in graphql.LabelFilter) (string, error) {
+	return g.genericToGQL(in, `{
+		key: "{{.Key}}",
+		{{- if .Query }}
+		query: "{{.Query}}",
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) IntegrationSystemInputToGQL(in graphql.IntegrationSystemInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) PlaceholderDefinitionInputToGQL(in graphql.PlaceholderDefinitionInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) TemplateValueInputToGQL(in graphql.TemplateValueInput) (string, error) {
+	return g.genericToGQL(in, `{
+		placeholder: "{{.Placeholder}}"
+		value: "{{.Value}}"
+	}`)
+}
+
+func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFromTemplateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		templateName: "{{.TemplateName}}"
+		{{- if .Values }}
+		values: [
+			{{- range $i, $e := .Values }} 
+				{{- if $i}}, {{- end}} {{ TemplateValueInput $e }}
+			{{- end }} ],
+		{{- end }},
+	}`)
+}
+
+func (g *Graphqlizer) PackageCreateInputToGQL(in graphql.PackageCreateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{ .Name }}"
+		{{- if .Description }}
+		description: "{{ .Description }}"
+		{{- end }}
+		{{- if .InstanceAuthRequestInputSchema }}
+		instanceAuthRequestInputSchema: {{ .InstanceAuthRequestInputSchema }}
+		{{- end }}
+		{{- if .DefaultInstanceAuth }}
+		defaultInstanceAuth: {{- AuthInputToGQL .DefaultInstanceAuth }}
+		{{- end }}
+		{{- if .APIDefinitions }}
+		apiDefinitions: [
+			{{- range $i, $e := .APIDefinitions }}
+				{{- if $i}}, {{- end}} {{ APIDefinitionInputToGQL $e }}
+			{{- end }}],
+		{{- end }}
+		{{- if .EventDefinitions }}
+		eventDefinitions: [
+			{{- range $i, $e := .EventDefinitions }}
+				{{- if $i}}, {{- end}} {{ EventDefinitionInputToGQL $e }}
+			{{- end }}],
+		{{- end }}
+		{{- if .Documents }} 
+		documents: [
+			{{- range $i, $e := .Documents }} 
+				{{- if $i}}, {{- end}} {{- DocumentInputToGQL $e }}
+			{{- end }} ],
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) PackageUpdateInputToGQL(in graphql.PackageUpdateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{ .Name }}"
+		{{- if .Description }}
+		description: "{{ .Description }}"
+		{{- end }}
+		{{- if .InstanceAuthRequestInputSchema }}
+		instanceAuthRequestInputSchema: {{ .InstanceAuthRequestInputSchema }}
+		{{- end }}
+		{{- if .DefaultInstanceAuth }}
+		defaultInstanceAuth: {{- AuthInputToGQL .DefaultInstanceAuth }}
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) PackageInstanceAuthStatusInputToGQL(in graphql.PackageInstanceAuthStatusInput) (string, error) {
+	return g.genericToGQL(in, `{
+		condition: {{ .Condition }}
+		{{- if .Message }}
+		message: "{{ .Message }}"
+		{{- end }}
+		{{- if .Reason }}
+		reason: "{{ .Reason }}"
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) PackageInstanceAuthRequestInputToGQL(in graphql.PackageInstanceAuthRequestInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .Context }}
+		context: {{ .Context }}
+		{{- end }}
+		{{- if .InputParams }}
+		inputParams: {{ .InputParams }}
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) PackageInstanceAuthSetInputToGQL(in graphql.PackageInstanceAuthSetInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .Auth }}
+		auth: {{- AuthInputToGQL .Auth}}
+		{{- end }}
+		{{- if .Status }}
+		status: {{- PackageInstanceAuthStatusInputToGQL .Status }}
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) marshal(obj interface{}) string {
+	var out string
+
+	val := reflect.ValueOf(obj)
+
+	if val.Kind() == reflect.Map {
+		s, err := g.genericToGQL(obj, `{ {{- range $k,$v := . }}{{ $k }}:{{ marshal $v }},{{ end -}} }`)
+		if err != nil {
+			return ""
+		}
+		out = s
+	} else {
+		marshalled, err := json.Marshal(obj)
+		if err != nil {
+			return ""
+		}
+		out = string(marshalled)
+	}
+
+	return out
+}
+
 func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
+	fm["marshal"] = g.marshal
+	fm["ApplicationRegisterInputToGQL"] = g.ApplicationRegisterInputToGQL
 	fm["DocumentInputToGQL"] = g.DocumentInputToGQL
 	fm["FetchRequesstInputToGQL"] = g.FetchRequestInputToGQL
 	fm["AuthInputToGQL"] = g.AuthInputToGQL
@@ -285,6 +498,10 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["CredentialDataInputToGQL"] = g.CredentialDataInputToGQL
 	fm["CSRFTokenCredentialRequestAuthInputToGQL"] = g.CSRFTokenCredentialRequestAuthInputToGQL
 	fm["CredentialRequestAuthInputToGQL"] = g.CredentialRequestAuthInputToGQL
+	fm["PlaceholderDefinitionInputToGQL"] = g.PlaceholderDefinitionInputToGQL
+	fm["TemplateValueInput"] = g.TemplateValueInputToGQL
+	fm["PackageInstanceAuthStatusInputToGQL"] = g.PackageInstanceAuthStatusInputToGQL
+	fm["PackageCreateInputToGQL"] = g.PackageCreateInputToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {
@@ -297,4 +514,12 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 		return "", errors.Wrap(err, "while executing template")
 	}
 	return b.String(), nil
+}
+
+func quoteString(in *graphql.CLOB) *graphql.CLOB {
+	if in != nil {
+		quotedData := strconv.Quote(string(*in))
+		return (*graphql.CLOB)(&quotedData)
+	}
+	return nil
 }
