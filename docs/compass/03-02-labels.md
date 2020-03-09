@@ -119,6 +119,12 @@ query {
 }
 ```
 
+You can also filter objects by their key and string value. To do so, use:
+
+```graphql
+runtimes(filter: { key: "{KEY}" query: "\"{VALUE}\"" })
+```
+
 You can also search for objects by their key and array values. In the **query** field, use only the limited SQL/JSON path expressions. The supported syntax is `$[*] ? (@ == "{VALUE}" )`. For example, to filter all objects assigned to the `default` scenario, run:
 
 ```graphql
@@ -133,12 +139,6 @@ query {
     totalCount
   }
 }
-```
-
-You can also filter objects by their key and string value. To do so, use:
-
-```graphql
-runtimes(filter: { key: "{KEY}" query: "\"{VALUE}\"" })
 ```
 
 ## **Scenarios** label
