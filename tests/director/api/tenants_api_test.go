@@ -17,18 +17,20 @@ func TestQueryTenants(t *testing.T) {
 	ctx := context.Background()
 
 	getTenantsRequest := fixTenantsRequest()
-	output := []*graphql.Tenant{}
+	var output []*graphql.Tenant
 	defaultTenants := fixDefaultTenants()
 
 	// WHEN
-	t.Log("List tenants")
+	t.Log("List tenant")
 	err := tc.RunOperationWithoutTenant(ctx, getTenantsRequest, &output)
 	require.NoError(t, err)
 
 	//THEN
 	t.Log("Check if tenants were received")
-	assert.Equal(t, 6, len(output))
-	assert.Equal(t, defaultTenants, output)
+
+	for _, tenant := range defaultTenants {
+		assert.Contains(t, output, tenant)
+	}
 	saveExample(t, getTenantsRequest.Query(), "query tenants")
 }
 
@@ -40,12 +42,19 @@ func fixTenant(id, name string) *graphql.Tenant {
 }
 
 func fixDefaultTenants() []*graphql.Tenant {
-	return []*graphql.Tenant{
+	return append([]*graphql.Tenant{
 		fixTenant("3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", "default"),
-		fixTenant("9ca034f1-11ab-5b25-b76f-dc77106f571d", "test-default-tenant"),
 		fixTenant("1eba80dd-8ff6-54ee-be4d-77944d17b10b", "foo"),
 		fixTenant("af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e", "bar"),
-		fixTenant("2bf03de1-23b1-4063-9d3e-67096800accc", "foobar"),
-		fixTenant("f739b36c-813f-4fc3-996e-dd03c7d13aa0", "foobaz"),
+	}, tenantsToGraphql(testTenants.GetAll())...)
+}
+
+func tenantsToGraphql(tenants []Tenant) []*graphql.Tenant {
+	var toReturn []*graphql.Tenant
+
+	for k, _ := range tenants {
+		toReturn = append(toReturn, &graphql.Tenant{ID: tenants[k].ID, Name: &tenants[k].Name})
 	}
+
+	return toReturn
 }

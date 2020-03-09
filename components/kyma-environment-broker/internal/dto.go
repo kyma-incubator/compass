@@ -32,7 +32,6 @@ func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {
 type ProvisioningParametersDTO struct {
 	Name                        string   `json:"name"`
 	TargetSecret                *string  `json:"targetSecret"`
-	NodeCount                   *int     `json:"nodeCount"`
 	VolumeSizeGb                *int     `json:"volumeSizeGb"`
 	MachineType                 *string  `json:"machineType"`
 	Region                      *string  `json:"region"`

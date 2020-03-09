@@ -1034,6 +1034,7 @@
     "github.com/gorilla/handlers",
     "github.com/hashicorp/go-multierror",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
+    "github.com/kyma-incubator/compass/components/director/pkg/jsonschema",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
     "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",

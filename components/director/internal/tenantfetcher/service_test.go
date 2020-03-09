@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	persistenceautomock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher/automock"
+	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"

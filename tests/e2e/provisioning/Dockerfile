@@ -1,4 +1,4 @@
-FROM golang:1.12.5-alpine3.9 as builder
+FROM golang:1.13.8-alpine3.11 as builder
 
 ENV SRC_DIR=/go/src/github.com/kyma-incubator/compass/tests/e2e/provisioning
 
@@ -7,7 +7,9 @@ COPY . $SRC_DIR
 
 RUN CGO_ENABLED=0 GOOS=linux go test -ldflags="-s -w" -c ./test
 
-FROM alpine:3.10
+# After the next release of alpine is available (3.12) we should set it here instead of the edge tag
+# We can't do it now cause alpine:3.11 contains a vulnerable version of curl
+FROM alpine:edge
 
 RUN apk --no-cache add ca-certificates curl
 

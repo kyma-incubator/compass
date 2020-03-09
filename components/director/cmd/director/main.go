@@ -25,7 +25,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	log "github.com/sirupsen/logrus"
 

@@ -75,7 +75,6 @@ func (r *RuntimeInput) Create() (gqlschema.ProvisionRuntimeInput, error) {
 func (r *RuntimeInput) applyProvisioningParameters() error {
 	updateString(&r.input.RuntimeInput.Name, &r.provisioningParameters.Name)
 
-	updateInt(&r.input.ClusterConfig.GardenerConfig.NodeCount, r.provisioningParameters.NodeCount)
 	updateInt(&r.input.ClusterConfig.GardenerConfig.MaxUnavailable, r.provisioningParameters.MaxUnavailable)
 	updateInt(&r.input.ClusterConfig.GardenerConfig.MaxSurge, r.provisioningParameters.MaxSurge)
 	updateInt(&r.input.ClusterConfig.GardenerConfig.AutoScalerMin, r.provisioningParameters.AutoScalerMin)

@@ -166,6 +166,23 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 			{DisplayName: "doc1", Kind: &kind},
 			{DisplayName: "doc2", Kind: &kind},
 		},
+		Packages: []*model.PackageCreateInput{
+			{
+				Name: "foo",
+				APIDefinitions: []*model.APIDefinitionInput{
+					{Name: "api1", TargetURL: "foo.bar"},
+					{Name: "api2", TargetURL: "foo.bar2"},
+				},
+				EventDefinitions: []*model.EventDefinitionInput{
+					{Name: "event1", Description: &desc},
+					{Name: "event2", Description: &desc},
+				},
+				Documents: []*model.DocumentInput{
+					{DisplayName: "doc1", Kind: &kind},
+					{DisplayName: "doc2", Kind: &kind},
+				},
+			},
+		},
 	}
 }
 
@@ -207,6 +224,23 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 		Documents: []*graphql.DocumentInput{
 			{DisplayName: "doc1", Kind: &kind},
 			{DisplayName: "doc2", Kind: &kind},
+		},
+		Packages: []*graphql.PackageCreateInput{
+			{
+				Name: "foo",
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{Name: "api1", TargetURL: "foo.bar"},
+					{Name: "api2", TargetURL: "foo.bar2"},
+				},
+				EventDefinitions: []*graphql.EventDefinitionInput{
+					{Name: "event1", Description: &desc},
+					{Name: "event2", Description: &desc},
+				},
+				Documents: []*graphql.DocumentInput{
+					{DisplayName: "doc1", Kind: &kind},
+					{DisplayName: "doc2", Kind: &kind},
+				},
+			},
 		},
 	}
 }

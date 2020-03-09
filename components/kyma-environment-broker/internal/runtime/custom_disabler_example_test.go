@@ -9,23 +9,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLokiDisabler(t *testing.T) {
+func TestCustomDisablerExample(t *testing.T) {
 	// given
-	sut := runtime.NewLokiDisabler()
+	sut := runtime.NewCustomDisablerExample()
 
 	givenComponents := internal.ComponentConfigurationInputList{
 		{
-			Component: "logging",
+			Component: runtime.CustomDisablerComponentName,
 			Namespace: "kyma-system",
 		},
 	}
 	expComponents := internal.ComponentConfigurationInputList{
 		{
-			Component: "logging",
+			Component: runtime.CustomDisablerComponentName,
 			Namespace: "kyma-system",
 			Configuration: []*gqlschema.ConfigEntryInput{
 				{
-					Key:   "loki.enabled",
+					Key:   "component-x.enabled",
+					Value: "false",
+				},
+				{
+					Key:   "component-x.Output.conf.enabled",
 					Value: "false",
 				},
 			},

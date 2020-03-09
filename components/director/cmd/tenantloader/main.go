@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/externaltenant"
 	log "github.com/sirupsen/logrus"

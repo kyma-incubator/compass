@@ -102,7 +102,6 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Loki":   runtime.NewLokiDisabler(),
 		"Kiali":  runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
 		"Jaeger": runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
 	}
@@ -144,10 +143,13 @@ func main() {
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
 
+	plansValidator, err := broker.NewPlansSchemaValidator()
+	fatalOnError(err)
+
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
 		broker.NewServices(cfg.Broker, optComponentsSvc, dumper),
-		broker.NewProvision(cfg.Broker, db.Operations(), queue, inputFactory, dumper),
+		broker.NewProvision(cfg.Broker, db.Operations(), queue, inputFactory, plansValidator, dumper),
 		broker.NewDeprovision(db.Instances(), provisionerClient, dumper),
 		broker.NewUpdate(dumper),
 		broker.NewGetInstance(db.Instances(), dumper),

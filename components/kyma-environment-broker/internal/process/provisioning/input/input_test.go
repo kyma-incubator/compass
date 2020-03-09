@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
@@ -44,8 +43,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	// when
 	input, err := builder.
 		SetProvisioningParameters(internal.ProvisioningParametersDTO{
-			Name:         "azure-cluster",
-			NodeCount:    ptr.Integer(4),
+			Name: "azure-cluster",
 			TargetSecret: ptr.String("azure-secret"),
 		}).
 		SetRuntimeLabels(fixID, fixID).
@@ -71,7 +69,6 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assert.Equal(t, "azure-cluster", input.RuntimeInput.Name)
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
 	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
-	assert.Equal(t, 4, input.ClusterConfig.GardenerConfig.NodeCount)
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 	assert.Equal(t, &gqlschema.Labels{
 		brokerKeyPrefix + "instance_id":   []string{fixID},

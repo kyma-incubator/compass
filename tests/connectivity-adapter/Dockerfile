@@ -1,4 +1,4 @@
-FROM golang:1.13.5-alpine3.10 as builder
+FROM golang:1.13.8-alpine3.11 as builder
 
 
 ENV BASE_TEST_DIR /go/src/github.com/kyma-incubator/compass/tests/connectivity-adapter
@@ -8,7 +8,9 @@ COPY . ${BASE_TEST_DIR}
 
 RUN CGO_ENABLED=0 go test -c ./test/api
 
-FROM alpine:3.10
+# After the next release of alpine is available (3.12) we should set it here instead of the edge tag
+# We can't do it now cause alpine:3.11 contains a vulnerable version of curl
+FROM alpine:edge
 
 RUN apk add --no-cache curl
 
@@ -19,4 +21,3 @@ COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/connectivity
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/connectivity-adapter/licenses ./licenses
 
 ENTRYPOINT ./entrypoint.sh
-
