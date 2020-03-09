@@ -1,25 +1,14 @@
 # Labels
 
-A label is a key-value pair that you can add to every top-level entity, such as an Application or a Runtime. It allows you to search for and find out about all Applications and Runtimes label keys used in a given tenant. You can also define validation rules for labels with a given key using LabelDefinitions.
+A label is a key-value pair that you can add to every top-level entity, such as an Application or a Runtime. Labels allow you to enrich Applications and Runtimes with additional information.
+
+<example>
 
 ## LabelDefinitions
 
-For every label, you can create a LabelDefinition to set validation rules for values. LabelDefinitions are optional, but they are created automatically if the user adds labels for which LabelDefinitions do not exist. You can manage LabelDefinitions using mutations and queries. See the examples:
+For every label, you can create a related LabelDefinition to set validation rules for values using a JSON schema. It allows you to search for all Applications and Runtimes label keys used in a given tenant. LabelDefinitions are optional, but they are created automatically if the user adds labels for which LabelDefinitions do not exist. You can manage LabelDefinitions using the following mutations and queries:
 
 ```graphql
-scalar JSONSchema # the same as Any
-
-type LabelDefinition {
-    key: String!
-    schema: JSONSchema
-}
-
-input LabelDefinitionInput {
-    key: String!
-    schema: JSONSchema
-}
-
-
 type Query {
     labelDefinitions: [LabelDefinition!]!
     labelDefinition(key: String!): LabelDefinition
@@ -107,9 +96,9 @@ deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean=false): LabelDe
 ```
 This mutation allows you to remove only definitions that are not used. If you want to delete a LabelDefinition with all values, set the **deleteRelatedLabels** parameter to `true`.
 
-### Search for objects using LabelFilters
+## LabelFilters
 
-You can define a LabelFilter to list the objects according to their labels. To search for a given Application or Runtime, use this query:
+You can define a LabelFilter to list the top-level entities according to their labels. You can search for Applications and Runtimes by label keys or by label keys and their values. To search for a given Application or Runtime, use this query:
 
 ```graphql
  applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
@@ -130,7 +119,7 @@ query {
 }
 ```
 
-To search for all objects assigned to the `default` scenario, use this query:
+You can also search for objects by their key and array values. In the **query** field, use only the limited SQL/JSON path expressions. The supported syntax is `$[*] ? (@ == "{VALUE}" )`. For example, to filter all objects assigned to the `default` scenario, run:
 
 ```graphql
 query {
@@ -146,7 +135,11 @@ query {
 }
 ```
 
-In the **query** field, use only the limited SQL/JSON path expressions. The supported syntax is `$[*] ? (@ == "{VALUE}" )`.
+You can also filter objects by their key and string value. To do so, use:
+
+```graphql
+runtimes(filter: { key: "{KEY}" query: "\"{VALUE}\"" })
+```
 
 ## **Scenarios** label
 

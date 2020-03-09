@@ -25,11 +25,11 @@ Application pairing phase is a process of creating a new Application and establi
 
 ### API registration phase
 
-API registration phase is a process of registering new API and Event definitions, which consists of two steps:
+API registration phase is a process of registering new API and Event Definitions, which consists of two steps:
 
 ![](./assets/api-registration.svg)
 
-1. Application sends a request to register API or Event definition to the Director component.
+1. Application sends a request to register API or Event Definition to the Director component.
 2. Director returns the operation result to the Application.
 
 ## Registering Runtime
@@ -45,7 +45,7 @@ The process of registering a new Runtime looks as follows:
 5. Connector generates a one-time token for the Runtime.
 6. Connector returns the token to Runtime Provisioner.
 7. Runtime Provisioner provisions a Runtime.
-8. Runtime Provisioner injects Runtime configuration along with the one-time token. (?)
+8. Runtime Provisioner injects Runtime configuration along with the one-time token.
 9. Runtime Agent uses the token to set up a trusted connection between Compass and Runtime.
 
 When the Runtime is ready, Runtime Agent notifies the Director about the Runtime status. When the Director receives notification that a Runtime is ready, it passes the notification for every Application in a group assigned to the Runtime using Application Webhook API.
