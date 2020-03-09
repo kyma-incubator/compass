@@ -29,23 +29,23 @@ const (
 )
 
 /*TODO(anishj0shi)
-	1) create an interface type "event-hub-provider" which exposes some functions like
-	GetEventHubNamespace, MarkNamespaceAsUsed, GetNamespaceAccessCredentials, inject this interface as an input
-	to NewProvisioningAzureEventHubStep
-	2) Refactor Azure Client Wrapper to conform to the above protocol
-	3) Implement retry logic for Namespace retrieval and NamespaceTagging operation.
+1) create an interface type "event-hub-provider" which exposes some functions like
+GetEventHubNamespace, MarkNamespaceAsUsed, GetNamespaceAccessCredentials, inject this interface as an input
+to NewProvisioningAzureEventHubStep
+2) Refactor Azure Client Wrapper to conform to the above protocol
+3) Implement retry logic for Namespace retrieval and NamespaceTagging operation.
 */
 
 type ProvisionAzureEventHubStep struct {
 	operationManager *process.OperationManager
-	config           *azure.Config
+	namespaceClient  azure.NamespaceClientInterface
 	context          context.Context
 }
 
-func NewProvisionAzureEventHubStep(os storage.Operations, cfg *azure.Config, ctx context.Context) *ProvisionAzureEventHubStep {
+func NewProvisionAzureEventHubStep(os storage.Operations, namespaceClient azure.NamespaceClientInterface, ctx context.Context) *ProvisionAzureEventHubStep {
 	return &ProvisionAzureEventHubStep{
 		operationManager: process.NewOperationManager(os),
-		config:           cfg,
+		namespaceClient:  namespaceClient,
 		context:          ctx,
 	}
 }
@@ -57,7 +57,7 @@ func (p *ProvisionAzureEventHubStep) Name() string {
 func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperation,
 	log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
-	unusedEventHubNamespace, err := azure.GetFirstUnusedNamespaces(p.context, p.config)
+	unusedEventHubNamespace, err := azure.GetFirstUnusedNamespaces(p.context, p.namespaceClient)
 	if err != nil {
 		return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
 	}
@@ -67,7 +67,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	log.Printf("Found unused EventHubs Namespace, name: %v, resourceGroup: %v", unusedEventHubNamespace.Name, resourceGroup)
 
-	accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(p.context, p.config, resourceGroup, *unusedEventHubNamespace.Name, authorizationRuleName)
+	accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(p.context, p.namespaceClient, resourceGroup, *unusedEventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
 		log.Fatalf("Failed to get Access Keys for Azure EventHubs Namespace [%s] with error: %v\n", unusedEventHubNamespace, err)
 	}
@@ -76,7 +76,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
-	if _, err := azure.MarkNamespaceAsUsed(p.context, p.config, resourceGroup, unusedEventHubNamespace); err != nil {
+	if _, err := azure.MarkNamespaceAsUsed(p.context, p.namespaceClient, resourceGroup, unusedEventHubNamespace); err != nil {
 		return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
 	}
 
