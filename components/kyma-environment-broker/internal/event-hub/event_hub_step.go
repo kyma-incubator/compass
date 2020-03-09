@@ -3,9 +3,10 @@ package event_hub
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -29,11 +30,11 @@ const (
 )
 
 /*TODO(anishj0shi)
-	1) create an interface type "event-hub-provider" which exposes some functions like
-	GetEventHubNamespace, MarkNamespaceAsUsed, GetNamespaceAccessCredentials, inject this interface as an input
-	to NewProvisioningAzureEventHubStep
-	2) Refactor Azure Client Wrapper to conform to the above protocol
-	3) Implement retry logic for Namespace retrieval and NamespaceTagging operation.
+1) create an interface type "event-hub-provider" which exposes some functions like
+GetEventHubNamespace, MarkNamespaceAsUsed, GetNamespaceAccessCredentials, inject this interface as an input
+to NewProvisioningAzureEventHubStep
+2) Refactor Azure Client Wrapper to conform to the above protocol
+3) Implement retry logic for Namespace retrieval and NamespaceTagging operation.
 */
 
 type ProvisionAzureEventHubStep struct {

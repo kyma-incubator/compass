@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
