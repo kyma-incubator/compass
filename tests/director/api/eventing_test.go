@@ -30,13 +30,13 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	defer unregisterApplication(t, application.ID)
 
 	runtime1 := registerRuntime(t, ctx, "runtime-1-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime1.ID, defaultTenant)
+	defer unregisterRuntimeWithinTenant(t, runtime1.ID, testTenants.GetDefaultTenantID())
 
 	setRuntimeLabel(t, ctx, runtime1.ID, scenariosLabel, defaultScenarios)
 	setRuntimeLabel(t, ctx, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
 
 	runtime2 := registerRuntime(t, ctx, "runtime-2-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime2.ID, defaultTenant)
+	defer unregisterRuntimeWithinTenant(t, runtime2.ID, testTenants.GetDefaultTenantID())
 
 	setRuntimeLabel(t, ctx, runtime2.ID, scenariosLabel, defaultScenarios)
 	setRuntimeLabel(t, ctx, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
@@ -55,7 +55,7 @@ func TestGetEventingConfigurationForRuntime(t *testing.T) {
 	runtimeEventingURL := "http://eventing.runtime.local"
 
 	runtime := registerRuntime(t, ctx, "runtime-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime.ID, defaultTenant)
+	defer unregisterRuntimeWithinTenant(t, runtime.ID, testTenants.GetDefaultTenantID())
 
 	setRuntimeLabel(t, ctx, runtime.ID, runtimeEventingURLLabelKey, runtimeEventingURL)
 
@@ -81,13 +81,13 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	defer unregisterApplication(t, application.ID)
 
 	runtime1 := registerRuntime(t, ctx, "runtime-1-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime1.ID, defaultTenant)
+	defer unregisterRuntimeWithinTenant(t, runtime1.ID, testTenants.GetDefaultTenantID())
 
 	setRuntimeLabel(t, ctx, runtime1.ID, scenariosLabel, defaultScenarios)
 	setRuntimeLabel(t, ctx, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
 
 	runtime2 := registerRuntime(t, ctx, "runtime-2-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime2.ID, defaultTenant)
+	defer unregisterRuntimeWithinTenant(t, runtime2.ID, testTenants.GetDefaultTenantID())
 
 	setRuntimeLabel(t, ctx, runtime2.ID, scenariosLabel, defaultScenarios)
 	setRuntimeLabel(t, ctx, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
@@ -122,7 +122,7 @@ func TestEmptyEventConfigurationForApp(t *testing.T) {
 	defer unregisterApplication(t, application.ID)
 
 	runtime1 := registerRuntime(t, ctx, "runtime-1-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime1.ID, defaultTenant)
+	defer unregisterRuntimeWithinTenant(t, runtime1.ID, testTenants.GetDefaultTenantID())
 
 	//WHEN
 	app := getApplication(t, ctx, application.ID)
@@ -146,13 +146,13 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	defer unregisterApplication(t, application.ID)
 
 	runtime1 := registerRuntime(t, ctx, "runtime-1-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime1.ID, defaultTenant)
+	defer unregisterRuntimeWithinTenant(t, runtime1.ID, testTenants.GetDefaultTenantID())
 
 	setRuntimeLabel(t, ctx, runtime1.ID, scenariosLabel, defaultScenarios)
 	setRuntimeLabel(t, ctx, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
 
 	runtime2 := registerRuntime(t, ctx, "runtime-2-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime2.ID, defaultTenant)
+	defer unregisterRuntimeWithinTenant(t, runtime2.ID, testTenants.GetDefaultTenantID())
 
 	setRuntimeLabel(t, ctx, runtime2.ID, scenariosLabel, defaultScenarios)
 	setRuntimeLabel(t, ctx, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
