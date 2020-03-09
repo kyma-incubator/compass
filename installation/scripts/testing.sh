@@ -26,12 +26,6 @@ matchNames=$(cat <<-END
     matchNames:
       - name: compass-director-api
         namespace: compass-system
-      - name: compass-director-gateway-integration
-        namespace: kyma-system
-      - name: compass-connector-tests
-        namespace: compass-system
-      - name: connectivity-adapter
-        namespace: compass-system
 END
 )
 
