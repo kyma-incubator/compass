@@ -2,11 +2,12 @@ package security
 
 import (
 	"encoding/json"
-	"fmt"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/fake-external-test-component/pkg/model"
 	"github.com/pkg/errors"
-	"net/http"
+	log "github.com/sirupsen/logrus"
 )
 
 type SecurityEventService interface {
@@ -17,10 +18,11 @@ type SecurityEventService interface {
 
 type ConfigChangeHandler struct {
 	service SecurityEventService
+	logger  *log.Logger
 }
 
-func NewSecurityEventHandler(service SecurityEventService) *ConfigChangeHandler {
-	return &ConfigChangeHandler{service: service}
+func NewSecurityEventHandler(service SecurityEventService, logger *log.Logger) *ConfigChangeHandler {
+	return &ConfigChangeHandler{service: service, logger: logger}
 }
 
 const (
@@ -29,7 +31,7 @@ const (
 )
 
 func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request) {
-	defer req.Body.Close()
+	defer h.closeBody(req)
 	var log model.SecuritEvent
 	err := json.NewDecoder(req.Body).Decode(&log)
 	if err != nil {
@@ -42,8 +44,6 @@ func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request
 		WriteError(writer, errors.Wrap(err, "while saving security event log"), http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Printf("Got: %+v\n", log)
 
 	response := model.SuccessResponse{ID: id}
 	writer.WriteHeader(http.StatusCreated)
@@ -82,6 +82,13 @@ func (h *ConfigChangeHandler) Delete(writer http.ResponseWriter, req *http.Reque
 	}
 
 	h.service.Delete(id)
+}
+
+func (h *ConfigChangeHandler) closeBody(req *http.Request) {
+	err := req.Body.Close()
+	if err != nil {
+		h.logger.Error(errors.Wrap(err, "while closing body"))
+	}
 }
 
 func WriteError(writer http.ResponseWriter, err error, statusCode int) {

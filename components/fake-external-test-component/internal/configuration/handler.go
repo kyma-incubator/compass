@@ -2,12 +2,12 @@ package configuration
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/fake-external-test-component/pkg/model"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=ConfigChangeService -output=automock -outpkg=automock -case=underscore
@@ -19,10 +19,11 @@ type ConfigChangeService interface {
 
 type ConfigChangeHandler struct {
 	service ConfigChangeService
+	logger  *log.Logger
 }
 
-func NewConfigurationHandler(service ConfigChangeService) *ConfigChangeHandler {
-	return &ConfigChangeHandler{service: service}
+func NewConfigurationHandler(service ConfigChangeService, logger *log.Logger) *ConfigChangeHandler {
+	return &ConfigChangeHandler{service: service, logger: logger}
 }
 
 const (
@@ -31,7 +32,8 @@ const (
 )
 
 func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request) {
-	defer req.Body.Close()
+	defer h.closeBody(req)
+
 	var log model.ConfigurationChange
 	err := json.NewDecoder(req.Body).Decode(&log)
 	if err != nil {
@@ -44,8 +46,6 @@ func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request
 		WriteError(writer, errors.Wrap(err, "while saving configuration change log"), http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Printf("Got: %+v\n", log)
 
 	response := model.SuccessResponse{ID: id}
 	writer.WriteHeader(http.StatusCreated)
@@ -84,6 +84,13 @@ func (h *ConfigChangeHandler) Delete(writer http.ResponseWriter, req *http.Reque
 	}
 
 	h.service.Delete(id)
+}
+
+func (h *ConfigChangeHandler) closeBody(req *http.Request) {
+	err := req.Body.Close()
+	if err != nil {
+		h.logger.Error(errors.Wrap(err, "while closing body"))
+	}
 }
 
 func WriteError(writer http.ResponseWriter, err error, statusCode int) {

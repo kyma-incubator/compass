@@ -1,9 +1,12 @@
 package main
 
 import (
-	"github.com/kyma-incubator/compass/components/fake-external-test-component/internal/security"
 	"log"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/kyma-incubator/compass/components/fake-external-test-component/internal/security"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/fake-external-test-component/internal/configuration"
@@ -33,20 +36,21 @@ func exitOnError(err error, context string) {
 }
 
 func initApiHandlers(cfg config) http.Handler {
+	logger := logrus.New()
+
 	router := mux.NewRouter()
 	configService := configuration.NewService()
 	securityEventService := security.NewService()
 
-	securityHandler := security.NewSecurityEventHandler(securityEventService)
-	configHandler := configuration.NewConfigurationHandler(configService)
+	securityHandler := security.NewSecurityEventHandler(securityEventService, logger)
+	configHandler := configuration.NewConfigurationHandler(configService, logger)
 
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
-	router.HandleFunc("/v1/logs/configuration-change", configHandler.Save).Methods("POST")
-	router.HandleFunc("/v1/logs/configuration-change/{id}", configHandler.Get).Methods("GET")
-	router.HandleFunc("/v1/logs/configuration-change/{id}", configHandler.Delete).Methods("DELETE")
+	router.HandleFunc("/audit-log/v2/configuration-changes", configHandler.Save).Methods("POST")
+	router.HandleFunc("/audit-log/v2/configuration-changes/{id}", configHandler.Get).Methods("GET")
+	router.HandleFunc("/audit-log/v2/configuration-changes/{id}", configHandler.Delete).Methods("DELETE")
 
-	//TODO: Add security-event log
-	router.HandleFunc("/v1/logs/security-event", securityHandler.Save).Methods("POST")
+	router.HandleFunc("/audit-log/v2/security-event", securityHandler.Save).Methods("POST")
 	router.HandleFunc("/v1/logs/security-event/{id}", securityHandler.Get).Methods("GET")
 	router.HandleFunc("/v1/logs/security-event/{id}", securityHandler.Delete).Methods("DELETE")
 	return router
