@@ -102,7 +102,6 @@ echo "ClusterTestSuite details:"
 kubectl get cts ${suiteName} -oyaml
 
 echo "Generate JUnit test summary (${JUNIT_REPORT_PATH})"
-
 kyma test status "${suiteName}" -ojunit | sed 's/ (executions: [0-9]*)"/"/g' > "${JUNIT_REPORT_PATH}"
 
 
