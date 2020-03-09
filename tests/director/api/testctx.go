@@ -39,7 +39,7 @@ func newTestContext() (*testContext, error) {
 
 	currentScopes := strings.Split(scopesStr, " ")
 
-	bearerToken, err := jwtbuilder.Do(testTenants.defaultTenant(), currentScopes)
+	bearerToken, err := jwtbuilder.Do(testTenants.GetDefaultTenantID(), currentScopes)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building JWT token")
 	}
@@ -75,7 +75,7 @@ func (tc *testContext) RunOperationWithCustomTenant(ctx context.Context, tenant 
 }
 
 func (tc *testContext) RunOperationWithCustomScopes(ctx context.Context, scopes []string, req *gcli.Request, resp interface{}) error {
-	return tc.runCustomOperation(ctx, testTenants.defaultTenant(), scopes, req, resp)
+	return tc.runCustomOperation(ctx, testTenants.GetDefaultTenantID(), scopes, req, resp)
 }
 
 func (tc *testContext) RunOperationWithoutTenant(ctx context.Context, req *gcli.Request, resp interface{}) error {

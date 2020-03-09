@@ -28,9 +28,7 @@ func TestMain(m *testing.M) {
 		}
 	}()
 
-	insertTenants(transact)
-
-	getTenants(transact)
+	testTenants.InitializeDB(transact)
 
 	tc, err = newTestContext()
 	if err != nil {
@@ -39,7 +37,7 @@ func TestMain(m *testing.M) {
 
 	exitVal := m.Run()
 
-	deleteTenants(transact)
+	testTenants.CleanupDB(transact)
 
 	os.Exit(exitVal)
 }
