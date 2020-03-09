@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
 	gcli "github.com/machinebox/graphql"
 )
@@ -322,7 +322,7 @@ func fixAPIRuntimeAuthRequest(applicationID string, runtimeID string) *gcli.Requ
 							result: application(id: "%s") {
 								%s
 							}
-						}`, applicationID, tc.gqlFieldsProvider.ForApplication(gql.FieldCtx{
+						}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
 			"APIDefinition.auth": fmt.Sprintf(`auth(runtimeID: "%s") {%s}`, runtimeID, tc.gqlFieldsProvider.ForAPIRuntimeAuth()),
 		})))
 }
@@ -694,7 +694,7 @@ func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
 			result: application(id: "%s") {
 				%s
 				}
-			}`, applicationID, tc.gqlFieldsProvider.ForApplication(gql.FieldCtx{
+			}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
 			"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`, packageID, tc.gqlFieldsProvider.ForPackage()),
 		})))
 }
@@ -707,9 +707,9 @@ func fixPackageWithInstanceAuthRequest(applicationID string, packageID string, i
 				}
 			}`, applicationID,
 			tc.gqlFieldsProvider.ForApplication(
-				gql.FieldCtx{"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`,
+				graphqlizer.FieldCtx{"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`,
 					packageID,
-					tc.gqlFieldsProvider.ForPackage(gql.FieldCtx{
+					tc.gqlFieldsProvider.ForPackage(graphqlizer.FieldCtx{
 						"Package.instanceAuth": fmt.Sprintf(`instanceAuth(id: "%s") {%s}`,
 							instanceAuthID,
 							tc.gqlFieldsProvider.ForPackageInstanceAuth()),
