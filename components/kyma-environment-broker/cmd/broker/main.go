@@ -2,17 +2,16 @@ package main
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
 	"log"
 	"net/http"
 	"os"
-
-	event_hub "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
+	event_hub "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning"
@@ -50,8 +49,7 @@ type Config struct {
 	KymaVersion                          string
 	ManagedRuntimeComponentsYAMLFilePath string
 
-	EventHubConfig azure.Config
-	Broker         broker.Config
+	Broker broker.Config
 }
 
 func main() {
@@ -121,7 +119,10 @@ func main() {
 	// create and run queue, steps provisioning
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 
-	provisionAzureEventHub := event_hub.NewProvisionAzureEventHubStep(db.Operations(), cfg.EventHubConfig, ctx)
+	secret := os.Getenv("AZURE_SECRET")
+	azureConfig := azure.GetConfig("38c0ed1b-13d0-4936-8429-eccc80d2d8fb", secret, "42f7676c-f455-423c-82f6-dc2d99791af7", "35d42578-34d1-486d-a689-012a8d514c19")
+
+	provisionAzureEventHub := event_hub.NewProvisionAzureEventHubStep(db.Operations(), azureConfig, ctx)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
 
 	logs := logrus.New()

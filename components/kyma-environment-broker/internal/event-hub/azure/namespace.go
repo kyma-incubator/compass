@@ -36,6 +36,7 @@ func getNamespacesClientOrDie(config *Config) eventhub.NamespacesClient {
 
 // MarkNamespaceAsUsed sets a tag to indicate that the Namespace is used
 func MarkNamespaceAsUsed(ctx context.Context, config *Config, resourceGroupName string, namespace eventhub.EHNamespace) (eventhub.EHNamespace, error) {
+	log.Printf("Marking namespace to be unused, namespace: %+v, resourceGroup: %s", namespace, resourceGroupName)
 	nsClient := getNamespacesClientOrDie(config)
 	trueVal := strconv.FormatBool(true)
 	namespace.Tags[EHNamespaceTagInUse] = &trueVal
