@@ -65,7 +65,7 @@ spec:
             - name: APP_TENANT_ID
               value: "{{ .Values.global.defaultTenant }}"
             - name: APP_DUMMY_TEST
-              value: "true"
+              value: "false"
             - name: APP_BROKER_URL
               value: 'https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}'
             - name: APP_BROKER_PROVISION_GCP
