@@ -7,8 +7,8 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,11 +17,14 @@ import (
 func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	// given
 	var (
+		fixID               = "fix-id"
 		inputComponentList  = fixKymaComponentList()
 		mappedComponentList = mapToGQLComponentConfigurationInput(inputComponentList)
 		toDisableComponents = []string{"kiali"}
-		smOverrides         = internal.ServiceManagerEntryDTO{URL: "http://sm-pico-bello-url.com"}
-		fixID               = "fix-id"
+		kebOverrides        = []*gqlschema.ConfigEntryInput{
+			{Key: "key-1", Value: "pico"},
+			{Key: "key-2", Value: "bello", Secret: ptr.Bool(true)},
+		}
 	)
 
 	optComponentsSvc := &automock.OptionalComponentService{}
@@ -49,21 +52,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 			Name: "azure-cluster",
 		}).
 		SetRuntimeLabels(fixID, fixID).
-		SetOverrides(ServiceManagerComponentName, []*gqlschema.ConfigEntryInput{
-			{
-				Key:   "config.sm.url",
-				Value: smOverrides.URL,
-			},
-			{
-				Key:   "sm.user",
-				Value: smOverrides.Credentials.BasicAuth.Username,
-			},
-			{
-				Key:    "sm.password",
-				Value:  smOverrides.Credentials.BasicAuth.Password,
-				Secret: ptr.Bool(true),
-			},
-		}).Create()
+		SetOverrides("keb", kebOverrides).Create()
 
 	// then
 	require.NoError(t, err)
@@ -77,13 +66,14 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 		globalKeyPrefix + "subaccount_id": []string{fixID},
 	}, input.RuntimeInput.Labels)
 
-	assertServiceManagerOverrides(t, input.KymaConfig.Components, smOverrides)
+	assertOverrides(t, "keb", input.KymaConfig.Components, kebOverrides)
 }
 
-func assertServiceManagerOverrides(t *testing.T, components internal.ComponentConfigurationInputList, overrides internal.ServiceManagerEntryDTO) {
-	smComponent, found := find(components, ServiceManagerComponentName)
+func assertOverrides(t *testing.T, componentName string, components internal.ComponentConfigurationInputList, overrides []*gqlschema.ConfigEntryInput) {
+	overriddenComponent, found := find(components, componentName)
 	require.True(t, found)
-	assert.Equal(t, overrides.URL, smComponent.Configuration[0].Value)
+
+	assert.Equal(t, overriddenComponent.Configuration, overrides)
 }
 
 func find(in internal.ComponentConfigurationInputList, name string) (*gqlschema.ComponentConfigurationInput, bool) {
@@ -100,6 +90,5 @@ func fixKymaComponentList() []v1alpha1.KymaComponent {
 		{Name: "dex", Namespace: "kyma-system"},
 		{Name: "ory", Namespace: "kyma-system"},
 		{Name: "keb", Namespace: "kyma-system"},
-		{Name: ServiceManagerComponentName, Namespace: "kyma-system"},
 	}
 }
