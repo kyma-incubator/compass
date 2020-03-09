@@ -14,7 +14,6 @@ func NewService() *Service {
 }
 func (s *Service) Save(change model.SecuritEvent) (string, error) {
 	id := uuid.New().String()
-	id = "0ef99922-c493-4ccf-b8de-1778ab84ca3a"
 	//TODO: any collisions?
 	s.configLogs[id] = change
 

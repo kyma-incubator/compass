@@ -47,6 +47,7 @@ func initApiHandlers(cfg config) http.Handler {
 
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
 	router.HandleFunc("/audit-log/v2/configuration-changes", configHandler.Save).Methods("POST")
+	router.HandleFunc("/audit-log/v2/configuration-changes", configHandler.List).Methods("GET")
 	router.HandleFunc("/audit-log/v2/configuration-changes/{id}", configHandler.Get).Methods("GET")
 	router.HandleFunc("/audit-log/v2/configuration-changes/{id}", configHandler.Delete).Methods("DELETE")
 

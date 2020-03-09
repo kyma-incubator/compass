@@ -14,6 +14,7 @@ import (
 type ConfigChangeService interface {
 	Save(change model.ConfigurationChange) (string, error)
 	Get(id string) *model.ConfigurationChange
+	List() []model.ConfigurationChange
 	Delete(id string)
 }
 
@@ -71,6 +72,16 @@ func (h *ConfigChangeHandler) Get(writer http.ResponseWriter, req *http.Request)
 	}
 
 	err := json.NewEncoder(writer).Encode(&val)
+	if err != nil {
+		WriteError(writer, errors.New("error while encoding response"), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *ConfigChangeHandler) List(writer http.ResponseWriter, req *http.Request) {
+	values := h.service.List()
+
+	err := json.NewEncoder(writer).Encode(&values)
 	if err != nil {
 		WriteError(writer, errors.New("error while encoding response"), http.StatusInternalServerError)
 		return
