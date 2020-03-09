@@ -57,7 +57,6 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				KubernetesVersion: "1.15.5",
 				DiskType:          "pd-standard",
 				VolumeSizeGb:      30,
-				NodeCount:         2,
 				MachineType:       "n1-standard-4",
 				Region:            "europe-west4-a",
 				Provider:          "gcp",
@@ -172,8 +171,7 @@ func fixProvisioningParameters(t *testing.T) string {
 			},
 		},
 		Parameters: internal.ProvisioningParametersDTO{
-			NodeCount: ptr.Integer(2),
-			Region:    ptr.String("europe-west4-a"),
+			Region: ptr.String("europe-west4-a"),
 		},
 	}
 

@@ -13,7 +13,6 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			KubernetesVersion: "1.15.4",
 			DiskType:          "Standard_LRS",
 			VolumeSizeGb:      50,
-			NodeCount:         3,
 			MachineType:       "Standard_D8_v3",
 			Region:            "westeurope",
 			Provider:          "azure",

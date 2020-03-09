@@ -18,11 +18,6 @@ func TestNewPlansSchemaValidatorErrors(t *testing.T) {
 			inputJSON:    `{"components": ["wrong component name"]}`,
 			expErr:       `(root): name is required, components.0: components.0 must be one of the following: "Kiali", "Jaeger"`,
 		},
-		"not valid node count": {
-			againstPlans: []string{AzurePlanID},
-			inputJSON:    `{"name": "wrong-node", "nodeCount": 123123}`,
-			expErr:       "nodeCount: Must be less than or equal to 20",
-		},
 		"missing name, not valid machine type": {
 			againstPlans: []string{AzurePlanID},
 			inputJSON:    `{"name": "wrong-machType", "machineType": "WrongName"}`,

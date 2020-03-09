@@ -46,8 +46,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	// when
 	input, err := builder.
 		SetProvisioningParameters(internal.ProvisioningParametersDTO{
-			Name:      "azure-cluster",
-			NodeCount: ptr.Integer(4),
+			Name: "azure-cluster",
 		}).
 		SetRuntimeLabels(fixID, fixID).
 		SetOverrides(ServiceManagerComponentName, []*gqlschema.ConfigEntryInput{
@@ -72,7 +71,6 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assert.Equal(t, "azure-cluster", input.RuntimeInput.Name)
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
 	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
-	assert.Equal(t, 4, input.ClusterConfig.GardenerConfig.NodeCount)
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 	assert.Equal(t, &gqlschema.Labels{
 		brokerKeyPrefix + "instance_id":   []string{fixID},
