@@ -74,14 +74,14 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 		errMsg := fmt.Sprintf("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s has failed: %s", pp.ErsContext.GlobalAccountID, hypType, err)
 		logger.Info(errMsg)
 
-		dur := time.Since(operation.UpdatedAt).Round(time.Second)
+		// if failed retry step every 10s by next 10min
+		dur := time.Since(operation.UpdatedAt).Round(time.Minute)
 
-		if dur < 3*time.Second {
-			logger.Info("will retry in 2 seconds")
-			return operation, 2 * time.Second, nil
+		if dur < 10*time.Minute {
+			return operation, 10 * time.Second, nil
 		}
 
-		logger.Errorf("Aborting after failing to resolve provisioning credentials for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
+		logger.Errorf("Aborting after 10 minutes of failing to resolve provisioning credentials for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 		return s.operationManager.OperationFailed(operation, errMsg)
 	}
 
@@ -98,6 +98,8 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 	if err != nil {
 		return operation, 1 * time.Minute, nil
 	}
+
+	logger.Infof("Resolved %s as target secret name to use for cluster provisioning for global account ID %s on Hyperscaler %s", pp.Parameters.TargetSecret, pp.ErsContext.GlobalAccountID, hypType)
 
 	return *updatedOperation, 0, nil
 }

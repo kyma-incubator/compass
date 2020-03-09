@@ -10,7 +10,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	hyperscalerMocks "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -54,7 +53,7 @@ func TestResolveCredentialsStepHappyPath_Run(t *testing.T) {
 	assert.Equal(t, "gardener-secret-gcp", *pp.Parameters.TargetSecret)
 }
 
-func TestResolveCredentialsStepFailedAfterRetry_Run(t *testing.T) {
+func TestResolveCredentialsStepRetry_Run(t *testing.T) {
 	// given
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
@@ -85,7 +84,7 @@ func TestResolveCredentialsStepFailedAfterRetry_Run(t *testing.T) {
 
 	// then
 	assert.NoError(t, err)
-	assert.Equal(t, 2*time.Second, repeat)
+	assert.Equal(t, 10*time.Second, repeat)
 	assert.Nil(t, pp.Parameters.TargetSecret)
 	assert.Empty(t, operation.State)
 
@@ -96,18 +95,7 @@ func TestResolveCredentialsStepFailedAfterRetry_Run(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NoError(t, err)
-	assert.Equal(t, 2*time.Second, repeat)
+	assert.Equal(t, 10*time.Second, repeat)
 	assert.Empty(t, operation.State)
-	assert.Nil(t, pp.Parameters.TargetSecret)
-
-	time.Sleep(repeat)
-	operation, repeat, err = step.Run(operation, log)
-	assert.Error(t, err)
-
-	pp, err = operation.GetProvisioningParameters()
-	assert.NoError(t, err)
-
-	assert.Equal(t, domain.Failed, operation.State)
-	assert.Equal(t, time.Duration(0), repeat)
 	assert.Nil(t, pp.Parameters.TargetSecret)
 }
