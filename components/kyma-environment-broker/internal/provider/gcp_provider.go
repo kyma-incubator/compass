@@ -13,7 +13,6 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 			KubernetesVersion: "1.15.5",
 			DiskType:          "pd-standard",
 			VolumeSizeGb:      30,
-			NodeCount:         3,
 			MachineType:       "n1-standard-4",
 			Region:            "europe-west4",
 			Provider:          "gcp",
