@@ -42,7 +42,7 @@ var plans = map[string]struct {
 			  "items": [
 				{
 				  "type": "string",
-				  "enum": ["Loki", "Kiali", "Jaeger"]
+				  "enum": ["Kiali", "Jaeger"]
 				}
 			  ],
 			  "additionalItems": false,
@@ -120,7 +120,7 @@ var plans = map[string]struct {
 			  "items": [
 				{
 				  "type": "string",
-				  "enum": ["Loki", "Kiali", "Jaeger"]
+				  "enum": ["Kiali", "Jaeger"]
 				}
 			  ],
 			  "additionalItems": false,
