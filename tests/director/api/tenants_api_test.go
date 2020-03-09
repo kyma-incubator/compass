@@ -27,8 +27,10 @@ func TestQueryTenants(t *testing.T) {
 
 	//THEN
 	t.Log("Check if tenants were received")
-	assert.Equal(t, len(defaultTenants), len(output))
-	assert.Equal(t, defaultTenants, output)
+
+	for _, tenant := range defaultTenants {
+		assert.Contains(t, output, tenant)
+	}
 	saveExample(t, getTenantsRequest.Query(), "query tenants")
 }
 
