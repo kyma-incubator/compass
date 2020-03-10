@@ -1,10 +1,11 @@
 package avs
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 type InternalEvaluationStep struct {

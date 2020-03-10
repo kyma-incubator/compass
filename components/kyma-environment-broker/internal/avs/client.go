@@ -2,11 +2,12 @@ package avs
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/oauth2"
 	"net/http"
 	"sync"
 	"sync/atomic"
+
+	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
 )
 
 type clientHolder struct {

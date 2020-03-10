@@ -2,6 +2,7 @@ package avs
 
 import (
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 )
 
