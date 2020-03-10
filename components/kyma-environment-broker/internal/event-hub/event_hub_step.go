@@ -29,11 +29,7 @@ const (
 )
 
 /*TODO(anishj0shi)
-1) create an interface type "event-hub-provider" which exposes some functions like
-GetEventHubNamespace, MarkNamespaceAsUsed, GetNamespaceAccessCredentials, inject this interface as an input
-to NewProvisioningAzureEventHubStep
-2) Refactor Azure Client Wrapper to conform to the above protocol
-3) Implement retry logic for Namespace retrieval and NamespaceTagging operation.
+- Implement retry logic for Namespace retrieval and NamespaceTagging operation.
 */
 
 type ProvisionAzureEventHubStep struct {
