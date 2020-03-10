@@ -125,10 +125,3 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 	}
 	return copiedList
 }
-
-type ServiceManagerOverride struct {
-	CredentialsOverride bool `envconfig:"default=false"`
-	URL                 string
-	Password            string
-	Username            string
-}

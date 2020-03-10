@@ -8,9 +8,8 @@ import (
 )
 
 const (
-	brokerKeyPrefix             = "broker_"
-	globalKeyPrefix             = "global_"
-	ServiceManagerComponentName = "service-manager-proxy"
+	brokerKeyPrefix = "broker_"
+	globalKeyPrefix = "global_"
 )
 
 type Config struct {

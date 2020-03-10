@@ -9,14 +9,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/director"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli/automock"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
 	log "github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -37,7 +37,7 @@ func TestMiddleware(t *testing.T) {
 
 		logger, _ := test.NewNullLogger()
 
-		gqlQueryBuilder := director.NewClient(nil, &gql.Graphqlizer{}, &gql.GqlFieldsProvider{})
+		gqlQueryBuilder := director.NewClient(nil, &graphqlizer.Graphqlizer{}, &graphqlizer.GqlFieldsProvider{})
 		expectedQuery := gqlQueryBuilder.GetApplicationsByNameRequest(appName)
 
 		var apps appdetails.GqlSuccessfulAppPage
@@ -66,7 +66,7 @@ func TestMiddleware(t *testing.T) {
 		logger, _ := test.NewNullLogger()
 		emptyResponse := graphql.ApplicationPageExt{}
 
-		gqlQueryBuilder := director.NewClient(nil, &gql.Graphqlizer{}, &gql.GqlFieldsProvider{})
+		gqlQueryBuilder := director.NewClient(nil, &graphqlizer.Graphqlizer{}, &graphqlizer.GqlFieldsProvider{})
 		expectedQuery := gqlQueryBuilder.GetApplicationsByNameRequest(appName)
 
 		var apps appdetails.GqlSuccessfulAppPage
@@ -99,7 +99,7 @@ func TestMiddleware(t *testing.T) {
 		logger, _ := test.NewNullLogger()
 		appPage := graphql.ApplicationPageExt{ApplicationPage: graphql.ApplicationPage{},
 			Data: []*graphql.ApplicationExt{&app, &app}}
-		gqlQueryBuilder := director.NewClient(nil, &gql.Graphqlizer{}, &gql.GqlFieldsProvider{})
+		gqlQueryBuilder := director.NewClient(nil, &graphqlizer.Graphqlizer{}, &graphqlizer.GqlFieldsProvider{})
 		expectedQuery := gqlQueryBuilder.GetApplicationsByNameRequest(appName)
 
 		var apps appdetails.GqlSuccessfulAppPage
@@ -131,7 +131,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("director returns error", func(t *testing.T) {
 		logger, hook := test.NewNullLogger()
 
-		gqlQueryBuilder := director.NewClient(nil, &gql.Graphqlizer{}, &gql.GqlFieldsProvider{})
+		gqlQueryBuilder := director.NewClient(nil, &graphqlizer.Graphqlizer{}, &graphqlizer.GqlFieldsProvider{})
 		expectedQuery := gqlQueryBuilder.GetApplicationsByNameRequest(appName)
 
 		var apps appdetails.GqlSuccessfulAppPage

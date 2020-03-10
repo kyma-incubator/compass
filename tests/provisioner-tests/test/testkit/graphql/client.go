@@ -44,9 +44,7 @@ type graphQLResponseWrapper struct {
 }
 
 // ExecuteRequest executes GraphQL request and unmarshal response to respDestination.
-// If empty object is provided and unmarshaled response is equal to it, the error is returned.
-// Due to GraphQL client not checking response codes we need to relay on result being empty in case of failure.
-func (c Client) ExecuteRequest(req *gcli.Request, respDestination interface{}, emptyObject ...interface{}) error {
+func (c Client) ExecuteRequest(req *gcli.Request, respDestination interface{}) error {
 	if reflect.ValueOf(respDestination).Kind() != reflect.Ptr {
 		return errors.New("destination is not of pointer type")
 	}
@@ -55,12 +53,6 @@ func (c Client) ExecuteRequest(req *gcli.Request, respDestination interface{}, e
 	err := c.graphQLClient.Run(context.Background(), req, wrapper)
 	if err != nil {
 		return errors.Wrap(err, "Failed to execute request")
-	}
-
-	if len(emptyObject) > 0 {
-		if reflect.DeepEqual(respDestination, emptyObject[0]) {
-			return errors.New("Failed to execute request: received empty object response")
-		}
 	}
 
 	return nil

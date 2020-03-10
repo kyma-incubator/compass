@@ -141,7 +141,7 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	appTemplate2 := createApplicationTemplate(t, ctx, name2)
 	defer deleteApplicationTemplate(t, ctx, appTemplate2.ID)
 
-	first := 2
+	first := 100
 	after := ""
 
 	getApplicationTemplatesRequest := fixApplicationTemplates(first, after)
@@ -154,7 +154,7 @@ func TestQueryApplicationTemplates(t *testing.T) {
 
 	//THEN
 	t.Log("Check if application templates were received")
-	assert.Equal(t, 2, output.TotalCount)
+	assert.Subset(t, output.Data, []*graphql.ApplicationTemplate{&appTemplate1, &appTemplate2})
 	saveExample(t, getApplicationTemplatesRequest.Query(), "query application templates")
 }
 

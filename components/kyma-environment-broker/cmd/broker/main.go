@@ -10,9 +10,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
 
-	"code.cloudfoundry.org/lager"
-	"github.com/gorilla/handlers"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
@@ -23,6 +20,9 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+
+	"code.cloudfoundry.org/lager"
+	"github.com/gorilla/handlers"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pivotal-cf/brokerapi"
 	"github.com/sirupsen/logrus"
@@ -47,7 +47,7 @@ type Config struct {
 
 	ManagementPlaneURL string
 
-	ServiceManager internal.ServiceManagerOverride
+	ServiceManager provisioning.ServiceManagerOverrideConfig
 
 	KymaVersion                          string
 	ManagedRuntimeComponentsYAMLFilePath string
@@ -129,16 +129,17 @@ func main() {
 
 	// create and run queue, steps provisioning
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
-
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
-
-	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
+	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
+	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
 	stepManager.InitStep(initialisation)
 	stepManager.AddStep(1, resolveCredentialsStep)
-	stepManager.AddStep(2, runtimeStep)
+
+	stepManager.AddStep(10, runtimeStep)
+	stepManager.AddStep(2, smOverrideStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())

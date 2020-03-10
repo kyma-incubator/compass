@@ -44,10 +44,10 @@ type ProvisioningParametersDTO struct {
 }
 
 type ERSContext struct {
-	TenantID        string                 `json:"tenant_id"`
-	SubAccountID    string                 `json:"subaccount_id"`
-	GlobalAccountID string                 `json:"globalaccount_id"`
-	ServiceManager  ServiceManagerEntryDTO `json:"sm_platform_credentials"`
+	TenantID        string                  `json:"tenant_id"`
+	SubAccountID    string                  `json:"subaccount_id"`
+	GlobalAccountID string                  `json:"globalaccount_id"`
+	ServiceManager  *ServiceManagerEntryDTO `json:"sm_platform_credentials,omitempty"`
 }
 
 type ServiceManagerEntryDTO struct {

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	gqlizer "github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
-
 	"github.com/sirupsen/logrus"
 
 	"github.com/avast/retry-go"
@@ -22,8 +22,8 @@ var tc *testContext
 
 // testContext contains dependencies that help executing tests
 type testContext struct {
-	graphqlizer       gql.Graphqlizer
-	gqlFieldsProvider gql.GqlFieldsProvider
+	graphqlizer       gqlizer.Graphqlizer
+	gqlFieldsProvider gqlizer.GqlFieldsProvider
 	currentScopes     []string
 	cli               *gcli.Client
 }
@@ -45,8 +45,8 @@ func newTestContext() (*testContext, error) {
 	}
 
 	return &testContext{
-		graphqlizer:       gql.Graphqlizer{},
-		gqlFieldsProvider: gql.GqlFieldsProvider{},
+		graphqlizer:       gqlizer.Graphqlizer{},
+		gqlFieldsProvider: gqlizer.GqlFieldsProvider{},
 		currentScopes:     currentScopes,
 		cli:               gql.NewAuthorizedGraphQLClient(bearerToken),
 	}, nil
