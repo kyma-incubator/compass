@@ -27,10 +27,6 @@ const (
 	DeprovisioningTimeout = 60 * time.Minute
 
 	checkInterval = 10 * time.Second
-
-	Azure = testkit.Azure
-	GCP   = testkit.GCP
-	AWS   = testkit.AWS
 )
 
 type TestSuite struct {
