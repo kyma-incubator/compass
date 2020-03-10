@@ -132,7 +132,7 @@ func main() {
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
-	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager, accountProvider)
+	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations(), accountProvider)
 
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
 

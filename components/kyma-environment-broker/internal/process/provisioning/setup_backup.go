@@ -2,31 +2,34 @@ package provisioning
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/Azure/go-autorest/autorest/azure/auth"
+
+	azStorage "github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2019-04-01/storage"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 	"time"
-	"github.com/Azure-Samples/azure-sdk-for-go-samples/internal/iam"
-	azStorage "github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2017-06-01/storage"
-
 )
 
 const (
 	// the time after which the operation is marked as expired
-	CSetuUpBackup = 1 * time.Hour
+	SetuUpBackupTimeOut = 1 * time.Hour
 )
 
 type SetupBackupStep struct {
 	bucketName string
 	zone string
 	operationManager  *process.OperationManager
-	instanceStorage   storage.Instances
-	provisionerClient provisioner.Client
-	serviceManager    internal.ServiceManagerOverride
+	//instanceStorage   storage.Instances
+	//provisionerClient provisioner.Client
+	//serviceManager    internal.ServiceManagerOverride
 	accountProvider  hyperscaler.AccountProvider
 }
 
@@ -34,12 +37,9 @@ func (s *SetupBackupStep) Name() string {
 	return "Setup_Backup"
 }
 
-func NewSetupBackupStep(os storage.Operations, is storage.Instances, cli provisioner.Client, smOverride internal.ServiceManagerOverride, accountProvider hyperscaler.AccountProvider) *SetupBackupStep {
+func NewSetupBackupStep(os storage.Operations, accountProvider hyperscaler.AccountProvider) *SetupBackupStep {
 	return &SetupBackupStep{
 		operationManager:  process.NewOperationManager(os),
-		instanceStorage:   is,
-		provisionerClient: cli,
-		serviceManager:    smOverride,
 		accountProvider:  accountProvider,
 	}
 }
@@ -49,6 +49,10 @@ func (s *SetupBackupStep) SetupBackupStep() {
 }
 
 func (s *SetupBackupStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	if time.Since(operation.UpdatedAt) > SetuUpBackupTimeOut {
+		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", SetuUpBackupTimeOut))
+	}
 	log.Info("Setting Up Backup")
 
 	pp, err := operation.GetProvisioningParameters()
@@ -70,30 +74,64 @@ func (s *SetupBackupStep) Run(operation internal.ProvisioningOperation, log logr
 		return s.operationManager.OperationFailed(operation, errMsg)
 	}
 	switch hypType {
-	case "azure": backupSetupAz(creds.CredentialData, log)
+	case "azure":
+		err := backupSetupAz(creds.CredentialData, log)
+		if err != nil {
+			log.Info(err.Error())
+			return operation, 2 * time.Minute, nil
+		}
+		operation.InputCreator.SetOverrides(input.ServiceManagerComponentName, s.setupBackUpOverride(pp.ErsContext))
 	}
+
 	fmt.Println(creds.CredentialData)
 
 
 	// Create bucket
 
 	// Setup access rights
-	return operation, 5 * time.Second, nil
+	return operation, 0, nil
 }
 
-func getStorageAccountsClient(creds map[string][]byte) azStorage.AccountsClient {
-
-	storageAccountsClient := azStorage.NewAccountsClient(string(creds["subscriptionID"]))
-	auth, _ := iam.GetResourceManagementAuthorizer()
-	storageAccountsClient.Authorizer = auth
-	storageAccountsClient.AddToUserAgent("setup-backup")
-	return storageAccountsClient
+func (s *SetupBackupStep) setupBackUpOverride(ersContext internal.ERSContext) []*gqlschema.ConfigEntryInput {
+	backupStepOverrides := []*gqlschema.ConfigEntryInput{
+		{
+			Key: "configuration.provider",
+			Value: "azure",
+		},
+	}
+return backupStepOverrides
+	
 }
 
-func backupSetupAz(cred map[string][]byte,  log logrus.FieldLogger) {
+func getStorageAccountsClient(creds map[string][]byte) (azStorage.AccountsClient, error) {
 
-	storageAccountsClient := getStorageAccountsClient(cred)
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	certificateAuthorizer := auth.NewClientCredentialsConfig(string(creds["clientSecret"]), string(creds["clientID"]), string(creds["tenantID"]))
+	authorizerToken, err := certificateAuthorizer.Authorizer()
+	if err != nil {
+		return azStorage.AccountsClient{},  errors.New("unable to authenticate to Hyperscaler")
+	}
+
+	storageAccountsClient := azStorage.NewAccountsClient(string(creds["SubscriptionID"]) )
+	storageAccountsClient.Authorizer = authorizerToken
+	err = storageAccountsClient.AddToUserAgent("backup-setup")
+	if err != nil {
+		return  azStorage.AccountsClient{},  errors.New("unable to add useragent to storage client")
+	}
+	return storageAccountsClient, nil
+}
+
+func backupSetupAz(cred map[string][]byte,  log logrus.FieldLogger) error{
+
+	storageAccountsClient, err := getStorageAccountsClient(cred)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	log.Infof("Storage account list: %v",storageAccountsClient.List(ctx))
+	l, err := storageAccountsClient.List(ctx)
+	if err != nil {
+		return err
+	}
+	log.Infof("Storage account list: %v",l)
+	return  nil
 }
