@@ -194,8 +194,7 @@ func (c *Client) FetchDashboardURL() (string, error) {
 
 func (c *Client) prepareProvisionDetails() ([]byte, error) {
 	parameters := provisionParameters{
-		Name:       c.clusterName,
-		Components: []string{"loki"}, // fill with optional components
+		Name: c.clusterName,
 	}
 	context := inputContext{
 		TenantID:        "1eba80dd-8ff6-54ee-be4d-77944d17b10b",
