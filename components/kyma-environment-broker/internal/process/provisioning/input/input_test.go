@@ -33,10 +33,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	optComponentsSvc.On("ExecuteDisablers", mappedComponentList, toDisableComponents[0]).Return(mappedComponentList, nil)
 
 	config := Config{
-		URL:             "",
-		GCPSecretName:   "",
-		AzureSecretName: "azure-secret",
-		AWSSecretName:   "",
+		URL: "",
 	}
 	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, config, "1.10.0")
 
@@ -49,7 +46,8 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	// when
 	input, err := builder.
 		SetProvisioningParameters(internal.ProvisioningParametersDTO{
-			Name: "azure-cluster",
+			Name:         "azure-cluster",
+			TargetSecret: ptr.String("azure-secret"),
 		}).
 		SetRuntimeLabels(fixID, fixID).
 		SetOverrides("keb", kebOverrides).Create()

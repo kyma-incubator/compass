@@ -6,6 +6,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
@@ -36,9 +40,11 @@ type Config struct {
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
-	Provisioning       input.Config
-	Director           director.Config
-	Database           storage.Config
+	Provisioning input.Config
+	Director     director.Config
+	Database     storage.Config
+	Gardener     gardener.Config
+
 	ManagementPlaneURL string
 
 	ServiceManager provisioning.ServiceManagerOverrideConfig
@@ -106,6 +112,15 @@ func main() {
 	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
 	fatalOnError(err)
 
+	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
+	fatalOnError(err)
+	//
+	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
+	fatalOnError(err)
+
+	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
+	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
+
 	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion)
 
 	// create log dumper
@@ -114,15 +129,17 @@ func main() {
 
 	// create and run queue, steps provisioning
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
+	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
 	stepManager.InitStep(initialisation)
+	stepManager.AddStep(1, resolveCredentialsStep)
 
 	stepManager.AddStep(10, runtimeStep)
-	stepManager.AddStep(1, smOverrideStep)
+	stepManager.AddStep(2, smOverrideStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())

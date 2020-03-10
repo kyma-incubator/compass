@@ -13,10 +13,7 @@ const (
 )
 
 type Config struct {
-	URL             string
-	GCPSecretName   string
-	AzureSecretName string
-	AWSSecretName   string
+	URL string
 }
 
 type RuntimeInput struct {
@@ -84,6 +81,7 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 	updateInt(&r.input.ClusterConfig.GardenerConfig.VolumeSizeGb, r.provisioningParameters.VolumeSizeGb)
 	updateString(&r.input.ClusterConfig.GardenerConfig.Region, r.provisioningParameters.Region)
 	updateString(&r.input.ClusterConfig.GardenerConfig.MachineType, r.provisioningParameters.MachineType)
+	updateString(&r.input.ClusterConfig.GardenerConfig.TargetSecret, r.provisioningParameters.TargetSecret)
 
 	r.hyperscalerInputProvider.ApplyParameters(r.input.ClusterConfig, r.provisioningParameters)
 
