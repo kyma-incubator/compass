@@ -17,6 +17,7 @@
 /chart/compass/charts/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 /components/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 /docs/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
+/components/kyma-environment-broker/internal/hyperscaler @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @koala7659
 
 # Compass UI
 /chart/compass/charts/cockpit @kwiatekus @dariadomagala @y-kkamil @parostatkiem @akucharska @sjanota
