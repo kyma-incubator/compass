@@ -2,7 +2,20 @@
 
 A label is a key-value pair that you can add to every top-level entity, such as an Application or a Runtime. Labels allow you to enrich Applications and Runtimes with additional information.
 
-<example>
+Use GraphQL mutations to set labels on your Applications and Runtimes. For example, to set the `test:val` label on your Application, use:
+
+```graphql
+mutation {
+  result: setApplicationLabel(
+    applicationID: "{YOUR_APPLICATION_ID}"
+    key: "test"
+    value: "val"
+  ) {
+    key
+    value
+  }
+}
+```
 
 ## LabelDefinitions
 
@@ -26,10 +39,6 @@ LabelDefinition key has to be unique for a given tenant. For the given label, yo
 ```graphql
 setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label!
 ```
-
-### Label Applications without creating LabelDefinitions
-
-You can label an Application or a Runtime without providing validation rules. Adding LabelDefinitions is optional, however, they are created automatically if you add labels for which LabelDefinitions do not exist. In such a case, the schema is empty and labels validation is not performed, which means that the user can provide any value.
 
 ### Define and set LabelDefinitions
 
@@ -104,7 +113,7 @@ You can define a LabelFilter to list the top-level entities according to their l
  applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
 ```
 
-To search for all objects with a given label despite their values, use this query:
+To search for all objects with a given label despite their values, use:
 
 ```graphql
 query {
@@ -119,7 +128,7 @@ query {
 }
 ```
 
-You can also filter objects by their key and string value. To do so, use:
+To filter objects by their key and string value, use this query:
 
 ```graphql
 runtimes(filter: { key: "{KEY}" query: "\"{VALUE}\"" })
