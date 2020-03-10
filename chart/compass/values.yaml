@@ -86,6 +86,7 @@ global:
       rootCA:
         name: compass-connector-root-ca
         namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
+        cacert: compass-connector-root-ca-cacert
     certificateDataHeader: "Certificate-Data"
     revocation:
       configmap:
