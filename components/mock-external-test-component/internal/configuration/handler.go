@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/fake-external-test-component/pkg/model"
+	"github.com/kyma-incubator/compass/components/mock-external-test-component/pkg/model"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )

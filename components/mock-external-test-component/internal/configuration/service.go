@@ -2,7 +2,7 @@ package configuration
 
 import (
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/fake-external-test-component/pkg/model"
+	"github.com/kyma-incubator/compass/components/mock-external-test-component/pkg/model"
 )
 
 type Service struct {

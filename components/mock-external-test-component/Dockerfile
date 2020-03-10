@@ -1,6 +1,6 @@
 FROM golang:1.13.8-alpine3.11 as builder
 
-ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/fake-external-test-component
+ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/mock-external-test-component
 WORKDIR ${BASE_APP_DIR}
 
 #
@@ -14,7 +14,7 @@ COPY . .
 #
 
 RUN go build -v -o main ./cmd/main.go
-RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
+RUN mkdir /app && mv ./main /app/main
 
 FROM alpine:3.11.3
 LABEL source = git@github.com:kyma-incubator/compass.git

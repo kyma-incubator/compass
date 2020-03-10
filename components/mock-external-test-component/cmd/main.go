@@ -6,11 +6,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/fake-external-test-component/internal/security"
+	"github.com/kyma-incubator/compass/components/mock-external-test-component/internal/security"
 
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/fake-external-test-component/internal/configuration"
-	"github.com/kyma-incubator/compass/components/fake-external-test-component/pkg/health"
+	"github.com/kyma-incubator/compass/components/mock-external-test-component/internal/configuration"
+	"github.com/kyma-incubator/compass/components/mock-external-test-component/pkg/health"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )

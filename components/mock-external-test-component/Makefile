@@ -1,5 +1,5 @@
-APP_NAME = compass-fake-external-test-component
-APP_PATH = components/fake-external-test-component
+APP_NAME = compass-mock-external-test-component
+APP_PATH = components/mock-external-test-component
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20190913-65b55d1
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export GO111MODULE = on
