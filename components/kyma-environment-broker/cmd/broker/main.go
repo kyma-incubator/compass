@@ -132,7 +132,7 @@ func main() {
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
-	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager, accountProvider)
+	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations(), accountProvider)
 
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
 
