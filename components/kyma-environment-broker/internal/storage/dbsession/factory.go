@@ -17,6 +17,7 @@ type Factory interface {
 type ReadSession interface {
 	GetInstanceByID(instanceID string) (internal.Instance, dberr.Error)
 	GetOperationByID(opID string) (OperationDTO, dberr.Error)
+	GetOperationsInProgress() ([]OperationDTO, dberr.Error)
 	GetOperationByInstanceID(inID string) (OperationDTO, dberr.Error)
 }
 

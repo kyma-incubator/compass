@@ -142,6 +142,11 @@ func TestSchemaInitializer(t *testing.T) {
 		err = svc.InsertProvisioningOperation(givenOperation)
 		require.NoError(t, err)
 
+		ops, err := svc.GetOperationsInProgress()
+		require.NoError(t, err)
+		assert.Len(t, ops, 1)
+		assert.Equal(t, givenOperation.Operation, ops[0])
+
 		gotOperation, err := svc.GetProvisioningOperationByID("operation-id")
 		require.NoError(t, err)
 

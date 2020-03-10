@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 type readSession struct {
@@ -43,6 +44,20 @@ func (r readSession) GetOperationByID(opID string) (OperationDTO, dberr.Error) {
 	return operation, nil
 }
 
+func (r readSession) GetOperationsInProgress() ([]OperationDTO, dberr.Error) {
+	condition := dbr.Eq("state", domain.InProgress)
+	operations, err := r.getOperations(condition)
+	if err != nil {
+		switch {
+		case dberr.IsNotFound(err):
+			return nil, dberr.NotFound("not found operation in progress")
+		default:
+			return nil, err
+		}
+	}
+	return operations, nil
+}
+
 func (r readSession) GetOperationByInstanceID(inID string) (OperationDTO, dberr.Error) {
 	condition := dbr.Eq("instance_id", inID)
 	operation, err := r.getOperation(condition)
@@ -73,4 +88,22 @@ func (r readSession) getOperation(condition dbr.Builder) (OperationDTO, dberr.Er
 		return OperationDTO{}, dberr.Internal("Failed to get operation: %s", err)
 	}
 	return operation, nil
+}
+
+func (r readSession) getOperations(condition dbr.Builder) ([]OperationDTO, dberr.Error) {
+	var operations []OperationDTO
+
+	_, err := r.session.
+		Select("*").
+		From(postsql.OperationTableName).
+		Where(condition).
+		Load(&operations)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return nil, dberr.NotFound("cannot find operations: %s", err)
+		}
+		return nil, dberr.Internal("Failed to get operations: %s", err)
+	}
+	return operations, nil
 }

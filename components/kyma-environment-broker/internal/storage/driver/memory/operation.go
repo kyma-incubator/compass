@@ -3,6 +3,8 @@ package memory
 import (
 	"sync"
 
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 )
@@ -75,4 +77,15 @@ func (s *operations) GetOperation(operationID string) (*internal.Operation, erro
 	}
 
 	return &op.Operation, nil
+}
+
+func (s *operations) GetOperationsInProgress() ([]internal.Operation, error) {
+	ops := make([]internal.Operation, 0)
+	for _, op := range s.provisioningOperations {
+		if op.State == domain.InProgress {
+			ops = append(ops, op.Operation)
+		}
+	}
+
+	return ops, nil
 }

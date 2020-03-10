@@ -16,4 +16,5 @@ type Operations interface {
 	GetProvisioningOperationByInstanceID(instanceID string) (*internal.ProvisioningOperation, error)
 	UpdateProvisioningOperation(operation internal.ProvisioningOperation) (*internal.ProvisioningOperation, error)
 	GetOperation(operationID string) (*internal.Operation, error)
+	GetOperationsInProgress() ([]internal.Operation, error)
 }

@@ -103,6 +103,16 @@ func (s *operations) GetOperation(operationID string) (*internal.Operation, erro
 	return &op, nil
 }
 
+func (s *operations) GetOperationsInProgress() ([]internal.Operation, error) {
+	session := s.NewReadSession()
+	dto, err := session.GetOperationsInProgress()
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Operations from the storage")
+	}
+	op := toOperations(dto)
+	return op, nil
+}
+
 func toOperation(op *dbsession.OperationDTO) internal.Operation {
 	return internal.Operation{
 		ID:                     op.ID,
@@ -114,6 +124,14 @@ func toOperation(op *dbsession.OperationDTO) internal.Operation {
 		Description:            op.Description,
 		Version:                op.Version,
 	}
+}
+
+func toOperations(op []dbsession.OperationDTO) []internal.Operation {
+	operations := make([]internal.Operation, 0)
+	for _, o := range op {
+		operations = append(operations, toOperation(&o))
+	}
+	return operations
 }
 
 func toProvisioningOperation(op *dbsession.OperationDTO) (*internal.ProvisioningOperation, error) {
