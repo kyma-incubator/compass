@@ -137,7 +137,6 @@ func main() {
 	azureConfig := azure.GetConfig("38c0ed1b-13d0-4936-8429-eccc80d2d8fb", secret, "42f7676c-f455-423c-82f6-dc2d99791af7", "35d42578-34d1-486d-a689-012a8d514c19")
 
 	provisionAzureEventHub := event_hub.NewProvisionAzureEventHubStep(db.Operations(), azureConfig, ctx)
-	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
