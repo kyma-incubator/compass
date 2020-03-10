@@ -141,7 +141,6 @@ You can also search for objects by their key and array values. In the **query** 
 ```graphql
 query {
   applications(filter:[{key:"scenarios",
-    # This field is optional. If not provided, the query returns every object with the given label, regardless its value.
     query:"$[*] ? (@ == \"DEFAULT\")"}]) {
     data {
       name
