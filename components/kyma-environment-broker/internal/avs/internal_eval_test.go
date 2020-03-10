@@ -150,7 +150,7 @@ func fixProvisioningParameters(t *testing.T) string {
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    subAccountID,
-			ServiceManager: internal.ServiceManagerEntryDTO{
+			ServiceManager: &internal.ServiceManagerEntryDTO{
 				Credentials: internal.ServiceManagerCredentials{
 					BasicAuth: internal.ServiceManagerBasicAuth{
 						Username: serviceManagerUser,
@@ -161,8 +161,7 @@ func fixProvisioningParameters(t *testing.T) string {
 			},
 		},
 		Parameters: internal.ProvisioningParametersDTO{
-			NodeCount: ptr.Integer(2),
-			Region:    ptr.String("europe-west4-a"),
+			Region: ptr.String("europe-west4-a"),
 		},
 	}
 
@@ -189,19 +188,9 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Namespace:     "kyma-system",
 			Configuration: nil,
 		},
-		{
-			Component:     input.ServiceManagerComponentName,
-			Namespace:     "kyma-system",
-			Configuration: nil,
-		},
 	}).Return(internal.ComponentConfigurationInputList{
 		{
 			Component:     "keb",
-			Namespace:     "kyma-system",
-			Configuration: nil,
-		},
-		{
-			Component:     input.ServiceManagerComponentName,
 			Namespace:     "kyma-system",
 			Configuration: nil,
 		},
@@ -214,10 +203,6 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 		},
 		{
 			Name:      "keb",
-			Namespace: "kyma-system",
-		},
-		{
-			Name:      input.ServiceManagerComponentName,
 			Namespace: "kyma-system",
 		},
 	}
