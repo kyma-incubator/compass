@@ -4,10 +4,12 @@ import "fmt"
 
 type queryProvider struct{}
 
-func (qp queryProvider) provisionRuntime(runtimeID string, config string) string {
+func (qp queryProvider) provisionRuntime(config string) string {
 	return fmt.Sprintf(`mutation {
-	result: provisionRuntime(id: "%s", config: %s)
-}`, runtimeID, config)
+	result: provisionRuntime(config: %s) { 
+		%s 
+	}
+}`, config, operationStatusData())
 }
 
 func (qp queryProvider) upgradeRuntime(runtimeID string, config string) string {
@@ -31,7 +33,7 @@ func (qp queryProvider) reconnectRuntimeAgent(runtimeID string) string {
 func (qp queryProvider) runtimeStatus(operationID string) string {
 	return fmt.Sprintf(`query {
 	result: runtimeStatus(id: "%s") {
-	%s
+		%s
 	}
 }`, operationID, runtimeStatusData())
 }
@@ -39,7 +41,7 @@ func (qp queryProvider) runtimeStatus(operationID string) string {
 func (qp queryProvider) runtimeOperationStatus(operationID string) string {
 	return fmt.Sprintf(`query {
 	result: runtimeOperationStatus(id: "%s") {
-	%s
+		%s
 	}
 }`, operationID, operationStatusData())
 }
@@ -52,16 +54,17 @@ func runtimeStatusData() string {
 				clusterConfig { 
 					%s
 				} 
-				kymaConfig { version modules } 
+				kymaConfig { 
+					version
+				} 
 			}`, clusterConfig())
 }
 
 func clusterConfig() string {
 	return fmt.Sprintf(`
 		... on GardenerConfig {
-			name 
+			name
 			kubernetesVersion
-			projectName
 			nodeCount 
 			volumeSizeGB
 			diskType

@@ -16,12 +16,7 @@ func TestNewPlansSchemaValidatorErrors(t *testing.T) {
 		"missing name, not valid components list": {
 			againstPlans: []string{GcpPlanID, AzurePlanID},
 			inputJSON:    `{"components": ["wrong component name"]}`,
-			expErr:       `(root): name is required, components.0: components.0 must be one of the following: "Loki", "Kiali", "Jaeger"`,
-		},
-		"not valid node count": {
-			againstPlans: []string{AzurePlanID},
-			inputJSON:    `{"name": "wrong-node", "nodeCount": 123123}`,
-			expErr:       "nodeCount: Must be less than or equal to 20",
+			expErr:       `(root): name is required, components.0: components.0 must be one of the following: "Kiali", "Jaeger"`,
 		},
 		"missing name, not valid machine type": {
 			againstPlans: []string{AzurePlanID},
