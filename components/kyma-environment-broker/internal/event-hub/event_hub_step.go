@@ -87,31 +87,21 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	// TODO(nachtmaar): only create resource group once
 	// TODO(nachtmaar): use different resource group name
-	// TODO(nachtmaar): tag resources with kyma runtime id
-	if _, err = azure.PersistResourceGroup(p.context, azureCfg, groupName); err != nil {
+	resourceGroup, err := azure.PersistResourceGroup(p.context, azureCfg, groupName)
+	if err != nil {
 		// TODO(nachtmaar):
 		log.Fatalf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
 	}
 	log.Printf("Persisted Azure Resource Group [%s]", groupName)
 
-	if _, err = azure.PersistEventHubsNamespace(p.context, azureCfg, p.namespaceClient, groupName, eventHubsNamespace); err != nil {
+	eventHubNamespace, err := azure.PersistEventHubsNamespace(p.context, azureCfg, p.namespaceClient, groupName, eventHubsNamespace)
+	if err != nil {
 		// TODO(nachtmaar):
 		log.Fatalf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
 	}
 	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
 
-	unusedEventHubNamespace, err := azure.GetFirstUnusedNamespaces(p.context, p.namespaceClient)
-	if err != nil {
-		return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
-	}
-	log.Printf("Found unused EventHubs Namespace, name: %v", unusedEventHubNamespace.Name)
-
-	log.Infof("Get Access Keys for Azure EventHubs Namespace [%s]\n", unusedEventHubNamespace)
-	resourceGroup := azure.GetResourceGroup(unusedEventHubNamespace)
-
-	log.Printf("Found the unused EventHubs Namespace %v in resourceGroup: %v", unusedEventHubNamespace.Name, resourceGroup)
-
-	accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(p.context, p.namespaceClient, resourceGroup, *unusedEventHubNamespace.Name, authorizationRuleName)
+	accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(p.context, p.namespaceClient, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
 		return p.operationManager.OperationFailed(operation, "unable to retrieve access keys to azure event-hub namespace")
 	}
@@ -120,9 +110,10 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
-	if _, err := azure.MarkNamespaceAsUsed(p.context, p.namespaceClient, resourceGroup, unusedEventHubNamespace); err != nil {
-		return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
-	}
+	// TODO(nachtmaar): tag resources with kyma runtime id
+	// if _, err := azure.MarkNamespaceAsUsed(p.context, p.namespaceClient, *resourceGroup.Name, *eventHubNamespace); err != nil {
+	// 	return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
+	// }
 
 	// TODO(nachtmaar):
 	// kafkaEndpoint := "TODO"
