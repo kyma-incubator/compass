@@ -38,8 +38,8 @@ func (b *GetInstanceEndpoint) GetInstance(ctx context.Context, instanceID string
 	decodedParams := make(map[string]interface{})
 	err = json.Unmarshal([]byte(inst.ProvisioningParameters), &decodedParams)
 	if err != nil {
-		logger.Errorf("unable to decode instance parameters", instanceID)
-		logger.Errorf("  parameters: %s", inst.ProvisioningParameters)
+		logger.Errorf("unable to decode instance parameters %s", inst.ProvisioningParameters)
+		return domain.GetInstanceDetailsSpec{}, errors.Wrapf(err, "while getting instance from storage")
 	}
 
 	spec := domain.GetInstanceDetailsSpec{
