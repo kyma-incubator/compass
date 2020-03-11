@@ -27,7 +27,7 @@ func TestNewRuntimeEventingConfiguration(t *testing.T) {
 		{
 			Name:          "Invalid rawURL",
 			RawURL:        "::",
-			ExpectedError: errors.New("parse \"::\": missing protocol scheme"),
+			ExpectedError: errors.New("parse ::: missing protocol scheme"),
 		},
 	}
 

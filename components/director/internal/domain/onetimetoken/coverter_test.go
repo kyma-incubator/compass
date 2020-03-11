@@ -61,5 +61,5 @@ func TestConverter_ToGraphQLForApplication_ErrorWithInvalidLegacyURL(t *testing.
 	// WHEN
 	_, err := conv.ToGraphQLForApplication(tokenModel)
 	//THEN
-	assert.EqualError(t, err, "while parsing string (:123:invalid-url) as the URL: parse \":123:invalid-url\": missing protocol scheme")
+	assert.EqualError(t, err, "while parsing string (:123:invalid-url) as the URL: parse :123:invalid-url: missing protocol scheme")
 }

@@ -77,7 +77,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		// WHEN
 		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedEventsType, 1)
 		// THEN
-		require.EqualError(t, err, "parse \"___ :// ___ \": first path segment in URL cannot contain colon")
+		require.EqualError(t, err, "parse ___ :// ___ : first path segment in URL cannot contain colon")
 		assert.Empty(t, res)
 	})
 
@@ -85,7 +85,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		// WHEN
 		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedEventsType, 1)
 		// THEN
-		require.EqualError(t, err, "while sending get request: Get \"http://127.0.0.1:8111/badpath?page=1&resultsPerPage=1000&ts=1\": dial tcp 127.0.0.1:8111: connect: connection refused")
+		require.EqualError(t, err, "while sending get request: Get http://127.0.0.1:8111/badpath?page=1&resultsPerPage=1000&ts=1: dial tcp 127.0.0.1:8111: connect: connection refused")
 		assert.Empty(t, res)
 	})
 }
