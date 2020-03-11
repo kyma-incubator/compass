@@ -4,6 +4,11 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/gateway/internal/time"
+	"github.com/kyma-incubator/compass/components/gateway/internal/uuid"
+
+	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog"
+
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/pkg/errors"
 
@@ -16,6 +21,17 @@ type config struct {
 
 	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3000"`
 	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3000"`
+	auditlog.AuditlogConfig
+}
+
+type AuditogService interface {
+	Log(request, response string, claims proxy.Claims) error
+	//LogConfigurationChange(change model.ConfigurationChange) error
+	//LogSecurityEvent(event model.SecuritEvent) error
+}
+
+type HTTPTransport interface {
+	RoundTrip(req *http.Request) (resp *http.Response, err error)
 }
 
 func main() {
@@ -25,10 +41,27 @@ func main() {
 
 	router := mux.NewRouter()
 
-	err = proxyRequestsForComponent(router, "/connector", cfg.ConnectorOrigin)
+	uuidSvc := uuid.NewService()
+	timeSvc := &time.TimeService{}
+	auditlogClient := auditlog.NewClient(cfg.AuditlogConfig, uuidSvc, timeSvc)
+
+	done := make(chan bool)
+	auditlogMsgChannel := make(chan auditlog.AuditlogMessage)
+
+	auditlogSource := auditlog.NewAuditlogSink(auditlogMsgChannel)
+	auditlogSvc := auditlog.NewService(auditlogClient)
+
+	worker := auditlog.NewWorker(auditlogSvc, auditlogMsgChannel, done)
+	go func() {
+		worker.Start()
+	}()
+
+	tr := proxy.NewTransport(auditlogSource, http.DefaultTransport)
+
+	err = proxyRequestsForComponent(router, "/connector", cfg.ConnectorOrigin, tr)
 	exitOnError(err, "Error while initializing proxy for Connector")
 
-	err = proxyRequestsForComponent(router, "/director", cfg.DirectorOrigin)
+	err = proxyRequestsForComponent(router, "/director", cfg.DirectorOrigin, tr)
 	exitOnError(err, "Error while initializing proxy for Director")
 
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
@@ -43,14 +76,15 @@ func main() {
 
 	log.Printf("Listening on %s", cfg.Address)
 	if err := http.ListenAndServe(cfg.Address, nil); err != nil {
+		done <- true
 		panic(err)
 	}
 }
 
-func proxyRequestsForComponent(router *mux.Router, path string, targetOrigin string, middleware ...mux.MiddlewareFunc) error {
+func proxyRequestsForComponent(router *mux.Router, path string, targetOrigin string, transport HTTPTransport, middleware ...mux.MiddlewareFunc) error {
 	log.Printf("Proxying requests on path `%s` to `%s`\n", path, targetOrigin)
 
-	componentProxy, err := proxy.New(targetOrigin, path)
+	componentProxy, err := proxy.New(targetOrigin, path, transport)
 	if err != nil {
 		return errors.Wrapf(err, "while initializing proxy for component")
 	}
