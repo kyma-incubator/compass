@@ -14,6 +14,8 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	inputAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
@@ -44,6 +46,10 @@ func (nc *FakeNamespaceClient) ListComplete(ctx context.Context) (result eventhu
 	return eventhub.EHNamespaceListResultIterator{}, nil
 }
 
+func (nc *FakeNamespaceClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
+	return eventhub.EHNamespace{}, nil
+}
+
 // ensure the fake client is implementing the interface
 var _ azure.NamespaceClientInterface = (*FakeNamespaceClient)(nil)
 
@@ -51,8 +57,33 @@ func Test_Overrides(t *testing.T) {
 	// given
 	memoryStorageOp := storage.NewMemoryStorage().Operations()
 	fakeNamespaceClient := FakeNamespaceClient{}
-	step := NewProvisionAzureEventHubStep(memoryStorageOp, &fakeNamespaceClient, nil, context.Background(), )
+	accountProvider := automock.AccountProvider{}
+	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
+		CredentialName:  "",
+		HyperscalerType: "",
+		TenantName:      "",
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+	}, nil)
+
+	step := NewProvisionAzureEventHubStep(memoryStorageOp,
+		&fakeNamespaceClient,
+		&accountProvider,
+		context.Background(),
+	)
 	op := internal.ProvisioningOperation{
+		Operation: internal.Operation{},
+		ProvisioningParameters: `{
+			"parameters": {
+        		"name": "nachtmaar-15",
+        		"components": [],
+				"region": "europe-west3"
+			}
+		}`,
 		InputCreator: fixInputCreator(t),
 	}
 
