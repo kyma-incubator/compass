@@ -468,11 +468,10 @@
   version = "v1.2"
 
 [[projects]]
-  digest = "1:8c9d2695a93ed5e9f131acca92e0db10a5d7dd1fbd3091c5f1ea2245a40a30cd"
+  digest = "1:bda5052505bc4179914b039975c4cf39579d68ed3ab5aa9351a22fe8ac9ad423"
   name = "github.com/pivotal-cf/brokerapi"
   packages = [
     ".",
-    "domain",
     "v7/auth",
     "v7/domain",
     "v7/domain/apiresponses",
@@ -499,14 +498,6 @@
   pruneopts = "UT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
-
-[[projects]]
-  digest = "1:557c675b127d3ffdb1e6830f5f14e747da291c21a7b9e1230ec83c9d7f2246d0"
-  name = "github.com/sanity-io/litter"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "6d3310f9743f04a36bd5c898067ecb80ac3b332b"
-  version = "v1.2.0"
 
 [[projects]]
   digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
@@ -1041,11 +1032,9 @@
     "github.com/lib/pq",
     "github.com/machinebox/graphql",
     "github.com/pivotal-cf/brokerapi",
-    "github.com/pivotal-cf/brokerapi/domain",
     "github.com/pivotal-cf/brokerapi/v7/domain",
     "github.com/pivotal-cf/brokerapi/v7/domain/apiresponses",
     "github.com/pkg/errors",
-    "github.com/sanity-io/litter",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
