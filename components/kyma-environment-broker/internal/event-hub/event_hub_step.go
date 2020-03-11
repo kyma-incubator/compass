@@ -54,32 +54,33 @@ func (p *ProvisionAzureEventHubStep) Name() string {
 func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperation,
 	log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
-	//unusedEventHubNamespace, err := azure.GetFirstUnusedNamespaces(p.context, p.namespaceClient)
-	//if err != nil {
-	//	return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
-	//}
+	unusedEventHubNamespace, err := azure.GetFirstUnusedNamespaces(p.context, p.namespaceClient)
+	if err != nil {
+		return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
+	}
+	log.Printf("Found unused EventHubs Namespace, name: %v", unusedEventHubNamespace.Name)
 
-	//log.Printf("Get Access Keys for Azure EventHubs Namespace [%s]\n", unusedEventHubNamespace)
-	//resourceGroup := azure.GetResourceGroup(unusedEventHubNamespace)
+	log.Printf("Get Access Keys for Azure EventHubs Namespace [%s]\n", unusedEventHubNamespace)
+	resourceGroup := azure.GetResourceGroup(unusedEventHubNamespace)
 
-	//log.Printf("Found unused EventHubs Namespace, name: %v, resourceGroup: %v", unusedEventHubNamespace.Name, resourceGroup)
+	log.Printf("Found the unused EventHubs Namespace %v in resourceGroup: %v", unusedEventHubNamespace.Name, resourceGroup)
 
-	//accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(p.context, p.namespaceClient, resourceGroup, *unusedEventHubNamespace.Name, authorizationRuleName)
-	//if err != nil {
-	//	log.Fatalf("Failed to get Access Keys for Azure EventHubs Namespace [%s] with error: %v\n", unusedEventHubNamespace, err)
-	//}
+	accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(p.context, p.namespaceClient, resourceGroup, *unusedEventHubNamespace.Name, authorizationRuleName)
+	if err != nil {
+		log.Fatalf("Failed to get Access Keys for Azure EventHubs Namespace [%s] with error: %v\n", unusedEventHubNamespace, err)
+	}
 
-	//kafkaEndpoint := extractEndpoint(accessKeys)
-	//kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
-	//kafkaPassword := *accessKeys.PrimaryConnectionString
+	kafkaEndpoint := extractEndpoint(accessKeys)
+	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
+	kafkaPassword := *accessKeys.PrimaryConnectionString
 
-	//if _, err := azure.MarkNamespaceAsUsed(p.context, p.namespaceClient, resourceGroup, unusedEventHubNamespace); err != nil {
-	//	return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
-	//}
+	if _, err := azure.MarkNamespaceAsUsed(p.context, p.namespaceClient, resourceGroup, unusedEventHubNamespace); err != nil {
+		return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
+	}
 
 	// TODO(nachtmaar):
-	kafkaEndpoint := "TODO"
-	kafkaPassword := "TODO"
+	// kafkaEndpoint := "TODO"
+	// kafkaPassword := "TODO"
 
 	operation.InputCreator.SetOverrides(componentNameKnativeEventing, getKnativeEventingOverrides())
 	operation.InputCreator.SetOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
