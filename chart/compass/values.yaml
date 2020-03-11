@@ -25,7 +25,7 @@ global:
       version: "PR-948"
     gateway:
       dir: pr/
-      version: "PR-357"
+      version: "PR-943"
     healthchecker:
       dir: pr/
       version: "PR-357"
@@ -65,6 +65,17 @@ global:
 
   director:
     port: 3000
+
+  auditlog:
+    enabled: false
+    configmap:
+      name: "auditlog-configmap"
+    url: "http://localhost:3000"
+    tenant: "f3efddb8-cc74-4baf-9bef-9e49a36761bb"
+    secret:
+      name: "auditlog-secret"
+      user: "user"
+      password: "password"
 
   tenantConfig:
     useDefaultTenants: true

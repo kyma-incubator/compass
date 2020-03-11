@@ -21,7 +21,7 @@ type config struct {
 
 	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3000"`
 	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3000"`
-	auditlog.AuditlogConfig
+	AuditlogEnabled bool   `envconfig:"default=false"`
 }
 
 type AuditogService interface {
@@ -41,22 +41,15 @@ func main() {
 
 	router := mux.NewRouter()
 
-	uuidSvc := uuid.NewService()
-	timeSvc := &time.TimeService{}
-	auditlogClient := auditlog.NewClient(cfg.AuditlogConfig, uuidSvc, timeSvc)
-
 	done := make(chan bool)
-	auditlogMsgChannel := make(chan auditlog.AuditlogMessage)
+	var auditlogSvc AuditogService
+	if cfg.AuditlogEnabled {
+		auditlogSvc = initAuditLogsSvc(done)
+	} else {
+		auditlogSvc = &auditlog.DummyAuditlog{}
+	}
 
-	auditlogSource := auditlog.NewAuditlogSink(auditlogMsgChannel)
-	auditlogSvc := auditlog.NewService(auditlogClient)
-
-	worker := auditlog.NewWorker(auditlogSvc, auditlogMsgChannel, done)
-	go func() {
-		worker.Start()
-	}()
-
-	tr := proxy.NewTransport(auditlogSource, http.DefaultTransport)
+	tr := proxy.NewTransport(auditlogSvc, http.DefaultTransport)
 
 	err = proxyRequestsForComponent(router, "/connector", cfg.ConnectorOrigin, tr)
 	exitOnError(err, "Error while initializing proxy for Connector")
@@ -101,4 +94,25 @@ func exitOnError(err error, context string) {
 		wrappedError := errors.Wrap(err, context)
 		log.Fatal(wrappedError)
 	}
+}
+
+func initAuditLogsSvc(done chan bool) AuditogService {
+	log.Print("Auditlog enabled\n")
+	auditlogCfg := auditlog.AuditlogConfig{}
+	err := envconfig.InitWithPrefix(&auditlogCfg, "APP")
+	exitOnError(err, "Error while loading auditlog cfg")
+
+	uuidSvc := uuid.NewService()
+	timeSvc := &time.TimeService{}
+
+	auditlogClient := auditlog.NewClient(auditlogCfg, uuidSvc, timeSvc)
+	auditlogMsgChannel := make(chan auditlog.AuditlogMessage)
+
+	logger := auditlog.NewService(auditlogClient)
+	worker := auditlog.NewWorker(logger, auditlogMsgChannel, done)
+	go func() {
+		worker.Start()
+	}()
+
+	return auditlog.NewAuditlogSink(auditlogMsgChannel)
 }

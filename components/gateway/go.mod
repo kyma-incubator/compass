@@ -1,6 +1,6 @@
 module github.com/kyma-incubator/compass/components/gateway
 
-go 1.12
+go 1.13
 
 require (
 	github.com/google/go-cmp v0.4.0 // indirect

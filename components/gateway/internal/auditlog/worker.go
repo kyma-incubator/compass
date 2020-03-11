@@ -1,7 +1,7 @@
 package auditlog
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 )
@@ -30,10 +30,10 @@ func (w *AuditLogWorker) Start() {
 		select {
 		case <-w.done:
 			return
-		case log := <-w.auditlogChannel:
-			err := w.svc.Log(log.Request, log.Response, log.Claims)
+		case msg := <-w.auditlogChannel:
+			err := w.svc.Log(msg.Request, msg.Response, msg.Claims)
 			if err != nil {
-				fmt.Printf("error while saving auditlog: %s\n", err.Error())
+				log.Printf("error while saving auditlog: %s\n", err.Error())
 			}
 		}
 	}

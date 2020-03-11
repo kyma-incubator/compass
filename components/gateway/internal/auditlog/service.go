@@ -35,6 +35,13 @@ func (sink *AuditlogSource) Log(request, response string, claims proxy.Claims) e
 	return nil
 }
 
+type DummyAuditlog struct {
+}
+
+func (sink *DummyAuditlog) Log(request, response string, claims proxy.Claims) error {
+	return nil
+}
+
 //go:generate mockery -name=AuditlogClient -output=automock -outpkg=automock -case=underscore
 type AuditlogClient interface {
 	LogConfigurationChange(change model.ConfigurationChange) error

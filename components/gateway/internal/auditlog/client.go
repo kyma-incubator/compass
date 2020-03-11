@@ -74,7 +74,6 @@ func (c *Client) LogConfigurationChange(change model.ConfigurationChange) error 
 		return errors.Wrap(err, "while marshalling auditlog payload")
 	}
 
-	fmt.Printf("PAYLOAD TO CONFIGURATION CHANGE AUDITLOG:\n %s\n", payload)
 	req, err := http.NewRequest("POST", c.configChangeURL, bytes.NewBuffer(payload))
 	if err != nil {
 		return errors.Wrap(err, "while creating request")
