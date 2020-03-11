@@ -103,14 +103,13 @@ func (s *operations) GetOperation(operationID string) (*internal.Operation, erro
 	return &op, nil
 }
 
-func (s *operations) GetOperationsInProgress() ([]internal.Operation, error) {
+func (s *operations) GetOperationsInProgressByType(operationType dbsession.OperationType) ([]internal.Operation, error) {
 	session := s.NewReadSession()
-	dto, err := session.GetOperationsInProgress()
+	dto, err := session.GetOperationsInProgressByType(operationType)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Operations from the storage")
 	}
-	op := toOperations(dto)
-	return op, nil
+	return toOperations(dto), nil
 }
 
 func toOperation(op *dbsession.OperationDTO) internal.Operation {

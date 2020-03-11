@@ -6,6 +6,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
 
@@ -142,7 +144,7 @@ func TestSchemaInitializer(t *testing.T) {
 		err = svc.InsertProvisioningOperation(givenOperation)
 		require.NoError(t, err)
 
-		ops, err := svc.GetOperationsInProgress()
+		ops, err := svc.GetOperationsInProgressByType(dbsession.OperationTypeProvision)
 		require.NoError(t, err)
 		assert.Len(t, ops, 1)
 		assert.Equal(t, givenOperation.Operation, ops[0])

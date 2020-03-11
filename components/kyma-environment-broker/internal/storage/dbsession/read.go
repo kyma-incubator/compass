@@ -44,16 +44,22 @@ func (r readSession) GetOperationByID(opID string) (OperationDTO, dberr.Error) {
 	return operation, nil
 }
 
-func (r readSession) GetOperationsInProgress() ([]OperationDTO, dberr.Error) {
-	condition := dbr.Eq("state", domain.InProgress)
-	operations, err := r.getOperations(condition)
+func (r readSession) GetOperationsInProgressByType(operationType OperationType) ([]OperationDTO, dberr.Error) {
+	stateCondition := dbr.Eq("state", domain.InProgress)
+	typeCondition := dbr.Eq("type", operationType)
+	var operations []OperationDTO
+
+	_, err := r.session.
+		Select("*").
+		From(postsql.OperationTableName).
+		Where(stateCondition).
+		Where(typeCondition).
+		Load(&operations)
 	if err != nil {
-		switch {
-		case dberr.IsNotFound(err):
-			return nil, dberr.NotFound("not found operation in progress")
-		default:
-			return nil, err
+		if err == dbr.ErrNotFound {
+			return nil, dberr.NotFound("cannot find operations: %s", err)
 		}
+		return nil, dberr.Internal("Failed to get operations: %s", err)
 	}
 	return operations, nil
 }
@@ -88,22 +94,4 @@ func (r readSession) getOperation(condition dbr.Builder) (OperationDTO, dberr.Er
 		return OperationDTO{}, dberr.Internal("Failed to get operation: %s", err)
 	}
 	return operation, nil
-}
-
-func (r readSession) getOperations(condition dbr.Builder) ([]OperationDTO, dberr.Error) {
-	var operations []OperationDTO
-
-	_, err := r.session.
-		Select("*").
-		From(postsql.OperationTableName).
-		Where(condition).
-		Load(&operations)
-
-	if err != nil {
-		if err == dbr.ErrNotFound {
-			return nil, dberr.NotFound("cannot find operations: %s", err)
-		}
-		return nil, dberr.Internal("Failed to get operations: %s", err)
-	}
-	return operations, nil
 }

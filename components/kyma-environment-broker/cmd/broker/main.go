@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
 	"github.com/pkg/errors"
 
 	"code.cloudfoundry.org/lager"
@@ -143,7 +144,7 @@ func main() {
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
 
-	err = processOperationsInProgress(db.Operations(), queue)
+	err = processOperationsInProgress(db.Operations(), queue, logs)
 	fatalOnError(err)
 
 	plansValidator, err := broker.NewPlansSchemaValidator()
@@ -170,9 +171,9 @@ func main() {
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
 }
 
-// queues all in progress operations existing in the database
-func processOperationsInProgress(op storage.Operations, queue *process.Queue) error {
-	operations, err := op.GetOperationsInProgress()
+// queues all in progress provision operations existing in the database
+func processOperationsInProgress(op storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
+	operations, err := op.GetOperationsInProgressByType(dbsession.OperationTypeProvision)
 	if err != nil {
 		if !dberr.IsNotFound(err) {
 			return errors.Wrap(err, "while getting in progress operations from storage")
@@ -181,6 +182,7 @@ func processOperationsInProgress(op storage.Operations, queue *process.Queue) er
 	}
 	for _, operation := range operations {
 		queue.Add(operation.ID)
+		log.Infof("Resuming the processing of operation ID: %s", operation.ID)
 	}
 	return nil
 }
