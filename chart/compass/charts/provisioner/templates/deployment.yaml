@@ -83,9 +83,9 @@ spec:
             - name: APP_INSTALLATION_ERRORS_COUNT_FAILURE_THRESHOLD
               value: "{{ .Values.installation.errorsCountFailureThreshold }}"
             - name: APP_GARDENER_PROJECT
-              value: {{ .Values.gardener.project }}
+              value: {{ .Values.global.gardener.project }}
             - name: APP_GARDENER_KUBECONFIG_PATH
-              value: {{ .Values.gardener.kubeconfigPath }}
+              value: {{ .Values.global.gardener.kubeconfigPath }}
             - name: APP_PROVISIONER
               value: {{ .Values.provisioner }}
           volumeMounts:
@@ -120,4 +120,4 @@ spec:
       {{end}}
       - name: gardener-kubeconfig
         secret:
-          secretName: {{ .Values.gardener.secretName }}
+          secretName: {{ .Values.global.gardener.secretName }}

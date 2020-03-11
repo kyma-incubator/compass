@@ -115,9 +115,9 @@ spec:
             - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_FILE_PATH
               value: /config/additionalRuntimeComponents.yaml
             - name: APP_GARDENER_PROJECT
-              value: {{ .Values.gardener.project }}
+              value: {{ .Values.global.gardener.project }}
             - name: APP_GARDENER_KUBECONFIG_PATH
-              value: {{ .Values.gardener.kubeconfigPath }}
+              value: {{ .Values.global.gardener.kubeconfigPath }}
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
@@ -162,4 +162,4 @@ spec:
       {{- end}}
       - name: gardener-kubeconfig
         secret:
-          secretName: {{ .Values.gardener.secretName }}
+          secretName: {{ .Values.global.gardener.secretName }}
