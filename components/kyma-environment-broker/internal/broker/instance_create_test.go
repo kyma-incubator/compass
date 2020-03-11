@@ -162,7 +162,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixValidator,
-			&broker.DumyDumper{},
+			logrus.StandardLogger(),
 		)
 
 		// when
