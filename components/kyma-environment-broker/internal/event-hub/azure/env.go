@@ -2,6 +2,8 @@ package azure
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"log"
 	"strconv"
 
@@ -9,16 +11,23 @@ import (
 	"github.com/gobuffalo/envy"
 )
 
-func GetConfig(clientID, clientSecret, tenantID, subscriptionID string) *Config {
+func GetConfig(clientID, clientSecret, tenantID, subscriptionID string) (*Config, error) {
 	config := NewDefaultConfig()
 
-	azureEnv, _ := azure.EnvironmentFromName("AzurePublicCloud") // shouldn't fail
+	azureEnv, err := azure.EnvironmentFromName("AzurePublicCloud") // shouldn't fail
+	if err != nil {
+		return nil, err
+	}
 	config.authorizationServerURL = azureEnv.ActiveDirectoryEndpoint
 	config.clientID = clientID
 	config.clientSecret = clientSecret
 	config.tenantID = tenantID
 	config.subscriptionID = subscriptionID
-	return config
+	return config, nil
+}
+
+func GetConfigfromHAPCredentialsAndProvisioningParams(credentials hyperscaler.Credentials, parameters internal.ProvisioningParameters) (*Config, error) {
+	return nil, nil
 }
 
 // TODO(nachtmaar): delete me since GetConfig should be used in KEB later
@@ -59,5 +68,6 @@ func GetConfigFromEnvironment(files ...string) (*Config, error) {
 		return nil, fmt.Errorf("expected env vars not provided: %s", err)
 	}
 
-	return GetConfig(clientID, clientSecret, tenantID, subscriptionID), nil
+	return GetConfig(clientID, clientSecret, tenantID, subscriptionID)
+
 }

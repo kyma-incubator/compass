@@ -3,6 +3,7 @@ package event_hub
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"strings"
 	"time"
 
@@ -39,14 +40,14 @@ to NewProvisioningAzureEventHubStep
 
 type ProvisionAzureEventHubStep struct {
 	operationManager *process.OperationManager
-	config           *azure.Config
+	accountProvider  hyperscaler.AccountProvider
 	context          context.Context
 }
 
-func NewProvisionAzureEventHubStep(os storage.Operations, cfg *azure.Config, ctx context.Context) *ProvisionAzureEventHubStep {
+func NewProvisionAzureEventHubStep(os storage.Operations, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
 	return &ProvisionAzureEventHubStep{
 		operationManager: process.NewOperationManager(os),
-		config:           cfg,
+		accountProvider:  accountProvider,
 		context:          ctx,
 	}
 }
@@ -58,26 +59,49 @@ func (p *ProvisionAzureEventHubStep) Name() string {
 func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperation,
 	log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
-	unusedEventHubNamespace, err := azure.GetFirstUnusedNamespaces(p.context, p.config)
+	pp, err := operation.GetProvisioningParameters()
+	log.Infof("Provisioning Params..... %+v", pp) //TODO(anishj0shi) Remove after testing
+
+	if err != nil {
+		log.Error("Aborting after failing to get valid operation provisioning parameters")
+		return p.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
+	}
+
+	hypType := hyperscaler.Azure
+
+	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
+
+	credentials, err := p.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+
+	if err != nil {
+		log.Error("Unable to retrieve Gardener Credentials from HAP lookup")
+		return operation, 5 * time.Second, nil
+	}
+
+	log.Infof("CREDENTIALS RETRIEVED..... %+v", credentials) //TODO(anishj0shi) Remove after testing
+
+	azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp)
+
+	unusedEventHubNamespace, err := azure.GetFirstUnusedNamespaces(p.context, azureCfg)
 	if err != nil {
 		return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
 	}
 
-	log.Printf("Get Access Keys for Azure EventHubs Namespace [%s]\n", unusedEventHubNamespace)
+	log.Infof("Get Access Keys for Azure EventHubs Namespace [%s]\n", unusedEventHubNamespace)
 	resourceGroup := azure.GetResourceGroup(unusedEventHubNamespace)
 
-	log.Printf("Found unused EventHubs Namespace, name: %v, resourceGroup: %v", unusedEventHubNamespace.Name, resourceGroup)
+	log.Infof("Found unused EventHubs Namespace, name: %v, resourceGroup: %v", unusedEventHubNamespace.Name, resourceGroup)
 
-	accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(p.context, p.config, resourceGroup, *unusedEventHubNamespace.Name, authorizationRuleName)
+	accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(p.context, azureCfg, resourceGroup, *unusedEventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
-		log.Fatalf("Failed to get Access Keys for Azure EventHubs Namespace [%s] with error: %v\n", unusedEventHubNamespace, err)
+		return p.operationManager.OperationFailed(operation, "unable to retrieve access keys to azure event-hub namespace")
 	}
 
 	kafkaEndpoint := extractEndpoint(accessKeys)
 	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
-	if _, err := azure.MarkNamespaceAsUsed(p.context, p.config, resourceGroup, unusedEventHubNamespace); err != nil {
+	if _, err := azure.MarkNamespaceAsUsed(p.context, azureCfg, resourceGroup, unusedEventHubNamespace); err != nil {
 		return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
 	}
 
