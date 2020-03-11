@@ -11,9 +11,10 @@ import (
 )
 
 type SecurityEventService interface {
-	Save(change model.SecuritEvent) (string, error)
-	Get(id string) *model.SecuritEvent
+	Save(change model.SecurityEvent) (string, error)
+	Get(id string) *model.SecurityEvent
 	Delete(id string)
+	List() []model.SecurityEvent
 }
 
 type ConfigChangeHandler struct {
@@ -32,14 +33,14 @@ const (
 
 func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request) {
 	defer h.closeBody(req)
-	var log model.SecuritEvent
-	err := json.NewDecoder(req.Body).Decode(&log)
+	var auditLog model.SecurityEvent
+	err := json.NewDecoder(req.Body).Decode(&auditLog)
 	if err != nil {
 		WriteError(writer, errors.Wrap(err, "while decoding input"), http.StatusInternalServerError)
 		return
 	}
 
-	id, err := h.service.Save(log)
+	id, err := h.service.Save(auditLog)
 	if err != nil {
 		WriteError(writer, errors.Wrap(err, "while saving security event log"), http.StatusInternalServerError)
 		return
@@ -69,6 +70,16 @@ func (h *ConfigChangeHandler) Get(writer http.ResponseWriter, req *http.Request)
 	}
 
 	err := json.NewEncoder(writer).Encode(&val)
+	if err != nil {
+		WriteError(writer, errors.New("error while encoding response"), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *ConfigChangeHandler) List(writer http.ResponseWriter, req *http.Request) {
+	values := h.service.List()
+
+	err := json.NewEncoder(writer).Encode(&values)
 	if err != nil {
 		WriteError(writer, errors.New("error while encoding response"), http.StatusInternalServerError)
 		return

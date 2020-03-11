@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"net/http"
 
@@ -45,14 +46,30 @@ func initApiHandlers(cfg config) http.Handler {
 	securityHandler := security.NewSecurityEventHandler(securityEventService, logger)
 	configHandler := configuration.NewConfigurationHandler(configService, logger)
 
+	router.Use(authMiddleware)
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
 	router.HandleFunc("/audit-log/v2/configuration-changes", configHandler.Save).Methods("POST")
 	router.HandleFunc("/audit-log/v2/configuration-changes", configHandler.List).Methods("GET")
 	router.HandleFunc("/audit-log/v2/configuration-changes/{id}", configHandler.Get).Methods("GET")
 	router.HandleFunc("/audit-log/v2/configuration-changes/{id}", configHandler.Delete).Methods("DELETE")
 
-	router.HandleFunc("/audit-log/v2/security-event", securityHandler.Save).Methods("POST")
-	router.HandleFunc("/v1/logs/security-event/{id}", securityHandler.Get).Methods("GET")
-	router.HandleFunc("/v1/logs/security-event/{id}", securityHandler.Delete).Methods("DELETE")
+	router.HandleFunc("/audit-log/v2/security-events", securityHandler.Save).Methods("POST")
+	router.HandleFunc("/audit-log/v2/security-events", securityHandler.List).Methods("GET")
+	router.HandleFunc("/audit-log/v2/security-events/{id}", securityHandler.Get).Methods("GET")
+	router.HandleFunc("/audit-log/v2/security-events/{id}", securityHandler.Delete).Methods("DELETE")
 	return router
+}
+
+func authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if len(authHeader) == 0 {
+			w.Header().Add("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			io.WriteString(w, `{"error":"No auth header"}`)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

@@ -14,7 +14,6 @@ func NewService() *Service {
 }
 func (s *Service) Save(change model.ConfigurationChange) (string, error) {
 	id := uuid.New().String()
-	//TODO: any collisions?
 	s.configLogs[id] = change
 
 	return id, nil
@@ -29,11 +28,11 @@ func (s *Service) Get(id string) *model.ConfigurationChange {
 }
 
 func (s *Service) List() []model.ConfigurationChange {
-	var logs []model.ConfigurationChange
+	var auditLogs []model.ConfigurationChange
 	for _, v := range s.configLogs {
-		logs = append(logs, v)
+		auditLogs = append(auditLogs, v)
 	}
-	return logs
+	return auditLogs
 }
 
 func (s *Service) Delete(id string) {

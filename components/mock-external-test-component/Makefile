@@ -24,5 +24,4 @@ dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
 build-local:
-	env go build -o bin/director ./cmd/director/main.go
-	env go build -o bin/tenantfetcher ./cmd/tenantfetcher/main.go
+	env go build -o bin/mock-external-test-component ./cmd/main.go

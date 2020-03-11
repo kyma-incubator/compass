@@ -35,14 +35,14 @@ const (
 func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request) {
 	defer h.closeBody(req)
 
-	var log model.ConfigurationChange
-	err := json.NewDecoder(req.Body).Decode(&log)
+	var auditLog model.ConfigurationChange
+	err := json.NewDecoder(req.Body).Decode(&auditLog)
 	if err != nil {
 		WriteError(writer, errors.Wrap(err, "while decoding input"), http.StatusInternalServerError)
 		return
 	}
 
-	id, err := h.service.Save(log)
+	id, err := h.service.Save(auditLog)
 	if err != nil {
 		WriteError(writer, errors.Wrap(err, "while saving configuration change log"), http.StatusInternalServerError)
 		return
