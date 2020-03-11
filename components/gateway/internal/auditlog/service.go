@@ -81,7 +81,12 @@ func (svc *AuditlogService) Log(request, response string, claims proxy.Claims) e
 		return errors.Wrap(err, "while sending secuity event to auditlog")
 	}
 
-	if isReadError(graphqlResponse, request) {
+	isReadErr, err := isReadError(graphqlResponse, request)
+	if err != nil {
+		return errors.Wrap(err, "while checking if error is read error")
+	}
+
+	if isReadErr {
 		log := svc.createConfigChangeLog(claims, request)
 		log.Attributes = append(log.Attributes, model.Attribute{
 			Name: "response",
@@ -143,25 +148,30 @@ type graphqQuery struct {
 
 //We assume that if request payload start with `mutation` and
 //if any of response errors has path array length equal 1, that means that mutation failed
-func isReadError(response GraphqlResponse, request string) bool {
+func isReadError(response GraphqlResponse, request string) (bool, error) {
 	req := strings.TrimSpace(request)
-	mutation := strings.HasPrefix(req, "mutation")
-	if !mutation {
-		var graphqlQuery graphqQuery
-		err := json.Unmarshal([]byte(request), &graphqlQuery)
-		if err != nil {
-			return true
-		}
-
-		graphqlRequestPayload := strings.TrimSpace(graphqlQuery.Query)
-		if strings.HasPrefix(graphqlRequestPayload, "mutation") {
-			return searchForMutationErr(response)
-		}
-
-		return true
+	isMutation := strings.HasPrefix(req, "mutation")
+	if isMutation {
+		return searchForMutationErr(response), nil
 	}
-	return searchForMutationErr(response)
 
+	isQuery := strings.HasPrefix(req, "query")
+	if isQuery {
+		return true, nil
+	}
+
+	var graphqlQuery graphqQuery
+	err := json.Unmarshal([]byte(request), &graphqlQuery)
+	if err != nil {
+		return false, errors.Wrap(err, "while marshalling graphql named query")
+	}
+
+	graphqlRequestPayload := strings.TrimSpace(graphqlQuery.Query)
+	if strings.HasPrefix(graphqlRequestPayload, "mutation") {
+		return searchForMutationErr(response), nil
+	}
+
+	return true, nil
 }
 
 func searchForMutationErr(response GraphqlResponse) bool {
