@@ -42,7 +42,7 @@ var plans = map[string]struct {
 			  "items": [
 				{
 				  "type": "string",
-				  "enum": ["Loki", "Kiali", "Jaeger"]
+				  "enum": ["Kiali", "Jaeger"]
 				}
 			  ],
 			  "additionalItems": false,
@@ -50,9 +50,6 @@ var plans = map[string]struct {
 			},
 			"diskType": {
 			  "type": "string"
-			},
-			"nodeCount": {
-			  "type": "integer"
 			},
 			"volumeSizeGb": {
 			  "type": "integer"
@@ -120,7 +117,7 @@ var plans = map[string]struct {
 			  "items": [
 				{
 				  "type": "string",
-				  "enum": ["Loki", "Kiali", "Jaeger"]
+				  "enum": ["Kiali", "Jaeger"]
 				}
 			  ],
 			  "additionalItems": false,
@@ -131,11 +128,6 @@ var plans = map[string]struct {
 			},
 			"diskType": {
 			  "type": "string"
-			},
-			"nodeCount": {
-			  "type": "integer",
-			  "minimum": 3,
-			  "maximum": 20
 			},
 			"volumeSizeGb": {
 			  "type": "integer",

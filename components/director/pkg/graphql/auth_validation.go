@@ -16,7 +16,7 @@ func (i AuthInput) Validate() error {
 			inputvalidation.EachKey(validation.Required),                                         // key
 			inputvalidation.Each(validation.Required, inputvalidation.Each(validation.Required)), // value
 		),
-		validation.Field(&i.Credential, validation.Required),
+		validation.Field(&i.Credential, validation.NilOrNotEmpty),
 		validation.Field(&i.RequestAuth),
 	)
 }
@@ -64,6 +64,6 @@ func (i CSRFTokenCredentialRequestAuthInput) Validate() error {
 			inputvalidation.Each(validation.Required, inputvalidation.Each(validation.Required)), // value
 		),
 		validation.Field(&i.TokenEndpointURL, validation.Required, is.URL),
-		validation.Field(&i.Credential, validation.Required),
+		validation.Field(&i.Credential, validation.NilOrNotEmpty),
 	)
 }

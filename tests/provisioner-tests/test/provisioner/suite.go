@@ -1,12 +1,9 @@
 package provisioner
 
 import (
-	"encoding/base64"
-	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -19,30 +16,24 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 )
 
 const (
-	provisionerCredentialsSecretKey = "credentials"
+	ProvisioningTimeout   = 90 * time.Minute
+	DeprovisioningTimeout = 60 * time.Minute
 
-	ProvisioningTimeout   = 25 * time.Minute
-	DeprovisioningTimeout = 15 * time.Minute
-
-	checkInterval = 2 * time.Second
+	checkInterval = 10 * time.Second
 )
 
 type TestSuite struct {
 	TestId            string
 	ProvisionerClient provisioner.Client
 
-	CredentialsSecretName string
+	gardenerProviders []string
 
 	config        testkit.TestConfig
 	secretsClient v1client.SecretInterface
@@ -54,17 +45,7 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	// TODO: Sleep ensures that the Istio Sidecar is up before running the tests. We can consider adding some health endpoint in the service to avoid hardcoded sleep.
 	time.Sleep(15 * time.Second)
 
-	k8sConfig, err := getK8sConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to get K8s config")
-	}
-
-	k8sClient, err := kubernetes.NewForConfig(k8sConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	provisionerClient := provisioner.NewProvisionerClient(config.InternalProvisionerURL, config.QueryLogging)
+	provisionerClient := provisioner.NewProvisionerClient(config.InternalProvisionerURL, config.Tenant, config.QueryLogging)
 
 	testId := randStringBytes(8)
 
@@ -72,30 +53,28 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 		TestId:            testId,
 		ProvisionerClient: provisionerClient,
 
-		config:                config,
-		secretsClient:         k8sClient.CoreV1().Secrets(config.CredentialsNamespace),
-		CredentialsSecretName: fmt.Sprintf("tests-cred-%s", testId),
+		gardenerProviders: config.Gardener.Providers,
+
+		config: config,
 	}, nil
 }
 
 func (ts *TestSuite) Setup() error {
 	logrus.Infof("Setting up environment")
 
-	err := ts.saveCredentialsToSecret(ts.config.GCPCredentials)
-	if err != nil {
-		return errors.WithMessagef(err, "Failed to save credentials to %s secret", ts.CredentialsSecretName)
-	}
-
 	return nil
 }
 
 func (ts *TestSuite) Cleanup() {
 	logrus.Infof("Starting cleanup...")
+	// TODO: Fetch Provisioner logs if test failed
 
-	logrus.Infof("Removing credentials secret %s ...", ts.CredentialsSecretName)
-	err := ts.removeCredentialsSecret()
-	if err != nil {
-		logrus.Warnf("Failed to remove credentials secret: %s", err.Error())
+	logrus.Infof("Cleanup completed.")
+}
+
+func (ts *TestSuite) Recover() {
+	if r := recover(); r != nil {
+		logrus.Warn("Recovered after panic signal: ", r)
 	}
 }
 
@@ -111,7 +90,7 @@ func (ts *TestSuite) WaitUntilOperationIsFinished(timeout time.Duration, operati
 		}
 
 		if operationStatus.State == gqlschema.OperationStateInProgress {
-			logrus.Infof("Operation %s in progress", operationID)
+			logrus.Infof("Operation '%s': %s in progress", operationStatus.Operation, operationID)
 			return false
 		}
 
@@ -142,43 +121,8 @@ func (ts *TestSuite) KubernetesClientFromRawConfig(t *testing.T, rawConfig strin
 	return k8sClient
 }
 
-func (ts *TestSuite) saveCredentialsToSecret(credentials string) error {
-	decodedCredentials, err := base64.StdEncoding.DecodeString(ts.config.GCPCredentials)
-	if err != nil {
-		return errors.Errorf("Failed to decode credentials from base64: %s", err.Error())
-	}
-
-	logrus.Infof("Creating credentials secret %s ...", ts.CredentialsSecretName)
-	_, err = ts.secretsClient.Create(&v1.Secret{
-		ObjectMeta: v1meta.ObjectMeta{Name: ts.CredentialsSecretName},
-		Data: map[string][]byte{
-			provisionerCredentialsSecretKey: decodedCredentials,
-		},
-	})
-	if err != nil {
-		return errors.Wrap(err, "Failed to save credentials to secret")
-	}
-
-	return nil
-}
-
-func (ts *TestSuite) removeCredentialsSecret() error {
-	return ts.secretsClient.Delete(ts.CredentialsSecretName, &v1meta.DeleteOptions{})
-}
-
-func getK8sConfig() (*restclient.Config, error) {
-	k8sConfig, err := restclient.InClusterConfig()
-	if err != nil {
-		logrus.Info("Failed to read in cluster config, trying with local config")
-		home := homedir.HomeDir()
-		k8sConfPath := filepath.Join(home, ".kube", "config")
-		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return k8sConfig, nil
+func (ts *TestSuite) removeCredentialsSecret(secretName string) error {
+	return ts.secretsClient.Delete(secretName, &v1meta.DeleteOptions{})
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyz123456789"

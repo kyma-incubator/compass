@@ -13,4 +13,4 @@ export ARTIFACTS="/var/log/prow_artifacts"
 sudo mkdir -p "${ARTIFACTS}"
 
 sudo ${INSTALLATION_DIR}/cmd/run.sh
-sudo ${INSTALLATION_DIR}/scripts/testing.sh
+sudo ARTIFACTS=${ARTIFACTS} ${INSTALLATION_DIR}/scripts/testing.sh

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+
 	"github.com/avast/retry-go"
 	"github.com/sirupsen/logrus"
 
@@ -27,7 +29,7 @@ type Client interface {
 type client struct {
 	scopes       []string
 	tenant       string
-	graphqulizer gqlTools.Graphqlizer
+	graphqulizer graphqlizer.Graphqlizer
 	client       *gcli.Client
 }
 
@@ -75,7 +77,7 @@ func NewClient(directorURL, directorHealthzURL, tenant string, scopes []string) 
 	return client{
 		scopes:       scopes,
 		tenant:       tenant,
-		graphqulizer: gqlTools.Graphqlizer{},
+		graphqulizer: graphqlizer.Graphqlizer{},
 		client:       gqlClient,
 	}, nil
 }

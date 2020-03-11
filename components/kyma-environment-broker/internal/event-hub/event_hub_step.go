@@ -3,9 +3,10 @@ package event_hub
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"

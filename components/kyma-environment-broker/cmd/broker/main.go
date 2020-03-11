@@ -2,12 +2,16 @@ package main
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
@@ -39,12 +43,14 @@ type Config struct {
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
-	Provisioning       input.Config
-	Director           director.Config
-	Database           storage.Config
+	Provisioning input.Config
+	Director     director.Config
+	Database     storage.Config
+	Gardener     gardener.Config
+
 	ManagementPlaneURL string
 
-	ServiceManager internal.ServiceManagerOverride
+	ServiceManager provisioning.ServiceManagerOverrideConfig
 
 	KymaVersion                          string
 	ManagedRuntimeComponentsYAMLFilePath string
@@ -99,7 +105,6 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Loki":   runtime.NewLokiDisabler(),
 		"Kiali":  runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
 		"Jaeger": runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
 	}
@@ -110,6 +115,15 @@ func main() {
 	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
 	fatalOnError(err)
 
+	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
+	fatalOnError(err)
+	//
+	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
+	fatalOnError(err)
+
+	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
+	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
+
 	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion)
 
 	// create log dumper
@@ -119,19 +133,22 @@ func main() {
 	// create and run queue, steps provisioning
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 
-	// TODO(nachtmaar): use HyperscalerAccountPool
 	secret := os.Getenv("AZURE_SECRET")
 	azureConfig := azure.GetConfig("38c0ed1b-13d0-4936-8429-eccc80d2d8fb", secret, "42f7676c-f455-423c-82f6-dc2d99791af7", "35d42578-34d1-486d-a689-012a8d514c19")
 
 	provisionAzureEventHub := event_hub.NewProvisionAzureEventHubStep(db.Operations(), azure.GetNamespacesClientOrDie(azureConfig), ctx)
-	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
+	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
+	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
+	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
 	stepManager.InitStep(initialisation)
+	stepManager.AddStep(1, resolveCredentialsStep)
 
-	stepManager.AddStep(1, provisionAzureEventHub)
-	stepManager.AddStep(2, runtimeStep)
+	stepManager.AddStep(2, provisionAzureEventHub)
+	stepManager.AddStep(10, runtimeStep)
+	stepManager.AddStep(3, smOverrideStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
