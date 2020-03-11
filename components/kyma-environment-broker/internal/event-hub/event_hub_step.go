@@ -64,7 +64,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log.Infof("Provisioning Params..... %+v", pp) //TODO(anishj0shi) Remove after testing
 
 	if err != nil {
-		log.Error("Aborting after failing to get valid operation provisioning parameters")
+		log.Errorf("Aborting after failing to get valid operation provisioning parameters: %v", err)
 		return p.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 
@@ -73,7 +73,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	credentials, err := p.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
 
 	if err != nil {
-		log.Error("Unable to retrieve Gardener Credentials from HAP lookup")
+		log.Errorf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
 		return operation, 5 * time.Second, nil
 	}
 
@@ -89,11 +89,13 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	// TODO(nachtmaar): use different resource group name
 	// TODO(nachtmaar): tag resources with kyma runtime id
 	if _, err = azure.PersistResourceGroup(p.context, azureCfg, groupName); err != nil {
+		// TODO(nachtmaar):
 		log.Fatalf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
 	}
 	log.Printf("Persisted Azure Resource Group [%s]", groupName)
 
 	if _, err = azure.PersistEventHubsNamespace(p.context, azureCfg, p.namespaceClient, groupName, eventHubsNamespace); err != nil {
+		// TODO(nachtmaar):
 		log.Fatalf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
 	}
 	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
