@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
@@ -80,7 +79,7 @@ func (s *SetupBackupStep) Run(operation internal.ProvisioningOperation, log logr
 			log.Info(err.Error())
 			return operation, 2 * time.Minute, nil
 		}
-		operation.InputCreator.SetOverrides(input.ServiceManagerComponentName, s.setupBackUpOverride(pp.ErsContext))
+		operation.InputCreator.SetOverrides("setup_backup", s.setupBackUpOverride(pp.ErsContext))
 	}
 
 	fmt.Println(creds.CredentialData)
