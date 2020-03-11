@@ -42,6 +42,7 @@ type GardenerConfig struct {
 
 func (c GardenerConfig) ToShootTemplate(namespace string) (*gardener_types.Shoot, error) {
 	allowPrivlagedContainers := true
+	enableBasicAuthentication := false
 
 	var seed *string = nil
 	if c.Seed != "" {
@@ -60,6 +61,12 @@ func (c GardenerConfig) ToShootTemplate(namespace string) (*gardener_types.Shoot
 			Kubernetes: gardener_types.Kubernetes{
 				AllowPrivilegedContainers: &allowPrivlagedContainers,
 				Version:                   c.KubernetesVersion,
+				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
+					EnableBasicAuthentication: &enableBasicAuthentication,
+					AdmissionPlugins: []gardener_types.AdmissionPlugin{
+						{Name: "SecurityContextDeny"}, // TODO: Check what actually should be there!
+					},
+				},
 			},
 			Networking: gardener_types.Networking{
 				Type:  "calico",        // Default value - we may consider adding it to API (if Hydroform will support it)

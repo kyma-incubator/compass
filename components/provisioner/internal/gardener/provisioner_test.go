@@ -98,17 +98,20 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 			assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
 			assertAnnotation(t, shoot, provisioningStepAnnotation, ProvisioningInProgressStep.String())
 
+			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer)
+			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
+			assert.False(t, *shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
+			assert.Contains(t, shoot.Spec.Kubernetes.KubeAPIServer.AdmissionPlugins, gardener_types.AdmissionPlugin{Name: "SecurityContextDeny"})
+
 			if testCase.auditLogsEnabled {
 				assertAnnotation(t, shoot, auditLogsAnnotation, testCase.subAccountId)
 
-				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer)
 				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig)
 				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy)
 				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef)
 				assert.Equal(t, auditLogsPolicyCMName, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef.Name)
 			} else {
 				assertNoAnnotation(t, shoot, auditLogsAnnotation)
-				assert.Nil(t, shoot.Spec.Kubernetes.KubeAPIServer)
 			}
 		})
 	}
