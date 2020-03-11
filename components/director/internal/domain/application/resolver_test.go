@@ -157,11 +157,9 @@ func TestResolver_UpdateApplication(t *testing.T) {
 
 	desc := "Lorem ipsum"
 	gqlInput := graphql.ApplicationUpdateInput{
-		Name:        "Foo",
 		Description: &desc,
 	}
 	modelInput := model.ApplicationUpdateInput{
-		Name:        "Foo",
 		Description: &desc,
 	}
 	applicationID := "foo"
