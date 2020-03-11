@@ -12,6 +12,7 @@
   - "integration_system:write"
   - "runtime:read"
   - "runtime:write"
+  - "broker:write"
   - "label_definition:read"
   - "label_definition:write"
   - "eventing:manage"

@@ -1,0 +1,10 @@
+apiVersion: hydra.ory.sh/v1alpha1
+kind: OAuth2Client
+metadata:
+  name: $CLIENT_NAME
+  namespace: $CLIENT_NAMESPACE
+spec:
+  grantTypes:
+    - "client_credentials"
+  scope: "broker:write"
+  secretName: broker
