@@ -13,24 +13,27 @@ import (
 type jwkCacheEntry struct {
 	key      interface{}
 	cachedAt time.Time
+	expireAt time.Time
 }
 
 func (e jwkCacheEntry) IsExpired() bool {
-	return time.Now().After(e.cachedAt.Add(5 * time.Minute))
+	return time.Now().After(e.expireAt)
 }
 
 type jwksCache struct {
-	logger *logrus.Logger
-	fetch  KeyGetter
-	cache  map[string]jwkCacheEntry
-	flag   sync.Mutex
+	logger    *logrus.Logger
+	fetch     KeyGetter
+	expPeriod time.Duration
+	cache     map[string]jwkCacheEntry
+	flag      sync.Mutex
 }
 
-func NewJWKsCache(logger *logrus.Logger, fetch KeyGetter) *jwksCache {
+func NewJWKsCache(logger *logrus.Logger, fetch KeyGetter, expPeriod time.Duration) *jwksCache {
 	return &jwksCache{
-		logger: logger,
-		fetch:  fetch,
-		cache:  make(map[string]jwkCacheEntry),
+		logger:    logger,
+		fetch:     fetch,
+		expPeriod: expPeriod,
+		cache:     make(map[string]jwkCacheEntry),
 	}
 }
 
@@ -60,6 +63,7 @@ func (c *jwksCache) GetKey(token *jwt.Token) (interface{}, error) {
 		c.cache[keyID] = jwkCacheEntry{
 			key:      key,
 			cachedAt: time.Now(),
+			expireAt: time.Now().Add(c.expPeriod),
 		}
 		c.flag.Unlock()
 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -267,6 +268,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 
 func TestTokenVerifier_Verify(t *testing.T) {
 	privateKeys := readJWK(t, "testdata/jwks-private.json")
+	cachePeriod := time.Duration(5 * time.Minute)
 
 	t.Run("should validate token using cache for keys", func(t *testing.T) {
 		// GIVEN
@@ -281,7 +283,7 @@ func TestTokenVerifier_Verify(t *testing.T) {
 		logger, hook := logrustest.NewNullLogger()
 
 		jwksFetch := NewJWKsFetch(logger)
-		jwksCache := NewJWKsCache(logger, jwksFetch)
+		jwksCache := NewJWKsCache(logger, jwksFetch, cachePeriod)
 		tokenVerifier := NewTokenVerifier(logger, jwksCache)
 		token := createSignedToken(t, privateKeys.Keys[0])
 

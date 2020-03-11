@@ -10,23 +10,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var cachePeriod time.Duration = time.Duration(5 * time.Minute)
+
 func TestJWKCacheEntry_Expired(t *testing.T) {
-	t.Run("should return true when entry is cached for more than 5 minutes", func(t *testing.T) {
+	t.Run("should return true when entry is cached for more than cachePeriod", func(t *testing.T) {
 		// WHEN
 		entry := jwkCacheEntry{
 			key:      "dummy",
-			cachedAt: time.Now().Add(-5 * time.Minute),
+			expireAt: time.Now().Add(-1 * cachePeriod),
 		}
 
 		// THEN
 		require.True(t, entry.IsExpired())
 	})
 
-	t.Run("should return false when entry is cached for no longer than 5 minutes", func(t *testing.T) {
+	t.Run("should return false when entry is cached for no longer than cachePeriod", func(t *testing.T) {
 		// WHEN
 		entry := jwkCacheEntry{
 			key:      "dummy",
-			cachedAt: time.Now().Add(-3 * time.Minute),
+			expireAt: time.Now().Add(cachePeriod),
 		}
 
 		// THEN
@@ -47,7 +49,7 @@ func TestJWKsCache_GetKey(t *testing.T) {
 
 		logger, hook := logrustest.NewNullLogger()
 		jwksFetch := NewJWKsFetch(logger)
-		jwksCache := NewJWKsCache(logger, jwksFetch)
+		jwksCache := NewJWKsCache(logger, jwksFetch, cachePeriod)
 		token := createToken()
 
 		// WHEN
@@ -73,7 +75,7 @@ func TestJWKsCache_GetKey(t *testing.T) {
 
 		logger, hook := logrustest.NewNullLogger()
 		jwksFetch := NewJWKsFetch(logger)
-		jwksCache := NewJWKsCache(logger, jwksFetch)
+		jwksCache := NewJWKsCache(logger, jwksFetch, cachePeriod)
 		token := createToken()
 
 		// WHEN
@@ -94,7 +96,7 @@ func TestJWKsCache_GetKey(t *testing.T) {
 	t.Run("should return error when token is nil", func(t *testing.T) {
 		// GIVEN
 		jwksFetch := NewJWKsFetch(nil)
-		jwksCache := NewJWKsCache(nil, jwksFetch)
+		jwksCache := NewJWKsCache(nil, jwksFetch, cachePeriod)
 
 		// WHEN
 		_, err := jwksCache.GetKey(nil)
@@ -107,7 +109,7 @@ func TestJWKsCache_GetKey(t *testing.T) {
 		// GIVEN
 		token := &jwt.Token{}
 		jwksFetch := NewJWKsFetch(nil)
-		jwksCache := NewJWKsCache(nil, jwksFetch)
+		jwksCache := NewJWKsCache(nil, jwksFetch, cachePeriod)
 
 		// WHEN
 		_, err := jwksCache.GetKey(token)
@@ -129,7 +131,7 @@ func TestJWKsCache_GetKey(t *testing.T) {
 		defer restoreHTTPClient()
 
 		jwksFetch := NewJWKsFetch(nil)
-		jwksCache := NewJWKsCache(nil, jwksFetch)
+		jwksCache := NewJWKsCache(nil, jwksFetch, cachePeriod)
 		token := createToken()
 
 		// WHEN
@@ -145,15 +147,15 @@ func TestJWKsCache_Cleanup(t *testing.T) {
 		// GIVEN
 		logger, hook := logrustest.NewNullLogger()
 		jwksFetch := NewJWKsFetch(logger)
-		jwksCache := NewJWKsCache(logger, jwksFetch)
+		jwksCache := NewJWKsCache(logger, jwksFetch, cachePeriod)
 
 		// WHEN
 		jwksCache.cache["123"] = jwkCacheEntry{
-			cachedAt: time.Now().Add(-5 * time.Minute), //expired
+			expireAt: time.Now().Add(-1 * cachePeriod), //expired
 			key:      "abc-key-value",
 		}
 		jwksCache.cache["234"] = jwkCacheEntry{
-			cachedAt: time.Now(),
+			expireAt: time.Now().Add(cachePeriod),
 			key:      "def-key-value",
 		}
 		require.Equal(t, 2, len(jwksCache.cache))

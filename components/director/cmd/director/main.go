@@ -58,6 +58,8 @@ type config struct {
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone bool          `envconfig:"default=true"`
 
+	RuntimeJWKSCachePeriod time.Duration `envconfig:"default=5m"`
+
 	StaticUsersSrc    string `envconfig:"default=/data/static-users.yaml"`
 	StaticGroupsSrc   string `envconfig:"default=/data/static-groups.yaml"`
 	PairingAdapterSrc string `envconfig:"optional"`
@@ -126,7 +128,7 @@ func main() {
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	log.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHanderFunc(transact, stopCh)
+	runtimeMappingHandlerFunc, err := getRuntimeMappingHanderFunc(transact, cfg.JWKSSyncPeriod, stopCh)
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
@@ -234,7 +236,7 @@ func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersS
 	return tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
 }
 
-func getRuntimeMappingHanderFunc(transact persistence.Transactioner, stopCh <-chan struct{}) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getRuntimeMappingHanderFunc(transact persistence.Transactioner, cachePeriod time.Duration, stopCh <-chan struct{}) (func(writer http.ResponseWriter, request *http.Request), error) {
 	logger := log.WithField("component", "runtime-mapping-handler").Logger
 
 	uidSvc := uid.NewService()
@@ -255,7 +257,7 @@ func getRuntimeMappingHanderFunc(transact persistence.Transactioner, stopCh <-ch
 	reqDataParser := tenantmapping.NewReqDataParser()
 
 	jwksFetch := runtimemapping.NewJWKsFetch(logger)
-	jwksCahce := runtimemapping.NewJWKsCache(logger, jwksFetch)
+	jwksCahce := runtimemapping.NewJWKsCache(logger, jwksFetch, cachePeriod)
 	tokenVerifier := runtimemapping.NewTokenVerifier(logger, jwksCahce)
 
 	executor.NewPeriodic(1*time.Minute, func(stopCh <-chan struct{}) {
