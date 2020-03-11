@@ -150,7 +150,7 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 		case componentNameKnativeEventingKafka:
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "kafka.brokers",
-				Value:  "TODO",
+				Value:  "name:9093",
 				Secret: ptr.Bool(true),
 			})
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
@@ -160,7 +160,7 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 			})
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "kafka.password",
-				Value:  "TODO",
+				Value:  "Endpoint=sb://name/;",
 				Secret: ptr.Bool(true),
 			})
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
