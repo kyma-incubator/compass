@@ -55,7 +55,7 @@ global:
         version: "PR-565"
       e2e_provisioning:
         dir:
-        version: "PR-736"
+        version: "PR-945"
       connectivity_adapter:
         dir:
         version: "PR-935"
