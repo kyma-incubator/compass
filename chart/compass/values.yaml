@@ -34,7 +34,7 @@ global:
       version: "PR-913"
     provisioner:
       dir:
-      version: "PR-913"
+      version: "PR-953"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -42,7 +42,7 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-913"
+      version: "PR-953"
     tests:
       director:
         dir:
@@ -52,7 +52,7 @@ global:
         version: "02e8358c"
       provisioner:
         dir:
-        version: "PR-565"
+        version: "PR-953"
       e2e_provisioning:
         dir:
         version: "PR-945"
@@ -155,6 +155,7 @@ global:
     kubeconfigPath: "/gardener/kubeconfig/kubeconfig"
     kubeconfig: "" # Base64 encoded Gardener SA key
     secretName: "gardener-credentials"
+    auditLogsPolicyConfigMap: ""
     manageSecrets: true
 
   database:
