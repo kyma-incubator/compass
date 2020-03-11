@@ -66,7 +66,8 @@ func authMiddleware(next http.Handler) http.Handler {
 		if len(authHeader) == 0 {
 			w.Header().Add("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			io.WriteString(w, `{"error":"No auth header"}`)
+			_, err := io.WriteString(w, `{"error":"No auth header"}`)
+			exitOnError(err, "while writing auth response")
 			return
 		}
 
