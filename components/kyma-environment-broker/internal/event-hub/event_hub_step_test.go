@@ -7,6 +7,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
@@ -66,7 +67,6 @@ func Test_Overrides(t *testing.T) {
 	allOverridesFound := ensureOverrides(t, provisionRuntimeInput)
 	require.True(t, allOverridesFound[componentNameKnativeEventing], "overrides for %s were not found", componentNameKnativeEventing)
 	require.True(t, allOverridesFound[componentNameKnativeEventingKafka], "overrides for %s were not found", componentNameKnativeEventingKafka)
-	// TODO(nachtmaar): validate overrides are correct
 }
 
 // ensureOverrides ensures that the overrides for
@@ -83,12 +83,12 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 	for _, component := range kymaConfig.Components {
 		switch component.Component {
 		case componentNameKnativeEventing:
-			require.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
+			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "knative-eventing.channel.default.apiVersion",
 				Value:  "knativekafka.kyma-project.io/v1alpha1",
 				Secret: ptr.Bool(false),
 			})
-			require.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
+			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "knative-eventing.channel.default.kind",
 				Value:  "KafkaChannel",
 				Secret: ptr.Bool(false),
@@ -96,32 +96,32 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 			allOverridesFound[componentNameKnativeEventing] = true
 			break
 		case componentNameKnativeEventingKafka:
-			require.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
+			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "kafka.brokers",
 				Value:  "TODO",
 				Secret: ptr.Bool(true),
 			})
-			require.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
+			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "kafka.namespace",
 				Value:  "knative-eventing",
 				Secret: ptr.Bool(true),
 			})
-			require.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
+			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "kafka.password",
 				Value:  "TODO",
 				Secret: ptr.Bool(true),
 			})
-			require.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
+			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "kafka.username",
 				Value:  "$ConnectionString",
 				Secret: ptr.Bool(true),
 			})
-			require.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
+			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "kafka.secretName",
 				Value:  "knative-kafka",
 				Secret: ptr.Bool(true),
 			})
-			require.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
+			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "environment.kafkaProvider",
 				Value:  kafkaProvider,
 				Secret: ptr.Bool(true),
