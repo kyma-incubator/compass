@@ -114,8 +114,9 @@ func GetFirstUnusedNamespaces(ctx context.Context, namespaceClient NamespaceClie
 }
 
 func PersistEventHubsNamespace(ctx context.Context, azureCfg *Config, namespaceClient NamespaceClientInterface, groupName, namespace string) (*eventhub.EHNamespace, error) {
-	location := azureCfg.GetLocation()
-	fmt.Println(location)
-	ehNamespace, err := namespaceClient.CreateOrUpdate(ctx, groupName, namespace, eventhub.EHNamespace{Location: &location})
+	// we need to use a copy of the location, because the following azure call will modify it
+	locationCopy := azureCfg.GetLocation()
+	parameters := eventhub.EHNamespace{Location: &locationCopy}
+	ehNamespace, err := namespaceClient.CreateOrUpdate(ctx, groupName, namespace, parameters)
 	return &ehNamespace, err
 }

@@ -9,7 +9,9 @@ import (
 
 func PersistResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error) {
 	client := getGroupsClientOrDie(config)
-	return client.CreateOrUpdate(ctx, name, resources.Group{Location: &config.location})
+	// we need to use a copy of the location, because the following azure call will modify it
+	locationCopy := config.GetLocation()
+	return client.CreateOrUpdate(ctx, name, resources.Group{Location: &locationCopy})
 }
 
 func DeleteGroup(ctx context.Context, config *Config, groupName string) (resources.GroupsDeleteFuture, error) {
