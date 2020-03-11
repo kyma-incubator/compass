@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 )
@@ -30,9 +30,14 @@ type TenantService interface {
 	GetExternalTenant(ctx context.Context, id string) (string, error)
 }
 
+//go:generate mockery -name=ReqDataParser -output=automock -outpkg=automock -case=underscore
+type ReqDataParser interface {
+	Parse(req *http.Request) (oathkeeper.ReqData, error)
+}
+
 type Handler struct {
 	logger        *logrus.Logger
-	reqDataParser tenantmapping.ReqDataParser
+	reqDataParser ReqDataParser
 	transact      persistence.Transactioner
 	tokenVerifier TokenVerifier
 	runtimeSvc    RuntimeService
@@ -41,7 +46,7 @@ type Handler struct {
 
 func NewHandler(
 	logger *logrus.Logger,
-	reqDataParser tenantmapping.ReqDataParser,
+	reqDataParser ReqDataParser,
 	transact persistence.Transactioner,
 	tokenVerifier TokenVerifier,
 	runtimeSvc RuntimeService,
@@ -65,7 +70,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
 		h.logError(err, "while parsing the request")
-		h.respond(writer, tenantmapping.ReqBody{})
+		h.respond(writer, oathkeeper.ReqBody{})
 		return
 	}
 
@@ -95,7 +100,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	h.respond(writer, reqData.Body)
 }
 
-func (h *Handler) processRequest(ctx context.Context, reqData *tenantmapping.ReqData) error {
+func (h *Handler) processRequest(ctx context.Context, reqData *oathkeeper.ReqData) error {
 	claims, err := h.tokenVerifier.Verify(reqData.Header.Get("Authorization"))
 	if err != nil {
 		return errors.Wrap(err, "while verifying the token")
@@ -126,7 +131,7 @@ func (h *Handler) logError(err error, wrapperStr string) {
 	h.logger.Error(wrappedErr)
 }
 
-func (h *Handler) respond(writer http.ResponseWriter, body tenantmapping.ReqBody) {
+func (h *Handler) respond(writer http.ResponseWriter, body oathkeeper.ReqBody) {
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(body)
 	if err != nil {

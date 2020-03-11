@@ -17,8 +17,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/runtimemapping/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 )
 
 func TestHandler(t *testing.T) {
@@ -34,7 +34,7 @@ func TestHandler(t *testing.T) {
 		extTenantID := uuid.New().String()
 		expectedBody := "{\"subject\":\"\",\"extra\":{\"email\":\"me@domain.local\",\"groups\":\"admin-group\",\"name\":\"John Doe\"},\"header\":{\"Tenant\":[\"" + extTenantID + "\"]}}"
 		logger, hook := logrustest.NewNullLogger()
-		reqDataParser := tenantmapping.NewReqDataParser()
+		reqDataParser := oathkeeper.NewReqDataParser()
 		persistenceMock, transactMock := txCtxGenerator.ThatSucceeds()
 
 		runtimeSvcMock := &automock.RuntimeService{}
@@ -86,7 +86,7 @@ func TestHandler(t *testing.T) {
 		// GIVEN
 		expectedBody := "{\"subject\":\"\",\"extra\":null,\"header\":null}"
 		logger, hook := logrustest.NewNullLogger()
-		reqDataParser := tenantmapping.NewReqDataParser()
+		reqDataParser := oathkeeper.NewReqDataParser()
 
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader(""))
@@ -109,7 +109,7 @@ func TestHandler(t *testing.T) {
 		// GIVEN
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
 		logger, hook := logrustest.NewNullLogger()
-		reqDataParser := tenantmapping.NewReqDataParser()
+		reqDataParser := oathkeeper.NewReqDataParser()
 		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
@@ -140,7 +140,7 @@ func TestHandler(t *testing.T) {
 		claimsMock := &jwt.MapClaims{"email": "me@domain.local", "groups": "admin-group", "name": "John Doe"}
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
 		logger, hook := logrustest.NewNullLogger()
-		reqDataParser := tenantmapping.NewReqDataParser()
+		reqDataParser := oathkeeper.NewReqDataParser()
 		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
@@ -171,7 +171,7 @@ func TestHandler(t *testing.T) {
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
 
 		logger, hook := logrustest.NewNullLogger()
-		reqDataParser := tenantmapping.NewReqDataParser()
+		reqDataParser := oathkeeper.NewReqDataParser()
 		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
 		runtimeSvcMock := &automock.RuntimeService{}
@@ -204,7 +204,7 @@ func TestHandler(t *testing.T) {
 		// GIVEN
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
 		logger, hook := logrustest.NewNullLogger()
-		reqDataParser := tenantmapping.NewReqDataParser()
+		reqDataParser := oathkeeper.NewReqDataParser()
 		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
 		runtimeSvcMock := &automock.RuntimeService{}
