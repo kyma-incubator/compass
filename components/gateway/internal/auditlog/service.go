@@ -137,20 +137,38 @@ func (svc *AuditlogService) isInsufficientScopeError(errors []ErrorMessage) int 
 	return -1
 }
 
+type graphqQuery struct {
+	Query string `json:"query"`
+}
+
 //We assume that if request payload start with `mutation` and
 //if any of response errors has path array length equal 1, that means that mutation failed
 func isReadError(response GraphqlResponse, request string) bool {
 	req := strings.TrimSpace(request)
 	mutation := strings.HasPrefix(req, "mutation")
 	if !mutation {
+		var graphqlQuery graphqQuery
+		err := json.Unmarshal([]byte(request), &graphqlQuery)
+		if err != nil {
+			return true
+		}
+
+		graphqlRequestPayload := strings.TrimSpace(graphqlQuery.Query)
+		if strings.HasPrefix(graphqlRequestPayload, "mutation") {
+			return searchForMutationErr(response)
+		}
+
 		return true
 	}
+	return searchForMutationErr(response)
 
+}
+
+func searchForMutationErr(response GraphqlResponse) bool {
 	for _, graphqlErr := range response.Errors {
 		if len(graphqlErr.Path) == 1 {
 			return false
 		}
 	}
-
 	return true
 }

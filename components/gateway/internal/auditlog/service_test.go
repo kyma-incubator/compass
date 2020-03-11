@@ -129,6 +129,25 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 		client.AssertExpectations(t)
 	})
 
+	t.Run("Success mutation with payload as json with read errors", func(t *testing.T) {
+		//GIVEN
+		request := fixJsonRequest()
+		response := fixResponseReadError(t)
+		claims := fixClaims()
+		log := fixLogSuccess(claims, request, "success")
+
+		client := &automock.AuditlogClient{}
+		client.On("LogConfigurationChange", log).Return(nil)
+		auditlogSvc := auditlog.NewService(client)
+
+		//WHEN
+		err := auditlogSvc.Log(request, response, claims)
+
+		//THEN
+		require.NoError(t, err)
+		client.AssertExpectations(t)
+	})
+
 	t.Run("Security event - insufficient scope", func(t *testing.T) {
 		//GIVEN
 		request := fixRequest()
@@ -196,6 +215,10 @@ func fixRequest() string {
 		  name
 		  }
 		}`
+}
+
+func fixJsonRequest() string {
+	return `{"query":"mutation a{\n   registerApplication(in : {name:\"test123\"}) {\n  id\n  name\n  labels\n  apiDefinition(id:\"\") {\n    id\n  }\n  }\n  registerRuntime(in: {name:\"app2\"}) {\n      id\n  name\n  labels\n  }\n}\n","operationName":"a"}`
 }
 
 func fixRequestWithQuery() string {
