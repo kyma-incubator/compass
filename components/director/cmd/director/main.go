@@ -258,10 +258,10 @@ func getRuntimeMappingHanderFunc(transact persistence.Transactioner, cachePeriod
 
 	jwksFetch := runtimemapping.NewJWKsFetch(logger)
 	jwksCache := runtimemapping.NewJWKsCache(logger, jwksFetch, cachePeriod)
-	tokenVerifier := runtimemapping.NewTokenVerifier(logger, jwksCahce)
+	tokenVerifier := runtimemapping.NewTokenVerifier(logger, jwksCache)
 
 	executor.NewPeriodic(1*time.Minute, func(stopCh <-chan struct{}) {
-		jwksCahce.Cleanup()
+		jwksCache.Cleanup()
 	}).Run(stopCh)
 
 	return runtimemapping.NewHandler(
