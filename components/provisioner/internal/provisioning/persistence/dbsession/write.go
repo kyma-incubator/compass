@@ -22,6 +22,7 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 		Pair("credentials_secret_name", cluster.CredentialsSecretName).
 		Pair("creation_timestamp", cluster.CreationTimestamp).
 		Pair("tenant", cluster.Tenant).
+		Pair("sub_account_id", cluster.SubAccountId).
 		Exec()
 
 	if err != nil {

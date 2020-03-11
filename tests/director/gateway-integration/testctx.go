@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
 	"github.com/sirupsen/logrus"
 
@@ -28,14 +28,14 @@ func init() {
 
 // TestContext contains dependencies that help executing tests
 type TestContext struct {
-	Graphqlizer       gql.Graphqlizer
-	gqlFieldsProvider gql.GqlFieldsProvider
+	Graphqlizer       graphqlizer.Graphqlizer
+	gqlFieldsProvider graphqlizer.GqlFieldsProvider
 }
 
 func NewTestContext() (*TestContext, error) {
 	return &TestContext{
-		Graphqlizer:       gql.Graphqlizer{},
-		gqlFieldsProvider: gql.GqlFieldsProvider{},
+		Graphqlizer:       graphqlizer.Graphqlizer{},
+		gqlFieldsProvider: graphqlizer.GqlFieldsProvider{},
 	}, nil
 }
 

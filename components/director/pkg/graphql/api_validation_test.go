@@ -283,7 +283,6 @@ func TestAPIDefinitionInput_Validate_Version(t *testing.T) {
 
 func TestAPIDefinitionInput_Validate_DefaultAuth(t *testing.T) {
 	validObj := fixValidAuthInput()
-	emptyObj := graphql.AuthInput{}
 
 	testCases := []struct {
 		Name          string
@@ -301,8 +300,8 @@ func TestAPIDefinitionInput_Validate_DefaultAuth(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name:          "Invalid object",
-			Value:         &emptyObj,
+			Name:          "Invalid - Nested validation error",
+			Value:         &graphql.AuthInput{Credential: &graphql.CredentialDataInput{}},
 			ExpectedValid: false,
 		},
 	}

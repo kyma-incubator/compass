@@ -112,7 +112,7 @@ func TestWebhookInput_Validate_Auth(t *testing.T) {
 		},
 		{
 			Name:          "Invalid - Nested validation error",
-			Value:         &graphql.AuthInput{},
+			Value:         &graphql.AuthInput{Credential: &graphql.CredentialDataInput{}},
 			ExpectedValid: false,
 		},
 	}

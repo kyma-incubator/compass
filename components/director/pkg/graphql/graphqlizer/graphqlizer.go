@@ -163,7 +163,9 @@ func (g *Graphqlizer) CredentialDataInputToGQL(in *graphql.CredentialDataInput) 
 func (g *Graphqlizer) CSRFTokenCredentialRequestAuthInputToGQL(in *graphql.CSRFTokenCredentialRequestAuthInput) (string, error) {
 	return g.genericToGQL(in, `{
 			tokenEndpointURL: "{{ .TokenEndpointURL }}",
+			{{- if .Credential }}
 			credential: {{ CredentialDataInputToGQL .Credential }},
+			{{- end }}
 			{{- if .AdditionalHeaders }}
 			additionalHeaders : {{ HTTPHeadersToGQL .AdditionalHeaders }},
 			{{- end }}
@@ -175,7 +177,9 @@ func (g *Graphqlizer) CSRFTokenCredentialRequestAuthInputToGQL(in *graphql.CSRFT
 
 func (g *Graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
 	return g.genericToGQL(in, `{
+		{{- if .Credential }}
 		credential: {{ CredentialDataInputToGQL .Credential }},
+		{{- end }}
 		{{- if .AdditionalHeaders }}
 		additionalHeaders: {{ HTTPHeadersToGQL .AdditionalHeaders }},
 		{{- end }}

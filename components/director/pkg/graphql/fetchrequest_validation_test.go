@@ -69,8 +69,8 @@ func TestFetchRequestInput_Validate_Auth(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name:          "Invalid object",
-			Value:         &graphql.AuthInput{},
+			Name:          "Invalid - Nested validation error",
+			Value:         &graphql.AuthInput{Credential: &graphql.CredentialDataInput{}},
 			ExpectedValid: false,
 		},
 	}

@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -20,8 +21,8 @@ type GraphQLizer interface {
 
 //go:generate mockery -name=GqlFieldsProvider -output=automock -outpkg=automock -case=underscore
 type GqlFieldsProvider interface {
-	ForApplication(ctx ...gql.FieldCtx) string
-	ForAPIDefinition(ctx ...gql.FieldCtx) string
+	ForApplication(ctx ...graphqlizer.FieldCtx) string
+	ForAPIDefinition(ctx ...graphqlizer.FieldCtx) string
 	ForEventDefinition() string
 	ForLabel() string
 	Page(item string) string

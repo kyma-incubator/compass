@@ -38,7 +38,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	err := r.session.
 		Select(
 			"id", "kubeconfig", "terraform_state", "tenant",
-			"credentials_secret_name", "creation_timestamp", "deleted").
+			"credentials_secret_name", "creation_timestamp", "deleted", "sub_account_id").
 		From("cluster").
 		Where(dbr.Eq("cluster.id", runtimeID)).
 		LoadOne(&cluster)
@@ -85,11 +85,11 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 		LoadOne(&clusterWithProvider)
 
 	if err != nil {
-		if err != dbr.ErrNotFound {
-			return model.Cluster{}, dberrors.NotFound("Cannot find Gardener Cluster with name:'%s", name)
+		if err == dbr.ErrNotFound {
+			return model.Cluster{}, dberrors.NotFound("Cannot find Gardener Cluster with name: %s", name)
 		}
 
-		return model.Cluster{}, dberrors.Internal("Failed to get Gardener Cluster: %s", err)
+		return model.Cluster{}, dberrors.Internal("Failed to get Gardener Cluster with name: %s, error: %s", name, err)
 	}
 	cluster := clusterWithProvider.Cluster
 
