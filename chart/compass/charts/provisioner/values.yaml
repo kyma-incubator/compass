@@ -12,6 +12,9 @@ security:
 database:
   schemaFilePath: "/assets/database/provisioner.sql"
 
+gardener:
+    auditLogsPolicyConfigMap: ""
+
 provisioner: "gardener"
 
 installation:
