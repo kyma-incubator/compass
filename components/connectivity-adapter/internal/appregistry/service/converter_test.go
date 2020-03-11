@@ -1,26 +1,31 @@
 package service_test
 
 import (
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/service"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"testing"
 )
 
-//func TestConversionDeprecatedServiceDetailsToGraphQLInput(t *testing.T) {
+//func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 //	type testCase struct {
 //		given    model.ServiceDetails
-//		expected model.GraphQLServiceDetailsInput
+//		expected graphql.PackageCreateInput
 //	}
-//	sut := service.NewConverter()
+//	conv := service.NewConverter()
 //
 //	for name, tc := range map[string]testCase{
 //		"input ID propagated to output": {
 //			given: model.ServiceDetails{},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //			},
 //		},
 //		"name and description propagated to api": {
 //			given: model.ServiceDetails{Name: "name", Description: "description", Api: &model.API{}},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					Name:        "name",
@@ -34,7 +39,7 @@ import (
 //					TargetUrl: "http://target.url",
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					// TODO out name?
@@ -49,7 +54,7 @@ import (
 //					ApiType:   "ODATA",
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					TargetURL: "http://target.url",
@@ -67,7 +72,7 @@ import (
 //					ApiType: "anything else",
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					Spec: &graphql.APISpecInput{
@@ -84,7 +89,7 @@ import (
 //					Spec: json.RawMessage(`openapi: "3.0.0"`),
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					Spec: &graphql.APISpecInput{
@@ -102,7 +107,7 @@ import (
 //					Spec: json.RawMessage(`{"spec":"v0.0.1"}`),
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					Spec: &graphql.APISpecInput{
@@ -120,7 +125,7 @@ import (
 //					Spec: json.RawMessage(`<spec></spec>"`),
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					Spec: &graphql.APISpecInput{
@@ -145,7 +150,7 @@ import (
 //					},
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					DefaultAuth: &graphql.AuthInput{
@@ -176,7 +181,7 @@ import (
 //					},
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					DefaultAuth: &graphql.AuthInput{
@@ -210,7 +215,7 @@ import (
 //					},
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					DefaultAuth: &graphql.AuthInput{
@@ -237,7 +242,7 @@ import (
 //					},
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					DefaultAuth: &graphql.AuthInput{
@@ -275,7 +280,7 @@ import (
 //					},
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					DefaultAuth: &graphql.AuthInput{
@@ -296,7 +301,7 @@ import (
 //					SpecificationUrl: "http://specification.url",
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					Spec: &graphql.APISpecInput{
@@ -321,7 +326,7 @@ import (
 //					},
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					Spec: &graphql.APISpecInput{
@@ -356,7 +361,7 @@ import (
 //					},
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					Spec: &graphql.APISpecInput{
@@ -394,7 +399,7 @@ import (
 //					},
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				API: &graphql.APIDefinitionInput{
 //					Spec: &graphql.APISpecInput{
@@ -423,7 +428,7 @@ import (
 //					Spec: json.RawMessage(`asyncapi: "1.2.0"`),
 //				},
 //			},
-//			expected: model.GraphQLServiceDetailsInput{
+//			expected: graphql.PackageCreateInput{
 //				ID: "id",
 //				Event: &graphql.EventDefinitionInput{
 //					//TODO what about name
@@ -438,7 +443,7 @@ import (
 //	} {
 //		t.Run(name, func(t *testing.T) {
 //			// WHEN
-//			actual, err := sut.DetailsToGraphQLInput("id", tc.given)
+//			actual, err := conv.DetailsToGraphQLCreateInput(tc.given)
 //
 //			// THEN
 //			require.NoError(t, err)
@@ -448,16 +453,15 @@ import (
 //}
 //
 //func TestGraphQLToServiceDetails(t *testing.T) {
-//
 //	type testCase struct {
-//		given    model.GraphQLServiceDetails
+//		given    graphql.PackageCreateInput
 //		expected model.ServiceDetails
 //	}
-//	sut := service.NewConverter()
+//	conv := service.NewConverter()
 //
 //	for name, tc := range map[string]testCase{
 //		"name and description is loaded from api/event": {
-//			given: model.GraphQLServiceDetails{
+//			given: graphql.PackageCreateInput{
 //				API: &graphql.APIDefinitionExt{
 //					APIDefinition: graphql.APIDefinition{
 //						Name:        "name",
@@ -473,7 +477,7 @@ import (
 //			},
 //		},
 //		"simple API": {
-//			given: model.GraphQLServiceDetails{
+//			given: graphql.PackageCreateInput{
 //				API: &graphql.APIDefinitionExt{
 //					APIDefinition: graphql.APIDefinition{
 //						TargetURL: "http://target.url",
@@ -488,7 +492,7 @@ import (
 //			},
 //		},
 //		"simple API with additional headers and query params": {
-//			given: model.GraphQLServiceDetails{
+//			given: graphql.PackageCreateInput{
 //				API: &graphql.APIDefinitionExt{
 //					APIDefinition: graphql.APIDefinition{
 //						TargetURL: "http://target.url",
@@ -529,7 +533,7 @@ import (
 //			},
 //		},
 //		"simple API with Basic Auth": {
-//			given: model.GraphQLServiceDetails{
+//			given: graphql.PackageCreateInput{
 //				API: &graphql.APIDefinitionExt{
 //					APIDefinition: graphql.APIDefinition{
 //						TargetURL: "http://target.url",
@@ -558,7 +562,7 @@ import (
 //			},
 //		},
 //		"simple API with Oauth": {
-//			given: model.GraphQLServiceDetails{
+//			given: graphql.PackageCreateInput{
 //				API: &graphql.APIDefinitionExt{
 //
 //					APIDefinition: graphql.APIDefinition{
@@ -590,7 +594,7 @@ import (
 //			},
 //		},
 //		"simple API with FetchRequest (query params and headers)": {
-//			given: model.GraphQLServiceDetails{
+//			given: graphql.PackageCreateInput{
 //				API: &graphql.APIDefinitionExt{
 //					Spec: &graphql.APISpecExt{
 //						FetchRequest: &graphql.FetchRequest{
@@ -623,7 +627,7 @@ import (
 //			},
 //		},
 //		"simple API with Fetch Request protected with Basic Auth": {
-//			given: model.GraphQLServiceDetails{
+//			given: graphql.PackageCreateInput{
 //				API: &graphql.APIDefinitionExt{
 //
 //					Spec: &graphql.APISpecExt{
@@ -650,7 +654,7 @@ import (
 //			},
 //		},
 //		"simple API with Fetch Request protected with Oauth": {
-//			given: model.GraphQLServiceDetails{
+//			given: graphql.PackageCreateInput{
 //				API: &graphql.APIDefinitionExt{
 //					Spec: &graphql.APISpecExt{
 //						FetchRequest: &graphql.FetchRequest{
@@ -678,7 +682,7 @@ import (
 //			},
 //		},
 //		"events": {
-//			given: model.GraphQLServiceDetails{
+//			given: graphql.PackageCreateInput{
 //				Event: &graphql.EventAPIDefinitionExt{
 //					Spec: &graphql.EventAPISpecExt{
 //						EventSpec: graphql.EventSpec{
@@ -697,123 +701,150 @@ import (
 //	} {
 //		t.Run(name, func(t *testing.T) {
 //			// WHEN
-//			actual, err := sut.GraphQLToServiceDetails(tc.given)
+//			actual, err := conv.GraphQLToServiceDetails(tc.given)
 //			// THEN
 //			require.NoError(t, err)
 //			assert.Equal(t, tc.expected, actual)
 //		})
 //	}
 //}
-//
-//func TestConverter_ServiceDetailsToService(t *testing.T) {
-//	//GIVEN
-//	input := model.ServiceDetails{
-//		Provider:         "provider",
-//		Name:             "name",
-//		Description:      "description",
-//		ShortDescription: "short description",
-//		Identifier:       "identifie",
-//		Labels:           &map[string]string{"blalb": "blalba"},
-//	}
-//	id := "id"
-//
-//	//WHEN
-//	sut := service.NewConverter()
-//	output, err := sut.ServiceDetailsToService(input, id)
-//
-//	//THEN
-//	require.NoError(t, err)
-//	assert.Equal(t, input.Provider, output.Provider)
-//	assert.Equal(t, input.Name, output.Name)
-//	assert.Equal(t, input.Description, output.Description)
-//	assert.Equal(t, input.Identifier, output.Identifier)
-//	assert.Equal(t, input.Labels, output.Labels)
-//}
-//
-//func TestConverter_DetailsToGraphQLInput_TestSpecsRecognition(t *testing.T) {
-//	// GIVEN
-//	sut := service.NewConverter()
-//
-//	// API
-//	apiCases := []struct {
-//		Name           string
-//		InputAPI       model.API
-//		ExpectedType   graphql.APISpecType
-//		ExpectedFormat graphql.SpecFormat
-//	}{
-//		{
-//			Name:           "OpenAPI + YAML",
-//			InputAPI:       fixAPIOpenAPIYAML(),
-//			ExpectedType:   graphql.APISpecTypeOpenAPI,
-//			ExpectedFormat: graphql.SpecFormatYaml,
-//		},
-//		{
-//			Name:           "OpenAPI + JSON",
-//			InputAPI:       fixAPIOpenAPIJSON(),
-//			ExpectedType:   graphql.APISpecTypeOpenAPI,
-//			ExpectedFormat: graphql.SpecFormatJSON,
-//		},
-//		{
-//			Name:           "OData + XML",
-//			InputAPI:       fixAPIODataXML(),
-//			ExpectedType:   graphql.APISpecTypeOdata,
-//			ExpectedFormat: graphql.SpecFormatXML,
-//		},
-//	}
-//
-//	for _, testCase := range apiCases {
-//		t.Run(testCase.Name, func(t *testing.T) {
-//			in := model.ServiceDetails{Api: &testCase.InputAPI}
-//
-//			// WHEN
-//			out, err := sut.DetailsToGraphQLInput("id", in)
-//
-//			// THEN
-//			require.NoError(t, err)
-//			require.NotNil(t, out.API)
-//			require.NotNil(t, out.API.Spec)
-//			assert.Equal(t, testCase.ExpectedType, out.API.Spec.Type)
-//			assert.Equal(t, testCase.ExpectedFormat, out.API.Spec.Format)
-//		})
-//	}
-//
-//	// Events
-//	eventsCases := []struct {
-//		Name           string
-//		InputEvents    model.Events
-//		ExpectedType   graphql.EventSpecType
-//		ExpectedFormat graphql.SpecFormat
-//	}{
-//		{
-//			Name:           "Async API + JSON",
-//			InputEvents:    fixEventsAsyncAPIJSON(),
-//			ExpectedType:   graphql.EventSpecTypeAsyncAPI,
-//			ExpectedFormat: graphql.SpecFormatJSON,
-//		},
-//		{
-//			Name:           "Async API + YAML",
-//			InputEvents:    fixEventsAsyncAPIYAML(),
-//			ExpectedType:   graphql.EventSpecTypeAsyncAPI,
-//			ExpectedFormat: graphql.SpecFormatYaml,
-//		},
-//	}
-//
-//	for _, testCase := range eventsCases {
-//		t.Run(testCase.Name, func(t *testing.T) {
-//			in := model.ServiceDetails{Events: &testCase.InputEvents}
-//
-//			// WHEN
-//			out, err := sut.DetailsToGraphQLInput("id", in)
-//
-//			// THEN
-//			require.NoError(t, err)
-//			require.NotNil(t, out.Event)
-//			require.NotNil(t, out.Event.Spec)
-//			assert.Equal(t, testCase.ExpectedType, out.Event.Spec.Type)
-//			assert.Equal(t, testCase.ExpectedFormat, out.Event.Spec.Format)
-//		})
-//	}
-//}
+
+func TestConverter_ServiceDetailsToService(t *testing.T) {
+	//GIVEN
+	input := model.ServiceDetails{
+		Provider:         "provider",
+		Name:             "name",
+		Description:      "description",
+		ShortDescription: "short description",
+		Identifier:       "identifie",
+		Labels:           &map[string]string{"blalb": "blalba"},
+	}
+	id := "id"
+
+	//WHEN
+	conv := service.NewConverter()
+	output, err := conv.ServiceDetailsToService(input, id)
+
+	//THEN
+	require.NoError(t, err)
+	assert.Equal(t, input.Provider, output.Provider)
+	assert.Equal(t, input.Name, output.Name)
+	assert.Equal(t, input.Description, output.Description)
+	assert.Equal(t, input.Identifier, output.Identifier)
+	assert.Equal(t, input.Labels, output.Labels)
+}
+
+func TestConverter_GraphQLCreateInputToUpdateInput(t *testing.T) {
+	desc := "Desc"
+	schema := graphql.JSONSchema("foo")
+	auth := graphql.AuthInput{Credential:&graphql.CredentialDataInput{Basic:&graphql.BasicCredentialDataInput{
+		Username: "foo",
+		Password: "bar",
+	}}}
+	in := graphql.PackageCreateInput{
+		Name:                           "foo",
+		Description:                    &desc,
+		InstanceAuthRequestInputSchema: &schema,
+		DefaultInstanceAuth:            &auth,
+	}
+	expected := graphql.PackageUpdateInput{
+		Name:                           "foo",
+		Description:                    &desc,
+		InstanceAuthRequestInputSchema: &schema,
+		DefaultInstanceAuth:            &auth,
+	}
+
+	conv := service.NewConverter()
+
+	res := conv.GraphQLCreateInputToUpdateInput(in)
+
+	assert.Equal(t, expected, res)
+}
+
+func TestConverter_DetailsToGraphQLInput_TestSpecsRecognition(t *testing.T) {
+	// GIVEN
+	conv := service.NewConverter()
+
+	// API
+	apiCases := []struct {
+		Name           string
+		InputAPI       model.API
+		ExpectedType   graphql.APISpecType
+		ExpectedFormat graphql.SpecFormat
+	}{
+		{
+			Name:           "OpenAPI + YAML",
+			InputAPI:       fixAPIOpenAPIYAML(),
+			ExpectedType:   graphql.APISpecTypeOpenAPI,
+			ExpectedFormat: graphql.SpecFormatYaml,
+		},
+		{
+			Name:           "OpenAPI + JSON",
+			InputAPI:       fixAPIOpenAPIJSON(),
+			ExpectedType:   graphql.APISpecTypeOpenAPI,
+			ExpectedFormat: graphql.SpecFormatJSON,
+		},
+		{
+			Name:           "OData + XML",
+			InputAPI:       fixAPIODataXML(),
+			ExpectedType:   graphql.APISpecTypeOdata,
+			ExpectedFormat: graphql.SpecFormatXML,
+		},
+	}
+
+	for _, testCase := range apiCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			in := model.ServiceDetails{Api: &testCase.InputAPI}
+
+			// WHEN
+			out, err := conv.DetailsToGraphQLCreateInput(in)
+
+			// THEN
+			require.NoError(t, err)
+			require.Len(t, out.APIDefinitions, 1)
+			require.NotNil(t, out.APIDefinitions[0].Spec)
+			assert.Equal(t, testCase.ExpectedType, out.APIDefinitions[0].Spec.Type)
+			assert.Equal(t, testCase.ExpectedFormat, out.APIDefinitions[0].Spec.Format)
+		})
+	}
+
+	// Events
+	eventsCases := []struct {
+		Name           string
+		InputEvents    model.Events
+		ExpectedType   graphql.EventSpecType
+		ExpectedFormat graphql.SpecFormat
+	}{
+		{
+			Name:           "Async API + JSON",
+			InputEvents:    fixEventsAsyncAPIJSON(),
+			ExpectedType:   graphql.EventSpecTypeAsyncAPI,
+			ExpectedFormat: graphql.SpecFormatJSON,
+		},
+		{
+			Name:           "Async API + YAML",
+			InputEvents:    fixEventsAsyncAPIYAML(),
+			ExpectedType:   graphql.EventSpecTypeAsyncAPI,
+			ExpectedFormat: graphql.SpecFormatYaml,
+		},
+	}
+
+	for _, testCase := range eventsCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			in := model.ServiceDetails{Events: &testCase.InputEvents}
+
+			// WHEN
+			out, err := conv.DetailsToGraphQLCreateInput(in)
+
+			// THEN
+			require.NoError(t, err)
+			require.Len(t, out.EventDefinitions, 1)
+			require.NotNil(t, out.EventDefinitions[0].Spec)
+			assert.Equal(t, testCase.ExpectedType, out.EventDefinitions[0].Spec.Type)
+			assert.Equal(t, testCase.ExpectedFormat, out.EventDefinitions[0].Spec.Format)
+		})
+	}
+}
 
 func emptyLabels() *map[string]string {
 	return &map[string]string{}
