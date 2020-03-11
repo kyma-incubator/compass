@@ -7,7 +7,7 @@ import (
 )
 
 type Auditlog interface {
-	Log(response, request string, claims proxy.Claims) error
+	Log(request, response string, claims proxy.Claims) error
 }
 
 type AuditLogWorker struct {
@@ -31,7 +31,7 @@ func (w *AuditLogWorker) Start() {
 		case <-w.done:
 			return
 		case log := <-w.auditlogChannel:
-			err := w.svc.Log(log.Response, log.Request, log.Claims)
+			err := w.svc.Log(log.Request, log.Response, log.Claims)
 			if err != nil {
 				fmt.Printf("error while saving auditlog: %s\n", err.Error())
 			}
