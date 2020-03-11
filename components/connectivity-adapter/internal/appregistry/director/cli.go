@@ -44,12 +44,17 @@ func NewClient(cli gqlcli.GraphQLClient, graphqlizer GraphQLizer, gqlFieldsProvi
 	return &directorClient{cli: cli, graphqlizer: graphqlizer, gqlFieldsProvider: gqlFieldsProvider}
 }
 
+// TODO: Replace with method which uses GraphQL client
 func (c *directorClient) GetApplicationsByNameRequest(appName string) *gcli.Request {
 	return gcli.NewRequest(fmt.Sprintf(`query {
 			result: applications(filter: {key:"%s", query: "\"%s\""}) {
 					%s
 			}
 	}`, nameKey, appName, c.gqlFieldsProvider.Page(c.gqlFieldsProvider.ForApplication())))
+}
+
+type CreatePackageResult struct {
+	Result graphql.PackageExt `json:"result"`
 }
 
 func (c *directorClient) CreatePackage(appID string, in graphql.PackageCreateInput) (string, error) {
@@ -64,9 +69,7 @@ func (c *directorClient) CreatePackage(appID string, in graphql.PackageCreateInp
 				id
 			}}`, appID, inStr))
 
-	var resp struct {
-		Result graphql.PackageExt `json:"result"`
-	}
+	var resp CreatePackageResult
 
 	err = c.cli.Run(context.Background(), gqlRequest, &resp)
 	if err != nil {
@@ -74,6 +77,31 @@ func (c *directorClient) CreatePackage(appID string, in graphql.PackageCreateInp
 	}
 
 	return resp.Result.ID, nil
+}
+
+func (c *directorClient) UpdatePackage(packageID string, in graphql.PackageUpdateInput) error {
+	inStr, err := c.graphqlizer.PackageUpdateInputToGQL(in)
+	if err != nil {
+		return errors.Wrap(err, "while preparing GraphQL input")
+	}
+
+	gqlRequest := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: updatePackage(id: "%s", in: %s) {
+				id
+			}
+		}`, packageID, inStr))
+
+	err = c.cli.Run(context.Background(), gqlRequest, nil)
+	if err != nil {
+		return errors.Wrap(err, "while doing GraphQL request")
+	}
+
+	return nil
+}
+
+type GetPackageResult struct {
+	Result graphql.ApplicationExt `json:"result"`
 }
 
 func (c *directorClient) GetPackage(appID string, packageID string) (graphql.PackageExt, error) {
@@ -86,9 +114,7 @@ func (c *directorClient) GetPackage(appID string, packageID string) (graphql.Pac
 			"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`, packageID, c.gqlFieldsProvider.ForPackage()),
 		})))
 
-	var resp struct {
-		Result graphql.ApplicationExt `json:"result"`
-	}
+	var resp GetPackageResult
 
 	err := c.cli.Run(context.Background(), gqlRequest, &resp)
 	if err != nil {
@@ -96,6 +122,10 @@ func (c *directorClient) GetPackage(appID string, packageID string) (graphql.Pac
 	}
 
 	return resp.Result.Package, nil
+}
+
+type ListPackagesResult struct {
+	Result graphql.ApplicationExt `json:"result"`
 }
 
 func (c *directorClient) ListPackages(appID string) ([]*graphql.PackageExt, error) {
@@ -107,9 +137,7 @@ func (c *directorClient) ListPackages(appID string) ([]*graphql.PackageExt, erro
 			}`, appID, c.gqlFieldsProvider.ForApplication(),
 		))
 
-	var resp struct {
-		Result graphql.ApplicationExt `json:"result"`
-	}
+	var resp ListPackagesResult
 
 	err := c.cli.Run(context.Background(), gqlRequest, &resp)
 	if err != nil {
@@ -136,28 +164,7 @@ func (c *directorClient) DeletePackage(packageID string) error {
 	return nil
 }
 
-func (c *directorClient) UpdatePackage(packageID string, in graphql.PackageUpdateInput) error {
-	inStr, err := c.graphqlizer.PackageUpdateInputToGQL(in)
-	if err != nil {
-		return errors.Wrap(err, "while preparing GraphQL input")
-	}
-
-	gqlRequest := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: updatePackage(id: "%s", in: %s) {
-				id
-			}
-		}`, packageID, inStr))
-
-	err = c.cli.Run(context.Background(), gqlRequest, nil)
-	if err != nil {
-		return errors.Wrap(err, "while doing GraphQL request")
-	}
-
-	return nil
-}
-
-type SuccessAPIDefinition struct {
+type CreateAPIDefinitionResult struct {
 	Result graphql.APIDefinition `json:"result"`
 }
 
@@ -174,7 +181,7 @@ func (c *directorClient) CreateAPIDefinition(packageID string, apiDefinitionInpu
 				}
 			}`, packageID, inStr, c.gqlFieldsProvider.ForAPIDefinition()))
 
-	var resp SuccessAPIDefinition
+	var resp CreateAPIDefinitionResult
 
 	err = c.cli.Run(context.Background(), gqlRequest, &resp)
 	if err != nil {
@@ -199,6 +206,10 @@ func (c *directorClient) DeleteAPIDefinition(apiID string) error {
 	return nil
 }
 
+type CreateEventDefinitionResult struct {
+	Result graphql.EventDefinition `json:"result"`
+}
+
 func (c *directorClient) CreateEventDefinition(packageID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error) {
 	inStr, err := c.graphqlizer.EventDefinitionInputToGQL(eventDefinitionInput)
 	if err != nil {
@@ -207,14 +218,12 @@ func (c *directorClient) CreateEventDefinition(packageID string, eventDefinition
 
 	gqlRequest := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-				result: addEventDefinitionToPackage(packageID: "%s", in: %s) {
-						%s	
-					}
-				}`, packageID, inStr, c.gqlFieldsProvider.ForEventDefinition()))
+			result: addEventDefinitionToPackage(packageID: "%s", in: %s) {
+					%s
+				}
+			}`, packageID, inStr, c.gqlFieldsProvider.ForEventDefinition()))
 
-	var resp struct {
-		Result graphql.EventDefinition `json:"result"`
-	}
+	var resp CreateEventDefinitionResult
 
 	err = c.cli.Run(context.Background(), gqlRequest, &resp)
 	if err != nil {
@@ -239,6 +248,10 @@ func (c *directorClient) DeleteEventDefinition(eventID string) error {
 	return nil
 }
 
+type CreateDocumentResult struct {
+	Result graphql.Document `json:"result"`
+}
+
 func (c *directorClient) CreateDocument(packageID string, documentInput graphql.DocumentInput) (string, error) {
 	inStr, err := c.graphqlizer.DocumentInputToGQL(&documentInput)
 	if err != nil {
@@ -252,9 +265,7 @@ func (c *directorClient) CreateDocument(packageID string, documentInput graphql.
 				}
 			}`, packageID, inStr, c.gqlFieldsProvider.ForDocument()))
 
-	var resp struct {
-		Result graphql.Document `json:"result"`
-	}
+	var resp CreateDocumentResult
 
 	err = c.cli.Run(context.Background(), gqlRequest, &resp)
 	if err != nil {
