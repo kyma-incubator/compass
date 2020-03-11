@@ -14,7 +14,7 @@ OVERRIDES_COMPASS_GATEWAY="${ROOT_PATH}"/installation/resources/installer-overri
 ISTIO_OVERRIDES="${ROOT_PATH}"/installation/resources/installer-overrides-istio.yaml
 
 kyma provision minikube
-kyma install -o $INSTALLER_CR_PATH  -o $OVERRIDES_COMPASS_GATEWAY -o -o $ISTIO_OVERRIDES --source "${KYMA_RELEASE}"
+kyma install -o $INSTALLER_CR_PATH  -o $OVERRIDES_COMPASS_GATEWAY -o $ISTIO_OVERRIDES --source "${KYMA_RELEASE}"
 
 #Get Tiller tls client certificates
 kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.helm\.ca\.crt']}" | base64 --decode > "$(helm home)/ca.pem"
