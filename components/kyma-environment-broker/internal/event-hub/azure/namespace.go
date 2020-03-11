@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
+	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 )
 
 const EHNamespaceTagInUse = "in_use"
@@ -17,6 +18,8 @@ type NamespaceClientInterface interface {
 	Update(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error)
 	ListComplete(ctx context.Context) (result eventhub.EHNamespaceListResultIterator, err error)
 	CreateOrUpdate(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error)
+	PersistResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error)
+	PersistEventHubsNamespace(ctx context.Context, azureCfg *Config, namespaceClient NamespaceClientInterface, groupName, namespace string) (*eventhub.EHNamespace, error)
 }
 
 type NamespaceClient struct {
@@ -55,9 +58,12 @@ func (nc *NamespaceClient) CreateOrUpdate(ctx context.Context, resourceGroupName
 	return result, err
 }
 
-func GetEventHubsNamespaceAccessKeys(ctx context.Context, namespaceClient NamespaceClientInterface, resourceGroupName, namespaceName, authorizationRuleName string) (*eventhub.AccessKeys, error) {
-	accessKeys, err := namespaceClient.ListKeys(ctx, resourceGroupName, namespaceName, authorizationRuleName)
-	return &accessKeys, err
+func (nc* NamespaceClient) PersistResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error) {
+	return PersistResourceGroup(ctx, config, name)
+}
+
+func (nc* NamespaceClient) PersistEventHubsNamespace(ctx context.Context, azureCfg *Config, namespaceClient NamespaceClientInterface, groupName, namespace string) (*eventhub.EHNamespace, error) {
+	return PersistEventHubsNamespace(ctx, azureCfg, namespaceClient, groupName, namespace)
 }
 
 func GetNamespacesClientOrDie(config *Config) NamespaceClientInterface {

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
@@ -132,7 +133,7 @@ func main() {
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
-	provisionAzureEventHub := event_hub.NewProvisionAzureEventHubStep(db.Operations(), nil, accountProvider, ctx)
+	provisionAzureEventHub := event_hub.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureClient(), accountProvider, ctx)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 

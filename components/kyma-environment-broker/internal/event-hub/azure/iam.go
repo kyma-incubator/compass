@@ -60,6 +60,7 @@ func getAuthorizerForResource(config *Config, grantType OAuthGrantType, resource
 		}
 		a = autorest.NewBearerAuthorizer(token)
 
+	// TODO(nachtmaar): delete me
 	case OAuthGrantTypeDeviceFlow:
 		deviceConfig := auth.NewDeviceFlowConfig(config.clientID, config.tenantID)
 		deviceConfig.Resource = resource

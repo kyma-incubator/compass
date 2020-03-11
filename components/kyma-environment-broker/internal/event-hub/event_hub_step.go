@@ -35,19 +35,18 @@ const (
 */
 
 type ProvisionAzureEventHubStep struct {
-	operationManager *process.OperationManager
-	namespaceClient  azure.NamespaceClientInterface
-	accountProvider  hyperscaler.AccountProvider
-	context          context.Context
+	operationManager     *process.OperationManager
+	azureClientInterface azure.AzureClientInterface
+	accountProvider      hyperscaler.AccountProvider
+	context              context.Context
 }
 
-func NewProvisionAzureEventHubStep(os storage.Operations, namespaceClient azure.NamespaceClientInterface, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
+func NewProvisionAzureEventHubStep(os storage.Operations, azureClientInterface azure.AzureClientInterface, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
 	return &ProvisionAzureEventHubStep{
-		operationManager: process.NewOperationManager(os),
-		// TODO(nachtmaar): remove ?
-		namespaceClient:  nil,
-		accountProvider:  accountProvider,
-		context:          ctx,
+		operationManager:     process.NewOperationManager(os),
+		accountProvider:      accountProvider,
+		context:              ctx,
+		azureClientInterface: azureClientInterface,
 	}
 }
 
@@ -80,40 +79,35 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log.Infof("CREDENTIALS RETRIEVED..... %+v", credentials) //TODO(anishj0shi) Remove after testing
 
 	azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp)
-	p.namespaceClient = azure.GetNamespacesClientOrDie(azureCfg)
+	namespaceClient := p.azureClientInterface.GetNamespacesClientOrDie(azureCfg)
 
-	groupName:= pp.Parameters.Name
+	groupName := pp.Parameters.Name
 	eventHubsNamespace := pp.Parameters.Name
 
 	// TODO(nachtmaar): only create resource group once
 	// TODO(nachtmaar): use different resource group name
-	resourceGroup, err := azure.PersistResourceGroup(p.context, azureCfg, groupName)
+	resourceGroup, err := namespaceClient.PersistResourceGroup(p.context, azureCfg, groupName)
 	if err != nil {
 		// TODO(nachtmaar):
 		log.Fatalf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
 	}
 	log.Printf("Persisted Azure Resource Group [%s]", groupName)
 
-	eventHubNamespace, err := azure.PersistEventHubsNamespace(p.context, azureCfg, p.namespaceClient, groupName, eventHubsNamespace)
+	eventHubNamespace, err := namespaceClient.PersistEventHubsNamespace(p.context, azureCfg, namespaceClient, groupName, eventHubsNamespace)
 	if err != nil {
 		// TODO(nachtmaar):
 		log.Fatalf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
 	}
 	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
 
-	accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(p.context, p.namespaceClient, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
+	accessKeys, err := namespaceClient.ListKeys(p.context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
 		return p.operationManager.OperationFailed(operation, "unable to retrieve access keys to azure event-hub namespace")
 	}
 
-	kafkaEndpoint := extractEndpoint(accessKeys)
+	kafkaEndpoint := extractEndpoint(&accessKeys)
 	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
 	kafkaPassword := *accessKeys.PrimaryConnectionString
-
-	// TODO(nachtmaar): tag resources with kyma runtime id
-	// if _, err := azure.MarkNamespaceAsUsed(p.context, p.namespaceClient, *resourceGroup.Name, *eventHubNamespace); err != nil {
-	// 	return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
-	// }
 
 	// TODO(nachtmaar):
 	// kafkaEndpoint := "TODO"

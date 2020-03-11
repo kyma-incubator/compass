@@ -5,11 +5,14 @@ import (
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
+	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
@@ -20,7 +23,6 @@ import (
 	inputAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
 const kymaVersion = "1.10"
@@ -35,7 +37,9 @@ type FakeNamespaceClient struct {
 }
 
 func (nc *FakeNamespaceClient) ListKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
-	return eventhub.AccessKeys{}, nil
+	return eventhub.AccessKeys{
+		PrimaryConnectionString: ptr.String("Endpoint=sb://name/;"),
+	}, nil
 }
 
 func (nc *FakeNamespaceClient) Update(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
@@ -50,13 +54,30 @@ func (nc *FakeNamespaceClient) CreateOrUpdate(ctx context.Context, resourceGroup
 	return eventhub.EHNamespace{}, nil
 }
 
+func (nc *FakeNamespaceClient) PersistResourceGroup(ctx context.Context, config *azure.Config, name string) (resources.Group, error) {
+	return resources.Group{
+		Name: ptr.String("my-resourcegroup"),
+	}, nil
+}
+
+func (nc *FakeNamespaceClient) PersistEventHubsNamespace(ctx context.Context, azureCfg *azure.Config, namespaceClient azure.NamespaceClientInterface, groupName, namespace string) (*eventhub.EHNamespace, error) {
+	return &eventhub.EHNamespace{
+		Name: ptr.String("my-ehnamespace"),
+	}, nil
+}
+
+type fakeAzureClient struct{}
+
+func (ac *fakeAzureClient) GetNamespacesClientOrDie(config *azure.Config) azure.NamespaceClientInterface {
+	return &FakeNamespaceClient{}
+}
+
 // ensure the fake client is implementing the interface
 var _ azure.NamespaceClientInterface = (*FakeNamespaceClient)(nil)
 
 func Test_Overrides(t *testing.T) {
 	// given
 	memoryStorageOp := storage.NewMemoryStorage().Operations()
-	fakeNamespaceClient := FakeNamespaceClient{}
 	accountProvider := automock.AccountProvider{}
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
 		CredentialName:  "",
@@ -71,7 +92,7 @@ func Test_Overrides(t *testing.T) {
 	}, nil)
 
 	step := NewProvisionAzureEventHubStep(memoryStorageOp,
-		&fakeNamespaceClient,
+		&fakeAzureClient{},
 		&accountProvider,
 		context.Background(),
 	)
