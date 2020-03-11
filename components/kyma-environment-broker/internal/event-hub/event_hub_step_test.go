@@ -51,7 +51,7 @@ func Test_Overrides(t *testing.T) {
 	// given
 	memoryStorageOp := storage.NewMemoryStorage().Operations()
 	fakeNamespaceClient := FakeNamespaceClient{}
-	step := NewProvisionAzureEventHubStep(memoryStorageOp, &fakeNamespaceClient, context.Background())
+	step := NewProvisionAzureEventHubStep(memoryStorageOp, &fakeNamespaceClient, nil, context.Background(), )
 	op := internal.ProvisioningOperation{
 		InputCreator: fixInputCreator(t),
 	}

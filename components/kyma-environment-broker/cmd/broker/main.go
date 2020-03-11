@@ -132,7 +132,7 @@ func main() {
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
-	provisionAzureEventHub := event_hub.NewProvisionAzureEventHubStep(db.Operations(), accountProvider, ctx)
+	provisionAzureEventHub := event_hub.NewProvisionAzureEventHubStep(db.Operations(), nil, accountProvider, ctx)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 

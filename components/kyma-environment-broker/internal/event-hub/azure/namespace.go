@@ -16,6 +16,7 @@ type NamespaceClientInterface interface {
 	ListKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
 	Update(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error)
 	ListComplete(ctx context.Context) (result eventhub.EHNamespaceListResultIterator, err error)
+	CreateOrUpdate(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error)
 }
 
 type NamespaceClient struct {
@@ -37,6 +38,21 @@ func (nc *NamespaceClient) Update(ctx context.Context, resourceGroupName string,
 
 func (nc *NamespaceClient) ListComplete(ctx context.Context) (result eventhub.EHNamespaceListResultIterator, err error) {
 	return nc.namespaceClient.ListComplete(ctx)
+}
+
+func (nc *NamespaceClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
+	future, err := nc.namespaceClient.CreateOrUpdate(ctx, resourceGroupName, namespaceName, parameters)
+	if err != nil {
+		return eventhub.EHNamespace{}, err
+	}
+
+	err = future.WaitForCompletionRef(ctx, nc.namespaceClient.Client)
+	if err != nil {
+		return eventhub.EHNamespace{}, err
+	}
+
+	result, err = future.Result(nc.namespaceClient)
+	return result, err
 }
 
 func GetEventHubsNamespaceAccessKeys(ctx context.Context, namespaceClient NamespaceClientInterface, resourceGroupName, namespaceName, authorizationRuleName string) (*eventhub.AccessKeys, error) {
@@ -95,4 +111,11 @@ func GetFirstUnusedNamespaces(ctx context.Context, namespaceClient NamespaceClie
 		}
 	}
 	return eventhub.EHNamespace{}, fmt.Errorf("no ready EHNamespace found")
+}
+
+func PersistEventHubsNamespace(ctx context.Context, azureCfg *Config, namespaceClient NamespaceClientInterface, groupName, namespace string) (*eventhub.EHNamespace, error) {
+	location := azureCfg.GetLocation()
+	fmt.Println(location)
+	ehNamespace, err := namespaceClient.CreateOrUpdate(ctx, groupName, namespace, eventhub.EHNamespace{Location: &location})
+	return &ehNamespace, err
 }

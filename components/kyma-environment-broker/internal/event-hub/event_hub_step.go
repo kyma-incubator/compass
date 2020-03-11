@@ -44,7 +44,8 @@ type ProvisionAzureEventHubStep struct {
 func NewProvisionAzureEventHubStep(os storage.Operations, namespaceClient azure.NamespaceClientInterface, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
 	return &ProvisionAzureEventHubStep{
 		operationManager: process.NewOperationManager(os),
-		namespaceClient:  namespaceClient,
+		// TODO(nachtmaar): remove ?
+		namespaceClient:  nil,
 		accountProvider:  accountProvider,
 		context:          ctx,
 	}
@@ -57,6 +58,8 @@ func (p *ProvisionAzureEventHubStep) Name() string {
 func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperation,
 	log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
+	hypType := hyperscaler.Azure
+
 	pp, err := operation.GetProvisioningParameters()
 	log.Infof("Provisioning Params..... %+v", pp) //TODO(anishj0shi) Remove after testing
 
@@ -64,8 +67,6 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		log.Error("Aborting after failing to get valid operation provisioning parameters")
 		return p.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-
-	hypType := hyperscaler.Azure
 
 	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
@@ -79,6 +80,23 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log.Infof("CREDENTIALS RETRIEVED..... %+v", credentials) //TODO(anishj0shi) Remove after testing
 
 	azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp)
+	p.namespaceClient = azure.GetNamespacesClientOrDie(azureCfg)
+
+	groupName:= pp.Parameters.Name
+	eventHubsNamespace := pp.Parameters.Name
+
+	// TODO(nachtmaar): only create resource group once
+	// TODO(nachtmaar): use different resource group name
+	// TODO(nachtmaar): tag resources with kyma runtime id
+	if _, err = azure.PersistResourceGroup(p.context, azureCfg, groupName); err != nil {
+		log.Fatalf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
+	}
+	log.Printf("Persisted Azure Resource Group [%s]", groupName)
+
+	if _, err = azure.PersistEventHubsNamespace(p.context, azureCfg, p.namespaceClient, groupName, eventHubsNamespace); err != nil {
+		log.Fatalf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
+	}
+	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
 
 	unusedEventHubNamespace, err := azure.GetFirstUnusedNamespaces(p.context, p.namespaceClient)
 	if err != nil {
