@@ -12,13 +12,39 @@ import (
 
 const EHNamespaceTagInUse = "in_use"
 
-func GetEventHubsNamespaceAccessKeys(ctx context.Context, config *Config, resourceGroupName, namespaceName, authorizationRuleName string) (*eventhub.AccessKeys, error) {
-	nsClient := getNamespacesClientOrDie(config)
-	accessKeys, err := nsClient.ListKeys(ctx, resourceGroupName, namespaceName, authorizationRuleName)
+type NamespaceClientInterface interface {
+	ListKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
+	Update(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error)
+	ListComplete(ctx context.Context) (result eventhub.EHNamespaceListResultIterator, err error)
+}
+
+type NamespaceClient struct {
+	namespaceClient eventhub.NamespacesClient
+}
+
+func NewNamespaceClient(client eventhub.NamespacesClient) NamespaceClientInterface {
+	return &NamespaceClient{
+		namespaceClient: client,
+	}
+}
+func (nc *NamespaceClient) ListKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
+	return nc.namespaceClient.ListKeys(ctx, resourceGroupName, namespaceName, authorizationRuleName)
+}
+
+func (nc *NamespaceClient) Update(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
+	return nc.namespaceClient.Update(ctx, resourceGroupName, namespaceName, parameters)
+}
+
+func (nc *NamespaceClient) ListComplete(ctx context.Context) (result eventhub.EHNamespaceListResultIterator, err error) {
+	return nc.namespaceClient.ListComplete(ctx)
+}
+
+func GetEventHubsNamespaceAccessKeys(ctx context.Context, namespaceClient NamespaceClientInterface, resourceGroupName, namespaceName, authorizationRuleName string) (*eventhub.AccessKeys, error) {
+	accessKeys, err := namespaceClient.ListKeys(ctx, resourceGroupName, namespaceName, authorizationRuleName)
 	return &accessKeys, err
 }
 
-func getNamespacesClientOrDie(config *Config) eventhub.NamespacesClient {
+func GetNamespacesClientOrDie(config *Config) NamespaceClientInterface {
 	nsClient := eventhub.NewNamespacesClient(config.subscriptionID)
 
 	authorizer, err := GetResourceManagementAuthorizer(config)
@@ -31,16 +57,15 @@ func getNamespacesClientOrDie(config *Config) eventhub.NamespacesClient {
 		log.Fatalf("Failed to add use agent [%s] with error: %v", config.userAgent, err)
 	}
 
-	return nsClient
+	return NewNamespaceClient(nsClient)
 }
 
 // MarkNamespaceAsUsed sets a tag to indicate that the Namespace is used
-func MarkNamespaceAsUsed(ctx context.Context, config *Config, resourceGroupName string, namespace eventhub.EHNamespace) (eventhub.EHNamespace, error) {
+func MarkNamespaceAsUsed(ctx context.Context, namespaceClient NamespaceClientInterface, resourceGroupName string, namespace eventhub.EHNamespace) (eventhub.EHNamespace, error) {
 	log.Printf("Marking namespace to be unused, namespace: %+v, resourceGroup: %s", namespace, resourceGroupName)
-	nsClient := getNamespacesClientOrDie(config)
 	trueVal := strconv.FormatBool(true)
 	namespace.Tags[EHNamespaceTagInUse] = &trueVal
-	updatedEHNamespace, err := nsClient.Update(ctx, resourceGroupName, *namespace.Name, namespace)
+	updatedEHNamespace, err := namespaceClient.Update(ctx, resourceGroupName, *namespace.Name, namespace)
 	return updatedEHNamespace, err
 }
 
@@ -51,10 +76,9 @@ func GetResourceGroup(namespace eventhub.EHNamespace) string {
 	return strings.Split(strings.Split(*namespace.ID, "resourceGroups/")[1], "/")[0]
 }
 
-func GetFirstUnusedNamespaces(ctx context.Context, config *Config) (eventhub.EHNamespace, error) {
-	nsClient := getNamespacesClientOrDie(config)
+func GetFirstUnusedNamespaces(ctx context.Context, namespaceClient NamespaceClientInterface) (eventhub.EHNamespace, error) {
 	// TODO(nachtmaar): optimize ?
-	ehNamespaceIterator, err := nsClient.ListComplete(ctx)
+	ehNamespaceIterator, err := namespaceClient.ListComplete(ctx)
 	if err != nil {
 		return eventhub.EHNamespace{}, err
 	}

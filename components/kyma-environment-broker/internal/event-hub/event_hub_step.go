@@ -31,22 +31,20 @@ const (
 )
 
 /*TODO(anishj0shi)
-1) create an interface type "event-hub-provider" which exposes some functions like
-GetEventHubNamespace, MarkNamespaceAsUsed, GetNamespaceAccessCredentials, inject this interface as an input
-to NewProvisioningAzureEventHubStep
-2) Refactor Azure Client Wrapper to conform to the above protocol
-3) Implement retry logic for Namespace retrieval and NamespaceTagging operation.
+- Implement retry logic for Namespace retrieval and NamespaceTagging operation.
 */
 
 type ProvisionAzureEventHubStep struct {
 	operationManager *process.OperationManager
+	namespaceClient  azure.NamespaceClientInterface
 	accountProvider  hyperscaler.AccountProvider
 	context          context.Context
 }
 
-func NewProvisionAzureEventHubStep(os storage.Operations, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
+func NewProvisionAzureEventHubStep(os storage.Operations, namespaceClient azure.NamespaceClientInterface, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
 	return &ProvisionAzureEventHubStep{
 		operationManager: process.NewOperationManager(os),
+		namespaceClient:  namespaceClient,
 		accountProvider:  accountProvider,
 		context:          ctx,
 	}
@@ -82,17 +80,18 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp)
 
-	unusedEventHubNamespace, err := azure.GetFirstUnusedNamespaces(p.context, azureCfg)
+	unusedEventHubNamespace, err := azure.GetFirstUnusedNamespaces(p.context, p.namespaceClient)
 	if err != nil {
 		return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
 	}
+	log.Printf("Found unused EventHubs Namespace, name: %v", unusedEventHubNamespace.Name)
 
 	log.Infof("Get Access Keys for Azure EventHubs Namespace [%s]\n", unusedEventHubNamespace)
 	resourceGroup := azure.GetResourceGroup(unusedEventHubNamespace)
 
-	log.Infof("Found unused EventHubs Namespace, name: %v, resourceGroup: %v", unusedEventHubNamespace.Name, resourceGroup)
+	log.Printf("Found the unused EventHubs Namespace %v in resourceGroup: %v", unusedEventHubNamespace.Name, resourceGroup)
 
-	accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(p.context, azureCfg, resourceGroup, *unusedEventHubNamespace.Name, authorizationRuleName)
+	accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(p.context, p.namespaceClient, resourceGroup, *unusedEventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
 		return p.operationManager.OperationFailed(operation, "unable to retrieve access keys to azure event-hub namespace")
 	}
@@ -101,9 +100,13 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
-	if _, err := azure.MarkNamespaceAsUsed(p.context, azureCfg, resourceGroup, unusedEventHubNamespace); err != nil {
+	if _, err := azure.MarkNamespaceAsUsed(p.context, p.namespaceClient, resourceGroup, unusedEventHubNamespace); err != nil {
 		return p.operationManager.OperationFailed(operation, "no azure event-hub namespace found in the given subscription")
 	}
+
+	// TODO(nachtmaar):
+	// kafkaEndpoint := "TODO"
+	// kafkaPassword := "TODO"
 
 	operation.InputCreator.SetOverrides(componentNameKnativeEventing, getKnativeEventingOverrides())
 	operation.InputCreator.SetOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
@@ -126,12 +129,14 @@ func getKnativeEventingOverrides() []*gqlschema.ConfigEntryInput {
 	var knativeOverrides []*gqlschema.ConfigEntryInput
 	knativeOverrides = []*gqlschema.ConfigEntryInput{
 		{
-			Key:   "knative-eventing.channel.default.apiVersion",
-			Value: "knativekafka.kyma-project.io/v1alpha1",
+			Key:    "knative-eventing.channel.default.apiVersion",
+			Value:  "knativekafka.kyma-project.io/v1alpha1",
+			Secret: ptr.Bool(false),
 		},
 		{
-			Key:   "knative-eventing.channel.default.kind",
-			Value: "KafkaChannel",
+			Key:    "knative-eventing.channel.default.kind",
+			Value:  "KafkaChannel",
+			Secret: ptr.Bool(false),
 		},
 	}
 	return knativeOverrides
