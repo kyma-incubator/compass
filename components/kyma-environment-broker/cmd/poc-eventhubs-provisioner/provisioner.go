@@ -38,14 +38,14 @@ func main() {
 	if err != nil {
 		panic("no ready EventHubs Namespace found")
 	}
-	log.Printf("Get Access Keys for Azure EventHubs Namespace [%s]\n", unusedEventHubNamespace)
+	log.Printf("Get Access Keys for Azure EventHubs Namespace [%s]\n", *unusedEventHubNamespace.Name)
 	resourceGroup := azure.GetResourceGroup(unusedEventHubNamespace)
 
 	log.Printf("Found unused EventHubs Namespace, name: %v, resourceGroup: %v", unusedEventHubNamespace.Name, resourceGroup)
 
 	accessKeys, err := azure.GetEventHubsNamespaceAccessKeys(ctx, cfg, resourceGroup, *unusedEventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
-		log.Fatalf("Failed to get Access Keys for Azure EventHubs Namespace [%s] with error: %v\n", unusedEventHubNamespace, err)
+		log.Fatalf("Failed to get Access Keys for Azure EventHubs Namespace [%s] with error: %v\n", *unusedEventHubNamespace.Name, err)
 	}
 
 	kafkaEndpoint := extractEndpoint(accessKeys)
