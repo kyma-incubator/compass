@@ -15,7 +15,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const overrideKey = "avs_bridge.config.evaluations.cluster.id"
+const (
+	overrideKey     = "avs_bridge.config.evaluations.cluster.id"
+	avsBridgeAPIKey = "avs_bridge.config.availabilityService.apiKey"
+)
 
 type delegator struct {
 	operationManager *process.OperationManager
@@ -59,6 +62,10 @@ func (del *delegator) doRun(logger logrus.FieldLogger, stepName string, operatio
 		{
 			Key:   overrideKey,
 			Value: strconv.FormatInt(updatedOperation.AvsEvaluationInternalId, 10),
+		},
+		{
+			Key:   avsBridgeAPIKey,
+			Value: del.avsConfig.ApiKey,
 		},
 	})
 

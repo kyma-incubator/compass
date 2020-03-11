@@ -7,4 +7,5 @@ type Config struct {
 	OauthClientId      string
 	ApiEndpoint        string
 	DefinitionType     string `envconfig:"default=BASIC"`
+	ApiKey             string
 }
