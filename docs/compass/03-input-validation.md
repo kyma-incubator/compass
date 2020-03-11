@@ -191,7 +191,7 @@ filter: String | false | `max=256` | varchar(256) in db  
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
-credential: CredentialDataInput! | true | |  
+credential: CredentialDataInput! | false | |  
 additionalHeaders: HttpHeaders (map[string][]string) | false | key: `required`, value: `required`, `[required]` |  
 additionalQueryParams: QueryParams (map[string][]string) | false | key: `required`, value: `required`, `[required]` |  
 requestAuth: CredentialRequestAuthInput | false | | 
@@ -233,7 +233,7 @@ csrf: CSRFTokenCredentialRequestAuthInput | false | |  
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 tokenEndpointURL: String! | true | `url` |  
-credential: CredentialDataInput! | true | | 
+credential: CredentialDataInput! | false | | 
 additionalHeaders: HttpHeaders (map[string][]string) | false | key: `required`, value: `required`, `[required]` | 
 additionalQueryParams: QueryParams (map[string][]string) | false | key: `required`, value: `required`, `[required]` | 
 

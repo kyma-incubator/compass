@@ -21,7 +21,7 @@ import (
 
 //go:generate mockery -name=Service
 type Service interface {
-	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string) (*gqlschema.OperationStatus, error)
+	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, error)
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(id, tenant string) (string, error)
 	ReconnectRuntimeAgent(id string) (string, error)
@@ -63,7 +63,7 @@ func NewProvisioningService(
 	}
 }
 
-func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string) (*gqlschema.OperationStatus, error) {
+func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, error) {
 	runtimeInput := config.RuntimeInput
 
 	runtimeID, err := r.directorService.CreateRuntime(runtimeInput, tenant)
@@ -71,7 +71,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 		return nil, fmt.Errorf("Failed to register Runtime: %s", err.Error())
 	}
 
-	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config, tenant)
+	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config, tenant, subAccount)
 	if err != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
 		return nil, err

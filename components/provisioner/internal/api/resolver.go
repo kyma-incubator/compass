@@ -46,11 +46,12 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 	}
 
 	tenant, err := getTenant(ctx)
-
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
 		return nil, err
 	}
+
+	subAccount := getSubAccount(ctx)
 
 	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
 	if config.ClusterConfig.GcpConfig != nil && config.ClusterConfig.GardenerConfig == nil {
@@ -60,7 +61,7 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 		return nil, err
 	}
 
-	operationStatus, err := r.provisioning.ProvisionRuntime(config, tenant)
+	operationStatus, err := r.provisioning.ProvisionRuntime(config, tenant, subAccount)
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
 		return nil, err
@@ -152,4 +153,12 @@ func getTenant(ctx context.Context) (string, error) {
 		return "", errors.New("tenant header is empty")
 	}
 	return tenant, nil
+}
+
+func getSubAccount(ctx context.Context) string {
+	subAccount, ok := ctx.Value(middlewares.SubAccountID).(string)
+	if !ok {
+		return ""
+	}
+	return subAccount
 }
