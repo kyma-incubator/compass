@@ -8,12 +8,15 @@ import (
 )
 
 // accountIDKey is a header key name for request send by graphQL client
-const accountIDKey = "tenant"
+const (
+	accountIDKey    = "tenant"
+	subAccountIDKey = "sub-account"
+)
 
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
 
 type Client interface {
-	ProvisionRuntime(accountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error)
+	ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error)
 	UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(accountID, runtimeID string) (string, error)
 	ReconnectRuntimeAgent(accountID, runtimeID string) (string, error)
@@ -35,7 +38,7 @@ func NewProvisionerClient(endpoint string, queryLogging bool) Client {
 	}
 }
 
-func (c *client) ProvisionRuntime(accountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
+func (c *client) ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
 	provisionRuntimeIptGQL, err := c.graphqlizer.ProvisionRuntimeInputToGraphQL(config)
 	if err != nil {
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to convert Provision Runtime Input to query")
@@ -44,6 +47,7 @@ func (c *client) ProvisionRuntime(accountID string, config schema.ProvisionRunti
 	query := c.queryProvider.provisionRuntime(provisionRuntimeIptGQL)
 	req := gcli.NewRequest(query)
 	req.Header.Add(accountIDKey, accountID)
+	req.Header.Add(subAccountIDKey, subAccountID)
 
 	var response schema.OperationStatus
 	err = c.graphQLClient.ExecuteRequest(req, &response, schema.OperationStatus{})

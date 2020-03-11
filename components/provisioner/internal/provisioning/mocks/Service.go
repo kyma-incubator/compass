@@ -33,13 +33,13 @@ func (_m *Service) DeprovisionRuntime(id string, tenant string) (string, error) 
 	return r0, r1
 }
 
-// ProvisionRuntime provides a mock function with given fields: config, tenant
-func (_m *Service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string) (*gqlschema.OperationStatus, error) {
-	ret := _m.Called(config, tenant)
+// ProvisionRuntime provides a mock function with given fields: config, tenant, subAccount
+func (_m *Service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string, subAccount string) (*gqlschema.OperationStatus, error) {
+	ret := _m.Called(config, tenant, subAccount)
 
 	var r0 *gqlschema.OperationStatus
-	if rf, ok := ret.Get(0).(func(gqlschema.ProvisionRuntimeInput, string) *gqlschema.OperationStatus); ok {
-		r0 = rf(config, tenant)
+	if rf, ok := ret.Get(0).(func(gqlschema.ProvisionRuntimeInput, string, string) *gqlschema.OperationStatus); ok {
+		r0 = rf(config, tenant, subAccount)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*gqlschema.OperationStatus)
@@ -47,8 +47,8 @@ func (_m *Service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tena
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(gqlschema.ProvisionRuntimeInput, string) error); ok {
-		r1 = rf(config, tenant)
+	if rf, ok := ret.Get(1).(func(gqlschema.ProvisionRuntimeInput, string, string) error); ok {
+		r1 = rf(config, tenant, subAccount)
 	} else {
 		r1 = ret.Error(1)
 	}

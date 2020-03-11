@@ -30,6 +30,7 @@ type Cluster struct {
 	CreationTimestamp     time.Time
 	Deleted               bool
 	Tenant                string
+	SubAccountId          string
 
 	ClusterConfig ProviderConfiguration `db:"-"`
 	KymaConfig    KymaConfig            `db:"-"`

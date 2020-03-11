@@ -51,7 +51,7 @@ func (c *fakeClient) SetOperation(id string, operation schema.OperationStatus) {
 
 // Provisioner Client methods
 
-func (c *fakeClient) ProvisionRuntime(accountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
+func (c *fakeClient) ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
