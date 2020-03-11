@@ -108,7 +108,7 @@ func (f *jwksFetch) GetKey(token *jwt.Token) (interface{}, error) {
 }
 
 func (f *jwksFetch) getJWKsURI(token jwt.Token) (string, error) {
-	discoveryURL, err := getDiscoveryURL(token)
+	discoveryURL, err := f.getDiscoveryURL(token)
 	if err != nil {
 		return "", errors.Wrap(err, "while getting the discovery URL")
 	}
@@ -136,13 +136,13 @@ func (f *jwksFetch) getJWKsURI(token jwt.Token) (string, error) {
 	return jwksURI, nil
 }
 
-func getDiscoveryURL(token jwt.Token) (string, error) {
+func (f *jwksFetch) getDiscoveryURL(token jwt.Token) (string, error) {
 	claims, ok := token.Claims.(*jwt.MapClaims)
 	if !ok {
 		return "", errors.New("unable to cast claims to the MapClaims")
 	}
 
-	issuer, err := getIssuer(*claims)
+	issuer, err := getTokenIssuer(*claims)
 	if err != nil {
 		return "", errors.Wrap(err, "while getting the issuer from claims")
 	}
@@ -157,20 +157,6 @@ func getDiscoveryURL(token jwt.Token) (string, error) {
 	return u.String(), nil
 }
 
-func getIssuer(claims jwt.MapClaims) (string, error) {
-	issuer, ok := claims[claimsIssuerKey]
-	if !ok {
-		return "", errors.New("no issuer claim found")
-	}
-
-	issuerStr, ok := issuer.(string)
-	if !ok {
-		return "", errors.New("unable to cast the issuer to a string")
-	}
-
-	return issuerStr, nil
-}
-
 func getKeyID(token jwt.Token) (string, error) {
 	keyID, ok := token.Header[jwksKeyIDKey]
 	if !ok {
@@ -183,4 +169,18 @@ func getKeyID(token jwt.Token) (string, error) {
 	}
 
 	return keyIDStr, nil
+}
+
+func getTokenIssuer(claims jwt.MapClaims) (string, error) {
+	issuer, ok := claims[claimsIssuerKey]
+	if !ok {
+		return "", errors.New("no issuer claim found")
+	}
+
+	issuerStr, ok := issuer.(string)
+	if !ok {
+		return "", errors.New("unable to cast the issuer to a string")
+	}
+
+	return issuerStr, nil
 }

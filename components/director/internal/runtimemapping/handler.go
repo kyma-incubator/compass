@@ -101,7 +101,7 @@ func (h *Handler) processRequest(ctx context.Context, reqData *tenantmapping.Req
 		return errors.Wrap(err, "while verifying the token")
 	}
 
-	issuer, err := getIssuer(*claims)
+	issuer, err := getTokenIssuer(*claims)
 	if err != nil {
 		return errors.Wrap(err, "unable to get the issuer")
 	}
