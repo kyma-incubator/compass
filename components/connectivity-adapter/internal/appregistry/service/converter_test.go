@@ -1,713 +1,784 @@
 package service_test
 
 import (
+	"encoding/json"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/service"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
-//func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
-//	type testCase struct {
-//		given    model.ServiceDetails
-//		expected graphql.PackageCreateInput
-//	}
-//	conv := service.NewConverter()
-//
-//	for name, tc := range map[string]testCase{
-//		"input ID propagated to output": {
-//			given: model.ServiceDetails{},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//			},
-//		},
-//		"name and description propagated to api": {
-//			given: model.ServiceDetails{Name: "name", Description: "description", Api: &model.API{}},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					Name:        "name",
-//					Description: ptrString("description"),
-//				},
-//			},
-//		},
-//		"API with only URL provided": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					TargetUrl: "http://target.url",
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					// TODO out name?
-//					TargetURL: "http://target.url",
-//				},
-//			},
-//		},
-//		"ODATA API provided": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					TargetUrl: "http://target.url",
-//					ApiType:   "ODATA",
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					TargetURL: "http://target.url",
-//					Spec: &graphql.APISpecInput{
-//						Type:   graphql.APISpecTypeOdata,
-//						Format: graphql.SpecFormatYaml,
-//					},
-//				},
-//			},
-//		},
-//
-//		"API other than ODATA provided": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					ApiType: "anything else",
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					Spec: &graphql.APISpecInput{
-//						Type:   graphql.APISpecTypeOpenAPI,
-//						Format: graphql.SpecFormatYaml,
-//					},
-//				},
-//			},
-//		},
-//
-//		"API with directly spec provided in YAML": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					Spec: json.RawMessage(`openapi: "3.0.0"`),
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					Spec: &graphql.APISpecInput{
-//						Data:   ptrClob(graphql.CLOB(`openapi: "3.0.0"`)),
-//						Type:   graphql.APISpecTypeOpenAPI,
-//						Format: graphql.SpecFormatYaml,
-//					},
-//				},
-//			},
-//		},
-//
-//		"API with directly spec provided in JSON": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					Spec: json.RawMessage(`{"spec":"v0.0.1"}`),
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					Spec: &graphql.APISpecInput{
-//						Data:   ptrClob(graphql.CLOB(`{"spec":"v0.0.1"}`)),
-//						Type:   graphql.APISpecTypeOpenAPI,
-//						Format: graphql.SpecFormatJSON,
-//					},
-//				},
-//			},
-//		},
-//
-//		"API with directly spec provided in XML": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					Spec: json.RawMessage(`<spec></spec>"`),
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					Spec: &graphql.APISpecInput{
-//						Data:   ptrClob(graphql.CLOB(`<spec></spec>"`)),
-//						Type:   graphql.APISpecTypeOpenAPI,
-//						Format: graphql.SpecFormatXML,
-//					},
-//				},
-//			},
-//		},
-//
-//		"API with query params and headers stored in old fields": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					QueryParameters: &map[string][]string{
-//						"q1": {"a", "b"},
-//						"q2": {"c", "d"},
-//					},
-//					Headers: &map[string][]string{
-//						"h1": {"e", "f"},
-//						"h2": {"g", "h"},
-//					},
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					DefaultAuth: &graphql.AuthInput{
-//						AdditionalQueryParams: &graphql.QueryParams{
-//							"q1": {"a", "b"},
-//							"q2": {"c", "d"},
-//						},
-//						AdditionalHeaders: &graphql.HttpHeaders{
-//							"h1": {"e", "f"},
-//							"h2": {"g", "h"},
-//						},
-//					},
-//				},
-//			},
-//		},
-//		"API with query params and headers stored in the new fields": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					RequestParameters: &model.RequestParameters{
-//						QueryParameters: &map[string][]string{
-//							"q1": {"a", "b"},
-//							"q2": {"c", "d"},
-//						},
-//						Headers: &map[string][]string{
-//							"h1": {"e", "f"},
-//							"h2": {"g", "h"},
-//						},
-//					},
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					DefaultAuth: &graphql.AuthInput{
-//						AdditionalQueryParams: &graphql.QueryParams{
-//							"q1": {"a", "b"},
-//							"q2": {"c", "d"},
-//						},
-//						AdditionalHeaders: &graphql.HttpHeaders{
-//							"h1": {"e", "f"},
-//							"h2": {"g", "h"},
-//						},
-//					},
-//				},
-//			},
-//		},
-//		"API with query params and headers stored in old and new fields": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					RequestParameters: &model.RequestParameters{
-//						QueryParameters: &map[string][]string{
-//							"new": {"new"},
-//						},
-//						Headers: &map[string][]string{
-//							"new": {"new"},
-//						}},
-//					QueryParameters: &map[string][]string{
-//						"old": {"old"},
-//					},
-//					Headers: &map[string][]string{
-//						"old": {"old"},
-//					},
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					DefaultAuth: &graphql.AuthInput{
-//						AdditionalQueryParams: &graphql.QueryParams{
-//							"new": {"new"},
-//						},
-//						AdditionalHeaders: &graphql.HttpHeaders{
-//							"new": {"new"},
-//						},
-//					},
-//				},
-//			},
-//		},
-//		"API protected with basic": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					Credentials: &model.CredentialsWithCSRF{
-//						BasicWithCSRF: &model.BasicAuthWithCSRF{
-//							BasicAuth: model.BasicAuth{
-//								Username: "user",
-//								Password: "password",
-//							},
-//						},
-//					},
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					DefaultAuth: &graphql.AuthInput{
-//						Credential: &graphql.CredentialDataInput{
-//							Basic: &graphql.BasicCredentialDataInput{
-//								Username: "user",
-//								Password: "password",
-//							},
-//						},
-//					},
-//				},
-//			},
-//		},
-//		"API protected with oauth": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					Credentials: &model.CredentialsWithCSRF{
-//						OauthWithCSRF: &model.OauthWithCSRF{
-//							Oauth: model.Oauth{
-//								ClientID:     "client_id",
-//								ClientSecret: "client_secret",
-//								URL:          "http://oauth.url",
-//								RequestParameters: &model.RequestParameters{ // TODO this field is not mapped at all
-//									QueryParameters: &map[string][]string{
-//										"q1": {"a", "b"},
-//										"q2": {"c", "d"},
-//									},
-//									Headers: &map[string][]string{
-//										"h1": {"e", "f"},
-//										"h2": {"g", "h"},
-//									},
-//								},
-//							},
-//						},
-//					},
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					DefaultAuth: &graphql.AuthInput{
-//						Credential: &graphql.CredentialDataInput{
-//							Oauth: &graphql.OAuthCredentialDataInput{
-//								URL:          "http://oauth.url",
-//								ClientID:     "client_id",
-//								ClientSecret: "client_secret",
-//							},
-//						},
-//					},
-//				},
-//			},
-//		},
-//		"API specification mapped to fetch request": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					SpecificationUrl: "http://specification.url",
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					Spec: &graphql.APISpecInput{
-//						FetchRequest: &graphql.FetchRequestInput{
-//							URL: "http://specification.url",
-//						},
-//						Format: graphql.SpecFormatJSON,
-//						Type:   graphql.APISpecTypeOpenAPI,
-//					},
-//				},
-//			},
-//		},
-//		"API specification with basic auth converted to fetch request": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					SpecificationUrl: "http://specification.url",
-//					SpecificationCredentials: &model.Credentials{
-//						Basic: &model.BasicAuth{
-//							Username: "username",
-//							Password: "password",
-//						},
-//					},
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					Spec: &graphql.APISpecInput{
-//						FetchRequest: &graphql.FetchRequestInput{
-//							URL: "http://specification.url",
-//							Auth: &graphql.AuthInput{
-//								Credential: &graphql.CredentialDataInput{
-//									Basic: &graphql.BasicCredentialDataInput{
-//										Username: "username",
-//										Password: "password",
-//									},
-//								},
-//							},
-//						},
-//						Type:   graphql.APISpecTypeOpenAPI,
-//						Format: graphql.SpecFormatJSON,
-//					},
-//				},
-//			},
-//		},
-//		"API specification with oauth converted to fetch request": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					SpecificationUrl: "http://specification.url",
-//					SpecificationCredentials: &model.Credentials{
-//						Oauth: &model.Oauth{
-//							URL:               "http://oauth.url",
-//							ClientID:          "client_id",
-//							ClientSecret:      "client_secret",
-//							RequestParameters: nil, // TODO not supported
-//						},
-//					},
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					Spec: &graphql.APISpecInput{
-//						FetchRequest: &graphql.FetchRequestInput{
-//							URL: "http://specification.url",
-//							Auth: &graphql.AuthInput{
-//								Credential: &graphql.CredentialDataInput{
-//									Oauth: &graphql.OAuthCredentialDataInput{
-//										URL:          "http://oauth.url",
-//										ClientID:     "client_id",
-//										ClientSecret: "client_secret",
-//									},
-//								},
-//							},
-//						},
-//						Type:   graphql.APISpecTypeOpenAPI,
-//						Format: graphql.SpecFormatJSON,
-//					},
-//				},
-//			},
-//		},
-//		"API specification with request parameters converted to fetch request": {
-//			given: model.ServiceDetails{
-//				Api: &model.API{
-//					SpecificationUrl: "http://specification.url",
-//					SpecificationRequestParameters: &model.RequestParameters{
-//						QueryParameters: &map[string][]string{
-//							"q1": {"a", "b"},
-//							"q2": {"c", "d"},
-//						},
-//						Headers: &map[string][]string{
-//							"h1": {"e", "f"},
-//							"h2": {"g", "h"},
-//						},
-//					},
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				API: &graphql.APIDefinitionInput{
-//					Spec: &graphql.APISpecInput{
-//						FetchRequest: &graphql.FetchRequestInput{
-//							URL: "http://specification.url",
-//							Auth: &graphql.AuthInput{
-//								AdditionalQueryParams: &graphql.QueryParams{
-//									"q1": {"a", "b"},
-//									"q2": {"c", "d"},
-//								},
-//								AdditionalHeaders: &graphql.HttpHeaders{
-//									"h1": {"e", "f"},
-//									"h2": {"g", "h"},
-//								},
-//							},
-//						},
-//						Format: graphql.SpecFormatJSON,
-//						Type:   graphql.APISpecTypeOpenAPI,
-//					},
-//				},
-//			},
-//		},
-//		"Event": {
-//			given: model.ServiceDetails{
-//				Events: &model.Events{
-//					Spec: json.RawMessage(`asyncapi: "1.2.0"`),
-//				},
-//			},
-//			expected: graphql.PackageCreateInput{
-//				ID: "id",
-//				Event: &graphql.EventDefinitionInput{
-//					//TODO what about name
-//					Spec: &graphql.EventSpecInput{
-//						Data:   ptrClob(graphql.CLOB(`asyncapi: "1.2.0"`)),
-//						Type:   graphql.EventSpecTypeAsyncAPI,
-//						Format: graphql.SpecFormatYaml,
-//					},
-//				},
-//			},
-//		},
-//	} {
-//		t.Run(name, func(t *testing.T) {
-//			// WHEN
-//			actual, err := conv.DetailsToGraphQLCreateInput(tc.given)
-//
-//			// THEN
-//			require.NoError(t, err)
-//			assert.Equal(t, tc.expected, actual)
-//		})
-//	}
-//}
-//
-//func TestGraphQLToServiceDetails(t *testing.T) {
-//	type testCase struct {
-//		given    graphql.PackageCreateInput
-//		expected model.ServiceDetails
-//	}
-//	conv := service.NewConverter()
-//
-//	for name, tc := range map[string]testCase{
-//		"name and description is loaded from api/event": {
-//			given: graphql.PackageCreateInput{
-//				API: &graphql.APIDefinitionExt{
-//					APIDefinition: graphql.APIDefinition{
-//						Name:        "name",
-//						Description: ptrString("description"),
-//					},
-//				},
-//			},
-//			expected: model.ServiceDetails{
-//				Name:        "name",
-//				Description: "description",
-//				Api:         &model.API{},
-//				Labels:      emptyLabels(),
-//			},
-//		},
-//		"simple API": {
-//			given: graphql.PackageCreateInput{
-//				API: &graphql.APIDefinitionExt{
-//					APIDefinition: graphql.APIDefinition{
-//						TargetURL: "http://target.url",
-//					},
-//				},
-//			},
-//			expected: model.ServiceDetails{
-//				Api: &model.API{
-//					TargetUrl: "http://target.url",
-//				},
-//				Labels: emptyLabels(),
-//			},
-//		},
-//		"simple API with additional headers and query params": {
-//			given: graphql.PackageCreateInput{
-//				API: &graphql.APIDefinitionExt{
-//					APIDefinition: graphql.APIDefinition{
-//						TargetURL: "http://target.url",
-//						DefaultAuth: &graphql.Auth{
-//							AdditionalQueryParams: &graphql.QueryParams{
-//								"q1": []string{"a", "b"},
-//								"q2": []string{"c", "d"},
-//							},
-//							AdditionalHeaders: &graphql.HttpHeaders{
-//								"h1": []string{"e", "f"},
-//								"h2": []string{"g", "h"},
-//							},
-//						},
-//					},
-//				},
-//			},
-//			expected: model.ServiceDetails{
-//				Api: &model.API{
-//					TargetUrl: "http://target.url",
-//					Headers: &map[string][]string{
-//						"h1": {"e", "f"},
-//						"h2": {"g", "h"}},
-//					QueryParameters: &map[string][]string{
-//						"q1": {"a", "b"},
-//						"q2": {"c", "d"},
-//					},
-//					RequestParameters: &model.RequestParameters{
-//						Headers: &map[string][]string{
-//							"h1": {"e", "f"},
-//							"h2": {"g", "h"}},
-//						QueryParameters: &map[string][]string{
-//							"q1": {"a", "b"},
-//							"q2": {"c", "d"},
-//						},
-//					},
-//				},
-//				Labels: emptyLabels(),
-//			},
-//		},
-//		"simple API with Basic Auth": {
-//			given: graphql.PackageCreateInput{
-//				API: &graphql.APIDefinitionExt{
-//					APIDefinition: graphql.APIDefinition{
-//						TargetURL: "http://target.url",
-//						DefaultAuth: &graphql.Auth{
-//							Credential: &graphql.BasicCredentialData{
-//								Username: "username",
-//								Password: "password",
-//							},
-//						},
-//					},
-//				},
-//			},
-//			expected: model.ServiceDetails{
-//				Api: &model.API{
-//					TargetUrl: "http://target.url",
-//					Credentials: &model.CredentialsWithCSRF{
-//						BasicWithCSRF: &model.BasicAuthWithCSRF{
-//							BasicAuth: model.BasicAuth{
-//								Username: "username",
-//								Password: "password",
-//							},
-//						},
-//					},
-//				},
-//				Labels: emptyLabels(),
-//			},
-//		},
-//		"simple API with Oauth": {
-//			given: graphql.PackageCreateInput{
-//				API: &graphql.APIDefinitionExt{
-//
-//					APIDefinition: graphql.APIDefinition{
-//						TargetURL: "http://target.url",
-//						DefaultAuth: &graphql.Auth{
-//							Credential: &graphql.OAuthCredentialData{
-//								URL:          "http://oauth.url",
-//								ClientID:     "client_id",
-//								ClientSecret: "client_secret",
-//							},
-//						},
-//					},
-//				},
-//			},
-//			expected: model.ServiceDetails{
-//				Api: &model.API{
-//					TargetUrl: "http://target.url",
-//					Credentials: &model.CredentialsWithCSRF{
-//						OauthWithCSRF: &model.OauthWithCSRF{
-//							Oauth: model.Oauth{
-//								URL:          "http://oauth.url",
-//								ClientID:     "client_id",
-//								ClientSecret: "client_secret",
-//							},
-//						},
-//					},
-//				},
-//				Labels: emptyLabels(),
-//			},
-//		},
-//		"simple API with FetchRequest (query params and headers)": {
-//			given: graphql.PackageCreateInput{
-//				API: &graphql.APIDefinitionExt{
-//					Spec: &graphql.APISpecExt{
-//						FetchRequest: &graphql.FetchRequest{
-//							URL: "http://apispec.url",
-//							Auth: &graphql.Auth{
-//								AdditionalQueryParams: &graphql.QueryParams{
-//									"q1": {"a", "b"},
-//									"q2": {"c", "d"},
-//								},
-//								AdditionalHeaders: &graphql.HttpHeaders{
-//									"h1": {"e", "f"},
-//									"h2": {"g", "h"},
-//								},
-//							},
-//						}}}},
-//			expected: model.ServiceDetails{
-//				Api: &model.API{
-//					SpecificationUrl: "http://apispec.url",
-//					SpecificationRequestParameters: &model.RequestParameters{
-//						Headers: &map[string][]string{
-//							"h1": {"e", "f"},
-//							"h2": {"g", "h"}},
-//						QueryParameters: &map[string][]string{
-//							"q1": {"a", "b"},
-//							"q2": {"c", "d"},
-//						},
-//					},
-//				},
-//				Labels: emptyLabels(),
-//			},
-//		},
-//		"simple API with Fetch Request protected with Basic Auth": {
-//			given: graphql.PackageCreateInput{
-//				API: &graphql.APIDefinitionExt{
-//
-//					Spec: &graphql.APISpecExt{
-//						FetchRequest: &graphql.FetchRequest{
-//							URL: "http://apispec.url",
-//							Auth: &graphql.Auth{
-//								Credential: &graphql.BasicCredentialData{
-//									Username: "username",
-//									Password: "password",
-//								},
-//							},
-//						}}}},
-//			expected: model.ServiceDetails{
-//				Api: &model.API{
-//					SpecificationUrl: "http://apispec.url",
-//					SpecificationCredentials: &model.Credentials{
-//						Basic: &model.BasicAuth{
-//							Username: "username",
-//							Password: "password",
-//						},
-//					},
-//				},
-//				Labels: emptyLabels(),
-//			},
-//		},
-//		"simple API with Fetch Request protected with Oauth": {
-//			given: graphql.PackageCreateInput{
-//				API: &graphql.APIDefinitionExt{
-//					Spec: &graphql.APISpecExt{
-//						FetchRequest: &graphql.FetchRequest{
-//							URL: "http://apispec.url",
-//							Auth: &graphql.Auth{
-//								Credential: &graphql.OAuthCredentialData{
-//									URL:          "http://oauth.url",
-//									ClientID:     "client_id",
-//									ClientSecret: "client_secret",
-//								},
-//							},
-//						}}}},
-//			expected: model.ServiceDetails{
-//				Api: &model.API{
-//					SpecificationUrl: "http://apispec.url",
-//					SpecificationCredentials: &model.Credentials{
-//						Oauth: &model.Oauth{
-//							URL:          "http://oauth.url",
-//							ClientID:     "client_id",
-//							ClientSecret: "client_secret",
-//						},
-//					},
-//				},
-//				Labels: emptyLabels(),
-//			},
-//		},
-//		"events": {
-//			given: graphql.PackageCreateInput{
-//				Event: &graphql.EventAPIDefinitionExt{
-//					Spec: &graphql.EventAPISpecExt{
-//						EventSpec: graphql.EventSpec{
-//							Data: ptrClob(`asyncapi: "1.2.0"`),
-//						},
-//					},
-//				},
-//			},
-//			expected: model.ServiceDetails{
-//				Events: &model.Events{
-//					Spec: json.RawMessage(`asyncapi: "1.2.0"`),
-//				},
-//				Labels: emptyLabels(),
-//			},
-//		},
-//	} {
-//		t.Run(name, func(t *testing.T) {
-//			// WHEN
-//			actual, err := conv.GraphQLToServiceDetails(tc.given)
-//			// THEN
-//			require.NoError(t, err)
-//			assert.Equal(t, tc.expected, actual)
-//		})
-//	}
-//}
+func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
+	type testCase struct {
+		given    model.ServiceDetails
+		expected graphql.PackageCreateInput
+	}
+
+	conv := service.NewConverter()
+
+	for name, tc := range map[string]testCase{
+		"name and description propagated to api": {
+			given: model.ServiceDetails{Name: "name", Description: "description", Api: &model.API{}},
+			expected: graphql.PackageCreateInput{
+				Name:                "name",
+				Description:         ptrString("description"),
+				DefaultInstanceAuth: &graphql.AuthInput{},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						Name:        "name",
+						Description: ptrString("description"),
+					},
+				},
+			},
+		},
+		"API with only URL provided": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					TargetUrl: "http://target.url",
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						// TODO out name?
+						TargetURL: "http://target.url",
+					},
+				},
+			},
+		},
+		"ODATA API provided": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					TargetUrl: "http://target.url",
+					ApiType:   "ODATA",
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						TargetURL: "http://target.url",
+						Spec: &graphql.APISpecInput{
+							Type:   graphql.APISpecTypeOdata,
+							Format: graphql.SpecFormatYaml,
+						},
+					},
+				},
+			},
+		},
+
+		"API other than ODATA provided": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					ApiType: "anything else",
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						Spec: &graphql.APISpecInput{
+							Type:   graphql.APISpecTypeOpenAPI,
+							Format: graphql.SpecFormatYaml,
+						},
+					},
+				},
+			},
+		},
+
+		"API with directly spec provided in YAML": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					Spec: json.RawMessage(`openapi: "3.0.0"`),
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						Spec: &graphql.APISpecInput{
+							Data:   ptrClob(graphql.CLOB(`openapi: "3.0.0"`)),
+							Type:   graphql.APISpecTypeOpenAPI,
+							Format: graphql.SpecFormatYaml,
+						},
+					},
+				},
+			},
+		},
+
+		"API with directly spec provided in JSON": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					Spec: json.RawMessage(`{"spec":"v0.0.1"}`),
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						Spec: &graphql.APISpecInput{
+							Data:   ptrClob(graphql.CLOB(`{"spec":"v0.0.1"}`)),
+							Type:   graphql.APISpecTypeOpenAPI,
+							Format: graphql.SpecFormatJSON,
+						},
+					},
+				},
+			},
+		},
+
+		"API with directly spec provided in XML": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					Spec: json.RawMessage(`<spec></spec>"`),
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						Spec: &graphql.APISpecInput{
+							Data:   ptrClob(graphql.CLOB(`<spec></spec>"`)),
+							Type:   graphql.APISpecTypeOpenAPI,
+							Format: graphql.SpecFormatXML,
+						},
+					},
+				},
+			},
+		},
+
+		"API with query params and headers stored in old fields": {
+			given: model.ServiceDetails{
+				Name: "foo",
+				Api: &model.API{
+					QueryParameters: &map[string][]string{
+						"q1": {"a", "b"},
+						"q2": {"c", "d"},
+					},
+					Headers: &map[string][]string{
+						"h1": {"e", "f"},
+						"h2": {"g", "h"},
+					},
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				Name: "foo",
+				DefaultInstanceAuth: &graphql.AuthInput{
+					AdditionalQueryParams: &graphql.QueryParams{
+						"q1": {"a", "b"},
+						"q2": {"c", "d"},
+					},
+					AdditionalHeaders: &graphql.HttpHeaders{
+						"h1": {"e", "f"},
+						"h2": {"g", "h"},
+					},
+				},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{Name: "foo"},
+				},
+			},
+		},
+		"API with query params and headers stored in the new fields": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					RequestParameters: &model.RequestParameters{
+						QueryParameters: &map[string][]string{
+							"q1": {"a", "b"},
+							"q2": {"c", "d"},
+						},
+						Headers: &map[string][]string{
+							"h1": {"e", "f"},
+							"h2": {"g", "h"},
+						},
+					},
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{
+					AdditionalQueryParams: &graphql.QueryParams{
+						"q1": {"a", "b"},
+						"q2": {"c", "d"},
+					},
+					AdditionalHeaders: &graphql.HttpHeaders{
+						"h1": {"e", "f"},
+						"h2": {"g", "h"},
+					},
+				},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{},
+				},
+			},
+		},
+		"API with query params and headers stored in old and new fields": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					RequestParameters: &model.RequestParameters{
+						QueryParameters: &map[string][]string{
+							"new": {"new"},
+						},
+						Headers: &map[string][]string{
+							"new": {"new"},
+						}},
+					QueryParameters: &map[string][]string{
+						"old": {"old"},
+					},
+					Headers: &map[string][]string{
+						"old": {"old"},
+					},
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{
+					AdditionalQueryParams: &graphql.QueryParams{
+						"new": {"new"},
+					},
+					AdditionalHeaders: &graphql.HttpHeaders{
+						"new": {"new"},
+					},
+				},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{},
+				},
+			},
+		},
+		"API protected with basic": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					Credentials: &model.CredentialsWithCSRF{
+						BasicWithCSRF: &model.BasicAuthWithCSRF{
+							BasicAuth: model.BasicAuth{
+								Username: "user",
+								Password: "password",
+							},
+							CSRFInfo: &model.CSRFInfo{TokenEndpointURL: "foo.bar"},
+						},
+					},
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{
+					Credential: &graphql.CredentialDataInput{
+						Basic: &graphql.BasicCredentialDataInput{
+							Username: "user",
+							Password: "password",
+						},
+					},
+					RequestAuth: &graphql.CredentialRequestAuthInput{
+						Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{TokenEndpointURL: "foo.bar"},
+					},
+				},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{},
+				},
+			},
+		},
+		"API protected with oauth": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					Credentials: &model.CredentialsWithCSRF{
+						OauthWithCSRF: &model.OauthWithCSRF{
+							Oauth: model.Oauth{
+								ClientID:     "client_id",
+								ClientSecret: "client_secret",
+								URL:          "http://oauth.url",
+								RequestParameters: &model.RequestParameters{ // TODO this field is not mapped at all
+									QueryParameters: &map[string][]string{
+										"q1": {"a", "b"},
+										"q2": {"c", "d"},
+									},
+									Headers: &map[string][]string{
+										"h1": {"e", "f"},
+										"h2": {"g", "h"},
+									},
+								},
+							},
+							CSRFInfo: &model.CSRFInfo{TokenEndpointURL: "foo.bar"},
+						},
+					},
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{
+					Credential: &graphql.CredentialDataInput{
+						Oauth: &graphql.OAuthCredentialDataInput{
+							URL:          "http://oauth.url",
+							ClientID:     "client_id",
+							ClientSecret: "client_secret",
+						},
+					},
+					RequestAuth: &graphql.CredentialRequestAuthInput{
+						Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{TokenEndpointURL: "foo.bar"},
+					},
+				},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{},
+				},
+			},
+		},
+		"API specification mapped to fetch request": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					SpecificationUrl: "http://specification.url",
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						Spec: &graphql.APISpecInput{
+							FetchRequest: &graphql.FetchRequestInput{
+								URL: "http://specification.url",
+							},
+							Format: graphql.SpecFormatJSON,
+							Type:   graphql.APISpecTypeOpenAPI,
+						},
+					},
+				},
+			},
+		},
+		"API specification with basic auth converted to fetch request": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					SpecificationUrl: "http://specification.url",
+					SpecificationCredentials: &model.Credentials{
+						Basic: &model.BasicAuth{
+							Username: "username",
+							Password: "password",
+						},
+					},
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						Spec: &graphql.APISpecInput{
+							FetchRequest: &graphql.FetchRequestInput{
+								URL: "http://specification.url",
+								Auth: &graphql.AuthInput{
+									Credential: &graphql.CredentialDataInput{
+										Basic: &graphql.BasicCredentialDataInput{
+											Username: "username",
+											Password: "password",
+										},
+									},
+								},
+							},
+							Type:   graphql.APISpecTypeOpenAPI,
+							Format: graphql.SpecFormatJSON,
+						},
+					},
+				},
+			},
+		},
+		"API specification with oauth converted to fetch request": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					SpecificationUrl: "http://specification.url",
+					SpecificationCredentials: &model.Credentials{
+						Oauth: &model.Oauth{
+							URL:               "http://oauth.url",
+							ClientID:          "client_id",
+							ClientSecret:      "client_secret",
+							RequestParameters: nil, // TODO not supported
+						},
+					},
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						Spec: &graphql.APISpecInput{
+							FetchRequest: &graphql.FetchRequestInput{
+								URL: "http://specification.url",
+								Auth: &graphql.AuthInput{
+									Credential: &graphql.CredentialDataInput{
+										Oauth: &graphql.OAuthCredentialDataInput{
+											URL:          "http://oauth.url",
+											ClientID:     "client_id",
+											ClientSecret: "client_secret",
+										},
+									},
+								},
+							},
+							Type:   graphql.APISpecTypeOpenAPI,
+							Format: graphql.SpecFormatJSON,
+						},
+					},
+				},
+			},
+		},
+		"API specification with request parameters converted to fetch request": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					SpecificationUrl: "http://specification.url",
+					SpecificationRequestParameters: &model.RequestParameters{
+						QueryParameters: &map[string][]string{
+							"q1": {"a", "b"},
+							"q2": {"c", "d"},
+						},
+						Headers: &map[string][]string{
+							"h1": {"e", "f"},
+							"h2": {"g", "h"},
+						},
+					},
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						Spec: &graphql.APISpecInput{
+							FetchRequest: &graphql.FetchRequestInput{
+								URL: "http://specification.url",
+								Auth: &graphql.AuthInput{
+									AdditionalQueryParams: &graphql.QueryParams{
+										"q1": {"a", "b"},
+										"q2": {"c", "d"},
+									},
+									AdditionalHeaders: &graphql.HttpHeaders{
+										"h1": {"e", "f"},
+										"h2": {"g", "h"},
+									},
+								},
+							},
+							Format: graphql.SpecFormatJSON,
+							Type:   graphql.APISpecTypeOpenAPI,
+						},
+					},
+				},
+			},
+		},
+		"Event": {
+			given: model.ServiceDetails{
+				Name: "foo",
+				Events: &model.Events{
+					Spec: json.RawMessage(`asyncapi: "1.2.0"`),
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				Name:                "foo",
+				DefaultInstanceAuth: &graphql.AuthInput{},
+				EventDefinitions: []*graphql.EventDefinitionInput{
+					{
+						Name: "foo",
+						Spec: &graphql.EventSpecInput{
+							Data:   ptrClob(`asyncapi: "1.2.0"`),
+							Type:   graphql.EventSpecTypeAsyncAPI,
+							Format: graphql.SpecFormatYaml,
+						},
+					},
+				},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			// WHEN
+			actual, err := conv.DetailsToGraphQLCreateInput(tc.given)
+
+			// THEN
+			require.NoError(t, err)
+			assert.Equal(t, tc.expected, actual)
+		})
+	}
+}
+
+func TestConverter_GraphQLToServiceDetails(t *testing.T) {
+	type testCase struct {
+		given    graphql.PackageExt
+		expected model.ServiceDetails
+	}
+	conv := service.NewConverter()
+
+	for name, tc := range map[string]testCase{
+		"name and description is loaded from Package": {
+			given: graphql.PackageExt{
+				Package: graphql.Package{Name: "foo", Description: ptrString("description")},
+				APIDefinitions: graphql.APIDefinitionPageExt{
+					Data: []*graphql.APIDefinitionExt{
+						{
+							APIDefinition: graphql.APIDefinition{},
+						},
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Name:        "foo",
+				Description: "description",
+				Api:         &model.API{},
+				Labels:      emptyLabels(),
+			},
+		},
+		"simple API": {
+			given: graphql.PackageExt{
+				APIDefinitions: graphql.APIDefinitionPageExt{
+					Data: []*graphql.APIDefinitionExt{
+						{
+							APIDefinition: graphql.APIDefinition{
+								TargetURL: "http://target.url",
+							},
+						},
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					TargetUrl: "http://target.url",
+				},
+				Labels: emptyLabels(),
+			},
+		},
+		"simple API with additional headers and query params": {
+			given: graphql.PackageExt{
+				Package: graphql.Package{
+					DefaultInstanceAuth: &graphql.Auth{
+						AdditionalQueryParams: &graphql.QueryParams{
+							"q1": []string{"a", "b"},
+							"q2": []string{"c", "d"},
+						},
+						AdditionalHeaders: &graphql.HttpHeaders{
+							"h1": []string{"e", "f"},
+							"h2": []string{"g", "h"},
+						},
+					},
+				},
+				APIDefinitions: graphql.APIDefinitionPageExt{
+					Data: []*graphql.APIDefinitionExt{
+						{
+							APIDefinition: graphql.APIDefinition{
+								TargetURL: "http://target.url",
+							},
+						},
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					TargetUrl: "http://target.url",
+					Headers: &map[string][]string{
+						"h1": {"e", "f"},
+						"h2": {"g", "h"}},
+					QueryParameters: &map[string][]string{
+						"q1": {"a", "b"},
+						"q2": {"c", "d"},
+					},
+					RequestParameters: &model.RequestParameters{
+						Headers: &map[string][]string{
+							"h1": {"e", "f"},
+							"h2": {"g", "h"}},
+						QueryParameters: &map[string][]string{
+							"q1": {"a", "b"},
+							"q2": {"c", "d"},
+						},
+					},
+				},
+				Labels: emptyLabels(),
+			},
+		},
+		"simple API with Basic Auth": {
+			given: graphql.PackageExt{
+				Package: graphql.Package{
+					DefaultInstanceAuth: &graphql.Auth{
+						Credential: &graphql.BasicCredentialData{
+							Username: "username",
+							Password: "password",
+						},
+					},
+				},
+				APIDefinitions: graphql.APIDefinitionPageExt{
+					Data: []*graphql.APIDefinitionExt{
+						{
+							APIDefinition: graphql.APIDefinition{
+								TargetURL: "http://target.url",
+							},
+						},
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					TargetUrl: "http://target.url",
+					Credentials: &model.CredentialsWithCSRF{
+						BasicWithCSRF: &model.BasicAuthWithCSRF{
+							BasicAuth: model.BasicAuth{
+								Username: "username",
+								Password: "password",
+							},
+						},
+					},
+				},
+				Labels: emptyLabels(),
+			},
+		},
+		"simple API with Oauth": {
+			given: graphql.PackageExt{
+				Package: graphql.Package{
+					DefaultInstanceAuth: &graphql.Auth{
+						Credential: &graphql.OAuthCredentialData{
+							URL:          "http://oauth.url",
+							ClientID:     "client_id",
+							ClientSecret: "client_secret",
+						},
+					},
+				},
+				APIDefinitions: graphql.APIDefinitionPageExt{
+					Data: []*graphql.APIDefinitionExt{
+						{
+							APIDefinition: graphql.APIDefinition{
+								TargetURL: "http://target.url",
+							},
+						},
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					TargetUrl: "http://target.url",
+					Credentials: &model.CredentialsWithCSRF{
+						OauthWithCSRF: &model.OauthWithCSRF{
+							Oauth: model.Oauth{
+								URL:          "http://oauth.url",
+								ClientID:     "client_id",
+								ClientSecret: "client_secret",
+							},
+						},
+					},
+				},
+				Labels: emptyLabels(),
+			},
+		},
+		"simple API with FetchRequest (query params and headers)": {
+			given: graphql.PackageExt{
+				APIDefinitions: graphql.APIDefinitionPageExt{
+					Data: []*graphql.APIDefinitionExt{
+						{
+							Spec: &graphql.APISpecExt{
+								FetchRequest: &graphql.FetchRequest{
+									URL: "http://apispec.url",
+									Auth: &graphql.Auth{
+										AdditionalQueryParams: &graphql.QueryParams{
+											"q1": {"a", "b"},
+											"q2": {"c", "d"},
+										},
+										AdditionalHeaders: &graphql.HttpHeaders{
+											"h1": {"e", "f"},
+											"h2": {"g", "h"},
+										},
+									},
+								}}},
+					},
+				}},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					SpecificationUrl: "http://apispec.url",
+					SpecificationRequestParameters: &model.RequestParameters{
+						Headers: &map[string][]string{
+							"h1": {"e", "f"},
+							"h2": {"g", "h"}},
+						QueryParameters: &map[string][]string{
+							"q1": {"a", "b"},
+							"q2": {"c", "d"},
+						},
+					},
+				},
+				Labels: emptyLabels(),
+			},
+		},
+		"simple API with Fetch Request protected with Basic Auth": {
+			given: graphql.PackageExt{
+				APIDefinitions: graphql.APIDefinitionPageExt{
+					Data: []*graphql.APIDefinitionExt{
+						{
+							Spec: &graphql.APISpecExt{
+								FetchRequest: &graphql.FetchRequest{
+									URL: "http://apispec.url",
+									Auth: &graphql.Auth{
+										Credential: &graphql.BasicCredentialData{
+											Username: "username",
+											Password: "password",
+										},
+									},
+								}}},
+					},
+				}},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					SpecificationUrl: "http://apispec.url",
+					SpecificationCredentials: &model.Credentials{
+						Basic: &model.BasicAuth{
+							Username: "username",
+							Password: "password",
+						},
+					},
+				},
+				Labels: emptyLabels(),
+			},
+		},
+		"simple API with Fetch Request protected with Oauth": {
+			given: graphql.PackageExt{
+				APIDefinitions: graphql.APIDefinitionPageExt{
+					Data: []*graphql.APIDefinitionExt{
+						{
+							Spec: &graphql.APISpecExt{
+								FetchRequest: &graphql.FetchRequest{
+									URL: "http://apispec.url",
+									Auth: &graphql.Auth{
+										Credential: &graphql.OAuthCredentialData{
+											URL:          "http://oauth.url",
+											ClientID:     "client_id",
+											ClientSecret: "client_secret",
+										},
+									},
+								}}},
+					},
+				}},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					SpecificationUrl: "http://apispec.url",
+					SpecificationCredentials: &model.Credentials{
+						Oauth: &model.Oauth{
+							URL:          "http://oauth.url",
+							ClientID:     "client_id",
+							ClientSecret: "client_secret",
+						},
+					},
+				},
+				Labels: emptyLabels(),
+			},
+		},
+		"events": {
+			given: graphql.PackageExt{
+				EventDefinitions: graphql.EventAPIDefinitionPageExt{
+					Data: []*graphql.EventAPIDefinitionExt{{
+						Spec: &graphql.EventAPISpecExt{
+							EventSpec: graphql.EventSpec{
+								Data: ptrClob(`asyncapi: "1.2.0"`),
+							},
+						}},
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Events: &model.Events{
+					Spec: json.RawMessage(`asyncapi: "1.2.0"`),
+				},
+				Labels: emptyLabels(),
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			// WHEN
+			actual, err := conv.GraphQLToServiceDetails(tc.given)
+			// THEN
+			require.NoError(t, err)
+			assert.Equal(t, tc.expected, actual)
+		})
+	}
+}
 
 func TestConverter_ServiceDetailsToService(t *testing.T) {
 	//GIVEN
@@ -737,7 +808,7 @@ func TestConverter_ServiceDetailsToService(t *testing.T) {
 func TestConverter_GraphQLCreateInputToUpdateInput(t *testing.T) {
 	desc := "Desc"
 	schema := graphql.JSONSchema("foo")
-	auth := graphql.AuthInput{Credential:&graphql.CredentialDataInput{Basic:&graphql.BasicCredentialDataInput{
+	auth := graphql.AuthInput{Credential: &graphql.CredentialDataInput{Basic: &graphql.BasicCredentialDataInput{
 		Username: "foo",
 		Password: "bar",
 	}}}

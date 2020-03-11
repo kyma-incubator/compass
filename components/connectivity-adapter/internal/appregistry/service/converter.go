@@ -20,7 +20,9 @@ func NewConverter() *converter {
 func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails) (graphql.PackageCreateInput, error) {
 	out := graphql.PackageCreateInput{}
 	out.Name = deprecated.Name
-	out.Description = &deprecated.Description
+	if deprecated.Description != "" {
+		out.Description = &deprecated.Description
+	}
 
 	defaultInstanceAuth := &graphql.AuthInput{}
 	if deprecated.Api != nil {
