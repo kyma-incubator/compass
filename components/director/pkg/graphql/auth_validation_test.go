@@ -22,9 +22,9 @@ func TestAuthInput_Validate_Credential(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name:          "Invalid - nil",
+			Name:          "Empty",
 			Value:         nil,
-			ExpectedValid: false,
+			ExpectedValid: true,
 		},
 		{
 			Name:          "Invalid - nested validation error",
@@ -484,7 +484,7 @@ func TestCredentialRequestAuthInput_Validate(t *testing.T) {
 			ExpectedValid: false,
 		},
 		{
-			Name: "Invalid - nested validation error in Csrf",
+			Name: "Invalid - Nested validation error",
 			Value: &graphql.CredentialRequestAuthInput{
 				Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{},
 			},
@@ -522,9 +522,9 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_Credential(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name:          "Invalid - nil",
+			Name:          "Valid - empty",
 			Value:         nil,
-			ExpectedValid: false,
+			ExpectedValid: true,
 		},
 		{
 			Name: "Invalid - nested validation error",

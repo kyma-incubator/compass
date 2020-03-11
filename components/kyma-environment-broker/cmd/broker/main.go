@@ -6,7 +6,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
@@ -37,12 +40,14 @@ type Config struct {
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
-	Provisioning       input.Config
-	Director           director.Config
-	Database           storage.Config
+	Provisioning input.Config
+	Director     director.Config
+	Database     storage.Config
+	Gardener     gardener.Config
+
 	ManagementPlaneURL string
 
-	ServiceManager internal.ServiceManagerOverride
+	ServiceManager provisioning.ServiceManagerOverrideConfig
 
 	KymaVersion                          string
 	ManagedRuntimeComponentsYAMLFilePath string
@@ -97,7 +102,6 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Loki":   runtime.NewLokiDisabler(),
 		"Kiali":  runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
 		"Jaeger": runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
 	}
@@ -108,6 +112,15 @@ func main() {
 	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
 	fatalOnError(err)
 
+	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
+	fatalOnError(err)
+	//
+	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
+	fatalOnError(err)
+
+	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
+	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
+
 	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion)
 
 	// create log dumper
@@ -116,22 +129,28 @@ func main() {
 
 	// create and run queue, steps provisioning
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
-
-	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
+	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
+	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
+	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
 	stepManager.InitStep(initialisation)
+	stepManager.AddStep(1, resolveCredentialsStep)
 
-	stepManager.AddStep(1, runtimeStep)
+	stepManager.AddStep(10, runtimeStep)
+	stepManager.AddStep(2, smOverrideStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
 
+	plansValidator, err := broker.NewPlansSchemaValidator()
+	fatalOnError(err)
+
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
 		broker.NewServices(cfg.Broker, optComponentsSvc, dumper),
-		broker.NewProvision(cfg.Broker, db.Operations(), queue, inputFactory, dumper),
+		broker.NewProvision(cfg.Broker, db.Operations(), queue, inputFactory, plansValidator, dumper),
 		broker.NewDeprovision(db.Instances(), provisionerClient, dumper),
 		broker.NewUpdate(dumper),
 		broker.NewGetInstance(db.Instances(), dumper),

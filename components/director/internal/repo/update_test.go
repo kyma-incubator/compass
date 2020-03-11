@@ -8,9 +8,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )

@@ -7,13 +7,11 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -27,15 +25,13 @@ type CreateRuntimeStep struct {
 	operationManager  *process.OperationManager
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
-	serviceManager    internal.ServiceManagerOverride
 }
 
-func NewCreateRuntimeStep(os storage.Operations, is storage.Instances, cli provisioner.Client, smOverride internal.ServiceManagerOverride) *CreateRuntimeStep {
+func NewCreateRuntimeStep(os storage.Operations, is storage.Instances, cli provisioner.Client) *CreateRuntimeStep {
 	return &CreateRuntimeStep{
 		operationManager:  process.NewOperationManager(os),
 		instanceStorage:   is,
 		provisionerClient: cli,
-		serviceManager:    smOverride,
 	}
 }
 
@@ -121,7 +117,6 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 func (s *CreateRuntimeStep) createProvisionInput(operation internal.ProvisioningOperation, parameters internal.ProvisioningParameters) (gqlschema.ProvisionRuntimeInput, error) {
 	var request gqlschema.ProvisionRuntimeInput
 
-	operation.InputCreator.SetOverrides(input.ServiceManagerComponentName, s.serviceManagerOverride(parameters.ErsContext))
 	operation.InputCreator.SetProvisioningParameters(parameters.Parameters)
 	operation.InputCreator.SetRuntimeLabels(operation.InstanceID, parameters.ErsContext.SubAccountID)
 	request, err := operation.InputCreator.Create()
@@ -130,43 +125,4 @@ func (s *CreateRuntimeStep) createProvisionInput(operation internal.Provisioning
 	}
 
 	return request, nil
-}
-
-func (s *CreateRuntimeStep) serviceManagerOverride(ersCtx internal.ERSContext) []*gqlschema.ConfigEntryInput {
-	var smOverrides []*gqlschema.ConfigEntryInput
-	if s.serviceManager.CredentialsOverride {
-		smOverrides = []*gqlschema.ConfigEntryInput{
-			{
-				Key:   "config.sm.url",
-				Value: s.serviceManager.URL,
-			},
-			{
-				Key:   "sm.user",
-				Value: s.serviceManager.Username,
-			},
-			{
-				Key:    "sm.password",
-				Value:  s.serviceManager.Password,
-				Secret: ptr.Bool(true),
-			},
-		}
-	} else {
-		smOverrides = []*gqlschema.ConfigEntryInput{
-			{
-				Key:   "config.sm.url",
-				Value: ersCtx.ServiceManager.URL,
-			},
-			{
-				Key:   "sm.user",
-				Value: ersCtx.ServiceManager.Credentials.BasicAuth.Username,
-			},
-			{
-				Key:    "sm.password",
-				Value:  ersCtx.ServiceManager.Credentials.BasicAuth.Password,
-				Secret: ptr.Bool(true),
-			},
-		}
-	}
-
-	return smOverrides
 }

@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
-	persistencemock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
+	persistencemock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

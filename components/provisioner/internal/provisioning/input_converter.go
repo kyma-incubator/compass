@@ -51,14 +51,9 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		}
 	}
 
-	var credSecretName string
-	if input.Credentials != nil {
-		credSecretName = input.Credentials.SecretName
-	}
-
 	return model.Cluster{
 		ID:                    runtimeID,
-		CredentialsSecretName: credSecretName,
+		CredentialsSecretName: "",
 		KymaConfig:            kymaConfig,
 		ClusterConfig:         providerConfig,
 		Tenant:                tenant,
@@ -117,10 +112,10 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 }
 
 func (c converter) createGardenerClusterName(provider string) string {
-	uuid := c.uuidGenerator.New()
+	id := c.uuidGenerator.New()
 	provider = util.RemoveNotAllowedCharacters(provider)
 
-	name := strings.ReplaceAll(uuid, "-", "")
+	name := strings.ReplaceAll(id, "-", "")
 	name = fmt.Sprintf("%.3s-%.7s", provider, name)
 	name = util.StartWithLetter(name)
 	name = strings.ToLower(name)

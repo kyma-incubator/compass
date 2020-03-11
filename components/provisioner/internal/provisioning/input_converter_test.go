@@ -77,7 +77,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			},
 			Kubeconfig:            nil,
 			KymaConfig:            fixKymaConfig(),
-			CredentialsSecretName: "secretName",
+			CredentialsSecretName: "",
 			Tenant:                tenant,
 			SubAccountId:          subAccountId,
 		}
@@ -146,7 +146,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 		Kubeconfig:            nil,
 		KymaConfig:            fixKymaConfig(),
-		CredentialsSecretName: "secretName",
+		CredentialsSecretName: "",
 		Tenant:                tenant,
 		SubAccountId:          subAccountId,
 	}
@@ -213,7 +213,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 		Kubeconfig:            nil,
 		KymaConfig:            fixKymaConfig(),
-		CredentialsSecretName: "secretName",
+		CredentialsSecretName: "",
 		Tenant:                tenant,
 		SubAccountId:          subAccountId,
 	}
@@ -286,7 +286,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 		Kubeconfig:            nil,
 		KymaConfig:            fixKymaConfig(),
-		CredentialsSecretName: "secretName",
+		CredentialsSecretName: "",
 		Tenant:                tenant,
 		SubAccountId:          subAccountId,
 	}

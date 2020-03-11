@@ -16,18 +16,18 @@ require (
 	github.com/kubernetes/client-go v11.0.0+incompatible
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200123101435-9cd00b2924b8
 	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
-	github.com/kyma-incubator/hydroform/install v0.0.0-20191212125252-7afdb02ac964
+	github.com/kyma-incubator/hydroform/install v0.0.0-20200302090055-3f3b00d9799c
 	github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0
 	github.com/lib/pq v1.2.0
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.2.0 // indirect
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0
 	github.com/terraform-providers/terraform-provider-openstack v1.20.0 // indirect
-	github.com/testcontainers/testcontainers-go v0.0.8
+	github.com/testcontainers/testcontainers-go v0.3.1
 	github.com/vektah/gqlparser v1.2.0
 	github.com/vrischmann/envconfig v1.2.0
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
@@ -44,7 +44,5 @@ require (
 replace github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
 
 replace k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.15.8-beta.1
-
-replace github.com/kyma-incubator/hydroform/install => github.com/Szymongib/hydroform/install v0.0.0-20200115095213-f3daeb2c4886
 
 replace github.com/Azure/go-autorest v11.5.0+incompatible => github.com/Azure/go-autorest v13.3.2+incompatible

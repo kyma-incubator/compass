@@ -21,23 +21,56 @@ type PackageRepository interface {
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.PackagePage, error)
 }
 
+//go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
+type APIRepository interface {
+	ListForApplication(ctx context.Context, tenant, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
+	Create(ctx context.Context, item *model.APIDefinition) error
+	DeleteAllByApplicationID(ctx context.Context, tenant, id string) error
+}
+
+//go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
+type EventAPIRepository interface {
+	ListForApplication(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	Create(ctx context.Context, items *model.EventDefinition) error
+	DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error
+}
+
+//go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
+type DocumentRepository interface {
+	Create(ctx context.Context, item *model.Document) error
+	DeleteAllByApplicationID(ctx context.Context, tenant string, applicationID string) error
+}
+
+//go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
+type FetchRequestRepository interface {
+	Create(ctx context.Context, item *model.FetchRequest) error
+}
+
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
 type UIDService interface {
 	Generate() string
 }
 
 type service struct {
-	pkgRepo PackageRepository
+	pkgRepo          PackageRepository
+	apiRepo          APIRepository
+	eventAPIRepo     EventAPIRepository
+	documentRepo     DocumentRepository
+	fetchRequestRepo FetchRequestRepository
 
 	uidService   UIDService
 	timestampGen timestamp.Generator
 }
 
-func NewService(pkgRepo PackageRepository, uidService UIDService) *service {
+func NewService(pkgRepo PackageRepository, apiRepo APIRepository, eventAPIRepo EventAPIRepository, documentRepo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService) *service {
 	return &service{
-		pkgRepo:      pkgRepo,
-		uidService:   uidService,
-		timestampGen: timestamp.DefaultGenerator(),
+		pkgRepo:          pkgRepo,
+		apiRepo:          apiRepo,
+		eventAPIRepo:     eventAPIRepo,
+		documentRepo:     documentRepo,
+		fetchRequestRepo: fetchRequestRepo,
+		uidService:       uidService,
+		timestampGen:     timestamp.DefaultGenerator(),
 	}
 }
 
@@ -55,8 +88,31 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pac
 		return "", err
 	}
 
-	//TODO implement creating related resources
+	err = s.createRelatedResources(ctx, in, tnt, id)
+	if err != nil {
+		return "", errors.Wrap(err, "while creating related Application resources")
+	}
+
 	return id, nil
+}
+
+func (s *service) CreateMultiple(ctx context.Context, applicationID string, in []*model.PackageCreateInput) error {
+	if in == nil {
+		return nil
+	}
+
+	for _, pkg := range in {
+		if pkg == nil {
+			continue
+		}
+
+		_, err := s.Create(ctx, applicationID, *pkg)
+		if err != nil {
+			return errors.Wrap(err, "while creating Package for Application")
+		}
+	}
+
+	return nil
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.PackageUpdateInput) error {
@@ -160,4 +216,95 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 	}
 
 	return s.pkgRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
+}
+
+func (s *service) createRelatedResources(ctx context.Context, in model.PackageCreateInput, tenant string, packageID string) error {
+	err := s.createAPIs(ctx, packageID, tenant, in.APIDefinitions)
+	if err != nil {
+		return errors.Wrapf(err, "while creating APIs for application")
+	}
+
+	err = s.createEvents(ctx, packageID, tenant, in.EventDefinitions)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Events for application")
+	}
+
+	err = s.createDocuments(ctx, packageID, tenant, in.Documents)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Documents for application")
+	}
+
+	return nil
+}
+
+func (s *service) createAPIs(ctx context.Context, packageID, tenant string, apis []*model.APIDefinitionInput) error {
+	var err error
+	for _, item := range apis {
+		apiDefID := s.uidService.Generate()
+		err = s.apiRepo.Create(ctx, item.ToAPIDefinitionWithinPackage(apiDefID, &packageID, tenant))
+		if err != nil {
+			return errors.Wrap(err, "while creating API for application")
+		}
+
+		if item.Spec != nil && item.Spec.FetchRequest != nil {
+			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
+			if err != nil {
+				return errors.Wrap(err, "while creating FetchRequest for application")
+			}
+		}
+	}
+	return nil
+}
+
+func (s *service) createEvents(ctx context.Context, packageID, tenant string, events []*model.EventDefinitionInput) error {
+	var err error
+	for _, item := range events {
+		eventID := s.uidService.Generate()
+		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinitionWithinPackage(eventID, &packageID, tenant))
+		if err != nil {
+			return errors.Wrap(err, "while creating EventDefinitions for application")
+		}
+
+		if item.Spec != nil && item.Spec.FetchRequest != nil {
+			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventID)
+			if err != nil {
+				return errors.Wrap(err, "while creating FetchRequest for application")
+			}
+		}
+	}
+	return nil
+}
+
+func (s *service) createDocuments(ctx context.Context, packageID, tenant string, events []*model.DocumentInput) error {
+	var err error
+	for _, item := range events {
+		documentID := s.uidService.Generate()
+		err = s.documentRepo.Create(ctx, item.ToDocumentWithinPackage(documentID, tenant, &packageID))
+		if err != nil {
+			return errors.Wrapf(err, "while creating Document for application")
+		}
+
+		if item.FetchRequest != nil {
+			_, err = s.createFetchRequest(ctx, tenant, item.FetchRequest, model.DocumentFetchRequestReference, documentID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (s *service) createFetchRequest(ctx context.Context, tenant string, in *model.FetchRequestInput, objectType model.FetchRequestReferenceObjectType, objectID string) (*string, error) {
+	if in == nil {
+		return nil, nil
+	}
+
+	id := s.uidService.Generate()
+	fr := in.ToFetchRequest(s.timestampGen(), id, tenant, objectType, objectID)
+	err := s.fetchRequestRepo.Create(ctx, fr)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while creating FetchRequest for %s with ID %s", objectType, objectID)
+	}
+
+	return &id, nil
 }

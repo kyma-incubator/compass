@@ -3079,7 +3079,7 @@ input ApplicationUpdateInput {
 }
 
 input AuthInput {
-	credential: CredentialDataInput!
+	credential: CredentialDataInput
 	additionalHeaders: HttpHeaders
 	additionalQueryParams: QueryParams
 	requestAuth: CredentialRequestAuthInput
@@ -3092,7 +3092,7 @@ input BasicCredentialDataInput {
 
 input CSRFTokenCredentialRequestAuthInput {
 	tokenEndpointURL: String!
-	credential: CredentialDataInput!
+	credential: CredentialDataInput
 	additionalHeaders: HttpHeaders
 	additionalQueryParams: QueryParams
 }
@@ -3366,7 +3366,7 @@ type ApplicationTemplatePage implements Pageable {
 }
 
 type Auth {
-	credential: CredentialData!
+	credential: CredentialData
 	additionalHeaders: HttpHeaders
 	additionalQueryParams: QueryParams
 	requestAuth: CredentialRequestAuth
@@ -3379,7 +3379,7 @@ type BasicCredentialData {
 
 type CSRFTokenCredentialRequestAuth {
 	tokenEndpointURL: String!
-	credential: CredentialData!
+	credential: CredentialData
 	additionalHeaders: HttpHeaders
 	additionalQueryParams: QueryParams
 }
@@ -3732,6 +3732,7 @@ type Query {
 type Mutation {
 	"""
 	**Examples**
+	- [register application with packages](examples/register-application/register-application-with-packages.graphql)
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""
@@ -7881,15 +7882,12 @@ func (ec *executionContext) _Auth_credential(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(CredentialData)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialData(ctx, field.Selections, res)
+	return ec.marshalOCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_additionalHeaders(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
@@ -8131,15 +8129,12 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth_credential(ctx conte
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(CredentialData)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialData(ctx, field.Selections, res)
+	return ec.marshalOCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalHeaders(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) (ret graphql.Marshaler) {
@@ -18673,7 +18668,7 @@ func (ec *executionContext) unmarshalInputAuthInput(ctx context.Context, obj int
 		switch k {
 		case "credential":
 			var err error
-			it.Credential, err = ec.unmarshalNCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx, v)
+			it.Credential, err = ec.unmarshalOCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -18739,7 +18734,7 @@ func (ec *executionContext) unmarshalInputCSRFTokenCredentialRequestAuthInput(ct
 			}
 		case "credential":
 			var err error
-			it.Credential, err = ec.unmarshalNCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx, v)
+			it.Credential, err = ec.unmarshalOCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -20043,9 +20038,6 @@ func (ec *executionContext) _Auth(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = graphql.MarshalString("Auth")
 		case "credential":
 			out.Values[i] = ec._Auth_credential(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "additionalHeaders":
 			out.Values[i] = ec._Auth_additionalHeaders(ctx, field, obj)
 		case "additionalQueryParams":
@@ -20113,9 +20105,6 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth(ctx context.Context,
 			}
 		case "credential":
 			out.Values[i] = ec._CSRFTokenCredentialRequestAuth_credential(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "additionalHeaders":
 			out.Values[i] = ec._CSRFTokenCredentialRequestAuth_additionalHeaders(ctx, field, obj)
 		case "additionalQueryParams":
@@ -22615,22 +22604,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialData(ctx context.Context, sel ast.SelectionSet, v CredentialData) graphql.Marshaler {
-	return ec._CredentialData(ctx, sel, &v)
-}
-
-func (ec *executionContext) unmarshalNCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx context.Context, v interface{}) (CredentialDataInput, error) {
-	return ec.unmarshalInputCredentialDataInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx context.Context, v interface{}) (*CredentialDataInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) marshalNDocument2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v Document) graphql.Marshaler {
 	return ec._Document(ctx, sel, &v)
 }
@@ -24095,6 +24068,22 @@ func (ec *executionContext) unmarshalOCSRFTokenCredentialRequestAuthInput2ᚖgit
 		return nil, nil
 	}
 	res, err := ec.unmarshalOCSRFTokenCredentialRequestAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCSRFTokenCredentialRequestAuthInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialData(ctx context.Context, sel ast.SelectionSet, v CredentialData) graphql.Marshaler {
+	return ec._CredentialData(ctx, sel, &v)
+}
+
+func (ec *executionContext) unmarshalOCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx context.Context, v interface{}) (CredentialDataInput, error) {
+	return ec.unmarshalInputCredentialDataInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx context.Context, v interface{}) (*CredentialDataInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx, v)
 	return &res, err
 }
 

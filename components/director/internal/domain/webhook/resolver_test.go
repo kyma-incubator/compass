@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
 	"github.com/stretchr/testify/require"
 
@@ -12,8 +12,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook/automock"
-	persistenceautomock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 
 	"github.com/stretchr/testify/assert"
 )

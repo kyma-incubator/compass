@@ -1,4 +1,4 @@
-package gql
+package graphqlizer
 
 import (
 	"fmt"
@@ -287,7 +287,10 @@ func (fp *GqlFieldsProvider) ForPackage(ctx ...FieldCtx) string {
 		description
 		instanceAuthRequestInputSchema
 		instanceAuths {%s}
-		defaultInstanceAuth {%s}`, fp.ForPackageInstanceAuth(), fp.ForAuth()),
+		defaultInstanceAuth {%s}
+		apiDefinitions {%s}
+		eventDefinitions {%s}
+		documents {%s}`, fp.ForPackageInstanceAuth(), fp.ForAuth(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventDefinition()), fp.Page(fp.ForDocument())),
 		ctx, []string{"Package.instanceAuth"})
 }
 

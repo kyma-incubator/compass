@@ -25,14 +25,20 @@ func AssertNoError(t *testing.T, err error, msgAndArgs ...interface{}) {
 	t.Error(fullError, msgAndArgs)
 }
 
-func AssertNotNillAndEqualString(t *testing.T, expected string, actual *string) {
+func AssertNotNilAndEqualString(t *testing.T, expected string, actual *string) {
 	if !assert.NotNil(t, actual) {
 		assert.Equal(t, expected, *actual)
 	}
 }
 
-func AssertNotNillAndEqualInt(t *testing.T, expected int, actual *int) {
+func AssertNotNilAndEqualInt(t *testing.T, expected int, actual *int) {
 	if !assert.NotNil(t, actual) {
 		assert.Equal(t, expected, *actual)
+	}
+}
+
+func AssertNotNilAndNotEmptyString(t *testing.T, str *string) {
+	if !assert.NotNil(t, str) {
+		assert.NotEmpty(t, *str)
 	}
 }

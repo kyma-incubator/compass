@@ -190,7 +190,7 @@ input ApplicationUpdateInput {
 }
 
 input AuthInput {
-	credential: CredentialDataInput!
+	credential: CredentialDataInput
 	additionalHeaders: HttpHeaders
 	additionalQueryParams: QueryParams
 	requestAuth: CredentialRequestAuthInput
@@ -203,7 +203,7 @@ input BasicCredentialDataInput {
 
 input CSRFTokenCredentialRequestAuthInput {
 	tokenEndpointURL: String!
-	credential: CredentialDataInput!
+	credential: CredentialDataInput
 	additionalHeaders: HttpHeaders
 	additionalQueryParams: QueryParams
 }
@@ -477,7 +477,7 @@ type ApplicationTemplatePage implements Pageable {
 }
 
 type Auth {
-	credential: CredentialData!
+	credential: CredentialData
 	additionalHeaders: HttpHeaders
 	additionalQueryParams: QueryParams
 	requestAuth: CredentialRequestAuth
@@ -490,7 +490,7 @@ type BasicCredentialData {
 
 type CSRFTokenCredentialRequestAuth {
 	tokenEndpointURL: String!
-	credential: CredentialData!
+	credential: CredentialData
 	additionalHeaders: HttpHeaders
 	additionalQueryParams: QueryParams
 }
@@ -843,6 +843,7 @@ type Query {
 type Mutation {
 	"""
 	**Examples**
+	- [register application with packages](examples/register-application/register-application-with-packages.graphql)
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""

@@ -31,7 +31,7 @@ func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {
 
 type ProvisioningParametersDTO struct {
 	Name                        string   `json:"name"`
-	NodeCount                   *int     `json:"nodeCount"`
+	TargetSecret                *string  `json:"targetSecret"`
 	VolumeSizeGb                *int     `json:"volumeSizeGb"`
 	MachineType                 *string  `json:"machineType"`
 	Region                      *string  `json:"region"`
@@ -44,10 +44,10 @@ type ProvisioningParametersDTO struct {
 }
 
 type ERSContext struct {
-	TenantID        string                 `json:"tenant_id"`
-	SubAccountID    string                 `json:"subaccount_id"`
-	GlobalAccountID string                 `json:"globalaccount_id"`
-	ServiceManager  ServiceManagerEntryDTO `json:"sm_platform_credentials"`
+	TenantID        string                  `json:"tenant_id"`
+	SubAccountID    string                  `json:"subaccount_id"`
+	GlobalAccountID string                  `json:"globalaccount_id"`
+	ServiceManager  *ServiceManagerEntryDTO `json:"sm_platform_credentials,omitempty"`
 }
 
 type ServiceManagerEntryDTO struct {

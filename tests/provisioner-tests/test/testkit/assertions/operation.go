@@ -13,6 +13,10 @@ func AssertOperationSucceed(t *testing.T, expectedType gqlschema.OperationType, 
 	AssertOperation(t, gqlschema.OperationStateSucceeded, expectedType, expectedRuntimeId, operation)
 }
 
+func AssertOperationInProgress(t *testing.T, expectedType gqlschema.OperationType, expectedRuntimeId string, operation gqlschema.OperationStatus) {
+	AssertOperation(t, gqlschema.OperationStateInProgress, expectedType, expectedRuntimeId, operation)
+}
+
 func AssertOperation(t *testing.T, expectedState gqlschema.OperationState, expectedType gqlschema.OperationType, expectedRuntimeId string, operation gqlschema.OperationStatus) {
 	require.NotNil(t, operation.ID)
 	require.NotNil(t, operation.Message)
@@ -21,5 +25,5 @@ func AssertOperation(t *testing.T, expectedState gqlschema.OperationState, expec
 	logrus.Infof("Operation message: %s", *operation.Message)
 	require.Equal(t, expectedState, operation.State)
 	assert.Equal(t, expectedType, operation.Operation)
-	AssertNotNillAndEqualString(t, expectedRuntimeId, operation.RuntimeID)
+	AssertNotNilAndEqualString(t, expectedRuntimeId, operation.RuntimeID)
 }

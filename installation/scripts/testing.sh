@@ -3,7 +3,12 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 source ${ROOT_PATH}/kyma-scripts/testing-common.sh
 
-suiteName="testsuite-all-$(date '+%Y-%m-%d-%H-%M')"
+readonly TMP_DIR=$(mktemp -d)
+
+echo "ARTIFACTS: ${ARTIFACTS}"
+readonly JUNIT_REPORT_PATH="${ARTIFACTS:-${TMP_DIR}}/junit_compass_octopus-test-suite.xml"
+
+suiteName="testsuite-all"
 echo "----------------------------"
 echo "- Testing Compass..."
 echo "----------------------------"
@@ -95,6 +100,10 @@ cleanupExitCode=$?
 
 echo "ClusterTestSuite details:"
 kubectl get cts ${suiteName} -oyaml
+
+echo "Generate JUnit test summary (${JUNIT_REPORT_PATH})"
+kyma test status "${suiteName}" -ojunit | sed 's/ (executions: [0-9]*)"/"/g' > "${JUNIT_REPORT_PATH}"
+
 
 kubectl delete cts ${suiteName}
 
