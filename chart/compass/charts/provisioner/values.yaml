@@ -13,7 +13,7 @@ database:
   schemaFilePath: "/assets/database/provisioner.sql"
 
 gardener:
-    auditLogsPolicyConfigMap: ""
+  auditLogsPolicyConfigMap: ""
 
 provisioner: "gardener"
 
