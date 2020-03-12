@@ -78,36 +78,16 @@ var _ azure.NamespaceClientInterface = (*FakeNamespaceClient)(nil)
 
 func Test_Overrides(t *testing.T) {
 	// given
-	memoryStorageOp := storage.NewMemoryStorage().Operations()
-	accountProvider := automock.AccountProvider{}
-	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
-		CredentialData: map[string][]byte{
-			"subscriptionID": []byte("subscriptionID"),
-			"clientID":       []byte("clientID"),
-			"clientSecret":   []byte("clientSecret"),
-			"tenantID":       []byte("tenantID"),
-		},
-	}, nil)
-
-	step := NewProvisionAzureEventHubStep(memoryStorageOp,
-		&fakeAzureClient{},
-		&accountProvider,
-		context.Background(),
-	)
-	op := internal.ProvisioningOperation{
-		Operation: internal.Operation{},
-		ProvisioningParameters: `{
-			"parameters": {
-        		"name": "nachtmaar-15",
-        		"components": [],
-				"region": "europe-west3"
-			}
-		}`,
-		InputCreator: fixInputCreator(t),
-	}
+	memoryStorage := storage.NewMemoryStorage()
+	accountProvider := fixAccountProvider()
+	step := fixEventHubStep(memoryStorage.Operations(), accountProvider)
+	op := fixProvisioningOperation(t)
+	// this is required to avoid storage retries (without this statement there will be an error => retry)
+	err := memoryStorage.Operations().InsertProvisioningOperation(op)
+	assert.NoError(t, err)
 
 	// when
-	op, _, err := step.Run(op, fixLogger())
+	op, _, err = step.Run(op, fixLogger())
 	require.NoError(t, err)
 	provisionRuntimeInput, err := op.InputCreator.Create()
 	require.NoError(t, err)
@@ -121,30 +101,9 @@ func Test_Overrides(t *testing.T) {
 func Test_StepProvisionParametersError(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
-	accountProvider := automock.AccountProvider{}
-	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
-		CredentialData: map[string][]byte{
-			"subscriptionID": []byte("subscriptionID"),
-			"clientID":       []byte("clientID"),
-			"clientSecret":   []byte("clientSecret"),
-			"tenantID":       []byte("tenantID"),
-		},
-	}, nil)
-
-	step := NewProvisionAzureEventHubStep(memoryStorage.Operations(),
-		&fakeAzureClient{},
-		&accountProvider,
-		context.Background(),
-	)
-	operation := internal.Operation{}
-	op := internal.ProvisioningOperation{
-		Operation: operation,
-		// ups .. invalid json
-		ProvisioningParameters: `{
-			"parameters": a{}a
-		}`,
-		InputCreator: fixInputCreator(t),
-	}
+	accountProvider := fixAccountProvider()
+	step := fixEventHubStep(memoryStorage.Operations(), accountProvider)
+	op := fixInvalidProvisioningOperation(t)
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
 	err := memoryStorage.Operations().InsertProvisioningOperation(op)
 	assert.NoError(t, err)
@@ -293,4 +252,53 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	}
 
 	return creator
+}
+
+func fixAccountProvider() automock.AccountProvider {
+	accountProvider := automock.AccountProvider{}
+	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+	}, nil)
+	return accountProvider
+}
+
+func fixEventHubStep(memoryStorageOp storage.Operations, accountProvider automock.AccountProvider) *ProvisionAzureEventHubStep {
+	step := NewProvisionAzureEventHubStep(memoryStorageOp,
+		&fakeAzureClient{},
+		&accountProvider,
+		context.Background(),
+	)
+	return step
+}
+
+func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
+	op := internal.ProvisioningOperation{
+		Operation: internal.Operation{},
+		ProvisioningParameters: `{
+			"parameters": {
+        		"name": "nachtmaar-15",
+        		"components": [],
+				"region": "europe-west3"
+			}
+		}`,
+		InputCreator: fixInputCreator(t),
+	}
+	return op
+}
+
+func fixInvalidProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
+	op := internal.ProvisioningOperation{
+		Operation : internal.Operation{},
+		// ups .. invalid json
+		ProvisioningParameters: `{
+			"parameters": a{}a
+		}`,
+		InputCreator: fixInputCreator(t),
+	}
+	return op
 }
