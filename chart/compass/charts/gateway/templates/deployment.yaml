@@ -34,6 +34,7 @@ spec:
               value: "http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.graphql.external.port }}"
             - name: APP_AUDITLOG_ENABLED
               value: "{{ .Values.global.auditlog.enabled }}"
+{{ if .Values.global.auditlog.enabled }}
             - name: APP_AUDITLOG_USER
               valueFrom:
                 secretKeyRef:
@@ -49,11 +50,22 @@ spec:
                 configMapKeyRef:
                   name: {{ .Values.global.auditlog.configmap.name }}
                   key: auditlog-url
+            - name: APP_AUDITLOG_CONFIG_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.global.auditlog.configmap.name }}
+                  key: auditlog-config-path
+            - name: APP_AUDITLOG_SECURITY_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.global.auditlog.configmap.name }}
+                  key: auditlog-security-path
             - name: APP_AUDITLOG_TENANT
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Values.global.auditlog.configmap.name }}
                   key: auditlog-tenant
+{{ end }}
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}

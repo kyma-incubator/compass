@@ -69,13 +69,9 @@ global:
   auditlog:
     enabled: false
     configmap:
-      name: "auditlog-configmap"
-    url: "http://localhost:3000"
-    tenant: "f3efddb8-cc74-4baf-9bef-9e49a36761bb"
+      name: "compass-gateway-auditlog-config"
     secret:
-      name: "auditlog-secret"
-      user: "user"
-      password: "password"
+      name: "compass-gateway-auditlog-secret"
 
   tenantConfig:
     useDefaultTenants: true
