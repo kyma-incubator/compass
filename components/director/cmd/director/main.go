@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
@@ -231,7 +232,7 @@ func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersS
 	mapperForUser := tenantmapping.NewMapperForUser(staticUsersRepo, staticGroupsRepo, tenantRepo)
 	mapperForSystemAuth := tenantmapping.NewMapperForSystemAuth(systemAuthSvc, scopeProvider, tenantRepo)
 
-	reqDataParser := tenantmapping.NewReqDataParser()
+	reqDataParser := oathkeeper.NewReqDataParser()
 
 	return tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
 }
@@ -254,7 +255,7 @@ func getRuntimeMappingHanderFunc(transact persistence.Transactioner, cachePeriod
 	tenantRepo := tenant.NewRepository(tenantConv)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
-	reqDataParser := tenantmapping.NewReqDataParser()
+	reqDataParser := oathkeeper.NewReqDataParser()
 
 	jwksFetch := runtimemapping.NewJWKsFetch(logger)
 	jwksCache := runtimemapping.NewJWKsCache(logger, jwksFetch, cachePeriod)
