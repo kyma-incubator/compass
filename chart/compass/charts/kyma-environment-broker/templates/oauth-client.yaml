@@ -1,8 +1,7 @@
 apiVersion: hydra.ory.sh/v1alpha1
 kind: OAuth2Client
 metadata:
-  name: $CLIENT_NAME
-  namespace: $CLIENT_NAMESPACE
+  name: {{ include "kyma-env-broker.fullname" . }}
 spec:
   grantTypes:
     - "client_credentials"
