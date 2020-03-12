@@ -54,9 +54,8 @@ kymaVersion: "1.10.0"
 enablePlans: "azure,gcp"
 
 gardener:
-  project: "" # Gardener project connected to SA
+  project: "kyma-dev" # Gardener project connected to SA for HAP credentials lookup
   kubeconfigPath: "/gardener/kubeconfig/kubeconfig"
-  kubeconfig: "" # Base64 encoded Gardener SA key
   secretName: "gardener-credentials"
 
 # It is used to provide own creds for Service Manager instead of using the one provided by external system
