@@ -413,6 +413,77 @@ func TestService_Get(t *testing.T) {
 	}
 }
 
+func TestService_GetByTokenIssuer(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	desc := "Lorem ipsum"
+	tokenIssuer := "https://dex.domain.local"
+	filter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtime/console_url", `"https://console.domain.local"`)}
+
+	runtimeModel := &model.Runtime{
+		ID:          "foo",
+		Name:        "Foo",
+		Description: &desc,
+	}
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.RuntimeRepository
+		Input              model.RuntimeInput
+		InputID            string
+		ExpectedRuntime    *model.Runtime
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByFiltersGlobal", ctx, filter).Return(runtimeModel, nil).Once()
+				return repo
+			},
+			InputID:            id,
+			ExpectedRuntime:    runtimeModel,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when runtime retrieval failed",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByFiltersGlobal", ctx, filter).Return(nil, testErr).Once()
+				return repo
+			},
+			InputID:            id,
+			ExpectedRuntime:    runtimeModel,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := runtime.NewService(repo, nil, nil, nil, nil)
+
+			// when
+			rtm, err := svc.GetByTokenIssuer(ctx, tokenIssuer)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedRuntime, rtm)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_Exist(t *testing.T) {
 	tnt := "tenant"
 	ctx := context.TODO()
