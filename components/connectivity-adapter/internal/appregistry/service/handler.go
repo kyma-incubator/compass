@@ -144,7 +144,7 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	appID := reqContext.AppID
 	packages, err := reqContext.DirectorClient.ListPackages(appID)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "while fetching services")
+		wrappedErr := errors.Wrap(err, "while fetching Services")
 		h.logger.Error(wrappedErr)
 		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
@@ -339,9 +339,7 @@ func (h *Handler) createRelatedObjectsForPackage(dirCli DirectorClient, pkgID st
 
 		_, err := dirCli.CreateAPIDefinition(pkgID, *apiDef)
 		if err != nil {
-			wrappedErr := errors.Wrap(err, "while deleting API Definition")
-			h.logger.Error(wrappedErr)
-			return wrappedErr
+			return errors.Wrap(err, "while creating API Definition")
 		}
 	}
 
@@ -352,9 +350,7 @@ func (h *Handler) createRelatedObjectsForPackage(dirCli DirectorClient, pkgID st
 
 		_, err := dirCli.CreateEventDefinition(pkgID, *eventDef)
 		if err != nil {
-			wrappedErr := errors.Wrap(err, "while deleting Event Definition")
-			h.logger.Error(wrappedErr)
-			return wrappedErr
+			return errors.Wrap(err, "while creating Event Definition")
 		}
 	}
 
@@ -365,9 +361,7 @@ func (h *Handler) createRelatedObjectsForPackage(dirCli DirectorClient, pkgID st
 
 		_, err := dirCli.CreateDocument(pkgID, *doc)
 		if err != nil {
-			wrappedErr := errors.Wrap(err, "while deleting Event Definition")
-			h.logger.Error(wrappedErr)
-			return wrappedErr
+			return errors.Wrap(err, "while creating Document")
 		}
 	}
 
@@ -382,9 +376,7 @@ func (h *Handler) deleteRelatedObjectsForPackage(dirCli DirectorClient, pkg grap
 
 		err := dirCli.DeleteAPIDefinition(apiDef.ID)
 		if err != nil {
-			wrappedErr := errors.Wrap(err, "while deleting API Definition")
-			h.logger.WithField("ID", apiDef.ID).Error(wrappedErr)
-			return wrappedErr
+			return errors.Wrapf(err, "while deleting API Definition with ID '%s'", apiDef.ID)
 		}
 	}
 
@@ -395,9 +387,7 @@ func (h *Handler) deleteRelatedObjectsForPackage(dirCli DirectorClient, pkg grap
 
 		err := dirCli.DeleteEventDefinition(eventDef.ID)
 		if err != nil {
-			wrappedErr := errors.Wrap(err, "while deleting Event Definition")
-			h.logger.WithField("ID", eventDef.ID).Error(wrappedErr)
-			return wrappedErr
+			return errors.Wrapf(err, "while deleting Event Definition with ID '%s'", eventDef.ID)
 		}
 	}
 
@@ -408,9 +398,7 @@ func (h *Handler) deleteRelatedObjectsForPackage(dirCli DirectorClient, pkg grap
 
 		err := dirCli.DeleteDocument(doc.ID)
 		if err != nil {
-			wrappedErr := errors.Wrap(err, "while deleting Event Definition")
-			h.logger.WithField("ID", doc.ID).Error(wrappedErr)
-			return wrappedErr
+			return errors.Wrapf(err, "while deleting Document with ID '%s'", doc.ID)
 		}
 	}
 
