@@ -84,7 +84,7 @@ func (svc *AuditlogService) Log(request, response string, claims proxy.Claims) e
 			User: "proxy",
 			Data: string(data),
 		})
-		return errors.Wrap(err, "while sending secuity event to auditlog")
+		return errors.Wrap(err, "while sending security event to auditlog")
 	}
 
 	isReadErr, err := isReadError(graphqlResponse, request)

@@ -19,9 +19,6 @@ import (
 
 const LogFormatDate = "2006-01-02T15:04:05.999Z"
 
-const ConfigChangeURLPath = "/audit-log/v2/configuration-changes"
-const SecurityEventURLPath = "/audit-log/v2/security-events"
-
 //go:generate mockery -name=UUIDService -output=automock -outpkg=automock -case=underscore
 type UUIDService interface {
 	Generate() string
