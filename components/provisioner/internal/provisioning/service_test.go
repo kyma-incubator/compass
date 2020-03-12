@@ -31,7 +31,8 @@ const (
 	operationID    = "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
 	runtimeName    = "test runtime"
 
-	tenant = "tenant"
+	tenant       = "tenant"
+	subAccountId = "sub-account"
 )
 
 var (
@@ -106,7 +107,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator)
 
 		//when
-		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
+		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
 		require.NoError(t, err)
 
 		//then
@@ -151,7 +152,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator)
 
 		//when
-		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
+		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
 		require.NoError(t, err)
 
 		//then
@@ -183,7 +184,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator)
 
 		//when
-		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
+		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
 		require.Error(t, err)
 
 		//then
@@ -215,7 +216,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator)
 
 		//when
-		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
+		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
 		require.Error(t, err)
 
 		//then
@@ -236,7 +237,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, nil, nil, uuidGenerator)
 
 		//when
-		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant)
+		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
 		require.Error(t, err)
 
 		//then

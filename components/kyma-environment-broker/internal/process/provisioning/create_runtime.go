@@ -72,7 +72,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
-		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(pp.ErsContext.GlobalAccountID, requestInput)
+		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID, requestInput)
 		if err != nil {
 			log.Errorf("call to provisioner failed: %s", err)
 			return operation, 5 * time.Second, nil
