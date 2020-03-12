@@ -25,7 +25,7 @@ type jwksCache struct {
 	fetch     KeyGetter
 	expPeriod time.Duration
 	cache     map[string]jwkCacheEntry
-	flag      sync.Mutex
+	flag      sync.RWMutex
 }
 
 func NewJWKsCache(logger *logrus.Logger, fetch KeyGetter, expPeriod time.Duration) *jwksCache {
@@ -47,9 +47,9 @@ func (c *jwksCache) GetKey(token *jwt.Token) (interface{}, error) {
 		return nil, errors.Wrap(err, "while getting the key ID")
 	}
 
-	c.flag.Lock()
+	c.flag.RLock()
 	cachedKey, exists := c.cache[keyID]
-	c.flag.Unlock()
+	c.flag.RUnlock()
 
 	if !exists || cachedKey.IsExpired() {
 		key, err := c.fetch.GetKey(token)
@@ -76,15 +76,25 @@ func (c *jwksCache) GetKey(token *jwt.Token) (interface{}, error) {
 }
 
 func (c *jwksCache) Cleanup() {
+	var expiredKeys []string
+	c.flag.RLock()
 	for keyID := range c.cache {
 		if !c.cache[keyID].IsExpired() {
 			continue
 		}
+		expiredKeys = append(expiredKeys, keyID)
+	}
+	c.flag.RUnlock()
 
+	if len(expiredKeys) == 0 {
+		return
+	}
+
+	c.flag.Lock()
+	for _, keyID := range expiredKeys {
 		c.logger.Info(fmt.Sprintf("removing key %s from cache", keyID))
 
-		c.flag.Lock()
 		delete(c.cache, keyID)
-		c.flag.Unlock()
 	}
+	c.flag.Unlock()
 }
