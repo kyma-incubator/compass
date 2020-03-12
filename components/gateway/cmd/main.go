@@ -26,8 +26,6 @@ type config struct {
 
 type AuditogService interface {
 	Log(request, response string, claims proxy.Claims) error
-	//LogConfigurationChange(change model.ConfigurationChange) error
-	//LogSecurityEvent(event model.SecuritEvent) error
 }
 
 type HTTPTransport interface {
@@ -97,7 +95,7 @@ func exitOnError(err error, context string) {
 }
 
 func initAuditLogsSvc(done chan bool) AuditogService {
-	log.Print("Auditlog enabled\n")
+	log.Println("Auditlog enabled")
 	auditlogCfg := auditlog.AuditlogConfig{}
 	err := envconfig.InitWithPrefix(&auditlogCfg, "APP")
 	exitOnError(err, "Error while loading auditlog cfg")
@@ -105,7 +103,9 @@ func initAuditLogsSvc(done chan bool) AuditogService {
 	uuidSvc := uuid.NewService()
 	timeSvc := &time.TimeService{}
 
-	auditlogClient := auditlog.NewClient(auditlogCfg, uuidSvc, timeSvc)
+	auditlogClient, err := auditlog.NewClient(auditlogCfg, uuidSvc, timeSvc)
+	exitOnError(err, "Error while creating auditlog client from cfg")
+
 	auditlogMsgChannel := make(chan auditlog.AuditlogMessage)
 
 	logger := auditlog.NewService(auditlogClient)

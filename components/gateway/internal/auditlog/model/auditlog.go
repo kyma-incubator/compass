@@ -1,19 +1,32 @@
 package model
 
+import "net"
+
 type ConfigurationChange struct {
-	UUID       string      `json:"uuid"`
 	User       string      `json:"user"`
-	Time       string      `json:"time"`
 	Object     Object      `json:"object"`
 	Attributes []Attribute `json:"attributes"`
-	Tenant     string      `json:"tenant"`
 	Success    *bool       `json:"success"`
+	AuditlogMetadata
 }
 
 type Attribute struct {
 	Name string `json:"name"`
 	Old  string `json:"old"`
 	New  string `json:"new"`
+}
+
+type SecurityEvent struct {
+	User string  `json:"user"`
+	IP   *net.IP `json:"ip"`
+	Data string  `json:"data"`
+	AuditlogMetadata
+}
+
+type AuditlogMetadata struct {
+	Time   string `json:"time"`
+	Tenant string `json:"tenant"`
+	UUID   string `json:"uuid"`
 }
 
 type Object struct {
@@ -23,12 +36,4 @@ type Object struct {
 
 type ID struct {
 	ExtraData map[string]string `json:"extra_data"`
-}
-
-type SuccessResponse struct {
-	ID string `json:"id"`
-}
-
-type ErrorResponse struct {
-	Error string `json:"error"`
 }

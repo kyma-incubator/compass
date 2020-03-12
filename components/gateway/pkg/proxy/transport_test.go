@@ -10,7 +10,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog"
+	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
+
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy/automock"
 	"github.com/stretchr/testify/require"
@@ -67,15 +68,16 @@ func fixBearerHeader(t *testing.T) string {
 	marshalledClaims, err := json.Marshal(&claims)
 	require.NoError(t, err)
 
+	header := `{"alg": "HS256","typ": "JWT"}`
+
 	tokenClaims := base64.RawURLEncoding.EncodeToString(marshalledClaims)
-	tokenHeader := base64.RawURLEncoding.EncodeToString([]byte("WHATEVER"))
+	tokenHeader := base64.RawURLEncoding.EncodeToString([]byte(header))
 	return fmt.Sprintf("Bearer %s", fmt.Sprintf("%s.%s.", tokenHeader, tokenClaims))
 }
 
-func fixGraphqResponse() auditlog.GraphqlResponse {
-	return auditlog.GraphqlResponse{
-		Errors:  nil,
-		Message: "",
-		Data:    "payload",
+func fixGraphqResponse() model.GraphqlResponse {
+	return model.GraphqlResponse{
+		Errors: nil,
+		Data:   "payload",
 	}
 }

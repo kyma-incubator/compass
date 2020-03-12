@@ -3,6 +3,7 @@ module github.com/kyma-incubator/compass/components/gateway
 go 1.13
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4

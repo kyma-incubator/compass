@@ -74,9 +74,8 @@ func (svc *AuditlogService) Log(request, response string, claims proxy.Claims) e
 		return errors.Wrap(err, "while sending to auditlog")
 	}
 
-	if idx := svc.isInsufficientScopeError(graphqlResponse.Errors); idx != -1 {
-		graphqErr := graphqlResponse.Errors[idx]
-		data, err := json.Marshal(&graphqErr)
+	if svc.hasInsufficientScopeError(graphqlResponse.Errors) {
+		data, err := json.Marshal(&graphqlResponse.Errors)
 		if err != nil {
 			return errors.Wrap(err, "while marshalling graphql err")
 		}
@@ -93,8 +92,8 @@ func (svc *AuditlogService) Log(request, response string, claims proxy.Claims) e
 		return errors.Wrap(err, "while checking if error is read error")
 	}
 
+	log := svc.createConfigChangeLog(claims, request)
 	if isReadErr {
-		log := svc.createConfigChangeLog(claims, request)
 		log.Attributes = append(log.Attributes, model.Attribute{
 			Name: "response",
 			Old:  "",
@@ -102,23 +101,23 @@ func (svc *AuditlogService) Log(request, response string, claims proxy.Claims) e
 		})
 		err := svc.client.LogConfigurationChange(log)
 		return errors.Wrap(err, "while sending configuration change")
+	} else {
+		log.Attributes = append(log.Attributes, model.Attribute{
+			Name: "response",
+			Old:  "",
+			New:  response,
+		})
 	}
 
-	log := svc.createConfigChangeLog(claims, request)
-	log.Attributes = append(log.Attributes, model.Attribute{
-		Name: "response",
-		Old:  "",
-		New:  response,
-	})
 	err = svc.client.LogConfigurationChange(log)
 	return errors.Wrap(err, "while sending configuration change")
 }
 
-func (svc *AuditlogService) parseResponse(response string) (GraphqlResponse, error) {
-	var graphqResponse GraphqlResponse
+func (svc *AuditlogService) parseResponse(response string) (model.GraphqlResponse, error) {
+	var graphqResponse model.GraphqlResponse
 	err := json.Unmarshal([]byte(response), &graphqResponse)
 	if err != nil {
-		return GraphqlResponse{}, err
+		return model.GraphqlResponse{}, err
 	}
 	return graphqResponse, nil
 }
@@ -140,13 +139,13 @@ func (svc *AuditlogService) createConfigChangeLog(claims proxy.Claims, request s
 	}
 }
 
-func (svc *AuditlogService) isInsufficientScopeError(errors []ErrorMessage) int {
-	for i, msg := range errors {
+func (svc *AuditlogService) hasInsufficientScopeError(errors []model.ErrorMessage) bool {
+	for _, msg := range errors {
 		if strings.Contains(msg.Message, "insufficient scopes provided") {
-			return i
+			return true
 		}
 	}
-	return -1
+	return false
 }
 
 type graphqQuery struct {
@@ -155,7 +154,7 @@ type graphqQuery struct {
 
 //We assume that if request payload start with `mutation` and
 //if any of response errors has path array length equal 1, that means that mutation failed
-func isReadError(response GraphqlResponse, request string) (bool, error) {
+func isReadError(response model.GraphqlResponse, request string) (bool, error) {
 	req := strings.TrimSpace(request)
 	isMutation := strings.HasPrefix(req, "mutation")
 	if isMutation {
@@ -181,7 +180,7 @@ func isReadError(response GraphqlResponse, request string) (bool, error) {
 	return true, nil
 }
 
-func searchForMutationErr(response GraphqlResponse) bool {
+func searchForMutationErr(response model.GraphqlResponse) bool {
 	for _, graphqlErr := range response.Errors {
 		if len(graphqlErr.Path) == 1 {
 			return false

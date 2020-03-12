@@ -3,12 +3,14 @@ package auditlog
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
+	"path"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
 
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
 
@@ -31,10 +33,12 @@ type TimeService interface {
 }
 
 type AuditlogConfig struct {
-	User        string `envconfig:"APP_AUDITLOG_USER"`
-	Password    string `envconfig:"APP_AUDITLOG_PASSWORD"`
-	AuditLogURL string `envconfig:"APP_AUDITLOG_URL"`
-	Tenant      string `envconfig:"APP_AUDITLOG_TENANT"`
+	User                 string `envconfig:"APP_AUDITLOG_USER"`
+	Password             string `envconfig:"APP_AUDITLOG_PASSWORD"`
+	AuditLogURL          string `envconfig:"APP_AUDITLOG_URL"`
+	Tenant               string `envconfig:"APP_AUDITLOG_TENANT"`
+	AuditlogConfigPath   string `envconfig:"APP_AUDITLOG_CONFIG_PATH,default=/audit-log/v2/configuration-changes"`
+	AuditlogSecurityPath string `envconfig:"APP_AUDITLOG_SECURITY_PATH,default=/audit-log/v2/security-events"`
 }
 
 type Client struct {
@@ -46,70 +50,50 @@ type Client struct {
 	securityEventURL string
 }
 
-func NewClient(cfg AuditlogConfig, uuidSvc UUIDService, tsvc TimeService) *Client {
+func NewClient(cfg AuditlogConfig, uuidSvc UUIDService, tsvc TimeService) (*Client, error) {
 	client := http.Client{
 		Timeout: time.Second * 5,
 	}
-	configChangeURL := cfg.AuditLogURL + ConfigChangeURLPath
-	securityEventURL := cfg.AuditLogURL + SecurityEventURLPath
-	return &Client{configChangeURL: configChangeURL,
-		securityEventURL: securityEventURL,
+	configChangeURL, err := createURL(cfg.AuditLogURL, cfg.AuditlogConfigPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating auditlog config change url")
+	}
+
+	securityEventURL, err := createURL(cfg.AuditLogURL, cfg.AuditlogSecurityPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating auditlog security event url")
+
+	}
+
+	return &Client{configChangeURL: configChangeURL.String(),
+		securityEventURL: securityEventURL.String(),
 		http:             client,
 		uuidSvc:          uuidSvc,
 		cfg:              cfg,
-		timeSvc:          tsvc}
+		timeSvc:          tsvc}, nil
 }
 
 //TODO: use basic auth, Currently JWT token is broken
 func (c *Client) LogConfigurationChange(change model.ConfigurationChange) error {
-	t := c.timeSvc.Now()
-	logTime := t.Format(LogFormatDate)
-	change.Time = logTime
-
-	change.Tenant = c.cfg.Tenant
-	change.UUID = c.uuidSvc.Generate()
-
+	c.fillMessage(&change.AuditlogMetadata)
 	payload, err := json.Marshal(&change)
 	if err != nil {
-		return errors.Wrap(err, "while marshalling auditlog payload")
+		return errors.Wrap(err, "while marshaling auditlog payload")
 	}
 
 	req, err := http.NewRequest("POST", c.configChangeURL, bytes.NewBuffer(payload))
 	if err != nil {
 		return errors.Wrap(err, "while creating request")
 	}
-	req.SetBasicAuth(c.cfg.User, c.cfg.Password)
 
-	response, err := c.http.Do(req)
-	if err != nil {
-		return errors.Wrapf(err, "while sending auditlog to: %s", c.configChangeURL)
-	}
-	defer c.closeBody(response.Body)
-
-	if response.StatusCode != http.StatusCreated {
-		fmt.Printf("Got different status code: %d\n", response.StatusCode)
-		output, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			return errors.Wrap(err, "while reading response from auditlog")
-		}
-		fmt.Print(string(output))
-		return errors.Errorf("Write to auditlog failed with status code: %d", response.StatusCode)
-	}
-
-	return nil
+	return c.sendAuditLog(req)
 }
 
 func (c *Client) LogSecurityEvent(event model.SecurityEvent) error {
-	t := c.timeSvc.Now()
-	logTime := t.Format(LogFormatDate)
-	event.Time = logTime
-
-	event.Tenant = c.cfg.Tenant
-	event.UUID = c.uuidSvc.Generate()
-
+	c.fillMessage(&event.AuditlogMetadata)
 	payload, err := json.Marshal(&event)
 	if err != nil {
-		return errors.Wrap(err, "while marshalling auditlog payload")
+		return errors.Wrap(err, "while marshaling auditlog payload")
 	}
 
 	req, err := http.NewRequest("POST", c.securityEventURL, bytes.NewBuffer(payload))
@@ -124,24 +108,36 @@ func (c *Client) sendAuditLog(req *http.Request) error {
 	req.SetBasicAuth(c.cfg.User, c.cfg.Password)
 	response, err := c.http.Do(req)
 	if err != nil {
-		return errors.Wrapf(err, "while sending auditlog to: %s", c.configChangeURL)
+		return errors.Wrapf(err, "while sending auditlog to: %s", req.URL.String())
 	}
-	defer c.closeBody(response.Body)
+	defer httpcommon.CloseBody(response.Body)
 
 	if response.StatusCode != http.StatusCreated {
-		fmt.Printf("Got different status code: %d\n", response.StatusCode)
+		log.Printf("Got different status code: %d\n", response.StatusCode)
 		output, err := ioutil.ReadAll(response.Body)
 		if err != nil {
 			return errors.Wrap(err, "while reading response from auditlog")
 		}
-		fmt.Print(string(output))
+		log.Println(string(output))
 		return errors.Errorf("Write to auditlog failed with status code: %d", response.StatusCode)
 	}
 	return nil
 }
 
-func (c *Client) closeBody(body io.ReadCloser) {
-	if err := body.Close(); err != nil {
-		log.Printf("while closing body %+v\n", err)
+func (c *Client) fillMessage(message *model.AuditlogMetadata) {
+	t := c.timeSvc.Now()
+	logTime := t.Format(LogFormatDate)
+	message.Time = logTime
+
+	message.Tenant = c.cfg.Tenant
+	message.UUID = c.uuidSvc.Generate()
+}
+
+func createURL(auditlogURL, urlPath string) (url.URL, error) {
+	parsedURL, err := url.Parse(auditlogURL)
+	if err != nil {
+		return url.URL{}, errors.Wrap(err, "while creating auditlog URL")
 	}
+	parsedURL.Path = path.Join(parsedURL.Path, urlPath)
+	return *parsedURL, nil
 }

@@ -2,13 +2,12 @@ package proxy
 
 import (
 	"bytes"
-	"encoding/base64"
-	"encoding/json"
-	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
 
 	"github.com/pkg/errors"
 )
@@ -58,7 +57,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		return nil, err
 	}
 	resp.Body = ioutil.NopCloser(bytes.NewReader(responseBody))
-	defer t.closeBody(resp.Body)
+	defer httpcommon.CloseBody(resp.Body)
 
 	err = t.auditlogSvc.Log(string(requestBody), string(responseBody), claims)
 	if err != nil {
@@ -74,32 +73,22 @@ type Claims struct {
 	ConsumerType string `json:"consumerType"`
 }
 
+func (c Claims) Valid() error {
+	return nil
+}
+
 func (t *Transport) getClaims(headers http.Header) (Claims, error) {
 	token := headers.Get("Authorization")
 	if token == "" {
 		return Claims{}, errors.New("invalid bearer token")
 	}
-
 	token = strings.TrimPrefix(token, "Bearer ")
-	token = strings.Split(token, ".")[1]
 
+	parser := jwt.Parser{SkipClaimsValidation: true}
 	claims := Claims{}
-	tk, err := base64.RawURLEncoding.DecodeString(token)
+	_, _, err := parser.ParseUnverified(token, &claims)
 	if err != nil {
-		return Claims{}, nil
+		return claims, errors.Wrap(err, "while parsing beaerer token")
 	}
-
-	token = string(tk)
-	err = json.Unmarshal([]byte(token), &claims)
-	if err != nil {
-		return Claims{}, nil
-	}
-
 	return claims, nil
-}
-
-func (t *Transport) closeBody(body io.ReadCloser) {
-	if err := body.Close(); err != nil {
-		log.Printf("while closing body %+v\n", err)
-	}
 }

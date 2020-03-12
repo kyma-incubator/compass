@@ -154,7 +154,7 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 		graphqlResponse := FixResponseUnsufficientScopes()
 		response, err := json.Marshal(&graphqlResponse)
 		require.NoError(t, err)
-		responseErr, err := json.Marshal(graphqlResponse.Errors[0])
+		responseErr, err := json.Marshal(graphqlResponse.Errors)
 		require.NoError(t, err)
 		claims := fixClaims()
 		log := model.SecurityEvent{Data: string(responseErr), User: "proxy"}
@@ -249,14 +249,13 @@ func fixRequestWithInvalidQuery() string {
 }
 
 func fixGraphqlMutationError(t *testing.T) string {
-	response := auditlog.GraphqlResponse{
-		Errors: []auditlog.ErrorMessage{
+	response := model.GraphqlResponse{
+		Errors: []model.ErrorMessage{
 			{
 				Message: "zepsulo sie",
 				Path:    []string{"registerRuntime"},
 			},
 		},
-		Message: "zepsulo sie",
 		Data: map[string]string{
 			"value": "value",
 		},
@@ -267,8 +266,8 @@ func fixGraphqlMutationError(t *testing.T) string {
 }
 
 func fixGraphqlMultiErrorWithMutation(t *testing.T) string {
-	response := auditlog.GraphqlResponse{
-		Errors: []auditlog.ErrorMessage{
+	response := model.GraphqlResponse{
+		Errors: []model.ErrorMessage{
 			{
 				Message: "zepsulo sie",
 				Path:    []string{"registerRuntime"},
@@ -278,7 +277,6 @@ func fixGraphqlMultiErrorWithMutation(t *testing.T) string {
 				Path:    []string{"queyr", "failed"},
 			},
 		},
-		Message: "zepsulo sie",
 		Data: map[string]string{
 			"value": "value",
 		},
@@ -288,15 +286,14 @@ func fixGraphqlMultiErrorWithMutation(t *testing.T) string {
 	return string(output)
 }
 
-func FixResponseUnsufficientScopes() auditlog.GraphqlResponse {
-	return auditlog.GraphqlResponse{
-		Errors: []auditlog.ErrorMessage{
+func FixResponseUnsufficientScopes() model.GraphqlResponse {
+	return model.GraphqlResponse{
+		Errors: []model.ErrorMessage{
 			{
 				Message: "insufficient scopes provided, required: [application:write], actual: []",
 				Path:    []string{"path", "path"},
 			},
 		},
-		Message: "zepsulo sie",
 		Data: map[string]string{
 			"value": "value",
 		},
@@ -304,9 +301,8 @@ func FixResponseUnsufficientScopes() auditlog.GraphqlResponse {
 }
 
 func fixNoErrorResponse(t *testing.T) string {
-	response := auditlog.GraphqlResponse{
-		Errors:  nil,
-		Message: "",
+	response := model.GraphqlResponse{
+		Errors: nil,
 		Data: map[string]string{
 			"value": "value",
 		},
@@ -317,15 +313,14 @@ func fixNoErrorResponse(t *testing.T) string {
 }
 
 func fixResponseReadError(t *testing.T) string {
-	response := auditlog.GraphqlResponse{
-		Errors: []auditlog.ErrorMessage{
+	response := model.GraphqlResponse{
+		Errors: []model.ErrorMessage{
 			{
 				Message: "zepsulo sie",
 				Path:    []string{"registerApplication", "apiDefinition"},
 			},
 		},
-		Message: "zepsulo sie",
-		Data:    map[string]string{"value": "value"},
+		Data: map[string]string{"value": "value"},
 	}
 	output, err := json.Marshal(&response)
 	require.NoError(t, err)
@@ -351,8 +346,8 @@ func fixLogSuccess(claims proxy.Claims, request, response string) model.Configur
 }
 
 func fixResponseMultipleError(t *testing.T) string {
-	response := auditlog.GraphqlResponse{
-		Errors: []auditlog.ErrorMessage{
+	response := model.GraphqlResponse{
+		Errors: []model.ErrorMessage{
 			{
 				Message: "drugi error",
 				Path:    []string{"query", "query"},
@@ -362,8 +357,7 @@ func fixResponseMultipleError(t *testing.T) string {
 				Path:    []string{"registerApplication", "apiDefinition"},
 			},
 		},
-		Message: "zepsulo sie",
-		Data:    map[string]string{"value": "value"},
+		Data: map[string]string{"value": "value"},
 	}
 	output, err := json.Marshal(&response)
 	require.NoError(t, err)
