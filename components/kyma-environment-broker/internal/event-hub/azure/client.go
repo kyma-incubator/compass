@@ -1,15 +1,17 @@
 package azure
 
-type AzureClientInterface interface {
-	GetNamespacesClientOrDie(config *Config) NamespaceClientInterface
+type HyperscalerProvider interface {
+	GetClientOrDie(config *Config) NamespaceClientInterface
 }
 
-type azureClient struct {}
+var _ HyperscalerProvider = (*azureClient)(nil)
 
-func NewAzureClient() AzureClientInterface {
+type azureClient struct{}
+
+func NewAzureClient() HyperscalerProvider {
 	return &azureClient{}
 }
 
-func (ac *azureClient) GetNamespacesClientOrDie(config *Config) NamespaceClientInterface {
+func (ac *azureClient) GetClientOrDie(config *Config) NamespaceClientInterface {
 	return GetNamespacesClientOrDie(config)
 }

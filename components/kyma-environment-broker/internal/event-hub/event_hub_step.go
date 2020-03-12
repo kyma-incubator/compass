@@ -23,30 +23,34 @@ const (
 
 	kafkaPort = 9093
 
-	k8sSecretName                     = "secret-name"
 	k8sSecretNamespace                = "knative-eventing"
 	componentNameKnativeEventing      = "knative-eventing"
 	componentNameKnativeEventingKafka = "knative-eventing-kafka"
 	kafkaProvider                     = "azure"
+	gardenerCredentialsMaxTime        = time.Minute
+	gardenerCredentialsRetryInterval  = time.Second * 10
 )
 
 /*TODO(anishj0shi)
 - Implement retry logic for Namespace retrieval and NamespaceTagging operation.
 */
 
+// ensure the interface is implemented
+var _ process.Step = (*ProvisionAzureEventHubStep)(nil)
+
 type ProvisionAzureEventHubStep struct {
-	operationManager     *process.OperationManager
-	azureClientInterface azure.AzureClientInterface
-	accountProvider      hyperscaler.AccountProvider
-	context              context.Context
+	operationManager    *process.OperationManager
+	hyperscalerProvider azure.HyperscalerProvider
+	accountProvider     hyperscaler.AccountProvider
+	context             context.Context
 }
 
-func NewProvisionAzureEventHubStep(os storage.Operations, azureClientInterface azure.AzureClientInterface, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
+func NewProvisionAzureEventHubStep(os storage.Operations, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
 	return &ProvisionAzureEventHubStep{
-		operationManager:     process.NewOperationManager(os),
-		accountProvider:      accountProvider,
-		context:              ctx,
-		azureClientInterface: azureClientInterface,
+		operationManager:    process.NewOperationManager(os),
+		accountProvider:     accountProvider,
+		context:             ctx,
+		hyperscalerProvider: hyperscalerProvider,
 	}
 }
 
@@ -54,32 +58,30 @@ func (p *ProvisionAzureEventHubStep) Name() string {
 	return "Provision Azure Event Hubs"
 }
 
+// TODO(nachtmaar): use structured logging
 func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperation,
 	log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
 	hypType := hyperscaler.Azure
 
+	// parse provisioning parameters
 	pp, err := operation.GetProvisioningParameters()
-	log.Infof("Provisioning Params..... %+v", pp) //TODO(anishj0shi) Remove after testing
-
 	if err != nil {
 		log.Errorf("Aborting after failing to get valid operation provisioning parameters: %v", err)
 		return p.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-
 	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
+	// get hyperscaler credentials from HAP
 	credentials, err := p.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
-
 	if err != nil {
-		log.Errorf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
-		return operation, 5 * time.Second, nil
+		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
+		return p.retryOperation(operation, errorMessage, gardenerCredentialsRetryInterval, gardenerCredentialsMaxTime)
 	}
-
-	log.Infof("CREDENTIALS RETRIEVED..... %+v", credentials) //TODO(anishj0shi) Remove after testing
-
 	azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp)
-	namespaceClient := p.azureClientInterface.GetNamespacesClientOrDie(azureCfg)
+
+	// create hyperscaler client
+	namespaceClient := p.hyperscalerProvider.GetClientOrDie(azureCfg)
 
 	groupName := pp.Parameters.Name
 	eventHubsNamespace := pp.Parameters.Name
@@ -109,14 +111,24 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
-	// TODO(nachtmaar):
-	// kafkaEndpoint := "TODO"
-	// kafkaPassword := "TODO"
-
 	operation.InputCreator.SetOverrides(componentNameKnativeEventing, getKnativeEventingOverrides())
 	operation.InputCreator.SetOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
 
 	return operation, 0, nil
+}
+
+// TODO(nachtmaar): move to common package ?
+func (p *ProvisionAzureEventHubStep) retryOperation(operation internal.ProvisioningOperation, errorMessage string, retryInterval time.Duration, maxTime time.Duration) (internal.ProvisioningOperation, time.Duration, error) {
+	// if failed retry step every 10s by next 10min
+	dur := time.Since(operation.UpdatedAt).Round(time.Minute)
+
+	fmt.Printf("Retrying for %s in %s steps\n", maxTime.String(), retryInterval.String())
+	if dur < maxTime {
+		return operation, retryInterval, nil
+	}
+	// TODO(nachtmaar): use logger
+	fmt.Printf("Aborting after %s of failing retries\n", maxTime.String())
+	return p.operationManager.OperationFailed(operation, errorMessage)
 }
 
 func extractEndpoint(accessKeys *eventhub.AccessKeys) string {

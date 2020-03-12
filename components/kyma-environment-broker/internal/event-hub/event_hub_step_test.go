@@ -2,6 +2,7 @@ package event_hub
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -69,7 +70,7 @@ func (nc *FakeNamespaceClient) PersistEventHubsNamespace(ctx context.Context, az
 
 type fakeAzureClient struct{}
 
-func (ac *fakeAzureClient) GetNamespacesClientOrDie(config *azure.Config) azure.NamespaceClientInterface {
+func (ac *fakeAzureClient) GetClientOrDie(config *azure.Config) azure.NamespaceClientInterface {
 	return &FakeNamespaceClient{}
 }
 
@@ -84,7 +85,7 @@ func Test_Overrides(t *testing.T) {
 	op := fixProvisioningOperation(t)
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
 	err := memoryStorage.Operations().InsertProvisioningOperation(op)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// when
 	op, _, err = step.Run(op, fixLogger())
@@ -106,7 +107,7 @@ func Test_StepProvisionParametersError(t *testing.T) {
 	op := fixInvalidProvisioningOperation(t)
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
 	err := memoryStorage.Operations().InsertProvisioningOperation(op)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// when
 	op, when, err := step.Run(op, fixLogger())
@@ -117,6 +118,44 @@ func Test_StepProvisionParametersError(t *testing.T) {
 	ensureOperationIsNotRepeated(t, err, when, op)
 	_, err = op.InputCreator.Create()
 	require.NoError(t, err)
+}
+
+func Test_StepProvisionGardenerCredentialsError(t *testing.T) {
+	// given
+	memoryStorage := storage.NewMemoryStorage()
+	accountProvider := fixAccountProviderGardenerCredentialsError()
+	step := fixEventHubStep(memoryStorage.Operations(), accountProvider)
+	op := fixProvisioningOperation(t)
+
+	// this is required to avoid storage retries (without this statement there will be an error => retry)
+	err := memoryStorage.Operations().InsertProvisioningOperation(op)
+	require.NoError(t, err)
+
+	// when - first retry of operation
+	op.UpdatedAt = time.Now()
+	op, when, err := step.Run(op, fixLogger())
+
+	// then
+	ensureOperationIsRepeated(t, err, when)
+
+	// when - last retry of operation
+	op.UpdatedAt = time.Now().Add(-gardenerCredentialsMaxTime)
+	op, when, err = step.Run(op, fixLogger())
+
+	// then
+	// retry at least a bit to mitigate e.g. network issues
+	ensureOperationIsNotRepeated(t, err, when, op)
+
+	_, err = op.InputCreator.Create()
+	require.NoError(t, err)
+}
+
+func Test_StepPersistEventHubsNamspaceError(t *testing.T) {
+	t.Fail()
+}
+
+func Test_StepListKeysError(t *testing.T) {
+	t.Fail()
 }
 
 // operationManager.OperationFailed(...)
@@ -130,18 +169,6 @@ func ensureOperationIsRepeated(t *testing.T, err error, when time.Duration) {
 
 func ensureOperationIsNotRepeated(t *testing.T, err error, when time.Duration, op internal.ProvisioningOperation) {
 	require.True(t, err != nil)
-}
-
-func Test_StepProvisionGardenerCredentialsError(t *testing.T) {
-	t.Fail()
-}
-
-func Test_StepPersistEventHubsNamspaceError(t *testing.T) {
-	t.Fail()
-}
-
-func Test_StepListKeysError(t *testing.T) {
-	t.Fail()
 }
 
 // ensureOverrides ensures that the overrides for
@@ -267,6 +294,14 @@ func fixAccountProvider() automock.AccountProvider {
 	return accountProvider
 }
 
+func fixAccountProviderGardenerCredentialsError() automock.AccountProvider {
+	accountProvider := automock.AccountProvider{}
+	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
+		CredentialData: map[string][]byte{},
+	}, fmt.Errorf("ups ..."))
+	return accountProvider
+}
+
 func fixEventHubStep(memoryStorageOp storage.Operations, accountProvider automock.AccountProvider) *ProvisionAzureEventHubStep {
 	step := NewProvisionAzureEventHubStep(memoryStorageOp,
 		&fakeAzureClient{},
@@ -293,7 +328,7 @@ func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
 
 func fixInvalidProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
 	op := internal.ProvisioningOperation{
-		Operation : internal.Operation{},
+		Operation: internal.Operation{},
 		// ups .. invalid json
 		ProvisioningParameters: `{
 			"parameters": a{}a
