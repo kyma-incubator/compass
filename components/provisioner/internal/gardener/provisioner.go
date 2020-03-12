@@ -33,7 +33,7 @@ type GardenerProvisioner struct {
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) error {
 	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace)
 	if err != nil {
-		return fmt.Errorf("Failed to convert cluster config to Shoot template")
+		return fmt.Errorf("failed to convert cluster config to Shoot template")
 	}
 
 	if g.shouldEnableAuditLogs(cluster.SubAccountId) {
