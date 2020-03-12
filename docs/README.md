@@ -16,14 +16,14 @@ Start with the overarching [Compass documentation](./compass) where you can find
 The directory has the following structure:
 
 ```
-  ├── archive                  # Directory for archived documents    
   ├── compass                  # Overarching Compass documentation
   ├── connector                # Documentation for the Connector component     
   ├── director                 # Documentation for the Director component      
   ├── integration-system       # Documentation for the Integration System component                                    
   ├── investigations           # Directory for conducted investigations
-  ├── runtime-agent            # Documentation for the Runtime Agent component                                    
-  └── runtime-provisioner      # Documentation for the Runtime Provisioner component
+  ├── kyma-environment-broker  # Documentation for the Kyma Environment Broker component
+  ├── provisioner              # Documentation for the Runtime Provisioner component                                          
+  └── runtime-agent            # Documentation for the Runtime Agent component     
 ```
 
 ## Development
