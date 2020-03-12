@@ -91,8 +91,8 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	appID := reqContext.appID
-	serviceID, err := reqContext.directorClient.CreatePackage(appID, converted)
+	appID := reqContext.AppID
+	serviceID, err := reqContext.DirectorClient.CreatePackage(appID, converted)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while creating Service")
 		h.logger.Error(wrappedErr)
@@ -141,8 +141,8 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	appID := reqContext.appID
-	packages, err := reqContext.directorClient.ListPackages(appID)
+	appID := reqContext.AppID
+	packages, err := reqContext.DirectorClient.ListPackages(appID)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while fetching services")
 		h.logger.Error(wrappedErr)
@@ -209,9 +209,9 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		h.writeErrorInternal(writer, err)
 		return
 	}
-	dirCli := reqContext.directorClient
+	dirCli := reqContext.DirectorClient
 
-	previousPackage, err := dirCli.GetPackage(reqContext.appID, id)
+	previousPackage, err := dirCli.GetPackage(reqContext.AppID, id)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			h.writeErrorNotFound(writer, id)
@@ -263,7 +263,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = reqContext.directorClient.DeletePackage(id)
+	err = reqContext.DirectorClient.DeletePackage(id)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			h.writeErrorNotFound(writer, id)
@@ -418,7 +418,7 @@ func (h *Handler) deleteRelatedObjectsForPackage(dirCli DirectorClient, pkg grap
 }
 
 func (h *Handler) getAndWriteServiceByID(writer http.ResponseWriter, serviceID string, reqContext RequestContext) {
-	output, err := reqContext.directorClient.GetPackage(reqContext.appID, serviceID)
+	output, err := reqContext.DirectorClient.GetPackage(reqContext.AppID, serviceID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			h.writeErrorNotFound(writer, serviceID)

@@ -12,8 +12,8 @@ import (
 )
 
 type RequestContext struct {
-	appID          string
-	directorClient DirectorClient
+	AppID          string
+	DirectorClient DirectorClient
 }
 
 type requestContextProvider struct {
@@ -42,7 +42,7 @@ func (s *requestContextProvider) ForRequest(r *http.Request) (RequestContext, er
 	directorClient := director.NewClient(gqlCli, s.graphqlizer, s.gqlFieldsProvider)
 
 	return RequestContext{
-		appID:          appDetails.ID,
-		directorClient: directorClient,
+		AppID:          appDetails.ID,
+		DirectorClient: directorClient,
 	}, nil
 }
