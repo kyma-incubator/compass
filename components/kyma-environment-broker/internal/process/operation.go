@@ -19,8 +19,10 @@ func NewOperationManager(storage storage.Operations) *OperationManager {
 	return &OperationManager{storage: storage}
 }
 
+// OperationSucceeded marks the operation as failed and only repeats it if there is a storage error
 func (om *OperationManager) OperationSucceeded(operation internal.ProvisioningOperation, description string) (internal.ProvisioningOperation, time.Duration, error) {
 	updatedOperation, repeat := om.update(operation, domain.Succeeded, description)
+	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
 	}
@@ -28,8 +30,10 @@ func (om *OperationManager) OperationSucceeded(operation internal.ProvisioningOp
 	return updatedOperation, 0, nil
 }
 
+// OperationFailed marks the operation as failed and only repeats it if there is a storage error
 func (om *OperationManager) OperationFailed(operation internal.ProvisioningOperation, description string) (internal.ProvisioningOperation, time.Duration, error) {
 	updatedOperation, repeat := om.update(operation, domain.Failed, description)
+	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
 	}
@@ -51,6 +55,7 @@ func (om *OperationManager) update(operation internal.ProvisioningOperation, sta
 	operation.Description = fmt.Sprintf("%s : %s", operation.Description, description)
 
 	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
+	// repeat if there is a problem with the storage
 	if err != nil {
 		return operation, 1 * time.Minute
 	}

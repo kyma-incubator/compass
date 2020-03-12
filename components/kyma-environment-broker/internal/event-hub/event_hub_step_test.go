@@ -3,6 +3,7 @@ package event_hub
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
@@ -80,9 +81,6 @@ func Test_Overrides(t *testing.T) {
 	memoryStorageOp := storage.NewMemoryStorage().Operations()
 	accountProvider := automock.AccountProvider{}
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
-		CredentialName:  "",
-		HyperscalerType: "",
-		TenantName:      "",
 		CredentialData: map[string][]byte{
 			"subscriptionID": []byte("subscriptionID"),
 			"clientID":       []byte("clientID"),
@@ -111,7 +109,6 @@ func Test_Overrides(t *testing.T) {
 	// when
 	op, _, err := step.Run(op, fixLogger())
 	require.NoError(t, err)
-	// require.Zero(t, when)
 	provisionRuntimeInput, err := op.InputCreator.Create()
 	require.NoError(t, err)
 
@@ -119,6 +116,73 @@ func Test_Overrides(t *testing.T) {
 	allOverridesFound := ensureOverrides(t, provisionRuntimeInput)
 	require.True(t, allOverridesFound[componentNameKnativeEventing], "overrides for %s were not found", componentNameKnativeEventing)
 	require.True(t, allOverridesFound[componentNameKnativeEventingKafka], "overrides for %s were not found", componentNameKnativeEventingKafka)
+}
+
+func Test_StepProvisionParametersError(t *testing.T) {
+	// given
+	memoryStorage := storage.NewMemoryStorage()
+	accountProvider := automock.AccountProvider{}
+	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+	}, nil)
+
+	step := NewProvisionAzureEventHubStep(memoryStorage.Operations(),
+		&fakeAzureClient{},
+		&accountProvider,
+		context.Background(),
+	)
+	operation := internal.Operation{}
+	op := internal.ProvisioningOperation{
+		Operation: operation,
+		// ups .. invalid json
+		ProvisioningParameters: `{
+			"parameters": a{}a
+		}`,
+		InputCreator: fixInputCreator(t),
+	}
+	// this is required to avoid storage retries (without this statement there will be an error => retry)
+	err := memoryStorage.Operations().InsertProvisioningOperation(op)
+	assert.NoError(t, err)
+
+	// when
+	op, when, err := step.Run(op, fixLogger())
+
+	// then
+	// if the parameters are incorrect, there is no reason to retry the operation
+	// a new request has to be issued by the user
+	ensureOperationIsNotRepeated(t, err, when, op)
+	_, err = op.InputCreator.Create()
+	require.NoError(t, err)
+}
+
+// operationManager.OperationFailed(...)
+// manager.go: if processedOperation.State != domain.InProgress { return 0, nil } => repeat
+// queue.go: if err == nil && when != 0 => repeat
+
+func ensureOperationIsRepeated(t *testing.T, err error, when time.Duration) {
+	assert.Nil(t, err)
+	assert.True(t, when != 0)
+}
+
+func ensureOperationIsNotRepeated(t *testing.T, err error, when time.Duration, op internal.ProvisioningOperation) {
+	require.True(t, err != nil)
+}
+
+func Test_StepProvisionGardenerCredentialsError(t *testing.T) {
+	t.Fail()
+}
+
+func Test_StepPersistEventHubsNamspaceError(t *testing.T) {
+	t.Fail()
+}
+
+func Test_StepListKeysError(t *testing.T) {
+	t.Fail()
 }
 
 // ensureOverrides ensures that the overrides for
