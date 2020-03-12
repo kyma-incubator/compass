@@ -24,7 +24,7 @@ global:
       dir:
       version: "PR-948"
     gateway:
-      dir: pr/
+      dir:
       version: "PR-943"
     healthchecker:
       dir: pr/
