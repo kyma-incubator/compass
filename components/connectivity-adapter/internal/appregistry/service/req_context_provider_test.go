@@ -36,19 +36,19 @@ func TestRequestContextProvider_ForRequest(t *testing.T) {
 	}{
 		{
 			Name:                "Success",
-			InputRequestContext: fixContext(t, &app, gqlCli),
+			InputRequestContext: fixContext(&app, gqlCli),
 			ExpectedResult:      &expected,
 			ExpectedErrMessage:  "",
 		},
 		{
 			Name:                "Error - Load App Details",
-			InputRequestContext: fixContext(t, nil, gqlCli),
+			InputRequestContext: fixContext(nil, gqlCli),
 			ExpectedResult:      nil,
 			ExpectedErrMessage:  "while loading Application details from context: cannot read Application details from context",
 		},
 		{
 			Name:                "Error - Load GraphQL client",
-			InputRequestContext: fixContext(t, &app, nil),
+			InputRequestContext: fixContext(&app, nil),
 			ExpectedResult:      nil,
 			ExpectedErrMessage:  "while loading GraphQL client from context: cannot read GraphQL client from context",
 		},
@@ -78,7 +78,7 @@ func TestRequestContextProvider_ForRequest(t *testing.T) {
 	}
 }
 
-func fixContext(t *testing.T, app *graphql.ApplicationExt, gqlCli gqlcli.GraphQLClient) context.Context {
+func fixContext(app *graphql.ApplicationExt, gqlCli gqlcli.GraphQLClient) context.Context {
 	ctx := context.TODO()
 
 	if app != nil {

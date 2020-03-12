@@ -24,6 +24,7 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 	in := graphql.PackageCreateInput{
 		Name: "bar",
 	}
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addPackage(applicationID: \"foo\", in: input) {\n\t\t\t\tid\n\t\t\t}}")
 
 	tests := []struct {
 		Name           string
@@ -38,7 +39,7 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\t\tresult: addPackage(applicationID: \"foo\", in: input) {\n\t\t\t\tid\n\t\t\t}}"),
+					gqlRequest,
 					mock.AnythingOfType("*director.CreatePackageResult"),
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
@@ -77,7 +78,7 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\t\tresult: addPackage(applicationID: \"foo\", in: input) {\n\t\t\t\tid\n\t\t\t}}"),
+					gqlRequest,
 					mock.AnythingOfType("*director.CreatePackageResult"),
 				).Return(testErr).Once()
 				return am
@@ -116,6 +117,7 @@ func TestDirectorClient_UpdatePackage(t *testing.T) {
 	in := graphql.PackageUpdateInput{
 		Name: "bar",
 	}
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: updatePackage(id: \"foo\", in: input) {\n\t\t\t\tid\n\t\t\t}\n\t\t}")
 
 	tests := []struct {
 		Name          string
@@ -129,7 +131,7 @@ func TestDirectorClient_UpdatePackage(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\t\tresult: updatePackage(id: \"foo\", in: input) {\n\t\t\t\tid\n\t\t\t}\n\t\t}"),
+					gqlRequest,
 					nil,
 				).Return(nil).Once()
 				return am
@@ -160,7 +162,7 @@ func TestDirectorClient_UpdatePackage(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\t\tresult: updatePackage(id: \"foo\", in: input) {\n\t\t\t\tid\n\t\t\t}\n\t\t}"),
+					gqlRequest,
 					nil,
 				).Return(testErr).Once()
 				return am
@@ -198,6 +200,7 @@ func TestDirectorClient_GetPackage(t *testing.T) {
 	appID := "foo"
 	packageID := "foo"
 	successResult := graphql.PackageExt{Package: graphql.Package{ID: "1"}}
+	gqlRequest := gcli.NewRequest("query {\n\t\t\tresult: application(id: \"foo\") {\n\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
 		Name           string
@@ -211,7 +214,7 @@ func TestDirectorClient_GetPackage(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("query {\n\t\t\tresult: application(id: \"foo\") {\n\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}"),
+					gqlRequest,
 					mock.AnythingOfType("*director.GetPackageResult"),
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
@@ -232,7 +235,7 @@ func TestDirectorClient_GetPackage(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("query {\n\t\t\tresult: application(id: \"foo\") {\n\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}"),
+					gqlRequest,
 					mock.AnythingOfType("*director.GetPackageResult"),
 				).Return(testErr).Once()
 				return am
@@ -267,6 +270,7 @@ func TestDirectorClient_GetPackage(t *testing.T) {
 func TestDirectorClient_ListPackages(t *testing.T) {
 	appID := "foo"
 	successResult := []*graphql.PackageExt{{Package: graphql.Package{ID: "1"}}, {Package: graphql.Package{ID: "2"}}}
+	gqlRequest := gcli.NewRequest("query {\n\t\t\tresult: application(id: \"foo\") {\n\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
 		Name           string
@@ -280,7 +284,7 @@ func TestDirectorClient_ListPackages(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("query {\n\t\t\tresult: application(id: \"foo\") {\n\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}"),
+					gqlRequest,
 					mock.AnythingOfType("*director.ListPackagesResult"),
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
@@ -301,7 +305,7 @@ func TestDirectorClient_ListPackages(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("query {\n\t\t\tresult: application(id: \"foo\") {\n\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}"),
+					gqlRequest,
 					mock.AnythingOfType("*director.ListPackagesResult"),
 				).Return(testErr).Once()
 				return am
@@ -334,6 +338,7 @@ func TestDirectorClient_ListPackages(t *testing.T) {
 
 func TestDirectorClient_DeletePackage(t *testing.T) {
 	id := "foo"
+	gqlRequest := gcli.NewRequest("mutation {\n\t\tdeletePackage(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}")
 
 	tests := []struct {
 		Name        string
@@ -346,7 +351,7 @@ func TestDirectorClient_DeletePackage(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\tdeletePackage(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}"),
+					gqlRequest,
 					nil,
 				).Return(nil).Once()
 				return am
@@ -359,7 +364,7 @@ func TestDirectorClient_DeletePackage(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\tdeletePackage(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}"),
+					gqlRequest,
 					nil,
 				).Return(testErr).Once()
 				return am
@@ -392,6 +397,7 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 	in := graphql.APIDefinitionInput{
 		Name: "bar",
 	}
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addAPIDefinitionToPackage(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
 		Name           string
@@ -406,7 +412,7 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\t\tresult: addAPIDefinitionToPackage(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}"),
+					gqlRequest,
 					mock.AnythingOfType("*director.CreateAPIDefinitionResult"),
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
@@ -445,7 +451,7 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\t\tresult: addAPIDefinitionToPackage(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}"),
+					gqlRequest,
 					mock.AnythingOfType("*director.CreateAPIDefinitionResult"),
 				).Return(testErr).Once()
 				return am
@@ -484,6 +490,7 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 
 func TestDirectorClient_DeleteAPIDefinition(t *testing.T) {
 	id := "foo"
+	gqlRequest := gcli.NewRequest("mutation {\n\t\tdeleteAPIDefinition(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}")
 
 	tests := []struct {
 		Name        string
@@ -496,7 +503,7 @@ func TestDirectorClient_DeleteAPIDefinition(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\tdeleteAPIDefinition(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}"),
+					gqlRequest,
 					nil,
 				).Return(nil).Once()
 				return am
@@ -509,7 +516,7 @@ func TestDirectorClient_DeleteAPIDefinition(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\tdeleteAPIDefinition(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}"),
+					gqlRequest,
 					nil,
 				).Return(testErr).Once()
 				return am
@@ -542,6 +549,7 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 	in := graphql.EventDefinitionInput{
 		Name: "bar",
 	}
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addEventDefinitionToPackage(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
 		Name           string
@@ -556,7 +564,7 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\t\tresult: addEventDefinitionToPackage(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}"),
+					gqlRequest,
 					mock.AnythingOfType("*director.CreateEventDefinitionResult"),
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
@@ -595,7 +603,7 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\t\tresult: addEventDefinitionToPackage(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}"),
+					gqlRequest,
 					mock.AnythingOfType("*director.CreateEventDefinitionResult"),
 				).Return(testErr).Once()
 				return am
@@ -634,6 +642,7 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 
 func TestDirectorClient_DeleteEventDefinition(t *testing.T) {
 	id := "foo"
+	gqlRequest := gcli.NewRequest("mutation {\n\t\tdeleteEventDefinition(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}")
 
 	tests := []struct {
 		Name        string
@@ -646,7 +655,7 @@ func TestDirectorClient_DeleteEventDefinition(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\tdeleteEventDefinition(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}"),
+					gqlRequest,
 					nil,
 				).Return(nil).Once()
 				return am
@@ -659,7 +668,7 @@ func TestDirectorClient_DeleteEventDefinition(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\tdeleteEventDefinition(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}"),
+					gqlRequest,
 					nil,
 				).Return(testErr).Once()
 				return am
@@ -692,6 +701,7 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 	in := graphql.DocumentInput{
 		Title: "bar",
 	}
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addDocumentToPackage(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
 		Name           string
@@ -706,7 +716,7 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\t\tresult: addDocumentToPackage(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}"),
+					gqlRequest,
 					mock.AnythingOfType("*director.CreateDocumentResult"),
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
@@ -745,7 +755,7 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\t\tresult: addDocumentToPackage(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}"),
+					gqlRequest,
 					mock.AnythingOfType("*director.CreateDocumentResult"),
 				).Return(testErr).Once()
 				return am
@@ -784,6 +794,7 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 
 func TestDirectorClient_DeleteDocument(t *testing.T) {
 	apiID := "foo"
+	gqlRequest := gcli.NewRequest("mutation {\n\t\tdeleteDocument(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}")
 
 	tests := []struct {
 		Name        string
@@ -796,7 +807,7 @@ func TestDirectorClient_DeleteDocument(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\tdeleteDocument(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}"),
+					gqlRequest,
 					nil,
 				).Return(nil).Once()
 				return am
@@ -809,7 +820,7 @@ func TestDirectorClient_DeleteDocument(t *testing.T) {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
-					gcli.NewRequest("mutation {\n\t\tdeleteDocument(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}"),
+					gqlRequest,
 					nil,
 				).Return(testErr).Once()
 				return am
