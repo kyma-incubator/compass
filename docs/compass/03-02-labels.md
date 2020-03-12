@@ -36,7 +36,7 @@ type Mutation {
 
 > **TIP:** For all the GraphQL query and mutation examples that you can use, go to [this](https://github.com/kyma-incubator/compass/tree/master/components/director/examples) directory.
 
-LabelDefinition key has to be unique for a given tenant. For the given label, you can provide only one value, however, this label can contain many elements, depending on the LabelDefinition schema. In the following example, the type of label's value is `Any`, which means that the value can be of any type, such as `JSON`, `string`, `int`:
+LabelDefinition key has to be unique for a given tenant. You can provide only one value for a given label. However, this label can contain many elements, depending on the LabelDefinition schema. In the following example, the type of the label value is `Any`, which means that the value can be of any type, such as `JSON`, `string`, `int` etc.:
 
 ```graphql
 setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label!
@@ -105,7 +105,7 @@ Use this mutation to remove a LabelDefinition:
 deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean=false): LabelDefinition
 
 ```
-This mutation allows you to remove only definitions that are not used. If you want to delete a LabelDefinition with all values, set the **deleteRelatedLabels** parameter to `true`.
+This mutation allows you to remove only definitions that are not used. If you want to delete a LabelDefinition with all its values, set the **deleteRelatedLabels** parameter to `true`.
 
 ## LabelFilters
 
@@ -115,7 +115,7 @@ You can define a LabelFilter to list the top-level entities according to their l
  applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
 ```
 
-To search for all objects with a given label despite their values, use:
+To search for all objects with a given label ignoring their values, use:
 
 ```graphql
 query {
@@ -153,6 +153,6 @@ query {
 
 ## **Scenarios** label
 
-Every Application is labeled with the special **Scenarios** label which by default has the `default` value assigned. As every Application has to be assigned to at least one scenario, if not specified explicitly, the `default` scenario is used.
+Every Application is labeled with the special **Scenarios** label which automatically has the `default` value assigned. As every Application has to be assigned to at least one scenario, if no scenarios are explicitly specified, the `default` scenario is used.
 
 When you create a new tenant, the **Scenarios** LabelDefinition is created. It defines a list of possible values that can be used for the **Scenarios** label. Every time you create or modify an Application, there is a step that ensures that **Scenarios** label exists. You can add or remove values from the **Scenarios** LabelDefinition list, but neither the `default` value, nor the **Scenarios** label can be removed.
