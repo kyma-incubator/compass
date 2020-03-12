@@ -18,38 +18,63 @@ import (
 )
 
 func TestAuditLog(t *testing.T) {
-	//GIVEN
-	graphqlResp := fixGraphqResponse()
-	graphqlPayload, err := json.Marshal(&graphqlResp)
-	require.NoError(t, err)
+	t.Run("Success", func(t *testing.T) {
 
-	claims := fixBearerHeader(t)
-	req := httptest.NewRequest("POST", "http://localhost", bytes.NewBuffer(graphqlPayload))
-	req.Header = http.Header{
-		"Authorization": []string{claims},
-	}
-	resp := http.Response{
-		StatusCode:    http.StatusCreated,
-		Body:          ioutil.NopCloser(bytes.NewBuffer([]byte(graphqlPayload))),
-		ContentLength: (int64)(len(graphqlPayload)),
-	}
+		//GIVEN
+		graphqlResp := fixGraphqResponse()
+		graphqlPayload, err := json.Marshal(&graphqlResp)
+		require.NoError(t, err)
 
-	roundTripper := &automock.RoundTrip{}
-	roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
+		claims := fixBearerHeader(t)
+		req := httptest.NewRequest("POST", "http://localhost", bytes.NewBuffer(graphqlPayload))
+		req.Header = http.Header{
+			"Authorization": []string{claims},
+		}
+		resp := http.Response{
+			StatusCode:    http.StatusCreated,
+			Body:          ioutil.NopCloser(bytes.NewBuffer([]byte(graphqlPayload))),
+			ContentLength: (int64)(len(graphqlPayload)),
+		}
 
-	auditlogSvc := &automock.AuditlogService{}
-	auditlogSvc.On("Log", string(graphqlPayload), string(graphqlPayload), fixClaims()).Return(nil)
+		roundTripper := &automock.RoundTrip{}
+		roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
 
-	transport := proxy.NewTransport(auditlogSvc, roundTripper)
+		auditlogSvc := &automock.AuditlogService{}
+		auditlogSvc.On("Log", string(graphqlPayload), string(graphqlPayload), fixClaims()).Return(nil)
 
-	//WHEN
-	output, err := transport.RoundTrip(req)
+		transport := proxy.NewTransport(auditlogSvc, roundTripper)
 
-	//THEN
-	require.NoError(t, err)
-	require.NotNil(t, output)
-	roundTripper.AssertExpectations(t)
-	auditlogSvc.AssertExpectations(t)
+		//WHEN
+		output, err := transport.RoundTrip(req)
+
+		//THEN
+		require.NoError(t, err)
+		require.NotNil(t, output)
+		roundTripper.AssertExpectations(t)
+		auditlogSvc.AssertExpectations(t)
+	})
+
+	t.Run("Success HTTP GET", func(t *testing.T) {
+		//GIVEN
+		req := httptest.NewRequest("GET", "http://localhost", nil)
+
+		resp := http.Response{
+			StatusCode:    http.StatusCreated,
+			Body:          ioutil.NopCloser(bytes.NewBuffer([]byte("response"))),
+			ContentLength: (int64)(len("response")),
+		}
+
+		roundTripper := &automock.RoundTrip{}
+		roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
+
+		transport := proxy.NewTransport(nil, roundTripper)
+
+		//WHEN
+		_, err := transport.RoundTrip(req)
+
+		//THEN
+		require.NoError(t, err)
+	})
 }
 
 func fixClaims() proxy.Claims {

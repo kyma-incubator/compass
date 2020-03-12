@@ -35,6 +35,9 @@ func NewTransport(svc AuditlogService, trip RoundTrip) *Transport {
 }
 
 func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
+	if req.Body == nil || req.Method == http.MethodGet {
+		return t.RoundTripper.RoundTrip(req)
+	}
 	requestBody, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		return nil, err
@@ -44,7 +47,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 
 	resp, err = t.RoundTripper.RoundTrip(req)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while rount trip the request")
 	}
 
 	claims, err := t.getClaims(req.Header)
