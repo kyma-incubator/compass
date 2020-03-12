@@ -88,8 +88,8 @@ github.com/json-iterator/go v0.0.0-20180612202835-f2b4162afba3/go.mod h1:+SdeFBv
 github.com/json-iterator/go v1.1.8/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/json-iterator/go v1.1.9 h1:9yzud/Ht36ygwatGx56VwCZtlI/2AD15T1X2sjSuGns=
 github.com/json-iterator/go v1.1.9/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
-github.com/kfurgol/compass/components/director v0.0.0-20200311095728-79eb402ab11e h1:IztGSzK2yrHHfKxZPma7m75EjvFTWNB5ovceKqRs3fQ=
-github.com/kfurgol/compass/components/director v0.0.0-20200311095728-79eb402ab11e/go.mod h1:YCMIcaXV5kofz/VeajqyTEt/ELCLIuDeH+RpkohyIsY=
+github.com/kfurgol/compass/components/director v0.0.0-20200312135610-2457a970eca8 h1:qr/WttnHji4T/i5ZOP6sC9f5nhU6jinz4XqyrssxTgw=
+github.com/kfurgol/compass/components/director v0.0.0-20200312135610-2457a970eca8/go.mod h1:YCMIcaXV5kofz/VeajqyTEt/ELCLIuDeH+RpkohyIsY=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
