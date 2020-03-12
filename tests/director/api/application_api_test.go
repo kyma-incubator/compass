@@ -469,11 +469,11 @@ func TestUpdateApplication(t *testing.T) {
 	defer unregisterApplication(t, actualApp.ID)
 
 	expectedApp := actualApp
-	expectedApp.Name = "after"
+	expectedApp.Name = "before"
 	expectedApp.ProviderName = ptr.String("after")
 	expectedApp.Description = ptr.String("after")
 	expectedApp.HealthCheckURL = ptr.String(webhookURL)
-	expectedApp.Labels["name"] = "after"
+	expectedApp.Labels["name"] = "before"
 
 	updateInput := fixSampleApplicationUpdateInput("after")
 	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
@@ -512,7 +512,7 @@ func TestUpdateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 	require.Contains(t, err.Error(), "does not exist")
 }
 
-func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
+func TestCreateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
@@ -526,23 +526,6 @@ func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
 		require.NoError(t, err)
 		request := fixRegisterApplicationRequest(appInputGQL)
-
-		// WHEN
-		err = tc.RunOperation(ctx, request, nil)
-
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "not unique")
-	})
-
-	t.Run("Error when updating Application with name that exists", func(t *testing.T) {
-		actualApp := registerApplication(t, ctx, "differentname")
-		defer unregisterApplication(t, actualApp.ID)
-
-		updateInput := fixSampleApplicationUpdateInput(appName)
-		updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
-		require.NoError(t, err)
-		request := fixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
 
 		// WHEN
 		err = tc.RunOperation(ctx, request, nil)
@@ -1358,7 +1341,6 @@ func fixSampleApplicationCreateInputWithIntegrationSystem(placeholder string) gr
 
 func fixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
-		Name:           placeholder,
 		Description:    &placeholder,
 		HealthCheckURL: ptr.String(webhookURL),
 		ProviderName:   &placeholder,
@@ -1367,7 +1349,6 @@ func fixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpda
 
 func fixSampleApplicationUpdateInputWithIntegrationSystem(placeholder string) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
-		Name:                placeholder,
 		Description:         &placeholder,
 		HealthCheckURL:      ptr.String(webhookURL),
 		IntegrationSystemID: &integrationSystemID,
