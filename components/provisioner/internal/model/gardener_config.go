@@ -64,7 +64,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string) (*gardener_types.Shoot
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					EnableBasicAuthentication: &enableBasicAuthentication,
 					AdmissionPlugins: []gardener_types.AdmissionPlugin{
-						{Name: "SecurityContextDeny"}, // TODO: Check what actually should be there!
+						{Name: "SecurityContextDeny"},
 					},
 				},
 			},
