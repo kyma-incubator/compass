@@ -56,9 +56,6 @@ func (r readSession) GetOperationsInProgressByType(operationType OperationType) 
 		Where(typeCondition).
 		Load(&operations)
 	if err != nil {
-		if err == dbr.ErrNotFound {
-			return nil, dberr.NotFound("cannot find operations: %s", err)
-		}
 		return nil, dberr.Internal("Failed to get operations: %s", err)
 	}
 	return operations, nil

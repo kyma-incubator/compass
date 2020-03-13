@@ -18,7 +18,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
 	"github.com/pkg/errors"
 
@@ -175,10 +174,7 @@ func main() {
 func processOperationsInProgress(op storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
 	operations, err := op.GetOperationsInProgressByType(dbsession.OperationTypeProvision)
 	if err != nil {
-		if !dberr.IsNotFound(err) {
-			return errors.Wrap(err, "while getting in progress operations from storage")
-		}
-		return nil
+		return errors.Wrap(err, "while getting in progress operations from storage")
 	}
 	for _, operation := range operations {
 		queue.Add(operation.ID)

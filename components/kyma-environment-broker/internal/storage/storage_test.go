@@ -1,4 +1,4 @@
-// +build database-integration
+// +build database_integration
 
 package storage
 
@@ -147,7 +147,7 @@ func TestSchemaInitializer(t *testing.T) {
 		ops, err := svc.GetOperationsInProgressByType(dbsession.OperationTypeProvision)
 		require.NoError(t, err)
 		assert.Len(t, ops, 1)
-		assert.Equal(t, givenOperation.Operation, ops[0])
+		assertOperation(t, givenOperation.Operation, ops[0])
 
 		gotOperation, err := svc.GetProvisioningOperationByID("operation-id")
 		require.NoError(t, err)
@@ -236,6 +236,15 @@ func assertProvisioningOperation(t *testing.T, expected, got internal.Provisioni
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
 	expected.ProvisioningParameters = got.ProvisioningParameters
+	assert.Equal(t, expected, got)
+}
+
+func assertOperation(t *testing.T, expected, got internal.Operation) {
+	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
+	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
+
+	expected.CreatedAt = got.CreatedAt
+	expected.UpdatedAt = got.UpdatedAt
 	assert.Equal(t, expected, got)
 }
 
