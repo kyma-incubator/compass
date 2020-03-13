@@ -83,7 +83,7 @@ func (c Claims) Valid() error {
 func (t *Transport) getClaims(headers http.Header) (Claims, error) {
 	token := headers.Get("Authorization")
 	if token == "" {
-		return Claims{}, errors.New("invalid bearer token")
+		return Claims{}, errors.New("no bearer token")
 	}
 	token = strings.TrimPrefix(token, "Bearer ")
 
