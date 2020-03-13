@@ -1,13 +1,10 @@
 package provisioning
 
 import (
-	"context"
-	"errors"
 	"fmt"
+	azure "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/Azure"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 
-	"github.com/Azure/go-autorest/autorest/azure/auth"
-
-	azStorage "github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2019-04-01/storage"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
@@ -28,7 +25,7 @@ type SetupBackupStep struct {
 	operationManager  *process.OperationManager
 	//instanceStorage   storage.Instances
 	//provisionerClient provisioner.Client
-	//serviceManager    internal.ServiceManagerOverride
+	azureClientInterface azure.AzureClientInterface
 	accountProvider  hyperscaler.AccountProvider
 }
 
@@ -36,10 +33,12 @@ func (s *SetupBackupStep) Name() string {
 	return "Setup_Backup"
 }
 
-func NewSetupBackupStep(os storage.Operations, accountProvider hyperscaler.AccountProvider) *SetupBackupStep {
+func NewSetupBackupStep(os storage.Operations, accountProvider hyperscaler.AccountProvider, azureClientInterface azure.AzureClientInterface) *SetupBackupStep {
 	return &SetupBackupStep{
 		operationManager:  process.NewOperationManager(os),
 		accountProvider:  accountProvider,
+		azureClientInterface: azureClientInterface,
+
 	}
 }
 
@@ -67,23 +66,44 @@ func (s *SetupBackupStep) Run(operation internal.ProvisioningOperation, log logr
 	}
 
 	// get credentials
-	creds, err := s.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	//credentials, err := s.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	_, err = s.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+
 	if err != nil {
-		errMsg := fmt.Sprintf("Unable to fetch credentials for Global Account ID: %v",pp.ErsContext.GlobalAccountID)
-		return s.operationManager.OperationFailed(operation, errMsg)
+		log.Errorf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
+		return operation, 5 * time.Second, nil
 	}
 	switch hypType {
 	case "azure":
-		err := backupSetupAz(creds.CredentialData, log)
-		if err != nil {
-			log.Info(err.Error())
-			return operation, 2 * time.Minute, nil
-		}
-		operation.InputCreator.SetOverrides("setup_backup", s.setupBackUpOverride(pp.ErsContext))
+		//TODO: Uncomment when we have azure client
+		//azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp, log)
+		//if err != nil {
+		//	log.Errorf("Unable to set the Azure config: %v", err)
+		//	return operation, 5 * time.Second, nil
+		//}
+		//azSacClient := s.azureClientInterface.GetStorageAccountClientOrDie(azureCfg)
+		//ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		//defer cancel()
+		//name := "foobar"
+		//typeSac := "Microsoft.Storage/storageAccounts"
+		//accountName := azStorage.AccountCheckNameAvailabilityParameters{
+		//	Name: &name,
+		//	Type: &typeSac,
+		//}
+		//result, err  := azSacClient.CheckAccountNameAvailability(ctx, accountName)
+		//
+		//if err != nil {
+		//	log.Errorf("Unable to set the check if storage account name is available: %v", err)
+		//	return operation, 5 * time.Second, nil
+		//}
+		//
+		//log.Infof("result is %v", *result.NameAvailable)
+		//log.Infof("result statuscode 2 is %v", result.StatusCode)
+
+
+		backupOverrides := s.setupBackUpOverride()
+		operation.InputCreator.SetOverrides("backup-init", backupOverrides)
 	}
-
-	fmt.Println(creds.CredentialData)
-
 
 	// Create bucket
 
@@ -91,46 +111,14 @@ func (s *SetupBackupStep) Run(operation internal.ProvisioningOperation, log logr
 	return operation, 0, nil
 }
 
-func (s *SetupBackupStep) setupBackUpOverride(ersContext internal.ERSContext) []*gqlschema.ConfigEntryInput {
+func (s *SetupBackupStep) setupBackUpOverride() []*gqlschema.ConfigEntryInput {
 	backupStepOverrides := []*gqlschema.ConfigEntryInput{
 		{
 			Key: "configuration.provider",
 			Value: "azure",
+			Secret: ptr.Bool(true),
 		},
 	}
 return backupStepOverrides
 	
-}
-
-func getStorageAccountsClient(creds map[string][]byte) (azStorage.AccountsClient, error) {
-
-	certificateAuthorizer := auth.NewClientCredentialsConfig(string(creds["clientSecret"]), string(creds["clientID"]), string(creds["tenantID"]))
-	authorizerToken, err := certificateAuthorizer.Authorizer()
-	if err != nil {
-		return azStorage.AccountsClient{},  errors.New("unable to authenticate to Hyperscaler")
-	}
-
-	storageAccountsClient := azStorage.NewAccountsClient(string(creds["SubscriptionID"]) )
-	storageAccountsClient.Authorizer = authorizerToken
-	err = storageAccountsClient.AddToUserAgent("backup-setup")
-	if err != nil {
-		return  azStorage.AccountsClient{},  errors.New("unable to add useragent to storage client")
-	}
-	return storageAccountsClient, nil
-}
-
-func backupSetupAz(cred map[string][]byte,  log logrus.FieldLogger) error{
-
-	storageAccountsClient, err := getStorageAccountsClient(cred)
-	if err != nil {
-		return err
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-	defer cancel()
-	l, err := storageAccountsClient.List(ctx)
-	if err != nil {
-		return err
-	}
-	log.Infof("Storage account list: %v",l)
-	return  nil
 }
