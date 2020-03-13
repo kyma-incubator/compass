@@ -4,7 +4,7 @@ mutation {
     in: {
       name: "create-application-with-documents"
       providerName: "compass"
-      labels: { scenarios: ["DEFAULT"] }
+      labels: "{\"scenarios\":[\"DEFAULT\"]}"
       packages: [
         {
           name: "foo"

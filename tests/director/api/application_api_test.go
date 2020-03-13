@@ -469,11 +469,11 @@ func TestUpdateApplication(t *testing.T) {
 	defer unregisterApplication(t, actualApp.ID)
 
 	expectedApp := actualApp
-	expectedApp.Name = "after"
+	expectedApp.Name = "before"
 	expectedApp.ProviderName = ptr.String("after")
 	expectedApp.Description = ptr.String("after")
 	expectedApp.HealthCheckURL = ptr.String(webhookURL)
-	labels := `{"first":["first"],"integration-system-id":"","name":"after","scenarios":["DEFAULT"]}`
+	labels := `{"first":["first"],"integration-system-id":"","name":"before","scenarios":["DEFAULT"]}`
 	expectedApp.Labels = &labels
 
 	updateInput := fixSampleApplicationUpdateInput("after")
