@@ -58,7 +58,7 @@ global:
         version: "6b8099b5"
       connectivity_adapter:
         dir:
-        version: "PR-935"
+        version: "PR-923"
   isLocalEnv: false
   oauth2:
     host: oauth2
