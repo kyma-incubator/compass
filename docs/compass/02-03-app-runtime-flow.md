@@ -18,7 +18,7 @@ Application pairing phase is a process of creating a new Application and establi
 1. Administrator sends a request to register a new Application in Compass.
 2. Director registers the Application.
 3. Director sends back Application details, along with its unique ID.
-4. Administrator requests Application pairing to the Connector.
+4. Administrator requests Application pairing with the Connector.
 5. Connector generates a one-time token and sends it back to the Administrator.
 6. Administrator passes the one-time token to the Application.
 7. Application uses this token to establish a trusted connection with Compass.
@@ -29,7 +29,7 @@ API registration phase is a process of registering new API and Event Definitions
 
 ![](./assets/api-registration.svg)
 
-1. Application sends a request to register an API or Event Definition to the Director component.
+1. Application sends a request to the Director to register an API or Event Definition.
 2. Director returns the operation result to the Application.
 
 ## Registering Runtime
@@ -41,10 +41,10 @@ The process of registering a new Runtime looks as follows:
 1. Administrator sends a request to provision a new Runtime.
 2. Runtime Provisioner requests Runtime configuration from the Director.
 3. Director returns Runtime configuration to the Runtime Provisioner.
-4. Runtime Provisioner requests a one-time token from the Connector component.
+4. Runtime Provisioner requests a one-time token from the Connector.
 5. Connector generates a one-time token for the Runtime.
 6. Connector returns the token to the Runtime Provisioner.
-7. Runtime Provisioner provisions a Runtime.
+7. Runtime Provisioner provisions the Runtime.
 8. Runtime Provisioner injects Runtime configuration along with the one-time token to the Runtime Agent.
 9. Runtime Agent uses the token to set up a trusted connection between Compass and the Runtime.
 
@@ -64,7 +64,7 @@ In the first case, the Application periodically pulls configuration details, suc
 
 ![](./assets/app-configuration-update.svg)
 
-In the second case, if configuration for any connected Runtime changes, Application Webhook API notifies an Application that new configuration details are available. The following diagram shows the interaction between Runtime Agent, Director and Application when a new Runtime is configured successfully:
+In the second case, if configuration for any connected Runtime changes, Application Webhook API notifies an Application that new configuration details are available. The following diagram shows the interaction between the Runtime Agent, the Director, and an Application when a new Runtime is configured successfully:
 
 ![](./assets/runtime-notification.svg)
 
