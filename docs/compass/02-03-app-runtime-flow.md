@@ -40,10 +40,10 @@ The process of registering a new Runtime looks as follows:
 
 1. Administrator sends a request to provision a new Runtime.
 2. Runtime Provisioner requests Runtime configuration from the Director.
-3. Director returns Runtime configuration to Runtime Provisioner.
+3. Director returns Runtime configuration to the Runtime Provisioner.
 4. Runtime Provisioner requests a one-time token from the Connector component.
 5. Connector generates a one-time token for the Runtime.
-6. Connector returns the token to Runtime Provisioner.
+6. Connector returns the token to the Runtime Provisioner.
 7. Runtime Provisioner provisions a Runtime.
 8. Runtime Provisioner injects Runtime configuration along with the one-time token.
 9. Runtime Agent uses the token to set up a trusted connection between Compass and the Runtime.
