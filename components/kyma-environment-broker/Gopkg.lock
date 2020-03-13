@@ -872,7 +872,7 @@
   version = "v0.17.1"
 
 [[projects]]
-  digest = "1:e0ce2f07c93aa1fdfcc220a8dbe183a28bfa4fdb4f893301795f1f1ac3a3bc63"
+  digest = "1:c2001b25ae19e1af3389e8f824cc537449084b1d29be4e94cb2c16c98796501f"
   name = "k8s.io/client-go"
   packages = [
     "discovery",

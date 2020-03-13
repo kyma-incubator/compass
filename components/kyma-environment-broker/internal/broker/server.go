@@ -52,21 +52,3 @@ func AttachRoutes(router *mux.Router, serviceBroker domain.ServiceBroker, logger
 
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}/last_operation", apiHandler.LastBindingOperation).Methods("GET")
 }
-
-//
-//func AttachRoutes(prefix string, router *mux.Router, serviceBroker domain.ServiceBroker, logger lager.Logger) {
-//	apiHandler := handlers.NewApiHandler(serviceBroker, logger)
-//	router.HandleFunc(fmt.Sprintf("%s/catalog", prefix), apiHandler.Catalog).Methods("GET")
-//
-//	router.HandleFunc(fmt.Sprintf("%s/service_instances/{instance_id}", prefix), apiHandler.GetInstance).Methods("GET")
-//	router.HandleFunc(fmt.Sprintf("%s/service_instances/{instance_id}", prefix), apiHandler.Provision).Methods("PUT")
-//	router.HandleFunc(fmt.Sprintf("%s/service_instances/{instance_id}", prefix), apiHandler.Deprovision).Methods("DELETE")
-//	router.HandleFunc(fmt.Sprintf("%s/service_instances/{instance_id}/last_operation", prefix), apiHandler.LastOperation).Methods("GET")
-//	router.HandleFunc(fmt.Sprintf("%s/service_instances/{instance_id}", prefix), apiHandler.Update).Methods("PATCH")
-//
-//	router.HandleFunc(fmt.Sprintf("%s/service_instances/{instance_id}/service_bindings/{binding_id}", prefix), apiHandler.GetBinding).Methods("GET")
-//	router.HandleFunc(fmt.Sprintf("%s/service_instances/{instance_id}/service_bindings/{binding_id}", prefix), apiHandler.Bind).Methods("PUT")
-//	router.HandleFunc(fmt.Sprintf("%s/service_instances/{instance_id}/service_bindings/{binding_id}", prefix), apiHandler.Unbind).Methods("DELETE")
-//
-//	router.HandleFunc(fmt.Sprintf("%s/service_instances/{instance_id}/service_bindings/{binding_id}/last_operation", prefix), apiHandler.LastBindingOperation).Methods("GET")
-//}

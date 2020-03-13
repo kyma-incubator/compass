@@ -6,4 +6,4 @@ spec:
   grantTypes:
     - "client_credentials"
   scope: "broker:write"
-  secretName: broker
+  secretName: {{ include "kyma-env-broker.fullname" . }}-oauth

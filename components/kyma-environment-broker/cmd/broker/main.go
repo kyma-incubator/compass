@@ -163,11 +163,11 @@ func main() {
 		Password: cfg.Auth.Password,
 	}
 
-	// create and run broker in 2 modes:
+	// create and run broker OSB API in 2 modes:
 	// with basic auth
 	// with oauth
-	brokerBasicAPI := broker.New("/v2", kymaEnvBroker, logger, &brokerCredentials)
-	brokerAPI := broker.New("/oauth/v2", kymaEnvBroker, logger, nil)
+	brokerBasicAPI := broker.New("", kymaEnvBroker, logger, &brokerCredentials)
+	brokerAPI := broker.New("/oauth", kymaEnvBroker, logger, nil)
 	n := negroni.New(negroni.NewRecovery())
 	n.UseHandler(brokerAPI)
 	n.UseHandler(brokerBasicAPI)
