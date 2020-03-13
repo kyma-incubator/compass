@@ -13,4 +13,4 @@ require (
 	github.com/vrischmann/envconfig v1.2.0
 )
 
-replace github.com/kyma-incubator/compass/components/director => github.com/kfurgol/compass/components/director v0.0.0-20200313070945-162e020d517d
+replace github.com/kyma-incubator/compass/components/director => github.com/kfurgol/compass/components/director v0.0.0-20200313074416-ae69f53e16f0
