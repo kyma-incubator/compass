@@ -24,8 +24,8 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
 	gcli "github.com/machinebox/graphql"
-	"github.com/pivotal-cf/brokerapi"
 	"github.com/sirupsen/logrus"
+	"github.com/urfave/negroni"
 	"github.com/vrischmann/envconfig"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -70,12 +70,6 @@ func main() {
 	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.ERROR))
 
 	logger.Info("Starting Kyma Environment Broker")
-
-	// create broker credentials
-	brokerCredentials := brokerapi.BrokerCredentials{
-		Username: cfg.Auth.Username,
-		Password: cfg.Auth.Password,
-	}
 
 	// create provisioner client
 	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
@@ -163,9 +157,22 @@ func main() {
 		broker.NewLastBindingOperation(dumper),
 	}
 
-	// create and run broker OSB API
-	brokerAPI := brokerapi.New(kymaEnvBroker, logger, brokerCredentials)
-	r := handlers.LoggingHandler(os.Stdout, brokerAPI)
+	// create broker credentials
+	brokerCredentials := broker.BrokerCredentials{
+		Username: cfg.Auth.Username,
+		Password: cfg.Auth.Password,
+	}
+
+	// create and run broker in 2 modes:
+	// with basic auth
+	// with oauth
+	brokerBasicAPI := broker.New("/v2", kymaEnvBroker, logger, &brokerCredentials)
+	brokerAPI := broker.New("/oauth/v2", kymaEnvBroker, logger, nil)
+	n := negroni.New(negroni.NewRecovery())
+	n.UseHandler(brokerAPI)
+	n.UseHandler(brokerBasicAPI)
+
+	r := handlers.LoggingHandler(os.Stdout, n)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
 }
