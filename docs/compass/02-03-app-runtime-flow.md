@@ -45,7 +45,7 @@ The process of registering a new Runtime looks as follows:
 5. Connector generates a one-time token for the Runtime.
 6. Connector returns the token to the Runtime Provisioner.
 7. Runtime Provisioner provisions a Runtime.
-8. Runtime Provisioner injects Runtime configuration along with the one-time token.
+8. Runtime Provisioner injects Runtime configuration along with the one-time token to the Runtime Agent.
 9. Runtime Agent uses the token to set up a trusted connection between Compass and the Runtime.
 
 When the Runtime is ready, Runtime Agent notifies the Director about the Runtime status. When the Director receives a notification that a Runtime is ready, it passes the notification to every Application in a group assigned to this Runtime using Application Webhook API.
