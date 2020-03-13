@@ -313,6 +313,108 @@ func TestHandler_Get(t *testing.T) {
 
 }
 
+func TestHandler_List(t *testing.T) {
+
+	target := "http://example.com/foo"
+	testErr := errors.New("test")
+
+	t.Run("Error when loading request context", func(t *testing.T) {
+
+		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+		expectedError := "while requesting Request Context: test"
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockContextProvider.On("ForRequest", mock.Anything).Return(service.RequestContext{AppID: "test"}, testErr)
+
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
+		handler.Get(w, req)
+
+		resp := w.Result()
+		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		mockContextProvider.AssertExpectations(t)
+	})
+
+	t.Run("Error when fetching services", func(t *testing.T) {
+
+		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		expectedError := "while fetching Services: test"
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("ListPackages", mock.Anything, mock.Anything).Return([]*graphql.PackageExt{}, testErr)
+
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
+		handler.List(w, req)
+
+		resp := w.Result()
+		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+
+		mockClient.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+	})
+
+	t.Run("Error when converting services", func(t *testing.T) {
+
+		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		expectedError := "while converting graphql to detailed service: test"
+		packages := []*graphql.PackageExt{{
+			Package: graphql.Package{
+				ID:   "test",
+				Name: "test",
+			},
+		}}
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("ListPackages", mock.Anything, mock.Anything).Return(packages, nil)
+
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+		mockConverter := automock.Converter{}
+		mockConverter.On("GraphQLToServiceDetails", mock.Anything).Return(model.ServiceDetails{}, testErr)
+
+		handler := service.NewHandler(&mockConverter, nil, &mockContextProvider, logrus.New())
+		handler.List(w, req)
+
+		resp := w.Result()
+		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+
+		mockClient.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+	})
+	t.Run("Success", func(t *testing.T) {
+
+		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("ListPackages", mock.Anything, mock.Anything).Return([]*graphql.PackageExt{}, nil)
+
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
+		handler.List(w, req)
+
+		resp := w.Result()
+		assert.Equal(t, resp.StatusCode, http.StatusOK)
+		mockClient.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+	})
+}
+
 func TestHandler_Update(t *testing.T) {
 
 	target := "http://example.com/foo"
