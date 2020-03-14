@@ -5,7 +5,6 @@ import (
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
 )
 
 var (
@@ -59,15 +58,6 @@ func getAuthorizerForResource(config *Config, grantType OAuthGrantType, resource
 			return nil, err
 		}
 		a = autorest.NewBearerAuthorizer(token)
-
-	// TODO(nachtmaar): delete me
-	case OAuthGrantTypeDeviceFlow:
-		deviceConfig := auth.NewDeviceFlowConfig(config.clientID, config.tenantID)
-		deviceConfig.Resource = resource
-		a, err = deviceConfig.Authorizer()
-		if err != nil {
-			return nil, err
-		}
 
 	default:
 		return a, fmt.Errorf("invalid grant type specified")

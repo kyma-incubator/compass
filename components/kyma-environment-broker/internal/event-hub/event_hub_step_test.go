@@ -186,14 +186,12 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 		switch component.Component {
 		case componentNameKnativeEventing:
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
-				Key:    "knative-eventing.channel.default.apiVersion",
-				Value:  "knativekafka.kyma-project.io/v1alpha1",
-				Secret: ptr.Bool(false),
+				Key:   "knative-eventing.channel.default.apiVersion",
+				Value: "knativekafka.kyma-project.io/v1alpha1",
 			})
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
-				Key:    "knative-eventing.channel.default.kind",
-				Value:  "KafkaChannel",
-				Secret: ptr.Bool(false),
+				Key:   "knative-eventing.channel.default.kind",
+				Value: "KafkaChannel",
 			})
 			allOverridesFound[componentNameKnativeEventing] = true
 			break

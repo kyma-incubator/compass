@@ -22,8 +22,6 @@ func GetConfig(clientID, clientSecret, tenantID, subscriptionID, location string
 	config.tenantID = tenantID
 	config.subscriptionID = subscriptionID
 	config.location = location
-	// TODO(nachtmaar):
-	fmt.Printf("debug logs for config: %+v\n", config)
 	return config, nil
 }
 

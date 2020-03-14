@@ -32,10 +32,6 @@ const (
 	gardenerCredentialsRetryInterval  = time.Second * 10
 )
 
-/*TODO(anishj0shi)
-- Implement retry logic for Namespace retrieval and NamespaceTagging operation.
-*/
-
 // ensure the interface is implemented
 var _ process.Step = (*ProvisionAzureEventHubStep)(nil)
 
@@ -77,7 +73,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	credentials, err := p.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
 	if err != nil {
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
-		return p.retryOperation(operation, errorMessage, gardenerCredentialsRetryInterval, gardenerCredentialsMaxTime)
+		return p.retryOperation(operation, errorMessage, gardenerCredentialsRetryInterval, gardenerCredentialsMaxTime, log)
 	}
 	azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp)
 
@@ -90,15 +86,15 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	// TODO(nachtmaar): use different resource group name
 	resourceGroup, err := namespaceClient.PersistResourceGroup(p.context, azureCfg, groupName)
 	if err != nil {
-		// TODO(nachtmaar):
-		log.Fatalf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
+		log.Errorf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
+		return p.operationManager.OperationFailed(operation, "error creating resource group for azure event-hubs")
 	}
 	log.Printf("Persisted Azure Resource Group [%s]", groupName)
 
 	eventHubNamespace, err := namespaceClient.PersistEventHubsNamespace(p.context, azureCfg, namespaceClient, groupName, eventHubsNamespace)
 	if err != nil {
-		// TODO(nachtmaar):
-		log.Fatalf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
+		log.Errorf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
+		return p.operationManager.OperationFailed(operation, "error creating namespaces for azure event-hubs")
 	}
 	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
 
@@ -118,16 +114,15 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 }
 
 // TODO(nachtmaar): move to common package ?
-func (p *ProvisionAzureEventHubStep) retryOperation(operation internal.ProvisioningOperation, errorMessage string, retryInterval time.Duration, maxTime time.Duration) (internal.ProvisioningOperation, time.Duration, error) {
+func (p *ProvisionAzureEventHubStep) retryOperation(operation internal.ProvisioningOperation, errorMessage string, retryInterval time.Duration, maxTime time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	// if failed retry step every 10s by next 10min
 	dur := time.Since(operation.UpdatedAt).Round(time.Minute)
 
-	fmt.Printf("Retrying for %s in %s steps\n", maxTime.String(), retryInterval.String())
+	log.Infof("Retrying for %s in %s steps\n", maxTime.String(), retryInterval.String())
 	if dur < maxTime {
 		return operation, retryInterval, nil
 	}
-	// TODO(nachtmaar): use logger
-	fmt.Printf("Aborting after %s of failing retries\n", maxTime.String())
+	fmt.Errorf("Aborting after %s of failing retries\n", maxTime.String())
 	return p.operationManager.OperationFailed(operation, errorMessage)
 }
 
@@ -146,14 +141,12 @@ func getKnativeEventingOverrides() []*gqlschema.ConfigEntryInput {
 	var knativeOverrides []*gqlschema.ConfigEntryInput
 	knativeOverrides = []*gqlschema.ConfigEntryInput{
 		{
-			Key:    "knative-eventing.channel.default.apiVersion",
-			Value:  "knativekafka.kyma-project.io/v1alpha1",
-			Secret: ptr.Bool(false),
+			Key:   "knative-eventing.channel.default.apiVersion",
+			Value: "knativekafka.kyma-project.io/v1alpha1",
 		},
 		{
-			Key:    "knative-eventing.channel.default.kind",
-			Value:  "KafkaChannel",
-			Secret: ptr.Bool(false),
+			Key:   "knative-eventing.channel.default.kind",
+			Value: "KafkaChannel",
 		},
 	}
 	return knativeOverrides
