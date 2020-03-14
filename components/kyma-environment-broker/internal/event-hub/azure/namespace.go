@@ -58,11 +58,11 @@ func (nc *NamespaceClient) CreateOrUpdate(ctx context.Context, resourceGroupName
 	return result, err
 }
 
-func (nc* NamespaceClient) PersistResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error) {
+func (nc *NamespaceClient) PersistResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error) {
 	return PersistResourceGroup(ctx, config, name)
 }
 
-func (nc* NamespaceClient) PersistEventHubsNamespace(ctx context.Context, azureCfg *Config, namespaceClient NamespaceClientInterface, groupName, namespace string) (*eventhub.EHNamespace, error) {
+func (nc *NamespaceClient) PersistEventHubsNamespace(ctx context.Context, azureCfg *Config, namespaceClient NamespaceClientInterface, groupName, namespace string) (*eventhub.EHNamespace, error) {
 	return PersistEventHubsNamespace(ctx, azureCfg, namespaceClient, groupName, namespace)
 }
 

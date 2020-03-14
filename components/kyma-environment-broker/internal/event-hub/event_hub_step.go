@@ -3,9 +3,10 @@ package event_hub
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 
@@ -86,7 +87,6 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	groupName := pp.Parameters.Name
 	eventHubsNamespace := pp.Parameters.Name
 
-	// TODO(nachtmaar): only create resource group once
 	// TODO(nachtmaar): use different resource group name
 	resourceGroup, err := namespaceClient.PersistResourceGroup(p.context, azureCfg, groupName)
 	if err != nil {

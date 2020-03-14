@@ -274,14 +274,6 @@
   version = "v3.6.0"
 
 [[projects]]
-  digest = "1:95ad6540d666a04207f244dd7a44b7132f2ab3fef0a33a6291e3eaa2ca53ee38"
-  name = "github.com/gobuffalo/envy"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "3dbe4c98c1c77e4a8fac053251c262a85e048f21"
-  version = "v1.9.0"
-
-[[projects]]
   digest = "1:e43e924cdda2208737c20b6b1c8c03d3c7a2114273cd33bb6d00418c0f95ac1e"
   name = "github.com/gocraft/dbr"
   packages = [
@@ -392,14 +384,6 @@
   pruneopts = "UT"
   revision = "1afb36080aec31e0d1528973ebe6721b191b0369"
   version = "v0.3.8"
-
-[[projects]]
-  digest = "1:ecd9aa82687cf31d1585d4ac61d0ba180e42e8a6182b85bd785fcca8dfeefc1b"
-  name = "github.com/joho/godotenv"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "23d116af351c84513e1946b527c88823e476be13"
-  version = "v1.3.0"
 
 [[projects]]
   digest = "1:7cd2924a44ecf80a319cfa2378529fabd348d011b739fb4eccc565f65e3296c4"
@@ -570,18 +554,6 @@
   pruneopts = "UT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
-
-[[projects]]
-  digest = "1:e09ada96a5a41deda4748b1659cc8953961799e798aea557257b56baee4ecaf3"
-  name = "github.com/rogpeppe/go-internal"
-  packages = [
-    "modfile",
-    "module",
-    "semver",
-  ]
-  pruneopts = "UT"
-  revision = "bc89b17ba21ce5b8a495fa55a94e3fe32ecf4ed8"
-  version = "v1.5.2"
 
 [[projects]]
   digest = "1:557c675b127d3ffdb1e6830f5f14e747da291c21a7b9e1230ec83c9d7f2246d0"
@@ -1120,7 +1092,6 @@
     "github.com/Azure/go-autorest/autorest/azure/auth",
     "github.com/Masterminds/sprig",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
-    "github.com/gobuffalo/envy",
     "github.com/gocraft/dbr",
     "github.com/google/uuid",
     "github.com/gorilla/handlers",
