@@ -32,7 +32,7 @@ func GetConfigfromHAPCredentialsAndProvisioningParams(credentials hyperscaler.Cr
 	}
 	// region := *parameters.Parameters.Region
 	region := "westeurope"
-	// TODO(nachtmaar): set location
+	// TODO(nachtmaar): set location https://github.com/kyma-incubator/compass/issues/968
 	subscriptionID := string(credentials.CredentialData["subscriptionID"])
 	clientID := string(credentials.CredentialData["clientID"])
 	clientSecret := string(credentials.CredentialData["clientSecret"])

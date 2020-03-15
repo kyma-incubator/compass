@@ -83,7 +83,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	groupName := pp.Parameters.Name
 	eventHubsNamespace := pp.Parameters.Name
 
-	// TODO(nachtmaar): use different resource group name
+	// TODO(nachtmaar): use different resource group name https://github.com/kyma-incubator/compass/issues/967
 	resourceGroup, err := namespaceClient.PersistResourceGroup(p.context, azureCfg, groupName)
 	if err != nil {
 		log.Errorf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
