@@ -3071,7 +3071,6 @@ input ApplicationTemplateInput {
 }
 
 input ApplicationUpdateInput {
-	name: String!
 	providerName: String
 	description: String
 	healthCheckURL: String
@@ -18624,12 +18623,6 @@ func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Con
 
 	for k, v := range asMap {
 		switch k {
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "providerName":
 			var err error
 			it.ProviderName, err = ec.unmarshalOString2ᚖstring(ctx, v)

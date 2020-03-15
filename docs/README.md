@@ -4,26 +4,26 @@
 
 The `docs` folder contains end-to-end documentation on Compass and its components.
 
-Start with the overarching Compass documentation where you can find the general information on Compass. The documents are arranged in the fixed order that follows the [content strategy](https://kyma-project.io/community/guidelines/content/#content-strategy-content-strategy-documentation-types). Then, read about the components in more detail:
+Start with the overarching [Compass documentation](./compass) where you can find general information on Compass. The documents are arranged in the fixed order that follows the [content strategy](https://kyma-project.io/community/guidelines/content/#content-strategy-content-strategy-documentation-types). Then, read about the components in more detail:
 * [Connector](./connector)
 * [Director](./director)
 * [Integration System](./integration-system)
-* [Provisioner](./provisioner)
 * [Runtime Agent](./runtime-agent)
+* [Runtime Provisioner](./runtime-provisioner)
 
 ### Docs structure
 
 The directory has the following structure:
 
 ```
-  ├── archive                  # Directory for archived documents    
   ├── compass                  # Overarching Compass documentation
   ├── connector                # Documentation for the Connector component     
   ├── director                 # Documentation for the Director component      
   ├── integration-system       # Documentation for the Integration System component                                    
   ├── investigations           # Directory for conducted investigations
-  ├── provisioner              # Documentation for the Provisioner component                                    
-  └── runtime-agent            # Documentation for the Runtime Agent component
+  ├── kyma-environment-broker  # Documentation for the Kyma Environment Broker component
+  ├── provisioner              # Documentation for the Runtime Provisioner component                                          
+  └── runtime-agent            # Documentation for the Runtime Agent component     
 ```
 
 ## Development

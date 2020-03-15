@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -16,6 +17,7 @@ import (
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
+	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	Create(ctx context.Context, item *model.Runtime) error
 	Update(ctx context.Context, item *model.Runtime) error
@@ -81,6 +83,26 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 	runtime, err := s.repo.GetByID(ctx, rtmTenant, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Runtime with ID %s", id)
+	}
+
+	return runtime, nil
+}
+
+func (s *service) GetByTokenIssuer(ctx context.Context, issuer string) (*model.Runtime, error) {
+	const (
+		consoleURLLabelKey = "runtime/console_url"
+		dexSubdomain       = "dex"
+		consoleSubdomain   = "console"
+	)
+	consoleURL := strings.Replace(issuer, dexSubdomain, consoleSubdomain, 1)
+
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(consoleURLLabelKey, fmt.Sprintf(`"%s"`, consoleURL)),
+	}
+
+	runtime, err := s.repo.GetByFiltersGlobal(ctx, filters)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting the Runtime by the console URL label (%s)", consoleURL)
 	}
 
 	return runtime, nil

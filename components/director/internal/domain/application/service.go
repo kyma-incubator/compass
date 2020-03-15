@@ -322,7 +322,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		return errors.Wrap(err, "while setting the integration system label")
 	}
 
-	labelName := createLabel(nameKey, in.Name, app.ID)
+	labelName := createLabel(nameKey, app.Name, app.ID)
 	err = s.SetLabel(ctx, labelName)
 	if err != nil {
 		return errors.Wrap(err, "while setting application name label")

@@ -7,21 +7,22 @@ import (
 	"os"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
-
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
 	event_hub "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/pkg/errors"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
@@ -140,14 +141,17 @@ func main() {
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
 	stepManager.InitStep(initialisation)
-	stepManager.AddStep(1, resolveCredentialsStep)
 
+	stepManager.AddStep(1, resolveCredentialsStep)
 	stepManager.AddStep(2, provisionAzureEventHub)
 	stepManager.AddStep(10, runtimeStep)
 	stepManager.AddStep(3, smOverrideStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
+
+	err = processOperationsInProgress(db.Operations(), queue, logs)
+	fatalOnError(err)
 
 	plansValidator, err := broker.NewPlansSchemaValidator()
 	fatalOnError(err)
@@ -171,6 +175,19 @@ func main() {
 	r := handlers.LoggingHandler(os.Stdout, brokerAPI)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
+}
+
+// queues all in progress provision operations existing in the database
+func processOperationsInProgress(op storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
+	operations, err := op.GetOperationsInProgressByType(dbsession.OperationTypeProvision)
+	if err != nil {
+		return errors.Wrap(err, "while getting in progress operations from storage")
+	}
+	for _, operation := range operations {
+		queue.Add(operation.ID)
+		log.Infof("Resuming the processing of operation ID: %s", operation.ID)
+	}
+	return nil
 }
 
 func fatalOnError(err error) {

@@ -3,7 +3,6 @@ mutation {
   result: updateApplication(
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     in: {
-      name: "after"
       providerName: "after"
       description: "after"
       healthCheckURL: "https://kyma-project.io"

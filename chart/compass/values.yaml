@@ -22,7 +22,7 @@ global:
       version: "PR-867"
     director:
       dir:
-      version: "PR-948"
+      version: "PR-961"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -46,7 +46,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-935"
+        version: "PR-966"
       connector:
         dir:
         version: "02e8358c"
@@ -176,6 +176,13 @@ global:
     idTokenConfig:
       claims: "{\"scopes\": \"{{ print .Extra.scope }}\", \"tenant\": \"{{ print .Extra.tenant }}\", \"consumerID\": \"{{ print .Extra.consumerID}}\", \"consumerType\": \"{{ print .Extra.consumerType }}\"}"
     mutators:
+      runtimeMappingService:
+        config:
+          api:
+            url: http://compass-director.compass-system.svc.cluster.local:3000/runtime-mapping
+            retry:
+              give_up_after: 3s
+              max_delay: 2000ms
       tenantMappingService:
         config:
           api:

@@ -188,7 +188,6 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 
 func fixModelApplicationUpdateInput(name, description, url string) model.ApplicationUpdateInput {
 	return model.ApplicationUpdateInput{
-		Name:                name,
 		Description:         &description,
 		HealthCheckURL:      &url,
 		IntegrationSystemID: &intSysID,
@@ -247,7 +246,6 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 
 func fixGQLApplicationUpdateInput(name, description, url string) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
-		Name:                name,
 		Description:         &description,
 		HealthCheckURL:      &url,
 		IntegrationSystemID: &intSysID,

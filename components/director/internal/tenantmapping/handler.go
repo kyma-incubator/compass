@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 )
@@ -20,17 +21,17 @@ type ScopesGetter interface {
 
 //go:generate mockery -name=ReqDataParser -output=automock -outpkg=automock -case=underscore
 type ReqDataParser interface {
-	Parse(req *http.Request) (ReqData, error)
+	Parse(req *http.Request) (oathkeeper.ReqData, error)
 }
 
 //go:generate mockery -name=ObjectContextForUserProvider -output=automock -outpkg=automock -case=underscore
 type ObjectContextForUserProvider interface {
-	GetObjectContext(ctx context.Context, reqData ReqData, authID string) (ObjectContext, error)
+	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authID string) (ObjectContext, error)
 }
 
 //go:generate mockery -name=ObjectContextForSystemAuthProvider -output=automock -outpkg=automock -case=underscore
 type ObjectContextForSystemAuthProvider interface {
-	GetObjectContext(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (ObjectContext, error)
+	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authID string, authFlow oathkeeper.AuthFlow) (ObjectContext, error)
 }
 
 //go:generate mockery -name=Logger -output=automock -outpkg=automock -case=underscore
@@ -104,16 +105,16 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	h.respond(writer, reqData.Body)
 }
 
-func (h *Handler) getObjectContext(ctx context.Context, reqData ReqData) (ObjectContext, error) {
+func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqData) (ObjectContext, error) {
 	authID, authFlow, err := reqData.GetAuthID()
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while determining the auth ID from the request")
 	}
 
 	switch authFlow {
-	case JWTAuthFlow:
+	case oathkeeper.JWTAuthFlow:
 		return h.mapperForUser.GetObjectContext(ctx, reqData, authID)
-	case OAuth2Flow, CertificateFlow, OneTimeTokenFlow:
+	case oathkeeper.OAuth2Flow, oathkeeper.CertificateFlow, oathkeeper.OneTimeTokenFlow:
 		return h.mapperForSystemAuth.GetObjectContext(ctx, reqData, authID, authFlow)
 	}
 
@@ -125,7 +126,7 @@ func (h *Handler) logError(err error, wrapperStr string) {
 	h.logger.Error(wrappedErr)
 }
 
-func (h *Handler) respond(writer http.ResponseWriter, body ReqBody) {
+func (h *Handler) respond(writer http.ResponseWriter, body oathkeeper.ReqBody) {
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(body)
 	if err != nil {

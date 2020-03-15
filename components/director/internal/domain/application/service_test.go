@@ -613,14 +613,14 @@ func TestService_Update(t *testing.T) {
 	id := "foo"
 	tnt := "tenant"
 
-	updatedName := "updatedn"
+	appName := "initialn"
 	updatedDescription := "updatedd"
 	updatedURL := "updatedu"
-	updateInput := fixModelApplicationUpdateInput(updatedName, updatedDescription, updatedURL)
-	applicationModelBefore := fixModelApplicationWithAllUpdatableFields(id, tnt, "initialn", "initiald", "initialu")
-	applicationModelAfter := fixModelApplicationWithAllUpdatableFields(id, tnt, updatedName, updatedDescription, updatedURL)
+	updateInput := fixModelApplicationUpdateInput(appName, updatedDescription, updatedURL)
+	applicationModelBefore := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, "initiald", "initialu")
+	applicationModelAfter := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, updatedDescription, updatedURL)
 	intSysLabel := fixLabelInput("integration-system-id", intSysID, id, model.ApplicationLabelableObject)
-	nameLabel := fixLabelInput("name", updatedName, id, model.ApplicationLabelableObject)
+	nameLabel := fixLabelInput("name", appName, id, model.ApplicationLabelableObject)
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
 
