@@ -39,12 +39,13 @@ var _ azure.NamespaceClientInterface = (*FakeNamespaceClient)(nil)
 /// A fake client for Azure EventHubs Namespace handling
 type FakeNamespaceClient struct {
 	persistEventhubsNamespaceError error
+	listError                      error
 }
 
 func (nc *FakeNamespaceClient) ListKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
 	return eventhub.AccessKeys{
 		PrimaryConnectionString: ptr.String("Endpoint=sb://name/;"),
-	}, nil
+	}, nc.listError
 }
 
 func (nc *FakeNamespaceClient) Update(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
@@ -52,7 +53,7 @@ func (nc *FakeNamespaceClient) Update(ctx context.Context, resourceGroupName str
 }
 
 func (nc *FakeNamespaceClient) ListComplete(ctx context.Context) (result eventhub.EHNamespaceListResultIterator, err error) {
-	return eventhub.EHNamespaceListResultIterator{}, nil
+	return eventhub.EHNamespaceListResultIterator{}, nc.listError
 }
 
 func (nc *FakeNamespaceClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
@@ -75,8 +76,12 @@ func NewFakeNamespaceClientCreationError() azure.NamespaceClientInterface {
 	return &FakeNamespaceClient{persistEventhubsNamespaceError: fmt.Errorf("error while creating namespace")}
 }
 
+func NewFakeNamespaceClientListError() azure.NamespaceClientInterface {
+	return &FakeNamespaceClient{listError: fmt.Errorf("cannot list namespaces")}
+}
+
 func NewFakeNamespaceClientHappyPath() azure.NamespaceClientInterface {
-	return &FakeNamespaceClient{nil}
+	return &FakeNamespaceClient{}
 }
 
 // ensure the fake client is implementing the interface
@@ -187,7 +192,26 @@ func Test_StepPersistEventHubsNamespaceError(t *testing.T) {
 }
 
 func Test_StepListKeysError(t *testing.T) {
-	t.Fail()
+	// given
+	memoryStorage := storage.NewMemoryStorage()
+	accountProvider := fixAccountProvider()
+	step := NewProvisionAzureEventHubStep(memoryStorage.Operations(),
+		// ups ... namespace cannot get listed
+		&fakeHyperscalerProvider{client: NewFakeNamespaceClientListError()},
+		&accountProvider,
+		context.Background(),
+	)
+	op := fixProvisioningOperation(t)
+
+	// this is required to avoid storage retries (without this statement there will be an error => retry)
+	err := memoryStorage.Operations().InsertProvisioningOperation(op)
+	require.NoError(t, err)
+
+	// when
+	op, when, err := step.Run(op, fixLogger())
+
+	// then
+	ensureOperationIsRepeated(t, err, when)
 }
 
 // operationManager.OperationFailed(...)

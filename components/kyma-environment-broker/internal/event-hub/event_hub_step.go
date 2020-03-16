@@ -103,7 +103,8 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	// get EventHubs Namespace secret
 	accessKeys, err := namespaceClient.ListKeys(p.context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
-		return p.operationManager.OperationFailed(operation, "unable to retrieve access keys to azure event-hub namespace")
+		log.Errorf("unable to retrieve access keys to azure event-hub namespace")
+		return p.retryOperationOnce(operation, time.Second*10)
 	}
 	kafkaEndpoint := extractEndpoint(&accessKeys)
 	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
