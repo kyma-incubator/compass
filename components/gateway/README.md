@@ -1,5 +1,7 @@
 # Gateway
 
+The gateway is responsible for unifying graphql schema under one service and sending requests to Director or Connector.
+
 ## Configuration
 
 The Gateway binary allows to override some configuration parameters. You can specify following basic environment variables.
