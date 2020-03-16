@@ -76,7 +76,6 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
 		return p.retryOperation(operation, errorMessage, gardenerCredentialsRetryInterval, gardenerCredentialsMaxTime, log)
 	}
-	// TODO(nachtmaar): add test case
 	azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp)
 	if err != nil {
 		errorMessage := fmt.Sprintf("Failed to create Azure config: %v", err)
@@ -85,7 +84,6 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	// create hyperscaler client
 	namespaceClient, err := p.hyperscalerProvider.GetClient(azureCfg)
-	// TODO(nachtmaar): add test case
 	if err != nil {
 		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
 		return p.operationManager.OperationFailed(operation, errorMessage)

@@ -40,6 +40,7 @@ var _ azure.EventhubsInterface = (*FakeNamespaceClient)(nil)
 type FakeNamespaceClient struct {
 	persistEventhubsNamespaceError error
 	listError                      error
+	resourceGroupError             error
 }
 
 func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
@@ -51,7 +52,7 @@ func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resour
 func (nc *FakeNamespaceClient) CreateResourceGroup(ctx context.Context, config *azure.Config, name string) (resources.Group, error) {
 	return resources.Group{
 		Name: ptr.String("my-resourcegroup"),
-	}, nil
+	}, nc.resourceGroupError
 }
 
 func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *azure.Config, groupName, namespace string) (*eventhub.EHNamespace, error) {
@@ -66,6 +67,10 @@ func NewFakeNamespaceClientCreationError() azure.EventhubsInterface {
 
 func NewFakeNamespaceClientListError() azure.EventhubsInterface {
 	return &FakeNamespaceClient{listError: fmt.Errorf("cannot list namespaces")}
+}
+
+func NewFakeNamespaceResourceGroupError() azure.EventhubsInterface {
+	return &FakeNamespaceClient{resourceGroupError: fmt.Errorf("cannot create resource group")}
 }
 
 func NewFakeNamespaceClientHappyPath() azure.EventhubsInterface {
@@ -240,8 +245,27 @@ func Test_GetConfigFromHAPError(t *testing.T) {
 	ensureOperationIsNotRepeated(t, err, when, op)
 }
 
-func Test_GetHyperscalerClientError(t *testing.T) {
-	t.Fail()
+func Test_CreateResourceGroupError(t *testing.T) {
+	// given
+	memoryStorage := storage.NewMemoryStorage()
+	accountProvider := fixAccountProvider()
+	step := NewProvisionAzureEventHubStep(memoryStorage.Operations(),
+		// ups ... resource group cannot be created
+		NewFakeHyperscalerProvider(NewFakeNamespaceResourceGroupError()),
+		&accountProvider,
+		context.Background(),
+	)
+	op := fixProvisioningOperation(t)
+
+	// this is required to avoid storage retries (without this statement there will be an error => retry)
+	err := memoryStorage.Operations().InsertProvisioningOperation(op)
+	require.NoError(t, err)
+
+	// when
+	op, when, err := step.Run(op, fixLogger())
+
+	// then
+	ensureOperationIsRepeated(t, err, when)
 }
 
 // operationManager.OperationFailed(...)
