@@ -7,14 +7,14 @@ The Kyna Environment Broker provides the following ways to authorize users.
 To access the Kyma Environment Broker endpoints with basic authorization enabled, you must specify an Authorization Basic token header:
 
 ```
-Authorization: Basic YnJva2VyOkVVMmpLQmVKOGc=
+Authorization: Basic {BASE64_ENCODED_CREDENTIALS}
 ```
 
 >**NOTE**: The basic auth implementation is currently being replaced by the Oauth2 implementation and will be deprecated soon.
 
 ## Oauth2
 
-The Kyma Environment Broker allows to authorize users using the Oauth authentication. It is using the [ApiRule](https://github.com/kyma-project/kyma/blob/master/docs/api-gateway-v2/06-01-apirule.md) to provide a VirtualService and [Oathkeeper Access Rules](https://www.ory.sh/docs/oathkeeper/api-access-rules) according to the details specified in the CR.
+The Kyma Environment Broker allows to authorize users using the OAuth2 authorization. It is using the [ApiRule](https://github.com/kyma-project/kyma/blob/master/docs/api-gateway-v2/06-01-apirule.md) to provide a VirtualService and [Oathkeeper Access Rules](https://www.ory.sh/docs/oathkeeper/api-access-rules) according to the details specified in the CR.
 To authorize with the Kyma Environment Broker, use an OAuth2 client registered through the Hydra Maester controller. Look for more information [here](https://github.com/kyma-project/kyma/blob/master/docs/api-gateway-v2/08-01-exposesecure.md#register-an-oauth2-client-and-get-tokens).
 
 To access the Kyma Environment Broker endpoints with OAuth2 authorization enabled, use the `/oauth` prefix. For example:
@@ -47,7 +47,7 @@ Follow the tutorial to obtain a new access token.
       - "client_credentials"
     scope: "broker:write"
     secretName: $CLIENT_NAME
-  EOF
+EOF
   ```
 
 2. Export the credentials of the created client as environment variables. Run:
