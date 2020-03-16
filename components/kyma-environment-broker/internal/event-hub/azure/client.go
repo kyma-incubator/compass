@@ -1,12 +1,13 @@
 package azure
 
 import (
+	"fmt"
+
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
-	log "github.com/sirupsen/logrus"
 )
 
 type HyperscalerProvider interface {
-	GetClientOrDie(config *Config) NamespaceClientInterface
+	GetClient(config *Config) (EventhubsInterface, error)
 }
 
 var _ HyperscalerProvider = (*azureClient)(nil)
@@ -17,19 +18,19 @@ func NewAzureClient() HyperscalerProvider {
 	return &azureClient{}
 }
 
-func (ac *azureClient) GetClientOrDie(config *Config) NamespaceClientInterface {
-	// TODO(nachtmaar): don't die here, instead return error
+// GetClient gets a client for interacting with Azure EventHubs
+func (ac *azureClient) GetClient(config *Config) (EventhubsInterface, error) {
 	nsClient := eventhub.NewNamespacesClient(config.subscriptionID)
 
 	authorizer, err := GetResourceManagementAuthorizer(config)
 	if err != nil {
-		log.Fatalf("Failed to initialize authorizer with error: %v", err)
+		return nil, fmt.Errorf("failed to initialize authorizer with error: %w", err)
 	}
 	nsClient.Authorizer = authorizer
 
 	if err = nsClient.AddToUserAgent(config.userAgent); err != nil {
-		log.Fatalf("Failed to add use agent [%s] with error: %v", config.userAgent, err)
+		return nil, fmt.Errorf("failed to add use agent [%s] with error: %w", config.userAgent, err)
 	}
 
-	return NewNamespaceClient(nsClient)
+	return NewNamespaceClient(nsClient), nil
 }

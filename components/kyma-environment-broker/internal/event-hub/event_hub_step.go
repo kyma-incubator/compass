@@ -80,7 +80,12 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	// TODO(nachtmaar): handle error
 
 	// create hyperscaler client
-	namespaceClient := p.hyperscalerProvider.GetClientOrDie(azureCfg)
+	namespaceClient, err := p.hyperscalerProvider.GetClient(azureCfg)
+	// TODO(nachtmaar): add test case
+	if err != nil {
+		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
+		return p.operationManager.OperationFailed(operation, errorMessage)
+	}
 
 	// create Resource Group
 	groupName := pp.Parameters.Name
@@ -102,7 +107,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
 
 	// get EventHubs Namespace secret
-	accessKeys, err := namespaceClient.GetAccessKeys(p.context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
+	accessKeys, err := namespaceClient.GetEventhubAccessKeys(p.context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
 		log.Errorf("unable to retrieve access keys to azure event-hub namespace")
 		return p.retryOperationOnce(operation, time.Second*10)

@@ -8,13 +8,13 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 )
 
-type NamespaceClientInterface interface {
-	GetAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
+type EventhubsInterface interface {
+	GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
 	CreateResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error)
 	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string) (*eventhub.EHNamespace, error)
 }
 
-var _ NamespaceClientInterface = (*NamespaceClient)(nil)
+var _ EventhubsInterface = (*NamespaceClient)(nil)
 
 type NamespaceClient struct {
 	// the actual azure client
@@ -26,12 +26,18 @@ func NewNamespaceClient(client eventhub.NamespacesClient) *NamespaceClient {
 		eventhubNamespaceClient: client,
 	}
 }
-func (nc *NamespaceClient) GetAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
+func (nc *NamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
 	return nc.eventhubNamespaceClient.ListKeys(ctx, resourceGroupName, namespaceName, authorizationRuleName)
 }
 
 func (nc *NamespaceClient) CreateResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error) {
-	return PersistResourceGroup(ctx, config, name)
+	client, err := getGroupsClient(config)
+	if err != nil {
+		return resources.Group{}, err
+	}
+	// we need to use a copy of the location, because the following azure call will modify it
+	locationCopy := config.GetLocation()
+	return client.CreateOrUpdate(ctx, name, resources.Group{Location: &locationCopy})
 }
 
 func (nc *NamespaceClient) CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string) (*eventhub.EHNamespace, error) {

@@ -34,7 +34,7 @@ func fixLogger() logrus.FieldLogger {
 }
 
 // ensure the fake client is implementing the interface
-var _ azure.NamespaceClientInterface = (*FakeNamespaceClient)(nil)
+var _ azure.EventhubsInterface = (*FakeNamespaceClient)(nil)
 
 /// A fake client for Azure EventHubs Namespace handling
 type FakeNamespaceClient struct {
@@ -42,7 +42,7 @@ type FakeNamespaceClient struct {
 	listError                      error
 }
 
-func (nc *FakeNamespaceClient) GetAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
+func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
 	return eventhub.AccessKeys{
 		PrimaryConnectionString: ptr.String("Endpoint=sb://name/;"),
 	}, nc.listError
@@ -60,15 +60,15 @@ func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *az
 	}, nc.persistEventhubsNamespaceError
 }
 
-func NewFakeNamespaceClientCreationError() azure.NamespaceClientInterface {
+func NewFakeNamespaceClientCreationError() azure.EventhubsInterface {
 	return &FakeNamespaceClient{persistEventhubsNamespaceError: fmt.Errorf("error while creating namespace")}
 }
 
-func NewFakeNamespaceClientListError() azure.NamespaceClientInterface {
+func NewFakeNamespaceClientListError() azure.EventhubsInterface {
 	return &FakeNamespaceClient{listError: fmt.Errorf("cannot list namespaces")}
 }
 
-func NewFakeNamespaceClientHappyPath() azure.NamespaceClientInterface {
+func NewFakeNamespaceClientHappyPath() azure.EventhubsInterface {
 	return &FakeNamespaceClient{}
 }
 
@@ -76,11 +76,11 @@ func NewFakeNamespaceClientHappyPath() azure.NamespaceClientInterface {
 var _ azure.HyperscalerProvider = (*fakeHyperscalerProvider)(nil)
 
 type fakeHyperscalerProvider struct {
-	client azure.NamespaceClientInterface
+	client azure.EventhubsInterface
 }
 
-func (ac *fakeHyperscalerProvider) GetClientOrDie(config *azure.Config) azure.NamespaceClientInterface {
-	return ac.client
+func (ac *fakeHyperscalerProvider) GetClient(config *azure.Config) (azure.EventhubsInterface, error) {
+	return ac.client, nil
 }
 
 func Test_Overrides(t *testing.T) {
@@ -346,7 +346,7 @@ func fixAccountProviderGardenerCredentialsError() automock.AccountProvider {
 	accountProvider := automock.AccountProvider{}
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
 		CredentialData: map[string][]byte{},
-	}, fmt.Errorf("ups ..."))
+	}, fmt.Errorf("ups ... "))
 	return accountProvider
 }
 
