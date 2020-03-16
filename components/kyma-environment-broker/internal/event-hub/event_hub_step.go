@@ -155,12 +155,12 @@ func getKnativeEventingOverrides() []*gqlschema.ConfigEntryInput {
 	var knativeOverrides []*gqlschema.ConfigEntryInput
 	knativeOverrides = []*gqlschema.ConfigEntryInput{
 		{
-			Key:    "knative-eventing.channel.default.apiVersion",
-			Value:  "knativekafka.kyma-project.io/v1alpha1",
+			Key:   "knative-eventing.channel.default.apiVersion",
+			Value: "knativekafka.kyma-project.io/v1alpha1",
 		},
 		{
-			Key:    "knative-eventing.channel.default.kind",
-			Value:  "KafkaChannel",
+			Key:   "knative-eventing.channel.default.kind",
+			Value: "KafkaChannel",
 		},
 	}
 	return knativeOverrides
