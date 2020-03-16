@@ -1,7 +1,7 @@
 package azure
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/Azure/go-autorest/autorest/azure"
 )
@@ -31,17 +31,16 @@ func (c *Config) GetLocation() string {
 	return c.location
 }
 
-// TODO(nachtmaar): do not panic
-func (c *Config) Environment() *azure.Environment {
+func (c *Config) Environment() (*azure.Environment, error) {
 	if c.environment != nil {
-		return c.environment
+		return c.environment, nil
 	}
 
 	env, err := azure.EnvironmentFromName(c.cloudName)
 	if err != nil {
-		log.Panicf("invalid cloud name [%s]", c.cloudName)
+		return nil, fmt.Errorf("invalid cloud name [%s]", c.cloudName)
 	}
 	c.environment = &env
 
-	return c.environment
+	return c.environment, nil
 }

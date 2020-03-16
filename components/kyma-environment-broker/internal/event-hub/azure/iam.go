@@ -27,7 +27,11 @@ func GetResourceManagementAuthorizer(config *Config) (autorest.Authorizer, error
 	var a autorest.Authorizer
 	var err error
 
-	a, err = getAuthorizerForResource(config, grantType(), config.Environment().ResourceManagerEndpoint)
+	environment, err := config.Environment()
+	if err != nil {
+		return nil, err
+	}
+	a, err = getAuthorizerForResource(config, grantType(), environment.ResourceManagerEndpoint)
 
 	if err == nil {
 		// cache
@@ -45,7 +49,11 @@ func getAuthorizerForResource(config *Config, grantType OAuthGrantType, resource
 
 	switch grantType {
 	case OAuthGrantTypeServicePrincipal:
-		oauthConfig, err := adal.NewOAuthConfig(config.Environment().ActiveDirectoryEndpoint, config.tenantID)
+		environment, err := config.Environment()
+		if err != nil {
+			return nil, err
+		}
+		oauthConfig, err := adal.NewOAuthConfig(environment.ActiveDirectoryEndpoint, config.tenantID)
 		if err != nil {
 			return nil, err
 		}

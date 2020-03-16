@@ -1,8 +1,6 @@
 package azure
 
 import (
-	"fmt"
-
 	"github.com/Azure/go-autorest/autorest/azure"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -26,11 +24,6 @@ func GetConfig(clientID, clientSecret, tenantID, subscriptionID, location string
 }
 
 func GetConfigfromHAPCredentialsAndProvisioningParams(credentials hyperscaler.Credentials, parameters internal.ProvisioningParameters) (*Config, error) {
-	// TODO(nachtmaar): validate in early http request
-	if parameters.Parameters.Region == nil {
-		return nil, fmt.Errorf("region is a required parameter")
-	}
-	// region := *parameters.Parameters.Region
 	region := "westeurope"
 	// TODO(nachtmaar): set location https://github.com/kyma-incubator/compass/issues/968
 	subscriptionID := string(credentials.CredentialData["subscriptionID"])
