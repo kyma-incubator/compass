@@ -18,8 +18,12 @@ import (
 const (
 	gardenerNamespace = "default"
 	runtimeId         = "runtimeId"
+	tenant            = "tenant"
+	subAccountId      = "sub-account"
 	operationId       = "operationId"
 	clusterName       = "test-cluster"
+
+	auditLogsPolicyCMName = "audit-logs-policy"
 )
 
 func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
@@ -28,12 +32,98 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{})
 	require.NoError(t, err)
 
-	cluster := model.Cluster{
-		ID: runtimeId,
+	cluster := newClusterConfig("test-cluster", "", gcpGardenerConfig)
+
+	t.Run("should start provisioning", func(t *testing.T) {
+		// given
+		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, "")
+
+		// when
+		err := provisionerClient.ProvisionCluster(cluster, operationId)
+		require.NoError(t, err)
+
+		// then
+		shoot, err := shootClient.Get(clusterName, v1.GetOptions{})
+		require.NoError(t, err)
+		assertAnnotation(t, shoot, operationIdAnnotation, operationId)
+		assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
+		assertAnnotation(t, shoot, provisioningStepAnnotation, ProvisioningInProgressStep.String())
+	})
+
+	for _, testCase := range []struct {
+		description      string
+		clusterName      string
+		subAccountId     string
+		configMapName    string
+		auditLogsEnabled bool
+	}{
+		{
+			description:      "audit logs enabled",
+			clusterName:      "test-1",
+			subAccountId:     subAccountId,
+			configMapName:    auditLogsPolicyCMName,
+			auditLogsEnabled: true,
+		},
+		{
+			description:      "audit logs disabled when no sub account",
+			clusterName:      "test-2",
+			subAccountId:     "",
+			configMapName:    auditLogsPolicyCMName,
+			auditLogsEnabled: false,
+		},
+		{
+			description:      "audit logs disabled when no CM name",
+			clusterName:      "test-3",
+			subAccountId:     subAccountId,
+			configMapName:    "",
+			auditLogsEnabled: false,
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// given
+			shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+
+			provisionerClient := NewProvisioner(gardenerNamespace, shootClient, testCase.configMapName)
+
+			// when
+			err := provisionerClient.ProvisionCluster(newClusterConfig(testCase.clusterName, testCase.subAccountId, gcpGardenerConfig), operationId)
+			require.NoError(t, err)
+
+			// then
+			shoot, err := shootClient.Get(testCase.clusterName, v1.GetOptions{})
+			require.NoError(t, err)
+			assertAnnotation(t, shoot, operationIdAnnotation, operationId)
+			assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
+			assertAnnotation(t, shoot, provisioningStepAnnotation, ProvisioningInProgressStep.String())
+
+			if testCase.auditLogsEnabled {
+				assertAnnotation(t, shoot, auditLogsAnnotation, testCase.subAccountId)
+
+				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer)
+				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig)
+				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy)
+				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef)
+				assert.Equal(t, auditLogsPolicyCMName, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef.Name)
+			} else {
+				assertNoAnnotation(t, shoot, auditLogsAnnotation)
+				assert.Nil(t, shoot.Spec.Kubernetes.KubeAPIServer)
+			}
+		})
+	}
+
+}
+
+func newClusterConfig(name, subAccountId string, providerConfig model.GardenerProviderConfig) model.Cluster {
+	return model.Cluster{
+		ID:           runtimeId,
+		Tenant:       tenant,
+		SubAccountId: subAccountId,
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
 			ClusterID:              runtimeId,
-			Name:                   clusterName,
+			Name:                   name,
 			ProjectName:            "project-name",
 			KubernetesVersion:      "1.16",
 			NodeCount:              4,
@@ -48,28 +138,9 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 			AutoScalerMax:          5,
 			MaxSurge:               25,
 			MaxUnavailable:         1,
-			GardenerProviderConfig: gcpGardenerConfig,
+			GardenerProviderConfig: providerConfig,
 		},
 	}
-
-	t.Run("should start provisioning", func(t *testing.T) {
-		// given
-		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
-
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient)
-
-		// when
-		err := provisionerClient.ProvisionCluster(cluster, operationId)
-		require.NoError(t, err)
-
-		// then
-		shoot, err := shootClient.Get(clusterName, v1.GetOptions{})
-		require.NoError(t, err)
-		assertAnnotation(t, shoot, operationIdAnnotation, operationId)
-		assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
-		assertAnnotation(t, shoot, provisioningStepAnnotation, ProvisioningInProgressStep.String())
-	})
-
 }
 
 func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
@@ -97,7 +168,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, "")
 
 		// when
 		operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
@@ -120,7 +191,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, "")
 
 		// when
 		operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
@@ -152,4 +223,16 @@ func assertAnnotation(t *testing.T, shoot *gardener_types.Shoot, name, value str
 	}
 
 	assert.Equal(t, value, val, fmt.Sprintf("invalid value for %s annotation", name))
+}
+
+func assertNoAnnotation(t *testing.T, shoot *gardener_types.Shoot, name string) {
+	annotations := shoot.Annotations
+	if annotations == nil {
+		return
+	}
+
+	_, found := annotations[name]
+	if found {
+		t.Errorf("annotation %s found when not expected", name)
+	}
 }

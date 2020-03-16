@@ -75,7 +75,6 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 	//GIVEN
 	filledAppUpdate := model.ApplicationUpdateInput{
-		Name:                "",
 		ProviderName:        str.Ptr("provider name"),
 		Description:         str.Ptr("description"),
 		HealthCheckURL:      str.Ptr("https://kyma-project.io"),
@@ -87,7 +86,6 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 	app.SetFromUpdateInput(filledAppUpdate)
 
 	//THEN
-	assert.Equal(t, filledAppUpdate.Name, app.Name)
 	assert.Equal(t, filledAppUpdate.Description, app.Description)
 	assert.Equal(t, filledAppUpdate.HealthCheckURL, app.HealthCheckURL)
 	assert.Equal(t, filledAppUpdate.IntegrationSystemID, app.IntegrationSystemID)

@@ -166,7 +166,7 @@ func TestUpdateApplication_Validation(t *testing.T) {
 	defer unregisterApplication(t, app.ID)
 
 	longDesc := strings.Repeat("a", 2001)
-	appUpdate := graphql.ApplicationUpdateInput{Name: "name", ProviderName: str.Ptr("compass"), Description: &longDesc}
+	appUpdate := graphql.ApplicationUpdateInput{ProviderName: str.Ptr("compass"), Description: &longDesc}
 	appInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(appUpdate)
 	require.NoError(t, err)
 	updateRequest := fixUpdateApplicationRequest(app.ID, appInputGQL)

@@ -1,4 +1,4 @@
-package tenantmapping
+package oathkeeper
 
 import (
 	"bytes"

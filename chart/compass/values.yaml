@@ -22,19 +22,19 @@ global:
       version: "PR-867"
     director:
       dir:
-      version: "PR-948"
+      version: "PR-961"
     gateway:
-      dir: pr/
-      version: "PR-357"
+      dir:
+      version: "PR-943"
     healthchecker:
       dir: pr/
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-911"
+      version: "PR-913"
     provisioner:
       dir:
-      version: "PR-565"
+      version: "PR-913"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -42,11 +42,11 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-565"
+      version: "PR-913"
     tests:
       director:
         dir:
-        version: "PR-935"
+        version: "PR-966"
       connector:
         dir:
         version: "02e8358c"
@@ -55,7 +55,7 @@ global:
         version: "PR-565"
       e2e_provisioning:
         dir:
-        version: "PR-945"
+        version: "6b8099b5"
       connectivity_adapter:
         dir:
         version: "PR-935"
@@ -65,6 +65,13 @@ global:
 
   director:
     port: 3000
+
+  auditlog:
+    enabled: false
+    configmap:
+      name: "compass-gateway-auditlog-config"
+    secret:
+      name: "compass-gateway-auditlog-secret"
 
   tenantConfig:
     useDefaultTenants: true
@@ -176,6 +183,13 @@ global:
     idTokenConfig:
       claims: "{\"scopes\": \"{{ print .Extra.scope }}\", \"tenant\": \"{{ print .Extra.tenant }}\", \"consumerID\": \"{{ print .Extra.consumerID}}\", \"consumerType\": \"{{ print .Extra.consumerType }}\"}"
     mutators:
+      runtimeMappingService:
+        config:
+          api:
+            url: http://compass-director.compass-system.svc.cluster.local:3000/runtime-mapping
+            retry:
+              give_up_after: 3s
+              max_delay: 2000ms
       tenantMappingService:
         config:
           api:

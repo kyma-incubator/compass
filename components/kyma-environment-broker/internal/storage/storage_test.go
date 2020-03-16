@@ -1,10 +1,12 @@
-// +build database-integration
+// +build database_integration
 
 package storage
 
 import (
 	"context"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
@@ -142,6 +144,11 @@ func TestSchemaInitializer(t *testing.T) {
 		err = svc.InsertProvisioningOperation(givenOperation)
 		require.NoError(t, err)
 
+		ops, err := svc.GetOperationsInProgressByType(dbsession.OperationTypeProvision)
+		require.NoError(t, err)
+		assert.Len(t, ops, 1)
+		assertOperation(t, givenOperation.Operation, ops[0])
+
 		gotOperation, err := svc.GetProvisioningOperationByID("operation-id")
 		require.NoError(t, err)
 
@@ -229,6 +236,15 @@ func assertProvisioningOperation(t *testing.T, expected, got internal.Provisioni
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
 	expected.ProvisioningParameters = got.ProvisioningParameters
+	assert.Equal(t, expected, got)
+}
+
+func assertOperation(t *testing.T, expected, got internal.Operation) {
+	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
+	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
+
+	expected.CreatedAt = got.CreatedAt
+	expected.UpdatedAt = got.UpdatedAt
 	assert.Equal(t, expected, got)
 }
 
