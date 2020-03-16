@@ -34,24 +34,24 @@ func newDelegator(avsConfig Config, operationsStorage storage.Operations) *deleg
 	}
 }
 
-func (del *delegator) doRun(logger logrus.FieldLogger, stepName string, operation internal.ProvisioningOperation,
-	modelSupplier func(provisioningOperation internal.ProvisioningOperation) (*basicEvaluationCreateRequest, error)) (internal.ProvisioningOperation, time.Duration, error) {
-	logger.Infof("starting the step %s", stepName)
+func (del *delegator) doRun(logger logrus.FieldLogger, operation internal.ProvisioningOperation, modelSupplier func(provisioningOperation internal.ProvisioningOperation) (*basicEvaluationCreateRequest, error)) (internal.ProvisioningOperation, time.Duration, error) {
+	logger.Infof("starting the step")
 
 	if operation.AvsEvaluationInternalId != 0 {
-		msg := fmt.Sprintf("%s has already been finished previously", stepName)
+		msg := fmt.Sprintf("step has already been finished previously")
 		return del.operationManager.OperationSucceeded(operation, msg)
 	}
 
 	evaluationObject, err := modelSupplier(operation)
 	if err != nil {
-		logger.Errorf("Step %s failed with error %v", stepName, err)
-		return del.operationManager.OperationFailedWithError(operation, err)
+		logger.Errorf("step failed with error %v", err)
+		return operation, 5 * time.Second, nil
 	}
 
 	evalResp, err := del.postRequest(evaluationObject, logger)
 	if err != nil {
-		return del.operationManager.OperationFailedWithError(operation, err)
+		logger.Errorf("post to avs failed with error %v", err)
+		return operation, 30 * time.Second, nil
 	}
 
 	operation.AvsEvaluationInternalId = evalResp.Id

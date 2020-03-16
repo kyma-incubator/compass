@@ -23,8 +23,7 @@ func (ies *InternalEvaluationStep) Name() string {
 }
 
 func (ies *InternalEvaluationStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	stepName := ies.Name()
-	return ies.delegator.doRun(logger, stepName, operation, createInternalBasicEvaluationRequest)
+	return ies.delegator.doRun(logger, operation, createInternalBasicEvaluationRequest)
 }
 
 func createInternalBasicEvaluationRequest(operations internal.ProvisioningOperation) (*basicEvaluationCreateRequest, error) {
