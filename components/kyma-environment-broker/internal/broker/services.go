@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
 )
 
 // OptionalComponentNamesProvider provides optional components names
@@ -13,12 +14,13 @@ type OptionalComponentNamesProvider interface {
 }
 
 type ServicesEndpoint struct {
-	dumper             StructDumper
+	log logrus.FieldLogger
+
 	optionalComponents OptionalComponentNamesProvider
 	enabledPlanIDs     map[string]struct{}
 }
 
-func NewServices(cfg Config, optComponentsSvc OptionalComponentNamesProvider, dumper StructDumper) *ServicesEndpoint {
+func NewServices(cfg Config, optComponentsSvc OptionalComponentNamesProvider, log logrus.FieldLogger) *ServicesEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
 		id := planIDsMapping[planName]
@@ -26,7 +28,7 @@ func NewServices(cfg Config, optComponentsSvc OptionalComponentNamesProvider, du
 	}
 
 	return &ServicesEndpoint{
-		dumper:             dumper,
+		log:                log.WithField("service", "ServicesEndpoint"),
 		optionalComponents: optComponentsSvc,
 		enabledPlanIDs:     enabledPlanIDs,
 	}
@@ -46,7 +48,7 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 		err := json.Unmarshal(plan.provisioningRawSchema, &p.Schemas.Instance.Create.Parameters)
 		b.addComponentsToSchema(&p.Schemas.Instance.Create.Parameters)
 		if err != nil {
-			b.dumper.Dump("Could not decode provisioning schema:", err.Error())
+			b.log.Errorf("Could not decode provisioning schema: %s", err)
 			return nil, err
 		}
 		availableServicePlans = append(availableServicePlans, p)
