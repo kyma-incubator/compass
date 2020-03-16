@@ -66,6 +66,7 @@ func (nc *NamespaceClient) PersistEventHubsNamespace(ctx context.Context, azureC
 	return PersistEventHubsNamespace(ctx, azureCfg, namespaceClient, groupName, namespace)
 }
 
+// TODO(nachtmaar): don't die here, instead return error
 func GetNamespacesClientOrDie(config *Config) NamespaceClientInterface {
 	nsClient := eventhub.NewNamespacesClient(config.subscriptionID)
 

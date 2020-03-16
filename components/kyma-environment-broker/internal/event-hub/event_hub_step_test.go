@@ -33,9 +33,12 @@ func fixLogger() logrus.FieldLogger {
 	return logrus.StandardLogger()
 }
 
+// ensure the fake client is implementing the interface
+var _ azure.NamespaceClientInterface = (*FakeNamespaceClient)(nil)
+
 /// A fake client for Azure EventHubs Namespace handling
 type FakeNamespaceClient struct {
-	eventHubs []eventhub.EHNamespace
+	persistEventhubsNamespaceError error
 }
 
 func (nc *FakeNamespaceClient) ListKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
@@ -64,18 +67,28 @@ func (nc *FakeNamespaceClient) PersistResourceGroup(ctx context.Context, config 
 
 func (nc *FakeNamespaceClient) PersistEventHubsNamespace(ctx context.Context, azureCfg *azure.Config, namespaceClient azure.NamespaceClientInterface, groupName, namespace string) (*eventhub.EHNamespace, error) {
 	return &eventhub.EHNamespace{
-		Name: ptr.String("my-ehnamespace"),
-	}, nil
+		Name: ptr.String(namespace),
+	}, nc.persistEventhubsNamespaceError
 }
 
-type fakeAzureClient struct{}
+func NewFakeNamespaceClientCreationError() azure.NamespaceClientInterface {
+	return &FakeNamespaceClient{persistEventhubsNamespaceError: fmt.Errorf("error while creating namespace")}
+}
 
-func (ac *fakeAzureClient) GetClientOrDie(config *azure.Config) azure.NamespaceClientInterface {
-	return &FakeNamespaceClient{}
+func NewFakeNamespaceClientHappyPath() azure.NamespaceClientInterface {
+	return &FakeNamespaceClient{nil}
 }
 
 // ensure the fake client is implementing the interface
-var _ azure.NamespaceClientInterface = (*FakeNamespaceClient)(nil)
+var _ azure.HyperscalerProvider = (*fakeHyperscalerProvider)(nil)
+
+type fakeHyperscalerProvider struct {
+	client azure.NamespaceClientInterface
+}
+
+func (ac *fakeHyperscalerProvider) GetClientOrDie(config *azure.Config) azure.NamespaceClientInterface {
+	return ac.client
+}
 
 func Test_Overrides(t *testing.T) {
 	// given
@@ -150,13 +163,31 @@ func Test_StepProvisionGardenerCredentialsError(t *testing.T) {
 	require.NoError(t, err)
 }
 
-//TODO(nachtmaar) Implemeent me
-func Test_StepPersistEventHubsNamspaceError(t *testing.T) {
-	//t.Fail()
+func Test_StepPersistEventHubsNamespaceError(t *testing.T) {
+	// given
+	memoryStorage := storage.NewMemoryStorage()
+	accountProvider := fixAccountProvider()
+	step := NewProvisionAzureEventHubStep(memoryStorage.Operations(),
+		// ups ... namespace cannot get created
+		&fakeHyperscalerProvider{client: NewFakeNamespaceClientCreationError()},
+		&accountProvider,
+		context.Background(),
+	)
+	op := fixProvisioningOperation(t)
+
+	// this is required to avoid storage retries (without this statement there will be an error => retry)
+	err := memoryStorage.Operations().InsertProvisioningOperation(op)
+	require.NoError(t, err)
+
+	// when
+	op, when, err := step.Run(op, fixLogger())
+
+	// then
+	ensureOperationIsRepeated(t, err, when)
 }
 
 func Test_StepListKeysError(t *testing.T) {
-	//t.Fail()
+	t.Fail()
 }
 
 // operationManager.OperationFailed(...)
@@ -164,12 +195,14 @@ func Test_StepListKeysError(t *testing.T) {
 // queue.go: if err == nil && when != 0 => repeat
 
 func ensureOperationIsRepeated(t *testing.T, err error, when time.Duration) {
+	t.Helper()
 	assert.Nil(t, err)
 	assert.True(t, when != 0)
 }
 
 func ensureOperationIsNotRepeated(t *testing.T, err error, when time.Duration, op internal.ProvisioningOperation) {
-	require.True(t, err != nil)
+	t.Helper()
+	require.NotNil(t, err)
 }
 
 // ensureOverrides ensures that the overrides for
@@ -177,6 +210,8 @@ func ensureOperationIsNotRepeated(t *testing.T, err error, when time.Duration, o
 // - and the default knative channel
 // is set
 func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRuntimeInput) map[string]bool {
+	t.Helper()
+
 	allOverridesFound := map[string]bool{
 		componentNameKnativeEventing:      false,
 		componentNameKnativeEventingKafka: false,
@@ -305,7 +340,7 @@ func fixAccountProviderGardenerCredentialsError() automock.AccountProvider {
 
 func fixEventHubStep(memoryStorageOp storage.Operations, accountProvider automock.AccountProvider) *ProvisionAzureEventHubStep {
 	step := NewProvisionAzureEventHubStep(memoryStorageOp,
-		&fakeAzureClient{},
+		&fakeHyperscalerProvider{client: NewFakeNamespaceClientHappyPath()},
 		&accountProvider,
 		context.Background(),
 	)

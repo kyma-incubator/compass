@@ -76,6 +76,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		return p.retryOperation(operation, errorMessage, gardenerCredentialsRetryInterval, gardenerCredentialsMaxTime, log)
 	}
 	azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp)
+	// TODO(nachtmaar): handle error
 
 	// create hyperscaler client
 	namespaceClient := p.hyperscalerProvider.GetClientOrDie(azureCfg)
