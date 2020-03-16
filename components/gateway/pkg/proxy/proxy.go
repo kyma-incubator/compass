@@ -14,7 +14,11 @@ type Proxy struct {
 	reverseProxy *httputil.ReverseProxy
 }
 
-func New(targetOrigin, proxyPath string) (*httputil.ReverseProxy, error) {
+type HTTPTransport interface {
+	RoundTrip(req *http.Request) (resp *http.Response, err error)
+}
+
+func New(targetOrigin, proxyPath string, transport HTTPTransport) (*httputil.ReverseProxy, error) {
 	targetURL, err := url.Parse(targetOrigin)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while parsing URL %s", targetOrigin)
@@ -36,7 +40,7 @@ func New(targetOrigin, proxyPath string) (*httputil.ReverseProxy, error) {
 			req.Header.Set("User-Agent", "")
 		}
 	}
-	return &httputil.ReverseProxy{Director: director}, nil
+	return &httputil.ReverseProxy{Director: director, Transport: transport}, nil
 }
 
 func requestURL(requestPath, proxyPath string) string {
