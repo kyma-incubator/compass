@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
@@ -25,7 +26,6 @@ import (
 	"github.com/gorilla/handlers"
 	gcli "github.com/machinebox/graphql"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/negroni"
 	"github.com/vrischmann/envconfig"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -166,13 +166,14 @@ func main() {
 	// create and run broker OSB API in 2 modes:
 	// with basic auth
 	// with oauth
-	brokerBasicAPI := broker.New("", kymaEnvBroker, logger, &brokerCredentials)
-	brokerAPI := broker.New("/oauth", kymaEnvBroker, logger, nil)
-	n := negroni.New(negroni.NewRecovery())
-	n.UseHandler(brokerAPI)
-	n.UseHandler(brokerBasicAPI)
+	brokerAPI := broker.New(kymaEnvBroker, logger, nil)
+	brokerBasicAPI := broker.New(kymaEnvBroker, logger, &brokerCredentials)
 
-	r := handlers.LoggingHandler(os.Stdout, n)
+	router := mux.NewRouter()
+	router.Handle("/oauth", brokerAPI)
+	router.Handle("", brokerBasicAPI)
+
+	r := handlers.LoggingHandler(os.Stdout, router)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
 }

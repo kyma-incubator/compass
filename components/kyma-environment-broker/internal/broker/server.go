@@ -17,10 +17,10 @@ type BrokerCredentials struct {
 }
 
 // copied from github.com/pivotal-cf/brokerapi/api.go
-func New(prefix string, serviceBroker domain.ServiceBroker, logger lager.Logger, brokerCredentials *BrokerCredentials) http.Handler {
+func New(serviceBroker domain.ServiceBroker, logger lager.Logger, brokerCredentials *BrokerCredentials) http.Handler {
 	router := mux.NewRouter()
 
-	AttachRoutes(router.PathPrefix(prefix).Subrouter(), serviceBroker, logger)
+	AttachRoutes(router, serviceBroker, logger)
 
 	if brokerCredentials != nil {
 		authMiddleware := auth.NewWrapper(brokerCredentials.Username, brokerCredentials.Password).Wrap

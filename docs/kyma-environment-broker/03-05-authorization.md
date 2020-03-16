@@ -33,37 +33,57 @@ Authorization: Bearer {ACCESS_TOKEN}
 
 Follow the tutorial to obtain a new access token.
 
-1. Create a OAuth2 Client:
+1. Export these values as environment variables:
 
-  ```shell
-  cat <<EOF | kubectl apply -f -
-  apiVersion: hydra.ory.sh/v1alpha1
-  kind: OAuth2Client
-  metadata:
-    name: $CLIENT_NAME
-    namespace: $CLIENT_NAMESPACE
-  spec:
-    grantTypes:
-      - "client_credentials"
-    scope: "broker:write"
-    secretName: $CLIENT_NAME
+  - The name of your client and the Secret which stores the client credentials:
+
+    ```shell
+    export CLIENT_NAME={YOUR_CLIENT_NAME}
+    ```
+
+  - The Namespace in which you want to create the client and the Secret that stores its credentials:
+
+    ```shell
+    export CLIENT_NAMESPACE={YOUR_CLIENT_NAMESPACE}
+    ```
+
+  - The domain of your cluster:
+
+    ```shell
+    export DOMAIN={CLUSTER_DOMAIN}
+    ```
+
+2. Create a OAuth2 Client:
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: hydra.ory.sh/v1alpha1
+kind: OAuth2Client
+metadata:
+  name: $CLIENT_NAME
+  namespace: $CLIENT_NAMESPACE
+spec:
+  grantTypes:
+    - "client_credentials"
+  scope: "broker:write"
+  secretName: $CLIENT_NAME
 EOF
-  ```
+```
 
-2. Export the credentials of the created client as environment variables. Run:
+3. Export the credentials of the created client as environment variables. Run:
 
-  ```shell
-  export CLIENT_ID="$(kubectl get secret -n $CLIENT_NAMESPACE $CLIENT_NAME -o jsonpath='{.data.client_id}' | base64 --decode)"
-  export CLIENT_SECRET="$(kubectl get secret -n $CLIENT_NAMESPACE $CLIENT_NAME -o jsonpath='{.data.client_secret}' | base64 --decode)"
-  ```
+```shell
+export CLIENT_ID="$(kubectl get secret -n $CLIENT_NAMESPACE $CLIENT_NAME -o jsonpath='{.data.client_id}' | base64 --decode)"
+export CLIENT_SECRET="$(kubectl get secret -n $CLIENT_NAMESPACE $CLIENT_NAME -o jsonpath='{.data.client_secret}' | base64 --decode)"
+```
 
-3. Encode your client credentials and export them as an environment variable:
+4. Encode your client credentials and export them as an environment variable:
 
-  ```shell
-  export ENCODED_CREDENTIALS=$(echo -n "$CLIENT_ID:$CLIENT_SECRET" | base64)
-  ```
+```shell
+export ENCODED_CREDENTIALS=$(echo -n "$CLIENT_ID:$CLIENT_SECRET" | base64)
+```
 
-4. Get the access token:
-  ```shell
-  curl -ik -X POST "https://oauth2.$DOMAIN/oauth2/token" -H "Authorization: Basic $ENCODED_CREDENTIALS" -F "grant_type=client_credentials" -F "scope=broker:write"
-  ```
+5. Get the access token:
+```shell
+curl -ik -X POST "https://oauth2.$DOMAIN/oauth2/token" -H "Authorization: Basic $ENCODED_CREDENTIALS" -F "grant_type=client_credentials" -F "scope=broker:write"
+```
