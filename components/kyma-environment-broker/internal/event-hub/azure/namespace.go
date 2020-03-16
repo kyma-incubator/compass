@@ -2,7 +2,6 @@ package azure
 
 import (
 	"context"
-	"log"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
@@ -10,88 +9,57 @@ import (
 )
 
 type NamespaceClientInterface interface {
-	ListKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
-	Update(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error)
-	ListComplete(ctx context.Context) (result eventhub.EHNamespaceListResultIterator, err error)
-	CreateOrUpdate(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error)
-	PersistResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error)
-	PersistEventHubsNamespace(ctx context.Context, azureCfg *Config, namespaceClient NamespaceClientInterface, groupName, namespace string) (*eventhub.EHNamespace, error)
+	GetAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
+	CreateResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error)
+	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string) (*eventhub.EHNamespace, error)
 }
+
+var _ NamespaceClientInterface = (*NamespaceClient)(nil)
 
 type NamespaceClient struct {
-	namespaceClient eventhub.NamespacesClient
+	// the actual azure client
+	eventhubNamespaceClient eventhub.NamespacesClient
 }
 
-func NewNamespaceClient(client eventhub.NamespacesClient) NamespaceClientInterface {
+func NewNamespaceClient(client eventhub.NamespacesClient) *NamespaceClient {
 	return &NamespaceClient{
-		namespaceClient: client,
+		eventhubNamespaceClient: client,
 	}
 }
-func (nc *NamespaceClient) ListKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
-	return nc.namespaceClient.ListKeys(ctx, resourceGroupName, namespaceName, authorizationRuleName)
+func (nc *NamespaceClient) GetAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
+	return nc.eventhubNamespaceClient.ListKeys(ctx, resourceGroupName, namespaceName, authorizationRuleName)
 }
 
-func (nc *NamespaceClient) Update(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
-	return nc.namespaceClient.Update(ctx, resourceGroupName, namespaceName, parameters)
-}
-
-func (nc *NamespaceClient) ListComplete(ctx context.Context) (result eventhub.EHNamespaceListResultIterator, err error) {
-	return nc.namespaceClient.ListComplete(ctx)
-}
-
-func (nc *NamespaceClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
-	future, err := nc.namespaceClient.CreateOrUpdate(ctx, resourceGroupName, namespaceName, parameters)
-	if err != nil {
-		return eventhub.EHNamespace{}, err
-	}
-
-	err = future.WaitForCompletionRef(ctx, nc.namespaceClient.Client)
-	if err != nil {
-		return eventhub.EHNamespace{}, err
-	}
-
-	result, err = future.Result(nc.namespaceClient)
-	return result, err
-}
-
-func (nc *NamespaceClient) PersistResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error) {
+func (nc *NamespaceClient) CreateResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error) {
 	return PersistResourceGroup(ctx, config, name)
 }
 
-func (nc *NamespaceClient) PersistEventHubsNamespace(ctx context.Context, azureCfg *Config, namespaceClient NamespaceClientInterface, groupName, namespace string) (*eventhub.EHNamespace, error) {
-	return PersistEventHubsNamespace(ctx, azureCfg, namespaceClient, groupName, namespace)
+func (nc *NamespaceClient) CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string) (*eventhub.EHNamespace, error) {
+	// we need to use a copy of the location, because the following azure call will modify it
+	locationCopy := azureCfg.GetLocation()
+	parameters := eventhub.EHNamespace{Location: &locationCopy}
+	ehNamespace, err := nc.createOrUpdate(ctx, groupName, namespace, parameters)
+	return &ehNamespace, err
 }
 
-// TODO(nachtmaar): don't die here, instead return error
-func GetNamespacesClientOrDie(config *Config) NamespaceClientInterface {
-	nsClient := eventhub.NewNamespacesClient(config.subscriptionID)
-
-	authorizer, err := GetResourceManagementAuthorizer(config)
-	if err != nil {
-		log.Fatalf("Failed to initialize authorizer with error: %v", err)
-	}
-	nsClient.Authorizer = authorizer
-
-	if err = nsClient.AddToUserAgent(config.userAgent); err != nil {
-		log.Fatalf("Failed to add use agent [%s] with error: %v", config.userAgent, err)
-	}
-
-	return NewNamespaceClient(nsClient)
-}
-
-// MarkNamespaceAsUsed sets a tag to indicate that the Namespace is used
-
-// GetResourceGroup extract the ResouceGroup from a given EventHub Namespace
+// GetResourceGroup extract the ResourceGroup from a given EventHub Namespace
 func GetResourceGroup(namespace eventhub.EHNamespace) string {
 	// id has the following format "/subscriptions/<subscription>/resourceGroups/<resource-group>/providers/Microsoft.EventHub/namespaces/<namespace-name>"
 	// the code extract <resource-group> from the string
 	return strings.Split(strings.Split(*namespace.ID, "resourceGroups/")[1], "/")[0]
 }
 
-func PersistEventHubsNamespace(ctx context.Context, azureCfg *Config, namespaceClient NamespaceClientInterface, groupName, namespace string) (*eventhub.EHNamespace, error) {
-	// we need to use a copy of the location, because the following azure call will modify it
-	locationCopy := azureCfg.GetLocation()
-	parameters := eventhub.EHNamespace{Location: &locationCopy}
-	ehNamespace, err := namespaceClient.CreateOrUpdate(ctx, groupName, namespace, parameters)
-	return &ehNamespace, err
+func (nc *NamespaceClient) createOrUpdate(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
+	future, err := nc.eventhubNamespaceClient.CreateOrUpdate(ctx, resourceGroupName, namespaceName, parameters)
+	if err != nil {
+		return eventhub.EHNamespace{}, err
+	}
+
+	err = future.WaitForCompletionRef(ctx, nc.eventhubNamespaceClient.Client)
+	if err != nil {
+		return eventhub.EHNamespace{}, err
+	}
+
+	result, err = future.Result(nc.eventhubNamespaceClient)
+	return result, err
 }

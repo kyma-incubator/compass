@@ -85,7 +85,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	// create Resource Group
 	groupName := pp.Parameters.Name
 	// TODO(nachtmaar): use different resource group name https://github.com/kyma-incubator/compass/issues/967
-	resourceGroup, err := namespaceClient.PersistResourceGroup(p.context, azureCfg, groupName)
+	resourceGroup, err := namespaceClient.CreateResourceGroup(p.context, azureCfg, groupName)
 	if err != nil {
 		log.Errorf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
 		return p.retryOperationOnce(operation, time.Second*10)
@@ -94,7 +94,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	// create EventHubs Namespace
 	eventHubsNamespace := pp.Parameters.Name
-	eventHubNamespace, err := namespaceClient.PersistEventHubsNamespace(p.context, azureCfg, namespaceClient, groupName, eventHubsNamespace)
+	eventHubNamespace, err := namespaceClient.CreateNamespace(p.context, azureCfg, groupName, eventHubsNamespace)
 	if err != nil {
 		log.Errorf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
 		return p.retryOperationOnce(operation, time.Second*10)
@@ -102,7 +102,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
 
 	// get EventHubs Namespace secret
-	accessKeys, err := namespaceClient.ListKeys(p.context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
+	accessKeys, err := namespaceClient.GetAccessKeys(p.context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
 		log.Errorf("unable to retrieve access keys to azure event-hub namespace")
 		return p.retryOperationOnce(operation, time.Second*10)

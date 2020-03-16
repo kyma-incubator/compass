@@ -31,6 +31,7 @@ func (c *Config) GetLocation() string {
 	return c.location
 }
 
+// TODO(nachtmaar): do not panic
 func (c *Config) Environment() *azure.Environment {
 	if c.environment != nil {
 		return c.environment

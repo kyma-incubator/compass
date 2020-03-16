@@ -42,31 +42,19 @@ type FakeNamespaceClient struct {
 	listError                      error
 }
 
-func (nc *FakeNamespaceClient) ListKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
+func (nc *FakeNamespaceClient) GetAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
 	return eventhub.AccessKeys{
 		PrimaryConnectionString: ptr.String("Endpoint=sb://name/;"),
 	}, nc.listError
 }
 
-func (nc *FakeNamespaceClient) Update(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
-	return parameters, nil
-}
-
-func (nc *FakeNamespaceClient) ListComplete(ctx context.Context) (result eventhub.EHNamespaceListResultIterator, err error) {
-	return eventhub.EHNamespaceListResultIterator{}, nc.listError
-}
-
-func (nc *FakeNamespaceClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
-	return eventhub.EHNamespace{}, nil
-}
-
-func (nc *FakeNamespaceClient) PersistResourceGroup(ctx context.Context, config *azure.Config, name string) (resources.Group, error) {
+func (nc *FakeNamespaceClient) CreateResourceGroup(ctx context.Context, config *azure.Config, name string) (resources.Group, error) {
 	return resources.Group{
 		Name: ptr.String("my-resourcegroup"),
 	}, nil
 }
 
-func (nc *FakeNamespaceClient) PersistEventHubsNamespace(ctx context.Context, azureCfg *azure.Config, namespaceClient azure.NamespaceClientInterface, groupName, namespace string) (*eventhub.EHNamespace, error) {
+func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *azure.Config, groupName, namespace string) (*eventhub.EHNamespace, error) {
 	return &eventhub.EHNamespace{
 		Name: ptr.String(namespace),
 	}, nc.persistEventhubsNamespaceError
