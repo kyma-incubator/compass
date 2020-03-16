@@ -24,12 +24,12 @@ func (ac *azureClient) GetClient(config *Config) (EventhubsInterface, error) {
 
 	authorizer, err := GetResourceManagementAuthorizer(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize authorizer with error: %w", err)
+		return nil, fmt.Errorf("failed to initialize authorizer with error: %v", err)
 	}
 	nsClient.Authorizer = authorizer
 
 	if err = nsClient.AddToUserAgent(config.userAgent); err != nil {
-		return nil, fmt.Errorf("failed to add use agent [%s] with error: %w", config.userAgent, err)
+		return nil, fmt.Errorf("failed to add use agent [%s] with error: %v", config.userAgent, err)
 	}
 
 	return NewNamespaceClient(nsClient), nil
