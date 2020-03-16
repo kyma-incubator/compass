@@ -60,6 +60,11 @@ type ProvisioningOperation struct {
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
 func NewProvisioningOperation(instanceID string, parameters ProvisioningParameters) (ProvisioningOperation, error) {
+	return NewProvisioningOperationWithID(uuid.New().String(), instanceID, parameters)
+}
+
+// NewProvisioningOperationWithID creates a fresh (just starting) instance of the ProvisioningOperation with provided ID
+func NewProvisioningOperationWithID(operationID, instanceID string, parameters ProvisioningParameters) (ProvisioningOperation, error) {
 	params, err := json.Marshal(parameters)
 	if err != nil {
 		return ProvisioningOperation{}, errors.Wrap(err, "while marshaling provisioning parameters")
@@ -67,7 +72,7 @@ func NewProvisioningOperation(instanceID string, parameters ProvisioningParamete
 
 	return ProvisioningOperation{
 		Operation: Operation{
-			ID:          uuid.New().String(),
+			ID:          operationID,
 			Version:     0,
 			Description: "Operation created",
 			InstanceID:  instanceID,

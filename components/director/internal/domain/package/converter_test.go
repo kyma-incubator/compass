@@ -97,13 +97,12 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 			InstanceAuthRequestJSONSchema: sql.NullString{},
 			DefaultInstanceAuth:           sql.NullString{},
 		}
-		emptyString := ""
 		expectedModel := &model.Package{
 			ID:                             packageID,
 			TenantID:                       tenantID,
 			ApplicationID:                  appID,
 			Name:                           name,
-			Description:                    &emptyString,
+			Description:                    nil,
 			InstanceAuthRequestInputSchema: nil,
 			DefaultInstanceAuth:            nil,
 		}

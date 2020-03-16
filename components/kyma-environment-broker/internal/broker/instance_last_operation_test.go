@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,7 +27,7 @@ func TestLastOperation_LastOperation(t *testing.T) {
 	assert.NoError(t, err)
 
 	// #create LastOperation endpoint
-	lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), &broker.DumyDumper{})
+	lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), logrus.StandardLogger())
 
 	// when
 	response, err := lastOperationEndpoint.LastOperation(context.TODO(), instID, domain.PollDetails{OperationData: operationID})
