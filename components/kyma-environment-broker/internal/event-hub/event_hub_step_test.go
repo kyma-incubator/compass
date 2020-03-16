@@ -77,10 +77,25 @@ var _ azure.HyperscalerProvider = (*fakeHyperscalerProvider)(nil)
 
 type fakeHyperscalerProvider struct {
 	client azure.EventhubsInterface
+	err    error
 }
 
 func (ac *fakeHyperscalerProvider) GetClient(config *azure.Config) (azure.EventhubsInterface, error) {
-	return ac.client, nil
+	return ac.client, ac.err
+}
+
+func NewFakeHyperscalerProvider(client azure.EventhubsInterface) azure.HyperscalerProvider {
+	return &fakeHyperscalerProvider{
+		client: client,
+		err:    nil,
+	}
+}
+
+func NewFakeHyperscalerProviderError() azure.HyperscalerProvider {
+	return &fakeHyperscalerProvider{
+		client: nil,
+		err:    fmt.Errorf("ups ... "),
+	}
 }
 
 func Test_Overrides(t *testing.T) {
@@ -162,7 +177,7 @@ func Test_StepPersistEventHubsNamespaceError(t *testing.T) {
 	accountProvider := fixAccountProvider()
 	step := NewProvisionAzureEventHubStep(memoryStorage.Operations(),
 		// ups ... namespace cannot get created
-		&fakeHyperscalerProvider{client: NewFakeNamespaceClientCreationError()},
+		NewFakeHyperscalerProvider(NewFakeNamespaceClientCreationError()),
 		&accountProvider,
 		context.Background(),
 	)
@@ -185,7 +200,7 @@ func Test_StepListKeysError(t *testing.T) {
 	accountProvider := fixAccountProvider()
 	step := NewProvisionAzureEventHubStep(memoryStorage.Operations(),
 		// ups ... namespace cannot get listed
-		&fakeHyperscalerProvider{client: NewFakeNamespaceClientListError()},
+		NewFakeHyperscalerProvider(NewFakeNamespaceClientListError()),
 		&accountProvider,
 		context.Background(),
 	)
@@ -200,6 +215,33 @@ func Test_StepListKeysError(t *testing.T) {
 
 	// then
 	ensureOperationIsRepeated(t, err, when)
+}
+
+func Test_GetConfigFromHAPError(t *testing.T) {
+	// given
+	memoryStorage := storage.NewMemoryStorage()
+	accountProvider := fixAccountProvider()
+	step := NewProvisionAzureEventHubStep(memoryStorage.Operations(),
+		// ups ... client cannot be created
+		NewFakeHyperscalerProviderError(),
+		&accountProvider,
+		context.Background(),
+	)
+	op := fixProvisioningOperation(t)
+
+	// this is required to avoid storage retries (without this statement there will be an error => retry)
+	err := memoryStorage.Operations().InsertProvisioningOperation(op)
+	require.NoError(t, err)
+
+	// when
+	op, when, err := step.Run(op, fixLogger())
+
+	// then
+	ensureOperationIsNotRepeated(t, err, when, op)
+}
+
+func Test_GetHyperscalerClientError(t *testing.T) {
+	t.Fail()
 }
 
 // operationManager.OperationFailed(...)
@@ -236,12 +278,12 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "knative-eventing.channel.default.apiVersion",
 				Value:  "knativekafka.kyma-project.io/v1alpha1",
-				Secret: ptr.Bool(false),
+				Secret: nil,
 			})
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "knative-eventing.channel.default.kind",
 				Value:  "KafkaChannel",
-				Secret: ptr.Bool(false),
+				Secret: nil,
 			})
 			allOverridesFound[componentNameKnativeEventing] = true
 			break
@@ -352,7 +394,7 @@ func fixAccountProviderGardenerCredentialsError() automock.AccountProvider {
 
 func fixEventHubStep(memoryStorageOp storage.Operations, accountProvider automock.AccountProvider) *ProvisionAzureEventHubStep {
 	step := NewProvisionAzureEventHubStep(memoryStorageOp,
-		&fakeHyperscalerProvider{client: NewFakeNamespaceClientHappyPath()},
+		NewFakeHyperscalerProvider(NewFakeNamespaceClientHappyPath()),
 		&accountProvider,
 		context.Background(),
 	)

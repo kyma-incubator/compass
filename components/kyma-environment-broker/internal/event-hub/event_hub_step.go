@@ -76,8 +76,12 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
 		return p.retryOperation(operation, errorMessage, gardenerCredentialsRetryInterval, gardenerCredentialsMaxTime, log)
 	}
+	// TODO(nachtmaar): add test case
 	azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp)
-	// TODO(nachtmaar): handle error
+	if err != nil {
+		errorMessage := fmt.Sprintf("Failed to create Azure config: %v", err)
+		return p.operationManager.OperationFailed(operation, errorMessage)
+	}
 
 	// create hyperscaler client
 	namespaceClient, err := p.hyperscalerProvider.GetClient(azureCfg)
@@ -157,12 +161,10 @@ func getKnativeEventingOverrides() []*gqlschema.ConfigEntryInput {
 		{
 			Key:    "knative-eventing.channel.default.apiVersion",
 			Value:  "knativekafka.kyma-project.io/v1alpha1",
-			Secret: ptr.Bool(false),
 		},
 		{
 			Key:    "knative-eventing.channel.default.kind",
 			Value:  "KafkaChannel",
-			Secret: ptr.Bool(false),
 		},
 	}
 	return knativeOverrides
