@@ -1,6 +1,6 @@
 # Gateway
 
-The gateway is responsible for unifying graphql schema under one service and sending requests to Director or Connector.
+Gateway is a component that aggregates Director's and Connector's GraphQL schemas under one service and then sends proper requests to the Director or Connector accordingly.
 
 ## Configuration
 
