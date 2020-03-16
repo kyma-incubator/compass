@@ -139,8 +139,6 @@ func Test_StepProvisionParametersError(t *testing.T) {
 	op, when, err := step.Run(op, fixLogger())
 
 	// then
-	// if the parameters are incorrect, there is no reason to retry the operation
-	// a new request has to be issued by the user
 	ensureOperationIsNotRepeated(t, err, when, op)
 	_, err = op.InputCreator.Create()
 	require.NoError(t, err)
@@ -157,19 +155,10 @@ func Test_StepProvisionGardenerCredentialsError(t *testing.T) {
 	err := memoryStorage.Operations().InsertProvisioningOperation(op)
 	require.NoError(t, err)
 
-	// when - first retry of operation
-	op.UpdatedAt = time.Now()
+	// when
 	op, when, err := step.Run(op, fixLogger())
 
 	// then
-	ensureOperationIsRepeated(t, err, when)
-
-	// when - last retry of operation
-	op.UpdatedAt = time.Now().Add(-gardenerCredentialsMaxTime)
-	op, when, err = step.Run(op, fixLogger())
-
-	// then
-	// retry at least a bit to mitigate e.g. network issues
 	ensureOperationIsNotRepeated(t, err, when, op)
 
 	_, err = op.InputCreator.Create()
@@ -193,6 +182,7 @@ func Test_StepPersistEventHubsNamespaceError(t *testing.T) {
 	require.NoError(t, err)
 
 	// when
+	op.UpdatedAt = time.Now()
 	op, when, err := step.Run(op, fixLogger())
 
 	// then
@@ -216,6 +206,7 @@ func Test_StepListKeysError(t *testing.T) {
 	require.NoError(t, err)
 
 	// when
+	op.UpdatedAt = time.Now()
 	op, when, err := step.Run(op, fixLogger())
 
 	// then
@@ -262,6 +253,7 @@ func Test_CreateResourceGroupError(t *testing.T) {
 	require.NoError(t, err)
 
 	// when
+	op.UpdatedAt = time.Now()
 	op, when, err := step.Run(op, fixLogger())
 
 	// then

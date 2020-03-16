@@ -29,8 +29,6 @@ const (
 	componentNameKnativeEventing      = "knative-eventing"
 	componentNameKnativeEventingKafka = "knative-eventing-kafka"
 	kafkaProvider                     = "azure"
-	gardenerCredentialsMaxTime        = time.Minute
-	gardenerCredentialsRetryInterval  = time.Second * 10
 )
 
 // ensure the interface is implemented
@@ -64,6 +62,8 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	// parse provisioning parameters
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
+		// if the parameters are incorrect, there is no reason to retry the operation
+		// a new request has to be issued by the user
 		log.Errorf("Aborting after failing to get valid operation provisioning parameters: %v", err)
 		return p.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
@@ -73,10 +73,12 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	credentials, err := p.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
 	if err != nil {
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
-		return p.retryOperation(operation, errorMessage, gardenerCredentialsRetryInterval, gardenerCredentialsMaxTime, log)
+		// if gardener pool is not configured, retries won't solve the problem
+		return p.operationManager.OperationFailed(operation, errorMessage)
 	}
 	azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp)
 	if err != nil {
+		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure config: %v", err)
 		return p.operationManager.OperationFailed(operation, errorMessage)
 	}
@@ -84,6 +86,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	// create hyperscaler client
 	namespaceClient, err := p.hyperscalerProvider.GetClient(azureCfg)
 	if err != nil {
+		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
 		return p.operationManager.OperationFailed(operation, errorMessage)
 	}
@@ -93,8 +96,9 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	// TODO(nachtmaar): use different resource group name https://github.com/kyma-incubator/compass/issues/967
 	resourceGroup, err := namespaceClient.CreateResourceGroup(p.context, azureCfg, groupName)
 	if err != nil {
-		log.Errorf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
-		return p.retryOperationOnce(operation, time.Second*10)
+		// retrying might solve the issue while communicating with azure, e.g. network problems etc
+		errorMessage := fmt.Sprintf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
+		return p.retryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
 	log.Printf("Persisted Azure Resource Group [%s]", groupName)
 
@@ -102,16 +106,18 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	eventHubsNamespace := pp.Parameters.Name
 	eventHubNamespace, err := namespaceClient.CreateNamespace(p.context, azureCfg, groupName, eventHubsNamespace)
 	if err != nil {
-		log.Errorf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
-		return p.retryOperationOnce(operation, time.Second*10)
+		// retrying might solve the issue while communicating with azure, e.g. network problems etc
+		errorMessage := fmt.Sprintf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
+		return p.retryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
 	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
 
 	// get EventHubs Namespace secret
 	accessKeys, err := namespaceClient.GetEventhubAccessKeys(p.context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
-		log.Errorf("unable to retrieve access keys to azure event-hub namespace")
-		return p.retryOperationOnce(operation, time.Second*10)
+		// retrying might solve the issue while communicating with azure, e.g. network problems etc
+		errorMessage := fmt.Sprintf("Unable to retrieve access keys to azure event-hub namespace: %v", err)
+		return p.retryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
 	kafkaEndpoint := extractEndpoint(&accessKeys)
 	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
