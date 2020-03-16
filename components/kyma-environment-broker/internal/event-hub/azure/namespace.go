@@ -2,16 +2,12 @@ package azure
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"strconv"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 )
-
-const EHNamespaceTagInUse = "in_use"
 
 type NamespaceClientInterface interface {
 	ListKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
@@ -84,40 +80,12 @@ func GetNamespacesClientOrDie(config *Config) NamespaceClientInterface {
 }
 
 // MarkNamespaceAsUsed sets a tag to indicate that the Namespace is used
-func MarkNamespaceAsUsed(ctx context.Context, namespaceClient NamespaceClientInterface, resourceGroupName string, namespace eventhub.EHNamespace) (eventhub.EHNamespace, error) {
-	log.Printf("Marking namespace to be unused, namespace: %+v, resourceGroup: %s", namespace, resourceGroupName)
-	trueVal := strconv.FormatBool(true)
-	namespace.Tags[EHNamespaceTagInUse] = &trueVal
-	updatedEHNamespace, err := namespaceClient.Update(ctx, resourceGroupName, *namespace.Name, namespace)
-	return updatedEHNamespace, err
-}
 
 // GetResourceGroup extract the ResouceGroup from a given EventHub Namespace
 func GetResourceGroup(namespace eventhub.EHNamespace) string {
 	// id has the following format "/subscriptions/<subscription>/resourceGroups/<resource-group>/providers/Microsoft.EventHub/namespaces/<namespace-name>"
 	// the code extract <resource-group> from the string
 	return strings.Split(strings.Split(*namespace.ID, "resourceGroups/")[1], "/")[0]
-}
-
-func GetFirstUnusedNamespaces(ctx context.Context, namespaceClient NamespaceClientInterface) (eventhub.EHNamespace, error) {
-	// TODO(nachtmaar): optimize ?
-	ehNamespaceIterator, err := namespaceClient.ListComplete(ctx)
-	if err != nil {
-		return eventhub.EHNamespace{}, err
-	}
-	for ehNamespaceIterator.NotDone() {
-		ehNamespace := ehNamespaceIterator.Value()
-		if val, ok := ehNamespace.Tags[EHNamespaceTagInUse]; ok {
-			inUse, err := strconv.ParseBool(*val)
-			if err == nil && !inUse {
-				return ehNamespace, nil
-			}
-		}
-		if err := ehNamespaceIterator.NextWithContext(ctx); err != nil {
-			return eventhub.EHNamespace{}, err
-		}
-	}
-	return eventhub.EHNamespace{}, fmt.Errorf("no ready EHNamespace found")
 }
 
 func PersistEventHubsNamespace(ctx context.Context, azureCfg *Config, namespaceClient NamespaceClientInterface, groupName, namespace string) (*eventhub.EHNamespace, error) {

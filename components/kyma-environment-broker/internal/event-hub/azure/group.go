@@ -14,11 +14,6 @@ func PersistResourceGroup(ctx context.Context, config *Config, name string) (res
 	return client.CreateOrUpdate(ctx, name, resources.Group{Location: &locationCopy})
 }
 
-func DeleteGroup(ctx context.Context, config *Config, groupName string) (resources.GroupsDeleteFuture, error) {
-	groupsClient := getGroupsClientOrDie(config)
-	return groupsClient.Delete(ctx, groupName)
-}
-
 func getGroupsClientOrDie(config *Config) resources.GroupsClient {
 	client := resources.NewGroupsClient(config.subscriptionID)
 

@@ -11,12 +11,13 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/sirupsen/logrus"
 )
 
 const (

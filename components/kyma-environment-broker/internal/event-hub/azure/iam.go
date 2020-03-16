@@ -13,10 +13,7 @@ var (
 
 type OAuthGrantType int
 
-const (
-	OAuthGrantTypeServicePrincipal OAuthGrantType = iota
-	OAuthGrantTypeDeviceFlow
-)
+const OAuthGrantTypeServicePrincipal OAuthGrantType = iota
 
 func grantType() OAuthGrantType {
 	return OAuthGrantTypeServicePrincipal
