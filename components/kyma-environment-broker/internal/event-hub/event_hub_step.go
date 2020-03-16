@@ -80,37 +80,43 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	// create hyperscaler client
 	namespaceClient := p.hyperscalerProvider.GetClientOrDie(azureCfg)
 
+	// create Resource Group
 	groupName := pp.Parameters.Name
-	eventHubsNamespace := pp.Parameters.Name
-
 	// TODO(nachtmaar): use different resource group name https://github.com/kyma-incubator/compass/issues/967
 	resourceGroup, err := namespaceClient.PersistResourceGroup(p.context, azureCfg, groupName)
 	if err != nil {
 		log.Errorf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
-		return p.operationManager.OperationFailed(operation, "error creating resource group for azure event-hubs")
+		return p.retryOperationOnce(operation, time.Second*10)
 	}
 	log.Printf("Persisted Azure Resource Group [%s]", groupName)
 
+	// create EventHubs Namespace
+	eventHubsNamespace := pp.Parameters.Name
 	eventHubNamespace, err := namespaceClient.PersistEventHubsNamespace(p.context, azureCfg, namespaceClient, groupName, eventHubsNamespace)
 	if err != nil {
 		log.Errorf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
-		return p.operationManager.OperationFailed(operation, "error creating namespaces for azure event-hubs")
+		return p.retryOperationOnce(operation, time.Second*10)
 	}
 	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
 
+	// get EventHubs Namespace secret
 	accessKeys, err := namespaceClient.ListKeys(p.context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
 		return p.operationManager.OperationFailed(operation, "unable to retrieve access keys to azure event-hub namespace")
 	}
-
 	kafkaEndpoint := extractEndpoint(&accessKeys)
 	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
+	// set installation overrides
 	operation.InputCreator.SetOverrides(componentNameKnativeEventing, getKnativeEventingOverrides())
 	operation.InputCreator.SetOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
 
 	return operation, 0, nil
+}
+
+func (p *ProvisionAzureEventHubStep) retryOperationOnce(operation internal.ProvisioningOperation, wait time.Duration) (internal.ProvisioningOperation, time.Duration, error) {
+	return operation, wait, nil
 }
 
 // TODO(nachtmaar): move to common package ?
@@ -122,7 +128,7 @@ func (p *ProvisionAzureEventHubStep) retryOperation(operation internal.Provision
 	if dur < maxTime {
 		return operation, retryInterval, nil
 	}
-	fmt.Errorf("Aborting after %s of failing retries\n", maxTime.String())
+	log.Errorf("Aborting after %s of failing retries\n", maxTime.String())
 	return p.operationManager.OperationFailed(operation, errorMessage)
 }
 
@@ -141,12 +147,14 @@ func getKnativeEventingOverrides() []*gqlschema.ConfigEntryInput {
 	var knativeOverrides []*gqlschema.ConfigEntryInput
 	knativeOverrides = []*gqlschema.ConfigEntryInput{
 		{
-			Key:   "knative-eventing.channel.default.apiVersion",
-			Value: "knativekafka.kyma-project.io/v1alpha1",
+			Key:    "knative-eventing.channel.default.apiVersion",
+			Value:  "knativekafka.kyma-project.io/v1alpha1",
+			Secret: ptr.Bool(false),
 		},
 		{
-			Key:   "knative-eventing.channel.default.kind",
-			Value: "KafkaChannel",
+			Key:    "knative-eventing.channel.default.kind",
+			Value:  "KafkaChannel",
+			Secret: ptr.Bool(false),
 		},
 	}
 	return knativeOverrides
