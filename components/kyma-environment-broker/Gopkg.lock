@@ -468,10 +468,9 @@
   version = "v1.2"
 
 [[projects]]
-  digest = "1:5da7f62e1592f15a91cd62d149e7fa470515c65bd046e9fb167771473d4e77d7"
+  digest = "1:6e4b922386609d8c0de747b071320f5b1bfde0cc33005d27cbf58d393b830644"
   name = "github.com/pivotal-cf/brokerapi"
   packages = [
-    "domain",
     "v7/auth",
     "v7/domain",
     "v7/domain/apiresponses",
@@ -553,14 +552,6 @@
   pruneopts = "UT"
   revision = "0c6fcb48ff1cfa4d82a45b587e76b3588a4dc192"
   version = "v0.0.10"
-
-[[projects]]
-  digest = "1:d688f4ad71b5dfad95c2d74cb0feac09f8f3c32ae5cecc078230dbdeece39e53"
-  name = "github.com/urfave/negroni"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "c6a59be0ce122566695fbd5e48a77f8f10c8a63a"
-  version = "v1.0.0"
 
 [[projects]]
   digest = "1:831b94be76a8fe3b3b882e52752423070f1b2d7940ecc381cdac66ac01492bfd"
@@ -1040,7 +1031,6 @@
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
     "github.com/machinebox/graphql",
-    "github.com/pivotal-cf/brokerapi/domain",
     "github.com/pivotal-cf/brokerapi/v7/auth",
     "github.com/pivotal-cf/brokerapi/v7/domain",
     "github.com/pivotal-cf/brokerapi/v7/domain/apiresponses",
@@ -1053,7 +1043,6 @@
     "github.com/stretchr/testify/require",
     "github.com/testcontainers/testcontainers-go",
     "github.com/testcontainers/testcontainers-go/wait",
-    "github.com/urfave/negroni",
     "github.com/vrischmann/envconfig",
     "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",

@@ -1,8 +1,6 @@
 package broker
 
 import (
-	"net/http"
-
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
 	"github.com/pivotal-cf/brokerapi/v7/auth"
@@ -17,18 +15,18 @@ type BrokerCredentials struct {
 }
 
 // copied from github.com/pivotal-cf/brokerapi/api.go
-func New(serviceBroker domain.ServiceBroker, logger lager.Logger, brokerCredentials *BrokerCredentials) http.Handler {
+func New(serviceBroker domain.ServiceBroker, logger lager.Logger, brokerCredentials *BrokerCredentials) *mux.Router {
 	router := mux.NewRouter()
 
 	AttachRoutes(router, serviceBroker, logger)
 
+	router.Use(middlewares.AddCorrelationIDToContext)
 	if brokerCredentials != nil {
 		authMiddleware := auth.NewWrapper(brokerCredentials.Username, brokerCredentials.Password).Wrap
 		router.Use(authMiddleware)
 	}
 	apiVersionMiddleware := middlewares.APIVersionMiddleware{LoggerFactory: logger}
 
-	router.Use(middlewares.AddCorrelationIDToContext)
 	router.Use(middlewares.AddOriginatingIdentityToContext)
 	router.Use(apiVersionMiddleware.ValidateAPIVersionHdr)
 	router.Use(middlewares.AddInfoLocationToContext)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
@@ -165,11 +164,11 @@ func main() {
 	brokerAPI := broker.New(kymaEnvBroker, logger, nil)
 	brokerBasicAPI := broker.New(kymaEnvBroker, logger, &brokerCredentials)
 
-	router := mux.NewRouter()
-	router.Handle("/oauth", brokerAPI)
-	router.Handle("", brokerBasicAPI)
+	sm := http.NewServeMux()
+	sm.Handle("/", brokerBasicAPI)
+	sm.Handle("/oauth/", http.StripPrefix("/oauth", brokerAPI))
 
-	r := handlers.LoggingHandler(os.Stdout, router)
+	r := handlers.LoggingHandler(os.Stdout, sm)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
 }
