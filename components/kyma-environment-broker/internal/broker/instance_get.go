@@ -8,24 +8,27 @@ import (
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type GetInstanceEndpoint struct {
 	instancesStorage storage.Instances
-	dumper           StructDumper
+
+	log logrus.FieldLogger
 }
 
-func NewGetInstance(instancesStorage storage.Instances, dumper StructDumper) *GetInstanceEndpoint {
+func NewGetInstance(instancesStorage storage.Instances, log logrus.FieldLogger) *GetInstanceEndpoint {
 	return &GetInstanceEndpoint{
 		instancesStorage: instancesStorage,
-		dumper:           dumper,
+		log:              log.WithField("service", "GetInstanceEndpoint"),
 	}
 }
 
 // GetInstance fetches information about a service instance
 //   GET /v2/service_instances/{instance_id}
 func (b *GetInstanceEndpoint) GetInstance(ctx context.Context, instanceID string) (domain.GetInstanceDetailsSpec, error) {
-	b.dumper.Dump("GetInstance instanceID:", instanceID)
+	logger := b.log.WithField("instanceID", instanceID)
+	b.log.Infof("GetInstance instanceID:", instanceID)
 
 	inst, err := b.instancesStorage.GetByID(instanceID)
 	if err != nil {
@@ -35,8 +38,8 @@ func (b *GetInstanceEndpoint) GetInstance(ctx context.Context, instanceID string
 	decodedParams := make(map[string]interface{})
 	err = json.Unmarshal([]byte(inst.ProvisioningParameters), &decodedParams)
 	if err != nil {
-		b.dumper.Dump("unable to decode instance parameters for instanceID: ", instanceID)
-		b.dumper.Dump("  parameters: ", inst.ProvisioningParameters)
+		logger.Errorf("unable to decode instance parameters %s", inst.ProvisioningParameters)
+		return domain.GetInstanceDetailsSpec{}, errors.Wrapf(err, "while getting instance from storage")
 	}
 
 	spec := domain.GetInstanceDetailsSpec{
