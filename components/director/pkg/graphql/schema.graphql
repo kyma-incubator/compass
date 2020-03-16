@@ -37,8 +37,7 @@ enum APISpecType {
 
 enum ApplicationStatusCondition {
 	INITIAL
-	UNKNOWN
-	READY
+	CONNECTED
 	FAILED
 }
 
@@ -100,7 +99,7 @@ enum PackageInstanceAuthStatusCondition {
 
 enum RuntimeStatusCondition {
 	INITIAL
-	READY
+	CONNECTED
 	FAILED
 }
 
@@ -171,6 +170,7 @@ input ApplicationRegisterInput {
 	documents: [DocumentInput!] @deprecated(reason: "Use package.packages.documents")
 	packages: [PackageCreateInput!]
 	integrationSystemID: ID
+	statusCondition: ApplicationStatusCondition
 }
 
 input ApplicationTemplateInput {
@@ -186,6 +186,7 @@ input ApplicationUpdateInput {
 	description: String
 	healthCheckURL: String
 	integrationSystemID: ID
+	statusCondition: ApplicationStatusCondition
 }
 
 input AuthInput {
@@ -347,6 +348,7 @@ input RuntimeInput {
 	name: String!
 	description: String
 	labels: Labels
+	statusCondition: RuntimeStatusCondition
 }
 
 input TemplateValueInput {
@@ -843,6 +845,7 @@ type Mutation {
 	"""
 	**Examples**
 	- [register application with packages](examples/register-application/register-application-with-packages.graphql)
+	- [register application with status](examples/register-application/register-application-with-status.graphql)
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""

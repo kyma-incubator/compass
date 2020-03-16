@@ -2926,8 +2926,7 @@ enum APISpecType {
 
 enum ApplicationStatusCondition {
 	INITIAL
-	UNKNOWN
-	READY
+	CONNECTED
 	FAILED
 }
 
@@ -2989,7 +2988,7 @@ enum PackageInstanceAuthStatusCondition {
 
 enum RuntimeStatusCondition {
 	INITIAL
-	READY
+	CONNECTED
 	FAILED
 }
 
@@ -3060,6 +3059,7 @@ input ApplicationRegisterInput {
 	documents: [DocumentInput!] @deprecated(reason: "Use package.packages.documents")
 	packages: [PackageCreateInput!]
 	integrationSystemID: ID
+	statusCondition: ApplicationStatusCondition
 }
 
 input ApplicationTemplateInput {
@@ -3075,6 +3075,7 @@ input ApplicationUpdateInput {
 	description: String
 	healthCheckURL: String
 	integrationSystemID: ID
+	statusCondition: ApplicationStatusCondition
 }
 
 input AuthInput {
@@ -3236,6 +3237,7 @@ input RuntimeInput {
 	name: String!
 	description: String
 	labels: Labels
+	statusCondition: RuntimeStatusCondition
 }
 
 input TemplateValueInput {
@@ -3732,6 +3734,7 @@ type Mutation {
 	"""
 	**Examples**
 	- [register application with packages](examples/register-application/register-application-with-packages.graphql)
+	- [register application with status](examples/register-application/register-application-with-status.graphql)
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""
@@ -18569,6 +18572,12 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "statusCondition":
+			var err error
+			it.StatusCondition, err = ec.unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -18644,6 +18653,12 @@ func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Con
 		case "integrationSystemID":
 			var err error
 			it.IntegrationSystemID, err = ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "statusCondition":
+			var err error
+			it.StatusCondition, err = ec.unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19306,6 +19321,12 @@ func (ec *executionContext) unmarshalInputRuntimeInput(ctx context.Context, obj 
 		case "labels":
 			var err error
 			it.Labels, err = ec.unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "statusCondition":
+			var err error
+			it.StatusCondition, err = ec.unmarshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -23948,6 +23969,30 @@ func (ec *executionContext) marshalOApplicationEventingConfiguration2ᚖgithub�
 	return ec._ApplicationEventingConfiguration(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, v interface{}) (ApplicationStatusCondition, error) {
+	var res ApplicationStatusCondition
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, sel ast.SelectionSet, v ApplicationStatusCondition) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, v interface{}) (*ApplicationStatusCondition, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, sel ast.SelectionSet, v *ApplicationStatusCondition) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) marshalOApplicationTemplate2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx context.Context, sel ast.SelectionSet, v ApplicationTemplate) graphql.Marshaler {
 	return ec._ApplicationTemplate(ctx, sel, &v)
 }
@@ -24666,6 +24711,30 @@ func (ec *executionContext) marshalORuntimeEventingConfiguration2ᚖgithubᚗcom
 		return graphql.Null
 	}
 	return ec._RuntimeEventingConfiguration(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalORuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, v interface{}) (RuntimeStatusCondition, error) {
+	var res RuntimeStatusCondition
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalORuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, sel ast.SelectionSet, v RuntimeStatusCondition) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, v interface{}) (*RuntimeStatusCondition, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalORuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, sel ast.SelectionSet, v *RuntimeStatusCondition) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

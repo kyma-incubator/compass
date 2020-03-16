@@ -17,11 +17,17 @@ type Application struct {
 	IntegrationSystemID *string
 }
 
-func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput) {
+func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timestamp time.Time) {
+	if app.Status == nil {
+		app.Status = &ApplicationStatus{}
+	}
+
 	app.Description = update.Description
 	app.HealthCheckURL = update.HealthCheckURL
 	app.IntegrationSystemID = update.IntegrationSystemID
 	app.ProviderName = update.ProviderName
+	app.Status.Condition = getApplicationStatusConditionOrDefault(update.StatusCondition)
+	app.Status.Timestamp = timestamp
 }
 
 type ApplicationStatus struct {
@@ -32,10 +38,9 @@ type ApplicationStatus struct {
 type ApplicationStatusCondition string
 
 const (
-	ApplicationStatusConditionInitial ApplicationStatusCondition = "INITIAL"
-	ApplicationStatusConditionUnknown ApplicationStatusCondition = "UNKNOWN"
-	ApplicationStatusConditionReady   ApplicationStatusCondition = "READY"
-	ApplicationStatusConditionFailed  ApplicationStatusCondition = "FAILED"
+	ApplicationStatusConditionInitial   ApplicationStatusCondition = "INITIAL"
+	ApplicationStatusConditionConnected ApplicationStatusCondition = "CONNECTED"
+	ApplicationStatusConditionFailed    ApplicationStatusCondition = "FAILED"
 )
 
 type ApplicationPage struct {
@@ -56,9 +61,10 @@ type ApplicationRegisterInput struct {
 	Documents           []*DocumentInput
 	Packages            []*PackageCreateInput
 	IntegrationSystemID *string
+	StatusCondition     *ApplicationStatusCondition
 }
 
-func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, condition ApplicationStatusCondition, id, tenant string) *Application {
+func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant string) *Application {
 	if i == nil {
 		return nil
 	}
@@ -72,10 +78,19 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, condition 
 		IntegrationSystemID: i.IntegrationSystemID,
 		ProviderName:        i.ProviderName,
 		Status: &ApplicationStatus{
-			Condition: condition,
+			Condition: getApplicationStatusConditionOrDefault(i.StatusCondition),
 			Timestamp: timestamp,
 		},
 	}
+}
+
+func getApplicationStatusConditionOrDefault(in *ApplicationStatusCondition) ApplicationStatusCondition {
+	statusCondition := ApplicationStatusConditionInitial
+	if in != nil {
+		statusCondition = *in
+	}
+
+	return statusCondition
 }
 
 type ApplicationUpdateInput struct {
@@ -83,4 +98,5 @@ type ApplicationUpdateInput struct {
 	Description         *string
 	HealthCheckURL      *string
 	IntegrationSystemID *string
+	StatusCondition     *ApplicationStatusCondition
 }

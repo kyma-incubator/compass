@@ -6,6 +6,7 @@ mutation {
       name: "updated-name"
       description: "updated-description"
       labels: { key: ["values", "aabbcc"] }
+      statusCondition: CONNECTED
     }
   ) {
     id

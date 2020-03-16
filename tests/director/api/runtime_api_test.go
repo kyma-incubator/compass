@@ -130,14 +130,15 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	// update runtime, check if only simple values are updated
 	//GIVEN
+	runtimeStatusCond := graphql.RuntimeStatusConditionConnected
 	givenInput.Name = "updated-name"
 	givenInput.Description = ptr.String("updated-description")
 	givenInput.Labels = &graphql.Labels{
 		"key": []interface{}{"values", "aabbcc"},
 	}
+	givenInput.StatusCondition = &runtimeStatusCond
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	//actualRuntime = RuntimeExt{ID: actualRuntime.ID}
 	updateRuntimeReq := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 				result: updateRuntime(id: "%s", in: %s) {
@@ -153,6 +154,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, givenInput.Name, actualRuntime.Name)
 	assert.Equal(t, *givenInput.Description, *actualRuntime.Description)
+	assert.Equal(t, runtimeStatusCond, actualRuntime.Status.Condition)
 
 	// delete runtime
 

@@ -612,14 +612,16 @@ func TestService_Update(t *testing.T) {
 
 	id := "foo"
 	tnt := "tenant"
+	conditionTimestamp := time.Now()
+	timestampGenFunc := func() time.Time { return conditionTimestamp }
 
 	appName := "initialn"
 	updatedDescription := "updatedd"
 	updatedURL := "updatedu"
-	updateInput := fixModelApplicationUpdateInput(appName, updatedDescription, updatedURL)
-	applicationModelBefore := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, "initiald", "initialu")
-	applicationModelAfter := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, updatedDescription, updatedURL)
-	intSysLabel := fixLabelInput("integrationSystemID", intSysID, id, model.ApplicationLabelableObject)
+	updateInput := fixModelApplicationUpdateInput(appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected)
+	applicationModelBefore := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, "initiald", "initialu", model.ApplicationStatusConditionConnected, conditionTimestamp)
+	applicationModelAfter := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
+	intSysLabel := fixLabelInput("integration-system-id", intSysID, id, model.ApplicationLabelableObject)
 	nameLabel := fixLabelInput("name", appName, id, model.ApplicationLabelableObject)
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
@@ -811,6 +813,7 @@ func TestService_Update(t *testing.T) {
 			intSysRepo := testCase.IntSysRepoFn()
 			lblUpsrtSvc := testCase.LabelUpsertSvcFn()
 			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, nil)
+			svc.SetTimestampGen(timestampGenFunc)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)

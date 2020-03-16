@@ -44,6 +44,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [query runtimes](./query-runtimes/query-runtimes.graphql)
 - [query tenants](./query-tenants/query-tenants.graphql)
 - [register application with packages](./register-application/register-application-with-packages.graphql)
+- [register application with status](./register-application/register-application-with-status.graphql)
 - [register application with webhooks](./register-application/register-application-with-webhooks.graphql)
 - [register application](./register-application/register-application.graphql)
 - [register application from template](./register-application-from-template/register-application-from-template.graphql)

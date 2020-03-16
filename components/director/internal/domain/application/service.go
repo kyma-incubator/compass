@@ -245,7 +245,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	}
 
 	id := s.uidService.Generate()
-	app := in.ToApplication(s.timestampGen(), model.ApplicationStatusConditionInitial, id, appTenant)
+	app := in.ToApplication(s.timestampGen(), id, appTenant)
 
 	err = s.appRepo.Create(ctx, app)
 	if err != nil {
@@ -306,7 +306,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		return errors.Wrap(err, "while getting Application")
 	}
 
-	app.SetFromUpdateInput(in)
+	app.SetFromUpdateInput(in, s.timestampGen())
 
 	err = s.appRepo.Update(ctx, app)
 	if err != nil {
