@@ -8,7 +8,7 @@ Gateway is a component that aggregates Director's and Connector's GraphQL schema
 
 Gateway binary allows you to override some configuration parameters. You can specify the following basic environment variables:
 
-| Name                             | Description                                                  | Default                  | 
+| Name                             | Description                                                  | Default value            | 
 | ---------------------------------| ------------------------------------------------------------ | ------------------------ | 
 | **APP_ADDRESS**                  | The address and port for the service to listen on            | `http://127.0.0.1:3001`  | 
 | **APP_DIRECTOR_ORIGIN**          | The address and port for the Director service to listen on   | `http://127.0.0.1:3000`  | 
@@ -17,11 +17,11 @@ Gateway binary allows you to override some configuration parameters. You can spe
 
 If you set **APP_AUDITLOG_ENABLED** to `true`, the following environment variables are required:
 
-| Name                             | Description                                                    | Default           | 
-| -------------------------------- | -------------------------------------------------------------- | ----------------- |
-| **APP_AUDITLOG_USER**            | The username to the audit log service                          |                   |
-| **APP_AUDITLOG_PASSWORD**        | The password to the audit log service                          |                   |
-| **APP_AUDITLOG_URL**             | The URL under which the audit log service is available         |                   |
-| **APP_AUDITLOG_TENANT**          | The tenant for whom the audit logs are logged                  |                   |
-| **APP_AUDITLOG_CONFIG_PATH**     | The path for logging configuration changes logs                |                   |
-| **APP_AUDITLOG_SECURITY_PATH**   | The path for logging security events                            |                   |
+| Name                             | Description                                                    | 
+| -------------------------------- | -------------------------------------------------------------- |
+| **APP_AUDITLOG_USER**            | The username to the audit log service                          |
+| **APP_AUDITLOG_PASSWORD**        | The password to the audit log service                          |
+| **APP_AUDITLOG_URL**             | The URL under which the audit log service is available         |
+| **APP_AUDITLOG_TENANT**          | The tenant for whom the audit logs are logged                  |
+| **APP_AUDITLOG_CONFIG_PATH**     | The path for logging configuration changes logs                |
+| **APP_AUDITLOG_SECURITY_PATH**   | The path for logging security events                           |
