@@ -56,7 +56,6 @@ func (p *ProvisionAzureEventHubStep) Name() string {
 	return "Provision Azure Event Hubs"
 }
 
-// TODO(nachtmaar): use structured logging
 func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperation,
 	log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
@@ -129,9 +128,8 @@ func (p *ProvisionAzureEventHubStep) retryOperationOnce(operation internal.Provi
 	return operation, wait, nil
 }
 
-// TODO(nachtmaar): move to common package ?
+// retryOperation retries an operation for at maxTime in retryInterval steps
 func (p *ProvisionAzureEventHubStep) retryOperation(operation internal.ProvisioningOperation, errorMessage string, retryInterval time.Duration, maxTime time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	// if failed retry step every 10s by next 10min
 	dur := time.Since(operation.UpdatedAt).Round(time.Minute)
 
 	log.Infof("Retrying for %s in %s steps\n", maxTime.String(), retryInterval.String())
