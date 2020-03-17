@@ -77,7 +77,10 @@ func (ws writeSession) DeleteInstance(instanceID string) dberr.Error {
 		Where(dbr.Eq("instance_id", instanceID)).
 		Exec()
 
-	return dberr.Internal("Failed to delete record from Instance table: %s", err)
+	if err != nil {
+		return dberr.Internal("Failed to delete record from Instance table: %s", err)
+	}
+	return nil
 }
 
 func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
