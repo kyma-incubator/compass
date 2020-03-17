@@ -2,7 +2,6 @@ package provisioning
 
 import (
 	"fmt"
-	azure "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/Azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -23,9 +22,6 @@ type SetupBackupStep struct {
 	bucketName string
 	zone string
 	operationManager  *process.OperationManager
-	//instanceStorage   storage.Instances
-	//provisionerClient provisioner.Client
-	azureClientInterface azure.AzureClientInterface
 	accountProvider  hyperscaler.AccountProvider
 }
 
@@ -33,11 +29,10 @@ func (s *SetupBackupStep) Name() string {
 	return "Setup_Backup"
 }
 
-func NewSetupBackupStep(os storage.Operations, accountProvider hyperscaler.AccountProvider, azureClientInterface azure.AzureClientInterface) *SetupBackupStep {
+func NewSetupBackupStep(os storage.Operations, accountProvider hyperscaler.AccountProvider) *SetupBackupStep {
 	return &SetupBackupStep{
 		operationManager:  process.NewOperationManager(os),
 		accountProvider:  accountProvider,
-		azureClientInterface: azureClientInterface,
 
 	}
 }
@@ -75,32 +70,6 @@ func (s *SetupBackupStep) Run(operation internal.ProvisioningOperation, log logr
 	}
 	switch hypType {
 	case "azure":
-		//TODO: Uncomment when we have azure client
-		//azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp, log)
-		//if err != nil {
-		//	log.Errorf("Unable to set the Azure config: %v", err)
-		//	return operation, 5 * time.Second, nil
-		//}
-		//azSacClient := s.azureClientInterface.GetStorageAccountClientOrDie(azureCfg)
-		//ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-		//defer cancel()
-		//name := "foobar"
-		//typeSac := "Microsoft.Storage/storageAccounts"
-		//accountName := azStorage.AccountCheckNameAvailabilityParameters{
-		//	Name: &name,
-		//	Type: &typeSac,
-		//}
-		//result, err  := azSacClient.CheckAccountNameAvailability(ctx, accountName)
-		//
-		//if err != nil {
-		//	log.Errorf("Unable to set the check if storage account name is available: %v", err)
-		//	return operation, 5 * time.Second, nil
-		//}
-		//
-		//log.Infof("result is %v", *result.NameAvailable)
-		//log.Infof("result statuscode 2 is %v", result.StatusCode)
-
-
 		backupOverrides := s.setupBackUpOverride()
 		operation.InputCreator.SetOverrides("backup-init", backupOverrides)
 	}
