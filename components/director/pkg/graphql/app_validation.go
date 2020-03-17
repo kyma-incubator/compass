@@ -1,6 +1,8 @@
 package graphql
 
 import (
+	"regexp"
+
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )
@@ -10,7 +12,7 @@ func (i ApplicationRegisterInput) Validate() error {
 		validation.Field(&i.Name, validation.Required, inputvalidation.DNSName),
 		validation.Field(&i.ProviderName, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
-		validation.Field(&i.Labels, inputvalidation.EachKey(validation.Required)),
+		validation.Field(&i.Labels, inputvalidation.EachKey(validation.Required, validation.Match(regexp.MustCompile(alpanumericUnderscoreRegexpString)))),
 		validation.Field(&i.HealthCheckURL, inputvalidation.IsURL, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.Webhooks, validation.Each(validation.Required)),
 		validation.Field(&i.APIDefinitions, inputvalidation.Each(validation.Required)),
