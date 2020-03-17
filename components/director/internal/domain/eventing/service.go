@@ -18,9 +18,9 @@ import (
 )
 
 const (
-	RuntimeEventingURLLabel      = "runtime/event_service_url"
+	RuntimeEventingURLLabel      = "runtime_eventServiceUrl"
 	EmptyEventingURL             = ""
-	RuntimeDefaultEventingLabelf = "%s/defaultEventing"
+	RuntimeDefaultEventingLabelf = "%s_defaultEventing"
 )
 
 //go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore

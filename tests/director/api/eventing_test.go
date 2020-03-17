@@ -19,7 +19,7 @@ const appEventURLFormat = "https://%s/%s/v1/events"
 func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventingAssigned(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	runtimeEventingURLLabelKey := "runtime/event_service_url"
+	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtime1Eventing := "eventing.runtime1.local"
 	runtime1EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime1Eventing)
 	runtime2EventingURL := "https://eventing.runtime2.local"
@@ -51,7 +51,7 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 func TestGetEventingConfigurationForRuntime(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	runtimeEventingURLLabelKey := "runtime/event_service_url"
+	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtimeEventingURL := "http://eventing.runtime.local"
 
 	runtime := registerRuntime(t, ctx, "runtime-eventing")
@@ -69,7 +69,7 @@ func TestGetEventingConfigurationForRuntime(t *testing.T) {
 func TestSetDefaultEventingForApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	runtimeEventingURLLabelKey := "runtime/event_service_url"
+	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtime1Eventing := "eventing.runtime1.local"
 	runtime1EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime1Eventing)
 	runtime2Eventing := "eventing.runtime2.local"
@@ -134,7 +134,7 @@ func TestEmptyEventConfigurationForApp(t *testing.T) {
 func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	runtimeEventingURLLabelKey := "runtime/event_service_url"
+	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtime1Eventing := "eventing.runtime1.local"
 	runtime1EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime1Eventing)
 	runtime2Eventing := "eventing.runtime2.local"
