@@ -2,16 +2,17 @@ package release
 
 import (
 	"bytes"
+	"io/ioutil"
+	"net/http"
+	"strings"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"net/http"
-	"strings"
-	"testing"
 )
 
 const (
