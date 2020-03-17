@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	definitionType         = "BASIC"
+	DefinitionType         = "BASIC"
 	checkType              = "HTTPSGET"
 	interval               = 180
 	timeout                = 30000
@@ -19,7 +19,7 @@ const (
 	groupId                = 8278726
 )
 
-type basicEvaluationCreateRequest struct {
+type BasicEvaluationCreateRequest struct {
 	DefinitionType   string `json:"definition_type"`
 	Name             string `json:"name"`
 	Description      string `json:"description"`
@@ -37,7 +37,7 @@ type basicEvaluationCreateRequest struct {
 	Visibility       string `json:"visibility"`
 }
 
-type basicEvaluationCreateResponse struct {
+type BasicEvaluationCreateResponse struct {
 	DefinitionType   string `json:"definition_type"`
 	Name             string `json:"name"`
 	Description      string `json:"description"`
@@ -68,11 +68,11 @@ type basicEvaluationCreateResponse struct {
 	IdOnTester                 string   `json:"id_on_tester"`
 }
 
-func newInternalBasicEvaluation(operation internal.ProvisioningOperation) (*basicEvaluationCreateRequest, error) {
+func NewInternalBasicEvaluation(operation internal.ProvisioningOperation) (*BasicEvaluationCreateRequest, error) {
 	return newBasicEvaluationCreateRequest(operation, true)
 }
 
-func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, isInternal bool) (*basicEvaluationCreateRequest, error) {
+func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, isInternal bool) (*BasicEvaluationCreateRequest, error) {
 	provisionParams, err := operation.GetProvisioningParameters()
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, i
 	}
 
 	beName, beDescription := generateNameAndDescription(provisionParams.ErsContext.GlobalAccountID,
-		provisionParams.ErsContext.SubAccountID, provisionParams.Parameters.Name, definitionType, operation.InstanceID, nameSuffix)
+		provisionParams.ErsContext.SubAccountID, provisionParams.Parameters.Name, DefinitionType, operation.InstanceID, nameSuffix)
 
 	var url string
 	if isInternal {
@@ -98,18 +98,18 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, i
 		testerAccessId = internalTesterAccessId
 	}
 
-	return &basicEvaluationCreateRequest{
-		DefinitionType:   definitionType,
-		Name:             beName,
-		Description:      beDescription,
-		Service:          beName, //TODO: waiting for Gabor's inputs regarding service value
-		URL:              url,    //only required for external e.g. site 24X7
-		CheckType:        checkType,
-		Interval:         interval,
-		TesterAccessId:   testerAccessId,
-		Timeout:          timeout,
-		ReadOnly:         false,
-		ContentCheck:     contentCheck,
+	return &BasicEvaluationCreateRequest{
+		DefinitionType: DefinitionType,
+		Name:           beName,
+		Description:    beDescription,
+		Service:        beName, //TODO: waiting for Gabor's inputs regarding service value
+		URL:            url,    //only required for external e.g. site 24X7
+		CheckType:      checkType,
+		Interval:       interval,
+		TesterAccessId: testerAccessId,
+		Timeout:        timeout,
+		ReadOnly:       false,
+		ContentCheck:   contentCheck,
 		ContentCheckType: contentCheckType,
 		Threshold:        threshold,
 		GroupId:          groupId,

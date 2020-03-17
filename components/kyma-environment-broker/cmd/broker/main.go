@@ -147,7 +147,7 @@ func main() {
 	stepManager.AddStep(2, smOverrideStep)
 	stepManager.AddStep(10, runtimeStep)
 
-	evaluationStep := avs.NewInternalEvaluationStep(cfg.Avs, db.Operations())
+	evaluationStep := provisioning.NewInternalEvaluationStep(cfg.Avs, db.Operations())
 	stepManager.AddStep(1, evaluationStep)
 
 	queue := process.NewQueue(stepManager)

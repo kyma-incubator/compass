@@ -20,21 +20,21 @@ const (
 	avsBridgeAPIKey = "avs_bridge.config.availabilityService.apiKey"
 )
 
-type delegator struct {
+type Delegator struct {
 	operationManager *process.OperationManager
 	avsConfig        Config
 	clientHolder     *clientHolder
 }
 
-func newDelegator(avsConfig Config, operationsStorage storage.Operations) *delegator {
-	return &delegator{
+func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Delegator {
+	return &Delegator{
 		operationManager: process.NewOperationManager(operationsStorage),
 		avsConfig:        avsConfig,
 		clientHolder:     newClientHolder(avsConfig),
 	}
 }
 
-func (del *delegator) doRun(logger logrus.FieldLogger, operation internal.ProvisioningOperation, modelSupplier func(provisioningOperation internal.ProvisioningOperation) (*basicEvaluationCreateRequest, error)) (internal.ProvisioningOperation, time.Duration, error) {
+func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.ProvisioningOperation, modelSupplier func(provisioningOperation internal.ProvisioningOperation) (*BasicEvaluationCreateRequest, error)) (internal.ProvisioningOperation, time.Duration, error) {
 	logger.Infof("starting the step")
 
 	if operation.AvsEvaluationInternalId != 0 {
@@ -72,7 +72,7 @@ func (del *delegator) doRun(logger logrus.FieldLogger, operation internal.Provis
 	return updatedOperation, d, nil
 }
 
-func (del *delegator) postRequest(evaluationRequest *basicEvaluationCreateRequest, logger logrus.FieldLogger) (*basicEvaluationCreateResponse, error) {
+func (del *Delegator) postRequest(evaluationRequest *BasicEvaluationCreateRequest, logger logrus.FieldLogger) (*BasicEvaluationCreateResponse, error) {
 	objAsBytes, err := json.Marshal(evaluationRequest)
 	if err != nil {
 		return nil, err
@@ -109,9 +109,9 @@ func (del *delegator) postRequest(evaluationRequest *basicEvaluationCreateReques
 	return responseObject, nil
 }
 
-func deserialize(resp *http.Response, err error) (*basicEvaluationCreateResponse, error) {
+func deserialize(resp *http.Response, err error) (*BasicEvaluationCreateResponse, error) {
 	dec := json.NewDecoder(resp.Body)
-	var responseObject basicEvaluationCreateResponse
+	var responseObject BasicEvaluationCreateResponse
 	err = dec.Decode(&responseObject)
 	return &responseObject, err
 }
