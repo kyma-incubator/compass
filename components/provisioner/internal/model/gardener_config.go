@@ -63,9 +63,6 @@ func (c GardenerConfig) ToShootTemplate(namespace string) (*gardener_types.Shoot
 				Version:                   c.KubernetesVersion,
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					EnableBasicAuthentication: &enableBasicAuthentication,
-					AdmissionPlugins: []gardener_types.AdmissionPlugin{
-						{Name: "SecurityContextDeny"},
-					},
 				},
 			},
 			Networking: gardener_types.Networking{

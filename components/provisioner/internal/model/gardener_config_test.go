@@ -290,9 +290,6 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
-							AdmissionPlugins: []gardener_types.AdmissionPlugin{
-								{Name: "SecurityContextDeny"},
-							},
 						},
 					},
 					Maintenance: &gardener_types.Maintenance{},
@@ -338,9 +335,6 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
-							AdmissionPlugins: []gardener_types.AdmissionPlugin{
-								{Name: "SecurityContextDeny"},
-							},
 						},
 					},
 					Maintenance: &gardener_types.Maintenance{},
@@ -386,9 +380,6 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
-							AdmissionPlugins: []gardener_types.AdmissionPlugin{
-								{Name: "SecurityContextDeny"},
-							},
 						},
 					},
 					Maintenance: &gardener_types.Maintenance{},

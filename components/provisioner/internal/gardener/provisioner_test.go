@@ -101,7 +101,6 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer)
 			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
 			assert.False(t, *shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
-			assert.Contains(t, shoot.Spec.Kubernetes.KubeAPIServer.AdmissionPlugins, gardener_types.AdmissionPlugin{Name: "SecurityContextDeny"})
 
 			if testCase.auditLogsEnabled {
 				assertAnnotation(t, shoot, auditLogsAnnotation, testCase.subAccountId)
