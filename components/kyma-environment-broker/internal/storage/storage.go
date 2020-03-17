@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
 )
 
-//go:generate mockery -name=Instances -output=automock -outpkg=automock -case=underscore
 type BrokerStorage interface {
 	Instances() Instances
 	Operations() Operations
