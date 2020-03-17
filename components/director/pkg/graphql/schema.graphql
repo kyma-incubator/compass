@@ -182,7 +182,6 @@ input ApplicationTemplateInput {
 }
 
 input ApplicationUpdateInput {
-	name: String!
 	providerName: String
 	description: String
 	healthCheckURL: String

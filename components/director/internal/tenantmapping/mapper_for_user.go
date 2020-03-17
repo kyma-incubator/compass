@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 )
@@ -24,7 +25,7 @@ type mapperForUser struct {
 	tenantRepo      TenantRepository
 }
 
-func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, username string) (ObjectContext, error) {
+func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, username string) (ObjectContext, error) {
 	var externalTenantID, scopes string
 	var staticUser *StaticUser
 	var err error
@@ -57,7 +58,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData ReqData, u
 	return NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, username, consumer.User), nil
 }
 
-func (m *mapperForUser) getScopesForUserGroups(reqData ReqData) string {
+func (m *mapperForUser) getScopesForUserGroups(reqData oathkeeper.ReqData) string {
 	userGroups := reqData.GetUserGroups()
 	if len(userGroups) == 0 {
 		return ""
@@ -71,7 +72,7 @@ func (m *mapperForUser) getScopesForUserGroups(reqData ReqData) string {
 	return staticGroups.GetGroupScopes()
 }
 
-func (m *mapperForUser) getUserData(reqData ReqData, username string) (*StaticUser, string, error) {
+func (m *mapperForUser) getUserData(reqData oathkeeper.ReqData, username string) (*StaticUser, string, error) {
 	staticUser, err := m.staticUserRepo.Get(username)
 	if err != nil {
 		return nil, "", errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))

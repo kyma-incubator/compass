@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
 	"github.com/pkg/errors"
@@ -25,11 +26,11 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 	userObjCtxType := "Static User"
 
 	t.Run("returns tenant and scopes that are defined in the Extra map of ReqData", func(t *testing.T) {
-		reqData := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.ExternalTenantKey: expectedExternalTenantID.String(),
-					tenantmapping.ScopesKey:         strings.Join(expectedScopes, " "),
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.ScopesKey:         strings.Join(expectedScopes, " "),
 				},
 			},
 		}
@@ -63,11 +64,11 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 	})
 
 	t.Run("returns tenant and scopes that are defined in the Header map of ReqData", func(t *testing.T) {
-		reqData := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(tenantmapping.ExternalTenantKey): []string{expectedExternalTenantID.String()},
-					textproto.CanonicalMIMEHeaderKey(tenantmapping.ScopesKey):         []string{strings.Join(expectedScopes, " ")},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ExternalTenantKey): []string{expectedExternalTenantID.String()},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ScopesKey):         []string{strings.Join(expectedScopes, " ")},
 				},
 			},
 		}
@@ -100,13 +101,13 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 	})
 
 	t.Run("returns tenant which is defined in the Extra map and scopes which is defined in the Header map of ReqData", func(t *testing.T) {
-		reqData := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
 				},
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(tenantmapping.ScopesKey): []string{strings.Join(expectedScopes, " ")},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ScopesKey): []string{strings.Join(expectedScopes, " ")},
 				},
 			},
 		}
@@ -139,13 +140,13 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 	})
 
 	t.Run("returns tenant which is defined in the Header map and scopes which is defined in the Extra map of ReqData", func(t *testing.T) {
-		reqData := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.ScopesKey: strings.Join(expectedScopes, " "),
+					oathkeeper.ScopesKey: strings.Join(expectedScopes, " "),
 				},
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(tenantmapping.ExternalTenantKey): []string{expectedExternalTenantID.String()},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ExternalTenantKey): []string{expectedExternalTenantID.String()},
 				},
 			},
 		}
@@ -178,10 +179,10 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 	})
 
 	t.Run("returns scopes defined on the StaticUser and tenant from the request", func(t *testing.T) {
-		reqData := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
 				},
 			},
 		}
@@ -217,11 +218,11 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		groupName := "test"
 		expectedGroupScopes := []string{"tennants:read", "application:read"}
 
-		reqData := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.ExternalTenantKey: expectedExternalTenantID.String(),
-					tenantmapping.GroupsKey:         []interface{}{groupName},
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.GroupsKey:         []interface{}{groupName},
 				},
 			},
 		}
@@ -271,11 +272,11 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		expectedGroupScopes2 := []string{"application:read", "applications:edit"}
 		allExpectedGroupScopes := []string{"tennants:read", "application:read", "applications:edit"}
 
-		reqData := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.ExternalTenantKey: expectedExternalTenantID.String(),
-					tenantmapping.GroupsKey:         []interface{}{groupName1, groupName2},
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.GroupsKey:         []interface{}{groupName1, groupName2},
 				},
 			},
 		}
@@ -314,11 +315,11 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 
 	t.Run("returns scopes defined on the StaticUser when group not present from the request", func(t *testing.T) {
 		groupName := "test"
-		reqData := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.ExternalTenantKey: expectedExternalTenantID.String(),
-					tenantmapping.GroupsKey:         []interface{}{groupName},
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.GroupsKey:         []interface{}{groupName},
 				},
 			},
 		}
@@ -358,10 +359,10 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 
 	t.Run("returns error when tenant from the request does not match any tenants assigned to the static user", func(t *testing.T) {
 		nonExistingExternalTenantID := uuid.New().String()
-		reqData := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.ExternalTenantKey: nonExistingExternalTenantID,
+					oathkeeper.ExternalTenantKey: nonExistingExternalTenantID,
 				},
 			},
 		}
@@ -390,10 +391,10 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 	})
 
 	t.Run("returns error when tenant is specified in Extra map in a non-string format", func(t *testing.T) {
-		reqData := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.ExternalTenantKey: []byte{1, 2, 3},
+					oathkeeper.ExternalTenantKey: []byte{1, 2, 3},
 				},
 			},
 		}
@@ -415,10 +416,10 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 	})
 
 	t.Run("returns error when scopes is specified in Extra map in a non-string format", func(t *testing.T) {
-		reqData := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.ScopesKey: []byte{1, 2, 3},
+					oathkeeper.ScopesKey: []byte{1, 2, 3},
 				},
 			},
 		}
@@ -440,7 +441,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 	})
 
 	t.Run("returns error when user repository returns error", func(t *testing.T) {
-		reqData := tenantmapping.ReqData{}
+		reqData := oathkeeper.ReqData{}
 		username := "non-existing"
 
 		staticUserRepoMock := getStaticUserRepoMock()

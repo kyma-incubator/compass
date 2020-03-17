@@ -139,7 +139,8 @@ var plans = map[string]struct {
 			},
 			"region": {
 			  "type": "string",
-			  "enum": ["westeurope", "eastus", "eastus2", "centralus", "northeurope", "southeastasia", "japaneast", "westus2", "uksouth"]
+			  "enum": ["westeurope", "eastus", "eastus2", "centralus", "northeurope", "southeastasia", "japaneast", "westus2", "uksouth",
+                        "FranceCentral", "EastUS2EUAP", "uaenorth"]
 			},
 			"zone": {
 			  "type": "string"

@@ -116,7 +116,6 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 
 func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput {
 	return model.ApplicationUpdateInput{
-		Name:                in.Name,
 		Description:         in.Description,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,

@@ -403,51 +403,6 @@ func TestApplicationRegisterInput_Validate_Documents(t *testing.T) {
 	}
 }
 
-func TestApplicationUpdateInput_Validate_Name(t *testing.T) {
-	testCases := []struct {
-		Name          string
-		Value         string
-		ExpectedValid bool
-	}{
-		{
-			Name:          "ExpectedValid",
-			Value:         inputvalidationtest.ValidName,
-			ExpectedValid: true,
-		},
-		{
-			Name:          "Empty string",
-			Value:         inputvalidationtest.EmptyString,
-			ExpectedValid: false,
-		},
-		{
-			Name:          "Invalid Upper Case Letters",
-			Value:         inputvalidationtest.InvalidName,
-			ExpectedValid: false,
-		},
-		{
-			Name:          "String longer than 37 chars",
-			Value:         inputvalidationtest.String37Long,
-			ExpectedValid: false,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
-			app := fixValidApplicationUpdateInput()
-			app.Name = testCase.Value
-			//WHEN
-			err := app.Validate()
-			//THEN
-			if testCase.ExpectedValid {
-				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
-			}
-		})
-	}
-}
-
 func TestApplicationUpdateInput_Validate_ProviderName(t *testing.T) {
 	testCases := []struct {
 		Name          string
@@ -589,9 +544,7 @@ func TestApplicationUpdateInput_Validate_HealthCheckURL(t *testing.T) {
 }
 
 func fixValidApplicationUpdateInput() graphql.ApplicationUpdateInput {
-	return graphql.ApplicationUpdateInput{
-		Name: "application",
-	}
+	return graphql.ApplicationUpdateInput{}
 }
 
 func fixValidApplicationCreateInput() graphql.ApplicationRegisterInput {

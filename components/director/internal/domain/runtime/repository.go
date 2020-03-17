@@ -21,22 +21,24 @@ var (
 )
 
 type pgRepository struct {
-	existQuerier    repo.ExistQuerier
-	singleGetter    repo.SingleGetter
-	deleter         repo.Deleter
-	pageableQuerier repo.PageableQuerier
-	creator         repo.Creator
-	updater         repo.Updater
+	existQuerier       repo.ExistQuerier
+	singleGetter       repo.SingleGetter
+	singleGetterGlobal repo.SingleGetterGlobal
+	deleter            repo.Deleter
+	pageableQuerier    repo.PageableQuerier
+	creator            repo.Creator
+	updater            repo.Updater
 }
 
 func NewRepository() *pgRepository {
 	return &pgRepository{
-		existQuerier:    repo.NewExistQuerier(runtimeTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(runtimeTable, tenantColumn, runtimeColumns),
-		deleter:         repo.NewDeleter(runtimeTable, tenantColumn),
-		pageableQuerier: repo.NewPageableQuerier(runtimeTable, tenantColumn, runtimeColumns),
-		creator:         repo.NewCreator(runtimeTable, runtimeColumns),
-		updater:         repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
+		existQuerier:       repo.NewExistQuerier(runtimeTable, tenantColumn),
+		singleGetter:       repo.NewSingleGetter(runtimeTable, tenantColumn, runtimeColumns),
+		singleGetterGlobal: repo.NewSingleGetterGlobal(runtimeTable, runtimeColumns),
+		deleter:            repo.NewDeleter(runtimeTable, tenantColumn),
+		pageableQuerier:    repo.NewPageableQuerier(runtimeTable, tenantColumn, runtimeColumns),
+		creator:            repo.NewCreator(runtimeTable, runtimeColumns),
+		updater:            repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
 	}
 }
 
@@ -80,6 +82,30 @@ func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string,
 
 	var runtimeEnt Runtime
 	if err := r.singleGetter.Get(ctx, tenant, additionalConditions, repo.NoOrderBy, &runtimeEnt); err != nil {
+		return nil, err
+	}
+
+	runtimeModel, err := runtimeEnt.ToModel()
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating runtime model from entity")
+	}
+
+	return runtimeModel, nil
+}
+
+func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
+	filterSubquery, err := label.FilterQueryGlobal(model.RuntimeLabelableObject, label.IntersectSet, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var additionalConditions repo.Conditions
+	if filterSubquery != "" {
+		additionalConditions = append(additionalConditions, repo.NewInCondition("id", filterSubquery))
+	}
+
+	var runtimeEnt Runtime
+	if err := r.singleGetterGlobal.GetGlobal(ctx, additionalConditions, repo.NoOrderBy, &runtimeEnt); err != nil {
 		return nil, err
 	}
 

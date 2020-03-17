@@ -72,7 +72,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Package, error) {
 		TenantID:                       entity.TenantID,
 		ApplicationID:                  entity.ApplicationID,
 		Name:                           entity.Name,
-		Description:                    &entity.Description.String,
+		Description:                    repo.StringPtrFromNullableString(entity.Description),
 		DefaultInstanceAuth:            defaultInstanceAuth,
 		InstanceAuthRequestInputSchema: repo.StringPtrFromNullableString(entity.InstanceAuthRequestJSONSchema),
 	}
