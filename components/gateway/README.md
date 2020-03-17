@@ -2,7 +2,7 @@
 
 ## Overview
 
-Gateway is a component that exposes a service through which it forwards the incoming requests to backing services (Director and Connector). Optionally, Gateway can be configured to send audit logs to specified logging service.
+Gateway is a component that exposes a service through which it forwards the incoming requests to backing services, such as the Director and Connector. Optionally, Gateway can be configured to send audit logs to the specified logging service.
 
 ## Configuration
 
@@ -22,6 +22,6 @@ If you set **APP_AUDITLOG_ENABLED** to `true`, the following environment variabl
 | **APP_AUDITLOG_USER**            | The username to the audit log service                          |
 | **APP_AUDITLOG_PASSWORD**        | The password to the audit log service                          |
 | **APP_AUDITLOG_URL**             | The URL under which the audit log service is available         |
-| **APP_AUDITLOG_TENANT**          | The tenant for which the audit logs are created                |
-| **APP_AUDITLOG_CONFIG_PATH**     | The path for logging configuration changes events              |
+| **APP_AUDITLOG_TENANT**          | The tenant for which audit logs are created                |
+| **APP_AUDITLOG_CONFIG_PATH**     | The path for logging configuration changes              |
 | **APP_AUDITLOG_SECURITY_PATH**   | The path for logging security events                           |
