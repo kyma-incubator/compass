@@ -19,7 +19,7 @@ func NewOperationManager(storage storage.Operations) *OperationManager {
 	return &OperationManager{storage: storage}
 }
 
-// OperationSucceeded marks the operation as failed and only repeats it if there is a storage error
+// OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error
 func (om *OperationManager) OperationSucceeded(operation internal.ProvisioningOperation, description string) (internal.ProvisioningOperation, time.Duration, error) {
 	updatedOperation, repeat := om.update(operation, domain.Succeeded, description)
 	// repeat in case of storage error

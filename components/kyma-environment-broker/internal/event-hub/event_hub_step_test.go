@@ -156,10 +156,11 @@ func Test_StepProvisionGardenerCredentialsError(t *testing.T) {
 	require.NoError(t, err)
 
 	// when
+	op.UpdatedAt = time.Now()
 	op, when, err := step.Run(op, fixLogger())
 
 	// then
-	ensureOperationIsNotRepeated(t, err, when, op)
+	ensureOperationIsRepeated(t, err, when)
 
 	_, err = op.InputCreator.Create()
 	require.NoError(t, err)

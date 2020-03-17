@@ -71,9 +71,9 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	// get hyperscaler credentials from HAP
 	credentials, err := p.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
 	if err != nil {
+		// retrying might solve the issue, the HAP could be temporarily unavailable
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
-		// if gardener pool is not configured, retries won't solve the problem
-		return p.operationManager.OperationFailed(operation, errorMessage)
+		return p.retryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
 	azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp)
 	if err != nil {
