@@ -15,6 +15,7 @@ This table lists the configurable parameters, their descriptions, and default va
 |-----------|-------------|---------------|
 | **gardener.project** | Name of the Gardener project connected to the service account | `` |
 | **gardener.kubeconfig** | Base64-encoded Gardener service account key | `` |
+| **gardener.auditLogsPolicyConfigMap** | Name of the Config Map containing audit logs policy | `` |
 | **provisioner** | Provisioning mechanism used by the Runtime Provisioner (Gardener or Hydroform)  | `gardener` |
 | **installation.timeout** | Kyma installation timeout | `30m` |
 | **installation.errorsCountFailureThreshold** | Number of installation errors that causes installation to fail | `5` |
