@@ -312,7 +312,7 @@ func TestPgRepository_List(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE status != 'Inactive'`)).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
