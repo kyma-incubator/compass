@@ -1,8 +1,9 @@
 package provisioning
 
 import (
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"

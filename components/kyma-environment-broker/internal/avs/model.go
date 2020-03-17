@@ -99,17 +99,17 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, i
 	}
 
 	return &BasicEvaluationCreateRequest{
-		DefinitionType: DefinitionType,
-		Name:           beName,
-		Description:    beDescription,
-		Service:        beName, //TODO: waiting for Gabor's inputs regarding service value
-		URL:            url,    //only required for external e.g. site 24X7
-		CheckType:      checkType,
-		Interval:       interval,
-		TesterAccessId: testerAccessId,
-		Timeout:        timeout,
-		ReadOnly:       false,
-		ContentCheck:   contentCheck,
+		DefinitionType:   DefinitionType,
+		Name:             beName,
+		Description:      beDescription,
+		Service:          beName, //TODO: waiting for Gabor's inputs regarding service value
+		URL:              url,    //only required for external e.g. site 24X7
+		CheckType:        checkType,
+		Interval:         interval,
+		TesterAccessId:   testerAccessId,
+		Timeout:          timeout,
+		ReadOnly:         false,
+		ContentCheck:     contentCheck,
 		ContentCheckType: contentCheckType,
 		Threshold:        threshold,
 		GroupId:          groupId,

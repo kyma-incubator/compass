@@ -2,12 +2,13 @@ package provisioning
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
