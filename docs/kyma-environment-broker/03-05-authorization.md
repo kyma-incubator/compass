@@ -25,8 +25,8 @@ To access the Kyma Environment Broker endpoints with the OAuth2 authorization en
 /oauth/v2/catalog
 ```
 >**NOTE:** If you do not use the `/oauth` prefix, the Basic authorization is performed.
-You must also specify the `Authorization: Bearer` token header:
 
+You must also specify the `Authorization: Bearer` token header:
 ```
 Authorization: Bearer {ACCESS_TOKEN}
 ```
