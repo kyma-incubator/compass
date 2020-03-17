@@ -90,7 +90,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 
 func (s *service) GetByTokenIssuer(ctx context.Context, issuer string) (*model.Runtime, error) {
 	const (
-		consoleURLLabelKey = "runtime/console_url"
+		consoleURLLabelKey = "runtime_consoleUrl"
 		dexSubdomain       = "dex"
 		consoleSubdomain   = "console"
 	)

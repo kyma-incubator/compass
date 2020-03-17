@@ -2,7 +2,7 @@ package director
 
 import "fmt"
 
-const consoleURLLabelKey = "runtime/console_url"
+const consoleURLLabelKey = "runtime_console_url"
 
 type queryProvider struct{}
 

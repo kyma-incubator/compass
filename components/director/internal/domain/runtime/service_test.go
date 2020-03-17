@@ -420,7 +420,7 @@ func TestService_GetByTokenIssuer(t *testing.T) {
 	id := "foo"
 	desc := "Lorem ipsum"
 	tokenIssuer := "https://dex.domain.local"
-	filter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtime/console_url", `"https://console.domain.local"`)}
+	filter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtime_consoleUrl", `"https://console.domain.local"`)}
 
 	runtimeModel := &model.Runtime{
 		ID:          "foo",
