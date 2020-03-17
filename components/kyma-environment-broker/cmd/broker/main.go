@@ -24,7 +24,6 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
 	gcli "github.com/machinebox/graphql"
-	"github.com/pivotal-cf/brokerapi"
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,12 +69,6 @@ func main() {
 	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.ERROR))
 
 	logger.Info("Starting Kyma Environment Broker")
-
-	// create broker credentials
-	brokerCredentials := brokerapi.BrokerCredentials{
-		Username: cfg.Auth.Username,
-		Password: cfg.Auth.Password,
-	}
 
 	// create provisioner client
 	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
@@ -159,9 +152,23 @@ func main() {
 		broker.NewLastBindingOperation(logs),
 	}
 
-	// create and run broker OSB API
-	brokerAPI := brokerapi.New(kymaEnvBroker, logger, brokerCredentials)
-	r := handlers.LoggingHandler(os.Stdout, brokerAPI)
+	// create broker credentials
+	brokerCredentials := broker.BrokerCredentials{
+		Username: cfg.Auth.Username,
+		Password: cfg.Auth.Password,
+	}
+
+	// create and run broker OSB API in 2 modes:
+	// with basic auth
+	// with oauth
+	brokerAPI := broker.New(kymaEnvBroker, logger, nil)
+	brokerBasicAPI := broker.New(kymaEnvBroker, logger, &brokerCredentials)
+
+	sm := http.NewServeMux()
+	sm.Handle("/", brokerBasicAPI)
+	sm.Handle("/oauth/", http.StripPrefix("/oauth", brokerAPI))
+
+	r := handlers.LoggingHandler(os.Stdout, sm)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
 }
