@@ -18,7 +18,7 @@ type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant string) (model.Cluster, error)
 }
 
-func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository, gardenerProject string) InputConverter {
+func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider, gardenerProject string) InputConverter {
 	return &converter{
 		uuidGenerator:   uuidGenerator,
 		releaseRepo:     releaseRepo,
@@ -28,7 +28,7 @@ func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Rea
 
 type converter struct {
 	uuidGenerator   uuid.UUIDGenerator
-	releaseRepo     release.ReadRepository
+	releaseRepo     release.Provider
 	gardenerProject string
 }
 

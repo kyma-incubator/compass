@@ -410,7 +410,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 
 }
 
-func newInputConverterTester(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository) *converter {
+func newInputConverterTester(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider) *converter {
 	return &converter{
 		uuidGenerator: uuidGenerator,
 		releaseRepo:   releaseRepo,

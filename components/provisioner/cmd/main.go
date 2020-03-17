@@ -141,12 +141,12 @@ func main() {
 	httpClient := newHTTPClient(false)
 
 	releaseRepository := release.NewReleaseRepository(connection, uuid.NewUUIDGenerator())
-	aggregatedReleaseProviders := release.NewAggregator(releaseRepository)
+	var releaseProvider release.Provider = releaseRepository
 	if cfg.SupportOnDemandReleases {
-		aggregatedReleaseProviders.Register(release.NewOnDemand(httpClient, uuid.NewUUIDGenerator(), connection))
+		releaseProvider = release.NewOnDemandWrapper(httpClient, releaseRepository)
 	}
 
-	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, aggregatedReleaseProviders, directorClient)
+	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseProvider, directorClient)
 	validator := api.NewValidator(dbsFactory.NewReadSession())
 
 	resolver := api.NewResolver(provisioningSVC, validator)
