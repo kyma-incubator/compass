@@ -91,6 +91,7 @@ spec:
             - name: APP_GARDENER_AUDIT_LOGS_TENANT
               valueFrom:
                 configMapKeyRef:
+                  optional: true
                   name: {{ .Values.global.auditlog.configmap.name }}
                   key: auditlog-tenant
             - name: APP_PROVISIONER
