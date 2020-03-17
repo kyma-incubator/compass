@@ -278,6 +278,7 @@ func TestPgRepository_List(t *testing.T) {
 			newEntityBusinessTenantMapping("id2", "name2"),
 			newEntityBusinessTenantMapping("id3", "name3"),
 		}
+		//intSysEntities[3].Status = tenant.Inactive
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
@@ -291,7 +292,7 @@ func TestPgRepository_List(t *testing.T) {
 			{id: "id2", name: "name2", externalTenant: testExternal, provider: "Compass", status: tenant.Active},
 			{id: "id3", name: "name3", externalTenant: testExternal, provider: "Compass", status: tenant.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE status != 'Inactive'`)).
 			WillReturnRows(rowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)

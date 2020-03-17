@@ -2,6 +2,9 @@ package tenant
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/lib/pq"
 
 	"github.com/pkg/errors"
 
@@ -80,7 +83,8 @@ func (r *pgRepository) ExistsByExternalTenant(ctx context.Context, externalTenan
 func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection EntityCollection
 
-	err := r.listerGlobal.ListGlobal(ctx, &entityCollection)
+	condition := fmt.Sprintf("status != %s", pq.QuoteLiteral(string(Inactive)))
+	err := r.listerGlobal.ListGlobal(ctx, &entityCollection, condition)
 	if err != nil {
 		return nil, err
 	}
@@ -88,10 +92,6 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 	var items []*model.BusinessTenantMapping
 
 	for _, entity := range entityCollection {
-		if entity.Status == Inactive {
-			continue
-		}
-
 		tmModel := r.conv.FromEntity(&entity)
 		items = append(items, tmModel)
 	}
