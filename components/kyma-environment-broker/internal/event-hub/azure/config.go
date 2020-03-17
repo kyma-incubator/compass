@@ -38,7 +38,7 @@ func (c *Config) Environment() (*azure.Environment, error) {
 
 	env, err := azure.EnvironmentFromName(c.cloudName)
 	if err != nil {
-		return nil, fmt.Errorf("invalid cloud name [%s]", c.cloudName)
+		return nil, fmt.Errorf("invalid cloud name [%s], error: %v", c.cloudName, err)
 	}
 	c.environment = &env
 

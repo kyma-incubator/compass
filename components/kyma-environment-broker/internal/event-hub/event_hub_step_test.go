@@ -121,8 +121,8 @@ func Test_Overrides(t *testing.T) {
 
 	// then
 	allOverridesFound := ensureOverrides(t, provisionRuntimeInput)
-	require.True(t, allOverridesFound[componentNameKnativeEventing], "overrides for %s were not found", componentNameKnativeEventing)
-	require.True(t, allOverridesFound[componentNameKnativeEventingKafka], "overrides for %s were not found", componentNameKnativeEventingKafka)
+	assert.True(t, allOverridesFound[componentNameKnativeEventing], "overrides for %s were not found", componentNameKnativeEventing)
+	assert.True(t, allOverridesFound[componentNameKnativeEventingKafka], "overrides for %s were not found", componentNameKnativeEventingKafka)
 }
 
 func Test_StepProvisionParametersError(t *testing.T) {
@@ -278,7 +278,7 @@ func ensureOperationIsNotRepeated(t *testing.T, err error, when time.Duration, o
 // ensureOverrides ensures that the overrides for
 // - the kafka channel controller
 // - and the default knative channel
-// is set
+// are set
 func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRuntimeInput) map[string]bool {
 	t.Helper()
 

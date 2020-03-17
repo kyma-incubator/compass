@@ -43,11 +43,11 @@ func (nc *NamespaceClient) CreateNamespace(ctx context.Context, azureCfg *Config
 	// we need to use a copy of the location, because the following azure call will modify it
 	locationCopy := azureCfg.GetLocation()
 	parameters := eventhub.EHNamespace{Location: &locationCopy}
-	ehNamespace, err := nc.createOrUpdate(ctx, groupName, namespace, parameters)
+	ehNamespace, err := nc.createAndWait(ctx, groupName, namespace, parameters)
 	return &ehNamespace, err
 }
 
-func (nc *NamespaceClient) createOrUpdate(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
+func (nc *NamespaceClient) createAndWait(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
 	future, err := nc.eventhubNamespaceClient.CreateOrUpdate(ctx, resourceGroupName, namespaceName, parameters)
 	if err != nil {
 		return eventhub.EHNamespace{}, err

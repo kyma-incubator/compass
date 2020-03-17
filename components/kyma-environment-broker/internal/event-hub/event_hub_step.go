@@ -6,17 +6,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
-
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
-
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
+
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 )
 
@@ -119,7 +118,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		errorMessage := fmt.Sprintf("Unable to retrieve access keys to azure event-hub namespace: %v", err)
 		return p.retryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
-	kafkaEndpoint := extractEndpoint(&accessKeys)
+	kafkaEndpoint := extractEndpoint(accessKeys)
 	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
@@ -146,14 +145,14 @@ func (p *ProvisionAzureEventHubStep) retryOperation(operation internal.Provision
 	return p.operationManager.OperationFailed(operation, errorMessage)
 }
 
-func extractEndpoint(accessKeys *eventhub.AccessKeys) string {
+func extractEndpoint(accessKeys eventhub.AccessKeys) string {
 	endpoint := strings.Split(*accessKeys.PrimaryConnectionString, ";")[0]
 	endpoint = strings.TrimPrefix(endpoint, "Endpoint=sb://")
 	endpoint = strings.TrimSuffix(endpoint, "/")
 	return endpoint
 }
 
-func appendPort(endpoint string, port int64) string {
+func appendPort(endpoint string, port int) string {
 	return fmt.Sprintf("%s:%d", endpoint, port)
 }
 
