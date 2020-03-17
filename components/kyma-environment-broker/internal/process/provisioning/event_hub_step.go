@@ -137,11 +137,11 @@ func (p *ProvisionAzureEventHubStep) retryOperationOnce(operation internal.Provi
 func (p *ProvisionAzureEventHubStep) retryOperation(operation internal.ProvisioningOperation, errorMessage string, retryInterval time.Duration, maxTime time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	dur := time.Since(operation.UpdatedAt).Round(time.Minute)
 
-	log.Infof("Retrying for %s in %s steps\n", maxTime.String(), retryInterval.String())
+	log.Infof("Retrying for %s in %s steps", maxTime.String(), retryInterval.String())
 	if dur < maxTime {
 		return operation, retryInterval, nil
 	}
-	log.Errorf("Aborting after %s of failing retries\n", maxTime.String())
+	log.Errorf("Aborting after %s of failing retries", maxTime.String())
 	return p.operationManager.OperationFailed(operation, errorMessage)
 }
 
