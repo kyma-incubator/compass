@@ -2,7 +2,6 @@ package azure
 
 import (
 	"context"
-	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
@@ -46,13 +45,6 @@ func (nc *NamespaceClient) CreateNamespace(ctx context.Context, azureCfg *Config
 	parameters := eventhub.EHNamespace{Location: &locationCopy}
 	ehNamespace, err := nc.createOrUpdate(ctx, groupName, namespace, parameters)
 	return &ehNamespace, err
-}
-
-// GetResourceGroup extract the ResourceGroup from a given EventHub Namespace
-func GetResourceGroup(namespace eventhub.EHNamespace) string {
-	// id has the following format "/subscriptions/<subscription>/resourceGroups/<resource-group>/providers/Microsoft.EventHub/namespaces/<namespace-name>"
-	// the code extract <resource-group> from the string
-	return strings.Split(strings.Split(*namespace.ID, "resourceGroups/")[1], "/")[0]
 }
 
 func (nc *NamespaceClient) createOrUpdate(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
