@@ -3,7 +3,7 @@ package dbsession
 import (
 	"time"
 
-	dbr "github.com/gocraft/dbr"
+	"github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
@@ -70,6 +70,14 @@ func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
 	}
 
 	return nil
+}
+
+func (ws writeSession) DeleteInstance(instanceID string) dberr.Error {
+	_, err := ws.deleteFrom(postsql.InstancesTableName).
+		Where(dbr.Eq("instance_id", instanceID)).
+		Exec()
+
+	return dberr.Internal("Failed to delete record from Instance table: %s", err)
 }
 
 func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
