@@ -1,7 +1,7 @@
 # Authorization
 
 Kyma Environment Broker provides two ways to authorize users:
-- Basic authorization
+- Basic authorization (default)
 - OAuth2 authorization
 
 ## Basic authorization
@@ -12,11 +12,11 @@ To access the Kyma Environment Broker endpoints with the Basic authorization ena
 Authorization: Basic {BASE64_ENCODED_CREDENTIALS}
 ```
 
->**NOTE**: This implementation is currently being replaced by the Oauth2 implementation and will be deprecated soon.
+>**NOTE**: This implementation is currently being replaced with the Oauth2 implementation and will be deprecated soon.
 
 ## OAuth2 authorization
 
-The Kyma Environment Broker allows to authorize users using the OAuth2 authorization. It is using the [ApiRule](https://github.com/kyma-project/kyma/blob/master/docs/api-gateway-v2/06-01-apirule.md) to provide a [VirtualService](https://istio.io/docs/reference/config/networking/virtual-service/) and [Oathkeeper Access Rules](https://www.ory.sh/docs/oathkeeper/api-access-rules) according to the details specified in the CR.
+Kyma Environment Broker also allows for the OAuth2 authorization. For this purpose, Kyma Environment Broker uses the [ApiRule](https://github.com/kyma-project/kyma/blob/master/docs/api-gateway-v2/06-01-apirule.md) custom resource which generates a [VirtualService](https://istio.io/docs/reference/config/networking/virtual-service/) and uses  [Oathkeeper Access Rules](https://www.ory.sh/docs/oathkeeper/api-access-rules) to allow or deny access.
 To authorize with the Kyma Environment Broker, use an OAuth2 client registered through the [Hydra Maester controller](https://github.com/ory/k8s/blob/master/docs/helm/hydra-maester.md).
 
 To access the Kyma Environment Broker endpoints with the OAuth2 authorization enabled, use the `/oauth` prefix. For example:
@@ -24,14 +24,14 @@ To access the Kyma Environment Broker endpoints with the OAuth2 authorization en
 ```
 /oauth/v2/catalog
 ```
-
+>**NOTE:** If you do not use the `/oauth` prefix, the Basic authorization is performed.
 You must also specify the `Authorization: Bearer` token header:
 
 ```
 Authorization: Bearer {ACCESS_TOKEN}
 ```
 
-### Access token
+### Get the access token
 
 Follow these steps to obtain a new access token:
 
