@@ -278,7 +278,6 @@ func TestPgRepository_List(t *testing.T) {
 			newEntityBusinessTenantMapping("id2", "name2"),
 			newEntityBusinessTenantMapping("id3", "name3"),
 		}
-		//intSysEntities[3].Status = tenant.Inactive
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
