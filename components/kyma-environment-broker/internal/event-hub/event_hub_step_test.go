@@ -99,7 +99,7 @@ func NewFakeHyperscalerProvider(client azure.EventhubsInterface) azure.Hyperscal
 func NewFakeHyperscalerProviderError() azure.HyperscalerProvider {
 	return &fakeHyperscalerProvider{
 		client: nil,
-		err:    fmt.Errorf("ups ... "),
+		err:    fmt.Errorf("ups ... hyperscaler provider could not provide a hyperscaler client"),
 	}
 }
 
@@ -125,140 +125,112 @@ func Test_Overrides(t *testing.T) {
 	assert.True(t, allOverridesFound[componentNameKnativeEventingKafka], "overrides for %s were not found", componentNameKnativeEventingKafka)
 }
 
-func Test_StepProvisionParametersError(t *testing.T) {
-	// given
-	memoryStorage := storage.NewMemoryStorage()
-	accountProvider := fixAccountProvider()
-	step := fixEventHubStep(memoryStorage.Operations(), accountProvider)
-	op := fixInvalidProvisioningOperation(t)
-	// this is required to avoid storage retries (without this statement there will be an error => retry)
-	err := memoryStorage.Operations().InsertProvisioningOperation(op)
-	require.NoError(t, err)
+func Test_StepsUnhappyPath(t *testing.T) {
+	tests := []struct {
+		name                string
+		giveOperation       func(t *testing.T) internal.ProvisioningOperation
+		giveStep            func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep
+		wantRepeatOperation bool
+	}{
+		{
+			name:          "Provision parameter errors",
+			giveOperation: fixInvalidProvisioningOperation,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
+				accountProvider := fixAccountProvider()
+				return *fixEventHubStep(storage.Operations(), accountProvider)
+			},
+			wantRepeatOperation: false,
+		},
+		{
+			name:          "AccountProvider cannot get gardener credentials",
+			giveOperation: fixProvisioningOperation,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
+				accountProvider := fixAccountProviderGardenerCredentialsError()
+				return *fixEventHubStep(storage.Operations(), accountProvider)
+			},
+			wantRepeatOperation: true,
+		},
+		{
+			name:          "EventHubs Namespace creation error",
+			giveOperation: fixProvisioningOperation,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
+				accountProvider := fixAccountProvider()
+				return *NewProvisionAzureEventHubStep(storage.Operations(),
+					// ups ... namespace cannot get created
+					NewFakeHyperscalerProvider(NewFakeNamespaceClientCreationError()),
+					&accountProvider,
+					context.Background(),
+				)
+			},
+			wantRepeatOperation: true,
+		},
+		{
+			name:          "Error while getting EventHubs Namespace credentials",
+			giveOperation: fixProvisioningOperation,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
+				accountProvider := fixAccountProvider()
+				return *NewProvisionAzureEventHubStep(storage.Operations(),
+					// ups ... namespace cannot get listed
+					NewFakeHyperscalerProvider(NewFakeNamespaceClientListError()),
+					&accountProvider,
+					context.Background(),
+				)
+			},
+			wantRepeatOperation: true,
+		},
+		{
+			name:          "Error while getting config from HAP",
+			giveOperation: fixProvisioningOperation,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
+				accountProvider := fixAccountProvider()
+				return *NewProvisionAzureEventHubStep(storage.Operations(),
+					// ups ... client cannot be created
+					NewFakeHyperscalerProviderError(),
+					&accountProvider,
+					context.Background(),
+				)
+			},
+			wantRepeatOperation: false,
+		},
+		{
+			name:          "Error while creating Azure ResourceGroup",
+			giveOperation: fixProvisioningOperation,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
+				accountProvider := fixAccountProvider()
+				return *NewProvisionAzureEventHubStep(storage.Operations(),
+					// ups ... resource group cannot be created
+					NewFakeHyperscalerProvider(NewFakeNamespaceResourceGroupError()),
+					&accountProvider,
+					context.Background(),
+				)
+			},
+			wantRepeatOperation: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 
-	// when
-	op, when, err := step.Run(op, fixLogger())
+			// given
+			memoryStorage := storage.NewMemoryStorage()
+			op := tt.giveOperation(t)
+			step := tt.giveStep(t, memoryStorage)
+			// this is required to avoid storage retries (without this statement there will be an error => retry)
+			err := memoryStorage.Operations().InsertProvisioningOperation(op)
+			require.NoError(t, err)
 
-	// then
-	ensureOperationIsNotRepeated(t, err, when, op)
-	_, err = op.InputCreator.Create()
-	require.NoError(t, err)
-}
+			// when
+			op.UpdatedAt = time.Now()
+			op, when, err := step.Run(op, fixLogger())
+			require.NotNil(t, op)
 
-func Test_StepProvisionGardenerCredentialsError(t *testing.T) {
-	// given
-	memoryStorage := storage.NewMemoryStorage()
-	accountProvider := fixAccountProviderGardenerCredentialsError()
-	step := fixEventHubStep(memoryStorage.Operations(), accountProvider)
-	op := fixProvisioningOperation(t)
-
-	// this is required to avoid storage retries (without this statement there will be an error => retry)
-	err := memoryStorage.Operations().InsertProvisioningOperation(op)
-	require.NoError(t, err)
-
-	// when
-	op.UpdatedAt = time.Now()
-	op, when, err := step.Run(op, fixLogger())
-
-	// then
-	ensureOperationIsRepeated(t, err, when)
-
-	_, err = op.InputCreator.Create()
-	require.NoError(t, err)
-}
-
-func Test_StepPersistEventHubsNamespaceError(t *testing.T) {
-	// given
-	memoryStorage := storage.NewMemoryStorage()
-	accountProvider := fixAccountProvider()
-	step := NewProvisionAzureEventHubStep(memoryStorage.Operations(),
-		// ups ... namespace cannot get created
-		NewFakeHyperscalerProvider(NewFakeNamespaceClientCreationError()),
-		&accountProvider,
-		context.Background(),
-	)
-	op := fixProvisioningOperation(t)
-
-	// this is required to avoid storage retries (without this statement there will be an error => retry)
-	err := memoryStorage.Operations().InsertProvisioningOperation(op)
-	require.NoError(t, err)
-
-	// when
-	op.UpdatedAt = time.Now()
-	op, when, err := step.Run(op, fixLogger())
-
-	// then
-	ensureOperationIsRepeated(t, err, when)
-}
-
-func Test_StepListKeysError(t *testing.T) {
-	// given
-	memoryStorage := storage.NewMemoryStorage()
-	accountProvider := fixAccountProvider()
-	step := NewProvisionAzureEventHubStep(memoryStorage.Operations(),
-		// ups ... namespace cannot get listed
-		NewFakeHyperscalerProvider(NewFakeNamespaceClientListError()),
-		&accountProvider,
-		context.Background(),
-	)
-	op := fixProvisioningOperation(t)
-
-	// this is required to avoid storage retries (without this statement there will be an error => retry)
-	err := memoryStorage.Operations().InsertProvisioningOperation(op)
-	require.NoError(t, err)
-
-	// when
-	op.UpdatedAt = time.Now()
-	op, when, err := step.Run(op, fixLogger())
-
-	// then
-	ensureOperationIsRepeated(t, err, when)
-}
-
-func Test_GetConfigFromHAPError(t *testing.T) {
-	// given
-	memoryStorage := storage.NewMemoryStorage()
-	accountProvider := fixAccountProvider()
-	step := NewProvisionAzureEventHubStep(memoryStorage.Operations(),
-		// ups ... client cannot be created
-		NewFakeHyperscalerProviderError(),
-		&accountProvider,
-		context.Background(),
-	)
-	op := fixProvisioningOperation(t)
-
-	// this is required to avoid storage retries (without this statement there will be an error => retry)
-	err := memoryStorage.Operations().InsertProvisioningOperation(op)
-	require.NoError(t, err)
-
-	// when
-	op, when, err := step.Run(op, fixLogger())
-
-	// then
-	ensureOperationIsNotRepeated(t, err, when, op)
-}
-
-func Test_CreateResourceGroupError(t *testing.T) {
-	// given
-	memoryStorage := storage.NewMemoryStorage()
-	accountProvider := fixAccountProvider()
-	step := NewProvisionAzureEventHubStep(memoryStorage.Operations(),
-		// ups ... resource group cannot be created
-		NewFakeHyperscalerProvider(NewFakeNamespaceResourceGroupError()),
-		&accountProvider,
-		context.Background(),
-	)
-	op := fixProvisioningOperation(t)
-
-	// this is required to avoid storage retries (without this statement there will be an error => retry)
-	err := memoryStorage.Operations().InsertProvisioningOperation(op)
-	require.NoError(t, err)
-
-	// when
-	op.UpdatedAt = time.Now()
-	op, when, err := step.Run(op, fixLogger())
-
-	// then
-	ensureOperationIsRepeated(t, err, when)
+			// then
+			if tt.wantRepeatOperation {
+				ensureOperationIsRepeated(t, err, when)
+			} else {
+				ensureOperationIsNotRepeated(t, err)
+			}
+		})
+	}
 }
 
 // operationManager.OperationFailed(...)
@@ -271,9 +243,9 @@ func ensureOperationIsRepeated(t *testing.T, err error, when time.Duration) {
 	assert.True(t, when != 0)
 }
 
-func ensureOperationIsNotRepeated(t *testing.T, err error, when time.Duration, op internal.ProvisioningOperation) {
+func ensureOperationIsNotRepeated(t *testing.T, err error) {
 	t.Helper()
-	require.NotNil(t, err)
+	assert.NotNil(t, err)
 }
 
 // ensureOverrides ensures that the overrides for
@@ -405,7 +377,7 @@ func fixAccountProviderGardenerCredentialsError() automock.AccountProvider {
 	accountProvider := automock.AccountProvider{}
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
 		CredentialData: map[string][]byte{},
-	}, fmt.Errorf("ups ... "))
+	}, fmt.Errorf("ups ... gardener credentials could not be retrieved"))
 	return accountProvider
 }
 
