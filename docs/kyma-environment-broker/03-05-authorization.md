@@ -16,8 +16,8 @@ Authorization: Basic {BASE64_ENCODED_CREDENTIALS}
 
 ## OAuth2 authorization
 
-Kyma Environment Broker allows for authorizing users with the OAuth2 authorization. It uses the [ApiRule](https://github.com/kyma-project/kyma/blob/master/docs/api-gateway-v2/06-01-apirule.md) to provide a VirtualService and [Oathkeeper Access Rules](https://www.ory.sh/docs/oathkeeper/api-access-rules) according to the details specified in the CR.
-To authorize with Kyma Environment Broker, use an OAuth2 client registered through the Hydra Maester controller. For more information, read [this](https://github.com/kyma-project/kyma/blob/master/docs/api-gateway-v2/08-01-exposesecure.md#register-an-oauth2-client-and-get-tokens) document.
+The Kyma Environment Broker allows to authorize users using the OAuth2 authorization. It is using the [ApiRule](https://github.com/kyma-project/kyma/blob/master/docs/api-gateway-v2/06-01-apirule.md) to provide a [VirtualService](https://istio.io/docs/reference/config/networking/virtual-service/) and [Oathkeeper Access Rules](https://www.ory.sh/docs/oathkeeper/api-access-rules) according to the details specified in the CR.
+To authorize with the Kyma Environment Broker, use an OAuth2 client registered through the [Hydra Maester controller](https://github.com/ory/k8s/blob/master/docs/helm/hydra-maester.md).
 
 To access the Kyma Environment Broker endpoints with the OAuth2 authorization enabled, use the `/oauth` prefix. For example:
 
