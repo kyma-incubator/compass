@@ -18,7 +18,6 @@ type Application struct {
 }
 
 func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput) {
-	app.Name = update.Name
 	app.Description = update.Description
 	app.HealthCheckURL = update.HealthCheckURL
 	app.IntegrationSystemID = update.IntegrationSystemID
@@ -55,6 +54,7 @@ type ApplicationRegisterInput struct {
 	APIDefinitions      []*APIDefinitionInput
 	EventDefinitions    []*EventDefinitionInput
 	Documents           []*DocumentInput
+	Packages            []*PackageCreateInput
 	IntegrationSystemID *string
 }
 
@@ -79,7 +79,6 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, condition 
 }
 
 type ApplicationUpdateInput struct {
-	Name                string
 	ProviderName        *string
 	Description         *string
 	HealthCheckURL      *string

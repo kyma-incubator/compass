@@ -117,7 +117,6 @@ type ApplicationTemplatePage struct {
 func (ApplicationTemplatePage) IsPageable() {}
 
 type ApplicationUpdateInput struct {
-	Name                string  `json:"name"`
 	ProviderName        *string `json:"providerName"`
 	Description         *string `json:"description"`
 	HealthCheckURL      *string `json:"healthCheckURL"`

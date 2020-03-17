@@ -13,7 +13,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -120,6 +120,37 @@ func TestPgRepository_GetByFiltersAndID_WithAdditionalFiltersShouldReturnRuntime
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 	assert.Equal(t, runtimeID, modelRuntime.ID)
 	assert.Equal(t, tenantID, modelRuntime.Tenant)
+}
+
+func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeModelForRuntimeEntity(t *testing.T) {
+	// given
+	tenantID := uuid.New().String()
+	runtimeID := uuid.New().String()
+
+	timestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
+	require.NoError(t, err)
+
+	sqlxDB, sqlMock := testdb.MockDatabase(t)
+	defer sqlMock.AssertExpectations(t)
+
+	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}).
+		AddRow(runtimeID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, timestamp)
+
+	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE id IN \(SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "key" = 'someKey'\)$`).
+		WillReturnRows(rows)
+
+	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+	pgRepository := runtime.NewRepository()
+
+	// when
+	filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
+	modelRuntime, err := pgRepository.GetByFiltersGlobal(ctx, filters)
+
+	//then
+	require.NoError(t, err)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+	assert.Equal(t, runtimeID, modelRuntime.ID)
 }
 
 func TestPgRepository_GetOldestForFilters_ShouldReturnRuntimeModelForRuntimeEntity(t *testing.T) {

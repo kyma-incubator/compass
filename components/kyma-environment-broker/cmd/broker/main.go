@@ -6,17 +6,20 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/pkg/errors"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
@@ -37,12 +40,14 @@ type Config struct {
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
-	Provisioning       input.Config
-	Director           director.Config
-	Database           storage.Config
+	Provisioning input.Config
+	Director     director.Config
+	Database     storage.Config
+	Gardener     gardener.Config
+
 	ManagementPlaneURL string
 
-	ServiceManager internal.ServiceManagerOverride
+	ServiceManager provisioning.ServiceManagerOverrideConfig
 
 	KymaVersion                          string
 	ManagedRuntimeComponentsYAMLFilePath string
@@ -97,7 +102,6 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Loki":   runtime.NewLokiDisabler(),
 		"Kiali":  runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
 		"Jaeger": runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
 	}
@@ -108,38 +112,51 @@ func main() {
 	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
 	fatalOnError(err)
 
-	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion)
-
-	// create log dumper
-	dumper, err := broker.NewDumper()
+	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	fatalOnError(err)
+	//
+	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
+	fatalOnError(err)
+
+	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
+	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
+
+	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion)
 
 	// create and run queue, steps provisioning
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
-
-	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.ServiceManager)
+	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
+	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
+	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
 	stepManager.InitStep(initialisation)
-
-	stepManager.AddStep(1, runtimeStep)
+	stepManager.AddStep(1, resolveCredentialsStep)
+	stepManager.AddStep(2, smOverrideStep)
+	stepManager.AddStep(10, runtimeStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
 
+	err = processOperationsInProgress(db.Operations(), queue, logs)
+	fatalOnError(err)
+
+	plansValidator, err := broker.NewPlansSchemaValidator()
+	fatalOnError(err)
+
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
-		broker.NewServices(cfg.Broker, optComponentsSvc, dumper),
-		broker.NewProvision(cfg.Broker, db.Operations(), queue, inputFactory, dumper),
-		broker.NewDeprovision(db.Instances(), provisionerClient, dumper),
-		broker.NewUpdate(dumper),
-		broker.NewGetInstance(db.Instances(), dumper),
-		broker.NewLastOperation(db.Operations(), dumper),
-		broker.NewBind(dumper),
-		broker.NewUnbind(dumper),
-		broker.NewGetBinding(dumper),
-		broker.NewLastBindingOperation(dumper),
+		broker.NewServices(cfg.Broker, optComponentsSvc, logs),
+		broker.NewProvision(cfg.Broker, db.Operations(), queue, inputFactory, plansValidator, logs),
+		broker.NewDeprovision(db.Instances(), provisionerClient, logs),
+		broker.NewUpdate(logs),
+		broker.NewGetInstance(db.Instances(), logs),
+		broker.NewLastOperation(db.Operations(), logs),
+		broker.NewBind(logs),
+		broker.NewUnbind(logs),
+		broker.NewGetBinding(logs),
+		broker.NewLastBindingOperation(logs),
 	}
 
 	// create and run broker OSB API
@@ -147,6 +164,19 @@ func main() {
 	r := handlers.LoggingHandler(os.Stdout, brokerAPI)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
+}
+
+// queues all in progress provision operations existing in the database
+func processOperationsInProgress(op storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
+	operations, err := op.GetOperationsInProgressByType(dbsession.OperationTypeProvision)
+	if err != nil {
+		return errors.Wrap(err, "while getting in progress operations from storage")
+	}
+	for _, operation := range operations {
+		queue.Add(operation.ID)
+		log.Infof("Resuming the processing of operation ID: %s", operation.ID)
+	}
+	return nil
 }
 
 func fatalOnError(err error) {

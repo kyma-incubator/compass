@@ -62,8 +62,9 @@ type config struct {
 	}
 
 	Gardener struct {
-		Project        string `envconfig:"default=gardenerProject"`
-		KubeconfigPath string `envconfig:"default=./dev/kubeconfig.yaml"`
+		Project                  string `envconfig:"default=gardenerProject"`
+		KubeconfigPath           string `envconfig:"default=./dev/kubeconfig.yaml"`
+		AuditLogsPolicyConfigMap string `envconfig:"optional"`
 	}
 
 	Provisioner             string `envconfig:"default=gardener"`
@@ -128,7 +129,7 @@ func main() {
 		hydroformSvc := hydroform.NewHydroformService(client.NewHydroformClient(), cfg.Gardener.KubeconfigPath)
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
-		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient)
+		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, cfg.Gardener.AuditLogsPolicyConfigMap)
 		shootController, err := newShootController(cfg, gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, installationService, directorClient, runtimeConfigurator)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {

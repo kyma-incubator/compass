@@ -106,6 +106,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+// TODO: Remove; deprecated
 func TestRegisterApplicationWithAPIs(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -190,6 +191,7 @@ func TestRegisterApplicationWithAPIs(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+// TODO: Remove; deprecated
 func TestRegisterApplicationWithEventDefinitions(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -253,6 +255,7 @@ func TestRegisterApplicationWithEventDefinitions(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+// TODO: Remove; deprecated
 func TestRegisterApplicationWithDocuments(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -303,6 +306,36 @@ func TestRegisterApplicationWithDocuments(t *testing.T) {
 	err = tc.RunOperation(ctx, request, &actualApp)
 
 	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+	defer unregisterApplication(t, actualApp.ID)
+	assertApplication(t, in, actualApp)
+}
+
+func TestRegisterApplicationWithPackages(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	in := fixApplicationRegisterInputWithPackages()
+	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+	actualApp := graphql.ApplicationExt{}
+
+	// WHEN
+	request := gcli.NewRequest(
+		fmt.Sprintf(
+			`mutation {
+				result: registerApplication(in: %s) { 
+						%s 
+					}
+				}`,
+			appInputGQL,
+			tc.gqlFieldsProvider.ForApplication(),
+		))
+
+	err = tc.RunOperation(ctx, request, &actualApp)
+
+	//THEN
+	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with packages")
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer unregisterApplication(t, actualApp.ID)
@@ -436,11 +469,11 @@ func TestUpdateApplication(t *testing.T) {
 	defer unregisterApplication(t, actualApp.ID)
 
 	expectedApp := actualApp
-	expectedApp.Name = "after"
+	expectedApp.Name = "before"
 	expectedApp.ProviderName = ptr.String("after")
 	expectedApp.Description = ptr.String("after")
 	expectedApp.HealthCheckURL = ptr.String(webhookURL)
-	expectedApp.Labels["name"] = "after"
+	expectedApp.Labels["name"] = "before"
 
 	updateInput := fixSampleApplicationUpdateInput("after")
 	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
@@ -479,7 +512,7 @@ func TestUpdateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 	require.Contains(t, err.Error(), "does not exist")
 }
 
-func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
+func TestCreateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
@@ -493,23 +526,6 @@ func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
 		require.NoError(t, err)
 		request := fixRegisterApplicationRequest(appInputGQL)
-
-		// WHEN
-		err = tc.RunOperation(ctx, request, nil)
-
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "not unique")
-	})
-
-	t.Run("Error when updating Application with name that exists", func(t *testing.T) {
-		actualApp := registerApplication(t, ctx, "differentname")
-		defer unregisterApplication(t, actualApp.ID)
-
-		updateInput := fixSampleApplicationUpdateInput(appName)
-		updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
-		require.NoError(t, err)
-		request := fixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
 
 		// WHEN
 		err = tc.RunOperation(ctx, request, nil)
@@ -1063,7 +1079,7 @@ func TestTenantSeparation(t *testing.T) {
 			}
 		}`,
 		tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
-	customTenant := tenants["foo"]
+	customTenant := testTenants.GetIDByName(t, "Test1")
 	anotherTenantsApps := graphql.ApplicationPage{}
 	// THEN
 	err = tc.RunOperationWithCustomTenant(ctx, customTenant, getAppReq, &anotherTenantsApps)
@@ -1126,7 +1142,7 @@ func TestQueryAPIRuntimeAuths(t *testing.T) {
 				},
 			}
 
-			app := registerApplicationFromInputWithinTenant(t, ctx, appInput, defaultTenant)
+			app := registerApplicationFromInputWithinTenant(t, ctx, appInput, testTenants.GetDefaultTenantID())
 			defer unregisterApplication(t, app.ID)
 
 			var rtmIDs []string
@@ -1325,7 +1341,6 @@ func fixSampleApplicationCreateInputWithIntegrationSystem(placeholder string) gr
 
 func fixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
-		Name:           placeholder,
 		Description:    &placeholder,
 		HealthCheckURL: ptr.String(webhookURL),
 		ProviderName:   &placeholder,
@@ -1334,7 +1349,6 @@ func fixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpda
 
 func fixSampleApplicationUpdateInputWithIntegrationSystem(placeholder string) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
-		Name:                placeholder,
 		Description:         &placeholder,
 		HealthCheckURL:      ptr.String(webhookURL),
 		IntegrationSystemID: &integrationSystemID,

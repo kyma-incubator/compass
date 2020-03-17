@@ -43,7 +43,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	assert.NoError(t, err)
 
 	provisionerClient := &provisionerAutomock.Client{}
-	provisionerClient.On("ProvisionRuntime", globalAccountID, gqlschema.ProvisionRuntimeInput{
+	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "",
 			Description: nil,
@@ -54,10 +54,9 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				KubernetesVersion: "1.15.5",
+				KubernetesVersion: "1.15.11",
 				DiskType:          "pd-standard",
 				VolumeSizeGb:      30,
-				NodeCount:         2,
 				MachineType:       "n1-standard-4",
 				Region:            "europe-west4-a",
 				Provider:          "gcp",
@@ -84,27 +83,6 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 					Namespace:     "kyma-system",
 					Configuration: nil,
 				},
-				{
-					Component: input.ServiceManagerComponentName,
-					Namespace: "kyma-system",
-					Configuration: []*gqlschema.ConfigEntryInput{
-						{
-							Key:    "config.sm.url",
-							Value:  serviceManagerURL,
-							Secret: nil,
-						},
-						{
-							Key:    "sm.user",
-							Value:  serviceManagerUser,
-							Secret: nil,
-						},
-						{
-							Key:    "sm.password",
-							Value:  serviceManagerPassword,
-							Secret: ptr.Bool(true),
-						},
-					},
-				},
 			},
 			Configuration: nil,
 		},
@@ -125,7 +103,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		RuntimeID: ptr.String(runtimeID),
 	}, nil)
 
-	step := NewCreateRuntimeStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, internal.ServiceManagerOverride{})
+	step := NewCreateRuntimeStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
 
 	// when
 	entry := log.WithFields(logrus.Fields{"step": "TEST"})
@@ -161,7 +139,7 @@ func fixProvisioningParameters(t *testing.T) string {
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    subAccountID,
-			ServiceManager: internal.ServiceManagerEntryDTO{
+			ServiceManager: &internal.ServiceManagerEntryDTO{
 				Credentials: internal.ServiceManagerCredentials{
 					BasicAuth: internal.ServiceManagerBasicAuth{
 						Username: serviceManagerUser,
@@ -172,8 +150,7 @@ func fixProvisioningParameters(t *testing.T) string {
 			},
 		},
 		Parameters: internal.ProvisioningParametersDTO{
-			NodeCount: ptr.Integer(2),
-			Region:    ptr.String("europe-west4-a"),
+			Region: ptr.String("europe-west4-a"),
 		},
 	}
 
@@ -200,19 +177,9 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Namespace:     "kyma-system",
 			Configuration: nil,
 		},
-		{
-			Component:     input.ServiceManagerComponentName,
-			Namespace:     "kyma-system",
-			Configuration: nil,
-		},
 	}).Return(internal.ComponentConfigurationInputList{
 		{
 			Component:     "keb",
-			Namespace:     "kyma-system",
-			Configuration: nil,
-		},
-		{
-			Component:     input.ServiceManagerComponentName,
 			Namespace:     "kyma-system",
 			Configuration: nil,
 		},
@@ -225,10 +192,6 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 		},
 		{
 			Name:      "keb",
-			Namespace: "kyma-system",
-		},
-		{
-			Name:      input.ServiceManagerComponentName,
 			Namespace: "kyma-system",
 		},
 	}

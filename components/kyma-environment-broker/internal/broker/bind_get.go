@@ -5,21 +5,22 @@ import (
 	"errors"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
 )
 
 type GetBindingEndpoint struct {
-	dumper StructDumper
+	log logrus.FieldLogger
 }
 
-func NewGetBinding(dumper StructDumper) *GetBindingEndpoint {
-	return &GetBindingEndpoint{dumper: dumper}
+func NewGetBinding(log logrus.FieldLogger) *GetBindingEndpoint {
+	return &GetBindingEndpoint{log: log.WithField("service", "GetBindingEndpoint")}
 }
 
 // GetBinding fetches an existing service binding
 //   GET /v2/service_instances/{instance_id}/service_bindings/{binding_id}
 func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, bindingID string) (domain.GetBindingSpec, error) {
-	b.dumper.Dump("GetBinding instanceID:", instanceID)
-	b.dumper.Dump("GetBinding bindingID:", bindingID)
+	b.log.Infof("GetBinding instanceID: %s", instanceID)
+	b.log.Infof("GetBinding bindingID: %s", bindingID)
 
 	return domain.GetBindingSpec{}, errors.New("not supported")
 }

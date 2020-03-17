@@ -12,9 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
-	persistencemock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
+	persistencemock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -30,10 +31,10 @@ func TestHandler(t *testing.T) {
 	t.Run("success for the request parsed as JWT flow", func(t *testing.T) {
 		username := "admin"
 		scopes := "application:read"
-		reqDataMock := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.UsernameKey: username,
+					oathkeeper.UsernameKey: username,
 				},
 			},
 		}
@@ -74,10 +75,10 @@ func TestHandler(t *testing.T) {
 
 	t.Run("success for the request parsed as OAuth2 flow", func(t *testing.T) {
 		scopes := "application:read"
-		reqDataMock := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.ClientIDKey: systemAuthID.String(),
+					oathkeeper.ClientIDKey: systemAuthID.String(),
 				},
 			},
 		}
@@ -101,7 +102,7 @@ func TestHandler(t *testing.T) {
 		transactMock := getTransactMock()
 
 		mapperForSystemAuthMock := getMapperForSystemAuthMock()
-		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), tenantmapping.OAuth2Flow).Return(objCtx, nil).Once()
+		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), oathkeeper.OAuth2Flow).Return(objCtx, nil).Once()
 
 		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, mapperForSystemAuthMock)
 		handler.ServeHTTP(w, req)
@@ -118,11 +119,11 @@ func TestHandler(t *testing.T) {
 
 	t.Run("success for the request parsed as Certificate flow", func(t *testing.T) {
 		scopes := "application:read"
-		reqDataMock := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: make(map[string]interface{}),
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(tenantmapping.ClientIDCertKey): []string{systemAuthID.String()},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey): []string{systemAuthID.String()},
 				},
 			},
 		}
@@ -146,7 +147,7 @@ func TestHandler(t *testing.T) {
 		transactMock := getTransactMock()
 
 		mapperForSystemAuthMock := getMapperForSystemAuthMock()
-		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), tenantmapping.CertificateFlow).Return(objCtx, nil).Once()
+		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), oathkeeper.CertificateFlow).Return(objCtx, nil).Once()
 
 		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, mapperForSystemAuthMock)
 		handler.ServeHTTP(w, req)
@@ -163,11 +164,11 @@ func TestHandler(t *testing.T) {
 
 	t.Run("success for the request parsed as OneTimeToken flow", func(t *testing.T) {
 		scopes := "application:read"
-		reqDataMock := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: make(map[string]interface{}),
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(tenantmapping.ClientIDTokenKey): []string{systemAuthID.String()},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDTokenKey): []string{systemAuthID.String()},
 				},
 			},
 		}
@@ -191,7 +192,7 @@ func TestHandler(t *testing.T) {
 		transactMock := getTransactMock()
 
 		mapperForSystemAuthMock := getMapperForSystemAuthMock()
-		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), tenantmapping.OneTimeTokenFlow).Return(objCtx, nil).Once()
+		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), oathkeeper.OneTimeTokenFlow).Return(objCtx, nil).Once()
 
 		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, mapperForSystemAuthMock)
 		handler.ServeHTTP(w, req)
@@ -226,7 +227,7 @@ func TestHandler(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
-		reqDataParserMock.On("Parse", mock.Anything).Return(tenantmapping.ReqData{}, errors.New("some error")).Once()
+		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, errors.New("some error")).Once()
 
 		logger := getLoggerMock(t, "while parsing the request: some error")
 
@@ -237,20 +238,20 @@ func TestHandler(t *testing.T) {
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
-		out := tenantmapping.ReqData{}
+		out := oathkeeper.ReqData{}
 		err := json.NewDecoder(resp.Body).Decode(&out)
 		require.NoError(t, err)
 
-		assert.Equal(t, tenantmapping.ReqData{}, out)
+		assert.Equal(t, oathkeeper.ReqData{}, out)
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, logger)
 	})
 
 	t.Run("error when transaction begin fails", func(t *testing.T) {
-		reqData := tenantmapping.ReqData{
-			Body: tenantmapping.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantmapping.UsernameKey: "test",
+					oathkeeper.UsernameKey: "test",
 				},
 			},
 		}
@@ -273,7 +274,7 @@ func TestHandler(t *testing.T) {
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
-		out := tenantmapping.ReqBody{}
+		out := oathkeeper.ReqBody{}
 		err := json.NewDecoder(resp.Body).Decode(&out)
 		require.NoError(t, err)
 
@@ -287,7 +288,7 @@ func TestHandler(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
-		reqDataParserMock.On("Parse", mock.Anything).Return(tenantmapping.ReqData{}, nil).Once()
+		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, nil).Once()
 
 		transactMock := getTransactMock()
 
@@ -300,11 +301,11 @@ func TestHandler(t *testing.T) {
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
-		out := tenantmapping.ReqBody{}
+		out := oathkeeper.ReqBody{}
 		err := json.NewDecoder(resp.Body).Decode(&out)
 		require.NoError(t, err)
 
-		assert.Equal(t, tenantmapping.ReqBody{}, out)
+		assert.Equal(t, oathkeeper.ReqBody{}, out)
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock, logger)
 	})

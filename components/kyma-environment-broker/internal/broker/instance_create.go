@@ -10,9 +10,11 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 
+	"github.com/google/uuid"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=Queue -output=automock -outpkg=automock -case=underscore
@@ -29,14 +31,16 @@ type (
 )
 
 type ProvisionEndpoint struct {
-	operationsStorage storage.Operations
-	queue             Queue
-	builderFactory    PlanValidator
-	dumper            StructDumper
-	enabledPlanIDs    map[string]struct{}
+	operationsStorage    storage.Operations
+	queue                Queue
+	builderFactory       PlanValidator
+	enabledPlanIDs       map[string]struct{}
+	plansSchemaValidator PlansSchemaValidator
+
+	log logrus.FieldLogger
 }
 
-func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory PlanValidator, dumper StructDumper) *ProvisionEndpoint {
+func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory PlanValidator, validator PlansSchemaValidator, log logrus.FieldLogger) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
 		id := planIDsMapping[planName]
@@ -44,17 +48,21 @@ func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, bui
 	}
 
 	return &ProvisionEndpoint{
-		operationsStorage: operationsStorage,
-		queue:             q,
-		builderFactory:    builderFactory,
-		dumper:            dumper,
-		enabledPlanIDs:    enabledPlanIDs,
+		plansSchemaValidator: validator,
+		operationsStorage:    operationsStorage,
+		queue:                q,
+		builderFactory:       builderFactory,
+		log:                  log.WithField("service", "ProvisionEndpoint"),
+		enabledPlanIDs:       enabledPlanIDs,
 	}
 }
 
 // Provision creates a new service instance
 //   PUT /v2/service_instances/{instance_id}
 func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
+	operationID := uuid.New().String()
+	logger := b.log.WithField("instanceID", instanceID).WithField("operationID", operationID)
+	logger.Infof("Provision called: planID=%s", details.PlanID)
 	// validation of incoming input
 	ersContext, parameters, err := b.validateAndExtract(details)
 	if err != nil {
@@ -68,27 +76,29 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ErsContext: ersContext,
 		Parameters: parameters,
 	}
+	logger.Infof("Starting provisioning runtime: Name=%s, GlobalAccountID=%s, SubAccountID=%s", parameters.Name, ersContext.GlobalAccountID, ersContext.SubAccountID)
+	logger.Infof("Runtime parameters: %+v", parameters)
 
 	// check if operation with instance ID already created
 	existingOperation, errStorage := b.operationsStorage.GetProvisioningOperationByInstanceID(instanceID)
 	switch {
 	case errStorage != nil && !dberr.IsNotFound(errStorage):
-		b.dumper.Dump("cannot get existing operation from storage", errStorage)
+		logger.Errorf("cannot get existing operation from storage %s", errStorage)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot get existing operation from storage")
 	case existingOperation != nil && !dberr.IsNotFound(errStorage):
-		return b.handleExistingOperation(existingOperation, provisioningParameters)
+		return b.handleExistingOperation(existingOperation, provisioningParameters, logger)
 	}
 
 	// create and save new operation
-	operation, err := internal.NewProvisioningOperation(instanceID, provisioningParameters)
+	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
 	if err != nil {
-		b.dumper.Dump("cannot create new operation: ", err)
+		logger.Errorf("cannot create new operation: %s", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot create new operation")
 	}
 
 	err = b.operationsStorage.InsertProvisioningOperation(operation)
 	if err != nil {
-		b.dumper.Dump("cannot save operations: ", err)
+		logger.Errorf("cannot save operations: %s", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot save operations")
 	}
 
@@ -112,7 +122,16 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails) 
 		return ersContext, parameters, errors.Errorf("plan ID %q is not recognized", details.PlanID)
 	}
 
-	ersContext, err := b.extractERSContext(details)
+	result, err := b.plansSchemaValidator[details.PlanID].ValidateString(string(details.RawParameters))
+	if err != nil {
+		return ersContext, parameters, errors.Wrap(err, "while executing JSON schema validator")
+	}
+
+	if !result.Valid {
+		return ersContext, parameters, errors.Wrapf(result.Error, "while validating input parameters")
+	}
+
+	ersContext, err = b.extractERSContext(details)
 	if err != nil {
 		return ersContext, parameters, errors.Wrap(err, "while extracting ers context")
 	}
@@ -154,10 +173,10 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 	return parameters, nil
 }
 
-func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.ProvisioningOperation, input internal.ProvisioningParameters) (domain.ProvisionedServiceSpec, error) {
+func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.ProvisioningOperation, input internal.ProvisioningParameters, log logrus.FieldLogger) (domain.ProvisionedServiceSpec, error) {
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
-		b.dumper.Dump("cannot get provisioning parameters from exist operation", err)
+		log.Errorf("cannot get provisioning parameters from exist operation", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot get provisioning parameters from exist operation")
 	}
 	if pp.IsEqual(input) {
@@ -169,6 +188,6 @@ func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.Provisio
 	}
 
 	err = errors.New("provisioning operation already exist")
-	log := fmt.Sprintf("provisioning operation with InstanceID %s already exist", operation.InstanceID)
-	return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusConflict, log)
+	msg := fmt.Sprintf("provisioning operation with InstanceID %s already exist", operation.InstanceID)
+	return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusConflict, msg)
 }

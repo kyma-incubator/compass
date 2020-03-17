@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
-
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/director"
-
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+
+	"github.com/gorilla/mux"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -28,7 +27,7 @@ type GraphQLRequestBuilder interface {
 type applicationMiddleware struct {
 	cliProvider gqlcli.Provider
 	logger      *log.Logger
-	gqlProvider gql.GqlFieldsProvider
+	gqlProvider graphqlizer.GqlFieldsProvider
 }
 
 func NewApplicationMiddleware(cliProvider gqlcli.Provider, logger *log.Logger) *applicationMiddleware {
@@ -41,7 +40,7 @@ func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 		appName := variables[appNamePathVariable]
 
 		client := mw.cliProvider.GQLClient(r)
-		directorCli := director.NewClient(client, &gql.Graphqlizer{}, &gql.GqlFieldsProvider{})
+		directorCli := director.NewClient(client, &graphqlizer.Graphqlizer{}, &graphqlizer.GqlFieldsProvider{})
 		query := directorCli.GetApplicationsByNameRequest(appName)
 
 		var apps GqlSuccessfulAppPage

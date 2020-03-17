@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/sirupsen/logrus"
+	v12 "k8s.io/api/core/v1"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -11,22 +15,29 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 )
 
-func NewProvisioner(namespace string, client gardener_apis.ShootInterface) *GardenerProvisioner {
+func NewProvisioner(namespace string, client gardener_apis.ShootInterface, auditLogsCMName string) *GardenerProvisioner {
 	return &GardenerProvisioner{
-		namespace: namespace,
-		client:    client,
+		namespace:              namespace,
+		client:                 client,
+		auditLogsConfigMapName: auditLogsCMName,
 	}
 }
 
 type GardenerProvisioner struct {
-	namespace string
-	client    gardener_apis.ShootInterface
+	namespace              string
+	client                 gardener_apis.ShootInterface
+	auditLogsConfigMapName string
+	log                    *logrus.Entry
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) error {
 	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace)
 	if err != nil {
 		return fmt.Errorf("Failed to convert cluster config to Shoot template")
+	}
+
+	if g.shouldEnableAuditLogs(cluster.SubAccountId) {
+		enableAuditLogs(shootTemplate, g.auditLogsConfigMapName, cluster.SubAccountId)
 	}
 
 	annotate(shootTemplate, operationIdAnnotation, operationId)
@@ -78,6 +89,10 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, deletionTime), nil
 }
 
+func (g *GardenerProvisioner) shouldEnableAuditLogs(subAccountId string) bool {
+	return g.auditLogsConfigMapName != "" && subAccountId != ""
+}
+
 func newDeprovisionOperation(id, runtimeId, message string, state model.OperationState, startTime time.Time) model.Operation {
 	return model.Operation{
 		ID:             id,
@@ -87,4 +102,18 @@ func newDeprovisionOperation(id, runtimeId, message string, state model.Operatio
 		Message:        message,
 		ClusterID:      runtimeId,
 	}
+}
+
+func enableAuditLogs(shoot *gardener_types.Shoot, policyConfigMapName, subAccountId string) {
+	if shoot.Spec.Kubernetes.KubeAPIServer == nil {
+		shoot.Spec.Kubernetes.KubeAPIServer = &gardener_types.KubeAPIServerConfig{}
+	}
+
+	shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig = &gardener_types.AuditConfig{
+		AuditPolicy: &gardener_types.AuditPolicy{
+			ConfigMapRef: &v12.ObjectReference{Name: policyConfigMapName},
+		},
+	}
+
+	annotate(shoot, auditLogsAnnotation, subAccountId)
 }

@@ -82,8 +82,8 @@ func TestUpdateLabelDefinition_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	key := "test-validation-ld"
-	ld := createLabelDefinitionWithinTenant(t, ctx, key, map[string]string{"type": "string"}, defaultTenant)
-	defer deleteLabelDefinitionWithinTenant(t, ctx, ld.Key, true, defaultTenant)
+	ld := createLabelDefinitionWithinTenant(t, ctx, key, map[string]string{"type": "string"}, testTenants.GetDefaultTenantID())
+	defer deleteLabelDefinitionWithinTenant(t, ctx, ld.Key, true, testTenants.GetDefaultTenantID())
 	invalidInput := graphql.LabelDefinitionInput{
 		Key: "",
 	}
@@ -166,7 +166,7 @@ func TestUpdateApplication_Validation(t *testing.T) {
 	defer unregisterApplication(t, app.ID)
 
 	longDesc := strings.Repeat("a", 2001)
-	appUpdate := graphql.ApplicationUpdateInput{Name: "name", ProviderName: str.Ptr("compass"), Description: &longDesc}
+	appUpdate := graphql.ApplicationUpdateInput{ProviderName: str.Ptr("compass"), Description: &longDesc}
 	appInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(appUpdate)
 	require.NoError(t, err)
 	updateRequest := fixUpdateApplicationRequest(app.ID, appInputGQL)
@@ -354,7 +354,7 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 
 	appCreateInput := fixSampleApplicationRegisterInput("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
-		Name:             "0invalid",
+		Name:             "",
 		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
 		ApplicationInput: &appCreateInput,
 		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
@@ -380,7 +380,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 
 	appCreateInput := fixSampleApplicationRegisterInput("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
-		Name:             "0invalid",
+		Name:             "",
 		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
 		ApplicationInput: &appCreateInput,
 		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,

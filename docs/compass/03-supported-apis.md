@@ -1,12 +1,6 @@
-# API Specifications Support
+# Supported API specifications
 
-## Overview
-
-This document describes current and planned API specification support in Kyma components.
-
-## Currently supported API specification versions and formats
-
-The following table shows currently supported API specification versions and formats in different components.
+These are the currently supported API specification versions and formats in different components:
 
 > **NOTE:** The last row describes support for extracting API specifications from archive files.
 
@@ -25,7 +19,7 @@ Rafter would be responsible for validating and converting API specifications for
 Because Compass UI does not use Rafter conversion would have to be done in Compass Backend.
 Preferably Rafter's converters and validators should be exposed as services or libraries that could be used by Compass Backend and Compass UI.
 
-> **NOTE:**  The last row describes support for extracting API specifications from archive files. 
+> **NOTE:**  The last row describes support for extracting API specifications from archive files.
 
 | | Console UI & Compass UI (rendering) | Runtime Rafter (storing) |  Compass UI (uploading) | Compass Backend (storing) | Runtime Agent (storing)
 | --- | --- | --- | --- | --- |  --- |

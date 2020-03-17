@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 type readSession struct {
@@ -41,6 +42,23 @@ func (r readSession) GetOperationByID(opID string) (OperationDTO, dberr.Error) {
 		}
 	}
 	return operation, nil
+}
+
+func (r readSession) GetOperationsInProgressByType(operationType OperationType) ([]OperationDTO, dberr.Error) {
+	stateCondition := dbr.Eq("state", domain.InProgress)
+	typeCondition := dbr.Eq("type", operationType)
+	var operations []OperationDTO
+
+	_, err := r.session.
+		Select("*").
+		From(postsql.OperationTableName).
+		Where(stateCondition).
+		Where(typeCondition).
+		Load(&operations)
+	if err != nil {
+		return nil, dberr.Internal("Failed to get operations: %s", err)
+	}
+	return operations, nil
 }
 
 func (r readSession) GetOperationByInstanceID(inID string) (OperationDTO, dberr.Error) {

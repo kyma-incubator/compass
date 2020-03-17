@@ -19,12 +19,18 @@ type AuthConverter interface {
 }
 
 type converter struct {
-	auth AuthConverter
+	auth     AuthConverter
+	api      APIConverter
+	event    EventConverter
+	document DocumentConverter
 }
 
-func NewConverter(auth AuthConverter) *converter {
+func NewConverter(auth AuthConverter, api APIConverter, event EventConverter, document DocumentConverter) *converter {
 	return &converter{
-		auth: auth,
+		auth:     auth,
+		api:      api,
+		event:    event,
+		document: document,
 	}
 }
 
@@ -66,7 +72,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Package, error) {
 		TenantID:                       entity.TenantID,
 		ApplicationID:                  entity.ApplicationID,
 		Name:                           entity.Name,
-		Description:                    &entity.Description.String,
+		Description:                    repo.StringPtrFromNullableString(entity.Description),
 		DefaultInstanceAuth:            defaultInstanceAuth,
 		InstanceAuthRequestInputSchema: repo.StringPtrFromNullableString(entity.InstanceAuthRequestJSONSchema),
 	}
@@ -104,13 +110,29 @@ func (c *converter) MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, 
 	return packages, nil
 }
 
-func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) (*model.PackageCreateInput, error) {
-	return &model.PackageCreateInput{
+func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) model.PackageCreateInput {
+	return model.PackageCreateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            c.auth.InputFromGraphQL(in.DefaultInstanceAuth),
-	}, nil
+		APIDefinitions:                 c.api.MultipleInputFromGraphQL(in.APIDefinitions),
+		EventDefinitions:               c.event.MultipleInputFromGraphQL(in.EventDefinitions),
+		Documents:                      c.document.MultipleInputFromGraphQL(in.Documents),
+	}
+}
+
+func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) []*model.PackageCreateInput {
+	var packages []*model.PackageCreateInput
+	for _, item := range in {
+		if item == nil {
+			continue
+		}
+		pkg := c.CreateInputFromGraphQL(*item)
+		packages = append(packages, &pkg)
+	}
+
+	return packages
 }
 
 func (c *converter) UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error) {

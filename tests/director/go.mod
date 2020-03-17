@@ -3,14 +3,13 @@ module github.com/kyma-incubator/compass/tests/director
 go 1.13
 
 require (
-	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect
 	github.com/avast/retry-go v2.5.0+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/huandu/xstrings v1.3.0 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200228131107-650ca2e25748
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200313120115-f32c0dd81de5
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/pkg/errors v0.9.1

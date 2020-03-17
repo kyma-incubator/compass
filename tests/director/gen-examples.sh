@@ -16,11 +16,12 @@ DIRECTOR_CONTAINER="compass-dev-director"
 POSTGRES_VERSION="11"
 MIGRATOR_IMG_NAME="compass-schema-migrator"
 DIRECTOR_IMG_NAME="compass-director"
-DB_USER="usr"
-DB_PWD="pwd"
-DB_NAME="compass"
-DB_PORT="5432"
-DB_SSL_PARAM="disable"
+export APP_DB_USER="usr"
+export APP_DB_PASSWORD="pwd"
+export APP_DB_NAME="compass"
+export APP_DB_PORT="5432"
+export APP_DB_SSL_PARAM="disable"
+export APP_DB_HOST=${POSTGRES_CONTAINER}
 APP_PORT="3001"
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -48,9 +49,9 @@ trap cleanup EXIT
 echo -e "${GREEN}Running database container...${NC}"
 docker run -d --name ${POSTGRES_CONTAINER} \
     --network=${NETWORK} \
-    -e POSTGRES_USER=${DB_USER} \
-    -e POSTGRES_PASSWORD=${DB_PWD} \
-    -e POSTGRES_DB=${DB_NAME} \
+    -e POSTGRES_USER=${APP_DB_USER} \
+    -e POSTGRES_PASSWORD=${APP_DB_PASSWORD} \
+    -e POSTGRES_DB=${APP_DB_NAME} \
     -p 5432:5432 \
     postgres:${POSTGRES_VERSION}
 
@@ -59,19 +60,19 @@ cd "${SCRIPT_DIR}/../../components/schema-migrator/" && docker build -t $MIGRATO
 
 echo -e "${GREEN}Running migration...${NC}"
 docker run --rm --network=${NETWORK} \
-    -e DB_USER=${DB_USER} \
-    -e DB_PASSWORD=${DB_PWD} \
+    -e DB_USER=${APP_DB_USER} \
+    -e DB_PASSWORD=${APP_DB_PASSWORD} \
     -e DB_HOST=${POSTGRES_CONTAINER} \
-    -e DB_PORT=${DB_PORT} \
-    -e DB_NAME=${DB_NAME} \
-    -e DB_SSL=${DB_SSL_PARAM} \
+    -e DB_PORT=${APP_DB_PORT} \
+    -e DB_NAME=${APP_DB_NAME} \
+    -e DB_SSL=${APP_DB_SSL_PARAM} \
     -e DIRECTION="up" \
     -e MIGRATION_PATH="director" \
     ${MIGRATOR_IMG_NAME}
 
 
 echo -e "${GREEN}Seeding the db...${NC}"
-PGPASSWORD=${DB_PWD} psql -h ${POSTGRES_CONTAINER} -U ${DB_USER} -f <(cat seeds/director/*.sql) ${DB_NAME}
+PGPASSWORD=${APP_DB_PASSWORD} psql -h ${POSTGRES_CONTAINER} -U ${APP_DB_USER} -f <(cat seeds/director/*.sql) ${APP_DB_NAME}
 
 echo -e "${GREEN}Building Director image...${NC}"
 
@@ -92,11 +93,11 @@ docker run --name ${DIRECTOR_CONTAINER} -d --network=${NETWORK} \
     -v "${STATIC_GROUPS_PATH}:/data/static-groups.yaml" \
     -v "${HOST_ROOT_PATH}/components/director/hack/default-jwks.json:/app/default-jwks.json" \
     -e APP_ADDRESS=0.0.0.0:${APP_PORT} \
-    -e APP_DB_USER=${DB_USER} \
-    -e APP_DB_PASSWORD=${DB_PWD} \
+    -e APP_DB_USER=${APP_DB_USER} \
+    -e APP_DB_PASSWORD=${APP_DB_PASSWORD} \
     -e APP_DB_HOST=${POSTGRES_CONTAINER} \
-    -e APP_DB_PORT=${DB_PORT} \
-    -e APP_DB_NAME=${DB_NAME} \
+    -e APP_DB_PORT=${APP_DB_PORT} \
+    -e APP_DB_NAME=${APP_DB_NAME} \
     -e APP_SCOPES_CONFIGURATION_FILE=/app/config.yaml \
     -e APP_STATIC_USERS_FILE=/data/static-users.yaml \
     -e APP_OAUTH20_CLIENT_ENDPOINT="https://oauth2-admin.kyma.local/clients" \
@@ -113,6 +114,7 @@ export DIRECTOR_URL="http://${DIRECTOR_URL}:${APP_PORT}"
 DIRECTOR_HEALTHZ_URL="${DIRECTOR_URL}/healthz" ./wait-for-director.sh
 
 echo -e "${GREEN}Removing previous GraphQL examples...${NC}"
+touch "${LOCAL_ROOT_PATH}"/components/director/examples/tmp
 rm -r "${LOCAL_ROOT_PATH}"/components/director/examples/*
 
 echo -e "${GREEN}Running Director API tests with generating examples...${NC}"

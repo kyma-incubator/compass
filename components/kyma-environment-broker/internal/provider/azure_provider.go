@@ -10,16 +10,15 @@ type AzureInput struct{}
 func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			KubernetesVersion: "1.15.4",
+			KubernetesVersion: "1.15.11",
 			DiskType:          "Standard_LRS",
 			VolumeSizeGb:      50,
-			NodeCount:         3,
-			MachineType:       "Standard_D2_v3",
+			MachineType:       "Standard_D8_v3",
 			Region:            "westeurope",
 			Provider:          "azure",
 			WorkerCidr:        "10.250.0.0/19",
-			AutoScalerMin:     2,
-			AutoScalerMax:     4,
+			AutoScalerMin:     3,
+			AutoScalerMax:     10,
 			MaxSurge:          4,
 			MaxUnavailable:    1,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{

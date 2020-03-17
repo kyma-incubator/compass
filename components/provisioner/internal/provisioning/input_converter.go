@@ -15,7 +15,7 @@ import (
 )
 
 type InputConverter interface {
-	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant string) (model.Cluster, error)
+	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, error)
 }
 
 func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider, gardenerProject string) InputConverter {
@@ -32,7 +32,7 @@ type converter struct {
 	gardenerProject string
 }
 
-func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant string) (model.Cluster, error) {
+func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, error) {
 	var err error
 
 	var kymaConfig model.KymaConfig
@@ -51,17 +51,13 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		}
 	}
 
-	var credSecretName string
-	if input.Credentials != nil {
-		credSecretName = input.Credentials.SecretName
-	}
-
 	return model.Cluster{
 		ID:                    runtimeID,
-		CredentialsSecretName: credSecretName,
+		CredentialsSecretName: "",
 		KymaConfig:            kymaConfig,
 		ClusterConfig:         providerConfig,
 		Tenant:                tenant,
+		SubAccountId:          subAccountId,
 	}, nil
 }
 
@@ -116,10 +112,10 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 }
 
 func (c converter) createGardenerClusterName(provider string) string {
-	uuid := c.uuidGenerator.New()
+	id := c.uuidGenerator.New()
 	provider = util.RemoveNotAllowedCharacters(provider)
 
-	name := strings.ReplaceAll(uuid, "-", "")
+	name := strings.ReplaceAll(id, "-", "")
 	name = fmt.Sprintf("%.3s-%.7s", provider, name)
 	name = util.StartWithLetter(name)
 	name = strings.ToLower(name)

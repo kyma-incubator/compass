@@ -21,7 +21,6 @@ func (i ApplicationRegisterInput) Validate() error {
 
 func (i ApplicationUpdateInput) Validate() error {
 	return validation.ValidateStruct(&i,
-		validation.Field(&i.Name, validation.Required, inputvalidation.DNSName),
 		validation.Field(&i.ProviderName, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		validation.Field(&i.HealthCheckURL, inputvalidation.IsURL, validation.RuneLength(0, longStringLengthLimit)),

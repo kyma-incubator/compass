@@ -3,16 +3,10 @@ global:
   tenants:
     - name: default
       id: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
-    - name: test-default-tenant
-      id: 9ca034f1-11ab-5b25-b76f-dc77106f571d
     - name: foo
       id: 1eba80dd-8ff6-54ee-be4d-77944d17b10b
     - name: bar
       id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
-    - name: foobar
-      id: 2bf03de1-23b1-4063-9d3e-67096800accc
-    - name: foobaz
-      id: f739b36c-813f-4fc3-996e-dd03c7d13aa0
 
   images:
     containerRegistry:
@@ -22,25 +16,25 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-831"
+      version: "PR-935"
     pairing_adapter:
       dir:
       version: "PR-867"
     director:
       dir:
-      version: "PR-852"
+      version: "PR-971"
     gateway:
-      dir: pr/
-      version: "PR-357"
+      dir:
+      version: "PR-943"
     healthchecker:
       dir: pr/
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-802"
+      version: "PR-913"
     provisioner:
       dir:
-      version: "PR-669"
+      version: "PR-913"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -48,26 +42,36 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-896"
+      version: "PR-913"
     tests:
       director:
         dir:
-        version: "PR-852"
+        version: "PR-966"
       connector:
         dir:
         version: "02e8358c"
       provisioner:
         dir:
-        version: "PR-552"
+        version: "PR-565"
+      e2e_provisioning:
+        dir:
+        version: "6b8099b5"
       connectivity_adapter:
         dir:
-        version: "PR-891"
+        version: "PR-935"
   isLocalEnv: false
   oauth2:
     host: oauth2
 
   director:
     port: 3000
+
+  auditlog:
+    enabled: false
+    configmap:
+      name: "compass-gateway-auditlog-config"
+    secret:
+      name: "compass-gateway-auditlog-secret"
 
   tenantConfig:
     useDefaultTenants: true
@@ -179,6 +183,13 @@ global:
     idTokenConfig:
       claims: "{\"scopes\": \"{{ print .Extra.scope }}\", \"tenant\": \"{{ print .Extra.tenant }}\", \"consumerID\": \"{{ print .Extra.consumerID}}\", \"consumerType\": \"{{ print .Extra.consumerType }}\"}"
     mutators:
+      runtimeMappingService:
+        config:
+          api:
+            url: http://compass-director.compass-system.svc.cluster.local:3000/runtime-mapping
+            retry:
+              give_up_after: 3s
+              max_delay: 2000ms
       tenantMappingService:
         config:
           api:

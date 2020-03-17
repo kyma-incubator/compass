@@ -36,7 +36,7 @@ type Config struct {
 // EnablePlans defines the plans that should be available for provisioning
 type EnablePlans []string
 
-// Unmarshal provides custom parsing of Log Level.
+// Unmarshal provides custom parsing of enabled plans.
 // Implements envconfig.Unmarshal interface.
 func (m *EnablePlans) Unmarshal(in string) error {
 	plans := strings.Split(in, ",")

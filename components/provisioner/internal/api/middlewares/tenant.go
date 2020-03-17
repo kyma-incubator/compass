@@ -10,18 +10,27 @@ import (
 
 type Header string
 
-const Tenant Header = "tenant"
+const (
+	Tenant       Header = "tenant"
+	SubAccountID Header = "sub-account"
+)
 
 func ExtractTenant(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tenant := r.Header.Get(string(Tenant))
-
 		if tenant == "" {
 			util.RespondWithError(w, 400, errors.New("tenant header is empty"))
 			return
 		}
 
-		reqWithCtx := r.WithContext(context.WithValue(r.Context(), Tenant, tenant))
+		ctx := context.WithValue(r.Context(), Tenant, tenant)
+
+		subAccount := r.Header.Get(string(SubAccountID))
+		if subAccount != "" {
+			ctx = context.WithValue(ctx, SubAccountID, subAccount)
+		}
+
+		reqWithCtx := r.WithContext(ctx)
 
 		handler.ServeHTTP(w, reqWithCtx)
 	})

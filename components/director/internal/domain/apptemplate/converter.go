@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+
 	"github.com/pkg/errors"
 )
 
@@ -148,8 +149,8 @@ func (c *converter) graphqliseApplicationCreateInput(jsonAppInput string) (strin
 		return "", errors.Wrap(err, "while unmarshaling application create input")
 	}
 
-	g := Graphqlizer{}
-	gqlAppInput, err := g.ApplicationCreateInputToGQL(gqlAppCreateInput)
+	g := graphqlizer.Graphqlizer{}
+	gqlAppInput, err := g.ApplicationRegisterInputToGQL(gqlAppCreateInput)
 	if err != nil {
 		return "", errors.Wrap(err, "while graphqlising application create input")
 	}
