@@ -1,4 +1,4 @@
-package event_hub
+package provisioning
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"

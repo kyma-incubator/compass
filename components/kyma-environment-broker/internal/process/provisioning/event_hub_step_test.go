@@ -1,4 +1,4 @@
-package event_hub
+package provisioning
 
 import (
 	"context"
@@ -18,16 +18,14 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/automock"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	inputAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 )
-
-const kymaVersion = "1.10"
 
 func fixLogger() logrus.FieldLogger {
 	return logrus.StandardLogger()
@@ -103,7 +101,7 @@ func NewFakeHyperscalerProviderError() azure.HyperscalerProvider {
 	}
 }
 
-func Test_Overrides(t *testing.T) {
+func Test_HappyPath(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
 	accountProvider := fixAccountProvider()
@@ -315,7 +313,7 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 	return allOverridesFound
 }
 
-func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
+func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	optComponentsSvc := &inputAutomock.OptionalComponentService{}
 	componentConfigurationInputList := internal.ComponentConfigurationInputList{
 		{
@@ -400,7 +398,7 @@ func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
 				"region": "europe-west3"
 			}
 		}`,
-		InputCreator: fixInputCreator(t),
+		InputCreator: fixKnativeKafkaInputCreator(t),
 	}
 	return op
 }
@@ -412,7 +410,7 @@ func fixInvalidProvisioningOperation(t *testing.T) internal.ProvisioningOperatio
 		ProvisioningParameters: `{
 			"parameters": a{}a
 		}`,
-		InputCreator: fixInputCreator(t),
+		InputCreator: fixKnativeKafkaInputCreator(t),
 	}
 	return op
 }

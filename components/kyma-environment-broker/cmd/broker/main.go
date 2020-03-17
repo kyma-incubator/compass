@@ -6,12 +6,13 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub/azure"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
-	event_hub "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event-hub"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
@@ -22,7 +23,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
-	"github.com/pkg/errors"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
@@ -134,7 +134,7 @@ func main() {
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
-	provisionAzureEventHub := event_hub.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureClient(), accountProvider, ctx)
+	provisionAzureEventHub := provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureClient(), accountProvider, ctx)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 
