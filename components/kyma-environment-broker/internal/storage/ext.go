@@ -9,6 +9,7 @@ type Instances interface {
 	GetByID(instanceID string) (*internal.Instance, error)
 	Insert(instance internal.Instance) error
 	Update(instance internal.Instance) error
+	Delete(instanceID string) error
 }
 
 type Operations interface {
