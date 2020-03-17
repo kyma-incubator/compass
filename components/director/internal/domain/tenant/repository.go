@@ -88,6 +88,10 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 	var items []*model.BusinessTenantMapping
 
 	for _, entity := range entityCollection {
+		if entity.Status == Inactive {
+			continue
+		}
+
 		tmModel := r.conv.FromEntity(&entity)
 		items = append(items, tmModel)
 	}
