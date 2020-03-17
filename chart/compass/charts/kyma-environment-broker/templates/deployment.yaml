@@ -119,7 +119,7 @@ spec:
             - name: APP_GARDENER_PROJECT
               value: {{ .Values.global.gardener.project }}
             - name: APP_GARDENER_KUBECONFIG_PATH
-              value: {{ .Values.global.gardener.kubeconfigPath }}
+              value: {{ .Values.global.gardener.kubeconfigMountPath }}/kubeconfig
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
@@ -127,7 +127,7 @@ spec:
           resources:
               {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            - mountPath: /gardener/kubeconfig
+            - mountPath: {{ .Values.global.gardener.kubeconfigMountPath }}
               name: gardener-kubeconfig
               readOnly: true
             - mountPath: /config
