@@ -16,7 +16,7 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-892"
+      version: "PR-984"
     pairing_adapter:
       dir:
       version: "PR-867"
@@ -58,7 +58,7 @@ global:
         version: "6b8099b5"
       connectivity_adapter:
         dir:
-        version: "PR-935"
+        version: "PR-984"
   isLocalEnv: false
   oauth2:
     host: oauth2

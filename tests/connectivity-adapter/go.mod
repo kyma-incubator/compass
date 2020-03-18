@@ -12,5 +12,3 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/vrischmann/envconfig v1.2.0
 )
-
-replace github.com/kyma-incubator/compass/components/director => github.com/kfurgol/compass/components/director v0.0.0-20200318061650-e199a9977f64
