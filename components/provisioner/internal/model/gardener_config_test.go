@@ -291,6 +291,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(true),
 						Version:                   "1.15",
+						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
+							EnableBasicAuthentication: util.BoolPtr(false),
+						},
 					},
 					Maintenance: &gardener_types.Maintenance{},
 				},
@@ -336,6 +339,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(true),
 						Version:                   "1.15",
+						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
+							EnableBasicAuthentication: util.BoolPtr(false),
+						},
 					},
 					Maintenance: &gardener_types.Maintenance{},
 				},
@@ -381,6 +387,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(true),
 						Version:                   "1.15",
+						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
+							EnableBasicAuthentication: util.BoolPtr(false),
+						},
 					},
 					Maintenance: &gardener_types.Maintenance{},
 				},
