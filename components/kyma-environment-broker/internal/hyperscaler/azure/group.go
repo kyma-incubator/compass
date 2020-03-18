@@ -12,7 +12,7 @@ func getGroupsClient(config *Config) (resources.GroupsClient, error) {
 
 	authorizer, err := GetResourceManagementAuthorizer(config)
 	if err != nil {
-		return resources.GroupsClient{}, fmt.Errorf("failed to initialize authorizer with error: %v", err)
+		return resources.GroupsClient{}, errors.Wrap(err, "while initializing authorizer")
 	}
 	client.Authorizer = authorizer
 

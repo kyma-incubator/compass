@@ -16,7 +16,7 @@ func GetResourceManagementAuthorizer(config *Config) (autorest.Authorizer, error
 
 	environment, err := config.Environment()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while getting environment")
 	}
 	a, err := getAuthorizerForResource(config, environment.ResourceManagerEndpoint)
 	if err != nil {
