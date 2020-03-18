@@ -93,7 +93,6 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		Name:                   name,
 		ProjectName:            c.gardenerProject,
 		KubernetesVersion:      input.KubernetesVersion,
-		NodeCount:              input.NodeCount,
 		VolumeSizeGB:           input.VolumeSizeGb,
 		DiskType:               input.DiskType,
 		MachineType:            input.MachineType,

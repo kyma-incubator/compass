@@ -24,7 +24,6 @@ CREATE TABLE gardener_config
     name varchar(256) NOT NULL UNIQUE,
     project_name varchar(256) NOT NULL,
     kubernetes_version varchar(256) NOT NULL,
-    node_Count integer NOT NULL,
     volume_size_gb varchar(256) NOT NULL,
     machine_type varchar(256) NOT NULL,
     region varchar(256) NOT NULL,
