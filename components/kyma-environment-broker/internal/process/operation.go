@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
@@ -48,6 +50,23 @@ func (om *OperationManager) UpdateOperation(operation internal.ProvisioningOpera
 	}
 
 	return *updatedOperation, 0
+}
+
+// RetryOperationOnce retries the operation once and fails the operation when call second time
+func (om *OperationManager) RetryOperationOnce(operation internal.ProvisioningOperation, errorMessage string, wait time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	return om.RetryOperation(operation, errorMessage, wait, wait+1, log)
+}
+
+// RetryOperation retries an operation for at maxTime in retryInterval steps and fails the operation if retrying failed
+func (om *OperationManager) RetryOperation(operation internal.ProvisioningOperation, errorMessage string, retryInterval time.Duration, maxTime time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	since := time.Since(operation.UpdatedAt)
+
+	log.Infof("Retrying for %s in %s steps", maxTime.String(), retryInterval.String())
+	if since < maxTime {
+		return operation, retryInterval, nil
+	}
+	log.Errorf("Aborting after %s of failing retries", maxTime.String())
+	return om.OperationFailed(operation, errorMessage)
 }
 
 func (om *OperationManager) update(operation internal.ProvisioningOperation, state domain.LastOperationState, description string) (internal.ProvisioningOperation, time.Duration) {

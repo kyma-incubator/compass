@@ -37,14 +37,18 @@ var _ azure.EventhubsInterface = (*FakeNamespaceClient)(nil)
 /// A fake client for Azure EventHubs Namespace handling
 type FakeNamespaceClient struct {
 	persistEventhubsNamespaceError error
-	listError                      error
 	resourceGroupError             error
+	accessKeysError                error
+	accessKeys                     *eventhub.AccessKeys
 }
 
 func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
+	if nc.accessKeys != nil {
+		return *nc.accessKeys, nil
+	}
 	return eventhub.AccessKeys{
 		PrimaryConnectionString: ptr.String("Endpoint=sb://name/;"),
-	}, nc.listError
+	}, nc.accessKeysError
 }
 
 func (nc *FakeNamespaceClient) CreateResourceGroup(ctx context.Context, config *azure.Config, name string) (resources.Group, error) {
@@ -64,11 +68,22 @@ func NewFakeNamespaceClientCreationError() azure.EventhubsInterface {
 }
 
 func NewFakeNamespaceClientListError() azure.EventhubsInterface {
-	return &FakeNamespaceClient{listError: fmt.Errorf("cannot list namespaces")}
+	return &FakeNamespaceClient{accessKeysError: fmt.Errorf("cannot list namespaces")}
 }
 
 func NewFakeNamespaceResourceGroupError() azure.EventhubsInterface {
 	return &FakeNamespaceClient{resourceGroupError: fmt.Errorf("cannot create resource group")}
+}
+
+func NewFakeNamespaceAccessKeysNil() azure.EventhubsInterface {
+	return &FakeNamespaceClient{
+		// no error here
+		accessKeysError: nil,
+		accessKeys: &eventhub.AccessKeys{
+			// ups .. we got an AccessKeys with nil connection string even though there was no error
+			PrimaryConnectionString: nil,
+		},
+	}
 }
 
 func NewFakeNamespaceClientHappyPath() azure.EventhubsInterface {
@@ -112,6 +127,7 @@ func Test_HappyPath(t *testing.T) {
 	require.NoError(t, err)
 
 	// when
+	op.UpdatedAt = time.Now()
 	op, _, err = step.Run(op, fixLogger())
 	require.NoError(t, err)
 	provisionRuntimeInput, err := op.InputCreator.Create()
@@ -170,6 +186,20 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... namespace cannot get listed
 					NewFakeHyperscalerProvider(NewFakeNamespaceClientListError()),
+					&accountProvider,
+					context.Background(),
+				)
+			},
+			wantRepeatOperation: true,
+		},
+		{
+			name:          "No error while getting EventHubs Namespace credentials, but PrimaryConnectionString in AccessKey is nil",
+			giveOperation: fixProvisioningOperation,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
+				accountProvider := fixAccountProvider()
+				return *NewProvisionAzureEventHubStep(storage.Operations(),
+					// ups ... PrimaryConnectionString is nil
+					NewFakeHyperscalerProvider(NewFakeNamespaceAccessKeysNil()),
 					&accountProvider,
 					context.Background(),
 				)

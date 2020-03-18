@@ -144,7 +144,7 @@ func main() {
 
 	stepManager.AddStep(1, resolveCredentialsStep)
 	stepManager.AddStep(2, provisionAzureEventHub)
-	stepManager.AddStep(3, smOverrideStep)
+	stepManager.AddStep(2, smOverrideStep)
 	stepManager.AddStep(10, runtimeStep)
 
 	queue := process.NewQueue(stepManager)
