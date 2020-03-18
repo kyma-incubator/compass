@@ -105,7 +105,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 			assertAnnotation(t, shoot, provisioningStepAnnotation, ProvisioningInProgressStep.String())
 
 			assert.Equal(t, testCase.subAccountId, shoot.Labels[model.SubAccountLabel])
-			
+
 			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer)
 			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
 			assert.False(t, *shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
