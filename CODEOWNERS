@@ -19,7 +19,7 @@
 /docs/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 
 # Compass UI
-/chart/compass/charts/cockpit @kwiatekus @dariadomagala @y-kkamil @parostatkiem @akucharska @sjanota
+/chart/compass/charts/cockpit @kwiatekus @dariadomagala @y-kkamil @parostatkiem @akucharska @sjanota @Wawrzyn321
 
 # All .md files
 *.md @klaudiagrz @kazydek @tomekpapiernik @bszwarc @mmitoraj @majakurcius @alexandra-simeonova
