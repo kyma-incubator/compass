@@ -610,6 +610,14 @@
   version = "v0.0.10"
 
 [[projects]]
+  branch = "master"
+  digest = "1:8126c338c3a93a2c86230e5ee671241ab5881404435d75f2ceb0353311ae268b"
+  name = "github.com/vburenin/nsync"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "9a75d1c80410815ac45d65fc01ccabac9c98dd4a"
+
+[[projects]]
   digest = "1:831b94be76a8fe3b3b882e52752423070f1b2d7940ecc381cdac66ac01492bfd"
   name = "github.com/vektah/gqlparser"
   packages = [
@@ -1108,7 +1116,9 @@
     "github.com/stretchr/testify/require",
     "github.com/testcontainers/testcontainers-go",
     "github.com/testcontainers/testcontainers-go/wait",
+    "github.com/vburenin/nsync",
     "github.com/vrischmann/envconfig",
+    "golang.org/x/oauth2",
     "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",

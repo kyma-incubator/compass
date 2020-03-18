@@ -6,6 +6,7 @@ import (
 	cloudProvider "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+	"github.com/vburenin/nsync"
 )
 
 type (
@@ -71,6 +72,8 @@ func (f *InputBuilderFactory) ForPlan(planID string) (internal.ProvisionInputCre
 	return &RuntimeInput{
 		input:                     initInput,
 		overrides:                 make(map[string][]*gqlschema.ConfigEntryInput, 0),
+		globalOverrides:           make([]*gqlschema.ConfigEntryInput, 0),
+		mutex:                     nsync.NewNamedMutex(),
 		hyperscalerInputProvider:  provider,
 		optionalComponentsService: f.optComponentsSvc,
 	}, true

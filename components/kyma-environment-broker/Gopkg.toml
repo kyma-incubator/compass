@@ -66,10 +66,6 @@
   version = "0.8.1"
 
 [[constraint]]
-  name = "github.com/sanity-io/litter"
-  version = "1.2.0"
-
-[[constraint]]
   name = "github.com/sirupsen/logrus"
   version = "1.4.2"
 

@@ -96,6 +96,14 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 		},
 	})
 
+	// Can be remove when the compass will be enabled by default in Kyma. (after 1.12)
+	log.Info("set overrides to enable Packages support in SKR")
+	creator.AppendGlobalOverrides([]*gqlschema.ConfigEntryInput{
+		{
+			Key: "global.enableAPIPackages", Value: "true",
+		},
+	})
+
 	operation.InputCreator = creator
 	return operation, 0, nil
 }
