@@ -1,13 +1,12 @@
 package azure
 
 import (
-	"fmt"
-
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/pkg/errors"
 )
 
 type HyperscalerProvider interface {
@@ -32,19 +31,19 @@ func (ac *azureProvider) GetClient(config *Config) (AzureInterface, error) {
 
 	authorizer, err := ac.getResourceManagementAuthorizer(config, environment)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize authorizer with error: %v", err)
+		return nil, errors.Wrap(err, "while initializing authorizer")
 	}
 
 	// create namespace client
 	nsClient, err := ac.getNamespaceClient(config, authorizer)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create namespace client with error: %v", err)
+		return nil, errors.Wrap(err, "while creating namespace client")
 	}
 
 	// create resource group client
 	resourcegroupClient, err := ac.getGroupsClient(config, authorizer)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create resource group client with error: %v", err)
+		return nil, errors.Wrap(err, "while creating resource group client")
 	}
 
 	// create azure client
@@ -57,7 +56,7 @@ func (ac *azureProvider) getNamespaceClient(config *Config, authorizer autorest.
 	nsClient.Authorizer = authorizer
 
 	if err := nsClient.AddToUserAgent(config.userAgent); err != nil {
-		return eventhub.NamespacesClient{}, fmt.Errorf("failed to add use agent [%s] with error: %v", config.userAgent, err)
+		return eventhub.NamespacesClient{}, errors.Wrapf(err, "while adding user agent [%s]", config.userAgent)
 	}
 	return nsClient, nil
 }
@@ -68,7 +67,7 @@ func (ac *azureProvider) getGroupsClient(config *Config, authorizer autorest.Aut
 	client.Authorizer = authorizer
 
 	if err := client.AddToUserAgent(config.userAgent); err != nil {
-		return resources.GroupsClient{}, fmt.Errorf("failed to add use agent [%s] with error: %v", config.userAgent, err)
+		return resources.GroupsClient{}, errors.Wrapf(err, "while adding user agent [%s]", config.userAgent)
 	}
 
 	return client, nil
@@ -77,19 +76,10 @@ func (ac *azureProvider) getGroupsClient(config *Config, authorizer autorest.Aut
 func (ac *azureProvider) getResourceManagementAuthorizer(config *Config, environment *azure.Environment) (autorest.Authorizer, error) {
 	armAuthorizer, err := ac.getAuthorizerForResource(config, environment)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while creating resource authorizer")
 	}
 
 	return armAuthorizer, err
-}
-
-func (ac *azureProvider) getEnvironment(config *Config) (*azure.Environment, error) {
-	environment, err := config.Environment()
-	if err != nil {
-		return nil, err
-	}
-
-	return environment, nil
 }
 
 func (ac *azureProvider) getAuthorizerForResource(config *Config, environment *azure.Environment) (autorest.Authorizer, error) {
