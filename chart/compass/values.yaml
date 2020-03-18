@@ -49,7 +49,7 @@ global:
         version: "PR-984"
       connector:
         dir:
-        version: "02e8358c"
+        version: "PR-984"
       provisioner:
         dir:
         version: "PR-565"
