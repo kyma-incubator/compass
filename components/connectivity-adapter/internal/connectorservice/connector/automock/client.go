@@ -73,26 +73,3 @@ func (_m *Client) SignCSR(csr string, headers map[string]string) (externalschema
 
 	return r0, r1
 }
-
-// Token provides a mock function with given fields: application
-func (_m *Client) Token(application string) (string, apperrors.AppError) {
-	ret := _m.Called(application)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(application)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 apperrors.AppError
-	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
-		r1 = rf(application)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(apperrors.AppError)
-		}
-	}
-
-	return r0, r1
-}

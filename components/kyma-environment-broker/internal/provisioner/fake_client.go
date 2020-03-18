@@ -79,7 +79,7 @@ func (c *fakeClient) UpgradeRuntime(accountID, runtimeID string, config schema.U
 }
 
 func (c *fakeClient) DeprovisionRuntime(accountID, runtimeID string) (string, error) {
-	return "", fmt.Errorf("not implemented")
+	return uuid.New().String(), nil
 }
 
 func (c *fakeClient) ReconnectRuntimeAgent(accountID, runtimeID string) (string, error) {

@@ -13,6 +13,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -47,7 +48,7 @@ func TestProvision_Provision(t *testing.T) {
 			queue,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
-			&broker.DumyDumper{},
+			logrus.StandardLogger(),
 		)
 
 		// when
@@ -91,7 +92,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
-			&broker.DumyDumper{},
+			logrus.StandardLogger(),
 		)
 
 		// when
@@ -125,7 +126,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
-			&broker.DumyDumper{},
+			logrus.StandardLogger(),
 		)
 
 		// when
@@ -161,7 +162,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixValidator,
-			&broker.DumyDumper{},
+			logrus.StandardLogger(),
 		)
 
 		// when

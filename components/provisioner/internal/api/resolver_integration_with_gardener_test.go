@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
@@ -76,6 +78,7 @@ users:
 `
 
 	auditLogCMName = "auditLogPolicyConfigMap"
+	auditLogTenant = "audit-tenant"
 	subAccountId   = "sub-account"
 )
 
@@ -185,7 +188,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
 			uuidGenerator := uuid.NewUUIDGenerator()
-			provisioner := gardener.NewProvisioner(namespace, shootInterface, auditLogCMName)
+			provisioner := gardener.NewProvisioner(namespace, shootInterface, auditLogCMName, auditLogTenant)
 
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 
@@ -222,7 +225,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			//then
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
 			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
-			assert.Equal(t, subAccountId, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
+			assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
+			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
 			assert.Equal(t, "provisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
 			assert.Equal(t, "provisioning-in-progress", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning-step"])
 

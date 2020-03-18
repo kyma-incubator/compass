@@ -39,7 +39,7 @@ func (c mockProviderConfiguration) ToHydroformConfiguration(credentialsFileName 
 	return c.cluster, c.provider, c.err
 }
 
-func (c mockProviderConfiguration) ToShootTemplate(namespace string) (*gardener_types.Shoot, error) {
+func (c mockProviderConfiguration) ToShootTemplate(namespace string, subAccountId string) (*gardener_types.Shoot, error) {
 	return nil, nil
 }
 

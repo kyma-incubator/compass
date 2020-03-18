@@ -12,8 +12,8 @@ import (
 type TenantFieldMapping struct {
 	NameField          string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
 	IDField            string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
-	DiscriminatorField string `envconfig:"APP_MAPPING_FIELD_DISCRIMINATOR"`
-	DiscriminatorValue string `envconfig:"APP_MAPPING_VALUE_DISCRIMINATOR"`
+	DiscriminatorField string `envconfig:"optional,APP_MAPPING_FIELD_DISCRIMINATOR"`
+	DiscriminatorValue string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
 }
 
 type converter struct {
