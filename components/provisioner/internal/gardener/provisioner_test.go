@@ -24,6 +24,7 @@ const (
 	clusterName       = "test-cluster"
 
 	auditLogsPolicyCMName = "audit-logs-policy"
+	auditLogsTenant       = "audit-tenant"
 )
 
 func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
@@ -38,7 +39,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		// given
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, "")
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, "", "")
 
 		// when
 		err := provisionerClient.ProvisionCluster(cluster, operationId)
@@ -50,6 +51,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		assertAnnotation(t, shoot, operationIdAnnotation, operationId)
 		assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
 		assertAnnotation(t, shoot, provisioningStepAnnotation, ProvisioningInProgressStep.String())
+		assert.Equal(t, "", shoot.Labels[model.SubAccountLabel])
 	})
 
 	for _, testCase := range []struct {
@@ -57,6 +59,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		clusterName      string
 		subAccountId     string
 		configMapName    string
+		auditLogsTenant  string
 		auditLogsEnabled bool
 	}{
 		{
@@ -64,20 +67,23 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 			clusterName:      "test-1",
 			subAccountId:     subAccountId,
 			configMapName:    auditLogsPolicyCMName,
+			auditLogsTenant:  auditLogsTenant,
 			auditLogsEnabled: true,
 		},
 		{
-			description:      "audit logs disabled when no sub account",
+			description:      "audit logs disabled when no tenant",
 			clusterName:      "test-2",
-			subAccountId:     "",
+			subAccountId:     "acc",
 			configMapName:    auditLogsPolicyCMName,
+			auditLogsTenant:  "",
 			auditLogsEnabled: false,
 		},
 		{
 			description:      "audit logs disabled when no CM name",
 			clusterName:      "test-3",
-			subAccountId:     subAccountId,
+			subAccountId:     "",
 			configMapName:    "",
+			auditLogsTenant:  auditLogsTenant,
 			auditLogsEnabled: false,
 		},
 	} {
@@ -85,7 +91,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 			// given
 			shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-			provisionerClient := NewProvisioner(gardenerNamespace, shootClient, testCase.configMapName)
+			provisionerClient := NewProvisioner(gardenerNamespace, shootClient, testCase.configMapName, testCase.auditLogsTenant)
 
 			// when
 			err := provisionerClient.ProvisionCluster(newClusterConfig(testCase.clusterName, testCase.subAccountId, gcpGardenerConfig), operationId)
@@ -98,12 +104,14 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 			assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
 			assertAnnotation(t, shoot, provisioningStepAnnotation, ProvisioningInProgressStep.String())
 
+			assert.Equal(t, testCase.subAccountId, shoot.Labels[model.SubAccountLabel])
+			
 			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer)
 			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
 			assert.False(t, *shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
 
 			if testCase.auditLogsEnabled {
-				assertAnnotation(t, shoot, auditLogsAnnotation, testCase.subAccountId)
+				assertAnnotation(t, shoot, auditLogsAnnotation, auditLogsTenant)
 
 				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig)
 				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy)
@@ -170,7 +178,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, "")
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, "", "")
 
 		// when
 		operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
@@ -193,7 +201,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, "")
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, "", "")
 
 		// when
 		operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
