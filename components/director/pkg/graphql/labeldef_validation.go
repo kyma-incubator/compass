@@ -1,8 +1,6 @@
 package graphql
 
 import (
-	"regexp"
-
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
@@ -12,7 +10,7 @@ import (
 func (i LabelDefinitionInput) Validate() error {
 	return validation.Errors{
 		"Rule.ValidSchema": i.validateSchema(),
-		"Key":              validation.Validate(i.Key, validation.Required, validation.RuneLength(0, longStringLengthLimit), validation.Match(regexp.MustCompile(alpanumericUnderscoreRegexpString))),
+		"Key":              validation.Validate(i.Key, validation.Required, validation.RuneLength(0, longStringLengthLimit), validation.Match(alphanumericUnderscoreRegexp)),
 		"Schema":           validation.Validate(i.Schema),
 	}.Filter()
 }
