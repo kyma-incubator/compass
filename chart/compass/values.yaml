@@ -16,16 +16,16 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-935"
+      version: "PR-892"
     pairing_adapter:
       dir:
       version: "PR-867"
     director:
       dir:
-      version: "PR-797"
+      version: "PR-986"
     gateway:
-      dir: pr/
-      version: "PR-357"
+      dir:
+      version: "PR-943"
     healthchecker:
       dir: pr/
       version: "PR-357"
@@ -42,11 +42,11 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-913"
+      version: "PR-965"
     tests:
       director:
         dir:
-        version: "PR-935"
+        version: "PR-966"
       connector:
         dir:
         version: "02e8358c"
@@ -65,6 +65,13 @@ global:
 
   director:
     port: 3000
+
+  auditlog:
+    enabled: false
+    configmap:
+      name: "compass-gateway-auditlog-config"
+    secret:
+      name: "compass-gateway-auditlog-secret"
 
   tenantConfig:
     useDefaultTenants: true

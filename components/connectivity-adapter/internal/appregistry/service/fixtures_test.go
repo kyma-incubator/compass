@@ -345,3 +345,11 @@ func fixEventsAsyncAPIJSON() model.Events {
 		Spec: []byte(spec),
 	}
 }
+
+func fixServiceDetails() model.ServiceDetails {
+	return model.ServiceDetails{
+		Provider:    "Test",
+		Name:        "Test",
+		Description: "Test",
+	}
+}

@@ -2,12 +2,14 @@ package storage
 
 import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
 )
 
 type Instances interface {
 	GetByID(instanceID string) (*internal.Instance, error)
 	Insert(instance internal.Instance) error
 	Update(instance internal.Instance) error
+	Delete(instanceID string) error
 }
 
 type Operations interface {
@@ -16,4 +18,5 @@ type Operations interface {
 	GetProvisioningOperationByInstanceID(instanceID string) (*internal.ProvisioningOperation, error)
 	UpdateProvisioningOperation(operation internal.ProvisioningOperation) (*internal.ProvisioningOperation, error)
 	GetOperation(operationID string) (*internal.Operation, error)
+	GetOperationsInProgressByType(operationType dbsession.OperationType) ([]internal.Operation, error)
 }

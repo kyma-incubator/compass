@@ -17,6 +17,7 @@ type Factory interface {
 type ReadSession interface {
 	GetInstanceByID(instanceID string) (internal.Instance, dberr.Error)
 	GetOperationByID(opID string) (OperationDTO, dberr.Error)
+	GetOperationsInProgressByType(operationType OperationType) ([]OperationDTO, dberr.Error)
 	GetOperationByInstanceID(inID string) (OperationDTO, dberr.Error)
 }
 
@@ -26,6 +27,7 @@ type WriteSession interface {
 	InsertOperation(dto OperationDTO) dberr.Error
 	UpdateInstance(instance internal.Instance) dberr.Error
 	UpdateOperation(instance OperationDTO) dberr.Error
+	DeleteInstance(instanceID string) dberr.Error
 }
 
 type Transaction interface {
