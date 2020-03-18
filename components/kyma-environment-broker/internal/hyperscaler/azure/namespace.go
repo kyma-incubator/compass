@@ -7,39 +7,37 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 )
 
-type EventhubsInterface interface {
+type AzureInterface interface {
 	GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
 	CreateResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error)
 	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string) (*eventhub.EHNamespace, error)
 }
 
-var _ EventhubsInterface = (*NamespaceClient)(nil)
+var _ AzureInterface = (*AzureClient)(nil)
 
-type NamespaceClient struct {
+type AzureClient struct {
 	// the actual azure client
 	eventhubNamespaceClient eventhub.NamespacesClient
+	resourcegroupClient     resources.GroupsClient
 }
 
-func NewNamespaceClient(client eventhub.NamespacesClient) *NamespaceClient {
-	return &NamespaceClient{
-		eventhubNamespaceClient: client,
+func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourcegroupClient resources.GroupsClient) *AzureClient {
+	return &AzureClient{
+		eventhubNamespaceClient: namespaceClient,
+		resourcegroupClient:     resourcegroupClient,
 	}
 }
-func (nc *NamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
+func (nc *AzureClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
 	return nc.eventhubNamespaceClient.ListKeys(ctx, resourceGroupName, namespaceName, authorizationRuleName)
 }
 
-func (nc *NamespaceClient) CreateResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error) {
-	client, err := getGroupsClient(config)
-	if err != nil {
-		return resources.Group{}, err
-	}
+func (nc *AzureClient) CreateResourceGroup(ctx context.Context, config *Config, name string) (resources.Group, error) {
 	// we need to use a copy of the location, because the following azure call will modify it
 	locationCopy := config.GetLocation()
-	return client.CreateOrUpdate(ctx, name, resources.Group{Location: &locationCopy})
+	return nc.resourcegroupClient.CreateOrUpdate(ctx, name, resources.Group{Location: &locationCopy})
 }
 
-func (nc *NamespaceClient) CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string) (*eventhub.EHNamespace, error) {
+func (nc *AzureClient) CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string) (*eventhub.EHNamespace, error) {
 	// we need to use a copy of the location, because the following azure call will modify it
 	locationCopy := azureCfg.GetLocation()
 	parameters := eventhub.EHNamespace{Location: &locationCopy}
@@ -47,7 +45,7 @@ func (nc *NamespaceClient) CreateNamespace(ctx context.Context, azureCfg *Config
 	return &ehNamespace, err
 }
 
-func (nc *NamespaceClient) createAndWait(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
+func (nc *AzureClient) createAndWait(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
 	future, err := nc.eventhubNamespaceClient.CreateOrUpdate(ctx, resourceGroupName, namespaceName, parameters)
 	if err != nil {
 		return eventhub.EHNamespace{}, err

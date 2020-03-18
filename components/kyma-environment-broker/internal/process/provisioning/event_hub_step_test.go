@@ -32,7 +32,7 @@ func fixLogger() logrus.FieldLogger {
 }
 
 // ensure the fake client is implementing the interface
-var _ azure.EventhubsInterface = (*FakeNamespaceClient)(nil)
+var _ azure.AzureInterface = (*FakeNamespaceClient)(nil)
 
 /// A fake client for Azure EventHubs Namespace handling
 type FakeNamespaceClient struct {
@@ -63,19 +63,19 @@ func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *az
 	}, nc.persistEventhubsNamespaceError
 }
 
-func NewFakeNamespaceClientCreationError() azure.EventhubsInterface {
+func NewFakeNamespaceClientCreationError() azure.AzureInterface {
 	return &FakeNamespaceClient{persistEventhubsNamespaceError: fmt.Errorf("error while creating namespace")}
 }
 
-func NewFakeNamespaceClientListError() azure.EventhubsInterface {
+func NewFakeNamespaceClientListError() azure.AzureInterface {
 	return &FakeNamespaceClient{accessKeysError: fmt.Errorf("cannot list namespaces")}
 }
 
-func NewFakeNamespaceResourceGroupError() azure.EventhubsInterface {
+func NewFakeNamespaceResourceGroupError() azure.AzureInterface {
 	return &FakeNamespaceClient{resourceGroupError: fmt.Errorf("cannot create resource group")}
 }
 
-func NewFakeNamespaceAccessKeysNil() azure.EventhubsInterface {
+func NewFakeNamespaceAccessKeysNil() azure.AzureInterface {
 	return &FakeNamespaceClient{
 		// no error here
 		accessKeysError: nil,
@@ -86,7 +86,7 @@ func NewFakeNamespaceAccessKeysNil() azure.EventhubsInterface {
 	}
 }
 
-func NewFakeNamespaceClientHappyPath() azure.EventhubsInterface {
+func NewFakeNamespaceClientHappyPath() azure.AzureInterface {
 	return &FakeNamespaceClient{}
 }
 
@@ -94,15 +94,15 @@ func NewFakeNamespaceClientHappyPath() azure.EventhubsInterface {
 var _ azure.HyperscalerProvider = (*fakeHyperscalerProvider)(nil)
 
 type fakeHyperscalerProvider struct {
-	client azure.EventhubsInterface
+	client azure.AzureInterface
 	err    error
 }
 
-func (ac *fakeHyperscalerProvider) GetClient(config *azure.Config) (azure.EventhubsInterface, error) {
+func (ac *fakeHyperscalerProvider) GetClient(config *azure.Config) (azure.AzureInterface, error) {
 	return ac.client, ac.err
 }
 
-func NewFakeHyperscalerProvider(client azure.EventhubsInterface) azure.HyperscalerProvider {
+func NewFakeHyperscalerProvider(client azure.AzureInterface) azure.HyperscalerProvider {
 	return &fakeHyperscalerProvider{
 		client: client,
 		err:    nil,
