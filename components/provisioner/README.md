@@ -57,6 +57,6 @@ This table lists the environment variables, their descriptions, and default valu
 | **APP_INSTALLATION_ERRORS_COUNT_FAILURE_THRESHOLD** | Number of installation errors that cause installation to fail  | `5`|
 | **APP_GARDENER_PROJECT** | Name of the Gardener project connected to the service account  | `gardenerProject`|
 | **APP_GARDENER_KUBECONFIG_PATH** | Filepath for the Gardener kubeconfig  | `./dev/kubeconfig.yaml`|
-| **APP_GARDENER_AUDIT_LOGS_POLICY_CONFIG_MAP** | Name of the Config Map containing audit logs policy  | **optional** |
+| **APP_GARDENER_AUDIT_LOGS_POLICY_CONFIG_MAP** | Name of the Config Map containing the audit logs policy  | **optional** |
 | **APP_GARDENER_AUDIT_LOGS_TENANT** | Tenant used for storing audit logs  | **optional** |
 | **APP_PROVISIONER** | Provisioning mechanism used by the Runtime Provisioner (Gardener or Hydroform) | `gardener`|
