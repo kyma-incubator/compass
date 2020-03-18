@@ -7,10 +7,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
-
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
@@ -18,6 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
@@ -29,6 +26,7 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
 	gcli "github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -135,8 +133,10 @@ func main() {
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
+	evaluationStep := provisioning.NewInternalEvaluationStep(cfg.Avs, db.Operations())
 	provisionAzureEventHub := provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
+	overridesStep := provisioning.NewOverridesStep(cli, db.Operations())
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations())
 
@@ -145,13 +145,12 @@ func main() {
 	stepManager.InitStep(initialisation)
 
 	stepManager.AddStep(1, resolveCredentialsStep)
+	stepManager.AddStep(1, evaluationStep)
 	stepManager.AddStep(2, provisionAzureEventHub)
+	stepManager.AddStep(2, overridesStep)
 	stepManager.AddStep(2, smOverrideStep)
 	stepManager.AddStep(3, backupSetupStep)
 	stepManager.AddStep(10, runtimeStep)
-
-	evaluationStep := provisioning.NewInternalEvaluationStep(cfg.Avs, db.Operations())
-	stepManager.AddStep(1, evaluationStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
