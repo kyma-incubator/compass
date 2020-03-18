@@ -70,6 +70,7 @@ func (s *SetupBackupStep) Run(operation internal.ProvisioningOperation, log logr
 	}
 	switch hypType {
 	case "azure":
+		log.Info("Setting up backup overrides")
 		backupOverrides := s.setupBackUpOverride()
 		operation.InputCreator.SetOverrides("backup-init", backupOverrides)
 	}

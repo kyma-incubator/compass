@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	//azure "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/Azure"
+
 	"log"
 	"net/http"
 	"os"
@@ -130,7 +130,7 @@ func main() {
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 	//TODO: Uncomment when we azure client
-	//backupSetupStep := provisioning.NewSetupBackupStep(db.Operations(), accountProvider, azure.NewAzureClient())
+	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations(), accountProvider)
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
@@ -138,8 +138,9 @@ func main() {
 
 	stepManager.AddStep(1, resolveCredentialsStep)
 	stepManager.AddStep(2, smOverrideStep)
+	stepManager.AddStep(3, backupSetupStep)
 	stepManager.AddStep(10, runtimeStep)
-	//stepManager.AddStep(3, backupSetupStep)
+
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
