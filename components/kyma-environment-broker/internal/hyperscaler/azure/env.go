@@ -1,9 +1,12 @@
 package azure
 
 import (
+	"fmt"
+
 	"github.com/Azure/go-autorest/autorest/azure"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 )
 
@@ -24,11 +27,39 @@ func GetConfig(clientID, clientSecret, tenantID, subscriptionID, location string
 }
 
 func GetConfigfromHAPCredentialsAndProvisioningParams(credentials hyperscaler.Credentials, parameters internal.ProvisioningParameters) (*Config, error) {
-	region := "westeurope"
-	// TODO(nachtmaar): set location https://github.com/kyma-incubator/compass/issues/968
+	region, err := mapRegion(credentials, parameters)
+	if err != nil {
+		return nil, err
+	}
+
 	subscriptionID := string(credentials.CredentialData["subscriptionID"])
 	clientID := string(credentials.CredentialData["clientID"])
 	clientSecret := string(credentials.CredentialData["clientSecret"])
 	tenantID := string(credentials.CredentialData["tenantID"])
 	return GetConfig(clientID, clientSecret, tenantID, subscriptionID, region)
 }
+
+func mapRegion(credentials hyperscaler.Credentials, parameters internal.ProvisioningParameters) (string, error) {
+	if credentials.HyperscalerType != hyperscaler.Azure {
+		return "", fmt.Errorf("cannot use credential for hyperscaler of type %v on hyperscaler of type %v", credentials.HyperscalerType, hyperscaler.Azure)
+	}
+	region := *(parameters.Parameters.Region)
+	switch parameters.PlanID {
+	case broker.AzurePlanID:
+		if ! azureRegions()[region] {
+			return "", fmt.Errorf("supplied region \"%v\" is not a valid region for Azure", region)
+		}
+
+	case broker.GcpPlanID:
+		if azureRegion, ok := gcpToAzureRegionMapping()[region]; ok {
+			region = azureRegion
+			break
+		}
+		return "", fmt.Errorf("supplied gcp region \"%v\" cannot be mapped to Azure", region)
+	default:
+		return "", fmt.Errorf("cannot map from PlanID %v to azure regions", parameters.PlanID)
+	}
+	return region, nil
+}
+
+
