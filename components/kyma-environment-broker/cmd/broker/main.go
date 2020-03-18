@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/health"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
@@ -216,6 +217,9 @@ func main() {
 	sm := http.NewServeMux()
 	sm.Handle("/", brokerBasicAPI)
 	sm.Handle("/oauth/", http.StripPrefix("/oauth", brokerAPI))
+
+	sm.HandleFunc("/healthz", health.LivenessHandler(logger))
+	sm.HandleFunc("/readyz", health.ReadinessHandler(logger))
 
 	r := handlers.LoggingHandler(os.Stdout, sm)
 

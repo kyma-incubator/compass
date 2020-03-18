@@ -137,6 +137,22 @@ spec:
             - name: http
               containerPort: {{ .Values.broker.port }}
               protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.broker.port }}
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 5
+            initialDelaySeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: {{ .Values.broker.port }}
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 3
+            initialDelaySeconds: 30
           resources:
               {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
