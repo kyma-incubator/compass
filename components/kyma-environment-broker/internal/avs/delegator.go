@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	overrideKey     = "avs_bridge.config.evaluations.cluster.id"
+	evaluationIdKey = "avs_bridge.config.evaluations.cluster.id"
 	avsBridgeAPIKey = "avs_bridge.config.availabilityService.apiKey"
 )
 
@@ -60,7 +60,7 @@ func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.Provis
 
 	updatedOperation.InputCreator.SetOverrides("avs-bridge", []*gqlschema.ConfigEntryInput{
 		{
-			Key:   overrideKey,
+			Key:   evaluationIdKey,
 			Value: strconv.FormatInt(updatedOperation.AvsEvaluationInternalId, 10),
 		},
 		{

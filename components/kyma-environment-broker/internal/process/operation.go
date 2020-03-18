@@ -43,15 +43,6 @@ func (om *OperationManager) OperationFailed(operation internal.ProvisioningOpera
 	return updatedOperation, 0, errors.New(description)
 }
 
-func (om *OperationManager) OperationFailedWithError(operation internal.ProvisioningOperation, err error) (internal.ProvisioningOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, domain.Failed, err.Error())
-	if repeat != 0 {
-		return updatedOperation, repeat, nil
-	}
-
-	return updatedOperation, 0, err
-}
-
 func (om *OperationManager) UpdateOperation(operation internal.ProvisioningOperation) (internal.ProvisioningOperation, time.Duration) {
 	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
 	if err != nil {
