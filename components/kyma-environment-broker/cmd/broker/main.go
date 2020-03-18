@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
@@ -39,6 +40,9 @@ type Config struct {
 		Username string
 		Password string
 	}
+
+	DbInMemory bool `envconfig:"default=false"`
+
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
@@ -55,6 +59,8 @@ type Config struct {
 	ManagedRuntimeComponentsYAMLFilePath string
 
 	Broker broker.Config
+
+	Avs avs.Config
 }
 
 func main() {
@@ -90,8 +96,13 @@ func main() {
 	directorClient := director.NewDirectorClient(oauthClient, graphQLClient)
 
 	// create storage
-	db, err := storage.New(cfg.Database.ConnectionURL())
-	fatalOnError(err)
+	var db storage.BrokerStorage
+	if cfg.DbInMemory {
+		db = storage.NewMemoryStorage()
+	} else {
+		db, err = storage.New(cfg.Database.ConnectionURL())
+		fatalOnError(err)
+	}
 
 	// Register disabler. Convention:
 	// {component-name} : {component-disabler-service}
@@ -135,6 +146,9 @@ func main() {
 	stepManager.AddStep(2, provisionAzureEventHub)
 	stepManager.AddStep(2, smOverrideStep)
 	stepManager.AddStep(10, runtimeStep)
+
+	evaluationStep := provisioning.NewInternalEvaluationStep(cfg.Avs, db.Operations())
+	stepManager.AddStep(1, evaluationStep)
 
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
