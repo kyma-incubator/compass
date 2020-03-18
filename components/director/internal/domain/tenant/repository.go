@@ -83,7 +83,7 @@ func (r *pgRepository) ExistsByExternalTenant(ctx context.Context, externalTenan
 func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection EntityCollection
 
-	condition := fmt.Sprintf("status != %s", pq.QuoteLiteral(string(Inactive)))
+	condition := fmt.Sprintf("status = %s", pq.QuoteLiteral(string(Active)))
 	err := r.listerGlobal.ListGlobal(ctx, &entityCollection, condition)
 	if err != nil {
 		return nil, err
