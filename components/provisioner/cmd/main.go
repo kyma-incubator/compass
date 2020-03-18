@@ -65,6 +65,7 @@ type config struct {
 		Project                  string `envconfig:"default=gardenerProject"`
 		KubeconfigPath           string `envconfig:"default=./dev/kubeconfig.yaml"`
 		AuditLogsPolicyConfigMap string `envconfig:"optional"`
+		AuditLogsTenant          string `envconfig:"optional"`
 	}
 
 	Provisioner             string `envconfig:"default=gardener"`
@@ -76,13 +77,15 @@ func (c *config) String() string {
 		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s"+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
-		"GardenerProject: %s, GardenerKubeconfigPath: %s, Provisioner: %s"+
+		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, GardenerAuditLogsTenant: %s"+
+		"Provisioner: %s"+
 		"SupportOnDemandReleases: %v",
 		c.Address, c.APIEndpoint, c.CredentialsNamespace,
 		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
-		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Provisioner,
+		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenant,
+		c.Provisioner,
 		c.SupportOnDemandReleases)
 }
 
@@ -129,7 +132,7 @@ func main() {
 		hydroformSvc := hydroform.NewHydroformService(client.NewHydroformClient(), cfg.Gardener.KubeconfigPath)
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
-		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, cfg.Gardener.AuditLogsPolicyConfigMap)
+		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.AuditLogsTenant)
 		shootController, err := newShootController(cfg, gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, installationService, directorClient, runtimeConfigurator)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {

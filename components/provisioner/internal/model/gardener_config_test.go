@@ -259,6 +259,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
+					Labels: map[string]string{
+						"subaccount": "sub-account",
+					},
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "gcp",
@@ -301,6 +304,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
+					Labels: map[string]string{
+						"subaccount": "sub-account",
+					},
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "az",
@@ -343,6 +349,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
+					Labels: map[string]string{
+						"subaccount": "sub-account",
+					},
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "aws",
@@ -383,7 +392,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			gardenerProviderConfig := fixGardenerConfig(testCase.provider, testCase.providerConfig)
 
 			// when
-			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace")
+			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "sub-account")
 
 			// then
 			fmt.Println(string(template.Spec.Provider.InfrastructureConfig.Raw))
