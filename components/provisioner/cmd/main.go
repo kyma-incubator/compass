@@ -68,7 +68,8 @@ type config struct {
 		AuditLogsTenant          string `envconfig:"optional"`
 	}
 
-	Provisioner string `envconfig:"default=gardener"`
+	Provisioner             string `envconfig:"default=gardener"`
+	SupportOnDemandReleases bool   `envconfig:"default=false"`
 }
 
 func (c *config) String() string {
@@ -77,13 +78,15 @@ func (c *config) String() string {
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, GardenerAuditLogsTenant: %s"+
-		"Provisioner: %s",
+		"Provisioner: %s"+
+		"SupportOnDemandReleases: %v",
 		c.Address, c.APIEndpoint, c.CredentialsNamespace,
 		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenant,
-		c.Provisioner)
+		c.Provisioner,
+		c.SupportOnDemandReleases)
 }
 
 func main() {
@@ -116,8 +119,6 @@ func main() {
 	exitOnError(err, "Failed to initialize persistence")
 
 	dbsFactory := dbsession.NewFactory(connection)
-	releaseRepository := release.NewReleaseRepository(connection, uuid.NewUUIDGenerator())
-
 	installationService := installation.NewInstallationService(cfg.Installation.Timeout, installationSDK.NewKymaInstaller, cfg.Installation.ErrorsCountFailureThreshold)
 
 	directorClient, err := newDirectorClient(cfg)
@@ -141,13 +142,19 @@ func main() {
 	default:
 		log.Fatalf("Error: invalid provisioner provided: %s", cfg.Provisioner)
 	}
+	httpClient := newHTTPClient(false)
 
-	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseRepository, directorClient)
+	releaseRepository := release.NewReleaseRepository(connection, uuid.NewUUIDGenerator())
+	var releaseProvider release.Provider = releaseRepository
+	if cfg.SupportOnDemandReleases {
+		releaseProvider = release.NewOnDemandWrapper(httpClient, releaseRepository)
+	}
+
+	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseProvider, directorClient)
 	validator := api.NewValidator(dbsFactory.NewReadSession())
 
 	resolver := api.NewResolver(provisioningSVC, validator)
 
-	httpClient := newHTTPClient(false)
 	logger := log.WithField("Component", "Artifact Downloader")
 	downloader := release.NewArtifactsDownloader(releaseRepository, 5, false, httpClient, logger)
 

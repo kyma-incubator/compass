@@ -69,3 +69,8 @@ func (s *Instance) Update(instance internal.Instance) error {
 		return true, nil
 	})
 }
+
+func (s *Instance) Delete(instanceID string) error {
+	sess := s.NewWriteSession()
+	return sess.DeleteInstance(instanceID)
+}

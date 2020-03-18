@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,7 +26,7 @@ func TestServices_Services(t *testing.T) {
 	servicesEndpoint := broker.NewServices(
 		broker.Config{EnablePlans: []string{"gcp", "azure"}},
 		optComponentsProviderMock,
-		&broker.DumyDumper{},
+		logrus.StandardLogger(),
 	)
 
 	// when

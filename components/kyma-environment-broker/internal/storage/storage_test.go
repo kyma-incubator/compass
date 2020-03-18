@@ -107,6 +107,17 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.NotEmpty(t, inst.UpdatedAt)
 			assert.Equal(t, "0001-01-01 00:00:00 +0000 UTC", inst.DelatedAt.String())
 
+			// when
+			err = brokerStorage.Instances().Delete(fixInstance.InstanceID)
+
+			// then
+			assert.NoError(t, err)
+			_, err = brokerStorage.Instances().GetByID(fixInstance.InstanceID)
+			assert.True(t, dberr.IsNotFound(err))
+
+			// when
+			err = brokerStorage.Instances().Delete(fixInstance.InstanceID)
+			assert.NoError(t, err, "deletion non existing instance must not cause any error")
 		})
 	})
 

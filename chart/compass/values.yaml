@@ -22,7 +22,7 @@ global:
       version: "PR-867"
     director:
       dir:
-      version: "PR-961"
+      version: "PR-986"
     gateway:
       dir:
       version: "PR-943"
@@ -42,7 +42,7 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-913"
+      version: "PR-965"
     tests:
       director:
         dir:

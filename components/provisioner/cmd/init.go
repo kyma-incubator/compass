@@ -41,7 +41,7 @@ func newProvisioningService(
 	gardenerProject string,
 	provisioner provisioning.Provisioner,
 	dbsFactory dbsession.Factory,
-	releaseRepo release.ReadRepository,
+	releaseRepo release.Provider,
 	directorService director.DirectorClient) provisioning.Service {
 	uuidGenerator := uuid.NewUUIDGenerator()
 

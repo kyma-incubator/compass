@@ -24,7 +24,6 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
 	gcli "github.com/machinebox/graphql"
-	"github.com/pivotal-cf/brokerapi"
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,12 +69,6 @@ func main() {
 	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.ERROR))
 
 	logger.Info("Starting Kyma Environment Broker")
-
-	// create broker credentials
-	brokerCredentials := brokerapi.BrokerCredentials{
-		Username: cfg.Auth.Username,
-		Password: cfg.Auth.Password,
-	}
 
 	// create provisioner client
 	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
@@ -123,10 +116,6 @@ func main() {
 
 	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion)
 
-	// create log dumper
-	dumper, err := broker.NewDumper()
-	fatalOnError(err)
-
 	// create and run queue, steps provisioning
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
@@ -151,21 +140,35 @@ func main() {
 
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
-		broker.NewServices(cfg.Broker, optComponentsSvc, dumper),
-		broker.NewProvision(cfg.Broker, db.Operations(), queue, inputFactory, plansValidator, dumper),
-		broker.NewDeprovision(db.Instances(), provisionerClient, dumper),
-		broker.NewUpdate(dumper),
-		broker.NewGetInstance(db.Instances(), dumper),
-		broker.NewLastOperation(db.Operations(), dumper),
-		broker.NewBind(dumper),
-		broker.NewUnbind(dumper),
-		broker.NewGetBinding(dumper),
-		broker.NewLastBindingOperation(dumper),
+		broker.NewServices(cfg.Broker, optComponentsSvc, logs),
+		broker.NewProvision(cfg.Broker, db.Operations(), queue, inputFactory, plansValidator, logs),
+		broker.NewDeprovision(db.Instances(), provisionerClient, logs),
+		broker.NewUpdate(logs),
+		broker.NewGetInstance(db.Instances(), logs),
+		broker.NewLastOperation(db.Operations(), logs),
+		broker.NewBind(logs),
+		broker.NewUnbind(logs),
+		broker.NewGetBinding(logs),
+		broker.NewLastBindingOperation(logs),
 	}
 
-	// create and run broker OSB API
-	brokerAPI := brokerapi.New(kymaEnvBroker, logger, brokerCredentials)
-	r := handlers.LoggingHandler(os.Stdout, brokerAPI)
+	// create broker credentials
+	brokerCredentials := broker.BrokerCredentials{
+		Username: cfg.Auth.Username,
+		Password: cfg.Auth.Password,
+	}
+
+	// create and run broker OSB API in 2 modes:
+	// with basic auth
+	// with oauth
+	brokerAPI := broker.New(kymaEnvBroker, logger, nil)
+	brokerBasicAPI := broker.New(kymaEnvBroker, logger, &brokerCredentials)
+
+	sm := http.NewServeMux()
+	sm.Handle("/", brokerBasicAPI)
+	sm.Handle("/oauth/", http.StripPrefix("/oauth", brokerAPI))
+
+	r := handlers.LoggingHandler(os.Stdout, sm)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
 }
