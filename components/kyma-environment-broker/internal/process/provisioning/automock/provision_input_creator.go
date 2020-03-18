@@ -11,6 +11,38 @@ type ProvisionInputCreator struct {
 	mock.Mock
 }
 
+// AppendGlobalOverrides provides a mock function with given fields: overrides
+func (_m *ProvisionInputCreator) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {
+	ret := _m.Called(overrides)
+
+	var r0 internal.ProvisionInputCreator
+	if rf, ok := ret.Get(0).(func([]*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator); ok {
+		r0 = rf(overrides)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(internal.ProvisionInputCreator)
+		}
+	}
+
+	return r0
+}
+
+// AppendOverrides provides a mock function with given fields: component, overrides
+func (_m *ProvisionInputCreator) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {
+	ret := _m.Called(component, overrides)
+
+	var r0 internal.ProvisionInputCreator
+	if rf, ok := ret.Get(0).(func(string, []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator); ok {
+		r0 = rf(component, overrides)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(internal.ProvisionInputCreator)
+		}
+	}
+
+	return r0
+}
+
 // Create provides a mock function with given fields:
 func (_m *ProvisionInputCreator) Create() (gqlschema.ProvisionRuntimeInput, error) {
 	ret := _m.Called()

@@ -3,8 +3,8 @@ package input
 import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-
 	"github.com/pkg/errors"
+	"github.com/vburenin/nsync"
 )
 
 const (
@@ -17,8 +17,10 @@ type Config struct {
 }
 
 type RuntimeInput struct {
-	input     gqlschema.ProvisionRuntimeInput
-	overrides map[string][]*gqlschema.ConfigEntryInput
+	input           gqlschema.ProvisionRuntimeInput
+	mutex           *nsync.NamedMutex
+	overrides       map[string][]*gqlschema.ConfigEntryInput
+	globalOverrides []*gqlschema.ConfigEntryInput
 
 	hyperscalerInputProvider  HyperscalerInputProvider
 	optionalComponentsService OptionalComponentService
@@ -30,13 +32,40 @@ func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningPar
 	return r
 }
 
+// SetOverrides sets the overrides for the given component and discard the previous ones.
+//
+// Deprecated: use AppendOverrides
 func (r *RuntimeInput) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {
-	// TODO add possibility to adding same overrides to the same component
+	// currently same as in AppendOverrides function, as we working on the same underlying object.
+	r.mutex.Lock("AppendOverrides")
+	defer r.mutex.Unlock("AppendOverrides")
+
 	r.overrides[component] = overrides
 	return r
 }
 
+// AppendOverrides appends overrides for the given components, the existing overrides are preserved.
+func (r *RuntimeInput) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {
+	r.mutex.Lock("AppendOverrides")
+	defer r.mutex.Unlock("AppendOverrides")
+
+	r.overrides[component] = append(r.overrides[component], overrides...)
+	return r
+}
+
+// AppendAppendGlobalOverrides appends overrides, the existing overrides are preserved.
+func (r *RuntimeInput) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {
+	r.mutex.Lock("AppendGlobalOverrides")
+	defer r.mutex.Unlock("AppendGlobalOverrides")
+
+	r.globalOverrides = append(r.globalOverrides, overrides...)
+	return r
+}
+
 func (r *RuntimeInput) SetRuntimeLabels(instanceID, subAccountID string) internal.ProvisionInputCreator {
+	r.mutex.Lock("SetRuntimeLabels")
+	defer r.mutex.Unlock("SetRuntimeLabels")
+
 	r.input.RuntimeInput.Labels = &gqlschema.Labels{
 		brokerKeyPrefix + "instance_id":   []string{instanceID},
 		globalKeyPrefix + "subaccount_id": []string{subAccountID},
@@ -59,8 +88,12 @@ func (r *RuntimeInput) Create() (gqlschema.ProvisionRuntimeInput, error) {
 			execute: r.disableNotSelectedComponents,
 		},
 		{
-			name:    "applying service manager overrides",
+			name:    "applying components overrides",
 			execute: r.applyOverrides,
+		},
+		{
+			name:    "applying global overrides",
+			execute: r.applyGlobalOverrides,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -108,6 +141,11 @@ func (r *RuntimeInput) applyOverrides() error {
 		}
 	}
 
+	return nil
+}
+
+func (r *RuntimeInput) applyGlobalOverrides() error {
+	r.input.KymaConfig.Configuration = r.globalOverrides
 	return nil
 }
 
