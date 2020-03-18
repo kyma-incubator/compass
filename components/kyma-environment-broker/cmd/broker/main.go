@@ -7,6 +7,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
+
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
@@ -20,12 +24,10 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
-	"github.com/pkg/errors"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
 	gcli "github.com/machinebox/graphql"
-	"github.com/pivotal-cf/brokerapi"
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -71,12 +73,6 @@ func main() {
 	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.ERROR))
 
 	logger.Info("Starting Kyma Environment Broker")
-
-	// create broker credentials
-	brokerCredentials := brokerapi.BrokerCredentials{
-		Username: cfg.Auth.Username,
-		Password: cfg.Auth.Password,
-	}
 
 	// create provisioner client
 	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
@@ -126,7 +122,9 @@ func main() {
 
 	// create and run queue, steps provisioning
 	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
+
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
+	provisionAzureEventHub := provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 	//TODO: Uncomment when we azure client
@@ -137,6 +135,7 @@ func main() {
 	stepManager.InitStep(initialisation)
 
 	stepManager.AddStep(1, resolveCredentialsStep)
+	stepManager.AddStep(2, provisionAzureEventHub)
 	stepManager.AddStep(2, smOverrideStep)
 	stepManager.AddStep(3, backupSetupStep)
 	stepManager.AddStep(10, runtimeStep)
@@ -165,9 +164,23 @@ func main() {
 		broker.NewLastBindingOperation(logs),
 	}
 
-	// create and run broker OSB API
-	brokerAPI := brokerapi.New(kymaEnvBroker, logger, brokerCredentials)
-	r := handlers.LoggingHandler(os.Stdout, brokerAPI)
+	// create broker credentials
+	brokerCredentials := broker.BrokerCredentials{
+		Username: cfg.Auth.Username,
+		Password: cfg.Auth.Password,
+	}
+
+	// create and run broker OSB API in 2 modes:
+	// with basic auth
+	// with oauth
+	brokerAPI := broker.New(kymaEnvBroker, logger, nil)
+	brokerBasicAPI := broker.New(kymaEnvBroker, logger, &brokerCredentials)
+
+	sm := http.NewServeMux()
+	sm.Handle("/", brokerBasicAPI)
+	sm.Handle("/oauth/", http.StripPrefix("/oauth", brokerAPI))
+
+	r := handlers.LoggingHandler(os.Stdout, sm)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
 }

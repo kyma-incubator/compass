@@ -16,13 +16,13 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-935"
+      version: "PR-892"
     pairing_adapter:
       dir:
       version: "PR-867"
     director:
       dir:
-      version: "PR-961"
+      version: "PR-989"
     gateway:
       dir:
       version: "PR-943"
@@ -34,7 +34,7 @@ global:
       version: "PR-913"
     provisioner:
       dir:
-      version: "PR-913"
+      version: "PR-957"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -42,7 +42,7 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-913"
+      version: "PR-905"
     tests:
       director:
         dir:

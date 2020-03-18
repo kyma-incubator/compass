@@ -27,6 +27,7 @@ type WriteSession interface {
 	InsertOperation(dto OperationDTO) dberr.Error
 	UpdateInstance(instance internal.Instance) dberr.Error
 	UpdateOperation(instance OperationDTO) dberr.Error
+	DeleteInstance(instanceID string) dberr.Error
 }
 
 type Transaction interface {

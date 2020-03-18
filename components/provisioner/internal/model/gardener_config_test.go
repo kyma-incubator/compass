@@ -259,6 +259,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
+					Labels: map[string]string{
+						"subaccount": "sub-account",
+					},
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "gcp",
@@ -288,6 +291,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(true),
 						Version:                   "1.15",
+						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
+							EnableBasicAuthentication: util.BoolPtr(false),
+						},
 					},
 					Maintenance: &gardener_types.Maintenance{},
 				},
@@ -301,6 +307,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
+					Labels: map[string]string{
+						"subaccount": "sub-account",
+					},
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "az",
@@ -330,6 +339,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(true),
 						Version:                   "1.15",
+						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
+							EnableBasicAuthentication: util.BoolPtr(false),
+						},
 					},
 					Maintenance: &gardener_types.Maintenance{},
 				},
@@ -343,6 +355,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
+					Labels: map[string]string{
+						"subaccount": "sub-account",
+					},
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "aws",
@@ -372,6 +387,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(true),
 						Version:                   "1.15",
+						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
+							EnableBasicAuthentication: util.BoolPtr(false),
+						},
 					},
 					Maintenance: &gardener_types.Maintenance{},
 				},
@@ -383,7 +401,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			gardenerProviderConfig := fixGardenerConfig(testCase.provider, testCase.providerConfig)
 
 			// when
-			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace")
+			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "sub-account")
 
 			// then
 			fmt.Println(string(template.Spec.Provider.InfrastructureConfig.Raw))

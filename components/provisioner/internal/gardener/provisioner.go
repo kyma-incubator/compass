@@ -15,11 +15,12 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 )
 
-func NewProvisioner(namespace string, client gardener_apis.ShootInterface, auditLogsCMName string) *GardenerProvisioner {
+func NewProvisioner(namespace string, client gardener_apis.ShootInterface, auditLogsCMName, auditLogTenant string) *GardenerProvisioner {
 	return &GardenerProvisioner{
 		namespace:              namespace,
 		client:                 client,
 		auditLogsConfigMapName: auditLogsCMName,
+		auditLogTenant:         auditLogTenant,
 	}
 }
 
@@ -27,17 +28,18 @@ type GardenerProvisioner struct {
 	namespace              string
 	client                 gardener_apis.ShootInterface
 	auditLogsConfigMapName string
+	auditLogTenant         string
 	log                    *logrus.Entry
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) error {
-	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace)
+	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace, cluster.SubAccountId)
 	if err != nil {
-		return fmt.Errorf("Failed to convert cluster config to Shoot template")
+		return fmt.Errorf("failed to convert cluster config to Shoot template")
 	}
 
-	if g.shouldEnableAuditLogs(cluster.SubAccountId) {
-		enableAuditLogs(shootTemplate, g.auditLogsConfigMapName, cluster.SubAccountId)
+	if g.shouldEnableAuditLogs() {
+		enableAuditLogs(shootTemplate, g.auditLogsConfigMapName, g.auditLogTenant)
 	}
 
 	annotate(shootTemplate, operationIdAnnotation, operationId)
@@ -89,8 +91,8 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, deletionTime), nil
 }
 
-func (g *GardenerProvisioner) shouldEnableAuditLogs(subAccountId string) bool {
-	return g.auditLogsConfigMapName != "" && subAccountId != ""
+func (g *GardenerProvisioner) shouldEnableAuditLogs() bool {
+	return g.auditLogsConfigMapName != "" && g.auditLogTenant != ""
 }
 
 func newDeprovisionOperation(id, runtimeId, message string, state model.OperationState, startTime time.Time) model.Operation {

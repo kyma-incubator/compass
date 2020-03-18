@@ -18,6 +18,10 @@ import (
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 )
 
+const (
+	SubAccountLabel = "subaccount"
+)
+
 type GardenerConfig struct {
 	ID                     string
 	ClusterID              string
@@ -40,8 +44,9 @@ type GardenerConfig struct {
 	GardenerProviderConfig GardenerProviderConfig
 }
 
-func (c GardenerConfig) ToShootTemplate(namespace string) (*gardener_types.Shoot, error) {
+func (c GardenerConfig) ToShootTemplate(namespace string, subAccountId string) (*gardener_types.Shoot, error) {
 	allowPrivlagedContainers := true
+	enableBasicAuthentication := false
 
 	var seed *string = nil
 	if c.Seed != "" {
@@ -52,6 +57,9 @@ func (c GardenerConfig) ToShootTemplate(namespace string) (*gardener_types.Shoot
 		ObjectMeta: v1.ObjectMeta{
 			Name:      c.Name,
 			Namespace: namespace,
+			Labels: map[string]string{
+				SubAccountLabel: subAccountId,
+			},
 		},
 		Spec: gardener_types.ShootSpec{
 			SecretBindingName: c.TargetSecret,
@@ -60,6 +68,9 @@ func (c GardenerConfig) ToShootTemplate(namespace string) (*gardener_types.Shoot
 			Kubernetes: gardener_types.Kubernetes{
 				AllowPrivilegedContainers: &allowPrivlagedContainers,
 				Version:                   c.KubernetesVersion,
+				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
+					EnableBasicAuthentication: &enableBasicAuthentication,
+				},
 			},
 			Networking: gardener_types.Networking{
 				Type:  "calico",        // Default value - we may consider adding it to API (if Hydroform will support it)

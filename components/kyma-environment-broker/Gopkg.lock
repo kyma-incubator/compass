@@ -21,24 +21,24 @@
   version = "v0.10.2"
 
 [[projects]]
-  digest = "1:a483c0edd95b99df6e850ed0f7e7495c909ee31995a09de97f6a424934f6a2dd"
+  digest = "1:298d4ba5657d3558241332cfdf2062b9ef91a7ab7543db7e47677eecc6d750c6"
   name = "github.com/Azure/azure-sdk-for-go"
   packages = [
-    "services/storage/mgmt/2019-04-01/storage",
+    "services/eventhub/mgmt/2017-04-01/eventhub",
+    "services/resources/mgmt/2019-05-01/resources",
     "version",
   ]
   pruneopts = "UT"
-  revision = "v40.3.0"
+  revision = "ee7c54530df34dd03f392562bcb869613fd7efdc"
+  version = "v39.3.0"
 
 [[projects]]
-  digest = "1:0f5cec94ea46ab37f6b95e52a4b70761ada57b809059aba2d332ec0813416920"
+  digest = "1:24f3d5aa436b7cf0244efff65e6346602eb0af08e1026bb9d1940b458c5326f9"
   name = "github.com/Azure/go-autorest"
   packages = [
     "autorest",
     "autorest/adal",
     "autorest/azure",
-    "autorest/azure/auth",
-    "autorest/azure/cli",
     "autorest/date",
     "autorest/to",
     "autorest/validation",
@@ -152,6 +152,7 @@
   version = "v3.2.0"
 
 [[projects]]
+<<<<<<< HEAD
   digest = "1:cf0d2e435fd4ce45b789e93ef24b5f08e86be0e9807a16beb3694e2d8c9af965"
   name = "github.com/dimchansky/utfbom"
   packages = ["."]
@@ -160,6 +161,8 @@
   version = "v1.1.0"
 
 [[projects]]
+=======
+>>>>>>> master
   digest = "1:5d7f88f9487f370e3ae52155465156370fc5798102d811d2d4448d2385ccaf67"
   name = "github.com/docker/distribution"
   packages = [
@@ -521,10 +524,9 @@
   version = "v1.2"
 
 [[projects]]
-  digest = "1:bda5052505bc4179914b039975c4cf39579d68ed3ab5aa9351a22fe8ac9ad423"
+  digest = "1:6e4b922386609d8c0de747b071320f5b1bfde0cc33005d27cbf58d393b830644"
   name = "github.com/pivotal-cf/brokerapi"
   packages = [
-    ".",
     "v7/auth",
     "v7/domain",
     "v7/domain/apiresponses",
@@ -1073,13 +1075,22 @@
   analyzer-version = 1
   input-imports = [
     "code.cloudfoundry.org/lager",
+<<<<<<< HEAD
     "github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2019-04-01/storage",
     "github.com/Azure/go-autorest/autorest/azure/auth",
+=======
+    "github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub",
+    "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources",
+    "github.com/Azure/go-autorest/autorest",
+    "github.com/Azure/go-autorest/autorest/adal",
+    "github.com/Azure/go-autorest/autorest/azure",
+>>>>>>> master
     "github.com/Masterminds/sprig",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
     "github.com/gocraft/dbr",
     "github.com/google/uuid",
     "github.com/gorilla/handlers",
+    "github.com/gorilla/mux",
     "github.com/hashicorp/go-multierror",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/director/pkg/jsonschema",
@@ -1088,9 +1099,11 @@
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
     "github.com/machinebox/graphql",
-    "github.com/pivotal-cf/brokerapi",
+    "github.com/pivotal-cf/brokerapi/v7/auth",
     "github.com/pivotal-cf/brokerapi/v7/domain",
     "github.com/pivotal-cf/brokerapi/v7/domain/apiresponses",
+    "github.com/pivotal-cf/brokerapi/v7/handlers",
+    "github.com/pivotal-cf/brokerapi/v7/middlewares",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
