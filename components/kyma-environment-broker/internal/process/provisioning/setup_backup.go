@@ -23,10 +23,9 @@ func (s *SetupBackupStep) Name() string {
 	return "Setup_Backup"
 }
 
-func NewSetupBackupStep(os storage.Operations, accountProvider hyperscaler.AccountProvider) *SetupBackupStep {
+func NewSetupBackupStep(os storage.Operations) *SetupBackupStep {
 	return &SetupBackupStep{
 		operationManager: process.NewOperationManager(os),
-		accountProvider:  accountProvider,
 	}
 }
 
