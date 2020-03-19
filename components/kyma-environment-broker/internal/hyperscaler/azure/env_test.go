@@ -3,6 +3,8 @@ package azure
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
@@ -80,7 +82,6 @@ func Test_mapRegion(t *testing.T) {
 			want:    "westeurope",
 			wantErr: false,
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -95,13 +96,12 @@ func Test_mapRegion(t *testing.T) {
 			}
 
 			got, err := mapRegion(credentials, parameters)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("mapRegion() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.NotNil(t, err, "mapRegion() error = %v, wantErr %v", err, tt.wantErr)
+			} else {
+				require.Nil(t, err, "mapRegion() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if got != tt.want {
-				t.Errorf("mapRegion() got = %v, want %v", got, tt.want)
-			}
+			require.Equal(t, got, tt.want, "mapRegion() got = %v, want %v", got, tt.want)
 		})
 	}
 }
