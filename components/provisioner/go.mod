@@ -47,38 +47,4 @@ replace k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k
 
 replace github.com/Azure/go-autorest v11.5.0+incompatible => github.com/Azure/go-autorest v13.3.2+incompatible
 
-replace golang.org/x/crypto v0.0.0-20180816225734-aabede6cba87 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20180820150726-614d502a4dac => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20180904163835-0709b304e793 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20181025213731-e84da0312774 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20181030102418-4d3f4d9ffa16 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20181112202954-3d3f9f413869 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20190211182817-74369b46fc67 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20190219172222-a4c6cb3142f2 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20190222235706-ffb98f73852f => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20190418165655-df01cb2cc480 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20190605123033-f99c8df09eb5 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20190621222207-cc06ce4a13d4 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace golang.org/x/crypto v0.0.0-20191122220453-ac88ee75c92c => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
+replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
