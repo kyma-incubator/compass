@@ -57,7 +57,7 @@ mutation {
     }
 }
 ```
-3. Compass adds protected label with name `integration-system-id` for just registered Application, so output of the previous mutation is the following:
+3. Compass adds protected label with name `integration_system_id` for just registered Application, so output of the previous mutation is the following:
 ```json
 {
   "data": {
@@ -67,7 +67,7 @@ mutation {
       "integrationSystemID": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       "labels": {
         "scenarios":["DEFAULT"],
-        "integration-system-id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        "integration_system_id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       }
     }
   }
@@ -196,7 +196,7 @@ mutation {
 
 This mutation registers Application with name `ecommerce-app`, integrationSystemID is set to `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` and
 with two labels:
-- `integration-system-id` with value `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa`
+- `integration_system_id` with value `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa`
 - `simple-integration-system/application-type` with value `ecommerce`
 
 When Integration System noticed, that new Application was registered, it starts configuring it according to information

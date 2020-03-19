@@ -29,7 +29,7 @@ func assertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 //TODO: After fixing the 'Labels' scalar turn this back into regular assertion
 func assertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, app graphql.ApplicationExt) {
 	for key, value := range actual {
-		if key == "integration-system-id" {
+		if key == "integration_system_id" {
 			if app.IntegrationSystemID == nil {
 				continue
 			}
