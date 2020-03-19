@@ -93,7 +93,7 @@ func (s *OverridesStep) Run(operation internal.ProvisioningOperation, log logrus
 	}
 
 	for component, ovs := range overrides {
-		operation.InputCreator.SetOverrides(component, ovs)
+		operation.InputCreator.AppendOverrides(component, ovs)
 	}
 	return operation, 0, nil
 }

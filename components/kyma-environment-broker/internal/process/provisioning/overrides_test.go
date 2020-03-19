@@ -30,7 +30,7 @@ func TestOverridesStep_Run(t *testing.T) {
 
 	operation := internal.ProvisioningOperation{}
 	inputCreatorMock := &automock.ProvisionInputCreator{}
-	inputCreatorMock.On("SetOverrides", "core", []*gqlschema.ConfigEntryInput{
+	inputCreatorMock.On("AppendOverrides", "core", []*gqlschema.ConfigEntryInput{
 		{
 			Key:    "test1",
 			Value:  "test1abc",
@@ -41,14 +41,14 @@ func TestOverridesStep_Run(t *testing.T) {
 			Value: "test4abc",
 		},
 	}).Return(nil).Once()
-	inputCreatorMock.On("SetOverrides", "helm", []*gqlschema.ConfigEntryInput{
+	inputCreatorMock.On("AppendOverrides", "helm", []*gqlschema.ConfigEntryInput{
 		{
 			Key:    "test3",
 			Value:  "test3abc",
 			Secret: ptr.Bool(true),
 		},
 	}).Return(nil).Once()
-	inputCreatorMock.On("SetOverrides", "servicecatalog", []*gqlschema.ConfigEntryInput{
+	inputCreatorMock.On("AppendOverrides", "servicecatalog", []*gqlschema.ConfigEntryInput{
 		{
 			Key:   "test6",
 			Value: "test6abc",
