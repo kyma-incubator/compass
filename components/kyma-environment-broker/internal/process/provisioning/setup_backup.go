@@ -2,7 +2,10 @@ package provisioning
 
 import (
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
+
+	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
@@ -10,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 const (
@@ -19,9 +21,9 @@ const (
 )
 
 type SetupBackupStep struct {
-	bucketName string
-	zone string
-	operationManager  *process.OperationManager
+	bucketName       string
+	zone             string
+	operationManager *process.OperationManager
 	accountProvider  hyperscaler.AccountProvider
 }
 
@@ -31,9 +33,8 @@ func (s *SetupBackupStep) Name() string {
 
 func NewSetupBackupStep(os storage.Operations, accountProvider hyperscaler.AccountProvider) *SetupBackupStep {
 	return &SetupBackupStep{
-		operationManager:  process.NewOperationManager(os),
+		operationManager: process.NewOperationManager(os),
 		accountProvider:  accountProvider,
-
 	}
 }
 
@@ -84,11 +85,11 @@ func (s *SetupBackupStep) Run(operation internal.ProvisioningOperation, log logr
 func (s *SetupBackupStep) setupBackUpOverride() []*gqlschema.ConfigEntryInput {
 	backupStepOverrides := []*gqlschema.ConfigEntryInput{
 		{
-			Key: "configuration.provider",
-			Value: "azure",
+			Key:    "configuration.provider",
+			Value:  "azure",
 			Secret: ptr.Bool(true),
 		},
 	}
-return backupStepOverrides
-	
+	return backupStepOverrides
+
 }
