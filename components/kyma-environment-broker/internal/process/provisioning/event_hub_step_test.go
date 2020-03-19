@@ -19,10 +19,10 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/automock"
+	hyperscalerautomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
-	inputAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
+	inputautomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 )
@@ -344,7 +344,7 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 }
 
 func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
-	optComponentsSvc := &inputAutomock.OptionalComponentService{}
+	optComponentsSvc := &inputautomock.OptionalComponentService{}
 	componentConfigurationInputList := internal.ComponentConfigurationInputList{
 		{
 			Component:     "keb",
@@ -388,9 +388,10 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	return creator
 }
 
-func fixAccountProvider() automock.AccountProvider {
-	accountProvider := automock.AccountProvider{}
+func fixAccountProvider() hyperscalerautomock.AccountProvider {
+	accountProvider := hyperscalerautomock.AccountProvider{}
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.Azure,
 		CredentialData: map[string][]byte{
 			"subscriptionID": []byte("subscriptionID"),
 			"clientID":       []byte("clientID"),
@@ -401,15 +402,16 @@ func fixAccountProvider() automock.AccountProvider {
 	return accountProvider
 }
 
-func fixAccountProviderGardenerCredentialsError() automock.AccountProvider {
-	accountProvider := automock.AccountProvider{}
+func fixAccountProviderGardenerCredentialsError() hyperscalerautomock.AccountProvider {
+	accountProvider := hyperscalerautomock.AccountProvider{}
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
-		CredentialData: map[string][]byte{},
+		HyperscalerType: hyperscaler.Azure,
+		CredentialData:  map[string][]byte{},
 	}, fmt.Errorf("ups ... gardener credentials could not be retrieved"))
 	return accountProvider
 }
 
-func fixEventHubStep(memoryStorageOp storage.Operations, accountProvider automock.AccountProvider) *ProvisionAzureEventHubStep {
+func fixEventHubStep(memoryStorageOp storage.Operations, accountProvider hyperscalerautomock.AccountProvider) *ProvisionAzureEventHubStep {
 	step := NewProvisionAzureEventHubStep(memoryStorageOp,
 		NewFakeHyperscalerProvider(NewFakeNamespaceClientHappyPath()),
 		&accountProvider,
@@ -422,10 +424,11 @@ func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
 	op := internal.ProvisioningOperation{
 		Operation: internal.Operation{},
 		ProvisioningParameters: `{
+			"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 			"parameters": {
         		"name": "nachtmaar-15",
         		"components": [],
-				"region": "europe-west3"
+				"region": "westeurope"
 			}
 		}`,
 		InputCreator: fixKnativeKafkaInputCreator(t),
