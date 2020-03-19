@@ -12,11 +12,13 @@ import (
 
 type InternalEvaluationStep struct {
 	delegator *avs.Delegator
+	iec       *avs.InternalEvalConfigurator
 }
 
 func NewInternalEvaluationStep(avsConfig avs.Config, operationsStorage storage.Operations) *InternalEvaluationStep {
 	return &InternalEvaluationStep{
 		delegator: avs.NewDelegator(avsConfig, operationsStorage),
+		iec:       avs.NewInternalEvalConfigurator(avsConfig.ApiKey),
 	}
 }
 
@@ -25,9 +27,5 @@ func (ies *InternalEvaluationStep) Name() string {
 }
 
 func (ies *InternalEvaluationStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	return ies.delegator.DoRun(logger, operation, createInternalBasicEvaluationRequest)
-}
-
-func createInternalBasicEvaluationRequest(operations internal.ProvisioningOperation) (*avs.BasicEvaluationCreateRequest, error) {
-	return avs.NewInternalBasicEvaluation(operations)
+	return ies.delegator.DoRun(logger, operation, ies.iec)
 }

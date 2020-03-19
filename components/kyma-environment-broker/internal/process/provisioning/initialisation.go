@@ -113,6 +113,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 
 	_, err = url.ParseRequestURI(instance.DashboardURL)
 	if err == nil {
+		//
 		return s.operationManager.OperationSucceeded(operation, "URL dashboard already exist")
 	}
 
@@ -133,6 +134,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 		if err != nil || repeat != 0 {
 			return operation, repeat, err
 		}
+		//
 		return s.operationManager.OperationSucceeded(operation, msg)
 	case gqlschema.OperationStateInProgress:
 		return operation, 2 * time.Minute, nil

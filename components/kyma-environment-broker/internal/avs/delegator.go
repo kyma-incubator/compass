@@ -5,20 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	evaluationIdKey = "avs_bridge.config.evaluations.cluster.id"
-	avsBridgeAPIKey = "avs_bridge.config.availabilityService.apiKey"
 )
 
 type Delegator struct {
@@ -35,14 +28,15 @@ func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Deleg
 	}
 }
 
-func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.ProvisioningOperation, modelSupplier func(provisioningOperation internal.ProvisioningOperation) (*BasicEvaluationCreateRequest, error)) (internal.ProvisioningOperation, time.Duration, error) {
+func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalConfigurator EvalConfigurator) (internal.ProvisioningOperation, time.Duration, error) {
 	logger.Infof("starting the step")
 
-	if operation.AvsEvaluationInternalId != 0 {
-		return operation, 0, nil
+	if evalConfigurator.CheckIfAlreadyDone(operation) {
+		msg := fmt.Sprintf("step has already been finished previously")
+		return del.operationManager.OperationSucceeded(operation, msg)
 	}
 
-	evaluationObject, err := modelSupplier(operation)
+	evaluationObject, err := evalConfigurator.CreateInternalBasicEvaluationRequest(operation)
 	if err != nil {
 		logger.Errorf("step failed with error %v", err)
 		return operation, 5 * time.Second, nil
@@ -58,16 +52,7 @@ func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.Provis
 
 	updatedOperation, d := del.operationManager.UpdateOperation(operation)
 
-	updatedOperation.InputCreator.SetOverrides("avs-bridge", []*gqlschema.ConfigEntryInput{
-		{
-			Key:   evaluationIdKey,
-			Value: strconv.FormatInt(updatedOperation.AvsEvaluationInternalId, 10),
-		},
-		{
-			Key:   avsBridgeAPIKey,
-			Value: del.avsConfig.ApiKey,
-		},
-	})
+	evalConfigurator.SetOverrides(updatedOperation.InputCreator, updatedOperation.AvsEvaluationInternalId)
 
 	return updatedOperation, d, nil
 }
