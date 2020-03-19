@@ -38,7 +38,7 @@ type InitialisationStep struct {
 	inputBuilder      input.CreatorForPlan
 }
 
-func 	NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan, dURL string) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan, dURL string) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:  process.NewOperationManager(os),
 		instanceStorage:   is,
