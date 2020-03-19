@@ -31,10 +31,10 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-981"
+      version: "PR-1004"
     provisioner:
       dir:
-      version: "PR-957"
+      version: "PR-1004"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -52,7 +52,7 @@ global:
         version: "02e8358c"
       provisioner:
         dir:
-        version: "PR-565"
+        version: "PR-1004"
       e2e_provisioning:
         dir:
         version: "PR-1018"
