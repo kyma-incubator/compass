@@ -31,6 +31,7 @@ func TestSetupBackupStepHappyPath_Run(t *testing.T) {
 	// when
 	gotOperation, retryTime, err := step.Run(operation, NewLogDummy())
 
+	// then
 	require.NoError(t, err)
 
 	assert.Zero(t, retryTime)
