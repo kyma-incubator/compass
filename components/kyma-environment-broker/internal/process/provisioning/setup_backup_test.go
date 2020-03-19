@@ -28,6 +28,7 @@ func TestSetupBackupStepHappyPath_Run(t *testing.T) {
 	memoryStorage := storage.NewMemoryStorage()
 	step := NewSetupBackupStep(memoryStorage.Operations())
 
+	// when
 	gotOperation, retryTime, err := step.Run(operation, NewLogDummy())
 
 	require.NoError(t, err)
