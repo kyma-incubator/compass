@@ -64,15 +64,15 @@ func TestService_Create(t *testing.T) {
 	}
 
 	defaultLabels := map[string]interface{}{
-		model.ScenariosKey:      model.ScenariosDefaultValue,
-		"integration_system_id": intSysID,
-		"label":                 "value",
-		"name":                  "foo.bar-not",
+		model.ScenariosKey:    model.ScenariosDefaultValue,
+		"integrationSystemID": intSysID,
+		"label":               "value",
+		"name":                "foo.bar-not",
 	}
 	defaultLabelsWithoutIntSys := map[string]interface{}{
-		model.ScenariosKey:      model.ScenariosDefaultValue,
-		"integration_system_id": "",
-		"name":                  "test",
+		model.ScenariosKey:    model.ScenariosDefaultValue,
+		"integrationSystemID": "",
+		"name":                "test",
 	}
 
 	id := "foo"
@@ -619,7 +619,7 @@ func TestService_Update(t *testing.T) {
 	updateInput := fixModelApplicationUpdateInput(appName, updatedDescription, updatedURL)
 	applicationModelBefore := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, "initiald", "initialu")
 	applicationModelAfter := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, updatedDescription, updatedURL)
-	intSysLabel := fixLabelInput("integration_system_id", intSysID, id, model.ApplicationLabelableObject)
+	intSysLabel := fixLabelInput("integrationSystemID", intSysID, id, model.ApplicationLabelableObject)
 	nameLabel := fixLabelInput("name", appName, id, model.ApplicationLabelableObject)
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
