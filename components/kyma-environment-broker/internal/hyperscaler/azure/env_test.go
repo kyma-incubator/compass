@@ -11,8 +11,8 @@ import (
 func Test_mapRegion(t *testing.T) {
 	type args struct {
 		hyperscalerType hyperscaler.HyperscalerType
-		planID string
-		region  string
+		planID          string
+		region          string
 	}
 	tests := []struct {
 		name    string
@@ -21,8 +21,8 @@ func Test_mapRegion(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "invalid gcp mapping",
-			args:args{
+			name: "invalid gcp mapping",
+			args: args{
 				hyperscalerType: hyperscaler.Azure,
 				planID:          broker.GcpPlanID,
 				region:          "munich",
@@ -31,8 +31,8 @@ func Test_mapRegion(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "valid gcp mapping",
-			args:args{
+			name: "valid gcp mapping",
+			args: args{
 				hyperscalerType: hyperscaler.Azure,
 				planID:          broker.GcpPlanID,
 				region:          "europe-west1",
@@ -41,8 +41,8 @@ func Test_mapRegion(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "unknown planid",
-			args:args{
+			name: "unknown planid",
+			args: args{
 				hyperscalerType: hyperscaler.Azure,
 				planID:          "microsoftcloud",
 				region:          "",
@@ -51,8 +51,8 @@ func Test_mapRegion(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "unknown hyperscaler",
-			args:args{
+			name: "unknown hyperscaler",
+			args: args{
 				hyperscalerType: "microsoftcloud",
 				planID:          broker.AzurePlanID,
 				region:          "",
@@ -61,8 +61,8 @@ func Test_mapRegion(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "invalid azure region",
-			args:args{
+			name: "invalid azure region",
+			args: args{
 				hyperscalerType: hyperscaler.Azure,
 				planID:          broker.AzurePlanID,
 				region:          "",
@@ -71,8 +71,8 @@ func Test_mapRegion(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "valid azure region",
-			args:args{
+			name: "valid azure region",
+			args: args{
 				hyperscalerType: hyperscaler.Azure,
 				planID:          broker.AzurePlanID,
 				region:          "westeurope",
@@ -88,9 +88,9 @@ func Test_mapRegion(t *testing.T) {
 				HyperscalerType: tt.args.hyperscalerType,
 			}
 			parameters := internal.ProvisioningParameters{
-				PlanID:     tt.args.planID,
+				PlanID: tt.args.planID,
 				Parameters: internal.ProvisioningParametersDTO{
-					Region:                      &tt.args.region,
+					Region: &tt.args.region,
 				},
 			}
 

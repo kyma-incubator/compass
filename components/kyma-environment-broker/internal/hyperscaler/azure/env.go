@@ -46,7 +46,7 @@ func mapRegion(credentials hyperscaler.Credentials, parameters internal.Provisio
 	region := *(parameters.Parameters.Region)
 	switch parameters.PlanID {
 	case broker.AzurePlanID:
-		if ! azureRegions()[region] {
+		if !azureRegions()[region] {
 			return "", fmt.Errorf("supplied region \"%v\" is not a valid region for Azure", region)
 		}
 
@@ -61,5 +61,3 @@ func mapRegion(credentials hyperscaler.Credentials, parameters internal.Provisio
 	}
 	return region, nil
 }
-
-
