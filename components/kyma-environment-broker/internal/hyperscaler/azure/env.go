@@ -43,6 +43,9 @@ func mapRegion(credentials hyperscaler.Credentials, parameters internal.Provisio
 	if credentials.HyperscalerType != hyperscaler.Azure {
 		return "", fmt.Errorf("cannot use credential for hyperscaler of type %v on hyperscaler of type %v", credentials.HyperscalerType, hyperscaler.Azure)
 	}
+	if parameters.Parameters.Region == nil {
+		return "", fmt.Errorf("parameters region is nil")
+	}
 	region := *(parameters.Parameters.Region)
 	switch parameters.PlanID {
 	case broker.AzurePlanID:
