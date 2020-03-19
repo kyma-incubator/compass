@@ -17,7 +17,7 @@ import (
 
 const (
 	// the time after which the operation is marked as expired
-	SetuUpBackupTimeOut = 1 * time.Hour
+	SetupUpBackupTimeOut = 1 * time.Hour
 )
 
 type SetupBackupStep struct {
@@ -43,9 +43,9 @@ func (s *SetupBackupStep) SetupBackupStep() {
 }
 
 func (s *SetupBackupStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if time.Since(operation.UpdatedAt) > SetuUpBackupTimeOut {
+	if time.Since(operation.UpdatedAt) > SetupUpBackupTimeOut {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", SetuUpBackupTimeOut))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", SetupUpBackupTimeOut))
 	}
 	log.Info("Setting Up Backup")
 
