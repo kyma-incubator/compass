@@ -138,7 +138,6 @@ func main() {
 	provisionAzureEventHub := provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
-	//TODO: Uncomment when we azure client
 	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations(), accountProvider)
 
 	logs := logrus.New()
