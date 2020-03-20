@@ -7,16 +7,14 @@ import (
 )
 
 const (
-	DefinitionType         = "BASIC"
-	checkType              = "HTTPSGET"
-	interval               = 180
-	timeout                = 30000
-	contentCheck           = "SAP Kyma Runtime Monitoring"
-	contentCheckType       = "CONTAINS"
-	threshold              = "30000"
-	visibility             = "PUBLIC"
-	internalTesterAccessId = 8281610
-	groupId                = 8278726
+	DefinitionType   = "BASIC"
+	checkType        = "HTTPSGET"
+	interval         = 180
+	timeout          = 30000
+	contentCheck     = "SAP Kyma Runtime Monitoring"
+	contentCheckType = "CONTAINS"
+	threshold        = "30000"
+	visibility       = "PUBLIC"
 )
 
 type BasicEvaluationCreateRequest struct {
@@ -33,7 +31,7 @@ type BasicEvaluationCreateRequest struct {
 	ContentCheck     string `json:"content_check"`
 	ContentCheckType string `json:"content_check_type"`
 	Threshold        string `json:"threshold"`
-	GroupId          int    `json:"group_id"`
+	GroupId          int64  `json:"group_id"`
 	Visibility       string `json:"visibility"`
 }
 
@@ -51,7 +49,7 @@ type BasicEvaluationCreateResponse struct {
 	ContentCheck     string `json:"content_check"`
 	ContentCheckType string `json:"content_check_type"`
 	Threshold        int64  `json:"threshold"`
-	GroupId          int    `json:"group_id"`
+	GroupId          int64  `json:"group_id"`
 	Visibility       string `json:"visibility"`
 
 	DateCreated                int64    `json:"dateCreated"`
@@ -68,45 +66,24 @@ type BasicEvaluationCreateResponse struct {
 	IdOnTester                 string   `json:"id_on_tester"`
 }
 
-func NewInternalBasicEvaluation(operation internal.ProvisioningOperation) (*BasicEvaluationCreateRequest, error) {
-	return newBasicEvaluationCreateRequest(operation, true)
-}
-
-func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, isInternal bool) (*BasicEvaluationCreateRequest, error) {
+func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, configurator ModelConfigurator, groupId int64, url string) (*BasicEvaluationCreateRequest, error) {
 	provisionParams, err := operation.GetProvisioningParameters()
 	if err != nil {
 		return nil, err
 	}
 
-	var nameSuffix string
-	if isInternal {
-		nameSuffix = "internal"
-	} else {
-		nameSuffix = "external"
-	}
-
 	beName, beDescription := generateNameAndDescription(provisionParams.ErsContext.GlobalAccountID,
-		provisionParams.ErsContext.SubAccountID, provisionParams.Parameters.Name, DefinitionType, operation.InstanceID, nameSuffix)
-
-	var url string
-	if isInternal {
-		url = ""
-	}
-
-	var testerAccessId int64
-	if isInternal {
-		testerAccessId = internalTesterAccessId
-	}
+		provisionParams.ErsContext.SubAccountID, provisionParams.Parameters.Name, DefinitionType, operation.InstanceID, configurator.ProvideSuffix())
 
 	return &BasicEvaluationCreateRequest{
 		DefinitionType:   DefinitionType,
 		Name:             beName,
 		Description:      beDescription,
-		Service:          beName, //TODO: waiting for Gabor's inputs regarding service value
-		URL:              url,    //only required for external e.g. site 24X7
+		Service:          beName,
+		URL:              url,
 		CheckType:        checkType,
 		Interval:         interval,
-		TesterAccessId:   testerAccessId,
+		TesterAccessId:   configurator.ProvideTesterAccessId(),
 		Timeout:          timeout,
 		ReadOnly:         false,
 		ContentCheck:     contentCheck,

@@ -30,20 +30,22 @@ type DirectorClient interface {
 }
 
 type InitialisationStep struct {
-	operationManager  *process.ProvisionOperationManager
-	instanceStorage   storage.Instances
-	provisionerClient provisioner.Client
-	directorClient    DirectorClient
-	inputBuilder      input.CreatorForPlan
+	operationManager    *process.ProvisionOperationManager
+	instanceStorage     storage.Instances
+	provisionerClient   provisioner.Client
+	directorClient      DirectorClient
+	inputBuilder        input.CreatorForPlan
+	externalEvalCreator *ExternalEvalCreator
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan, avsExternalEvalCreator *ExternalEvalCreator) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:  process.NewProvisionOperationManager(os),
-		instanceStorage:   is,
-		provisionerClient: pc,
-		directorClient:    dc,
-		inputBuilder:      b,
+		operationManager:    process.NewProvisionOperationManager(os),
+		instanceStorage:     is,
+		provisionerClient:   pc,
+		directorClient:      dc,
+		inputBuilder:        b,
+		externalEvalCreator: avsExternalEvalCreator,
 	}
 }
 
@@ -113,8 +115,12 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 
 	_, err = url.ParseRequestURI(instance.DashboardURL)
 	if err == nil {
-		//
-		return s.operationManager.OperationSucceeded(operation, "URL dashboard already exist")
+		operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL)
+		if err != nil || repeat != 0 {
+			return operation, repeat, nil
+		} else {
+			return s.operationManager.OperationSucceeded(operation, "URL dashboard already exist")
+		}
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
@@ -134,8 +140,12 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 		if err != nil || repeat != 0 {
 			return operation, repeat, err
 		}
-		//
-		return s.operationManager.OperationSucceeded(operation, msg)
+		operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL)
+		if err != nil || repeat != 0 {
+			return operation, repeat, nil
+		} else {
+			return s.operationManager.OperationSucceeded(operation, msg)
+		}
 	case gqlschema.OperationStateInProgress:
 		return operation, 2 * time.Minute, nil
 	case gqlschema.OperationStatePending:

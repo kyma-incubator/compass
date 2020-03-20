@@ -28,15 +28,15 @@ func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Deleg
 	}
 }
 
-func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalConfigurator EvalConfigurator) (internal.ProvisioningOperation, time.Duration, error) {
+func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
 	logger.Infof("starting the step")
 
-	if evalConfigurator.CheckIfAlreadyDone(operation) {
+	if evalAssistant.CheckIfAlreadyDone(operation) {
 		msg := fmt.Sprintf("step has already been finished previously")
 		return del.operationManager.OperationSucceeded(operation, msg)
 	}
 
-	evaluationObject, err := evalConfigurator.CreateInternalBasicEvaluationRequest(operation)
+	evaluationObject, err := evalAssistant.CreateBasicEvaluationRequest(operation, url)
 	if err != nil {
 		logger.Errorf("step failed with error %v", err)
 		return operation, 5 * time.Second, nil
@@ -48,11 +48,11 @@ func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.Provis
 		return operation, 30 * time.Second, nil
 	}
 
-	operation.AvsEvaluationInternalId = evalResp.Id
+	evalAssistant.SetEvalId(&operation, evalResp.Id)
 
 	updatedOperation, d := del.operationManager.UpdateOperation(operation)
 
-	evalConfigurator.SetOverrides(updatedOperation.InputCreator, updatedOperation.AvsEvaluationInternalId)
+	evalAssistant.SetOverrides(updatedOperation.InputCreator, updatedOperation.AvsEvaluationInternalId)
 
 	return updatedOperation, d, nil
 }

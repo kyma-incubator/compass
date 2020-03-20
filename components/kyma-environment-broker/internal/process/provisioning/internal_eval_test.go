@@ -15,41 +15,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type idHolder struct {
+	id int64
+}
+
 func TestInternalEvaluationStep_Run(t *testing.T) {
 	// given
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
-	var id int64
 	provisioningOperation := fixOperationCreateRuntime(t)
 	err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 	assert.NoError(t, err)
 
-	mockOauthServer := httptest.NewServer(
-		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			writer.Header().Set("Content-Type", "application/json")
-			_, _ = writer.Write([]byte(`{"access_token": "90d64460d14870c08c81352a05dedd3465940a7c", "scope": "user", "token_type": "bearer", "expires_in": 86400}`))
-		}))
+	idh := &idHolder{}
+	mockOauthServer := newMockAvsOauthServer()
 	defer mockOauthServer.Close()
-
-	mockAvsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
-
-		dec := json.NewDecoder(r.Body)
-		var requestObj avs.BasicEvaluationCreateRequest
-		err := dec.Decode(&requestObj)
-		assert.NoError(t, err)
-
-		assert.Empty(t, requestObj.URL)
-
-		evalCreateResponse := createResponseObj(err, requestObj, t)
-		id = evalCreateResponse.Id
-		responseObjAsBytes, _ := json.Marshal(evalCreateResponse)
-
-		_, _ = w.Write(responseObjAsBytes)
-		w.WriteHeader(http.StatusOK)
-	}))
+	mockAvsServer := m(t, idh, true)
 	defer mockAvsServer.Close()
-	ies := NewInternalEvaluationStep(avsConfig(mockOauthServer, mockAvsServer), memoryStorage.Operations())
+	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
+	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
+
+	ies := NewInternalEvaluationStep(avsConfig, avsDel)
 
 	// when
 	logger := log.WithFields(logrus.Fields{"step": "TEST"})
@@ -58,21 +44,56 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	//then
 	assert.NoError(t, err)
 	assert.Equal(t, 0*time.Second, repeat)
-	assert.Equal(t, id, provisioningOperation.AvsEvaluationInternalId)
+	assert.Equal(t, idh.id, provisioningOperation.AvsEvaluationInternalId)
 
 	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(provisioningOperation.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, inDB.AvsEvaluationInternalId, id)
+	assert.Equal(t, inDB.AvsEvaluationInternalId, idh.id)
+}
+
+func newMockAvsOauthServer() *httptest.Server {
+	return httptest.NewServer(
+		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			writer.Header().Set("Content-Type", "application/json")
+			_, _ = writer.Write([]byte(`{"access_token": "90d64460d14870c08c81352a05dedd3465940a7c", "scope": "user", "token_type": "bearer", "expires_in": 86400}`))
+		}))
+}
+
+func m(t *testing.T, idh *idHolder, isInternal bool) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
+
+		dec := json.NewDecoder(r.Body)
+		var requestObj avs.BasicEvaluationCreateRequest
+		err := dec.Decode(&requestObj)
+		assert.NoError(t, err)
+
+		if isInternal {
+			assert.Empty(t, requestObj.URL)
+		} else {
+			assert.NotEmpty(t, requestObj.URL)
+		}
+
+		evalCreateResponse := createResponseObj(err, requestObj, t)
+		idh.id = evalCreateResponse.Id
+		responseObjAsBytes, _ := json.Marshal(evalCreateResponse)
+
+		_, _ = w.Write(responseObjAsBytes)
+		w.WriteHeader(http.StatusOK)
+	}))
 }
 
 func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server) avs.Config {
 	return avs.Config{
-		OauthTokenEndpoint: mockOauthServer.URL,
-		OauthUsername:      "dummy",
-		OauthPassword:      "dummy",
-		OauthClientId:      "dummy",
-		ApiEndpoint:        mockAvsServer.URL,
-		DefinitionType:     avs.DefinitionType,
+		OauthTokenEndpoint:     mockOauthServer.URL,
+		OauthUsername:          "dummy",
+		OauthPassword:          "dummy",
+		OauthClientId:          "dummy",
+		ApiEndpoint:            mockAvsServer.URL,
+		DefinitionType:         avs.DefinitionType,
+		InternalTesterAccessId: 1234,
+		ExternalTesterAccessId: 5678,
+		GroupId:                5555,
 	}
 }
 
