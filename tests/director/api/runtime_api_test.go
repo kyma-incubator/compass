@@ -32,12 +32,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	actualRuntime := graphql.RuntimeExt{}
 
 	// WHEN
-	registerReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: registerRuntime(in: %s) {
-					%s
-				}
-			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	registerReq := fixRegisterRuntimeRequest(runtimeInGQL)
 	saveExampleInCustomDir(t, registerReq.Query(), registerRuntimeCategory, "register runtime")
 	err = tc.RunOperation(ctx, registerReq, &actualRuntime)
 
@@ -65,12 +60,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	assert.Contains(t, actualLabel.Value, "bbb")
 
 	// get runtime and validate runtimes
-	getRuntimeReq := gcli.NewRequest(
-		fmt.Sprintf(`query {
-			result: runtime(id: "%s") {
-					%s
-				}
-			}`, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
+	getRuntimeReq := fixRuntimeRequest(actualRuntime.ID)
 	err = tc.RunOperation(ctx, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
 	assert.Len(t, actualRuntime.Labels, 3)
@@ -81,15 +71,10 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
-	createAppReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-  				result: registerApplication(in: %s) {
-    					%s
-					}
-				}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
-	actualApp := graphql.ApplicationExt{}
+	createAppReq := fixRegisterApplicationRequest(appInputGQL)
 
 	//WHEN
+	actualApp := graphql.ApplicationExt{}
 	err = tc.RunOperation(ctx, createAppReq, &actualApp)
 
 	//THEN
@@ -109,12 +94,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	authInStr, err := tc.graphqlizer.AuthInputToGQL(&authIn)
 	require.NoError(t, err)
-	setAuthReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: setAPIAuth(apiID: "%s", runtimeID: "%s", in: %s) {
-					%s
-				}
-			}`, actualApp.APIDefinitions.Data[0].ID, actualRuntime.ID, authInStr, tc.gqlFieldsProvider.ForAPIRuntimeAuth()))
+	setAuthReq := fixSetAPIAuthRequest(actualApp.APIDefinitions.Data[0].ID, actualRuntime.ID, authInStr)
 
 	//WHEN
 	err = tc.RunOperation(ctx, setAuthReq, &actualAPIRuntimeAuth)
@@ -135,16 +115,12 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	givenInput.Labels = &graphql.Labels{
 		"key": []interface{}{"values", "aabbcc"},
 	}
+	runtimeStatusCond := graphql.RuntimeStatusConditionConnected
+	givenInput.StatusCondition = &runtimeStatusCond
+
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	//actualRuntime = RuntimeExt{ID: actualRuntime.ID}
-	updateRuntimeReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-				result: updateRuntime(id: "%s", in: %s) {
-					%s
-				}
-		}
-		`, actualRuntime.ID, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	updateRuntimeReq := fixUpdateRuntimeRequest(actualRuntime.ID, runtimeInGQL)
 	saveExample(t, updateRuntimeReq.Query(), "update runtime")
 	//WHEN
 	err = tc.RunOperation(ctx, updateRuntimeReq, &actualRuntime)
@@ -153,11 +129,12 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, givenInput.Name, actualRuntime.Name)
 	assert.Equal(t, *givenInput.Description, *actualRuntime.Description)
+	assert.Equal(t, runtimeStatusCond, actualRuntime.Status.Condition)
 
 	// delete runtime
 
 	// WHEN
-	delReq := gcli.NewRequest(fmt.Sprintf(`mutation{result: unregisterRuntime(id: "%s") {%s}}`, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
+	delReq := fixUnregisterRuntimeRequest(actualRuntime.ID)
 	saveExample(t, delReq.Query(), "unregister runtime")
 	err = tc.RunOperation(ctx, delReq, nil)
 
@@ -177,12 +154,8 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
 	firstRuntime := graphql.RuntimeExt{}
-	registerReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: registerRuntime(in: %s) {
-					%s
-				}
-			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	registerReq := fixRegisterRuntimeRequest(runtimeInGQL)
+
 	// WHEN
 	err = tc.RunOperation(ctx, registerReq, &firstRuntime)
 
@@ -200,12 +173,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	registerReq = gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: registerRuntime(in: %s) {
-					%s
-				}
-			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	registerReq = fixRegisterRuntimeRequest(runtimeInGQL)
 	saveExampleInCustomDir(t, registerReq.Query(), registerRuntimeCategory, "register runtime")
 
 	// WHEN
@@ -226,12 +194,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
 	secondRuntime := graphql.RuntimeExt{}
-	registerReq = gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: registerRuntime(in: %s) {
-					%s
-				}
-			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	registerReq = fixRegisterRuntimeRequest(runtimeInGQL)
 
 	// WHEN
 	err = tc.RunOperation(ctx, registerReq, &secondRuntime)
@@ -251,12 +214,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	registerReq = gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: updateRuntime(id: "%s", in :%s) {
-					%s
-				}
-			}`, firstRuntime.ID, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	registerReq = fixUpdateRuntimeRequest(firstRuntime.ID, runtimeInGQL)
 
 	// WHEN
 	err = tc.RunOperation(ctx, registerReq, &secondRuntime)
@@ -275,12 +233,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 
 	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
-	registerReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-  				result: registerApplication(in: %s) {
-    					%s
-					}
-				}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
+	registerReq := fixRegisterApplicationRequest(appInputGQL)
 	actualApp := graphql.ApplicationExt{}
 	err = tc.RunOperation(ctx, registerReq, &actualApp)
 	require.NoError(t, err)
@@ -295,12 +248,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
 	require.NoError(t, err)
 	actualRuntime := graphql.Runtime{}
-	registerRuntimeReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-				result: registerRuntime(in: %s) {
-						%s
-					}
-				}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	registerRuntimeReq := fixRegisterRuntimeRequest(runtimeInGQL)
 	err = tc.RunOperation(ctx, registerRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
@@ -320,12 +268,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 
 	authInStr, err := tc.graphqlizer.AuthInputToGQL(&authIn)
 	require.NoError(t, err)
-	setAuthReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: setAPIAuth(apiID: "%s", runtimeID: "%s", in: %s) {
-					%s
-				}
-			}`, actualApp.APIDefinitions.Data[0].ID, actualRuntime.ID, authInStr, tc.gqlFieldsProvider.ForAPIRuntimeAuth()))
+	setAuthReq := fixSetAPIAuthRequest(actualApp.APIDefinitions.Data[0].ID, actualRuntime.ID, authInStr)
 	err = tc.RunOperation(ctx, setAuthReq, &actualAPIRuntimeAuth)
 
 	//THEN
@@ -338,12 +281,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 	assert.Equal(t, "secret", actualBasic.Password)
 
 	// delete Auth
-	delAuthReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: deleteAPIAuth(apiID: "%s",runtimeID: "%s") {
-					%s
-				} 
-			}`, actualApp.APIDefinitions.Data[0].ID, actualRuntime.ID, tc.gqlFieldsProvider.ForAPIRuntimeAuth()))
+	delAuthReq := fixDeleteAPIAuthRequestRequest(actualApp.APIDefinitions.Data[0].ID, actualRuntime.ID)
 	err = tc.RunOperation(ctx, delAuthReq, nil)
 	require.NoError(t, err)
 }
@@ -421,12 +359,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	registerReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: registerRuntime(in: %s) {
-					%s
-				}
-			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	registerReq := fixRegisterRuntimeRequest(runtimeInGQL)
 	createdRuntime := graphql.Runtime{}
 	err = tc.RunOperation(ctx, registerReq, &createdRuntime)
 	require.NoError(t, err)

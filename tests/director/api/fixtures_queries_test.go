@@ -148,7 +148,7 @@ func unregisterRuntime(t *testing.T, id string) {
 }
 
 func unregisterRuntimeWithinTenant(t *testing.T, id string, tenantID string) {
-	delReq := fixUnregisterRuntime(id)
+	delReq := fixUnregisterRuntimeRequest(id)
 
 	err := tc.RunOperationWithCustomTenant(context.Background(), tenantID, delReq, nil)
 	require.NoError(t, err)

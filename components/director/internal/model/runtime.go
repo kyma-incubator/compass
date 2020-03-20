@@ -23,30 +23,43 @@ type RuntimeStatus struct {
 type RuntimeStatusCondition string
 
 const (
-	RuntimeStatusConditionInitial RuntimeStatusCondition = "INITIAL"
-	RuntimeStatusConditionReady   RuntimeStatusCondition = "READY"
-	RuntimeStatusConditionFailed  RuntimeStatusCondition = "FAILED"
+	RuntimeStatusConditionInitial   RuntimeStatusCondition = "INITIAL"
+	RuntimeStatusConditionConnected RuntimeStatusCondition = "CONNECTED"
+	RuntimeStatusConditionFailed    RuntimeStatusCondition = "FAILED"
 )
 
 type RuntimeInput struct {
-	Name        string
-	Description *string
-	Labels      map[string]interface{}
+	Name            string
+	Description     *string
+	Labels          map[string]interface{}
+	StatusCondition *RuntimeStatusCondition
 }
 
-func (i *RuntimeInput) ToRuntime(id string, tenant string, creationTimestamp time.Time) *Runtime {
+func (i *RuntimeInput) ToRuntime(id string, tenant string, creationTimestamp, conditionTimestamp time.Time) *Runtime {
 	if i == nil {
 		return nil
 	}
 
 	return &Runtime{
-		ID:                id,
-		Name:              i.Name,
-		Description:       i.Description,
-		Tenant:            tenant,
-		Status:            &RuntimeStatus{},
+		ID:          id,
+		Name:        i.Name,
+		Description: i.Description,
+		Tenant:      tenant,
+		Status: &RuntimeStatus{
+			Condition: getRuntimeStatusConditionOrDefault(i.StatusCondition),
+			Timestamp: conditionTimestamp,
+		},
 		CreationTimestamp: creationTimestamp,
 	}
+}
+
+func getRuntimeStatusConditionOrDefault(in *RuntimeStatusCondition) RuntimeStatusCondition {
+	statusCondition := RuntimeStatusConditionInitial
+	if in != nil {
+		statusCondition = *in
+	}
+
+	return statusCondition
 }
 
 type RuntimePage struct {

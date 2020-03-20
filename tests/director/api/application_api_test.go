@@ -61,6 +61,41 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	require.NotEmpty(t, actualApp.ID)
 	defer unregisterApplication(t, actualApp.ID)
 	assertApplication(t, in, actualApp)
+	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
+}
+
+func TestRegisterApplicationWithStatusCondition(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	statusCond := graphql.ApplicationStatusConditionConnected
+	in := graphql.ApplicationRegisterInput{
+		Name:           "wordpress",
+		ProviderName:   ptr.String("provider name"),
+		Description:    ptr.String("my first wordpress application"),
+		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
+		Labels: &graphql.Labels{
+			"group":     []interface{}{"production", "experimental"},
+			"scenarios": []interface{}{"DEFAULT"},
+		},
+		StatusCondition: &statusCond,
+	}
+
+	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+
+	request := fixRegisterApplicationRequest(appInputGQL)
+
+	// WHEN
+	actualApp := graphql.ApplicationExt{}
+	err = tc.RunOperation(ctx, request, &actualApp)
+
+	//THEN
+	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with status")
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+	defer unregisterApplication(t, actualApp.ID)
+	assertApplication(t, in, actualApp)
+	assert.Equal(t, statusCond, actualApp.Status.Condition)
 }
 
 func TestRegisterApplicationWithWebhooks(t *testing.T) {
@@ -468,14 +503,18 @@ func TestUpdateApplication(t *testing.T) {
 	actualApp := registerApplication(t, ctx, "before")
 	defer unregisterApplication(t, actualApp.ID)
 
+	updateStatusCond := graphql.ApplicationStatusConditionConnected
+
 	expectedApp := actualApp
 	expectedApp.Name = "before"
 	expectedApp.ProviderName = ptr.String("after")
 	expectedApp.Description = ptr.String("after")
 	expectedApp.HealthCheckURL = ptr.String(webhookURL)
+	expectedApp.Status.Condition = updateStatusCond
 	expectedApp.Labels["name"] = "before"
 
 	updateInput := fixSampleApplicationUpdateInput("after")
+	updateInput.StatusCondition = &updateStatusCond
 	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
 	require.NoError(t, err)
 	request := fixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
@@ -486,7 +525,13 @@ func TestUpdateApplication(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assert.Equal(t, expectedApp, updatedApp)
+	assert.Equal(t, expectedApp.ID, updatedApp.ID)
+	assert.Equal(t, expectedApp.Name, updatedApp.Name)
+	assert.Equal(t, expectedApp.ProviderName, updatedApp.ProviderName)
+	assert.Equal(t, expectedApp.Description, updatedApp.Description)
+	assert.Equal(t, expectedApp.HealthCheckURL, updatedApp.HealthCheckURL)
+	assert.Equal(t, expectedApp.Status.Condition, updatedApp.Status.Condition)
+
 	saveExample(t, request.Query(), "update application")
 }
 

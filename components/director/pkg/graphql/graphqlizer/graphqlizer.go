@@ -63,6 +63,9 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		{{- if .IntegrationSystemID }}
 		integrationSystemID: "{{ .IntegrationSystemID }}",
 		{{- end }}
+		{{- if .StatusCondition }}
+		statusCondition: {{ .StatusCondition }}
+		{{- end }}
 	}`)
 }
 
@@ -79,6 +82,9 @@ func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateIn
 		{{- end }}
 		{{- if .IntegrationSystemID }}
 		integrationSystemID: "{{ .IntegrationSystemID }}",
+		{{- end }}
+		{{- if .StatusCondition }}
+		statusCondition: {{ .StatusCondition }}
 		{{- end }}
 	}`)
 }
@@ -319,6 +325,9 @@ func (g *Graphqlizer) RuntimeInputToGQL(in graphql.RuntimeInput) (string, error)
 		{{- end }}
 		{{- if .Labels }}
 		labels: {{ LabelsToGQL .Labels}},
+		{{- end }}
+		{{- if .StatusCondition }}
+		statusCondition: {{ .StatusCondition }},
 		{{- end }}
 	}`)
 }

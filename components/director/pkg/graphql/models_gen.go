@@ -73,17 +73,18 @@ type ApplicationPage struct {
 func (ApplicationPage) IsPageable() {}
 
 type ApplicationRegisterInput struct {
-	Name                string                  `json:"name"`
-	ProviderName        *string                 `json:"providerName"`
-	Description         *string                 `json:"description"`
-	Labels              *Labels                 `json:"labels"`
-	Webhooks            []*WebhookInput         `json:"webhooks"`
-	HealthCheckURL      *string                 `json:"healthCheckURL"`
-	APIDefinitions      []*APIDefinitionInput   `json:"apiDefinitions"`
-	EventDefinitions    []*EventDefinitionInput `json:"eventDefinitions"`
-	Documents           []*DocumentInput        `json:"documents"`
-	Packages            []*PackageCreateInput   `json:"packages"`
-	IntegrationSystemID *string                 `json:"integrationSystemID"`
+	Name                string                      `json:"name"`
+	ProviderName        *string                     `json:"providerName"`
+	Description         *string                     `json:"description"`
+	Labels              *Labels                     `json:"labels"`
+	Webhooks            []*WebhookInput             `json:"webhooks"`
+	HealthCheckURL      *string                     `json:"healthCheckURL"`
+	APIDefinitions      []*APIDefinitionInput       `json:"apiDefinitions"`
+	EventDefinitions    []*EventDefinitionInput     `json:"eventDefinitions"`
+	Documents           []*DocumentInput            `json:"documents"`
+	Packages            []*PackageCreateInput       `json:"packages"`
+	IntegrationSystemID *string                     `json:"integrationSystemID"`
+	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
 }
 
 type ApplicationStatus struct {
@@ -117,10 +118,11 @@ type ApplicationTemplatePage struct {
 func (ApplicationTemplatePage) IsPageable() {}
 
 type ApplicationUpdateInput struct {
-	ProviderName        *string `json:"providerName"`
-	Description         *string `json:"description"`
-	HealthCheckURL      *string `json:"healthCheckURL"`
-	IntegrationSystemID *string `json:"integrationSystemID"`
+	ProviderName        *string                     `json:"providerName"`
+	Description         *string                     `json:"description"`
+	HealthCheckURL      *string                     `json:"healthCheckURL"`
+	IntegrationSystemID *string                     `json:"integrationSystemID"`
+	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
 }
 
 type Auth struct {
@@ -409,9 +411,10 @@ type RuntimeEventingConfiguration struct {
 }
 
 type RuntimeInput struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
-	Labels      *Labels `json:"labels"`
+	Name            string                  `json:"name"`
+	Description     *string                 `json:"description"`
+	Labels          *Labels                 `json:"labels"`
+	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
 }
 
 type RuntimeMetadata struct {
@@ -527,22 +530,20 @@ func (e APISpecType) MarshalGQL(w io.Writer) {
 type ApplicationStatusCondition string
 
 const (
-	ApplicationStatusConditionInitial ApplicationStatusCondition = "INITIAL"
-	ApplicationStatusConditionUnknown ApplicationStatusCondition = "UNKNOWN"
-	ApplicationStatusConditionReady   ApplicationStatusCondition = "READY"
-	ApplicationStatusConditionFailed  ApplicationStatusCondition = "FAILED"
+	ApplicationStatusConditionInitial   ApplicationStatusCondition = "INITIAL"
+	ApplicationStatusConditionConnected ApplicationStatusCondition = "CONNECTED"
+	ApplicationStatusConditionFailed    ApplicationStatusCondition = "FAILED"
 )
 
 var AllApplicationStatusCondition = []ApplicationStatusCondition{
 	ApplicationStatusConditionInitial,
-	ApplicationStatusConditionUnknown,
-	ApplicationStatusConditionReady,
+	ApplicationStatusConditionConnected,
 	ApplicationStatusConditionFailed,
 }
 
 func (e ApplicationStatusCondition) IsValid() bool {
 	switch e {
-	case ApplicationStatusConditionInitial, ApplicationStatusConditionUnknown, ApplicationStatusConditionReady, ApplicationStatusConditionFailed:
+	case ApplicationStatusConditionInitial, ApplicationStatusConditionConnected, ApplicationStatusConditionFailed:
 		return true
 	}
 	return false
@@ -984,20 +985,20 @@ func (e PackageInstanceAuthStatusCondition) MarshalGQL(w io.Writer) {
 type RuntimeStatusCondition string
 
 const (
-	RuntimeStatusConditionInitial RuntimeStatusCondition = "INITIAL"
-	RuntimeStatusConditionReady   RuntimeStatusCondition = "READY"
-	RuntimeStatusConditionFailed  RuntimeStatusCondition = "FAILED"
+	RuntimeStatusConditionInitial   RuntimeStatusCondition = "INITIAL"
+	RuntimeStatusConditionConnected RuntimeStatusCondition = "CONNECTED"
+	RuntimeStatusConditionFailed    RuntimeStatusCondition = "FAILED"
 )
 
 var AllRuntimeStatusCondition = []RuntimeStatusCondition{
 	RuntimeStatusConditionInitial,
-	RuntimeStatusConditionReady,
+	RuntimeStatusConditionConnected,
 	RuntimeStatusConditionFailed,
 }
 
 func (e RuntimeStatusCondition) IsValid() bool {
 	switch e {
-	case RuntimeStatusConditionInitial, RuntimeStatusConditionReady, RuntimeStatusConditionFailed:
+	case RuntimeStatusConditionInitial, RuntimeStatusConditionConnected, RuntimeStatusConditionFailed:
 		return true
 	}
 	return false
