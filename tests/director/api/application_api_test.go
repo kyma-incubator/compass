@@ -525,7 +525,12 @@ func TestUpdateApplication(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assert.Equal(t, expectedApp, updatedApp)
+	assert.Equal(t, expectedApp.ID, updatedApp.ID)
+	assert.Equal(t, expectedApp.Name, updatedApp.Name)
+	assert.Equal(t, expectedApp.ProviderName, updatedApp.ProviderName)
+	assert.Equal(t, expectedApp.Description, updatedApp.Description)
+	assert.Equal(t, expectedApp.HealthCheckURL, updatedApp.HealthCheckURL)
+	assert.Equal(t, expectedApp.Status.Condition, updatedApp.Status.Condition)
 
 	saveExample(t, request.Query(), "update application")
 }
