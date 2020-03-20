@@ -55,12 +55,12 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 			result: setRuntimeLabel(runtimeID: "%s", key: "%s", value: %s) {
 					%s
 				}
-			}`, actualRuntime.ID, "new-label", "[\"bbb\"]", tc.gqlFieldsProvider.ForLabel()))
+			}`, actualRuntime.ID, "new_label", "[\"bbb\"]", tc.gqlFieldsProvider.ForLabel()))
 	err = tc.RunOperation(ctx, addLabelReq, &actualLabel)
 
 	//THEN
 	require.NoError(t, err)
-	assert.Equal(t, "new-label", actualLabel.Key)
+	assert.Equal(t, "new_label", actualLabel.Key)
 	assert.Len(t, actualLabel.Value, 1)
 	assert.Contains(t, actualLabel.Value, "bbb")
 

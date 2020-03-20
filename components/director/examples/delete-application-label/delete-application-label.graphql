@@ -2,7 +2,7 @@
 mutation {
   result: deleteApplicationLabel(
     applicationID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    key: "brand-new-label"
+    key: "brand_new_label"
   ) {
     key
     value

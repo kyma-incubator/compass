@@ -167,8 +167,13 @@ func TestApplicationRegisterInput_Validate_Labels(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name:          "Invalid key",
+			Name:          "Empty key",
 			Value:         &graphql.Labels{"": "value"},
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Invalid key",
+			Value:         &graphql.Labels{"not/valid": "value"},
 			ExpectedValid: false,
 		},
 	}

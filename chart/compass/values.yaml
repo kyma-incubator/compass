@@ -22,7 +22,7 @@ global:
       version: "PR-867"
     director:
       dir:
-      version: "PR-989"
+      version: "PR-984"
     gateway:
       dir:
       version: "PR-943"
@@ -42,11 +42,11 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-991"
+      version: "PR-984"
     tests:
       director:
         dir:
-        version: "PR-966"
+        version: "PR-984"
       connector:
         dir:
         version: "02e8358c"
@@ -58,7 +58,7 @@ global:
         version: "6b8099b5"
       connectivity_adapter:
         dir:
-        version: "PR-935"
+        version: "PR-984"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -161,21 +161,43 @@ global:
     manageSecrets: true
     embedded:
       enabled: true
+      director:
+        name: "postgres"
+      provisioner:
+        name: "provisioner"
+      broker:
+        name: "broker"
+
+      #TODO remove below after migration to separate user will be done
       directorDBName: "postgres"
       provisionerDBName: "provisioner"
       brokerDBName: "broker"
     # Values for GCP managed PostgreSQL database
     managedGCP:
+      director:
+        name: ""
+        user: ""
+        password: ""
+      provisioner:
+        name: ""
+        user: ""
+        password: ""
+      broker:
+        name: ""
+        user: ""
+        password: ""
       serviceAccountKey: ""
       instanceConnectionName: ""
+      host: "localhost"
+      hostPort: "5432"
+      sslMode: ""
+
+      #TODO remove below after migration to separate user will be done
       dbUser: ""
       dbPassword: ""
       directorDBName: ""
       provisionerDBName: ""
       brokerDBName: ""
-      host: "localhost"
-      hostPort: "5432"
-      sslMode: ""
 
   oathkeeper:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
