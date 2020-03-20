@@ -73,4 +73,4 @@ The Director binary allows to override some configuration parameters. You can sp
 
 ## Usage
 
-Example GraphQL calls can be found [here](examples/README.md)
+Find examples of GraphQL calls [here](examples/README.md).
