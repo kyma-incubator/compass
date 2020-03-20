@@ -117,6 +117,7 @@ func (c graphQLConverter) kymaConfigToGraphQLConfig(config model.KymaConfig) *gq
 			Component:     string(cmp.Component),
 			Namespace:     cmp.Namespace,
 			Configuration: c.configurationToGraphQLConfig(cmp.Configuration),
+			Source:        c.sourceURLToGraphQLSource(cmp.SourceURL), // TODO: Check if it works right!
 		}
 
 		components = append(components, &component)
@@ -143,6 +144,13 @@ func (c graphQLConverter) configurationToGraphQLConfig(cfg model.Configuration) 
 	}
 
 	return configuration
+}
+
+func (c graphQLConverter) sourceURLToGraphQLSource(sourceURL string) *string {
+	if sourceURL == "" {
+		return nil
+	}
+	return &sourceURL
 }
 
 func (c graphQLConverter) operationTypeToGraphQLType(operationType model.OperationType) gqlschema.OperationType {

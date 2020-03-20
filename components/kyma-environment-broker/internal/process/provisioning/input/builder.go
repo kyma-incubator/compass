@@ -96,8 +96,15 @@ func mapToGQLComponentConfigurationInput(kymaComponents []v1alpha1.KymaComponent
 		input = append(input, &gqlschema.ComponentConfigurationInput{
 			Component: component.Name,
 			Namespace: component.Namespace,
-			// TODO: Add the source here
+			Source:    getComponentSource(component),
 		})
 	}
 	return input
+}
+
+func getComponentSource(component v1alpha1.KymaComponent) *string {
+	if component.Source == nil {
+		return nil
+	}
+	return &component.Source.URL
 }

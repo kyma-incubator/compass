@@ -65,6 +65,7 @@ type ComponentConfiguration {
     component: String!
     namespace: String!
     configuration: [ConfigEntry]
+    source: String
 }
 
 type KymaConfig {
