@@ -621,7 +621,7 @@ func TestService_Update(t *testing.T) {
 	updateInput := fixModelApplicationUpdateInput(appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected)
 	applicationModelBefore := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, "initiald", "initialu", model.ApplicationStatusConditionConnected, conditionTimestamp)
 	applicationModelAfter := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
-	intSysLabel := fixLabelInput("integrationSystemId", intSysID, id, model.ApplicationLabelableObject)
+	intSysLabel := fixLabelInput("integrationSystemID", intSysID, id, model.ApplicationLabelableObject)
 	nameLabel := fixLabelInput("name", appName, id, model.ApplicationLabelableObject)
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
