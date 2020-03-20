@@ -54,6 +54,8 @@ The Director binary allows to override some configuration parameters. You can sp
 | APP_DB_PORT                              | 5432                            | Database port                                                 |
 | APP_DB_NAME                              | postgres                        | Database name                                                 |
 | APP_DB_SSL                               | disable                         | Database SSL mode (disable / enable)                          |
+| APP_DB_MAX_OPEN_CONNECTIONS              | 2                               | The maximum number of open connections to the database        |                                                      
+| APP_DB_MAX_IDLE_CONNECTIONS              | 2                               | The maximum number of connections in the idle connection pool |
 | APP_API_ENDPOINT                         | /graphql                        | The endpoint for GraphQL API                                  |
 | APP_PLAYGROUND_API_ENDPOINT              | /graphql                        | The endpoint of GraphQL API for the Playground                |
 | APP_TENANT_MAPPING_ENDPOINT              | /tenant-mapping                 | The endpoint of Tenant Mapping Service                        |
