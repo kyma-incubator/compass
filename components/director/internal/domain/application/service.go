@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	intSysKey = "integration-system-id"
+	intSysKey = "integrationSystemID"
 	nameKey   = "name"
 )
 

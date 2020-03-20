@@ -589,7 +589,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 	defer unregisterApplication(t, actualApp.ID)
 
 	t.Run("labels manipulation", func(t *testing.T) {
-		expectedLabel := graphql.Label{Key: "brand-new-label", Value: []interface{}{"aaa", "bbb"}}
+		expectedLabel := graphql.Label{Key: "brand_new_label", Value: []interface{}{"aaa", "bbb"}}
 
 		// add label
 		createdLabel := &graphql.Label{}

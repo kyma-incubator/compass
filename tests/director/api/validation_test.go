@@ -81,7 +81,7 @@ func TestCreateLabelDefinition_Validation(t *testing.T) {
 func TestUpdateLabelDefinition_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	key := "test-validation-ld"
+	key := "test_validation_ld"
 	ld := createLabelDefinitionWithinTenant(t, ctx, key, map[string]string{"type": "string"}, testTenants.GetDefaultTenantID())
 	defer deleteLabelDefinitionWithinTenant(t, ctx, ld.Key, true, testTenants.GetDefaultTenantID())
 	invalidInput := graphql.LabelDefinitionInput{
