@@ -38,8 +38,7 @@ func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.Provis
 	logger.Infof("starting the step")
 
 	if operation.AvsEvaluationInternalId != 0 {
-		msg := fmt.Sprintf("step has already been finished previously")
-		return del.operationManager.OperationSucceeded(operation, msg)
+		return operation, 0, nil
 	}
 
 	evaluationObject, err := modelSupplier(operation)
