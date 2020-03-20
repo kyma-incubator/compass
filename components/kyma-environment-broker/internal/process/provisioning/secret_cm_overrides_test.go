@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -20,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestOverridesStep_Run(t *testing.T) {
+func TestOverridesFromSecretsAndConfigStep_Run(t *testing.T) {
 	// Given
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
@@ -28,8 +29,8 @@ func TestOverridesStep_Run(t *testing.T) {
 
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := internal.ProvisioningOperation{}
 	inputCreatorMock := &automock.ProvisionInputCreator{}
+	defer inputCreatorMock.AssertExpectations(t)
 	inputCreatorMock.On("AppendOverrides", "core", []*gqlschema.ConfigEntryInput{
 		{
 			Key:    "test1",
@@ -37,8 +38,8 @@ func TestOverridesStep_Run(t *testing.T) {
 			Secret: ptr.Bool(true),
 		},
 		{
-			Key:   "test4",
-			Value: "test4abc",
+			Key:   "test5",
+			Value: "test5abc",
 		},
 	}).Return(nil).Once()
 	inputCreatorMock.On("AppendOverrides", "helm", []*gqlschema.ConfigEntryInput{
@@ -50,13 +51,26 @@ func TestOverridesStep_Run(t *testing.T) {
 	}).Return(nil).Once()
 	inputCreatorMock.On("AppendOverrides", "servicecatalog", []*gqlschema.ConfigEntryInput{
 		{
-			Key:   "test6",
-			Value: "test6abc",
+			Key:   "test7",
+			Value: "test7abc",
 		},
 	}).Return(nil).Once()
-	operation.InputCreator = inputCreatorMock
+	inputCreatorMock.On("AppendGlobalOverrides", []*gqlschema.ConfigEntryInput{
+		{
+			Key:    "test4",
+			Value:  "test4abc",
+			Secret: ptr.Bool(true),
+		},
+		{
+			Key:   "test8",
+			Value: "test8abc",
+		},
+	}).Return(nil).Once()
+	operation := internal.ProvisioningOperation{
+		InputCreator: inputCreatorMock,
+	}
 
-	step := NewOverridesStep(client, memoryStorage.Operations())
+	step := NewOverridesFromSecretsAndConfigStep(context.TODO(), client, memoryStorage.Operations())
 
 	// When
 	operation, repeat, err := step.Run(operation, logrus.New())
@@ -93,13 +107,21 @@ func fixResources() []runtime.Object {
 		},
 		Data: map[string][]byte{"test3": []byte("test3abc")},
 	})
+	resources = append(resources, &coreV1.Secret{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "secret#4",
+			Namespace: namespace,
+			Labels:    map[string]string{"provisioning-runtime-override": "true"},
+		},
+		Data: map[string][]byte{"test4": []byte("test4abc")},
+	})
 	resources = append(resources, &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "configmap#1",
 			Namespace: namespace,
 			Labels:    map[string]string{"provisioning-runtime-override": "true", "component": "core"},
 		},
-		Data: map[string]string{"test4": "test4abc"},
+		Data: map[string]string{"test5": "test5abc"},
 	})
 	resources = append(resources, &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -107,7 +129,7 @@ func fixResources() []runtime.Object {
 			Namespace: "default",
 			Labels:    map[string]string{"provisioning-runtime-override": "true", "component": "helm"},
 		},
-		Data: map[string]string{"test5": "test5abc"},
+		Data: map[string]string{"test6": "test6abc"},
 	})
 	resources = append(resources, &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -115,7 +137,15 @@ func fixResources() []runtime.Object {
 			Namespace: namespace,
 			Labels:    map[string]string{"provisioning-runtime-override": "true", "component": "servicecatalog"},
 		},
-		Data: map[string]string{"test6": "test6abc"},
+		Data: map[string]string{"test7": "test7abc"},
+	})
+	resources = append(resources, &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "configmap#4",
+			Namespace: namespace,
+			Labels:    map[string]string{"provisioning-runtime-override": "true"},
+		},
+		Data: map[string]string{"test8": "test8abc"},
 	})
 
 	return resources

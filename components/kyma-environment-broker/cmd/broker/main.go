@@ -136,7 +136,7 @@ func main() {
 	evaluationStep := provisioning.NewInternalEvaluationStep(cfg.Avs, db.Operations())
 	provisionAzureEventHub := provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
-	overridesStep := provisioning.NewOverridesStep(cli, db.Operations())
+	overridesStep := provisioning.NewOverridesFromSecretsAndConfigStep(ctx, cli, db.Operations())
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations())
 
