@@ -335,7 +335,7 @@ func fixRuntimeRequest(runtimeID string) *gcli.Request {
 				}}`, runtimeID, tc.gqlFieldsProvider.ForRuntime()))
 }
 
-func fixUnregisterRuntime(id string) *gcli.Request {
+func fixUnregisterRuntimeRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{unregisterRuntime(id: "%s") {
 				id
