@@ -50,8 +50,6 @@ type Config struct {
 	Database     storage.Config
 	Gardener     gardener.Config
 
-	ManagementPlaneURL string
-
 	ServiceManager provisioning.ServiceManagerOverrideConfig
 
 	KymaVersion                          string
@@ -130,7 +128,7 @@ func main() {
 	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion)
 
 	// create and run queue, steps provisioning
-	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
+	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory)
 
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
 	evaluationStep := provisioning.NewInternalEvaluationStep(cfg.Avs, db.Operations())
