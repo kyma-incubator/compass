@@ -109,10 +109,10 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Kiali":  runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"Jaeger": runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
+		"Kiali":                   runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
+		"Jaeger":                  runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
 		"KnativeProvisionerNatss": runtime.NewGenericComponentDisabler("knative-provisioner-natss", "knative-eventing"),
-		"NatssStreaming": runtime.NewGenericComponentDisabler("nats-streaming", "natss"),
+		"NatssStreaming":          runtime.NewGenericComponentDisabler("nats-streaming", "natss"),
 	}
 
 	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
