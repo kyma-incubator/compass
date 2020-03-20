@@ -209,6 +209,7 @@ input ComponentConfigurationInput {
     component: String!                    # Kyma component name
     namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
+    source: String                        # Custom URL for the source files of the given component
 }
 
 input UpgradeRuntimeInput {

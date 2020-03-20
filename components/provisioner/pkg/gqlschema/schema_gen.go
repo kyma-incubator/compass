@@ -889,6 +889,7 @@ input ComponentConfigurationInput {
     component: String!                    # Kyma component name
     namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
+    source: String                        # Custom URL for the source files of the given component
 }
 
 input UpgradeRuntimeInput {
@@ -4468,6 +4469,12 @@ func (ec *executionContext) unmarshalInputComponentConfigurationInput(ctx contex
 		case "configuration":
 			var err error
 			it.Configuration, err = ec.unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "source":
+			var err error
+			it.Source, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
