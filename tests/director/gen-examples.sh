@@ -28,6 +28,8 @@ readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DIRECTOR_URL="compass-dev-director"
 LOCAL_ROOT_PATH=${SCRIPT_DIR}/../..
 
+source "${LOCAL_ROOT_PATH}/tests/director/common.sh"
+
 if [ -z ${HOST_ROOT_PATH+x} ];
 then
     # create network, because we are run locally
@@ -119,7 +121,6 @@ rm -r "${LOCAL_ROOT_PATH}"/components/director/examples/*
 
 echo -e "${GREEN}Running Director API tests with generating examples...${NC}"
 GO111MODULE=on go test -c "${SCRIPT_DIR}/api" -tags ignore_external_dependencies
-ALL_SCOPES="runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage tenant:read scenario_assignment:read scenario_assignment:write" \
 ./api.test
 
 echo -e "${GREEN}Prettifying GraphQL examples...${NC}"
