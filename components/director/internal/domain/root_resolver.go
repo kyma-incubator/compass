@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -250,6 +251,14 @@ func (r *queryResolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) 
 	return r.tenant.Tenants(ctx)
 }
 
+func (r *queryResolver) AutomaticScenarioAssignment(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *queryResolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
+	return nil, errors.New("not implemented")
+}
+
 type mutationResolver struct {
 	*RootResolver
 }
@@ -425,6 +434,13 @@ func (r *mutationResolver) UpdatePackage(ctx context.Context, id string, in grap
 }
 func (r *mutationResolver) DeletePackage(ctx context.Context, id string) (*graphql.Package, error) {
 	return r.mpPackage.DeletePackage(ctx, id)
+}
+
+func (r *mutationResolver) DeleteAutomaticScenarioAssignment(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
+	return nil, errors.New("not implemented")
+}
+func (r *mutationResolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
+	return nil, errors.New("not implemented")
 }
 
 type applicationResolver struct {

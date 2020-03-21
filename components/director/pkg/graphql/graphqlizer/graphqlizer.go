@@ -469,6 +469,20 @@ func (g *Graphqlizer) PackageInstanceAuthSetInputToGQL(in graphql.PackageInstanc
 	}`)
 }
 
+func (g *Graphqlizer) LabelInputToGQL(in graphql.LabelInput) (string, error) {
+	return g.genericToGQL(in, `{
+		key: "{{ .Key }}"
+		value: {{- marshal .Value }}
+	}`)
+}
+
+func (g *Graphqlizer) AutomaticScenarioAssignmentSetInput(in graphql.AutomaticScenarioAssignmentSetInput) (string, error) {
+	return g.genericToGQL(in, `{
+		scenarioName: {{ .ScenarioName }}
+		selector: {{- LabelInputToGQL .Selector }}
+	}`)
+}
+
 func (g *Graphqlizer) marshal(obj interface{}) string {
 	var out string
 
@@ -514,6 +528,7 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["TemplateValueInput"] = g.TemplateValueInputToGQL
 	fm["PackageInstanceAuthStatusInputToGQL"] = g.PackageInstanceAuthStatusInputToGQL
 	fm["PackageCreateInputToGQL"] = g.PackageCreateInputToGQL
+	fm["LabelInputToGQL"] = g.LabelInputToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {

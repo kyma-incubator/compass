@@ -139,6 +139,25 @@ type AuthInput struct {
 	RequestAuth           *CredentialRequestAuthInput `json:"requestAuth"`
 }
 
+type AutomaticScenarioAssignment struct {
+	ScenarioName string `json:"scenarioName"`
+	Selector     *Label `json:"selector"`
+}
+
+type AutomaticScenarioAssignmentPage struct {
+	Data       []*AutomaticScenarioAssignment `json:"data"`
+	PageInfo   *PageInfo                      `json:"pageInfo"`
+	TotalCount int                            `json:"totalCount"`
+}
+
+func (AutomaticScenarioAssignmentPage) IsPageable() {}
+
+type AutomaticScenarioAssignmentSetInput struct {
+	ScenarioName string `json:"scenarioName"`
+	// Runtimes and Applications which contain labels with equal key and value are matched
+	Selector *LabelInput `json:"selector"`
+}
+
 type BasicCredentialData struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
