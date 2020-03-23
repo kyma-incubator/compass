@@ -24,8 +24,8 @@ func (iec *InternalEvalAssistant) CreateBasicEvaluationRequest(operations intern
 	return newBasicEvaluationCreateRequest(operations, iec, iec.avsConfig.GroupId, url)
 }
 
-func (iec *InternalEvalAssistant) SetOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64) {
-	inputCreator.SetOverrides("avs-bridge", []*gqlschema.ConfigEntryInput{
+func (iec *InternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64) {
+	inputCreator.AppendOverrides("avs-bridge", []*gqlschema.ConfigEntryInput{
 		{
 			Key:   evaluationIdKey,
 			Value: strconv.FormatInt(evaluationId, 10),

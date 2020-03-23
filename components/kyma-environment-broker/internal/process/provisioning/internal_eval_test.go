@@ -30,7 +30,7 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	idh := &idHolder{}
 	mockOauthServer := newMockAvsOauthServer()
 	defer mockOauthServer.Close()
-	mockAvsServer := m(t, idh, true)
+	mockAvsServer := newMockAvsServer(t, idh, true)
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
 	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
@@ -59,7 +59,7 @@ func newMockAvsOauthServer() *httptest.Server {
 		}))
 }
 
-func m(t *testing.T, idh *idHolder, isInternal bool) *httptest.Server {
+func newMockAvsServer(t *testing.T, idh *idHolder, isInternal bool) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
 

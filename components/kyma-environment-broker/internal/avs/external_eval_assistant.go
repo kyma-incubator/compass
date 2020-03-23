@@ -14,7 +14,7 @@ func (eea *ExternalEvalAssistant) CreateBasicEvaluationRequest(operations intern
 	return newBasicEvaluationCreateRequest(operations, eea, eea.avsConfig.GroupId, url)
 }
 
-func (eea *ExternalEvalAssistant) SetOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64) {
+func (eea *ExternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64) {
 	//do nothing
 }
 

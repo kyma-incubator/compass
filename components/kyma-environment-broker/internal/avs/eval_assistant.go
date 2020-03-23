@@ -6,7 +6,7 @@ import (
 
 type EvalAssistant interface {
 	CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error)
-	SetOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64)
+	AppendOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64)
 	CheckIfAlreadyDone(operation internal.ProvisioningOperation) bool
 	SetEvalId(operation *internal.ProvisioningOperation, evalId int64)
 }

@@ -52,7 +52,7 @@ func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.Provis
 
 	updatedOperation, d := del.operationManager.UpdateOperation(operation)
 
-	evalAssistant.SetOverrides(updatedOperation.InputCreator, updatedOperation.AvsEvaluationInternalId)
+	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.AvsEvaluationInternalId)
 
 	return updatedOperation, d, nil
 }

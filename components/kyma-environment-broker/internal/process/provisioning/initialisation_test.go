@@ -58,7 +58,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 	idh := &idHolder{}
 	mockOauthServer := newMockAvsOauthServer()
 	defer mockOauthServer.Close()
-	mockAvsServer := m(t, idh, false)
+	mockAvsServer := newMockAvsServer(t, idh, false)
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
 	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
