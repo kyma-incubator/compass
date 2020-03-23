@@ -858,7 +858,8 @@ type Query {
 	- [query tenants](examples/query-tenants/query-tenants.graphql)
 	"""
 	tenants: [Tenant!]! @hasScopes(path: "graphql.query.tenants")
-	automaticScenarioAssignment(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.query.automaticScenarioAssignment")
+	automaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.query.automaticScenarioAssignmentForScenario")
+	automaticScenarioAssignmentForSelector(selector: LabelInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentForSelector")
 	automaticScenarioAssignments(first: Int = 100, after: PageCursor): AutomaticScenarioAssignmentPage @hasScopes(path: "graphql.query.automaticScenarioAssignments")
 }
 
@@ -1093,6 +1094,7 @@ type Mutation {
 	"""
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
 	setAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.setAutomaticScenarioAssignment")
-	deleteAutomaticScenarioAssignment(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignment")
+	deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForScenario")
+	deleteAutomaticScenarioAssignmentForSelector(selector: LabelInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForSelector")
 }
 

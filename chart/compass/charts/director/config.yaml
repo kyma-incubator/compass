@@ -16,7 +16,8 @@ graphql:
     viewer: []
     tenants: ["tenant:read"]
     automaticScenarioAssignments: ["automatic_scenario_assignment:read"]
-    automaticScenarioAssignment: ["automatic_scenario_assignment:read"]
+    automaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:read"]
+    automaticScenarioAssignmentForSelector: ["automatic_scenario_assignment:read"]
 
   mutation:
     registerApplication: ["application:write"]
@@ -75,7 +76,8 @@ graphql:
     updatePackage: ["application:write"]
     deletePackage: ["application:write"]
     setAutomaticScenarioAssignment: ["automatic_scenario_assignment:write"]
-    deleteAutomaticScenarioAssignment: ["automatic_scenario_assignment:write"]
+    deleteAutomaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:write"]
+    deleteAutomaticScenarioAssignmentForSelector: ["automatic_scenario_assignment:write"]
 
 # Scopes assigned for every new Client Credentials by given object type (Runtime / Application / Integration System)
 clientCredentialsRegistrationScopes:
