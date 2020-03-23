@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -45,8 +46,9 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 
 	secretList := &coreV1.SecretList{}
 	if err := s.k8sClient.List(s.ctx, secretList, s.listOptions()...); err != nil {
-		log.Errorf("cannot fetch list of secrets: %s", err)
-		return operation, 10 * time.Second, nil
+		errMsg := fmt.Sprintf("cannot fetch list of secrets: %s", err)
+		log.Errorf(errMsg)
+		return s.operationManager.RetryOperation(operation, errMsg, 10*time.Second, 30*time.Minute, log)
 	}
 
 	for _, secret := range secretList.Items {
@@ -70,8 +72,9 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 
 	configMapList := &coreV1.ConfigMapList{}
 	if err := s.k8sClient.List(s.ctx, configMapList, s.listOptions()...); err != nil {
-		log.Errorf("cannot fetch list of config maps: %s", err)
-		return operation, 10 * time.Second, nil
+		errMsg := fmt.Sprintf("cannot fetch list of config maps: %s", err)
+		log.Errorf(errMsg)
+		return s.operationManager.RetryOperation(operation, errMsg, 10*time.Second, 30*time.Minute, log)
 	}
 
 	for _, cm := range configMapList.Items {

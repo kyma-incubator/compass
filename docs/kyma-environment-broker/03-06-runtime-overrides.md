@@ -1,14 +1,12 @@
-# Set overrides for provisioning runtime
+# Set overrides for Kyma Runtime
 
-To provision cluster with custom overrides you can add `Secret` or `ConfigMap` with specific label.
+You can set overrides to customize your Kyma Runtime. To provision a cluster with custom overrides, add a Secret or a ConfigMap with a specific label. Kyma Environment Broker uses this Secret and/or ConfigMap to prepare a request to the Runtime Provisioner.
 
-Overrides can be global or for concrete components. In the second case, an appropriate label `component` should be used to indicate to which component it refers.
+Overrides can be either global or specified for a given component. In the second case, use the `component: {"COMPONENT_NAME"}` label to indicate the component. Create all overrides in the `compass-system` Namespace.
 
-All overrides have to be in `compass-system` namespace.
+See the examples:
 
-Examples are given below:
-
-1. ConfigMap with global overrides:
+- ConfigMap with global overrides:
     ```yaml
     apiVersion: v1
     kind: ConfigMap
@@ -21,7 +19,7 @@ Examples are given below:
       global.enableAPIPackages: "true"
     ```  
 
-2. Secret with overrides for `core` component:
+- Secret with overrides for the `core` component:
     ```yaml
     apiVersion: v1
     kind: Secret
