@@ -1,1 +1,1 @@
-DROP TABLE automatic_scenario_assignements;
+DROP TABLE automatic_scenario_assignments;
