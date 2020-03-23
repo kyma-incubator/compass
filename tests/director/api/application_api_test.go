@@ -833,12 +833,7 @@ func TestQueryApplications(t *testing.T) {
 	actualAppPage := graphql.ApplicationPage{}
 
 	// WHEN
-	queryReq := gcli.NewRequest(
-		fmt.Sprintf(`query {
-			result: applications {
-					%s
-				}
-			}`, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
+	queryReq := fixApplicationsRequest()
 	err := tc.RunOperation(ctx, queryReq, &actualAppPage)
 	saveExampleInCustomDir(t, queryReq.Query(), queryApplicationsCategory, "query applications")
 
@@ -905,12 +900,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	actualApp := graphql.Application{}
-	request := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: registerApplication(in: %s) {
-					%s
-				}
-			}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
+	request := fixRegisterApplicationRequest(appInputGQL)
 	err = tc.RunOperation(context.Background(), request, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
@@ -918,12 +908,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 	defer unregisterApplication(t, actualApp.ID)
 
 	// WHEN
-	queryAppReq := gcli.NewRequest(
-		fmt.Sprintf(`query {
-			result: application(id: "%s") {
-					%s
-				}
-			}`, actualApp.ID, tc.gqlFieldsProvider.ForApplication()))
+	queryAppReq := fixApplicationRequest(actualApp.ID)
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualApp)
 	saveExampleInCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
 
@@ -937,13 +922,7 @@ func TestTenantSeparation(t *testing.T) {
 	appIn := fixSampleApplicationRegisterInput("adidas")
 	inStr, err := tc.graphqlizer.ApplicationRegisterInputToGQL(appIn)
 	require.NoError(t, err)
-	createReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-				result: registerApplication(in: %s) {
-						%s
-					}
-				}`,
-			inStr, tc.gqlFieldsProvider.ForApplication()))
+	createReq := fixRegisterApplicationRequest(inStr)
 	actualApp := graphql.ApplicationExt{}
 	ctx := context.Background()
 	err = tc.RunOperation(ctx, createReq, &actualApp)
@@ -952,12 +931,7 @@ func TestTenantSeparation(t *testing.T) {
 	defer unregisterApplication(t, actualApp.ID)
 
 	// WHEN
-	getAppReq := gcli.NewRequest(fmt.Sprintf(`query {
-			result: applications {
-				%s
-			}
-		}`,
-		tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
+	getAppReq := fixApplicationsRequest()
 	customTenant := testTenants.GetIDByName(t, "Test1")
 	anotherTenantsApps := graphql.ApplicationPage{}
 	// THEN
@@ -1104,12 +1078,7 @@ func TestQuerySpecificAPIDefinition(t *testing.T) {
 	applicationID := registerApplication(t, context.Background(), "test").ID
 	defer unregisterApplication(t, applicationID)
 	actualAPI := graphql.APIDefinition{}
-	request := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: addAPIDefinition(applicationID: "%s", in: %s) {
-					%s
-				}
-			}`, applicationID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+	request := fixAddAPIRequest(applicationID, APIInputGQL)
 	err = tc.RunOperation(context.TODO(), request, &actualAPI)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualAPI.ID)
@@ -1117,14 +1086,7 @@ func TestQuerySpecificAPIDefinition(t *testing.T) {
 	defer deleteAPI(t, createdID)
 
 	// WHEN
-	queryAppReq := gcli.NewRequest(
-		fmt.Sprintf(`query {
-			result: application(id: "%s") {
-					apiDefinition(id: "%s"){
-						%s
-					}
-				}
-			}`, applicationID, actualAPI.ID, tc.gqlFieldsProvider.ForAPIDefinition()))
+	queryAppReq := fixAPIDefinitionRequest(applicationID, actualAPI.ID)
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualAPI)
 
 	//THEN
@@ -1148,13 +1110,9 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 	require.NoError(t, err)
 	applicationID := registerApplication(t, context.Background(), "test").ID
 	defer unregisterApplication(t, applicationID)
+
 	actualEventAPI := graphql.EventDefinition{}
-	request := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: addEventDefinition(applicationID: "%s", in: %s) {
-					%s
-				}
-			}`, applicationID, EventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
+	request := fixAddEventAPIRequest(applicationID, EventAPIInputGQL)
 	err = tc.RunOperation(context.TODO(), request, &actualEventAPI)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualEventAPI.ID)
@@ -1162,14 +1120,7 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 	defer deleteEventAPI(t, createdID)
 
 	// WHEN
-	queryAppReq := gcli.NewRequest(
-		fmt.Sprintf(`query {
-			result: application(id: "%s") {
-					eventDefinition(id: "%s"){
-						%s
-					}
-				}
-			}`, applicationID, actualEventAPI.ID, tc.gqlFieldsProvider.ForEventDefinition()))
+	queryAppReq := fixEventDefinitionRequest(applicationID, actualEventAPI.ID)
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualEventAPI)
 
 	//THEN

@@ -323,8 +323,7 @@ func fixSetRuntimeLabelRequest(runtimeID, labelKey string, labelValue interface{
 				result: setRuntimeLabel(runtimeID: "%s", key: "%s", value: %s) {
 						%s
 					}
-				}`,
-			runtimeID, labelKey, value, tc.gqlFieldsProvider.ForLabel()))
+				}`, runtimeID, labelKey, value, tc.gqlFieldsProvider.ForLabel()))
 }
 
 func fixSetAPIAuthRequest(apiID string, rtmID string, authInStr string) *gcli.Request {
@@ -338,14 +337,11 @@ func fixSetAPIAuthRequest(apiID string, rtmID string, authInStr string) *gcli.Re
 
 func fixApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
 	return gcli.NewRequest(
-		fmt.Sprintf(
-			`query {
+		fmt.Sprintf(`query {
   			result: applicationsForRuntime(runtimeID: "%s", first:%d, after:"") { 
 					%s 
 				}
-			}`,
-			runtimeID, 4, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication()),
-		))
+			}`, runtimeID, 4, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
 }
 
 func fixRuntimeRequestWithPaginationRequest(after int, cursor string) *gcli.Request {
@@ -360,10 +356,10 @@ func fixRuntimeRequestWithPaginationRequest(after int, cursor string) *gcli.Requ
 func fixAPIRuntimeAuthRequest(applicationID string, runtimeID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
-							result: application(id: "%s") {
-								%s
-							}
-						}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
+			result: application(id: "%s") {
+				%s
+			}
+		}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
 			"APIDefinition.auth": fmt.Sprintf(`auth(runtimeID: "%s") {%s}`, runtimeID, tc.gqlFieldsProvider.ForAPIRuntimeAuth()),
 		})))
 }
@@ -420,6 +416,16 @@ func fixLabelDefinitionsRequest() *gcli.Request {
 					schema
 				}
 			}`))
+}
+
+func fixApplicationsRequest() *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: applications {
+						%s
+					}
+				}`,
+			tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
 }
 
 func fixApplicationsFilteredPageableRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
@@ -737,6 +743,28 @@ func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
 				}
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
 			"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`, packageID, tc.gqlFieldsProvider.ForPackage()),
+		})))
+}
+
+func fixAPIDefinitionRequest(applicationID string, apiID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result application(id: "%s") {
+				%s
+				}
+			}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
+			"Application.apiDefinition": fmt.Sprintf(`apiDefinition(id: "%s") {%s}`, apiID, tc.gqlFieldsProvider.ForAPIDefinition()),
+		})))
+}
+
+func fixEventDefinitionRequest(applicationID string, eventDefID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result application(id: "%s") {
+				%s
+				}
+			}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
+			"Application.eventDefinition": fmt.Sprintf(`eventDefinition(id: "%s") {%s}`, eventDefID, tc.gqlFieldsProvider.ForAPIDefinition()),
 		})))
 }
 
