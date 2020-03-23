@@ -177,7 +177,7 @@ func TestProvision_Provision(t *testing.T) {
 		}, true)
 
 		// then
-		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Jaeger"`)
+		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Jaeger", "KnativeProvisionerNatss", "NatssStreaming"`)
 		assert.False(t, response.IsAsync)
 		assert.Empty(t, response.OperationData)
 	})
