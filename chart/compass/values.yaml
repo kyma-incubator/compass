@@ -25,7 +25,7 @@ global:
       version: "PR-1020"
     gateway:
       dir:
-      version: "PR-943"
+      version: "PR-988"
     healthchecker:
       dir: pr/
       version: "PR-357"
@@ -68,13 +68,6 @@ global:
 
     tests:
       scopes: "runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage tenant:read automatic_scenario_assignment:read automatic_scenario_assignment:write"
-
-  auditlog:
-    enabled: false
-    configmap:
-      name: "compass-gateway-auditlog-config"
-    secret:
-      name: "compass-gateway-auditlog-secret"
 
   tenantConfig:
     useDefaultTenants: true
