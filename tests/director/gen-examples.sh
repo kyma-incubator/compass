@@ -127,7 +127,7 @@ echo -e "${GREEN}Prettifying GraphQL examples...${NC}"
 img="prettier:latest"
 docker build -t ${img} ./tools/prettier
 docker run --rm -v "${HOST_ROOT_PATH}/components/director/examples":/prettier/examples \
-    ${img} prettier --write "examples/**/*.graphql"
+    ${img} --write "examples/**/*.graphql"
 
 cd "${SCRIPT_DIR}/tools/example-index-generator/"
 EXAMPLES_DIRECTORY="${LOCAL_ROOT_PATH}/components/director/examples" go run main.go
