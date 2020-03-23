@@ -26,7 +26,7 @@ func GetConfig(clientID, clientSecret, tenantID, subscriptionID, location string
 	return config, nil
 }
 
-func GetConfigfromHAPCredentialsAndProvisioningParams(credentials hyperscaler.Credentials, parameters internal.ProvisioningParameters) (*Config, error) {
+func GetConfigFromHAPCredentialsAndProvisioningParams(credentials hyperscaler.Credentials, parameters internal.ProvisioningParameters) (*Config, error) {
 	region, err := mapRegion(credentials, parameters)
 	if err != nil {
 		return nil, err
@@ -49,12 +49,12 @@ func mapRegion(credentials hyperscaler.Credentials, parameters internal.Provisio
 	region := *(parameters.Parameters.Region)
 	switch parameters.PlanID {
 	case broker.AzurePlanID:
-		if !azureRegions()[region] {
+		if _, valid := azureRegions()[region]; !valid {
 			return "", fmt.Errorf("supplied region \"%v\" is not a valid region for Azure", region)
 		}
 
 	case broker.GcpPlanID:
-		if azureRegion, ok := gcpToAzureRegionMapping()[region]; ok {
+		if azureRegion, mappingExists := gcpToAzureRegionMapping()[region]; mappingExists {
 			region = azureRegion
 			break
 		}

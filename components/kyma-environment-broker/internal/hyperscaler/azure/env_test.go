@@ -17,10 +17,10 @@ func Test_mapRegion(t *testing.T) {
 		region          string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
+		name       string
+		args       args
+		wantRegion string
+		wantErr    bool
 	}{
 		{
 			name: "invalid gcp mapping",
@@ -29,8 +29,8 @@ func Test_mapRegion(t *testing.T) {
 				planID:          broker.GcpPlanID,
 				region:          "munich",
 			},
-			want:    "",
-			wantErr: true,
+			wantRegion: "",
+			wantErr:    true,
 		},
 		{
 			name: "valid gcp mapping",
@@ -39,8 +39,8 @@ func Test_mapRegion(t *testing.T) {
 				planID:          broker.GcpPlanID,
 				region:          "europe-west1",
 			},
-			want:    "westeurope",
-			wantErr: false,
+			wantRegion: "westeurope",
+			wantErr:    false,
 		},
 		{
 			name: "unknown planid",
@@ -49,8 +49,8 @@ func Test_mapRegion(t *testing.T) {
 				planID:          "microsoftcloud",
 				region:          "",
 			},
-			want:    "",
-			wantErr: true,
+			wantRegion: "",
+			wantErr:    true,
 		},
 		{
 			name: "unknown hyperscaler",
@@ -59,8 +59,8 @@ func Test_mapRegion(t *testing.T) {
 				planID:          broker.AzurePlanID,
 				region:          "",
 			},
-			want:    "",
-			wantErr: true,
+			wantRegion: "",
+			wantErr:    true,
 		},
 		{
 			name: "invalid azure region",
@@ -69,8 +69,8 @@ func Test_mapRegion(t *testing.T) {
 				planID:          broker.AzurePlanID,
 				region:          "",
 			},
-			want:    "",
-			wantErr: true,
+			wantRegion: "",
+			wantErr:    true,
 		},
 		{
 			name: "valid azure region",
@@ -79,8 +79,8 @@ func Test_mapRegion(t *testing.T) {
 				planID:          broker.AzurePlanID,
 				region:          "westeurope",
 			},
-			want:    "westeurope",
-			wantErr: false,
+			wantRegion: "westeurope",
+			wantErr:    false,
 		},
 	}
 	for _, tt := range tests {
@@ -101,7 +101,7 @@ func Test_mapRegion(t *testing.T) {
 			} else {
 				require.Nil(t, err, "mapRegion() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			require.Equal(t, got, tt.want, "mapRegion() got = %v, want %v", got, tt.want)
+			require.Equal(t, got, tt.wantRegion, "mapRegion() got = %v, wantRegion %v", got, tt.wantRegion)
 		})
 	}
 }

@@ -75,7 +75,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
 		return p.operationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
-	azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp)
+	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, pp)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure config: %v", err)
@@ -121,7 +121,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	if accessKeys.PrimaryConnectionString == nil {
 		// if GetEventhubAccessKeys() does not fail then a non-nil accessKey is returned
 		// then retry the operation once
-		errorMessage := fmt.Sprintf("PrimaryConnectionString is nil")
+		errorMessage := "PrimaryConnectionString is nil"
 		return p.operationManager.RetryOperationOnce(operation, errorMessage, time.Second*15, log)
 	}
 	kafkaEndpoint := extractEndpoint(accessKeys)
