@@ -128,7 +128,6 @@ github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200309151613-712f462350c8 h1:H1BaPkgHKsHLfdNQfsaTChSxTjuUQwUWFFf0iVMFnHo=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200309151613-712f462350c8/go.mod h1:YCMIcaXV5kofz/VeajqyTEt/ELCLIuDeH+RpkohyIsY=
-github.com/kyma-incubator/compass/components/director v0.0.0-20200313120115-f32c0dd81de5 h1:vIgsTmf5zPnfeciKeYYE9Y1uXol8vYFEWlvzqf2q0KE=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200313120115-f32c0dd81de5/go.mod h1:YCMIcaXV5kofz/VeajqyTEt/ELCLIuDeH+RpkohyIsY=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200320102249-23e4ef8e03b6 h1:YBRAPi/KJ0mo6sapyDT86KtVdWsNBiCSn0yE6+Qg4g0=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200320102249-23e4ef8e03b6/go.mod h1:YCMIcaXV5kofz/VeajqyTEt/ELCLIuDeH+RpkohyIsY=
