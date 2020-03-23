@@ -749,7 +749,7 @@ func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
 func fixAPIDefinitionRequest(applicationID string, apiID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
-			result application(id: "%s") {
+			result: application(id: "%s") {
 				%s
 				}
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
@@ -760,11 +760,11 @@ func fixAPIDefinitionRequest(applicationID string, apiID string) *gcli.Request {
 func fixEventDefinitionRequest(applicationID string, eventDefID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
-			result application(id: "%s") {
+			result: application(id: "%s") {
 				%s
 				}
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
-			"Application.eventDefinition": fmt.Sprintf(`eventDefinition(id: "%s") {%s}`, eventDefID, tc.gqlFieldsProvider.ForAPIDefinition()),
+			"Application.eventDefinition": fmt.Sprintf(`eventDefinition(id: "%s") {%s}`, eventDefID, tc.gqlFieldsProvider.ForEventDefinition()),
 		})))
 }
 

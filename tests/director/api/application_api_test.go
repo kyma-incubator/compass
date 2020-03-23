@@ -1082,8 +1082,7 @@ func TestQuerySpecificAPIDefinition(t *testing.T) {
 	err = tc.RunOperation(context.TODO(), request, &actualAPI)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualAPI.ID)
-	createdID := actualAPI.ID
-	defer deleteAPI(t, createdID)
+	defer deleteAPI(t, actualAPI.ID)
 
 	// WHEN
 	queryAppReq := fixAPIDefinitionRequest(applicationID, actualAPI.ID)
@@ -1091,7 +1090,6 @@ func TestQuerySpecificAPIDefinition(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assert.Equal(t, createdID, actualAPI.ID)
 }
 
 func TestQuerySpecificEventAPIDefinition(t *testing.T) {
@@ -1116,8 +1114,7 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 	err = tc.RunOperation(context.TODO(), request, &actualEventAPI)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualEventAPI.ID)
-	createdID := actualEventAPI.ID
-	defer deleteEventAPI(t, createdID)
+	defer deleteEventAPI(t, actualEventAPI.ID)
 
 	// WHEN
 	queryAppReq := fixEventDefinitionRequest(applicationID, actualEventAPI.ID)
@@ -1125,7 +1122,6 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assert.Equal(t, createdID, actualEventAPI.ID)
 }
 
 func fixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRegisterInput {
