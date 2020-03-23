@@ -38,6 +38,6 @@ If you set **APP_AUDITLOG_AUTH_MODE** to `oauth`, you are required to pass the f
 
 | Name                              | Description                                                |  
 | --------------------------------- | ---------------------------------------------------------- |  
-| **APP_AUDITLOG_CLIENT_ID**        | The username to the OAuth service service                  |
+| **APP_AUDITLOG_CLIENT_ID**        | The username to the OAuth service                          |
 | **APP_AUDITLOG_CLIENT_SECRET**    | The password to the OAuth service                          |
 | **APP_AUDITLOG_OAUTH_URL**        | The OAuth URL from which Gateway gets the access token     |
