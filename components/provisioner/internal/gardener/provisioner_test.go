@@ -136,7 +136,6 @@ func newClusterConfig(name, subAccountId string, providerConfig model.GardenerPr
 			Name:                   name,
 			ProjectName:            "project-name",
 			KubernetesVersion:      "1.16",
-			NodeCount:              4,
 			VolumeSizeGB:           50,
 			DiskType:               "standard",
 			MachineType:            "n1-standard-4",

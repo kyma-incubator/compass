@@ -94,7 +94,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				KubernetesVersion: "version",
-				NodeCount:         3,
 				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
@@ -130,7 +129,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
 			KubernetesVersion:      "version",
-			NodeCount:              3,
 			VolumeSizeGB:           1024,
 			DiskType:               "ssd",
 			Provider:               "GCP",
@@ -162,7 +160,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				KubernetesVersion: "version",
-				NodeCount:         3,
 				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
@@ -197,7 +194,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
 			KubernetesVersion:      "version",
-			NodeCount:              3,
 			VolumeSizeGB:           1024,
 			DiskType:               "ssd",
 			Provider:               "Azure",
@@ -234,7 +230,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				KubernetesVersion: "version",
-				NodeCount:         3,
 				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
@@ -270,7 +265,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
 			KubernetesVersion:      "version",
-			NodeCount:              3,
 			VolumeSizeGB:           1024,
 			DiskType:               "ssd",
 			Provider:               "AWS",
