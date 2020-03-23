@@ -22,7 +22,7 @@ global:
       version: "PR-867"
     director:
       dir:
-      version: "PR-997"
+      version: "PR-1020"
     gateway:
       dir:
       version: "PR-943"
@@ -46,7 +46,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-981"
+        version: "PR-1020"
       connector:
         dir:
         version: "02e8358c"
@@ -65,6 +65,9 @@ global:
 
   director:
     port: 3000
+
+    tests:
+      scopes: "runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage tenant:read automatic_scenario_assignment:read automatic_scenario_assignment:write"
 
   auditlog:
     enabled: false

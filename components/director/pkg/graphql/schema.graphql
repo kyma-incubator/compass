@@ -196,6 +196,14 @@ input AuthInput {
 	requestAuth: CredentialRequestAuthInput
 }
 
+input AutomaticScenarioAssignmentSetInput {
+	scenarioName: String!
+	"""
+	Runtimes and Applications which contain labels with equal key and value are matched
+	"""
+	selector: LabelInput!
+}
+
 input BasicCredentialDataInput {
 	username: String!
 	password: String!
@@ -482,6 +490,17 @@ type Auth {
 	additionalHeaders: HttpHeaders
 	additionalQueryParams: QueryParams
 	requestAuth: CredentialRequestAuth
+}
+
+type AutomaticScenarioAssignment {
+	scenarioName: String!
+	selector: Label!
+}
+
+type AutomaticScenarioAssignmentPage implements Pageable {
+	data: [AutomaticScenarioAssignment!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 type BasicCredentialData {
@@ -839,6 +858,9 @@ type Query {
 	- [query tenants](examples/query-tenants/query-tenants.graphql)
 	"""
 	tenants: [Tenant!]! @hasScopes(path: "graphql.query.tenants")
+	automaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.query.automaticScenarioAssignmentForScenario")
+	automaticScenarioAssignmentForSelector(selector: LabelInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentForSelector")
+	automaticScenarioAssignments(first: Int = 100, after: PageCursor): AutomaticScenarioAssignmentPage @hasScopes(path: "graphql.query.automaticScenarioAssignments")
 }
 
 type Mutation {
@@ -1071,5 +1093,8 @@ type Mutation {
 	- [delete package](examples/delete-package/delete-package.graphql)
 	"""
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
+	setAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.setAutomaticScenarioAssignment")
+	deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForScenario")
+	deleteAutomaticScenarioAssignmentForSelector(selector: LabelInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForSelector")
 }
 
