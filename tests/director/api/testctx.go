@@ -28,7 +28,7 @@ type testContext struct {
 	cli               *gcli.Client
 }
 
-const defaultScopes = "runtime:write application:write tenant:read label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage scenario_assignment:read scenario_assignment:write"
+const defaultScopes = "runtime:write application:write tenant:read label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage automatic_scenario_assignment:read automatic_scenario_assignment:write"
 
 func newTestContext() (*testContext, error) {
 
