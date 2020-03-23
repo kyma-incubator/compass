@@ -137,6 +137,7 @@ func main() {
 	overridesStep := provisioning.NewOverridesFromSecretsAndConfigStep(ctx, cli, db.Operations())
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations())
+	loggingOverridesStep := provisioning.NewLoggingOverrides(db.Operations())
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
@@ -148,6 +149,7 @@ func main() {
 	stepManager.AddStep(2, overridesStep)
 	stepManager.AddStep(2, smOverrideStep)
 	stepManager.AddStep(3, backupSetupStep)
+	stepManager.AddStep(3, loggingOverridesStep)
 	stepManager.AddStep(10, runtimeStep)
 
 	queue := process.NewQueue(stepManager)
