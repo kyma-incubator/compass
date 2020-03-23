@@ -29,48 +29,39 @@ type TimeService interface {
 	Now() time.Time
 }
 
-type AuditlogConfig struct {
-	User                 string `envconfig:"APP_AUDITLOG_USER"`
-	Password             string `envconfig:"APP_AUDITLOG_PASSWORD"`
-	AuditLogURL          string `envconfig:"APP_AUDITLOG_URL"`
-	Tenant               string `envconfig:"APP_AUDITLOG_TENANT"`
-	AuditlogConfigPath   string `envconfig:"APP_AUDITLOG_CONFIG_PATH,default=/audit-log/v2/configuration-changes"`
-	AuditlogSecurityPath string `envconfig:"APP_AUDITLOG_SECURITY_PATH,default=/audit-log/v2/security-events"`
+//go:generate mockery -name=HttpClient -output=automock -outpkg=automock -case=underscore
+type HttpClient interface {
+	Do(request *http.Request) (*http.Response, error)
 }
 
 type Client struct {
-	cfg              AuditlogConfig
 	uuidSvc          UUIDService
 	timeSvc          TimeService
-	http             http.Client
+	httpClient       HttpClient
 	configChangeURL  string
 	securityEventURL string
+	tenant           *string
 }
 
-func NewClient(cfg AuditlogConfig, uuidSvc UUIDService, tsvc TimeService) (*Client, error) {
-	client := http.Client{
-		Timeout: time.Second * 5,
-	}
-	configChangeURL, err := createURL(cfg.AuditLogURL, cfg.AuditlogConfigPath)
+func NewClient(cfg Config, httpClient HttpClient, uuidSvc UUIDService, tsvc TimeService, tenant *string) (*Client, error) {
+	configChangeURL, err := createURL(cfg.URL, cfg.ConfigPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating auditlog config change url")
 	}
 
-	securityEventURL, err := createURL(cfg.AuditLogURL, cfg.AuditlogSecurityPath)
+	securityEventURL, err := createURL(cfg.URL, cfg.SecurityPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating auditlog security event url")
-
 	}
 
 	return &Client{configChangeURL: configChangeURL.String(),
 		securityEventURL: securityEventURL.String(),
-		http:             client,
+		tenant:           tenant,
 		uuidSvc:          uuidSvc,
-		cfg:              cfg,
-		timeSvc:          tsvc}, nil
+		timeSvc:          tsvc,
+		httpClient:       httpClient}, nil
 }
 
-//TODO: use basic auth, Currently JWT token is broken
 func (c *Client) LogConfigurationChange(change model.ConfigurationChange) error {
 	c.fillMessage(&change.AuditlogMetadata)
 	payload, err := json.Marshal(&change)
@@ -102,8 +93,7 @@ func (c *Client) LogSecurityEvent(event model.SecurityEvent) error {
 }
 
 func (c *Client) sendAuditLog(req *http.Request) error {
-	req.SetBasicAuth(c.cfg.User, c.cfg.Password)
-	response, err := c.http.Do(req)
+	response, err := c.httpClient.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "while sending auditlog to: %s", req.URL.String())
 	}
@@ -126,7 +116,9 @@ func (c *Client) fillMessage(message *model.AuditlogMetadata) {
 	logTime := t.Format(LogFormatDate)
 	message.Time = logTime
 
-	message.Tenant = c.cfg.Tenant
+	if c.tenant != nil {
+		message.Tenant = *c.tenant
+	}
 	message.UUID = c.uuidSvc.Generate()
 }
 
