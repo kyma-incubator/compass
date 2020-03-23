@@ -28,7 +28,6 @@ type GardenerConfig struct {
 	Name                   string
 	ProjectName            string
 	KubernetesVersion      string
-	NodeCount              int
 	VolumeSizeGB           int
 	DiskType               string
 	MachineType            string
@@ -92,8 +91,8 @@ func (c GardenerConfig) ToHydroformConfiguration(credentialsFilePath string) (*t
 	cluster := &types.Cluster{
 		KubernetesVersion: c.KubernetesVersion,
 		Name:              c.Name,
+		NodeCount:         1,
 		DiskSizeGB:        c.VolumeSizeGB,
-		NodeCount:         c.NodeCount,
 		Location:          c.Region,
 		MachineType:       c.MachineType,
 	}
@@ -195,10 +194,7 @@ func (c GCPGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 	shoot.Spec.CloudProfileName = "gcp"
 
-	workers := make([]gardener_types.Worker, gardenerConfig.NodeCount)
-	for i := 0; i < gardenerConfig.NodeCount; i++ {
-		workers[i] = getWorkerConfig(gardenerConfig, []string{c.input.Zone}, i)
-	}
+	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, []string{c.input.Zone})}
 
 	gcpInfra := NewGCPInfrastructure(gardenerConfig.WorkerCidr)
 	jsonData, err := json.Marshal(gcpInfra)
@@ -264,10 +260,7 @@ type AWSGardenerConfig struct {
 func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 	shoot.Spec.CloudProfileName = "az"
 
-	workers := make([]gardener_types.Worker, gardenerConfig.NodeCount)
-	for i := 0; i < gardenerConfig.NodeCount; i++ {
-		workers[i] = getWorkerConfig(gardenerConfig, nil, i)
-	}
+	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, nil)}
 
 	azInfra := NewAzureInfrastructure(gardenerConfig.WorkerCidr, c)
 	jsonData, err := json.Marshal(azInfra)
@@ -331,10 +324,7 @@ func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 	shoot.Spec.CloudProfileName = "aws"
 
-	workers := make([]gardener_types.Worker, gardenerConfig.NodeCount)
-	for i := 0; i < gardenerConfig.NodeCount; i++ {
-		workers[i] = getWorkerConfig(gardenerConfig, []string{c.input.Zone}, i)
-	}
+	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, []string{c.input.Zone})}
 
 	awsInfra := NewAWSInfrastructure(gardenerConfig.WorkerCidr, c)
 	jsonData, err := json.Marshal(awsInfra)
@@ -358,9 +348,9 @@ func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 	return nil
 }
 
-func getWorkerConfig(gardenerConfig GardenerConfig, zones []string, index int) gardener_types.Worker {
+func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_types.Worker {
 	return gardener_types.Worker{
-		Name:           fmt.Sprintf("cpu-worker-%d", index),
+		Name:           "cpu-worker-0",
 		MaxSurge:       util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxSurge)),
 		MaxUnavailable: util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxUnavailable)),
 		Machine: gardener_types.Machine{

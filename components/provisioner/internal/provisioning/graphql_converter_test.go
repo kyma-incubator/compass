@@ -137,7 +137,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		//given
 		clusterName := "Something"
 		project := "Project"
-		nodes := 3
 		disk := "standard"
 		machine := "machine"
 		region := "region"
@@ -171,7 +170,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				ClusterConfig: model.GardenerConfig{
 					Name:                   clusterName,
 					ProjectName:            project,
-					NodeCount:              nodes,
 					DiskType:               disk,
 					MachineType:            machine,
 					Region:                 region,
@@ -211,7 +209,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
 				ClusterConfig: gqlschema.GardenerConfig{
 					Name:              &clusterName,
-					NodeCount:         &nodes,
 					DiskType:          &disk,
 					MachineType:       &machine,
 					Region:            &region,

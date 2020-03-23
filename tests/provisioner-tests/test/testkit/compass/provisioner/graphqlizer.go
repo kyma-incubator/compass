@@ -70,7 +70,6 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 
 	return g.genericToGraphQL(in, `{
 		kubernetesVersion: "{{ .KubernetesVersion }}"
-		nodeCount: {{ .NodeCount }}
 		volumeSizeGB: {{ .VolumeSizeGb }}
 		machineType: "{{ .MachineType }}"
 		region: "{{ .Region }}"

@@ -22,7 +22,7 @@ global:
       version: "PR-867"
     director:
       dir:
-      version: "PR-984"
+      version: "PR-997"
     gateway:
       dir:
       version: "PR-943"
@@ -31,10 +31,10 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-913"
+      version: "PR-1004"
     provisioner:
       dir:
-      version: "PR-957"
+      version: "PR-1004"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -46,16 +46,16 @@ global:
     tests:
       director:
         dir:
-        version: "PR-984"
+        version: "PR-981"
       connector:
         dir:
         version: "02e8358c"
       provisioner:
         dir:
-        version: "PR-565"
+        version: "PR-1004"
       e2e_provisioning:
         dir:
-        version: "6b8099b5"
+        version: "PR-1018"
       connectivity_adapter:
         dir:
         version: "PR-984"
@@ -76,6 +76,9 @@ global:
   tenantConfig:
     useDefaultTenants: true
     useExternalTenants: false
+    dbPool:
+      maxOpenConnections: 1
+      maxIdleConnections: 1
 
   connector:
     graphql:
@@ -252,6 +255,9 @@ global:
       nameField: "name"
       discriminatorField: ""
       discriminatorValue: ""
+    dbPool:
+      maxOpenConnections: 1
+      maxIdleConnections: 1
 
 pairing-adapter:
   enabled: false
