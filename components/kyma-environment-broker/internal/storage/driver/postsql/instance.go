@@ -27,7 +27,7 @@ func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		instance, lastErr = sess.GetInstanceByID(instanceID)
 		if lastErr != nil {
-			if lastErr.Code() == dberr.CodeNotFound {
+			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("Instance with id %s not exist", instanceID)
 			}
 			log.Warn(errors.Wrapf(lastErr, "while getting instance by ID %s", instanceID).Error())
@@ -64,7 +64,7 @@ func (s *Instance) Update(instance internal.Instance) error {
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		lastErr = sess.UpdateInstance(instance)
 		if lastErr != nil {
-			if lastErr.Code() == dberr.CodeNotFound {
+			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("Instance with id %s not exist", instance.InstanceID)
 			}
 			log.Warn(errors.Wrapf(lastErr, "while updating instance ID %s", instance.InstanceID).Error())

@@ -77,7 +77,7 @@ func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*i
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		operation, lastErr = session.GetOperationByInstanceID(instanceID)
 		if lastErr != nil {
-			if lastErr.Code() == dberr.CodeNotFound {
+			if dberr.IsNotFound(lastErr) {
 				lastErr = dberr.NotFound("operation does not exist")
 				return false, lastErr
 			}
@@ -109,7 +109,7 @@ func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperati
 	var lastErr error
 	err = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		dErr := session.UpdateOperation(dto)
-		if dErr != nil && dErr.Code() == dberr.CodeNotFound {
+		if dErr != nil && dberr.IsNotFound(dErr) {
 			_, lastErr = s.NewReadSession().GetOperationByID(op.ID)
 			if lastErr != nil {
 				log.Warn(errors.Wrapf(lastErr, "while getting Operation").Error())
@@ -131,17 +131,21 @@ func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperati
 func (s *operations) GetOperation(operationID string) (*internal.Operation, error) {
 	session := s.NewReadSession()
 	operation := dbsession.OperationDTO{}
+	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		dto, err := session.GetOperationByID(operationID)
-		if err != nil {
-			log.Warn(errors.Wrapf(err, "while reading Operation from the storage").Error())
+		operation, lastErr = session.GetOperationByID(operationID)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				lastErr = dberr.NotFound("Operation with id %s not exist", operationID)
+				return false, lastErr
+			}
+			log.Warn(errors.Wrapf(lastErr, "while reading Operation from the storage").Error())
 			return false, nil
 		}
-		operation = dto
 		return true, nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, lastErr
 	}
 	op := toOperation(&operation)
 	return &op, nil
