@@ -866,7 +866,7 @@ func TestQueryApplicationsPageable(t *testing.T) {
 	// WHEN
 	queriesForFullPage := appAmount / after
 	for i := 0; i < queriesForFullPage; i++ {
-		appReq := fixApplicationsRequestPageable(after, cursor)
+		appReq := fixApplicationsPageableRequest(after, cursor)
 		err := tc.RunOperation(ctx, appReq, &appsPage)
 		require.NoError(t, err)
 
@@ -882,7 +882,7 @@ func TestQueryApplicationsPageable(t *testing.T) {
 		cursor = string(appsPage.PageInfo.EndCursor)
 	}
 
-	appReq := fixApplicationsRequestPageable(after, cursor)
+	appReq := fixApplicationsPageableRequest(after, cursor)
 	err := tc.RunOperation(ctx, appReq, &appsPage)
 	require.NoError(t, err)
 

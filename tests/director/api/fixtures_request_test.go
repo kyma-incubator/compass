@@ -422,7 +422,7 @@ func fixLabelDefinitionsRequest() *gcli.Request {
 			}`))
 }
 
-func fixApplicationsRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
+func fixApplicationsFilteredPageableRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 				result: applications(filter: %s, first: %d, after: "%s") {
@@ -432,10 +432,10 @@ func fixApplicationsRequest(labelFilterInGQL string, first int, after string) *g
 			labelFilterInGQL, first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
 }
 
-func fixApplicationsRequestPageable(first int, after string) *gcli.Request {
+func fixApplicationsPageableRequest(first int, after string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
-				result: applications(, first: %d, after: "%s") {
+				result: applications(first: %d, after: "%s") {
 						%s
 					}
 				}`,
