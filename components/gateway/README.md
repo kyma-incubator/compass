@@ -24,7 +24,7 @@ If you set **APP_AUDITLOG_ENABLED** to `true`, the following environment variabl
 | **APP_AUDITLOG_URL**             | The URL under which the audit log service is available                          |
 | **APP_AUDITLOG_CONFIG_PATH**     | The path for logging configuration changes                                      |
 | **APP_AUDITLOG_SECURITY_PATH**   | The path for logging security events                                            |
-| **APP_AUDITLOG_AUTH_MODE**       | The audit log authorization mode. The possible values are `basic` and `oauth`   |
+| **APP_AUDITLOG_AUTH_MODE**       | The audit log authorization mode. The possible values are `basic` and `oauth`.  |
 
 If you set **APP_AUDITLOG_AUTH_MODE** to `basic`, you are required to pass the following values:
 
@@ -38,6 +38,6 @@ If you set **APP_AUDITLOG_AUTH_MODE** to `oauth`, you are required to pass the f
 
 | Name                              | Description                                                |  
 | --------------------------------- | ---------------------------------------------------------- |  
-| **APP_AUDITLOG_CLIENT_ID**        | The username to the Oauth service service                  |
-| **APP_AUDITLOG_CLIENT_SECRET**    | The password to the Oauth service                          |
-| **APP_AUDITLOG_OAUTH_URL**        | The Oauth URL from which gateway can get the access token  |
+| **APP_AUDITLOG_CLIENT_ID**        | The username to the OAuth service service                  |
+| **APP_AUDITLOG_CLIENT_SECRET**    | The password to the OAuth service                          |
+| **APP_AUDITLOG_OAUTH_URL**        | The OAuth URL from which Gateway gets the access token     |
