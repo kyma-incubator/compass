@@ -458,7 +458,17 @@ func fixApplicationTemplates(first int, after string) *gcli.Request {
 			first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplicationTemplate())))
 }
 
-func fixRuntimesRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
+func fixRuntimesRequest() *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: runtimes {
+						%s
+					}
+				}`,
+			tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
+}
+
+func fixRuntimesFilteredPageableRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 				result: runtimes(filter: %s, first: %d, after: "%s") {
@@ -793,4 +803,14 @@ func fixPackagesRequest(applicationID string) *gcli.Request {
 				%s
 				}
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication()))
+}
+
+func fixDeleteDefaultEventingForApplication(appID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: deleteDefaultEventingForApplication(appID: "%s") {
+						%s
+					}
+				}`,
+			appID, tc.gqlFieldsProvider.ForEventingConfiguration()))
 }
