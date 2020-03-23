@@ -12,14 +12,13 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	db := persistence.DatabaseConfig{}
-	err := envconfig.Init(&db)
+	dbCfg := persistence.DatabaseConfig{}
+	err := envconfig.Init(&dbCfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	connString := persistence.GetConnString(db)
-	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), connString)
+	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), dbCfg)
 
 	defer func() {
 		err := closeFunc()
