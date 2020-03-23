@@ -31,7 +31,7 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-1004"
+      version: "PR-1034"
     provisioner:
       dir:
       version: "PR-1004"
