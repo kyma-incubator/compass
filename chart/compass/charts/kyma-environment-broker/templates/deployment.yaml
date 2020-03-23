@@ -147,7 +147,7 @@ spec:
             initialDelaySeconds: 30
           livenessProbe:
             httpGet:
-              path: /livez
+              path: /healthz
               port: {{ .Values.broker.port }}
             failureThreshold: 3
             periodSeconds: 10
