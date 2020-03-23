@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"log"
 	"net/http"
 	"os"
@@ -137,6 +138,7 @@ func main() {
 	provisionAzureEventHub := provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
+	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations())
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
@@ -145,6 +147,7 @@ func main() {
 	stepManager.AddStep(1, resolveCredentialsStep)
 	stepManager.AddStep(2, provisionAzureEventHub)
 	stepManager.AddStep(2, smOverrideStep)
+	stepManager.AddStep(3, backupSetupStep)
 	stepManager.AddStep(10, runtimeStep)
 
 	evaluationStep := provisioning.NewInternalEvaluationStep(cfg.Avs, db.Operations())
