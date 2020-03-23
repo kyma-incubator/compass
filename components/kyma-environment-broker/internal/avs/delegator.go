@@ -32,8 +32,8 @@ func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.Provis
 	logger.Infof("starting the step")
 
 	if evalAssistant.CheckIfAlreadyDone(operation) {
-		msg := fmt.Sprintf("step has already been finished previously")
-		return del.operationManager.OperationSucceeded(operation, msg)
+		logger.Infof("step has already been finished previously")
+		return operation, 0, nil
 	}
 
 	evaluationObject, err := evalAssistant.CreateBasicEvaluationRequest(operation, url)
