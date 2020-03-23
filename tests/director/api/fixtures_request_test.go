@@ -11,7 +11,6 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
-// CREATE
 func fixRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -20,6 +19,15 @@ func fixRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
 				}
 			}`,
 			applicationInGQL, tc.gqlFieldsProvider.ForApplication()))
+}
+
+func fixUnregisterApplicationRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			unregisterApplication(id: "%s") {
+				id
+			}
+		}`, id))
 }
 
 func fixCreateApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.Request {
@@ -71,6 +79,15 @@ func fixAddDocumentRequest(appID, documentInputInGQL string) *gcli.Request {
 		}`, appID, documentInputInGQL, tc.gqlFieldsProvider.ForDocument()))
 }
 
+func fixDeleteDocumentRequest(docID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteDocument(id: "%s") {
+					id
+				}
+			}`, docID))
+}
+
 func fixAddDocumentToPackageRequest(packageID, documentInputInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -88,6 +105,15 @@ func fixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
 				}
 			}`,
 			applicationID, webhookInGQL, tc.gqlFieldsProvider.ForWebhooks()))
+}
+
+func fixDeleteWebhookRequest(webhookID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteWebhook(webhookID: "%s") {
+				%s
+			}
+		}`, webhookID, tc.gqlFieldsProvider.ForWebhooks()))
 }
 
 func fixAddAPIRequest(appID, APIInputGQL string) *gcli.Request {
@@ -110,14 +136,23 @@ func fixAddAPIToPackageRequest(pkgID, APIInputGQL string) *gcli.Request {
 		`, pkgID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
 }
 
-func fixUpdateAPIRequest(appID, APIInputGQL string) *gcli.Request {
+func fixUpdateAPIRequest(apiID, APIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 		result: updateAPIDefinition(id: "%s", in: %s) {
 				%s
 			}
 		}
-		`, appID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+		`, apiID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+}
+
+func fixDeleteAPIRequest(apiID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: deleteAPIDefinition(id: "%s") {
+				id
+			}
+		}`, apiID))
 }
 
 func fixAddEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
@@ -140,17 +175,25 @@ func fixAddEventAPIToPackageRequest(pkgID, eventAPIInputGQL string) *gcli.Reques
 		`, pkgID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
-func fixUpdateEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
+func fixUpdateEventAPIRequest(eventAPIID, eventAPIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 		result: updateEventDefinition(id: "%s", in: %s) {
 				%s
 			}
 		}
-		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
+		`, eventAPIID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
-//UPDATE
+func fixDeleteEventAPIRequest(eventAPIID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteEventDefinition(id: "%s") {
+				id
+			}
+		}`, eventAPIID))
+}
+
 func fixUpdateRuntimeRequest(id, updateInputInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -252,7 +295,6 @@ func fixRequestClientCredentialsForIntegrationSystem(id string) *gcli.Request {
 				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
-// SET
 func fixSetApplicationLabelRequest(appID, labelKey string, labelValue interface{}) *gcli.Request {
 	jsonValue, err := json.Marshal(labelValue)
 	if err != nil {
@@ -294,7 +336,6 @@ func fixSetAPIAuthRequest(apiID string, rtmID string, authInStr string) *gcli.Re
 			}`, apiID, rtmID, authInStr, tc.gqlFieldsProvider.ForAPIRuntimeAuth()))
 }
 
-// QUERY
 func fixApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(
