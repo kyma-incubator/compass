@@ -112,10 +112,9 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 
 func (c converter) createGardenerClusterName(provider string) string {
 	id := c.uuidGenerator.New()
-	provider = util.RemoveNotAllowedCharacters(provider)
 
 	name := strings.ReplaceAll(id, "-", "")
-	name = fmt.Sprintf("%.3s-%.7s", provider, name)
+	name = fmt.Sprintf("%.7s", name)
 	name = util.StartWithLetter(name)
 	name = strings.ToLower(name)
 	return name
