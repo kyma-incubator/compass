@@ -1,3 +1,30 @@
+# Gopkg.toml example
+#
+# Refer to https://golang.github.io/dep/docs/Gopkg.toml.html
+# for detailed Gopkg.toml documentation.
+#
+# required = ["github.com/user/thing/cmd/thing"]
+# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
+#
+# [[constraint]]
+#   name = "github.com/user/project"
+#   version = "1.0.0"
+#
+# [[constraint]]
+#   name = "github.com/user/project2"
+#   branch = "dev"
+#   source = "github.com/myfork/project2"
+#
+# [[override]]
+#   name = "github.com/x/y"
+#   version = "2.4.0"
+#
+# [prune]
+#   non-go = false
+#   go-tests = true
+#   unused-packages = true
+
+
 [[constraint]]
   name = "code.cloudfoundry.org/lager"
   version = "2.0.0"
@@ -19,9 +46,8 @@
   version = "1.4.2"
 
 [[constraint]]
+  revision = "ad250cc742673ef5b628cc806841182bafe9750a"
   name = "github.com/kyma-incubator/compass"
-  source = "github.com/franpog859/compass"
-  branch = "942-provision-from-custom-sources"
 
 [[constraint]]
   name = "github.com/lib/pq"
