@@ -49,6 +49,10 @@ func (iec *InternalEvalAssistant) ProvideTesterAccessId() int64 {
 	return iec.avsConfig.InternalTesterAccessId
 }
 
+func (iec *InternalEvalAssistant) ProvideCheckType() string {
+	return ""
+}
+
 func (iec *InternalEvalAssistant) SetEvalId(operation *internal.ProvisioningOperation, evalId int64) {
 	operation.AvsEvaluationInternalId = evalId
 }

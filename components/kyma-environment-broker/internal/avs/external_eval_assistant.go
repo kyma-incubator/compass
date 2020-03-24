@@ -2,6 +2,8 @@ package avs
 
 import "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 
+const externalEvalCheckType = "HTTPSGET"
+
 type ExternalEvalAssistant struct {
 	avsConfig Config
 }
@@ -32,4 +34,8 @@ func (eea *ExternalEvalAssistant) ProvideTesterAccessId() int64 {
 
 func (eea *ExternalEvalAssistant) SetEvalId(operation *internal.ProvisioningOperation, evalId int64) {
 	operation.AVSEvaluationExternalId = evalId
+}
+
+func (eea *ExternalEvalAssistant) ProvideCheckType() string {
+	return externalEvalCheckType
 }

@@ -8,7 +8,6 @@ import (
 
 const (
 	DefinitionType   = "BASIC"
-	checkType        = "HTTPSGET"
 	interval         = 180
 	timeout          = 30000
 	contentCheck     = "SAP Kyma Runtime Monitoring"
@@ -81,7 +80,7 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, c
 		Description:      beDescription,
 		Service:          beName,
 		URL:              url,
-		CheckType:        checkType,
+		CheckType:        configurator.ProvideCheckType(),
 		Interval:         interval,
 		TesterAccessId:   configurator.ProvideTesterAccessId(),
 		Timeout:          timeout,
