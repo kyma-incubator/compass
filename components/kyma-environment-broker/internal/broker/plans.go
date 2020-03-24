@@ -10,6 +10,7 @@ const (
 )
 
 // plans is designed to hold plan defaulting logic
+// keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
 var plans = map[string]struct {
 	planDefinition        domain.ServicePlan
 	provisioningRawSchema []byte
