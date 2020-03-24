@@ -152,6 +152,7 @@ func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 			return model.KymaConfig{}, dberrors.Internal("Failed to unmarshal configuration for %s component: %s", componentCfg.Component, err.Error())
 		}
 
+		// TODO: Add SourceURL here!
 		kymaComponentConfig := model.KymaComponentConfig{
 			ID:            componentCfg.ID,
 			Component:     model.KymaComponent(componentCfg.Component),

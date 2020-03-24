@@ -710,6 +710,8 @@ github.com/kyma-incubator/hydroform/install v0.0.0-20200302090055-3f3b00d9799c/g
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0 h1:FOy/aPGEt+ycdWNfeGx6UFG/Ziiy7hEi0D6T0lCPonM=
 github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
+github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442 h1:az/bKbDh2ePViYBebcsApy2EXB+dLieLnfg4ise9JRM=
+github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/leodido/go-urn v1.1.0/go.mod h1:+cyI34gQWZcE1eQU7NVgKkkzdXDQHr1dBMtdAPozLkw=
 github.com/lestrrat-go/jwx v0.9.0/go.mod h1:iEoxlYfZjvoGpuWwxUz+eR5e6KTJGsaRcy/YNA/UnBk=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=

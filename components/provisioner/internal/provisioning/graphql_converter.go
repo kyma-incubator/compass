@@ -116,7 +116,7 @@ func (c graphQLConverter) kymaConfigToGraphQLConfig(config model.KymaConfig) *gq
 			Component:     string(cmp.Component),
 			Namespace:     cmp.Namespace,
 			Configuration: c.configurationToGraphQLConfig(cmp.Configuration),
-			Source:        c.sourceURLToGraphQLSource(cmp.SourceURL), // TODO: Check if it works right!
+			SourceURL:     c.sourceURLToGraphQLSource(cmp.SourceURL), // TODO: Check if it works right!
 		}
 
 		components = append(components, &component)

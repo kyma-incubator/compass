@@ -169,6 +169,7 @@ func GetInstallationCRModificationFunc(componentsConfig []model.KymaComponentCon
 			components = append(components, v1alpha1.KymaComponent{
 				Name:      string(cc.Component),
 				Namespace: cc.Namespace,
+				Source:    &v1alpha1.ComponentSource{URL: cc.SourceURL},
 			})
 		}
 
