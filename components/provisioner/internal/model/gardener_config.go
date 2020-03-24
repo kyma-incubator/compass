@@ -20,7 +20,7 @@ import (
 
 const (
 	SubAccountLabel = "subaccount"
-	AccountLabel = "account"
+	AccountLabel    = "account"
 )
 
 type GardenerConfig struct {
@@ -59,7 +59,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			Namespace: namespace,
 			Labels: map[string]string{
 				SubAccountLabel: subAccountId,
-				AccountLabel: accountId,
+				AccountLabel:    accountId,
 			},
 		},
 		Spec: gardener_types.ShootSpec{
