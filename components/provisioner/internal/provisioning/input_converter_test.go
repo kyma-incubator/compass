@@ -124,7 +124,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "gcp-verylon",
+			Name:                   "verylon",
 			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
@@ -189,7 +189,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "azu-verylon",
+			Name:                   "verylon",
 			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
@@ -260,7 +260,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "aws-verylon",
+			Name:                   "verylon",
 			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
