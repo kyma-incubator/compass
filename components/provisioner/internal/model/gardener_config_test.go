@@ -260,6 +260,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
 					Labels: map[string]string{
+						"account": "account",
 						"subaccount": "sub-account",
 					},
 				},
@@ -307,6 +308,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
 					Labels: map[string]string{
+						"account": "account",
 						"subaccount": "sub-account",
 					},
 				},
@@ -354,6 +356,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
 					Labels: map[string]string{
+						"account": "account",
 						"subaccount": "sub-account",
 					},
 				},
@@ -398,7 +401,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			gardenerProviderConfig := fixGardenerConfig(testCase.provider, testCase.providerConfig)
 
 			// when
-			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "sub-account")
+			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "account","sub-account")
 
 			// then
 			fmt.Println(string(template.Spec.Provider.InfrastructureConfig.Raw))
