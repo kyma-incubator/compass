@@ -177,10 +177,50 @@ func TestProvision_Provision(t *testing.T) {
 		}, true)
 
 		// then
-		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Jaeger", "KnativeProvisionerNatss", "NatssStreaming"`)
+		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Jaeger"`)
 		assert.False(t, response.IsAsync)
 		assert.Empty(t, response.OperationData)
 	})
+
+	t.Run("return error on adding KnativeProvisionerNatss and NatssStreaming to list of components", func(t *testing.T) {
+			// given
+			// #setup memory storage
+			memoryStorage := storage.NewMemoryStorage()
+			err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
+			require.NoError(t, err)
+
+			factoryBuilder := &automock.PlanValidator{}
+			factoryBuilder.On("IsPlanSupport", planID).Return(true)
+
+			fixValidator, err := broker.NewPlansSchemaValidator()
+			require.NoError(t, err)
+
+			// #create provisioner endpoint
+			provisionEndpoint := broker.NewProvision(
+				broker.Config{EnablePlans: []string{"gcp", "azure"}},
+				memoryStorage.Operations(),
+				nil,
+				factoryBuilder,
+				fixValidator,
+				logrus.StandardLogger(),
+			)
+
+			// when
+			response, err := provisionEndpoint.Provision(context.TODO(), instanceID, domain.ProvisionDetails{
+				ServiceID: serviceID,
+				PlanID:    planID,
+				RawParameters: json.RawMessage(fmt.Sprintf(`{
+								"name": "%s",
+								"components": ["KnativeProvisionerNatss", "NatssStreaming"]
+								}`, clusterName)),
+				RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4")),
+			}, true)
+
+			// then
+			assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Jaeger", components: No additional items allowed on array`)
+			assert.False(t, response.IsAsync)
+			assert.Empty(t, response.OperationData)
+		})
 }
 
 func fixExistOperation() internal.ProvisioningOperation {
