@@ -45,6 +45,10 @@ func (c *Config) Environment() (*azure.Environment, error) {
 }
 
 // see internal/broker/plans.go for list of available azure regions
+// important" ! filter non evnehub regions out
+// filtered entries: "uaenorth"
+// list used: https://docs.microsoft.com/en-us/rest/api/eventhub/regions/listbysku
+
 func azureRegions() map[string]struct{} {
 	return map[string]struct{}{
 		"EastUS2EUAP":   {},
@@ -55,7 +59,6 @@ func azureRegions() map[string]struct{} {
 		"japaneast":     {},
 		"northeurope":   {},
 		"southeastasia": {},
-		"uaenorth":      {},
 		"uksouth":       {},
 		"westeurope":    {},
 		"westus2":       {},
