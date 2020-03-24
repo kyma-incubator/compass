@@ -49,13 +49,17 @@ func (s *operations) InsertProvisioningOperation(operation internal.Provisioning
 func (s *operations) GetProvisioningOperationByID(operationID string) (*internal.ProvisioningOperation, error) {
 	session := s.NewReadSession()
 	operation := dbsession.OperationDTO{}
+	var lastErr error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		dto, dbErr := session.GetOperationByID(operationID)
-		if dbErr != nil {
-			log.Warn(errors.Wrapf(dbErr, "while reading Operation from the storage"))
+		operation, lastErr = session.GetOperationByID(operationID)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				lastErr = dberr.NotFound("Operation with id %s not exist", operationID)
+				return false, lastErr
+			}
+			log.Warn(errors.Wrapf(lastErr, "while reading Operation from the storage"))
 			return false, nil
 		}
-		operation = dto
 		return true, nil
 	})
 	if err != nil {
