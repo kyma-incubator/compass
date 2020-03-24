@@ -108,11 +108,11 @@ func (ws writeSession) insertKymaComponentConfig(kymaConfigModule model.KymaComp
 		return dberrors.Internal("Failed to marshal %s component configuration: %s", kymaConfigModule.Component, err.Error())
 	}
 
-	// TODO: Add SourceURL here!
 	_, err = ws.insertInto("kyma_component_config").
 		Pair("id", kymaConfigModule.ID).
 		Pair("component", kymaConfigModule.Component).
 		Pair("namespace", kymaConfigModule.Namespace).
+		Pair("source_url", kymaConfigModule.SourceURL).
 		Pair("kyma_config_id", kymaConfigModule.KymaConfigID).
 		Pair("configuration", jsonConfig).
 		Exec()

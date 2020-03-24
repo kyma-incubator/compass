@@ -119,13 +119,15 @@ func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 		InstallerYAML       string
 		Component           string
 		Namespace           string
+		SourceURL           string
 		Configuration       []byte
 		ClusterID           string
 	}
 
 	rowsCount, err := r.session.
 		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.global_configuration",
-			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.namespace", "kyma_component_config.configuration",
+			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.namespace",
+			"kyma_component_config.source_url", "kyma_component_config.configuration",
 			"cluster_id",
 			"kyma_release.version", "kyma_release.tiller_yaml", "kyma_release.installer_yaml").
 		From("cluster").
@@ -152,11 +154,11 @@ func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 			return model.KymaConfig{}, dberrors.Internal("Failed to unmarshal configuration for %s component: %s", componentCfg.Component, err.Error())
 		}
 
-		// TODO: Add SourceURL here!
 		kymaComponentConfig := model.KymaComponentConfig{
 			ID:            componentCfg.ID,
 			Component:     model.KymaComponent(componentCfg.Component),
 			Namespace:     componentCfg.Namespace,
+			SourceURL:     componentCfg.SourceURL,
 			Configuration: configuration,
 			KymaConfigID:  componentCfg.KymaConfigID,
 		}
