@@ -9,7 +9,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 )
 
@@ -97,13 +96,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 
 	actualEventingCfg := graphql.ApplicationEventingConfiguration{}
-	request := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-				result: setDefaultEventingForApplication(appID: "%s", runtimeID: "%s") {
-						%s
-					}
-				}`,
-			application.ID, runtime2.ID, tc.gqlFieldsProvider.ForEventingConfiguration()))
+	request := fixSetDefaultEventingForApplication(application.ID, runtime2.ID)
 	err := tc.RunOperation(ctx, request, &actualEventingCfg)
 
 	// THEN
@@ -167,13 +160,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 
 	// WHEN
 	actualEventingCfg := graphql.ApplicationEventingConfiguration{}
-	request := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-				result: deleteDefaultEventingForApplication(appID: "%s") {
-						%s
-					}
-				}`,
-			application.ID, tc.gqlFieldsProvider.ForEventingConfiguration()))
+	request := fixDeleteDefaultEventingForApplication(application.ID)
 	err := tc.RunOperation(ctx, request, &actualEventingCfg)
 
 	// THEN
