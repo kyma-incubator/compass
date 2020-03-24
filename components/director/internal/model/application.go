@@ -100,3 +100,5 @@ type ApplicationUpdateInput struct {
 	IntegrationSystemID *string
 	StatusCondition     *ApplicationStatusCondition
 }
+
+
