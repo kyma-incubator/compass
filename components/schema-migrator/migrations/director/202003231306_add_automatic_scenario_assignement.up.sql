@@ -1,8 +1,10 @@
+BEGIN;
+
 CREATE TABLE automatic_scenario_assignments (
     scenario VARCHAR(128),
     tenant_id UUID NOT NULL,
-    key VARCHAR(256) NOT NULL,
-    value VARCHAR(256));
+    selector_key VARCHAR(256) NOT NULL,
+    selector_value VARCHAR(256));
 
 
 CREATE INDEX ON automatic_scenario_assignments (tenant_id);
@@ -16,3 +18,5 @@ ALTER TABLE automatic_scenario_assignments
     FOREIGN KEY (tenant_id)
     REFERENCES business_tenant_mappings(id)
     ON DELETE CASCADE;
+
+COMMIT;
