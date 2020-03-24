@@ -24,7 +24,10 @@ const (
 	kymaVersion                   = "1.5"
 	clusterEssentialsComponent    = "cluster-essentials"
 	coreComponent                 = "core"
+	rafterComponent               = "rafter"
 	applicationConnectorComponent = "application-connector"
+
+	rafterSourceURL = "github.com/kyma-project/kyma.git//resources/rafter"
 
 	gardenerProject = "gardener-project"
 )
@@ -323,7 +326,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		t.Run(testCase.description, func(t *testing.T) {
 			//given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
-			uuidGeneratorMock.On("New").Return("id").Times(5)
+			uuidGeneratorMock.On("New").Return("id").Times(6)
 			uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hypens")
 
 			inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject)
@@ -497,6 +500,11 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntryInput("test.config.key2", "value2", util.BoolPtr(false)),
 				},
+			},
+			{
+				Component: rafterComponent,
+				Namespace: kymaSystemNamespace,
+				SourceURL: util.StringPtr(rafterSourceURL),
 			},
 			{
 				Component: applicationConnectorComponent,
