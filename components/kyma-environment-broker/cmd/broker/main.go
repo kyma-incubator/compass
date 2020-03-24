@@ -218,7 +218,7 @@ func main() {
 	sm.Handle("/", brokerBasicAPI)
 	sm.Handle("/oauth/", http.StripPrefix("/oauth", brokerAPI))
 
-	sm.HandleFunc("/healthz", health.LivenessHandler(logger))
+	sm.HandleFunc("/healthz", health.LivenessHandler())
 
 	r := handlers.LoggingHandler(os.Stdout, sm)
 
