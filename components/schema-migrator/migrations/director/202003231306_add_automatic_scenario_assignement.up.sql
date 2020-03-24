@@ -17,6 +17,6 @@ ALTER TABLE automatic_scenario_assignments
     ADD CONSTRAINT automatic_scenario_assignments_tenant_constraint
     FOREIGN KEY (tenant_id)
     REFERENCES business_tenant_mappings(id)
-    ON DELETE CASCADE
+    ON DELETE CASCADE;
 
 COMMIT;
