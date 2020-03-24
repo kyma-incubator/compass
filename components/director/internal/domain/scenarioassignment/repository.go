@@ -25,20 +25,22 @@ var (
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator:      repo.NewCreator(tableName, columns),
-		lister:       repo.NewLister(tableName, tenantColumn, columns),
-		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, columns),
-		deleter:      repo.NewDeleter(tableName, tenantColumn),
-		conv:         conv,
+		creator:         repo.NewCreator(tableName, columns),
+		lister:          repo.NewLister(tableName, tenantColumn, columns),
+		singleGetter:    repo.NewSingleGetter(tableName, tenantColumn, columns),
+		pageableQuerier: repo.NewPageableQuerier(tableName, tenantColumn, columns),
+		deleter:         repo.NewDeleter(tableName, tenantColumn),
+		conv:            conv,
 	}
 }
 
 type repository struct {
-	creator      repo.Creator
-	singleGetter repo.SingleGetter
-	lister       repo.Lister
-	deleter      repo.Deleter
-	conv         EntityConverter
+	creator         repo.Creator
+	singleGetter    repo.SingleGetter
+	lister          repo.Lister
+	pageableQuerier repo.PageableQuerier
+	deleter         repo.Deleter
+	conv            EntityConverter
 }
 
 //go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
@@ -85,6 +87,27 @@ func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioN
 	assignmentModel := r.conv.FromEntity(ent)
 
 	return assignmentModel, nil
+}
+
+func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error) {
+	var collection EntityCollection
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, scenarioColumn, &collection)
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*model.AutomaticScenarioAssignment
+
+	for _, ent := range collection {
+		m := r.conv.FromEntity(ent)
+		items = append(items, &m)
+	}
+
+	return &model.AutomaticScenarioAssignmentPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page,
+	}, nil
 }
 
 func (r *repository) DeleteForSelector(ctx context.Context, tenantID string, selector model.LabelSelector) error {

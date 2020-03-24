@@ -17,6 +17,7 @@ type Repository interface {
 	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
 	GetForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error)
+	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 	DeleteForSelector(ctx context.Context, tenantID string, selector model.LabelSelector) error
 }
 
@@ -109,6 +110,19 @@ func (s *service) GetForScenarioName(ctx context.Context, scenarioName string) (
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while getting Assignment")
 	}
 	return sa, nil
+}
+
+func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if pageSize < 1 || pageSize > 100 {
+		return nil, errors.New("page size must be between 1 and 100")
+	}
+
+	return s.repo.List(ctx, tnt, pageSize, cursor)
 }
 
 func (s *service) DeleteForSelector(ctx context.Context, selector model.LabelSelector) error {
