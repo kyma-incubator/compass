@@ -1,2 +1,0 @@
-INSERT INTO app_templates ("id", "name", "description", "application_input", "placeholders", "access_level")
-    VALUES ('00000000-0000-0000-0000-000000000001', 'SAP Commerce Cloud', 'SAP Commerce Cloud v2', '{"name": "{{name}}", "labels": {"compass/legacy": true}, "packages": null, "webhooks": null, "documents": null, "description": "SAP Commerce Cloud v2", "providerName": "SAP", "apiDefinitions": null, "healthCheckURL": null, "eventDefinitions": null, "integrationSystemID": null}', '[{"Name": "name", "Description": "Application''s name"}]', 'GLOBAL');

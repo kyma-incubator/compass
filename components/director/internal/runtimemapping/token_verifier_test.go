@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/lestrrat-go/jwx/jwk"
 	logrustest "github.com/sirupsen/logrus/hooks/test"
@@ -106,7 +108,8 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		_, err := jwksFetch.GetKey(token)
 
 		// THEN
-		require.EqualError(t, err, "while getting the JWKs URI: while getting the configuration discovery: Get http://domain.local/.well-known/openid-configuration: dial tcp: lookup domain.local: no such host")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "while getting the JWKs URI: while getting the configuration discovery: Get http://domain.local/.well-known/openid-configuration: dial tcp: lookup domain.local")
 	})
 
 	t.Run("should return error when discovery URL does not return proper response", func(t *testing.T) {

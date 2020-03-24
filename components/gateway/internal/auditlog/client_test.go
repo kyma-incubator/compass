@@ -2,7 +2,8 @@ package auditlog_test
 
 import (
 	"encoding/json"
-	"io"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -20,41 +21,35 @@ import (
 )
 
 const (
-	testTenant   = "bfd679c3-aada-4af3-b8e2-74d710c4ed2e"
 	configPath   = "/audit-log/v2/configuration-changes"
 	securityPath = "/audit-log/v2/security-events"
 )
 
-func TestLogConfigurationChangeToAuditlog(t *testing.T) {
+func TestClient_LogConfigurationChange(t *testing.T) {
 	//GIVEN
 	msgID := uuid.New().String()
-	timestamp := time.Now().UTC()
-	configChangeLog := fixConfigChangeLog()
+	timestamp := time.Date(2020, 3, 17, 12, 37, 44, 1093, time.FixedZone("test", 3600))
+	configChangeLog := fixConfigChangeLog(msgID, timestamp)
+	expectedLog := fixConfigChangeLog(msgID, timestamp)
 
-	expectedLog := fixConfigChangeLog()
-	expectedLog.UUID = msgID
-	expectedLog.Time = timestamp.Format(auditlog.LogFormatDate)
-
-	cfg := auditlog.AuditlogConfig{
-		User:                 "user",
-		Password:             "password",
-		Tenant:               testTenant,
-		AuditlogConfigPath:   configPath,
-		AuditlogSecurityPath: securityPath,
+	cfg := auditlog.Config{
+		ConfigPath:   configPath,
+		SecurityPath: securityPath,
 	}
+
 	t.Run("Success", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			defer closeBody(t, r.Body)
 			assert.Equal(t, r.URL.Path, configPath)
 			inputLog := readConfigChangeRequestBody(t, r)
 			assert.Equal(t, expectedLog, inputLog)
 			w.WriteHeader(http.StatusCreated)
 		}))
 		defer ts.Close()
-		cfg.AuditLogURL = ts.URL
+		cfg.URL = ts.URL
 
 		uuidSvc, timeSvc := initMocks(msgID, timestamp)
-		client, err := auditlog.NewClient(cfg, uuidSvc, timeSvc)
+		httpClient := &http.Client{}
+		client, err := auditlog.NewClient(cfg, httpClient, uuidSvc, timeSvc, nil)
 		require.NoError(t, err)
 
 		//WHEN
@@ -67,7 +62,6 @@ func TestLogConfigurationChangeToAuditlog(t *testing.T) {
 
 	t.Run("Response Code different than 201", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			defer closeBody(t, r.Body)
 			assert.Equal(t, r.URL.Path, configPath)
 			inputLog := readConfigChangeRequestBody(t, r)
 			assert.Equal(t, expectedLog, inputLog)
@@ -75,10 +69,11 @@ func TestLogConfigurationChangeToAuditlog(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		cfg.AuditLogURL = ts.URL
+		cfg.URL = ts.URL
 
 		uuidSvc, timeSvc := initMocks(msgID, timestamp)
-		client, err := auditlog.NewClient(cfg, uuidSvc, timeSvc)
+		httpClient := &http.Client{}
+		client, err := auditlog.NewClient(cfg, httpClient, uuidSvc, timeSvc, nil)
 		require.NoError(t, err)
 
 		//WHEN
@@ -95,34 +90,53 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 	//GIVEN
 	msgID := uuid.New().String()
 	timestamp := time.Now().UTC()
-	securityEventLog := fixSecurityEventLog()
+	securityEventLog := fixSecurityEventLog(msgID, timestamp)
 
-	expectedLog := fixSecurityEventLog()
+	expectedLog := fixSecurityEventLog(msgID, timestamp)
 	expectedLog.UUID = msgID
-	expectedLog.Time = timestamp.Format(auditlog.LogFormatDate)
-	expectedLog.Tenant = testTenant
-
-	cfg := auditlog.AuditlogConfig{
-		User:                 "user",
-		Password:             "password",
-		Tenant:               testTenant,
-		AuditlogConfigPath:   configPath,
-		AuditlogSecurityPath: securityPath,
-	}
 
 	t.Run("Success", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			defer closeBody(t, r.Body)
 			assert.Equal(t, r.URL.Path, securityPath)
 			inputLog := readSecurityEventRequestBody(t, r)
 			assert.Equal(t, expectedLog, inputLog)
 			w.WriteHeader(http.StatusCreated)
 		}))
 		defer ts.Close()
-		cfg.AuditLogURL = ts.URL
+		cfg := fixAuditlogConfig()
+		cfg.URL = ts.URL
 
 		uuidSvc, timeSvc := initMocks(msgID, timestamp)
-		client, err := auditlog.NewClient(cfg, uuidSvc, timeSvc)
+		httpClient := &http.Client{}
+		client, err := auditlog.NewClient(cfg, httpClient, uuidSvc, timeSvc, nil)
+		require.NoError(t, err)
+
+		//WHEN
+		err = client.LogSecurityEvent(securityEventLog)
+
+		//THEN
+		require.NoError(t, err)
+		mock.AssertExpectationsForObjects(t, uuidSvc, timeSvc)
+	})
+
+	t.Run("Success with tenant", func(t *testing.T) {
+		testTenant := "bfd679c3-aada-4af3-b8e2-74d710c4ed2e"
+
+		expectedLog := fixSecurityEventLog(msgID, timestamp)
+		expectedLog.Tenant = testTenant
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, r.URL.Path, securityPath)
+			inputLog := readSecurityEventRequestBody(t, r)
+			assert.Equal(t, expectedLog, inputLog)
+			w.WriteHeader(http.StatusCreated)
+		}))
+		defer ts.Close()
+		cfg := fixAuditlogConfig()
+		cfg.URL = ts.URL
+
+		uuidSvc, timeSvc := initMocks(msgID, timestamp)
+		httpClient := &http.Client{}
+		client, err := auditlog.NewClient(cfg, httpClient, uuidSvc, timeSvc, &testTenant)
 		require.NoError(t, err)
 
 		//WHEN
@@ -135,17 +149,19 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 
 	t.Run("Response Code different than 201", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			defer closeBody(t, r.Body)
 			assert.Equal(t, r.URL.Path, securityPath)
 			inputLog := readSecurityEventRequestBody(t, r)
 			assert.Equal(t, expectedLog, inputLog)
 			w.WriteHeader(http.StatusForbidden)
 		}))
 		defer ts.Close()
-		cfg.AuditLogURL = ts.URL
+
+		cfg := fixAuditlogConfig()
+		cfg.URL = ts.URL
 
 		uuidSvc, timeSvc := initMocks(msgID, timestamp)
-		client, err := auditlog.NewClient(cfg, uuidSvc, timeSvc)
+		httpClient := &http.Client{}
+		client, err := auditlog.NewClient(cfg, httpClient, uuidSvc, timeSvc, nil)
 		require.NoError(t, err)
 
 		//WHEN
@@ -155,6 +171,26 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 		require.Error(t, err)
 		assert.EqualError(t, err, "Write to auditlog failed with status code: 403")
 		mock.AssertExpectationsForObjects(t, uuidSvc, timeSvc)
+	})
+
+	t.Run("http client return error", func(t *testing.T) {
+		//GIVEN
+		testErr := errors.New("test err")
+		uuidSvc, timeSvc := initMocks(msgID, timestamp)
+		httpClient := &automock.HttpClient{}
+		httpClient.On("Do", mock.Anything).Return(nil, testErr)
+
+		cfg := fixAuditlogConfig()
+		cfg.URL = "localhost:8080"
+		client, err := auditlog.NewClient(cfg, httpClient, uuidSvc, timeSvc, nil)
+		require.NoError(t, err)
+
+		//WHEN
+		err = client.LogSecurityEvent(securityEventLog)
+
+		//THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, fmt.Sprintf("while sending auditlog to: %s: %s", "localhost:8080", testErr.Error()))
 	})
 }
 
@@ -172,7 +208,7 @@ func TestDateFormat(t *testing.T) {
 	require.Equal(t, expected, formattedDate)
 }
 
-func fixConfigChangeLog() model.ConfigurationChange {
+func fixConfigChangeLog(msgId string, timestamp time.Time) model.ConfigurationChange {
 	return model.ConfigurationChange{
 		User: "test-user",
 		Object: model.Object{
@@ -184,15 +220,20 @@ func fixConfigChangeLog() model.ConfigurationChange {
 			},
 			Type: "",
 		},
-		Attributes: []model.Attribute{{Name: "name", Old: "", New: "new value"}},
 		AuditlogMetadata: model.AuditlogMetadata{
-			Tenant: testTenant,
+			Time: timestamp.Format(auditlog.LogFormatDate),
+			UUID: msgId,
 		},
+		Attributes: []model.Attribute{{Name: "name", Old: "", New: "new value"}},
 	}
 }
 
-func fixSecurityEventLog() model.SecurityEvent {
+func fixSecurityEventLog(msgId string, timestamp time.Time) model.SecurityEvent {
 	return model.SecurityEvent{
+		AuditlogMetadata: model.AuditlogMetadata{
+			Time: timestamp.Format(auditlog.LogFormatDate),
+			UUID: msgId,
+		},
 		User: "test-user",
 		Data: "test-data",
 	}
@@ -225,7 +266,9 @@ func readSecurityEventRequestBody(t *testing.T, r *http.Request) model.SecurityE
 	return confChangeLog
 }
 
-func closeBody(t *testing.T, body io.ReadCloser) {
-	err := body.Close()
-	require.NoError(t, err)
+func fixAuditlogConfig() auditlog.Config {
+	return auditlog.Config{
+		ConfigPath:   configPath,
+		SecurityPath: securityPath,
+	}
 }

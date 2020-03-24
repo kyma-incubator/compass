@@ -34,17 +34,15 @@ type InitialisationStep struct {
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
 	directorClient    DirectorClient
-	directorURL       string
 	inputBuilder      input.CreatorForPlan
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan, dURL string) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:  process.NewOperationManager(os),
 		instanceStorage:   is,
 		provisionerClient: pc,
 		directorClient:    dc,
-		directorURL:       dURL,
 		inputBuilder:      b,
 	}
 }
@@ -81,28 +79,6 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 		log.Error("input creator does not exist")
 		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
 	}
-
-	log.Info("set overrides for 'core' and 'compass-runtime-agent' components")
-	creator.SetOverrides("core", []*gqlschema.ConfigEntryInput{
-		{
-			Key:   "console.managementPlane.url",
-			Value: s.directorURL,
-		},
-	})
-	creator.SetOverrides("compass-runtime-agent", []*gqlschema.ConfigEntryInput{
-		{
-			Key:   "managementPlane.url",
-			Value: s.directorURL,
-		},
-	})
-
-	// Can be remove when the compass will be enabled by default in Kyma. (after 1.12)
-	log.Info("set overrides to enable Packages support in SKR")
-	creator.AppendGlobalOverrides([]*gqlschema.ConfigEntryInput{
-		{
-			Key: "global.enableAPIPackages", Value: "true",
-		},
-	})
 
 	operation.InputCreator = creator
 	return operation, 0, nil

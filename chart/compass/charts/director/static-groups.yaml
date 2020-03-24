@@ -12,3 +12,5 @@
     - "label_definition:write"
     - "eventing:manage"
     - "tenant:read"
+    - "automatic_scenario_assignment:read"
+    - "automatic_scenario_assignment:write"

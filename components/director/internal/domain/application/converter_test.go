@@ -178,8 +178,8 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 }
 
 func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
-	allPropsInput := fixGQLApplicationUpdateInput("foo", "Lorem ipsum", testURL)
-	allPropsExpected := fixModelApplicationUpdateInput("foo", "Lorem ipsum", testURL)
+	allPropsInput := fixGQLApplicationUpdateInput("foo", "Lorem ipsum", testURL, graphql.ApplicationStatusConditionConnected)
+	allPropsExpected := fixModelApplicationUpdateInput("foo", "Lorem ipsum", testURL, model.ApplicationStatusConditionConnected)
 
 	// given
 	testCases := []struct {
@@ -362,7 +362,7 @@ func assertApplicationDefinition(t *testing.T, appModel *model.Application, enti
 		assert.Equal(t, appModel.Status.Condition, model.ApplicationStatusCondition(entity.StatusCondition))
 		assert.Equal(t, appModel.Status.Timestamp, entity.StatusTimestamp)
 	} else {
-		assert.Equal(t, string(model.ApplicationStatusConditionUnknown), string(entity.StatusCondition))
+		assert.Equal(t, string(model.ApplicationStatusConditionInitial), string(entity.StatusCondition))
 	}
 
 	testdb.AssertSqlNullStringEqualTo(t, entity.Description, appModel.Description)
