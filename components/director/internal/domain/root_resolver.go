@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 
@@ -65,6 +67,7 @@ type RootResolver struct {
 	tenant              *tenant.Resolver
 	mpPackage           *mp_package.Resolver
 	packageInstanceAuth *packageinstanceauth.Resolver
+	scenarioAssignment  *scenarioassignment.Resolver
 }
 
 func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, pairingAdaptersMapping map[string]string) *RootResolver {
@@ -130,6 +133,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
 	packageInstanceAuthSvc := packageinstanceauth.NewService(packageInstanceAuthRepo, uidSvc)
+	assignmentConv := scenarioassignment.NewConverter()
 
 	return &RootResolver{
 		app:                 application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc, packageSvc, packageConverter),
@@ -150,6 +154,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
 		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, packageConverter, packageInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
 		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageSvc, packageInstanceAuthConv),
+		scenarioAssignment:  scenarioassignment.NewResolver(transact, assignmentConv, scenarioassignment.NewService(scenarioassignment.NewRepository(assignmentConv))),
 	}
 }
 
@@ -447,7 +452,7 @@ func (r *mutationResolver) DeleteAutomaticScenarioAssignmentForSelector(ctx cont
 	return nil, errors.New("not implemented")
 }
 func (r *mutationResolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
-	return nil, errors.New("not implemented")
+	return r.scenarioAssignment.SetAutomaticScenarioAssignment(ctx, in)
 }
 
 type applicationResolver struct {

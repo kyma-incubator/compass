@@ -6,9 +6,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewConverter() *converter{
+func NewConverter() *converter {
 	return &converter{}
 }
+
 type converter struct{}
 
 func (c *converter) FromInputGraphql(in graphql.AutomaticScenarioAssignmentSetInput, tenant string) (model.AutomaticScenarioAssignment, error) {
@@ -39,5 +40,14 @@ func (c *converter) ToGraphQL(in model.AutomaticScenarioAssignment) graphql.Auto
 			Key:   in.Selector.Key,
 			Value: in.Selector.Value,
 		},
+	}
+}
+
+func (c *converter) ToEntity(in model.AutomaticScenarioAssignment) Entity {
+	return Entity{
+		TenantID:      in.Tenant,
+		Scenario:      in.ScenarioName,
+		SelectorKey:   in.Selector.Key,
+		SelectorValue: in.Selector.Value,
 	}
 }

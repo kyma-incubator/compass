@@ -2,23 +2,27 @@ package scenarioassignment
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/pkg/errors"
 )
 
+//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
 	FromInputGraphql(in graphql.AutomaticScenarioAssignmentSetInput, tenant string) (model.AutomaticScenarioAssignment, error)
 	ToGraphQL(in model.AutomaticScenarioAssignment) graphql.AutomaticScenarioAssignment
 }
 
+//go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
 }
 
-func NewResolver(transact persistence.Transactioner, converter Converter, svc Service) *resolver {
-	return &resolver{
+func NewResolver(transact persistence.Transactioner, converter Converter, svc Service) *Resolver {
+	return &Resolver{
 		transact:  transact,
 		converter: converter,
 		svc:       svc,
@@ -26,16 +30,16 @@ func NewResolver(transact persistence.Transactioner, converter Converter, svc Se
 
 }
 
-type resolver struct {
+type Resolver struct {
 	transact  persistence.Transactioner
 	converter Converter
 	svc       Service
 }
 
-func (r *resolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
+func (r *Resolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while beginning transaction")
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
@@ -47,16 +51,16 @@ func (r *resolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphq
 	}
 	convertedIn, err := r.converter.FromInputGraphql(in, tnt)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while converting to model")
 	}
 	out, err := r.svc.Create(ctx, convertedIn)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while creating Assignment")
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
 	gqlApp := r.converter.ToGraphQL(out)

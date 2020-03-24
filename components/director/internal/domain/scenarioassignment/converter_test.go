@@ -1,12 +1,13 @@
 package scenarioassignment_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestFromInputGraphql(t *testing.T) {
@@ -65,5 +66,25 @@ func TestToGraphQL(t *testing.T) {
 			Key:   "my-label",
 			Value: "my-value",
 		},
+	}, actual)
+}
+
+func TestToEntity(t *testing.T) {
+	// GIVEN
+	sut := scenarioassignment.NewConverter()
+	// WHEM
+	actual := sut.ToEntity(model.AutomaticScenarioAssignment{
+		ScenarioName: "scenario-A",
+		Tenant:       "tenant",
+		Selector: model.LabelSelector{
+			Key:   "my-label",
+			Value: "my-value",
+		},
+	})
+	assert.Equal(t, scenarioassignment.Entity{
+		Scenario:      "scenario-A",
+		TenantID:      "tenant",
+		SelectorKey:   "my-label",
+		SelectorValue: "my-value",
 	}, actual)
 }
