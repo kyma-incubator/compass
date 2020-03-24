@@ -25,7 +25,7 @@ type service struct {
 func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error) {
 	err := s.repo.Create(ctx, in)
 	if err != nil {
-		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while persisting assignment")
+		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while persisting Assignment")
 	}
 	return in, nil
 }

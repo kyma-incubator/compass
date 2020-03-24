@@ -35,6 +35,6 @@ func TestService_Create(t *testing.T) {
 		// WHEN
 		_, err := sut.Create(context.TODO(), fixModel())
 		// THEN
-		require.EqualError(t, err, "while persisting assignment: some error")
+		require.EqualError(t, err, "while persisting Assignment: some error")
 	})
 }
