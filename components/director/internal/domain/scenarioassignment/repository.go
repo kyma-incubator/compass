@@ -2,6 +2,11 @@ package scenarioassignment
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/pkg/errors"
+
+	"github.com/lib/pq"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -15,7 +20,8 @@ var scenarioColumn = "scenario"
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator:      repo.NewCreator(tableName, columns),
+		creator: repo.NewCreator(tableName, columns),
+		lister:  repo.NewLister(tableName, tenantColumn, columns),
 		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, columns),
 		conv:         conv,
 	}
@@ -24,7 +30,8 @@ func NewRepository(conv EntityConverter) *repository {
 type repository struct {
 	creator      repo.Creator
 	singleGetter repo.SingleGetter
-	conv         EntityConverter
+	lister  repo.Lister
+	conv    EntityConverter
 }
 
 //go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
@@ -38,6 +45,23 @@ func (r *repository) Create(ctx context.Context, model model.AutomaticScenarioAs
 	return r.creator.Create(ctx, entity)
 }
 
+func (r *repository) GetForSelector(ctx context.Context, in model.LabelSelector, tenant string) ([]*model.AutomaticScenarioAssignment, error) {
+	var out EntityCollection
+
+	conditionKey := fmt.Sprintf("selector_key = %s", pq.QuoteLiteral(in.Key))
+	conditionValue := fmt.Sprintf("selector_value = %s", pq.QuoteLiteral(in.Value))
+	if err := r.lister.List(ctx, tenant, &out, conditionKey, conditionValue); err != nil {
+		return nil, errors.Wrap(err, "while getting automatic scenario assignments from db")
+	}
+
+	var items []*model.AutomaticScenarioAssignment
+
+	for _, v := range out {
+		items = append(items, r.conv.FromEntity(v))
+	}
+
+	return items, nil
+}
 func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error) {
 	var ent Entity
 

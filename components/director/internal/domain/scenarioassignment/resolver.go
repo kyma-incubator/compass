@@ -20,6 +20,7 @@ type Converter interface {
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
+	GetForSelector(ctx context.Context, in model.LabelSelector, tenant string) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
 }
 
@@ -127,4 +128,26 @@ func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int,
 		Data:       data,
 		TotalCount: len(data),
 	}, nil
+}
+
+func (r *resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	dupa := model.LabelSelector{
+		Key:   in.Key,
+		Value: in.Value,
+	}
+
+	assignments, err := r.svc.GetForSelector(ctx, dupa, tnt)
 }
