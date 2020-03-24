@@ -114,6 +114,7 @@ CREATE TABLE kyma_component_config
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     component varchar(256) NOT NULL,
     namespace varchar(256) NOT NULL,
+    source_url varchar(256),
     configuration jsonb,
     kyma_config_id uuid NOT NULL,
     foreign key (kyma_config_id) REFERENCES kyma_config (id) ON DELETE CASCADE
