@@ -7,22 +7,20 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestFromInputGraphql(t *testing.T) {
 	sut := scenarioassignment.NewConverter()
 	t.Run("happy path", func(t *testing.T) {
 		// WHEN
-		actual, err := sut.FromInputGraphQL(graphql.AutomaticScenarioAssignmentSetInput{
+		actual := sut.FromInputGraphQL(graphql.AutomaticScenarioAssignmentSetInput{
 			ScenarioName: "scenario-A",
-			Selector: &graphql.LabelInput{
+			Selector: &graphql.LabelSelectorInput{
 				Key:   "my-label",
 				Value: "my-value",
 			},
 		}, "tenant")
 		// THEN
-		require.NoError(t, err)
 		assert.Equal(t, model.AutomaticScenarioAssignment{
 			Tenant:       "tenant",
 			ScenarioName: "scenario-A",
@@ -34,17 +32,6 @@ func TestFromInputGraphql(t *testing.T) {
 
 	})
 
-	t.Run("error on converting value which is not a string", func(t *testing.T) {
-		_, err := sut.FromInputGraphQL(graphql.AutomaticScenarioAssignmentSetInput{
-			ScenarioName: "scenario-A",
-			Selector: &graphql.LabelInput{
-				Key:   "my-label",
-				Value: 123,
-			},
-		}, "tenant")
-		// THEN
-		require.EqualError(t, err, "value has to be a string")
-	})
 }
 
 func TestToGraphQL(t *testing.T) {

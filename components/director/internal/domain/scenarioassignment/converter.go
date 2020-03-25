@@ -1,8 +1,6 @@
 package scenarioassignment
 
 import (
-	"errors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -13,24 +11,23 @@ func NewConverter() *converter {
 
 type converter struct{}
 
-func (c *converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, tenant string) (model.AutomaticScenarioAssignment, error) {
+func (c *converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, tenant string) model.AutomaticScenarioAssignment {
 	out := model.AutomaticScenarioAssignment{
 		ScenarioName: in.ScenarioName,
 		Tenant:       tenant,
 	}
 
 	if in.Selector != nil {
-		out.Selector = model.LabelSelector{
-			Key: in.Selector.Key,
-		}
-
-		strVal, ok := (in.Selector.Value).(string)
-		if !ok {
-			return model.AutomaticScenarioAssignment{}, errors.New("value has to be a string")
-		}
-		out.Selector.Value = strVal
+		out.Selector = c.LabelSelectorFromInput(*in.Selector)
 	}
-	return out, nil
+	return out
+}
+
+func (c *converter) LabelSelectorFromInput(in graphql.LabelSelectorInput) model.LabelSelector {
+	return model.LabelSelector{
+		Key:   in.Key,
+		Value: in.Value,
+	}
 }
 
 func (c *converter) ToGraphQL(in model.AutomaticScenarioAssignment) graphql.AutomaticScenarioAssignment {

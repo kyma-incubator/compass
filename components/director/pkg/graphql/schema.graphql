@@ -201,7 +201,7 @@ input AutomaticScenarioAssignmentSetInput {
 	"""
 	Runtimes and Applications which contain labels with equal key and value are matched
 	"""
-	selector: LabelInput!
+	selector: LabelSelectorInput!
 }
 
 input BasicCredentialDataInput {
@@ -282,6 +282,11 @@ input LabelFilter {
 input LabelInput {
 	key: String!
 	value: Any!
+}
+
+input LabelSelectorInput {
+	key: String!
+	value: String!
 }
 
 input OAuthCredentialDataInput {
@@ -859,7 +864,7 @@ type Query {
 	"""
 	tenants: [Tenant!]! @hasScopes(path: "graphql.query.tenants")
 	automaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.query.automaticScenarioAssignmentForScenario")
-	automaticScenarioAssignmentForSelector(selector: LabelInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentForSelector")
+	automaticScenarioAssignmentForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentForSelector")
 	automaticScenarioAssignments(first: Int = 100, after: PageCursor): AutomaticScenarioAssignmentPage @hasScopes(path: "graphql.query.automaticScenarioAssignments")
 }
 
@@ -1095,6 +1100,6 @@ type Mutation {
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
 	setAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.setAutomaticScenarioAssignment")
 	deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForScenario")
-	deleteAutomaticScenarioAssignmentForSelector(selector: LabelInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForSelector")
+	deleteAutomaticScenarioAssignmentForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForSelector")
 }
 

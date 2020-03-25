@@ -260,7 +260,7 @@ func (r *queryResolver) AutomaticScenarioAssignmentForScenario(ctx context.Conte
 	return nil, errors.New("not implemented")
 }
 
-func (r *queryResolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+func (r *queryResolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -448,7 +448,7 @@ func (r *mutationResolver) DeletePackage(ctx context.Context, id string) (*graph
 func (r *mutationResolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
 	return nil, errors.New("not implemented")
 }
-func (r *mutationResolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+func (r *mutationResolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
 	return nil, errors.New("not implemented")
 }
 func (r *mutationResolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {

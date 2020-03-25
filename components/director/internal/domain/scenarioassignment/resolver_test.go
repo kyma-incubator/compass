@@ -18,7 +18,7 @@ import (
 func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 	givenInput := graphql.AutomaticScenarioAssignmentSetInput{
 		ScenarioName: "scenario-A",
-		Selector: &graphql.LabelInput{
+		Selector: &graphql.LabelSelectorInput{
 			Key:   "key",
 			Value: "value",
 		},
@@ -68,18 +68,6 @@ func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 		_, err := sut.SetAutomaticScenarioAssignment(context.TODO(), graphql.AutomaticScenarioAssignmentSetInput{})
 		// THEN
 		assert.EqualError(t, err, "cannot read tenant from context")
-	})
-
-	t.Run("error on converting input to model", func(t *testing.T) {
-		tx, transact := txGen.ThatDoesntExpectCommit()
-		mockConverter := &automock.Converter{}
-		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter)
-		mockConverter.On("FromInputGraphQL", mock.Anything, mock.Anything).Return(model.AutomaticScenarioAssignment{}, errors.New("conversion error"))
-		sut := scenarioassignment.NewResolver(transact, mockConverter, nil)
-		// WHEN
-		_, err := sut.SetAutomaticScenarioAssignment(fixCtxWithTenant(), givenInput)
-		// THEN
-		assert.EqualError(t, err, "while converting to model: conversion error")
 	})
 
 	t.Run("error on creating assignment by service", func(t *testing.T) {
