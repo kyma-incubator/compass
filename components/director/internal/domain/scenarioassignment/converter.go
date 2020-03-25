@@ -1,9 +1,10 @@
 package scenarioassignment
 
 import (
+	"errors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/pkg/errors"
 )
 
 func NewConverter() *converter {
@@ -12,7 +13,7 @@ func NewConverter() *converter {
 
 type converter struct{}
 
-func (c *converter) FromInputGraphql(in graphql.AutomaticScenarioAssignmentSetInput, tenant string) (model.AutomaticScenarioAssignment, error) {
+func (c *converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, tenant string) (model.AutomaticScenarioAssignment, error) {
 	out := model.AutomaticScenarioAssignment{
 		ScenarioName: in.ScenarioName,
 		Tenant:       tenant,
@@ -24,11 +25,10 @@ func (c *converter) FromInputGraphql(in graphql.AutomaticScenarioAssignmentSetIn
 		}
 
 		strVal, ok := (in.Selector.Value).(string)
-		if ok {
-			out.Selector.Value = strVal
-		} else {
+		if !ok {
 			return model.AutomaticScenarioAssignment{}, errors.New("value has to be a string")
 		}
+		out.Selector.Value = strVal
 	}
 	return out, nil
 }

@@ -14,7 +14,7 @@ func TestFromInputGraphql(t *testing.T) {
 	sut := scenarioassignment.NewConverter()
 	t.Run("happy path", func(t *testing.T) {
 		// WHEN
-		actual, err := sut.FromInputGraphql(graphql.AutomaticScenarioAssignmentSetInput{
+		actual, err := sut.FromInputGraphQL(graphql.AutomaticScenarioAssignmentSetInput{
 			ScenarioName: "scenario-A",
 			Selector: &graphql.LabelInput{
 				Key:   "my-label",
@@ -35,7 +35,7 @@ func TestFromInputGraphql(t *testing.T) {
 	})
 
 	t.Run("error on converting value which is not a string", func(t *testing.T) {
-		_, err := sut.FromInputGraphql(graphql.AutomaticScenarioAssignmentSetInput{
+		_, err := sut.FromInputGraphQL(graphql.AutomaticScenarioAssignmentSetInput{
 			ScenarioName: "scenario-A",
 			Selector: &graphql.LabelInput{
 				Key:   "my-label",
