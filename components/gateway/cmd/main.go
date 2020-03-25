@@ -105,16 +105,14 @@ func initAuditLogsSvc(done chan bool) AuditogService {
 	err := envconfig.InitWithPrefix(&auditlogCfg, "APP")
 	exitOnError(err, "Error while loading auditlog cfg")
 
-	httpClient, tenant := initAuditlogClient(auditlogCfg)
-	uuidSvc := uuid.NewService()
-	timeSvc := &time.TimeService{}
+	httpClient, msgFactory := initAuditlogClient(auditlogCfg)
 
-	auditlogClient, err := auditlog.NewClient(auditlogCfg, httpClient, uuidSvc, timeSvc, tenant)
+	auditlogClient, err := auditlog.NewClient(auditlogCfg, httpClient)
 	exitOnError(err, "Error while creating auditlog client from cfg")
 
 	auditlogMsgChannel := make(chan auditlog.AuditlogMessage)
 
-	logger := auditlog.NewService(auditlogClient)
+	logger := auditlog.NewService(auditlogClient, msgFactory)
 	worker := auditlog.NewWorker(logger, auditlogMsgChannel, done)
 	go func() {
 		worker.Start()
@@ -124,13 +122,16 @@ func initAuditLogsSvc(done chan bool) AuditogService {
 	return auditlog.NewSink(auditlogMsgChannel)
 }
 
-func initAuditlogClient(cfg auditlog.Config) (auditlog.HttpClient, *string) {
+func initAuditlogClient(cfg auditlog.Config) (auditlog.HttpClient, *auditlog.MessageFactory, ) {
+	uuidSvc := uuid.NewService()
+	timeSvc := &time.TimeService{}
+
 	if cfg.AuthMode == auditlog.Basic {
 		var basicCfg auditlog.BasicAuthConfig
 		err := envconfig.InitWithPrefix(&basicCfg, "APP")
 		exitOnError(err, "while loading basic auth config from envs")
 
-		return auditlog.NewBasicAuthClient(basicCfg), &basicCfg.Tenant
+		return auditlog.NewBasicAuthClient(basicCfg), auditlog.BasicAuthMessageFactory("proxy", basicCfg.Tenant, uuidSvc, timeSvc)
 	} else if cfg.AuthMode == auditlog.OAuth {
 		ctx := context.Background()
 
@@ -145,9 +146,9 @@ func initAuditlogClient(cfg auditlog.Config) (auditlog.HttpClient, *string) {
 			AuthStyle:    oauth2.AuthStyleAutoDetect,
 		}
 
-		return cfg.Client(ctx), nil
+		return cfg.Client(ctx), auditlog.OAuthMessageFactory(uuidSvc, timeSvc)
 	} else {
-		log.Fatal(fmt.Sprintf("Invalid Auditlog Auth mode: %s", cfg.AuthMode))
+		log.Fatal(fmt.Sprintf("Cannot create http client. Invalid Auditlog Auth mode: %s", cfg.AuthMode))
 		return nil, nil
 	}
 }

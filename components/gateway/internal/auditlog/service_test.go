@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/mock"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog"
@@ -17,6 +18,9 @@ import (
 func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 	t.Run("Success mutation", func(t *testing.T) {
 		//GIVEN
+		factory := &automock.AuditlogMessageFactory{}
+		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+
 		request := fixRequest()
 		response := fixNoErrorResponse(t)
 		claims := fixClaims()
@@ -24,18 +28,21 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
-		auditlogSvc := auditlog.NewService(client)
+		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
 		err := auditlogSvc.Log(request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
-		client.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, client, factory)
 	})
 
 	t.Run("Unsuccessful mutation", func(t *testing.T) {
 		//GIVEN
+		factory := &automock.AuditlogMessageFactory{}
+		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+
 		request := fixRequest()
 		response := fixGraphqlMutationError(t)
 		claims := fixClaims()
@@ -43,18 +50,21 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
-		auditlogSvc := auditlog.NewService(client)
+		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
 		err := auditlogSvc.Log(request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
-		client.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, client, factory)
 	})
 
 	t.Run("Success mutation with read error", func(t *testing.T) {
 		//GIVEN
+		factory := &automock.AuditlogMessageFactory{}
+		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+
 		request := fixRequestWithInvalidQuery()
 		response := fixResponseReadError(t)
 		claims := fixClaims()
@@ -62,18 +72,21 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
-		auditlogSvc := auditlog.NewService(client)
+		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
 		err := auditlogSvc.Log(request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
-		client.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, client, factory)
 	})
 
 	t.Run("Success mutation with multiple read error", func(t *testing.T) {
 		//GIVEN
+		factory := &automock.AuditlogMessageFactory{}
+		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+
 		request := fixRequest()
 		response := fixResponseMultipleError(t)
 		claims := fixClaims()
@@ -81,18 +94,21 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
-		auditlogSvc := auditlog.NewService(client)
+		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
 		err := auditlogSvc.Log(request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
-		client.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, client, factory)
 	})
 
 	t.Run("Unsuccessful mutation wit read error and mutation error", func(t *testing.T) {
 		//GIVEN
+		factory := &automock.AuditlogMessageFactory{}
+		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+
 		request := fixRequest()
 		response := fixGraphqlMultiErrorWithMutation(t)
 		claims := fixClaims()
@@ -100,18 +116,21 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
-		auditlogSvc := auditlog.NewService(client)
+		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
 		err := auditlogSvc.Log(request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
-		client.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, client, factory)
 	})
 
 	t.Run("Failed query with error", func(t *testing.T) {
 		//GIVEN
+		factory := &automock.AuditlogMessageFactory{}
+		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+
 		request := fixRequestWithQuery()
 		response := fixResponseReadError(t)
 		claims := fixClaims()
@@ -119,18 +138,21 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
-		auditlogSvc := auditlog.NewService(client)
+		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
 		err := auditlogSvc.Log(request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
-		client.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, client, factory)
 	})
 
 	t.Run("Success mutation with payload as json with read errors", func(t *testing.T) {
 		//GIVEN
+		factory := &automock.AuditlogMessageFactory{}
+		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+
 		request := fixJsonRequest()
 		response := fixResponseReadError(t)
 		claims := fixClaims()
@@ -138,18 +160,21 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
-		auditlogSvc := auditlog.NewService(client)
+		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
 		err := auditlogSvc.Log(request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
-		client.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, client, factory)
 	})
 
 	t.Run("Security event - insufficient scope", func(t *testing.T) {
 		//GIVEN
+		factory := &automock.AuditlogMessageFactory{}
+		factory.On("CreateSecurityEvent").Return(fixFactorySecurityEvent())
+
 		request := fixRequest()
 		graphqlResponse := FixResponseUnsufficientScopes()
 		response, err := json.Marshal(&graphqlResponse)
@@ -157,22 +182,26 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 		responseErr, err := json.Marshal(graphqlResponse.Errors)
 		require.NoError(t, err)
 		claims := fixClaims()
-		log := model.SecurityEvent{Data: string(responseErr), User: "proxy"}
+		log := fixFactorySecurityEvent()
+		log.Data = string(responseErr)
 
 		client := &automock.AuditlogClient{}
 		client.On("LogSecurityEvent", log).Return(nil)
-		auditlogSvc := auditlog.NewService(client)
+		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
 		err = auditlogSvc.Log(request, string(response), claims)
 
 		//THEN
 		require.NoError(t, err)
-		client.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, client, factory)
 	})
 
 	t.Run("Auditlog client return error", func(t *testing.T) {
 		//GIVEN
+		factory := &automock.AuditlogMessageFactory{}
+		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+
 		testError := errors.New("test-error")
 		request := fixRequest()
 		response := fixNoErrorResponse(t)
@@ -181,7 +210,7 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(testError)
-		auditlogSvc := auditlog.NewService(client)
+		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
 		err := auditlogSvc.Log(request, response, claims)
@@ -189,7 +218,7 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 		//THEN
 		require.Error(t, err)
 		assert.Error(t, err, fmt.Sprintf("while sending to auditlog: %s", testError.Error()))
-		client.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, client, factory)
 	})
 
 }
@@ -325,24 +354,6 @@ func fixResponseReadError(t *testing.T) string {
 	output, err := json.Marshal(&response)
 	require.NoError(t, err)
 	return string(output)
-}
-
-func fixLogSuccess(claims proxy.Claims, request, response string) model.ConfigurationChange {
-	return model.ConfigurationChange{
-		User: "proxy",
-		Object: model.Object{
-			ID: map[string]string{
-				"name":           "Config Change",
-				"externalTenant": claims.Tenant,
-				"apiConsumer":    claims.ConsumerType,
-				"consumerID":     claims.ConsumerID,
-			},
-			Type: "",
-		},
-		Attributes: []model.Attribute{
-			{Name: "request", Old: "", New: request},
-			{Name: "response", Old: "", New: response}},
-	}
 }
 
 func fixResponseMultipleError(t *testing.T) string {

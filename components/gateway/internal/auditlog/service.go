@@ -48,12 +48,19 @@ type AuditlogClient interface {
 	LogSecurityEvent(event model.SecurityEvent) error
 }
 
-type Service struct {
-	client AuditlogClient
+//go:generate mockery -name=AuditlogMessageFactory -output=automock -outpkg=automock -case=underscore
+type AuditlogMessageFactory interface {
+	CreateConfigurationChange() model.ConfigurationChange
+	CreateSecurityEvent() model.SecurityEvent
 }
 
-func NewService(client AuditlogClient) *Service {
-	return &Service{client: client}
+type Service struct {
+	client     AuditlogClient
+	msgFactory AuditlogMessageFactory
+}
+
+func NewService(client AuditlogClient, msgFactory AuditlogMessageFactory) *Service {
+	return &Service{client: client, msgFactory: msgFactory}
 }
 
 func (svc *Service) Log(request, response string, claims proxy.Claims) error {
@@ -79,11 +86,10 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 		if err != nil {
 			return errors.Wrap(err, "while marshalling graphql err")
 		}
+		log := svc.msgFactory.CreateSecurityEvent()
+		log.Data = string(data)
+		err = svc.client.LogSecurityEvent(log)
 
-		err = svc.client.LogSecurityEvent(model.SecurityEvent{
-			User: "proxy",
-			Data: string(data),
-		})
 		return errors.Wrap(err, "while sending security event to auditlog")
 	}
 
@@ -123,20 +129,18 @@ func (svc *Service) parseResponse(response string) (model.GraphqlResponse, error
 }
 
 func (svc *Service) createConfigChangeLog(claims proxy.Claims, request string) model.ConfigurationChange {
-	return model.ConfigurationChange{
-		User: "proxy",
-		Object: model.Object{
-			ID: map[string]string{
-				"name":           "Config Change",
-				"externalTenant": claims.Tenant,
-				"apiConsumer":    claims.ConsumerType,
-				"consumerID":     claims.ConsumerID,
-			},
-			Type: "",
-		},
-		Attributes: []model.Attribute{
-			{Name: "request", Old: "", New: request}},
-	}
+	msg := svc.msgFactory.CreateConfigurationChange()
+	msg.Object = model.Object{
+		ID: map[string]string{
+			"name":           "Config Change",
+			"externalTenant": claims.Tenant,
+			"apiConsumer":    claims.ConsumerType,
+			"consumerID":     claims.ConsumerID,
+		}}
+	msg.Attributes = []model.Attribute{
+		{Name: "request", Old: "", New: request}}
+
+	return msg
 }
 
 func (svc *Service) hasInsufficientScopeError(errors []model.ErrorMessage) bool {
