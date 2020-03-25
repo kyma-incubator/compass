@@ -6,6 +6,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 
@@ -19,6 +20,7 @@ type Repository interface {
 	GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 	DeleteForSelector(ctx context.Context, tenantID string, selector model.LabelSelector) error
+	DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error
 }
 
 //go:generate mockery -name=ScenariosDefService -output=automock -outpkg=automock -case=underscore
@@ -99,6 +101,7 @@ func (s *service) GetForSelector(ctx context.Context, in model.LabelSelector) ([
 	}
 	return assignments, nil
 }
+
 func (s *service) GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -134,6 +137,21 @@ func (s *service) DeleteForSelector(ctx context.Context, selector model.LabelSel
 	err = s.repo.DeleteForSelector(ctx, tenantID, selector)
 	if err != nil {
 		return errors.Wrap(err, "while deleting the Assignments")
+	}
+
+	return nil
+}
+
+// DeleteForScenarioName deletes the assignment for a given scenario in a scope of a tenant
+func (s *service) DeleteForScenarioName(ctx context.Context, scenarioName string) error {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while loading tenant from context")
+	}
+
+	err = s.repo.DeleteForScenarioName(ctx, tenantID, scenarioName)
+	if err != nil {
+		return errors.Wrap(err, "while deleting the Assignment")
 	}
 
 	return nil

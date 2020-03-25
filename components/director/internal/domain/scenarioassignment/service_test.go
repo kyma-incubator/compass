@@ -29,8 +29,10 @@ func TestService_Create(t *testing.T) {
 		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{scenarioName})
 		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc)
 		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc)
+
 		// WHEN
 		actual, err := sut.Create(fixCtxWithTenant(), fixModel())
+
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, fixModel(), actual)
@@ -38,9 +40,12 @@ func TestService_Create(t *testing.T) {
 	})
 
 	t.Run("error on missing tenant in context", func(t *testing.T) {
+		// GIVEN
 		sut := scenarioassignment.NewService(nil, nil)
+
 		// WHEN
 		_, err := sut.Create(context.TODO(), fixModel())
+
 		// THEN
 		assert.EqualError(t, err, "cannot read tenant from context")
 	})
@@ -48,6 +53,7 @@ func TestService_Create(t *testing.T) {
 	t.Run("returns error when scenario already has an assignment", func(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
+
 		mockRepo.On("Create", mock.Anything, fixModel()).Return(apperrors.NewNotUniqueError(""))
 		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{scenarioName})
 
@@ -64,8 +70,10 @@ func TestService_Create(t *testing.T) {
 		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{"completely-different-scenario"})
 		defer mock.AssertExpectationsForObjects(t, mockScenarioDefSvc)
 		sut := scenarioassignment.NewService(nil, mockScenarioDefSvc)
+
 		// WHEN
 		_, err := sut.Create(fixCtxWithTenant(), fixModel())
+
 		// THEN
 		require.EqualError(t, err, "scenario `scenario-A` does not exist")
 	})
@@ -81,6 +89,7 @@ func TestService_Create(t *testing.T) {
 
 		// WHEN
 		_, err := sut.Create(fixCtxWithTenant(), fixModel())
+
 		// THEN
 		require.EqualError(t, err, "while persisting Assignment: some error")
 	})
@@ -119,8 +128,10 @@ func TestService_GetByScenarioName(t *testing.T) {
 		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("GetForScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(fixModel(), nil).Once()
 		sut := scenarioassignment.NewService(mockRepo, nil)
+
 		// WHEN
 		actual, err := sut.GetForScenarioName(fixCtxWithTenant(), scenarioName)
+
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, fixModel(), actual)
@@ -128,11 +139,14 @@ func TestService_GetByScenarioName(t *testing.T) {
 	})
 
 	t.Run("error on missing tenant in context", func(t *testing.T) {
+		// GIVEN
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
 		sut := scenarioassignment.NewService(mockRepo, nil)
+
 		// WHEN
 		_, err := sut.GetForScenarioName(context.TODO(), scenarioName)
+
 		// THEN
 		assert.EqualError(t, err, "cannot read tenant from context")
 	})
@@ -143,8 +157,10 @@ func TestService_GetByScenarioName(t *testing.T) {
 		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("GetForScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(model.AutomaticScenarioAssignment{}, fixError()).Once()
 		sut := scenarioassignment.NewService(mockRepo, nil)
+
 		// WHEN
 		_, err := sut.GetForScenarioName(fixCtxWithTenant(), scenarioName)
+
 		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while getting Assignment: %s", errMsg))
 	})
@@ -160,12 +176,13 @@ func TestService_GetForSelector(t *testing.T) {
 		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("GetForSelector", mock.Anything, selector, tenantID).Return(result, nil).Once()
 		sut := scenarioassignment.NewService(mockRepo, nil)
+
 		// WHEN
 		actual, err := sut.GetForSelector(fixCtxWithTenant(), selector)
+
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, result, actual)
-
 	})
 
 	t.Run("returns error on error from repository", func(t *testing.T) {
@@ -175,8 +192,10 @@ func TestService_GetForSelector(t *testing.T) {
 		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("GetForSelector", mock.Anything, selector, tenantID).Return(nil, fixError()).Once()
 		sut := scenarioassignment.NewService(mockRepo, nil)
+
 		// WHEN
 		actual, err := sut.GetForSelector(fixCtxWithTenant(), selector)
+
 		// THEN
 		require.EqualError(t, err, "while getting the assignments: some error")
 		require.Nil(t, actual)
@@ -185,6 +204,7 @@ func TestService_GetForSelector(t *testing.T) {
 	t.Run("returns error when no tenant in context", func(t *testing.T) {
 		sut := scenarioassignment.NewService(nil, nil)
 		_, err := sut.GetForSelector(context.TODO(), fixLabelSelector())
+
 		require.EqualError(t, err, "cannot read tenant from context")
 	})
 }
@@ -319,6 +339,49 @@ func TestService_DeleteForSelector(t *testing.T) {
 		sut := scenarioassignment.NewService(nil, nil)
 		err := sut.DeleteForSelector(context.TODO(), selector)
 		require.EqualError(t, err, "cannot read tenant from context")
+	})
+}
+
+func TestService_DeleteForScenarioName(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// GIVEN
+		mockRepo := &automock.Repository{}
+		defer mockRepo.AssertExpectations(t)
+		mockRepo.On("DeleteForScenarioName", fixCtxWithTenant(), tenantID, scenarioName).Return(nil)
+		svc := scenarioassignment.NewService(mockRepo, nil)
+
+		// WHEN
+		err := svc.DeleteForScenarioName(fixCtxWithTenant(), scenarioName)
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("error on missing tenant in context", func(t *testing.T) {
+		// GIVEN
+		mockRepo := &automock.Repository{}
+		defer mockRepo.AssertExpectations(t)
+		svc := scenarioassignment.NewService(mockRepo, nil)
+
+		// WHEN
+		err := svc.DeleteForScenarioName(context.TODO(), scenarioName)
+
+		// THEN
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
+	})
+
+	t.Run("returns error on error from repository", func(t *testing.T) {
+		// GIVEN
+		mockRepo := &automock.Repository{}
+		defer mockRepo.AssertExpectations(t)
+		mockRepo.On("DeleteForScenarioName", fixCtxWithTenant(), tenantID, scenarioName).Return(fixError())
+		svc := scenarioassignment.NewService(mockRepo, nil)
+
+		// WHEN
+		err := svc.DeleteForScenarioName(fixCtxWithTenant(), scenarioName)
+
+		// THEN
+		require.EqualError(t, err, fmt.Sprintf("while deleting Assignment: %s", errMsg))
 	})
 }
 

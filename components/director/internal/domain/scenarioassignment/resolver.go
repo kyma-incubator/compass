@@ -26,6 +26,7 @@ type Service interface {
 	GetForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
 	DeleteForSelector(ctx context.Context, selector model.LabelSelector) error
+	DeleteForScenarioName(ctx context.Context, scenarioName string) error
 }
 
 // TODO: Change order of params: Service before Converter
@@ -93,10 +94,6 @@ func (r *Resolver) GetAutomaticScenarioAssignmentForScenarioName(ctx context.Con
 	return &assignment, nil
 }
 
-func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
-	return mock.FixAssignmentForScenario(scenarioName), nil
-}
-
 func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -119,6 +116,16 @@ func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, i
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 	return gqlAssignments, nil
+}
+
+func (r *Resolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+	sel := &graphql.Label{Key: selector.Key, Value: selector.Value}
+	data := []*graphql.AutomaticScenarioAssignment{
+		mock.FixAssignmentForScenarioWithSelector("DEFAULT", sel),
+		mock.FixAssignmentForScenarioWithSelector("Foo", sel),
+	}
+
+	return data, nil
 }
 
 func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
@@ -188,4 +195,33 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Cont
 	}
 
 	return r.converter.MultipleToGraphQL(assignments), nil
+}
+
+func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "while beginning transaction")
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	model, err := r.svc.GetForScenarioName(ctx, scenarioName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting the Assignment for scenario [name=%s]", scenarioName)
+	}
+
+	err = r.svc.DeleteForScenarioName(ctx, scenarioName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while deleting the Assignment for scenario [name=%s]", scenarioName)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
+	}
+
+	gql := r.converter.ToGraphQL(model)
+
+	return &gql, nil
 }

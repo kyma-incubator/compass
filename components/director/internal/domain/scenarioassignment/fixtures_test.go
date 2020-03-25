@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 const (
@@ -22,10 +23,13 @@ const (
 )
 
 func fixModel() model.AutomaticScenarioAssignment {
-	return model.AutomaticScenarioAssignment{
+	return fixModelWithScenarioName(scenarioName)
+}
+
+func fixGQLAutomaticScenarioAssignment() graphql.AutomaticScenarioAssignment {
+	return graphql.AutomaticScenarioAssignment{
 		ScenarioName: scenarioName,
-		Tenant:       tenantID,
-		Selector: model.LabelSelector{
+		Selector: &graphql.Label{
 			Key:   "key",
 			Value: "value",
 		},
