@@ -2,7 +2,6 @@ package domain
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
@@ -257,15 +256,15 @@ func (r *queryResolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) 
 }
 
 func (r *queryResolver) AutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
-	return nil, errors.New("not implemented")
+	return r.scenarioAssignment.AutomaticScenarioAssignmentForScenario(ctx, scenarioName)
 }
 
 func (r *queryResolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	return nil, errors.New("not implemented")
+	return r.scenarioAssignment.AutomaticScenarioAssignmentForSelector(ctx, selector)
 }
 
 func (r *queryResolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
-	return nil, errors.New("not implemented")
+	return r.scenarioAssignment.AutomaticScenarioAssignments(ctx, first, after)
 }
 
 type mutationResolver struct {
@@ -446,10 +445,10 @@ func (r *mutationResolver) DeletePackage(ctx context.Context, id string) (*graph
 }
 
 func (r *mutationResolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
-	return nil, errors.New("not implemented")
+	return r.scenarioAssignment.DeleteAutomaticScenarioAssignmentForScenario(ctx, scenarioName)
 }
 func (r *mutationResolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	return nil, errors.New("not implemented")
+	return r.scenarioAssignment.DeleteAutomaticScenarioAssignmentForSelector(ctx, selector)
 }
 func (r *mutationResolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
 	return r.scenarioAssignment.SetAutomaticScenarioAssignment(ctx, in)
