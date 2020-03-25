@@ -22,7 +22,7 @@ func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 			Key:   "key",
 			Value: "value",
 		},
-	}error on converting input to model
+	}
 	expectedOutput := graphql.AutomaticScenarioAssignment{
 		ScenarioName: "scenario-A",
 		Selector: &graphql.Label{
