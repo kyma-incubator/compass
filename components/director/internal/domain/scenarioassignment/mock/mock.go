@@ -7,7 +7,7 @@ func FixAssignmentForScenario(scenarioName string) *graphql.AutomaticScenarioAss
 		Key:   "selector",
 		Value: "dummy-value",
 	}
-	return FixAssignmentForScenarioWithSelector(scenarioName, &selector)
+	return FixAssignmentForScenarioWithSelector(scenarioName, selector)
 }
 
 func FixAssignmentForScenarioWithSelector(scenarioName string, selector *graphql.Label) *graphql.AutomaticScenarioAssignment {
