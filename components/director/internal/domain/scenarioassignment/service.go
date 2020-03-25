@@ -14,6 +14,7 @@ type Repository interface {
 	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
 	GetForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error)
+	DeleteForSelector(ctx context.Context, tenantID string, selector model.LabelSelector) error
 }
 
 func NewService(repo Repository) *service {
@@ -64,4 +65,18 @@ func (s *service) GetForScenarioName(ctx context.Context, scenarioName string) (
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while getting Assignment")
 	}
 	return sa, nil
+}
+
+func (s *service) DeleteForSelector(ctx context.Context, selector model.LabelSelector) error {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = s.repo.DeleteForSelector(ctx, tenantID, selector)
+	if err != nil {
+		return errors.Wrap(err, "while deleting the Assignments")
+	}
+
+	return nil
 }

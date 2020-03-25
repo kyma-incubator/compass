@@ -28,6 +28,7 @@ func NewRepository(conv EntityConverter) *repository {
 		creator:      repo.NewCreator(tableName, columns),
 		lister:       repo.NewLister(tableName, tenantColumn, columns),
 		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, columns),
+		deleter:      repo.NewDeleter(tableName, tenantColumn),
 		conv:         conv,
 	}
 }
@@ -36,6 +37,7 @@ type repository struct {
 	creator      repo.Creator
 	singleGetter repo.SingleGetter
 	lister       repo.Lister
+	deleter      repo.Deleter
 	conv         EntityConverter
 }
 
@@ -83,4 +85,9 @@ func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioN
 	assignmentModel := r.conv.FromEntity(ent)
 
 	return assignmentModel, nil
+}
+
+func (r *repository) DeleteForSelector(ctx context.Context, tenantID string, selector model.LabelSelector) error {
+	conditions := repo.Conditions{repo.NewEqualCondition(selectorKeyColumn, selector.Key), repo.NewEqualCondition(selectorValueColumn, selector.Value)}
+	return r.deleter.DeleteMany(ctx, tenantID, conditions)
 }
