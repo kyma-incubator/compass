@@ -2,6 +2,7 @@ package scenarioassignment_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -26,7 +27,7 @@ func TestRepositoryCreate(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.automatic_scenario_assignments ( scenario, tenant_id, selector_key, selector_value ) VALUES ( ?, ?, ?, ? )`)).
-			WithArgs("scenario-A", "tenant", "key", "value").
+			WithArgs(scenarioName, tenantID, "key", "value").
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -58,6 +59,62 @@ func TestRepositoryCreate(t *testing.T) {
 		err := repo.Create(ctx, fixModel())
 
 		// then
-		require.EqualError(t, err, "while inserting row to 'public.automatic_scenario_assignments' table: some error")
+		require.EqualError(t, err, fmt.Sprintf("while inserting row to 'public.automatic_scenario_assignments' table: %s", errMsg))
+	})
+}
+
+const tableName string = `public.automatic_scenario_assignments`
+
+var columns = []string{"scenario", tenantColumn, "selector_key", "selector_value"}
+var tenantColumn = "tenant_id"
+
+func TestRepository_GetByScenarioName(t *testing.T) {
+	ent := scenarioassignment.Entity{
+		Scenario:      scenarioName,
+		TenantID:      tenantID,
+		SelectorKey:   "key",
+		SelectorValue: "value",
+	}
+
+	selectQuery := `SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE tenant_id = \$1 AND scenario = \$2`
+
+	t.Run("Success", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		rows := sqlmock.NewRows(columns).
+			AddRow(fixAutomaticScenarioAssignmentRow(scenarioName, tenantID)...)
+
+		dbMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, scenarioName).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		convMock := &automock.EntityConverter{}
+		convMock.On("FromEntity", ent).Return(fixModel()).Once()
+		defer convMock.AssertExpectations(t)
+		pgRepository := scenarioassignment.NewRepository(convMock)
+		// WHEN
+		_, err := pgRepository.GetByScenarioName(ctx, tenantID, scenarioName)
+		//THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("DB error", func(t *testing.T) {
+		// given
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, scenarioName).
+			WillReturnError(fixError())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := scenarioassignment.NewRepository(nil)
+
+		// when
+		_, err := repo.GetByScenarioName(ctx, tenantID, scenarioName)
+
+		// then
+		require.EqualError(t, err, fmt.Sprintf("while getting object from DB: %s", errMsg))
 	})
 }

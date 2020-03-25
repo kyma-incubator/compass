@@ -48,3 +48,14 @@ func (c *converter) ToEntity(in model.AutomaticScenarioAssignment) Entity {
 		SelectorValue: in.Selector.Value,
 	}
 }
+
+func (c *converter) FromEntity(in Entity) model.AutomaticScenarioAssignment {
+	return model.AutomaticScenarioAssignment{
+		ScenarioName: in.Scenario,
+		Tenant:       in.TenantID,
+		Selector: model.LabelSelector{
+			Key:   in.SelectorKey,
+			Value: in.SelectorValue,
+		},
+	}
+}

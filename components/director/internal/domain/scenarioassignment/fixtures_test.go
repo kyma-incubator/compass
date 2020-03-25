@@ -2,6 +2,7 @@ package scenarioassignment_test
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -9,10 +10,16 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+const (
+	tenantID     = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	scenarioName = "scenario-A"
+	errMsg       = "some error"
+)
+
 func fixModel() model.AutomaticScenarioAssignment {
 	return model.AutomaticScenarioAssignment{
-		ScenarioName: "scenario-A",
-		Tenant:       "tenant",
+		ScenarioName: scenarioName,
+		Tenant:       tenantID,
 		Selector: model.LabelSelector{
 			Key:   "key",
 			Value: "value",
@@ -22,17 +29,21 @@ func fixModel() model.AutomaticScenarioAssignment {
 
 func fixEntity() scenarioassignment.Entity {
 	return scenarioassignment.Entity{
-		Scenario:      "scenario-A",
-		TenantID:      "tenant",
+		Scenario:      scenarioName,
+		TenantID:      tenantID,
 		SelectorKey:   "key",
 		SelectorValue: "value",
 	}
 }
 
 func fixError() error {
-	return errors.New("some error")
+	return errors.New(errMsg)
 }
 
 func fixCtxWithTenant() context.Context {
-	return tenant.SaveToContext(context.TODO(), "tenant")
+	return tenant.SaveToContext(context.TODO(), tenantID)
+}
+
+func fixAutomaticScenarioAssignmentRow(scenarioName, tnt string) []driver.Value {
+	return []driver.Value{scenarioName, tnt, "key", "value"}
 }

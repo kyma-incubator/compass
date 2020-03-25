@@ -2,7 +2,10 @@ package scenarioassignment_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment/automock"
@@ -16,25 +19,73 @@ func TestService_Create(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("Create", mock.Anything, fixModel()).Return(nil)
+		mockRepo.On("Create", fixCtxWithTenant(), fixModel()).Return(nil)
 		sut := scenarioassignment.NewService(mockRepo)
 		// WHEN
-		actual, err := sut.Create(context.TODO(), fixModel())
+		actual, err := sut.Create(fixCtxWithTenant(), fixModel())
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, fixModel(), actual)
 
 	})
 
-	t.Run("returns error on error from repository", func(t *testing.T) {
-		// GIVEN
+	t.Run("error on missing tenant in context", func(t *testing.T) {
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("Create", mock.Anything, fixModel()).Return(fixError())
 		sut := scenarioassignment.NewService(mockRepo)
 		// WHEN
 		_, err := sut.Create(context.TODO(), fixModel())
 		// THEN
-		require.EqualError(t, err, "while persisting Assignment: some error")
+		assert.EqualError(t, err, "cannot read tenant from context")
+	})
+
+	t.Run("returns error on error from repository", func(t *testing.T) {
+		// GIVEN
+		mockRepo := &automock.Repository{}
+		defer mockRepo.AssertExpectations(t)
+		mockRepo.On("Create", fixCtxWithTenant(), fixModel()).Return(fixError())
+		sut := scenarioassignment.NewService(mockRepo)
+		// WHEN
+		_, err := sut.Create(fixCtxWithTenant(), fixModel())
+		// THEN
+		require.EqualError(t, err, fmt.Sprintf("while persisting Assignment: %s", fixError().Error()))
+	})
+}
+
+func TestService_GetByScenarioName(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// GIVEN
+		mockRepo := &automock.Repository{}
+		defer mockRepo.AssertExpectations(t)
+		mockRepo.On("GetByScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(fixModel(), nil)
+		sut := scenarioassignment.NewService(mockRepo)
+		// WHEN
+		actual, err := sut.GetByScenarioName(fixCtxWithTenant(), scenarioName)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, fixModel(), actual)
+
+	})
+
+	t.Run("error on missing tenant in context", func(t *testing.T) {
+		mockRepo := &automock.Repository{}
+		defer mockRepo.AssertExpectations(t)
+		sut := scenarioassignment.NewService(mockRepo)
+		// WHEN
+		_, err := sut.GetByScenarioName(context.TODO(), scenarioName)
+		// THEN
+		assert.EqualError(t, err, "cannot read tenant from context")
+	})
+
+	t.Run("returns error on error from repository", func(t *testing.T) {
+		// GIVEN
+		mockRepo := &automock.Repository{}
+		defer mockRepo.AssertExpectations(t)
+		mockRepo.On("GetByScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(model.AutomaticScenarioAssignment{}, fixError())
+		sut := scenarioassignment.NewService(mockRepo)
+		// WHEN
+		_, err := sut.GetByScenarioName(fixCtxWithTenant(), scenarioName)
+		// THEN
+		require.EqualError(t, err, fmt.Sprintf("while getting Assignment: %s", errMsg))
 	})
 }

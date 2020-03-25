@@ -133,7 +133,6 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
 	packageInstanceAuthSvc := packageinstanceauth.NewService(packageInstanceAuthRepo, uidSvc)
-	assignmentConv := scenarioassignment.NewConverter()
 
 	return &RootResolver{
 		app:                 application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc, packageSvc, packageConverter),
@@ -257,7 +256,7 @@ func (r *queryResolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) 
 }
 
 func (r *queryResolver) AutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
-	return r.scenarioAssignment.AutomaticScenarioAssignmentForScenario(ctx, scenarioName)
+	return r.scenarioAssignment.GetAutomaticScenarioAssignmentByScenarioName(ctx, scenarioName)
 }
 
 func (r *queryResolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
