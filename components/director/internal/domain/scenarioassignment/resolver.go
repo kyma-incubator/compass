@@ -15,6 +15,7 @@ import (
 type Converter interface {
 	FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput) model.AutomaticScenarioAssignment
 	ToGraphQL(in model.AutomaticScenarioAssignment) graphql.AutomaticScenarioAssignment
+	LabelSelectorFromInput(in graphql.LabelSelectorInput) model.LabelSelector
 }
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
@@ -30,7 +31,6 @@ func NewResolver(transact persistence.Transactioner, converter Converter, svc Se
 		converter: converter,
 		svc:       svc,
 	}
-
 }
 
 type Resolver struct {
@@ -144,12 +144,9 @@ func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, i
 		return nil, err
 	}
 
-	dupa := model.LabelSelector{
-		Key:   in.Key,
-		Value: in.Value,
-	}
+	modelInput := r.converter.LabelSelectorFromInput(in)
 
-	assignments, err := r.svc.GetForSelector(ctx, dupa, tnt)
+	assignments, err := r.svc.GetForSelector(ctx, modelInput, tnt)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +160,7 @@ func (r *Resolver) multipleToGraphql(assignments []*model.AutomaticScenarioAssig
 	var gqlAssignments []*graphql.AutomaticScenarioAssignment
 
 	for _, v := range assignments {
-		assignment := r.converter.ToGraphQL(v)
+		assignment := r.converter.ToGraphQL(*v)
 		gqlAssignments = append(gqlAssignments, &assignment)
 	}
 	return gqlAssignments

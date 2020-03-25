@@ -54,6 +54,21 @@ func TestToGraphQL(t *testing.T) {
 	}, actual)
 }
 
+func TestLabelSelectorFromInput(t *testing.T) {
+	//GIVEN
+	sut := scenarioassignment.NewConverter()
+	//WHEN
+	actual := sut.LabelSelectorFromInput(graphql.LabelSelectorInput{
+		Key:   "test-key",
+		Value: "test-value",
+	})
+	//THEN
+	assert.Equal(t, model.LabelSelector{
+		Key:   "test-key",
+		Value: "test-value",
+	}, actual)
+}
+
 func TestToEntity(t *testing.T) {
 	// GIVEN
 	sut := scenarioassignment.NewConverter()

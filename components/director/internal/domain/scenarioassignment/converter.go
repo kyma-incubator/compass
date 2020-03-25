@@ -39,6 +39,13 @@ func (c *converter) ToGraphQL(in model.AutomaticScenarioAssignment) graphql.Auto
 	}
 }
 
+func (c *converter) LabelSelectorFromInput(in graphql.LabelSelectorInput) model.LabelSelector {
+	return model.LabelSelector{
+		Key:   in.Key,
+		Value: in.Value,
+	}
+}
+
 func (c *converter) ToEntity(in model.AutomaticScenarioAssignment) Entity {
 	return Entity{
 		TenantID:      in.Tenant,
