@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/automock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -27,10 +26,7 @@ const (
 
 func TestClient_LogConfigurationChange(t *testing.T) {
 	//GIVEN
-	msgID := uuid.New().String()
-	timestamp := time.Date(2020, 3, 17, 12, 37, 44, 1093, time.FixedZone("test", 3600))
-	configChangeLog := fixConfigChangeLog(msgID, timestamp)
-	expectedLog := fixConfigChangeLog(msgID, timestamp)
+	configChangeLog := fixFilledConfigChangeLog()
 
 	cfg := auditlog.Config{
 		ConfigPath:   configPath,
@@ -41,7 +37,7 @@ func TestClient_LogConfigurationChange(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, r.URL.Path, configPath)
 			inputLog := readConfigChangeRequestBody(t, r)
-			assert.Equal(t, expectedLog, inputLog)
+			assert.Equal(t, configChangeLog, inputLog)
 			w.WriteHeader(http.StatusCreated)
 		}))
 		defer ts.Close()
@@ -62,7 +58,7 @@ func TestClient_LogConfigurationChange(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, r.URL.Path, configPath)
 			inputLog := readConfigChangeRequestBody(t, r)
-			assert.Equal(t, expectedLog, inputLog)
+			assert.Equal(t, configChangeLog, inputLog)
 			w.WriteHeader(http.StatusForbidden)
 		}))
 		defer ts.Close()
@@ -84,17 +80,13 @@ func TestClient_LogConfigurationChange(t *testing.T) {
 
 func TestClient_LogSecurityEvent(t *testing.T) {
 	//GIVEN
-	msgID := uuid.New().String()
-	timestamp := time.Now().UTC()
-	securityEventLog := fixSecurityEventLog(msgID, timestamp)
-
-	expectedLog := fixSecurityEventLog(msgID, timestamp)
+	securityEventLog := fixFilledSecurityEventLog()
 
 	t.Run("Success", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, r.URL.Path, securityPath)
 			inputLog := readSecurityEventRequestBody(t, r)
-			assert.Equal(t, expectedLog, inputLog)
+			assert.Equal(t, securityEventLog, inputLog)
 			w.WriteHeader(http.StatusCreated)
 		}))
 		defer ts.Close()
@@ -116,7 +108,7 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, r.URL.Path, securityPath)
 			inputLog := readSecurityEventRequestBody(t, r)
-			assert.Equal(t, expectedLog, inputLog)
+			assert.Equal(t, securityEventLog, inputLog)
 			w.WriteHeader(http.StatusCreated)
 		}))
 		defer ts.Close()
@@ -138,7 +130,7 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, r.URL.Path, securityPath)
 			inputLog := readSecurityEventRequestBody(t, r)
-			assert.Equal(t, expectedLog, inputLog)
+			assert.Equal(t, securityEventLog, inputLog)
 			w.WriteHeader(http.StatusForbidden)
 		}))
 		defer ts.Close()
@@ -192,37 +184,6 @@ func TestDateFormat(t *testing.T) {
 	require.Equal(t, expected, formattedDate)
 }
 
-func fixConfigChangeLog(msgId string, timestamp time.Time) model.ConfigurationChange {
-	return model.ConfigurationChange{
-		User: "test-user",
-		Object: model.Object{
-			ID: map[string]string{
-				"name":           "Config Change",
-				"externalTenant": "external tenant",
-				"apiConsumer":    "application",
-				"consumerID":     "consumerID",
-			},
-			Type: "",
-		},
-		AuditlogMetadata: model.AuditlogMetadata{
-			Time: timestamp.Format(auditlog.LogFormatDate),
-			UUID: msgId,
-		},
-		Attributes: []model.Attribute{{Name: "name", Old: "", New: "new value"}},
-	}
-}
-
-func fixSecurityEventLog(msgId string, timestamp time.Time) model.SecurityEvent {
-	return model.SecurityEvent{
-		AuditlogMetadata: model.AuditlogMetadata{
-			Time: timestamp.Format(auditlog.LogFormatDate),
-			UUID: msgId,
-		},
-		User: "test-user",
-		Data: "test-data",
-	}
-}
-
 func readConfigChangeRequestBody(t *testing.T, r *http.Request) model.ConfigurationChange {
 	output, err := ioutil.ReadAll(r.Body)
 	require.NoError(t, err)
@@ -231,7 +192,6 @@ func readConfigChangeRequestBody(t *testing.T, r *http.Request) model.Configurat
 	require.NoError(t, err)
 	return confChangeLog
 }
-
 
 func readSecurityEventRequestBody(t *testing.T, r *http.Request) model.SecurityEvent {
 	output, err := ioutil.ReadAll(r.Body)

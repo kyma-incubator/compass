@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/mock"
 	"testing"
+
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog"
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/automock"
@@ -19,12 +20,12 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 	t.Run("Success mutation", func(t *testing.T) {
 		//GIVEN
 		factory := &automock.AuditlogMessageFactory{}
-		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+		factory.On("CreateConfigurationChange").Return(fixFabricatedConfigMsg())
 
 		request := fixRequest()
 		response := fixNoErrorResponse(t)
 		claims := fixClaims()
-		log := fixLogSuccess(claims, request, "success")
+		log := fixSuccessConfigLog(claims, request, "success")
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
@@ -41,12 +42,12 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 	t.Run("Unsuccessful mutation", func(t *testing.T) {
 		//GIVEN
 		factory := &automock.AuditlogMessageFactory{}
-		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+		factory.On("CreateConfigurationChange").Return(fixFabricatedConfigMsg())
 
 		request := fixRequest()
 		response := fixGraphqlMutationError(t)
 		claims := fixClaims()
-		log := fixLogSuccess(claims, request, response)
+		log := fixSuccessConfigLog(claims, request, response)
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
@@ -63,12 +64,12 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 	t.Run("Success mutation with read error", func(t *testing.T) {
 		//GIVEN
 		factory := &automock.AuditlogMessageFactory{}
-		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+		factory.On("CreateConfigurationChange").Return(fixFabricatedConfigMsg())
 
 		request := fixRequestWithInvalidQuery()
 		response := fixResponseReadError(t)
 		claims := fixClaims()
-		log := fixLogSuccess(claims, request, "success")
+		log := fixSuccessConfigLog(claims, request, "success")
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
@@ -85,12 +86,12 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 	t.Run("Success mutation with multiple read error", func(t *testing.T) {
 		//GIVEN
 		factory := &automock.AuditlogMessageFactory{}
-		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+		factory.On("CreateConfigurationChange").Return(fixFabricatedConfigMsg())
 
 		request := fixRequest()
 		response := fixResponseMultipleError(t)
 		claims := fixClaims()
-		log := fixLogSuccess(claims, request, "success")
+		log := fixSuccessConfigLog(claims, request, "success")
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
@@ -107,12 +108,12 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 	t.Run("Unsuccessful mutation wit read error and mutation error", func(t *testing.T) {
 		//GIVEN
 		factory := &automock.AuditlogMessageFactory{}
-		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+		factory.On("CreateConfigurationChange").Return(fixFabricatedConfigMsg())
 
 		request := fixRequest()
 		response := fixGraphqlMultiErrorWithMutation(t)
 		claims := fixClaims()
-		log := fixLogSuccess(claims, request, response)
+		log := fixSuccessConfigLog(claims, request, response)
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
@@ -129,12 +130,12 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 	t.Run("Failed query with error", func(t *testing.T) {
 		//GIVEN
 		factory := &automock.AuditlogMessageFactory{}
-		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+		factory.On("CreateConfigurationChange").Return(fixFabricatedConfigMsg())
 
 		request := fixRequestWithQuery()
 		response := fixResponseReadError(t)
 		claims := fixClaims()
-		log := fixLogSuccess(claims, request, "success")
+		log := fixSuccessConfigLog(claims, request, "success")
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
@@ -151,12 +152,12 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 	t.Run("Success mutation with payload as json with read errors", func(t *testing.T) {
 		//GIVEN
 		factory := &automock.AuditlogMessageFactory{}
-		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+		factory.On("CreateConfigurationChange").Return(fixFabricatedConfigMsg())
 
 		request := fixJsonRequest()
 		response := fixResponseReadError(t)
 		claims := fixClaims()
-		log := fixLogSuccess(claims, request, "success")
+		log := fixSuccessConfigLog(claims, request, "success")
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(nil)
@@ -173,7 +174,7 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 	t.Run("Security event - insufficient scope", func(t *testing.T) {
 		//GIVEN
 		factory := &automock.AuditlogMessageFactory{}
-		factory.On("CreateSecurityEvent").Return(fixFactorySecurityEvent())
+		factory.On("CreateSecurityEvent").Return(fixFabricatedSecurityEvent())
 
 		request := fixRequest()
 		graphqlResponse := FixResponseUnsufficientScopes()
@@ -182,7 +183,7 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 		responseErr, err := json.Marshal(graphqlResponse.Errors)
 		require.NoError(t, err)
 		claims := fixClaims()
-		log := fixFactorySecurityEvent()
+		log := fixFabricatedSecurityEvent()
 		log.Data = string(responseErr)
 
 		client := &automock.AuditlogClient{}
@@ -200,13 +201,13 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 	t.Run("Auditlog client return error", func(t *testing.T) {
 		//GIVEN
 		factory := &automock.AuditlogMessageFactory{}
-		factory.On("CreateConfigurationChange").Return(fixFactoryMessage())
+		factory.On("CreateConfigurationChange").Return(fixFabricatedConfigMsg())
 
 		testError := errors.New("test-error")
 		request := fixRequest()
 		response := fixNoErrorResponse(t)
 		claims := fixClaims()
-		log := fixLogSuccess(claims, request, "success")
+		log := fixSuccessConfigLog(claims, request, "success")
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", log).Return(testError)

@@ -3,12 +3,13 @@ package auditlog
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
 
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
 

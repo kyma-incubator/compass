@@ -122,7 +122,7 @@ func initAuditLogsSvc(done chan bool) AuditogService {
 	return auditlog.NewSink(auditlogMsgChannel)
 }
 
-func initAuditlogClient(cfg auditlog.Config) (auditlog.HttpClient, *auditlog.MessageFactory, ) {
+func initAuditlogClient(cfg auditlog.Config) (auditlog.HttpClient, *auditlog.MessageFactory) {
 	uuidSvc := uuid.NewService()
 	timeSvc := &time.TimeService{}
 
@@ -148,7 +148,7 @@ func initAuditlogClient(cfg auditlog.Config) (auditlog.HttpClient, *auditlog.Mes
 
 		return cfg.Client(ctx), auditlog.OAuthMessageFactory(uuidSvc, timeSvc)
 	} else {
-		log.Fatal(fmt.Sprintf("Cannot create http client. Invalid Auditlog Auth mode: %s", cfg.AuthMode))
+		log.Fatal(fmt.Sprintf("Invalid Auditlog Auth mode: %s", cfg.AuthMode))
 		return nil, nil
 	}
 }

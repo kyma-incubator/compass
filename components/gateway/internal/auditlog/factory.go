@@ -1,8 +1,9 @@
 package auditlog
 
 import (
-	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
 )
 
 const LogFormatDate = "2006-01-02T15:04:05.999Z"
@@ -46,8 +47,8 @@ func (f *MessageFactory) CreateSecurityEvent() model.SecurityEvent {
 		}}
 }
 
-func OAuthMessageFactory(uuidSvc UUIDService, tsvc TimeService) MessageFactory {
-	return MessageFactory{
+func OAuthMessageFactory(uuidSvc UUIDService, tsvc TimeService) *MessageFactory {
+	return &MessageFactory{
 		user:    "$USER",
 		tenant:  "$PROVIDER",
 		uuidSvc: uuidSvc,
