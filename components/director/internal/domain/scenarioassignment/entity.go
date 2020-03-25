@@ -1,4 +1,4 @@
-package scenarioassignement
+package scenarioassignment
 
 type Entity struct {
 	Scenario      string `db:"scenario"`
