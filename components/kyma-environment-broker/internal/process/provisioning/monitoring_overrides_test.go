@@ -53,14 +53,17 @@ func TestSetupMonitoringOverridesStepHappyPath_Run(t *testing.T) {
 	//}
 	//inputCreatorMock.On("AppendOverrides", "monitoring", expCredentialsValues).
 	//	Return(nil).Once()
-
-	inputCreatorMock.On("AppendOverrides", "monitoring", []*gqlschema.ConfigEntryInput{
+	expCredentialsValues := []*gqlschema.ConfigEntryInput{
 		{
-			Key:   "test7",
-			Value: "test7abc",
+			Key:    "test7",
+			Value:  "test7abc",
 			Secret: ptr.Bool(true),
 		},
-	}).Return(nil).Once()
+	}
+	//inputCreatorMock.On("setupMonitoringOverride").Return(expCredentialsValues).Once()
+
+	inputCreatorMock.On("AppendOverrides", "monitoring",expCredentialsValues ).Return(nil).Once()
+
 
 	operation := internal.ProvisioningOperation{
 		InputCreator: inputCreatorMock,
