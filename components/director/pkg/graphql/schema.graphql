@@ -201,7 +201,7 @@ input AutomaticScenarioAssignmentSetInput {
 	"""
 	Runtimes and Applications which contain labels with equal key and value are matched
 	"""
-	selector: LabelSelectorInput!
+	selector: LabelInput!
 }
 
 input BasicCredentialDataInput {

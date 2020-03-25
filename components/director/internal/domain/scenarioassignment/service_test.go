@@ -89,3 +89,36 @@ func TestService_GetByScenarioName(t *testing.T) {
 		require.EqualError(t, err, fmt.Sprintf("while getting Assignment: %s", errMsg))
 	})
 }
+
+func TestService_GetForSelector(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// GIVEN
+		selector := fixLabelSelector()
+		assignment := fixModel()
+		result := []*model.AutomaticScenarioAssignment{&assignment}
+		mockRepo := &automock.Repository{}
+		defer mockRepo.AssertExpectations(t)
+		mockRepo.On("GetForSelector", context.TODO(), selector, DefaultTenant).Return(result, nil)
+		sut := scenarioassignment.NewService(mockRepo)
+		// WHEN
+		actual, err := sut.GetForSelector(context.TODO(), selector, DefaultTenant)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, result, actual)
+
+	})
+
+	t.Run("returns error on error from repository", func(t *testing.T) {
+		// GIVEN
+		selector := fixLabelSelector()
+		mockRepo := &automock.Repository{}
+		defer mockRepo.AssertExpectations(t)
+		mockRepo.On("GetForSelector", context.TODO(), selector, DefaultTenant).Return(nil, fixError())
+		sut := scenarioassignment.NewService(mockRepo)
+		// WHEN
+		actual, err := sut.GetForSelector(context.TODO(), selector, DefaultTenant)
+		// THEN
+		require.EqualError(t, err, "while getting the assignments: some error")
+		require.Nil(t, actual)
+	})
+}
