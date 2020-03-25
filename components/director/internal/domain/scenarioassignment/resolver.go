@@ -133,7 +133,7 @@ func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int,
 func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while beginning transation")
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
@@ -148,11 +148,14 @@ func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, i
 
 	assignments, err := r.svc.GetForSelector(ctx, modelInput, tnt)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while getting the assignments")
 	}
 
 	gqlAssignments := r.multipleToGraphql(assignments)
 
+	if err = tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
+	}
 	return gqlAssignments, nil
 }
 

@@ -153,3 +153,126 @@ func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 		assert.EqualError(t, err, "while committing transaction: some persistence error")
 	})
 }
+
+func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
+
+	givenInput := graphql.LabelSelectorInput{
+		Key:   "key",
+		Value: "value",
+	}
+
+	expectedModels := []*model.AutomaticScenarioAssignment{
+		{
+			ScenarioName: "scenario-A",
+			Selector: model.LabelSelector{
+				Key:   "key",
+				Value: "value",
+			},
+		},
+		{
+			ScenarioName: "scenario-B",
+			Selector: model.LabelSelector{
+				Key:   "key",
+				Value: "value",
+			},
+		},
+	}
+
+	expectedOutput := []*graphql.AutomaticScenarioAssignment{
+		{
+			ScenarioName: "scenario-A",
+			Selector: &graphql.Label{
+				Key:   "key",
+				Value: "value",
+			},
+		},
+		{
+			ScenarioName: "scenario-B",
+			Selector: &graphql.Label{
+				Key:   "key",
+				Value: "value",
+			},
+		},
+	}
+
+	txGen := txtest.NewTransactionContextGenerator(errors.New("some persistence error"))
+
+	t.Run("happy path", func(t *testing.T) {
+		tx, transact := txGen.ThatSucceeds()
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("LabelSelectorFromInput", givenInput).Return(fixLabelSelector())
+		mockConverter.On("ToGraphQL", *expectedModels[0]).Return(*expectedOutput[0])
+		mockConverter.On("ToGraphQL", *expectedModels[1]).Return(*expectedOutput[1])
+
+		mockSvc := &automock.Service{}
+		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
+		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector(), DefaultTenant).Return(expectedModels, nil)
+
+		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
+		// WHEN
+		actual, err := sut.AutomaticScenarioAssignmentForSelector(fixCtxWithTenant(), givenInput)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, expectedOutput, actual)
+	})
+
+	t.Run("error on starting transaction", func(t *testing.T) {
+		tx, transact := txGen.ThatFailsOnBegin()
+		defer mock.AssertExpectationsForObjects(t, tx, transact)
+		sut := scenarioassignment.NewResolver(transact, nil, nil)
+		// WHEN
+		_, err := sut.SetAutomaticScenarioAssignment(context.TODO(), graphql.AutomaticScenarioAssignmentSetInput{})
+		// THEN
+		assert.EqualError(t, err, "while beginning transaction: some persistence error")
+	})
+
+	t.Run("error on missing tenant in context", func(t *testing.T) {
+		tx, transact := txGen.ThatDoesntExpectCommit()
+		defer mock.AssertExpectationsForObjects(t, tx, transact)
+		sut := scenarioassignment.NewResolver(transact, nil, nil)
+		// WHEN
+		_, err := sut.SetAutomaticScenarioAssignment(context.TODO(), graphql.AutomaticScenarioAssignmentSetInput{})
+		// THEN
+		assert.EqualError(t, err, "cannot read tenant from context")
+	})
+
+	t.Run("error on getting assignments by service", func(t *testing.T) {
+		tx, transact := txGen.ThatDoesntExpectCommit()
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("LabelSelectorFromInput", givenInput).Return(fixLabelSelector())
+
+		mockSvc := &automock.Service{}
+		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
+		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector(), DefaultTenant).Return(nil, fixError())
+
+		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
+		// WHEN
+		actual, err := sut.AutomaticScenarioAssignmentForSelector(fixCtxWithTenant(), givenInput)
+		// THEN
+		require.Nil(t, actual)
+		require.EqualError(t, err, "while getting the assignments: some error")
+
+	})
+
+	t.Run("error on committing transaction", func(t *testing.T) {
+		tx, transact := txGen.ThatFailsOnCommit()
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("LabelSelectorFromInput", givenInput).Return(fixLabelSelector())
+		mockConverter.On("ToGraphQL", *expectedModels[0]).Return(*expectedOutput[0])
+		mockConverter.On("ToGraphQL", *expectedModels[1]).Return(*expectedOutput[1])
+
+		mockSvc := &automock.Service{}
+		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
+		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector(), DefaultTenant).Return(expectedModels, nil)
+
+		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
+		// WHEN
+		actual, err := sut.AutomaticScenarioAssignmentForSelector(fixCtxWithTenant(), givenInput)
+		// THEN
+		require.EqualError(t, err, "while committing transaction: some persistence error")
+		require.Nil(t, actual)
+	})
+}
