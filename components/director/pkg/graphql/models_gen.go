@@ -155,7 +155,7 @@ func (AutomaticScenarioAssignmentPage) IsPageable() {}
 type AutomaticScenarioAssignmentSetInput struct {
 	ScenarioName string `json:"scenarioName"`
 	// Runtimes and Applications which contain labels with equal key and value are matched
-	Selector *LabelInput `json:"selector"`
+	Selector *LabelSelectorInput `json:"selector"`
 }
 
 type BasicCredentialData struct {
@@ -314,6 +314,11 @@ type LabelFilter struct {
 type LabelInput struct {
 	Key   string      `json:"key"`
 	Value interface{} `json:"value"`
+}
+
+type LabelSelectorInput struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type OAuthCredentialData struct {
