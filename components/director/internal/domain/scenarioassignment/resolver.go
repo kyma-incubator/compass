@@ -139,14 +139,9 @@ func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, i
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	modelInput := r.converter.LabelSelectorFromInput(in)
 
-	assignments, err := r.svc.GetForSelector(ctx, modelInput, tnt)
+	assignments, err := r.svc.GetForSelector(ctx, modelInput)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting the assignments")
 	}

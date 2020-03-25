@@ -207,7 +207,7 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector(), DefaultTenant).Return(expectedModels, nil)
+		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector()).Return(expectedModels, nil)
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 		// WHEN
@@ -227,16 +227,6 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 		assert.EqualError(t, err, "while beginning transaction: some persistence error")
 	})
 
-	t.Run("error on missing tenant in context", func(t *testing.T) {
-		tx, transact := txGen.ThatDoesntExpectCommit()
-		defer mock.AssertExpectationsForObjects(t, tx, transact)
-		sut := scenarioassignment.NewResolver(transact, nil, nil)
-		// WHEN
-		_, err := sut.SetAutomaticScenarioAssignment(context.TODO(), graphql.AutomaticScenarioAssignmentSetInput{})
-		// THEN
-		assert.EqualError(t, err, "cannot read tenant from context")
-	})
-
 	t.Run("error on getting assignments by service", func(t *testing.T) {
 		tx, transact := txGen.ThatDoesntExpectCommit()
 
@@ -245,7 +235,7 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector(), DefaultTenant).Return(nil, fixError())
+		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector()).Return(nil, fixError())
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 		// WHEN
@@ -266,7 +256,7 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector(), DefaultTenant).Return(expectedModels, nil)
+		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector()).Return(expectedModels, nil)
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 		// WHEN

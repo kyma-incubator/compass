@@ -98,10 +98,10 @@ func TestService_GetForSelector(t *testing.T) {
 		result := []*model.AutomaticScenarioAssignment{&assignment}
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("GetForSelector", context.TODO(), selector, DefaultTenant).Return(result, nil)
+		mockRepo.On("GetForSelector", mock.Anything, selector, DefaultTenant).Return(result, nil)
 		sut := scenarioassignment.NewService(mockRepo)
 		// WHEN
-		actual, err := sut.GetForSelector(context.TODO(), selector, DefaultTenant)
+		actual, err := sut.GetForSelector(fixCtxWithTenant(), selector)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, result, actual)
@@ -113,12 +113,18 @@ func TestService_GetForSelector(t *testing.T) {
 		selector := fixLabelSelector()
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("GetForSelector", context.TODO(), selector, DefaultTenant).Return(nil, fixError())
+		mockRepo.On("GetForSelector", mock.Anything, selector, DefaultTenant).Return(nil, fixError())
 		sut := scenarioassignment.NewService(mockRepo)
 		// WHEN
-		actual, err := sut.GetForSelector(context.TODO(), selector, DefaultTenant)
+		actual, err := sut.GetForSelector(fixCtxWithTenant(), selector)
 		// THEN
 		require.EqualError(t, err, "while getting the assignments: some error")
 		require.Nil(t, actual)
+	})
+
+	t.Run("returns error when empty tenant", func(t *testing.T) {
+		sut := scenarioassignment.NewService(nil)
+		_, err := sut.GetForSelector(context.TODO(), fixLabelSelector())
+		require.EqualError(t, err, "cannot read tenant from context")
 	})
 }
