@@ -83,7 +83,7 @@ func (c *Condition) GetQueryArg() (string, bool) {
 	case IsNotNullOp, InOp:
 		return "", false
 	default:
-		return pq.QuoteLiteral(c.Val), true
+		return c.Val, true
 	}
 }
 
