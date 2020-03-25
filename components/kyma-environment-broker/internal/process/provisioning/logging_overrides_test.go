@@ -16,7 +16,10 @@ func TestLoggingOverridesStepHappyPath_Run(t *testing.T) {
 	// given
 	inputCreatorMock := &automock.ProvisionInputCreator{}
 	expCredentialsValues := []*gqlschema.ConfigEntryInput{
-		{Key: "conf.Input.Kubernetes_loki.exclude.namespaces", Value: "kube-system,kyma-system,istio-system,kyma-installer,kyma-integration,knative-serving,knative-eventing", Secret: ptr.Bool(true)},
+		{
+			Key: "conf.Input.Kubernetes_loki.exclude.namespaces",
+			Value: "kube-node-lease,kube-public,kube-system,kyma-system,istio-system,kyma-installer,kyma-integration,knative-serving,knative-eventing",
+			Secret: ptr.Bool(true)},
 	}
 	inputCreatorMock.On("AppendOverrides", "logging", expCredentialsValues).
 		Return(nil).Once()

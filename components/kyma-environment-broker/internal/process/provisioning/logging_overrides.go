@@ -40,7 +40,7 @@ func (s *LoggingOverrides) setupLoggingOverrides() []*gqlschema.ConfigEntryInput
 	loggingStepOverrides := []*gqlschema.ConfigEntryInput{
 		{
 			Key:    "conf.Input.Kubernetes_loki.exclude.namespaces",
-			Value:  "kube-system,kyma-system,istio-system,kyma-installer,kyma-integration,knative-serving,knative-eventing",
+			Value:  "kube-node-lease,kube-public,kube-system,kyma-system,istio-system,kyma-installer,kyma-integration,knative-serving,knative-eventing",
 			Secret: ptr.Bool(true),
 		},
 	}
