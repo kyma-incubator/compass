@@ -130,7 +130,7 @@ func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int,
 	}, nil
 }
 
-func (r *resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -150,4 +150,21 @@ func (r *resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, i
 	}
 
 	assignments, err := r.svc.GetForSelector(ctx, dupa, tnt)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlAssignments := r.multipleToGraphql(assignments)
+
+	return gqlAssignments, nil
+}
+
+func (r *Resolver) multipleToGraphql(assignments []*model.AutomaticScenarioAssignment) []*graphql.AutomaticScenarioAssignment {
+	var gqlAssignments []*graphql.AutomaticScenarioAssignment
+
+	for _, v := range assignments {
+		assignment := r.converter.ToGraphQL(v)
+		gqlAssignments = append(gqlAssignments, &assignment)
+	}
+	return gqlAssignments
 }
