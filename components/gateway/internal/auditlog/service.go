@@ -70,7 +70,7 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 	}
 
 	if len(graphqlResponse.Errors) == 0 {
-		log := svc.createConfigChangeLog(claims, request)
+		log := svc.createConfigChangeMsg(claims, request)
 		log.Attributes = append(log.Attributes, model.Attribute{
 			Name: "response",
 			Old:  "",
@@ -86,9 +86,9 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 		if err != nil {
 			return errors.Wrap(err, "while marshalling graphql err")
 		}
-		log := svc.msgFactory.CreateSecurityEvent()
-		log.Data = string(data)
-		err = svc.client.LogSecurityEvent(log)
+		msg := svc.msgFactory.CreateSecurityEvent()
+		msg.Data = string(data)
+		err = svc.client.LogSecurityEvent(msg)
 
 		return errors.Wrap(err, "while sending security event to auditlog")
 	}
@@ -98,24 +98,24 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 		return errors.Wrap(err, "while checking if error is read error")
 	}
 
-	log := svc.createConfigChangeLog(claims, request)
+	msg := svc.createConfigChangeMsg(claims, request)
 	if isReadErr {
-		log.Attributes = append(log.Attributes, model.Attribute{
+		msg.Attributes = append(msg.Attributes, model.Attribute{
 			Name: "response",
 			Old:  "",
 			New:  "success",
 		})
-		err := svc.client.LogConfigurationChange(log)
+		err := svc.client.LogConfigurationChange(msg)
 		return errors.Wrap(err, "while sending configuration change")
 	} else {
-		log.Attributes = append(log.Attributes, model.Attribute{
+		msg.Attributes = append(msg.Attributes, model.Attribute{
 			Name: "response",
 			Old:  "",
 			New:  response,
 		})
 	}
 
-	err = svc.client.LogConfigurationChange(log)
+	err = svc.client.LogConfigurationChange(msg)
 	return errors.Wrap(err, "while sending configuration change")
 }
 
@@ -128,7 +128,7 @@ func (svc *Service) parseResponse(response string) (model.GraphqlResponse, error
 	return graphqResponse, nil
 }
 
-func (svc *Service) createConfigChangeLog(claims proxy.Claims, request string) model.ConfigurationChange {
+func (svc *Service) createConfigChangeMsg(claims proxy.Claims, request string) model.ConfigurationChange {
 	msg := svc.msgFactory.CreateConfigurationChange()
 	msg.Object = model.Object{
 		ID: map[string]string{

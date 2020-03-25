@@ -12,7 +12,7 @@ const (
 	Timestamp_text = "2020-03-17T12:37:44Z"
 )
 
-func fixFabricatedConfigMsg() model.ConfigurationChange {
+func fixFabricatedConfigChangeMsg() model.ConfigurationChange {
 	return model.ConfigurationChange{User: User, AuditlogMetadata: model.AuditlogMetadata{
 		Tenant: TestTenant,
 		UUID:   TestMsgID,
@@ -20,15 +20,15 @@ func fixFabricatedConfigMsg() model.ConfigurationChange {
 	}}
 }
 
-func fixFabricatedSecurityEvent() model.SecurityEvent {
+func fixFabricatedSecurityEventMsg() model.SecurityEvent {
 	return model.SecurityEvent{User: User, AuditlogMetadata: model.AuditlogMetadata{
 		Tenant: TestTenant,
 		UUID:   TestMsgID,
 	}}
 }
 
-func fixSuccessConfigLog(claims proxy.Claims, request, response string) model.ConfigurationChange {
-	msg := fixFabricatedConfigMsg()
+func fixSuccessConfigChangeMsg(claims proxy.Claims, request, response string) model.ConfigurationChange {
+	msg := fixFabricatedConfigChangeMsg()
 	msg.Object = model.Object{
 		ID: map[string]string{
 			"name":           "Config Change",
@@ -43,8 +43,8 @@ func fixSuccessConfigLog(claims proxy.Claims, request, response string) model.Co
 	return msg
 }
 
-func fixFilledConfigChangeLog() model.ConfigurationChange {
-	msg := fixFabricatedConfigMsg()
+func fixFilledConfigChangeMsg() model.ConfigurationChange {
+	msg := fixFabricatedConfigChangeMsg()
 	msg.Object = model.Object{
 		ID: map[string]string{
 			"name":           "Config Change",
@@ -57,8 +57,8 @@ func fixFilledConfigChangeLog() model.ConfigurationChange {
 	return msg
 }
 
-func fixFilledSecurityEventLog() model.SecurityEvent {
-	msg := fixFabricatedSecurityEvent()
+func fixFilledSecurityEventMsg() model.SecurityEvent {
+	msg := fixFabricatedSecurityEventMsg()
 	msg.Data = "test-data"
 
 	return msg

@@ -26,7 +26,7 @@ const (
 
 func TestClient_LogConfigurationChange(t *testing.T) {
 	//GIVEN
-	configChangeLog := fixFilledConfigChangeLog()
+	configChangeMsg := fixFilledConfigChangeMsg()
 
 	cfg := auditlog.Config{
 		ConfigPath:   configPath,
@@ -36,8 +36,8 @@ func TestClient_LogConfigurationChange(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, r.URL.Path, configPath)
-			inputLog := readConfigChangeRequestBody(t, r)
-			assert.Equal(t, configChangeLog, inputLog)
+			inputMsg := readConfigChangeRequestBody(t, r)
+			assert.Equal(t, configChangeMsg, inputMsg)
 			w.WriteHeader(http.StatusCreated)
 		}))
 		defer ts.Close()
@@ -48,7 +48,7 @@ func TestClient_LogConfigurationChange(t *testing.T) {
 		require.NoError(t, err)
 
 		//WHEN
-		err = client.LogConfigurationChange(configChangeLog)
+		err = client.LogConfigurationChange(configChangeMsg)
 
 		//THEN
 		require.NoError(t, err)
@@ -57,8 +57,8 @@ func TestClient_LogConfigurationChange(t *testing.T) {
 	t.Run("Response Code different than 201", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, r.URL.Path, configPath)
-			inputLog := readConfigChangeRequestBody(t, r)
-			assert.Equal(t, configChangeLog, inputLog)
+			inputMsg := readConfigChangeRequestBody(t, r)
+			assert.Equal(t, configChangeMsg, inputMsg)
 			w.WriteHeader(http.StatusForbidden)
 		}))
 		defer ts.Close()
@@ -70,7 +70,7 @@ func TestClient_LogConfigurationChange(t *testing.T) {
 		require.NoError(t, err)
 
 		//WHEN
-		err = client.LogConfigurationChange(configChangeLog)
+		err = client.LogConfigurationChange(configChangeMsg)
 
 		//THEN
 		require.Error(t, err)
@@ -80,13 +80,13 @@ func TestClient_LogConfigurationChange(t *testing.T) {
 
 func TestClient_LogSecurityEvent(t *testing.T) {
 	//GIVEN
-	securityEventLog := fixFilledSecurityEventLog()
+	securityEventMsg := fixFilledSecurityEventMsg()
 
 	t.Run("Success", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, r.URL.Path, securityPath)
-			inputLog := readSecurityEventRequestBody(t, r)
-			assert.Equal(t, securityEventLog, inputLog)
+			inputMsg := readSecurityEventRequestBody(t, r)
+			assert.Equal(t, securityEventMsg, inputMsg)
 			w.WriteHeader(http.StatusCreated)
 		}))
 		defer ts.Close()
@@ -98,7 +98,7 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 		require.NoError(t, err)
 
 		//WHEN
-		err = client.LogSecurityEvent(securityEventLog)
+		err = client.LogSecurityEvent(securityEventMsg)
 
 		//THEN
 		require.NoError(t, err)
@@ -107,8 +107,8 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 	t.Run("Success with tenant", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, r.URL.Path, securityPath)
-			inputLog := readSecurityEventRequestBody(t, r)
-			assert.Equal(t, securityEventLog, inputLog)
+			inputMsg := readSecurityEventRequestBody(t, r)
+			assert.Equal(t, securityEventMsg, inputMsg)
 			w.WriteHeader(http.StatusCreated)
 		}))
 		defer ts.Close()
@@ -120,7 +120,7 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 		require.NoError(t, err)
 
 		//WHEN
-		err = client.LogSecurityEvent(securityEventLog)
+		err = client.LogSecurityEvent(securityEventMsg)
 
 		//THEN
 		require.NoError(t, err)
@@ -129,8 +129,8 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 	t.Run("Response Code different than 201", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, r.URL.Path, securityPath)
-			inputLog := readSecurityEventRequestBody(t, r)
-			assert.Equal(t, securityEventLog, inputLog)
+			inputMsg := readSecurityEventRequestBody(t, r)
+			assert.Equal(t, securityEventMsg, inputMsg)
 			w.WriteHeader(http.StatusForbidden)
 		}))
 		defer ts.Close()
@@ -143,7 +143,7 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 		require.NoError(t, err)
 
 		//WHEN
-		err = client.LogSecurityEvent(securityEventLog)
+		err = client.LogSecurityEvent(securityEventMsg)
 
 		//THEN
 		require.Error(t, err)
@@ -162,7 +162,7 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 		require.NoError(t, err)
 
 		//WHEN
-		err = client.LogSecurityEvent(securityEventLog)
+		err = client.LogSecurityEvent(securityEventMsg)
 
 		//THEN
 		require.Error(t, err)
