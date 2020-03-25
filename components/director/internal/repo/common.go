@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/lib/pq"
 )
 
 // OrderByDir is a type encapsulating the ORDER BY direction
@@ -66,7 +68,7 @@ func (c *Condition) GetQueryPart(idx int) string {
 	case IsNotNullOp:
 		return fmt.Sprintf("%s %s", c.Field, c.Op)
 	case InOp:
-		return fmt.Sprintf("%s %s (%s)", c.Field, c.Op, c.Val)
+		return fmt.Sprintf("%s %s (%s)", c.Field, c.Op, pq.QuoteLiteral(c.Val))
 	default:
 		return fmt.Sprintf("%s %s $%d", c.Field, c.Op, idx)
 	}
@@ -81,7 +83,7 @@ func (c *Condition) GetQueryArg() (string, bool) {
 	case IsNotNullOp, InOp:
 		return "", false
 	default:
-		return c.Val, true
+		return pq.QuoteLiteral(c.Val), true
 	}
 }
 
