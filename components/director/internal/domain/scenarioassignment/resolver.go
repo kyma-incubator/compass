@@ -68,9 +68,9 @@ func (r *Resolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphq
 }
 
 func (r *Resolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	sel := graphql.Label{Key: selector.Key, Value: selector.Value}
+	sel := &graphql.Label{Key: selector.Key, Value: selector.Value}
 	data := []*graphql.AutomaticScenarioAssignment{
-		mock.FixAssignmentForScenarioWithSelector("DEFAULT", sel)
+		mock.FixAssignmentForScenarioWithSelector("DEFAULT", sel),
 		mock.FixAssignmentForScenarioWithSelector("Foo", sel),
 	}
 
@@ -86,9 +86,9 @@ func (r *Resolver) AutomaticScenarioAssignmentForScenario(ctx context.Context, s
 }
 
 func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	sel := graphql.Label{Key: selector.Key, Value: selector.Value}
+	sel := &graphql.Label{Key: selector.Key, Value: selector.Value}
 	data := []*graphql.AutomaticScenarioAssignment{
-		mock.FixAssignmentForScenarioWithSelector("DEFAULT", sel)
+		mock.FixAssignmentForScenarioWithSelector("DEFAULT", sel),
 		mock.FixAssignmentForScenarioWithSelector("Foo", sel),
 	}
 
@@ -97,13 +97,13 @@ func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, s
 
 func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
 	data := []*graphql.AutomaticScenarioAssignment{
-		mock.FixScenarioAssignmentForScenario("DEFAULT"),
-		mock.FixScenarioAssignmentForScenario("Foo"),
-		mock.FixScenarioAssignmentForScenario("bar"),
-		mock.FixScenarioAssignmentForScenario("fooBar"),
+		mock.FixAssignmentForScenario("DEFAULT"),
+		mock.FixAssignmentForScenario("Foo"),
+		mock.FixAssignmentForScenario("bar"),
+		mock.FixAssignmentForScenario("fooBar"),
 	}
 	return &graphql.AutomaticScenarioAssignmentPage{
-		Data:  data,
-		Total: len(data),
+		Data:       data,
+		TotalCount: len(data),
 	}, nil
 }
