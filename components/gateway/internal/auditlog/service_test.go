@@ -253,7 +253,7 @@ func fixGraphqlMutationError(t *testing.T) string {
 		Errors: []model.ErrorMessage{
 			{
 				Message: "zepsulo sie",
-				Path:    []string{"registerRuntime"},
+				Path:    []interface{}{"registerRuntime"},
 			},
 		},
 		Data: map[string]string{
@@ -270,11 +270,11 @@ func fixGraphqlMultiErrorWithMutation(t *testing.T) string {
 		Errors: []model.ErrorMessage{
 			{
 				Message: "zepsulo sie",
-				Path:    []string{"registerRuntime"},
+				Path:    []interface{}{"registerRuntime"},
 			},
 			{
 				Message: "read error",
-				Path:    []string{"queyr", "failed"},
+				Path:    []interface{}{"queyr", "failed"},
 			},
 		},
 		Data: map[string]string{
@@ -291,7 +291,7 @@ func FixResponseUnsufficientScopes() model.GraphqlResponse {
 		Errors: []model.ErrorMessage{
 			{
 				Message: "insufficient scopes provided, required: [application:write], actual: []",
-				Path:    []string{"path", "path"},
+				Path:    []interface{}{"path", "path"},
 			},
 		},
 		Data: map[string]string{
@@ -317,7 +317,7 @@ func fixResponseReadError(t *testing.T) string {
 		Errors: []model.ErrorMessage{
 			{
 				Message: "zepsulo sie",
-				Path:    []string{"registerApplication", "apiDefinition"},
+				Path:    []interface{}{"registerApplication", "apiDefinition"},
 			},
 		},
 		Data: map[string]string{"value": "value"},
@@ -350,11 +350,11 @@ func fixResponseMultipleError(t *testing.T) string {
 		Errors: []model.ErrorMessage{
 			{
 				Message: "drugi error",
-				Path:    []string{"query", "query"},
+				Path:    []interface{}{"query", "query"},
 			},
 			{
 				Message: "zepsulo sie",
-				Path:    []string{"registerApplication", "apiDefinition"},
+				Path:    []interface{}{"registerApplication", "apiDefinition"},
 			},
 		},
 		Data: map[string]string{"value": "value"},

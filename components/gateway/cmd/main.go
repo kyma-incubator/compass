@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/kyma-incubator/compass/components/gateway/internal/time"
 	"github.com/kyma-incubator/compass/components/gateway/internal/uuid"
@@ -17,10 +22,10 @@ import (
 )
 
 type config struct {
-	Address string `envconfig:"default=127.0.0.1:3001"`
+	Address string `envconfig:"default=127.0.0.1:3000"`
 
-	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3000"`
-	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3000"`
+	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3001"`
+	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3002"`
 	AuditlogEnabled bool   `envconfig:"default=false"`
 }
 
@@ -44,7 +49,7 @@ func main() {
 	if cfg.AuditlogEnabled {
 		auditlogSvc = initAuditLogsSvc(done)
 	} else {
-		auditlogSvc = &auditlog.DummyAuditlog{}
+		auditlogSvc = &auditlog.NoOpService{}
 	}
 
 	defaultTr := http.Transport{}
@@ -96,14 +101,15 @@ func exitOnError(err error, context string) {
 
 func initAuditLogsSvc(done chan bool) AuditogService {
 	log.Println("Auditlog enabled")
-	auditlogCfg := auditlog.AuditlogConfig{}
+	auditlogCfg := auditlog.Config{}
 	err := envconfig.InitWithPrefix(&auditlogCfg, "APP")
 	exitOnError(err, "Error while loading auditlog cfg")
 
+	httpClient, tenant := initAuditlogClient(auditlogCfg)
 	uuidSvc := uuid.NewService()
 	timeSvc := &time.TimeService{}
 
-	auditlogClient, err := auditlog.NewClient(auditlogCfg, uuidSvc, timeSvc)
+	auditlogClient, err := auditlog.NewClient(auditlogCfg, httpClient, uuidSvc, timeSvc, tenant)
 	exitOnError(err, "Error while creating auditlog client from cfg")
 
 	auditlogMsgChannel := make(chan auditlog.AuditlogMessage)
@@ -114,5 +120,34 @@ func initAuditLogsSvc(done chan bool) AuditogService {
 		worker.Start()
 	}()
 
-	return auditlog.NewAuditlogSink(auditlogMsgChannel)
+	log.Printf("Auditlog configured successfully, auth mode:%s\n", auditlogCfg.AuthMode)
+	return auditlog.NewSink(auditlogMsgChannel)
+}
+
+func initAuditlogClient(cfg auditlog.Config) (auditlog.HttpClient, *string) {
+	if cfg.AuthMode == auditlog.Basic {
+		var basicCfg auditlog.BasicAuthConfig
+		err := envconfig.InitWithPrefix(&basicCfg, "APP")
+		exitOnError(err, "while loading basic auth config from envs")
+
+		return auditlog.NewBasicAuthClient(basicCfg), &basicCfg.Tenant
+	} else if cfg.AuthMode == auditlog.OAuth {
+		ctx := context.Background()
+
+		var oauthCfg auditlog.OAuthConfig
+		err := envconfig.InitWithPrefix(&oauthCfg, "APP")
+		exitOnError(err, "while loading oauth config from envs")
+
+		cfg := clientcredentials.Config{
+			ClientID:     oauthCfg.ClientID,
+			ClientSecret: oauthCfg.ClientSecret,
+			TokenURL:     oauthCfg.OAuthURL,
+			AuthStyle:    oauth2.AuthStyleAutoDetect,
+		}
+
+		return cfg.Client(ctx), nil
+	} else {
+		log.Fatal(fmt.Sprintf("Invalid Auditlog Auth mode: %s", cfg.AuthMode))
+		return nil, nil
+	}
 }

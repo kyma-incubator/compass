@@ -648,7 +648,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	labelFilterGQL, err := tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	applicationRequest := fixApplicationsRequest(labelFilterGQL, 5, "")
+	applicationRequest := fixApplicationsFilteredPageableRequest(labelFilterGQL, 5, "")
 	applicationPage := graphql.ApplicationPageExt{}
 	err = tc.RunOperation(ctx, applicationRequest, &applicationPage)
 	require.NoError(t, err)
@@ -670,7 +670,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	labelFilterGQL, err = tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	applicationRequest = fixApplicationsRequest(labelFilterGQL, 5, "")
+	applicationRequest = fixApplicationsFilteredPageableRequest(labelFilterGQL, 5, "")
 	applicationPage = graphql.ApplicationPageExt{}
 	err = tc.RunOperation(ctx, applicationRequest, &applicationPage)
 	require.NoError(t, err)
@@ -727,7 +727,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelFilterGQL, err := tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	runtimesRequest := fixRuntimesRequest(labelFilterGQL, 5, "")
+	runtimesRequest := fixRuntimesFilteredPageableRequest(labelFilterGQL, 5, "")
 	runtimePage := graphql.RuntimePageExt{}
 	err = tc.RunOperation(ctx, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
@@ -749,7 +749,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelFilterGQL, err = tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	runtimesRequest = fixRuntimesRequest(labelFilterGQL, 5, "")
+	runtimesRequest = fixRuntimesFilteredPageableRequest(labelFilterGQL, 5, "")
 	runtimePage = graphql.RuntimePageExt{}
 	err = tc.RunOperation(ctx, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
