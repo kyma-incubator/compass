@@ -2,11 +2,14 @@ package scenarioassignment
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
 //go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
@@ -17,14 +20,22 @@ type Repository interface {
 	DeleteForSelector(ctx context.Context, tenantID string, selector model.LabelSelector) error
 }
 
-func NewService(repo Repository) *service {
+//go:generate mockery -name=ScenariosDefService -output=automock -outpkg=automock -case=underscore
+type ScenariosDefService interface {
+	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
+	GetAvailableScenarios(ctx context.Context, tenant string) ([]string, error)
+}
+
+func NewService(repo Repository, scenarioDefSvc ScenariosDefService) *service {
 	return &service{
-		repo: repo,
+		repo:            repo,
+		scenariosDefSvc: scenarioDefSvc,
 	}
 }
 
 type service struct {
-	repo Repository
+	repo            Repository
+	scenariosDefSvc ScenariosDefService
 }
 
 func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error) {
@@ -34,12 +45,45 @@ func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignme
 	}
 
 	in.Tenant = tenantID
-
+	if err := s.validateThatScenarioExists(ctx, in); err != nil {
+		return model.AutomaticScenarioAssignment{}, err
+	}
 	err = s.repo.Create(ctx, in)
-	if err != nil {
+	switch {
+	case err == nil:
+		return in, nil
+	case apperrors.IsNotUnique(err):
+		return model.AutomaticScenarioAssignment{}, errors.New("a given scenario already has an assignment")
+	default:
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while persisting Assignment")
 	}
-	return in, nil
+}
+
+func (s *service) validateThatScenarioExists(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+	availableScenarios, err := s.getAvailableScenarios(ctx, in.Tenant)
+	if err != nil {
+		return err
+	}
+
+	for _, av := range availableScenarios {
+		if av == in.ScenarioName {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("scenario `%s` does not exist", in.ScenarioName)
+}
+
+func (s *service) getAvailableScenarios(ctx context.Context, tenant string) ([]string, error) {
+	if err := s.scenariosDefSvc.EnsureScenariosLabelDefinitionExists(ctx, tenant); err != nil {
+		return nil, errors.Wrap(err, "while ensuring that `scenarios` label definition exist")
+	}
+
+	out, err := s.scenariosDefSvc.GetAvailableScenarios(ctx, tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting available scenarios")
+	}
+	return out, nil
 }
 
 func (s *service) GetForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error) {

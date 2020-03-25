@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -114,4 +116,58 @@ func TestScenariosService_EnsureScenariosLabelDefinitionExists(t *testing.T) {
 			uidSvc.AssertExpectations(t)
 		})
 	}
+}
+
+func TestGetAvailableScenarios(t *testing.T) {
+	t.Run("returns value from default schema", func(t *testing.T) {
+		// GIVEN
+		mockService := &automock.Repository{}
+		defer mockService.AssertExpectations(t)
+		var givenSchema interface{} = model.ScenariosSchema
+		givenDef := model.LabelDefinition{
+			Tenant: fixTenant(),
+			Key:    model.ScenariosKey,
+			Schema: &givenSchema,
+		}
+		mockService.On("GetByKey", mock.Anything, fixTenant(), model.ScenariosKey).Return(&givenDef, nil)
+		sut := labeldef.NewScenariosService(mockService, nil)
+		// WHEN
+		actualScenarios, err := sut.GetAvailableScenarios(context.TODO(), fixTenant())
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, []string{"DEFAULT"}, actualScenarios)
+	})
+
+	t.Run("returns error from repository", func(t *testing.T) {
+		// GIVEN
+		mockService := &automock.Repository{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("GetByKey", mock.Anything, fixTenant(), model.ScenariosKey).Return(nil, fixError())
+		sut := labeldef.NewScenariosService(mockService, nil)
+		// WHEN
+		_, err := sut.GetAvailableScenarios(context.TODO(), fixTenant())
+		// THEN
+		require.EqualError(t, err, "while getting `scenarios` label definition: some error")
+	})
+
+	t.Run("returns error when missing schema in label def", func(t *testing.T) {
+		// GIVEN
+		mockService := &automock.Repository{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("GetByKey", mock.Anything, fixTenant(), model.ScenariosKey).Return(&model.LabelDefinition{}, nil)
+		sut := labeldef.NewScenariosService(mockService, nil)
+		// WHEN
+		_, err := sut.GetAvailableScenarios(context.TODO(), fixTenant())
+		// THEN
+		require.EqualError(t, err, "missing schema for `scenarios` label definition")
+	})
+
+}
+
+func fixTenant() string {
+	return "tenant"
+}
+
+func fixError() error {
+	return errors.New("some error")
 }
