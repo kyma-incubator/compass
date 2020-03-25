@@ -24107,10 +24107,6 @@ func (ec *executionContext) unmarshalNLabelSelectorInput2ᚖgithubᚗcomᚋkyma�
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx context.Context, v interface{}) (LabelSelectorInput, error) {
-	return ec.unmarshalInputLabelSelectorInput(ctx, v)
-}
-
 func (ec *executionContext) marshalNOneTimeTokenForApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeTokenForApplication(ctx context.Context, sel ast.SelectionSet, v OneTimeTokenForApplication) graphql.Marshaler {
 	return ec._OneTimeTokenForApplication(ctx, sel, &v)
 }
