@@ -280,7 +280,7 @@ func fixGraphqlMutationError(t *testing.T) string {
 	response := model.GraphqlResponse{
 		Errors: []model.ErrorMessage{
 			{
-				Message: "zepsulo sie",
+				Message: "first error",
 				Path:    []interface{}{"registerRuntime"},
 			},
 		},
@@ -297,7 +297,7 @@ func fixGraphqlMultiErrorWithMutation(t *testing.T) string {
 	response := model.GraphqlResponse{
 		Errors: []model.ErrorMessage{
 			{
-				Message: "zepsulo sie",
+				Message: "first error",
 				Path:    []interface{}{"registerRuntime"},
 			},
 			{
@@ -344,7 +344,7 @@ func fixResponseReadError(t *testing.T) string {
 	response := model.GraphqlResponse{
 		Errors: []model.ErrorMessage{
 			{
-				Message: "zepsulo sie",
+				Message: "first error",
 				Path:    []interface{}{"registerApplication", "apiDefinition"},
 			},
 		},
@@ -359,11 +359,11 @@ func fixResponseMultipleError(t *testing.T) string {
 	response := model.GraphqlResponse{
 		Errors: []model.ErrorMessage{
 			{
-				Message: "drugi error",
+				Message: "first error",
 				Path:    []interface{}{"query", "query"},
 			},
 			{
-				Message: "zepsulo sie",
+				Message: "second error",
 				Path:    []interface{}{"registerApplication", "apiDefinition"},
 			},
 		},
