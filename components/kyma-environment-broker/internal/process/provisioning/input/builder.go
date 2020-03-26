@@ -5,9 +5,13 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	cloudProvider "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+	"github.com/pkg/errors"
 	"github.com/vburenin/nsync"
 )
+
+//go:generate mockery -name=ComponentListProvider -output=automock -outpkg=automock -case=underscore
 
 type (
 	OptionalComponentService interface {
@@ -23,6 +27,11 @@ type (
 	CreatorForPlan interface {
 		IsPlanSupport(planID string) bool
 		ForPlan(planID string) (internal.ProvisionInputCreator, bool)
+		SetKymaVersion(kymaVersion string) error
+	}
+
+	ComponentListProvider interface {
+		AllComponents(kymaVersion string) ([]v1alpha1.KymaComponent, error)
 	}
 )
 
@@ -31,15 +40,34 @@ type InputBuilderFactory struct {
 	config             Config
 	optComponentsSvc   OptionalComponentService
 	fullComponentsList internal.ComponentConfigurationInputList
+	componentsProvider ComponentListProvider
 }
 
-func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, fullComponentsList []v1alpha1.KymaComponent, config Config, kymaVersion string) CreatorForPlan {
+func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, componentsListProvider ComponentListProvider, config Config, defaultKymaVersion string) (CreatorForPlan, error) {
+	components, err := componentsListProvider.AllComponents(defaultKymaVersion)
+	if err != nil {
+		return &InputBuilderFactory{}, errors.Wrap(err, "while creating components list for default Kyma version")
+	}
+
 	return &InputBuilderFactory{
 		config:             config,
-		kymaVersion:        kymaVersion,
+		kymaVersion:        defaultKymaVersion,
 		optComponentsSvc:   optComponentsSvc,
-		fullComponentsList: mapToGQLComponentConfigurationInput(fullComponentsList),
+		fullComponentsList: mapToGQLComponentConfigurationInput(components),
+		componentsProvider: componentsListProvider,
+	}, nil
+}
+
+func (f *InputBuilderFactory) SetKymaVersion(kymaVersion string) error {
+	f.kymaVersion = kymaVersion
+
+	allComponents, err := f.componentsProvider.AllComponents(f.kymaVersion)
+	if err != nil {
+		return errors.Wrapf(err, "while fetching components list for %q kyma version", f.kymaVersion)
 	}
+	f.fullComponentsList = mapToGQLComponentConfigurationInput(allComponents)
+
+	return nil
 }
 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {

@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,17 +30,21 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 				{Key: "key-4", Value: "matata", Secret: ptr.Bool(true)},
 			}
 		)
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-		builder, found := NewInputBuilderFactory(dummyOptComponentsSvc, fixKymaComponentList(), Config{}, "not-important").ForPlan(broker.AzurePlanID)
+		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, componentsProvider, Config{}, "not-important")
+		assert.NoError(t, err)
+		creator, found := builder.ForPlan(broker.AzurePlanID)
 		require.True(t, found)
 
 		// when
-		builder.
+		creator.
 			AppendOverrides("keb", overridesA1).
 			AppendOverrides("keb", overridesA2)
 
 		// then
-		out, err := builder.Create()
+		out, err := creator.Create()
 		require.NoError(t, err)
 
 		overriddenComponent, found := find(out.KymaConfig.Components, "keb")
@@ -62,17 +67,21 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 				{Key: "key-4", Value: "matata", Secret: ptr.Bool(true)},
 			}
 		)
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-		builder, found := NewInputBuilderFactory(optComponentsSvc, fixKymaComponentList(), Config{}, "not-important").ForPlan(broker.AzurePlanID)
+		builder, err := NewInputBuilderFactory(optComponentsSvc, componentsProvider, Config{}, "not-important")
+		assert.NoError(t, err)
+		creator, found := builder.ForPlan(broker.AzurePlanID)
 		require.True(t, found)
 
 		// when
-		builder.
+		creator.
 			AppendGlobalOverrides(overridesA1).
 			AppendGlobalOverrides(overridesA2)
 
 		// then
-		out, err := builder.Create()
+		out, err := creator.Create()
 		require.NoError(t, err)
 
 		assertContainsAllOverrides(t, out.KymaConfig.Configuration, overridesA1, overridesA1)
@@ -100,7 +109,12 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	config := Config{
 		URL: "",
 	}
-	factory := NewInputBuilderFactory(optComponentsSvc, inputComponentList, config, "1.10.0")
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(inputComponentList, nil)
+	defer componentsProvider.AssertExpectations(t)
+
+	factory, err := NewInputBuilderFactory(optComponentsSvc, componentsProvider, config, "1.10.0")
+	assert.NoError(t, err)
 
 	// when
 	builder, found := factory.ForPlan(broker.AzurePlanID)

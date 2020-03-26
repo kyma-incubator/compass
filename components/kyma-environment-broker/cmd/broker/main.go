@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"os"
 
-	"code.cloudfoundry.org/lager"
-	"github.com/gorilla/handlers"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
@@ -25,6 +23,8 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 
+	"code.cloudfoundry.org/lager"
+	"github.com/gorilla/handlers"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -59,6 +59,7 @@ type Config struct {
 	ServiceManager provisioning.ServiceManagerOverrideConfig
 
 	KymaVersion                          string
+	KymaVersionOnDemand                  bool `envconfig:"default=false"`
 	ManagedRuntimeComponentsYAMLFilePath string
 
 	Broker broker.Config
@@ -127,12 +128,9 @@ func main() {
 		"KnativeProvisionerNatss": runtime.NewGenericComponentDisabler("knative-provisioner-natss", "knative-eventing"),
 		"NatssStreaming":          runtime.NewGenericComponentDisabler("nats-streaming", "natss"),
 	}
-
 	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
 
-	runtimeProvider := runtime.NewComponentsListProvider(cfg.KymaVersion, cfg.ManagedRuntimeComponentsYAMLFilePath)
-	fullRuntimeComponentList, err := runtimeProvider.AllComponents()
-	fatalOnError(err)
+	runtimeProvider := runtime.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLFilePath)
 
 	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	fatalOnError(err)
@@ -143,7 +141,8 @@ func main() {
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
 	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
 
-	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion)
+	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, runtimeProvider, cfg.Provisioning, cfg.KymaVersion)
+	fatalOnError(err)
 
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), logs)

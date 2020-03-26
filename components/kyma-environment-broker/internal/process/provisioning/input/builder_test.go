@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +14,12 @@ import (
 
 func TestInputBuilderFactory_IsPlanSupport(t *testing.T) {
 	// given
-	ibf := NewInputBuilderFactory(nil, []v1alpha1.KymaComponent{}, Config{}, "1.10")
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil)
+	defer componentsProvider.AssertExpectations(t)
+
+	ibf, err := NewInputBuilderFactory(nil, componentsProvider, Config{}, "1.10")
+	assert.NoError(t, err)
 
 	// when/then
 	assert.True(t, ibf.IsPlanSupport(broker.GcpPlanID))
@@ -22,7 +28,12 @@ func TestInputBuilderFactory_IsPlanSupport(t *testing.T) {
 
 func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	// given
-	ibf := NewInputBuilderFactory(nil, []v1alpha1.KymaComponent{}, Config{}, "1.10")
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil)
+	defer componentsProvider.AssertExpectations(t)
+
+	ibf, err := NewInputBuilderFactory(nil, componentsProvider, Config{}, "1.10")
+	assert.NoError(t, err)
 
 	// when
 	input, found := ibf.ForPlan(broker.GcpPlanID)

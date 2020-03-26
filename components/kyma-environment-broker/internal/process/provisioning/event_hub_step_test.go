@@ -376,7 +376,12 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Namespace: "knative-eventing",
 		},
 	}
-	ibf := input.NewInputBuilderFactory(optComponentsSvc, kymaComponentList, input.Config{}, kymaVersion)
+	componentsProvider := &inputAutomock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
+	defer componentsProvider.AssertExpectations(t)
+
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{}, kymaVersion)
+	assert.NoError(t, err)
 
 	creator, found := ibf.ForPlan(broker.AzurePlanID)
 	if !found {

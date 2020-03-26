@@ -9,6 +9,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
+	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -36,15 +38,17 @@ type InitialisationStep struct {
 	provisionerClient provisioner.Client
 	directorClient    DirectorClient
 	inputBuilder      input.CreatorForPlan
+	kymaVerOnDemand   bool
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan, kvod bool) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:  process.NewProvisionOperationManager(os),
 		instanceStorage:   is,
 		provisionerClient: pc,
 		directorClient:    dc,
 		inputBuilder:      b,
+		kymaVerOnDemand:   kvod,
 	}
 }
 
@@ -72,6 +76,26 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 	if err != nil {
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
+	}
+
+	if s.kymaVerOnDemand {
+		kymaVersion := pp.Parameters.KymaVersion
+		if kymaVersion == "" {
+			log.Info("input builder setting up to work with default Kyma version")
+		} else {
+			err := s.inputBuilder.SetKymaVersion(kymaVersion)
+			switch {
+			case err == nil:
+				log.Infof("setting up input builder to work with %s Kyma version", kymaVersion)
+			case kebError.IsTemporaryError(err):
+				log.Errorf("cannot fetch temporary kyma components for version %s: %s", kymaVersion, err)
+				return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+			default:
+				msg := fmt.Sprintf("cannot fetch kyma components for version %s", kymaVersion)
+				log.Error(msg)
+				return s.operationManager.OperationFailed(operation, msg)
+			}
+		}
 	}
 
 	log.Infof("create input creator for %q plan ID", pp.PlanID)
@@ -132,7 +156,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 
 func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance) (time.Duration, error) {
 	dashboardURL, err := s.directorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
-	if director.IsTemporaryError(err) {
+	if kebError.IsTemporaryError(err) {
 		return 3 * time.Minute, nil
 	}
 	if err != nil {

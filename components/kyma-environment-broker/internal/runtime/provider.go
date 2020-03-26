@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/iosafety"
 
 	"github.com/hashicorp/go-multierror"
@@ -22,9 +23,9 @@ const (
 
 // ComponentsListProvider provides the whole components list for creating a Kyma Runtime
 type ComponentsListProvider struct {
-	kymaVersion                      string
 	managedRuntimeComponentsYAMLPath string
 	httpClient                       HTTPDoer
+	components                       map[string][]v1alpha1.KymaComponent
 }
 
 type HTTPDoer interface {
@@ -32,22 +33,27 @@ type HTTPDoer interface {
 }
 
 // NewComponentsListProvider returns new instance of the ComponentsListProvider
-func NewComponentsListProvider(kymaVersion string, managedRuntimeComponentsYAMLPath string) *ComponentsListProvider {
+func NewComponentsListProvider(managedRuntimeComponentsYAMLPath string) *ComponentsListProvider {
 	return &ComponentsListProvider{
 		httpClient:                       http.DefaultClient,
-		kymaVersion:                      kymaVersion,
 		managedRuntimeComponentsYAMLPath: managedRuntimeComponentsYAMLPath,
+		components:                       make(map[string][]v1alpha1.KymaComponent, 0),
 	}
 }
 
 // AllComponents returns all components for Kyma Runtime. It fetches always the
 // Kyma open-source components from the given url and management components from
 // the file system and merge them together.
-func (r *ComponentsListProvider) AllComponents() ([]v1alpha1.KymaComponent, error) {
+func (r *ComponentsListProvider) AllComponents(kymaVersion string) ([]v1alpha1.KymaComponent, error) {
+	if cmps, ok := r.components[kymaVersion]; ok {
+		return cmps, nil
+	}
+
 	// Read Kyma installer yaml (url)
-	openSourceKymaComponents, err := r.getOpenSourceKymaComponents()
+	openSourceKymaComponents, err := r.getOpenSourceKymaComponents(kymaVersion)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting open source Kyma components list")
+		// do not wrap error, TemporaryError type can be return
+		return nil, err
 	}
 
 	// Read mounted config (path)
@@ -59,13 +65,14 @@ func (r *ComponentsListProvider) AllComponents() ([]v1alpha1.KymaComponent, erro
 	// Return merged list, managed components added at the end
 	merged := append(openSourceKymaComponents, managedRuntimeComponents...)
 
+	r.components[kymaVersion] = merged
 	return merged, nil
 }
 
 // DownloadFile will download a url to a local file. It's efficient because it will
 // write as it downloads and not load the whole file into memory.
-func (r *ComponentsListProvider) getOpenSourceKymaComponents() (comp []v1alpha1.KymaComponent, err error) {
-	installerYamlURL := r.getInstallerYamlURL()
+func (r *ComponentsListProvider) getOpenSourceKymaComponents(version string) (comp []v1alpha1.KymaComponent, err error) {
+	installerYamlURL := r.getInstallerYamlURL(version)
 
 	req, err := http.NewRequest(http.MethodGet, installerYamlURL, nil)
 	if err != nil {
@@ -74,7 +81,7 @@ func (r *ComponentsListProvider) getOpenSourceKymaComponents() (comp []v1alpha1.
 
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, kebError.NewTemporaryError("while making request for Kyma components list", err)
 	}
 	defer func() {
 		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
@@ -87,6 +94,7 @@ func (r *ComponentsListProvider) getOpenSourceKymaComponents() (comp []v1alpha1.
 	}()
 
 	if err := r.checkStatusCode(resp); err != nil {
+		// do not wrap error, TemporaryError type can be return
 		return nil, err
 	}
 
@@ -134,24 +142,34 @@ type Installation struct {
 }
 
 func (r *ComponentsListProvider) checkStatusCode(resp *http.Response) error {
-	if resp.StatusCode != http.StatusOK {
-		// limited buff to ready only ~4kb, so big response will not blowup our component
-		body, err := ioutil.ReadAll(io.LimitReader(resp.Body, 4096))
-		if err != nil {
-			body = []byte(fmt.Sprintf("cannot read body, got error: %s", err))
-		}
-		return errors.Errorf("got unexpected status code, want %d, got %d, url: %s, body: %s",
-			http.StatusOK, resp.StatusCode, resp.Request.URL.String(), body)
+	if resp.StatusCode == http.StatusOK {
+		return nil
 	}
-	return nil
+
+	// limited buff to ready only ~4kb, so big response will not blowup our component
+	body, err := ioutil.ReadAll(io.LimitReader(resp.Body, 4096))
+	if err != nil {
+		body = []byte(fmt.Sprintf("cannot read body, got error: %s", err))
+	}
+	msg := fmt.Sprintf("while checking response status code for Kyma components list: "+
+		"got unexpected status code, want %d, got %d, url: %s, body: %s",
+		http.StatusOK, resp.StatusCode, resp.Request.URL.String(), body)
+
+	switch {
+	case resp.StatusCode == http.StatusRequestTimeout:
+		return kebError.NewTemporaryError(msg, nil)
+	case resp.StatusCode >= http.StatusInternalServerError:
+		return kebError.NewTemporaryError(msg, nil)
+	default:
+		return errors.New(msg)
+	}
 }
 
-func (r *ComponentsListProvider) getInstallerYamlURL() string {
-	if r.isOnDemandRelease(r.kymaVersion) {
-		return fmt.Sprintf(onDemandInstallerURLFormat, r.kymaVersion)
+func (r *ComponentsListProvider) getInstallerYamlURL(kymaVersion string) string {
+	if r.isOnDemandRelease(kymaVersion) {
+		return fmt.Sprintf(onDemandInstallerURLFormat, kymaVersion)
 	}
-	return fmt.Sprintf(releaseInstallerURLFormat, r.kymaVersion)
-
+	return fmt.Sprintf(releaseInstallerURLFormat, kymaVersion)
 }
 
 // isOnDemandRelease returns true if the version is recognized as on-demand.
@@ -159,12 +177,10 @@ func (r *ComponentsListProvider) getInstallerYamlURL() string {
 // Detection rules:
 //   For pull requests: PR-<number>
 //   For changes to the master branch: master-<commit_sha>
-//   For the latest changes in the master branch: master
 //
 // source: https://github.com/kyma-project/test-infra/blob/master/docs/prow/prow-architecture.md#generate-development-artifacts
 func (r *ComponentsListProvider) isOnDemandRelease(version string) bool {
 	isOnDemandVersion := strings.HasPrefix(version, "PR-") ||
-		strings.HasPrefix(version, "master-") ||
-		strings.EqualFold(version, "master")
+		strings.HasPrefix(version, "master-")
 	return isOnDemandVersion
 }
