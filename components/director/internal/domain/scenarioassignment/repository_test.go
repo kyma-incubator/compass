@@ -170,3 +170,45 @@ func TestRepositoryGetForSelector(t *testing.T) {
 		assert.Nil(t, result)
 	})
 }
+
+func TestRepository_DeleteForSelector(t *testing.T) {
+	deleteQuery := regexp.QuoteMeta(`DELETE FROM public.automatic_scenario_assignments WHERE tenant_id = $1 AND selector_key = $2 AND selector_value = $3`)
+
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectExec(deleteQuery).
+			WithArgs(tenantID, "key", "value").
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := scenarioassignment.NewRepository(nil)
+
+		// WHEN
+		err := repo.DeleteForSelector(ctx, tenantID, fixLabelSelector())
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("DB error", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectExec(deleteQuery).
+			WithArgs(tenantID, "key", "value").
+			WillReturnError(fixError())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := scenarioassignment.NewRepository(nil)
+
+		// WHEN
+		err := repo.DeleteForSelector(ctx, tenantID, fixLabelSelector())
+
+		// THEN
+		require.EqualError(t, err, fmt.Sprintf("while deleting from database: %s", errMsg))
+	})
+}
