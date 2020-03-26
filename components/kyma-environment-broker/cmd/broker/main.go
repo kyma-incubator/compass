@@ -42,6 +42,11 @@ type Config struct {
 
 	DbInMemory bool `envconfig:"default=false"`
 
+	// DisableProcessOperationsInProgress allows to disable processing operations
+	// which are in progress on starting application. Set to true if you are
+	// running in a separate testing deployment but with the production DB.
+	DisableProcessOperationsInProgress bool `envconfig:"default=false"`
+
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
@@ -76,6 +81,8 @@ func main() {
 
 	logger.Info("Starting Kyma Environment Broker")
 
+	logs := logrus.New()
+
 	// create provisioner client
 	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 
@@ -97,7 +104,7 @@ func main() {
 	if cfg.DbInMemory {
 		db = storage.NewMemoryStorage()
 	} else {
-		db, err = storage.New(cfg.Database.ConnectionURL())
+		db, err = storage.NewFromConfig(cfg.Database, logs)
 		fatalOnError(err)
 	}
 
@@ -141,7 +148,6 @@ func main() {
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
 	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations())
 
-	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
 	stepManager.InitStep(initialisation)
 
@@ -156,8 +162,12 @@ func main() {
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
 
-	err = processOperationsInProgress(db.Operations(), queue, logs)
-	fatalOnError(err)
+	if !cfg.DisableProcessOperationsInProgress {
+		err = processOperationsInProgress(db.Operations(), queue, logs)
+		fatalOnError(err)
+	} else {
+		logger.Info("Skipping processing operation in progress on start")
+	}
 
 	plansValidator, err := broker.NewPlansSchemaValidator()
 	fatalOnError(err)

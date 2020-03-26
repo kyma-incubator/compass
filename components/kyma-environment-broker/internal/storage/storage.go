@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/driver/memory"
 	postgres "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/driver/postsql"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
+	"github.com/sirupsen/logrus"
 )
 
 type BrokerStorage interface {
@@ -12,11 +13,18 @@ type BrokerStorage interface {
 	Operations() Operations
 }
 
-func New(connectionURL string) (BrokerStorage, error) {
-	connection, err := postsql.InitializeDatabase(connectionURL)
+func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, error) {
+	connection, err := postsql.InitializeDatabase(cfg.ConnectionURL())
 	if err != nil {
 		return nil, err
 	}
+
+	log.Infof("Setting DB connection pool params: connectionMaxLifetime=%s "+
+		"maxIdleConnections=%d maxOpenConnections=%d", cfg.ConnMaxLifetime, cfg.MaxIdleConns, cfg.MaxOpenConns)
+	connection.SetConnMaxLifetime(cfg.ConnMaxLifetime)
+	connection.SetMaxIdleConns(cfg.MaxIdleConns)
+	connection.SetMaxOpenConns(cfg.MaxOpenConns)
+
 	fact := dbsession.NewFactory(connection)
 
 	return storage{

@@ -17,6 +17,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,12 +32,12 @@ func TestSchemaInitializer(t *testing.T) {
 	t.Run("Init tests", func(t *testing.T) {
 		t.Run("Should initialize database when schema not applied", func(t *testing.T) {
 			// given
-			containerCleanupFunc, connString, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
 			// when
-			connection, err := postsql.InitializeDatabase(connString)
+			connection, err := postsql.InitializeDatabase(cfg.ConnectionURL())
 
 			require.NoError(t, err)
 			require.NotNil(t, connection)
@@ -68,15 +69,15 @@ func TestSchemaInitializer(t *testing.T) {
 	t.Run("Instances", func(t *testing.T) {
 		t.Run("Should create and update instance", func(t *testing.T) {
 			// given
-			containerCleanupFunc, connString, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = InitTestDBTables(t, connString)
+			err = InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
 			// when
-			brokerStorage, err := New(connString)
+			brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
 
 			require.NoError(t, err)
 			require.NotNil(t, brokerStorage)
@@ -122,7 +123,7 @@ func TestSchemaInitializer(t *testing.T) {
 	})
 
 	t.Run("Operations", func(t *testing.T) {
-		containerCleanupFunc, connString, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -142,10 +143,10 @@ func TestSchemaInitializer(t *testing.T) {
 			ProvisioningParameters: `{"k":"v"}`,
 		}
 
-		err = InitTestDBTables(t, connString)
+		err = InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
 
-		brokerStorage, err := New(connString)
+		brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
 		svc := brokerStorage.Operations()
 
 		require.NoError(t, err)
@@ -183,7 +184,7 @@ func TestSchemaInitializer(t *testing.T) {
 	})
 
 	t.Run("Operations conflicts", func(t *testing.T) {
-		containerCleanupFunc, connString, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -202,10 +203,10 @@ func TestSchemaInitializer(t *testing.T) {
 			ProvisioningParameters: `{"key":"value"}`,
 		}
 
-		err = InitTestDBTables(t, connString)
+		err = InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
 
-		brokerStorage, err := New(connString)
+		brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
 		svc := brokerStorage.Operations()
 
 		require.NoError(t, err)
