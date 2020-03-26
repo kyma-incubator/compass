@@ -3,8 +3,9 @@ package gardener
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 
 	proviRuntime "github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 
