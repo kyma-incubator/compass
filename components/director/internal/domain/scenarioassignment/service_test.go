@@ -21,7 +21,7 @@ func TestService_Create(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
 		mockRepo.On("Create", fixCtxWithTenant(), fixModel()).Return(nil)
-		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{"scenario-A"})
+		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{scenarioName})
 		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc)
 		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc)
 		// WHEN
@@ -44,7 +44,7 @@ func TestService_Create(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
 		mockRepo.On("Create", mock.Anything, fixModel()).Return(apperrors.NewNotUniqueError(""))
-		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{"scenario-A"})
+		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{scenarioName})
 
 		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc)
 		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc)
@@ -69,7 +69,7 @@ func TestService_Create(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
 		mockRepo.On("Create", mock.Anything, fixModel()).Return(fixError())
-		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{"scenario-A"})
+		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{scenarioName})
 
 		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc)
 		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc)

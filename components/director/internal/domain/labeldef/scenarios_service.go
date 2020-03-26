@@ -53,11 +53,11 @@ func (s *scenariosService) GetAvailableScenarios(ctx context.Context, tenant str
 
 	b, err := json.Marshal(*def.Schema)
 	if err != nil {
-		return nil, fmt.Errorf("schema for `%s` label definition cannot be marshaled to JSON", model.ScenariosKey)
+		return nil, errors.Wrapf(err, "while marshaling schema")
 	}
 	sd := ScenariosDefinition{}
 	if err = json.Unmarshal(b, &sd); err != nil {
-		return nil, fmt.Errorf("cannot umarshal schema to %T", sd)
+		return nil, errors.Wrapf(err, "while unmarshaling schema to %T", sd)
 	}
 	return sd.Items.Enum, nil
 

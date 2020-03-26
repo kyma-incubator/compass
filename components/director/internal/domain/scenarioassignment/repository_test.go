@@ -119,9 +119,9 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 func TestRepositoryGetForSelector(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// given
-		scenarioEntities := []scenarioassignment.Entity{fixEntityWithScenarioName("scenario-A"),
+		scenarioEntities := []scenarioassignment.Entity{fixEntityWithScenarioName(scenarioName),
 			fixEntityWithScenarioName("scenario-B")}
-		scenarioModels := []model.AutomaticScenarioAssignment{fixModelWithScenarioName("scenario-A"),
+		scenarioModels := []model.AutomaticScenarioAssignment{fixModelWithScenarioName(scenarioName),
 			fixModelWithScenarioName("scenario-B")}
 
 		mockConverter := &automock.EntityConverter{}
@@ -132,7 +132,7 @@ func TestRepositoryGetForSelector(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{scenario: "scenario-A", tenantId: tenantID, selectorKey: "key", selectorValue: "value"},
+			{scenario: scenarioName, tenantId: tenantID, selectorKey: "key", selectorValue: "value"},
 			{scenario: "scenario-B", tenantId: tenantID, selectorKey: "key", selectorValue: "value"},
 		})
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE tenant_id=$1 AND selector_key = 'key' AND selector_value = 'value'`)).

@@ -18,14 +18,14 @@ import (
 
 func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 	givenInput := graphql.AutomaticScenarioAssignmentSetInput{
-		ScenarioName: "scenario-A",
+		ScenarioName: scenarioName,
 		Selector: &graphql.LabelSelectorInput{
 			Key:   "key",
 			Value: "value",
 		},
 	}
 	expectedOutput := graphql.AutomaticScenarioAssignment{
-		ScenarioName: "scenario-A",
+		ScenarioName: scenarioName,
 		Selector: &graphql.Label{
 			Key:   "key",
 			Value: "value",
@@ -93,7 +93,7 @@ func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 
 func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 	expectedOutput := graphql.AutomaticScenarioAssignment{
-		ScenarioName: "scenario-A",
+		ScenarioName: scenarioName,
 		Selector: &graphql.Label{
 			Key:   "key",
 			Value: "value",
@@ -163,7 +163,7 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 	expectedModels := []*model.AutomaticScenarioAssignment{
 		{
-			ScenarioName: "scenario-A",
+			ScenarioName: scenarioName,
 			Selector: model.LabelSelector{
 				Key:   "key",
 				Value: "value",
@@ -180,7 +180,7 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 	expectedOutput := []*graphql.AutomaticScenarioAssignment{
 		{
-			ScenarioName: "scenario-A",
+			ScenarioName: scenarioName,
 			Selector: &graphql.Label{
 				Key:   "key",
 				Value: "value",

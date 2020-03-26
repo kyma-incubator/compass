@@ -163,11 +163,3 @@ func TestGetAvailableScenarios(t *testing.T) {
 	})
 
 }
-
-func fixTenant() string {
-	return "tenant"
-}
-
-func fixError() error {
-	return errors.New("some error")
-}

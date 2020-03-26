@@ -74,12 +74,12 @@ func (s *service) validateThatScenarioExists(ctx context.Context, in model.Autom
 	return fmt.Errorf("scenario `%s` does not exist", in.ScenarioName)
 }
 
-func (s *service) getAvailableScenarios(ctx context.Context, tenant string) ([]string, error) {
-	if err := s.scenariosDefSvc.EnsureScenariosLabelDefinitionExists(ctx, tenant); err != nil {
+func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
+	if err := s.scenariosDefSvc.EnsureScenariosLabelDefinitionExists(ctx, tenantID); err != nil {
 		return nil, errors.Wrap(err, "while ensuring that `scenarios` label definition exist")
 	}
 
-	out, err := s.scenariosDefSvc.GetAvailableScenarios(ctx, tenant)
+	out, err := s.scenariosDefSvc.GetAvailableScenarios(ctx, tenantID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting available scenarios")
 	}
