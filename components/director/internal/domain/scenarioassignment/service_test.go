@@ -193,7 +193,7 @@ func TestService_DeleteForSelector(t *testing.T) {
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("DeleteForSelector", ctx, tenantID, selector).Return(nil).Once()
-		sut := scenarioassignment.NewService(mockRepo)
+		sut := scenarioassignment.NewService(mockRepo, nil)
 		// WHEN
 		err := sut.DeleteForSelector(ctx, selector)
 		// THEN
@@ -204,7 +204,7 @@ func TestService_DeleteForSelector(t *testing.T) {
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("DeleteForSelector", ctx, tenantID, selector).Return(fixError()).Once()
-		sut := scenarioassignment.NewService(mockRepo)
+		sut := scenarioassignment.NewService(mockRepo, nil)
 		// WHEN
 		err := sut.DeleteForSelector(ctx, selector)
 		// THEN
@@ -212,7 +212,7 @@ func TestService_DeleteForSelector(t *testing.T) {
 	})
 
 	t.Run("returns error when empty tenant", func(t *testing.T) {
-		sut := scenarioassignment.NewService(nil)
+		sut := scenarioassignment.NewService(nil, nil)
 		err := sut.DeleteForSelector(context.TODO(), selector)
 		require.EqualError(t, err, "cannot read tenant from context")
 	})
