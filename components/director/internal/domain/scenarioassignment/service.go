@@ -12,6 +12,7 @@ import (
 //go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
 type Repository interface {
 	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
+	GetForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error)
 }
 
@@ -40,6 +41,18 @@ func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignme
 	return in, nil
 }
 
+func (s *service) GetForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error) {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	assignments, err := s.repo.GetForSelector(ctx, in, tenantID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting the assignments")
+	}
+	return assignments, nil
+}
 func (s *service) GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {

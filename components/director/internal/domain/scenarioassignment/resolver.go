@@ -15,11 +15,14 @@ import (
 type Converter interface {
 	FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput) model.AutomaticScenarioAssignment
 	ToGraphQL(in model.AutomaticScenarioAssignment) graphql.AutomaticScenarioAssignment
+	LabelSelectorFromInput(in graphql.LabelSelectorInput) model.LabelSelector
+	MultipleToGraphQL(assignments []*model.AutomaticScenarioAssignment) []*graphql.AutomaticScenarioAssignment
 }
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
+	GetForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
 }
 
@@ -29,7 +32,6 @@ func NewResolver(transact persistence.Transactioner, converter Converter, svc Se
 		converter: converter,
 		svc:       svc,
 	}
-
 }
 
 type Resolver struct {
@@ -106,16 +108,6 @@ func (r *Resolver) AutomaticScenarioAssignmentForScenario(ctx context.Context, s
 	return mock.FixAssignmentForScenario(scenarioName), nil
 }
 
-func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	sel := &graphql.Label{Key: selector.Key, Value: selector.Value}
-	data := []*graphql.AutomaticScenarioAssignment{
-		mock.FixAssignmentForScenarioWithSelector("DEFAULT", sel),
-		mock.FixAssignmentForScenarioWithSelector("Foo", sel),
-	}
-
-	return data, nil
-}
-
 func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
 	data := []*graphql.AutomaticScenarioAssignment{
 		mock.FixAssignmentForScenario("DEFAULT"),
@@ -127,4 +119,28 @@ func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int,
 		Data:       data,
 		TotalCount: len(data),
 	}, nil
+}
+
+func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "while beginning transation")
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	modelInput := r.converter.LabelSelectorFromInput(in)
+
+	assignments, err := r.svc.GetForSelector(ctx, modelInput)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting the assignments")
+	}
+
+	gqlAssignments := r.converter.MultipleToGraphQL(assignments)
+
+	if err = tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
+	}
+	return gqlAssignments, nil
 }

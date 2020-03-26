@@ -89,3 +89,42 @@ func TestService_GetByScenarioName(t *testing.T) {
 		require.EqualError(t, err, fmt.Sprintf("while getting Assignment: %s", errMsg))
 	})
 }
+
+func TestService_GetForSelector(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// GIVEN
+		selector := fixLabelSelector()
+		assignment := fixModel()
+		result := []*model.AutomaticScenarioAssignment{&assignment}
+		mockRepo := &automock.Repository{}
+		defer mockRepo.AssertExpectations(t)
+		mockRepo.On("GetForSelector", mock.Anything, selector, tenantID).Return(result, nil)
+		sut := scenarioassignment.NewService(mockRepo)
+		// WHEN
+		actual, err := sut.GetForSelector(fixCtxWithTenant(), selector)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, result, actual)
+
+	})
+
+	t.Run("returns error on error from repository", func(t *testing.T) {
+		// GIVEN
+		selector := fixLabelSelector()
+		mockRepo := &automock.Repository{}
+		defer mockRepo.AssertExpectations(t)
+		mockRepo.On("GetForSelector", mock.Anything, selector, tenantID).Return(nil, fixError())
+		sut := scenarioassignment.NewService(mockRepo)
+		// WHEN
+		actual, err := sut.GetForSelector(fixCtxWithTenant(), selector)
+		// THEN
+		require.EqualError(t, err, "while getting the assignments: some error")
+		require.Nil(t, actual)
+	})
+
+	t.Run("returns error when no tenant in context", func(t *testing.T) {
+		sut := scenarioassignment.NewService(nil)
+		_, err := sut.GetForSelector(context.TODO(), fixLabelSelector())
+		require.EqualError(t, err, "cannot read tenant from context")
+	})
+}

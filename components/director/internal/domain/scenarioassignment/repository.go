@@ -2,6 +2,11 @@ package scenarioassignment
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/pkg/errors"
+
+	"github.com/lib/pq"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -9,13 +14,19 @@ import (
 
 const tableName string = `public.automatic_scenario_assignments`
 
-var columns = []string{scenarioColumn, tenantColumn, "selector_key", "selector_value"}
-var tenantColumn = "tenant_id"
-var scenarioColumn = "scenario"
+var columns = []string{scenarioColumn, tenantColumn, selectorKeyColumn, selectorValueColumn}
+
+var (
+	tenantColumn        = "tenant_id"
+	selectorKeyColumn   = "selector_key"
+	selectorValueColumn = "selector_value"
+	scenarioColumn      = "scenario"
+)
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
 		creator:      repo.NewCreator(tableName, columns),
+		lister:       repo.NewLister(tableName, tenantColumn, columns),
 		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, columns),
 		conv:         conv,
 	}
@@ -24,6 +35,7 @@ func NewRepository(conv EntityConverter) *repository {
 type repository struct {
 	creator      repo.Creator
 	singleGetter repo.SingleGetter
+	lister       repo.Lister
 	conv         EntityConverter
 }
 
@@ -38,6 +50,25 @@ func (r *repository) Create(ctx context.Context, model model.AutomaticScenarioAs
 	return r.creator.Create(ctx, entity)
 }
 
+func (r *repository) GetForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error) {
+	var out EntityCollection
+
+	conditionKey := fmt.Sprintf("%s = %s", selectorKeyColumn, pq.QuoteLiteral(in.Key))
+	conditionValue := fmt.Sprintf("%s = %s", selectorValueColumn, pq.QuoteLiteral(in.Value))
+
+	if err := r.lister.List(ctx, tenantID, &out, conditionKey, conditionValue); err != nil {
+		return nil, errors.Wrap(err, "while getting automatic scenario assignments from db")
+	}
+
+	var items []*model.AutomaticScenarioAssignment
+
+	for _, v := range out {
+		item := r.conv.FromEntity(v)
+		items = append(items, &item)
+	}
+
+	return items, nil
+}
 func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error) {
 	var ent Entity
 

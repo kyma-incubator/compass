@@ -5,6 +5,8 @@ import (
 	"database/sql/driver"
 	"errors"
 
+	"github.com/DATA-DOG/go-sqlmock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -27,9 +29,31 @@ func fixModel() model.AutomaticScenarioAssignment {
 	}
 }
 
+var testTableColumns = []string{"scenario", "tenant_id", "selector_key", "selector_value"}
+
+func fixModelWithScenarioName(scenario string) model.AutomaticScenarioAssignment {
+	return model.AutomaticScenarioAssignment{
+		ScenarioName: scenario,
+		Tenant:       tenantID,
+		Selector: model.LabelSelector{
+			Key:   "key",
+			Value: "value",
+		},
+	}
+}
+
 func fixEntity() scenarioassignment.Entity {
 	return scenarioassignment.Entity{
 		Scenario:      scenarioName,
+		TenantID:      tenantID,
+		SelectorKey:   "key",
+		SelectorValue: "value",
+	}
+}
+
+func fixEntityWithScenarioName(scenario string) scenarioassignment.Entity {
+	return scenarioassignment.Entity{
+		Scenario:      scenario,
 		TenantID:      tenantID,
 		SelectorKey:   "key",
 		SelectorValue: "value",
@@ -42,6 +66,28 @@ func fixError() error {
 
 func fixCtxWithTenant() context.Context {
 	return tenant.SaveToContext(context.TODO(), tenantID)
+}
+
+func fixLabelSelector() model.LabelSelector {
+	return model.LabelSelector{
+		Key:   "key",
+		Value: "value",
+	}
+}
+
+type sqlRow struct {
+	scenario      string
+	tenantId      string
+	selectorKey   string
+	selectorValue string
+}
+
+func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
+	out := sqlmock.NewRows(testTableColumns)
+	for _, row := range rows {
+		out.AddRow(row.scenario, row.tenantId, row.selectorKey, row.selectorValue)
+	}
+	return out
 }
 
 func fixAutomaticScenarioAssignmentRow(scenarioName, tenantID string) []driver.Value {
