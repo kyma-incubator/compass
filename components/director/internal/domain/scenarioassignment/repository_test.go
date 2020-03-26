@@ -203,10 +203,10 @@ func TestRepository_DeleteForSelector(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := scenarioassignment.NewRepository(nil)
 
-		// when
+		// WHEN
 		err := repo.DeleteForSelector(ctx, tenantID, fixLabelSelector())
 
-		// then
+		// THEN
 		require.EqualError(t, err, "while deleting from database: some error")
 	})
 }

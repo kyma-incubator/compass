@@ -95,10 +95,6 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Cont
 	return mock.FixAssignmentForScenario(scenarioName), nil
 }
 
-func (r *Resolver) AutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
-	return mock.FixAssignmentForScenario(scenarioName), nil
-}
-
 func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
 	data := []*graphql.AutomaticScenarioAssignment{
 		mock.FixAssignmentForScenario("DEFAULT"),
