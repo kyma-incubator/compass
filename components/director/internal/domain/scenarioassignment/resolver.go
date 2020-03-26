@@ -22,16 +22,18 @@ type Converter interface {
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
+	List(ctx context.Context, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 	GetForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
 	DeleteForSelector(ctx context.Context, selector model.LabelSelector) error
 }
 
+// TODO: Change order of params: Service before Converter
 func NewResolver(transact persistence.Transactioner, converter Converter, svc Service) *Resolver {
 	return &Resolver{
 		transact:  transact,
-		converter: converter,
 		svc:       svc,
+		converter: converter,
 	}
 }
 
@@ -95,19 +97,6 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Cont
 	return mock.FixAssignmentForScenario(scenarioName), nil
 }
 
-func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
-	data := []*graphql.AutomaticScenarioAssignment{
-		mock.FixAssignmentForScenario("DEFAULT"),
-		mock.FixAssignmentForScenario("Foo"),
-		mock.FixAssignmentForScenario("bar"),
-		mock.FixAssignmentForScenario("fooBar"),
-	}
-	return &graphql.AutomaticScenarioAssignmentPage{
-		Data:       data,
-		TotalCount: len(data),
-	}, nil
-}
-
 func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -130,6 +119,46 @@ func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, i
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 	return gqlAssignments, nil
+}
+
+func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+	if first == nil {
+		return nil, errors.New("missing required parameter 'first'")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "while beginning transaction")
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	page, err := r.svc.List(ctx, *first, cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing the assignments")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
+	}
+
+	gqlApps := r.converter.MultipleToGraphQL(page.Data)
+
+	return &graphql.AutomaticScenarioAssignmentPage{
+		Data:       gqlApps,
+		TotalCount: page.TotalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(page.PageInfo.EndCursor),
+			HasNextPage: page.PageInfo.HasNextPage,
+		},
+	}, nil
 }
 
 func (r *Resolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {

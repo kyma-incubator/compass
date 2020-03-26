@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -19,7 +21,7 @@ import (
 
 func TestRepositoryCreate(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		// given
+		// GIVEN
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", fixModel()).Return(fixEntity()).Once()
@@ -35,15 +37,15 @@ func TestRepositoryCreate(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := scenarioassignment.NewRepository(mockConverter)
 
-		// when
+		// WHEN
 		err := repo.Create(ctx, fixModel())
 
-		// then
+		// THEN
 		assert.NoError(t, err)
 	})
 
 	t.Run("DB error", func(t *testing.T) {
-		// given
+		// GIVEN
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", fixModel()).Return(fixEntity()).Once()
@@ -57,10 +59,10 @@ func TestRepositoryCreate(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := scenarioassignment.NewRepository(mockConverter)
 
-		// when
+		// WHEN
 		err := repo.Create(ctx, fixModel())
 
-		// then
+		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while inserting row to 'public.automatic_scenario_assignments' table: %s", errMsg))
 	})
 }
@@ -89,15 +91,15 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 		convMock := &automock.EntityConverter{}
 		convMock.On("FromEntity", ent).Return(fixModel()).Once()
 		defer convMock.AssertExpectations(t)
-		pgRepository := scenarioassignment.NewRepository(convMock)
+		repo := scenarioassignment.NewRepository(convMock)
 		// WHEN
-		_, err := pgRepository.GetForScenarioName(ctx, tenantID, scenarioName)
+		_, err := repo.GetForScenarioName(ctx, tenantID, scenarioName)
 		//THEN
 		require.NoError(t, err)
 	})
 
 	t.Run("DB error", func(t *testing.T) {
-		// given
+		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
@@ -108,17 +110,17 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := scenarioassignment.NewRepository(nil)
 
-		// when
+		// WHEN
 		_, err := repo.GetForScenarioName(ctx, tenantID, scenarioName)
 
-		// then
+		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while getting object from DB: %s", errMsg))
 	})
 }
 
 func TestRepositoryGetForSelector(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		// given
+		// GIVEN
 		scenarioEntities := []scenarioassignment.Entity{fixEntityWithScenarioName(scenarioName),
 			fixEntityWithScenarioName("scenario-B")}
 		scenarioModels := []model.AutomaticScenarioAssignment{fixModelWithScenarioName(scenarioName),
@@ -142,17 +144,17 @@ func TestRepositoryGetForSelector(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := scenarioassignment.NewRepository(mockConverter)
 
-		// when
+		// WHEN
 		result, err := repo.GetForSelector(ctx, fixLabelSelector(), tenantID)
 
-		// then
+		// THEN
 		assert.NoError(t, err)
 		assert.Equal(t, scenarioModels[0], *result[0])
 		assert.Equal(t, scenarioModels[1], *result[1])
 	})
 
 	t.Run("DB error", func(t *testing.T) {
-		// given
+		// GIVEN
 
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -162,12 +164,93 @@ func TestRepositoryGetForSelector(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := scenarioassignment.NewRepository(nil)
 
-		// when
+		// WHEN
 		result, err := repo.GetForSelector(ctx, fixLabelSelector(), tenantID)
 
-		// then
+		// THEN
 		require.EqualError(t, err, "while getting automatic scenario assignments from db: while fetching list of objects from DB: some error")
 		assert.Nil(t, result)
+	})
+}
+
+func TestRepository_List(t *testing.T) {
+	// GIVEN
+	ExpectedLimit := 3
+	ExpectedOffset := 0
+
+	inputPageSize := 3
+	inputCursor := ""
+	totalCount := 2
+
+	scenarioName1 := "foo"
+	scenarioName2 := "bar"
+
+	ent1 := fixEntityWithScenarioName(scenarioName1)
+	ent2 := fixEntityWithScenarioName(scenarioName2)
+
+	mod1 := fixModelWithScenarioName(scenarioName1)
+	mod2 := fixModelWithScenarioName(scenarioName2)
+
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.automatic_scenario_assignments
+		WHERE tenant_id=\$1
+		ORDER BY scenario LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
+
+	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM public.automatic_scenario_assignments
+		WHERE tenant_id=$1`)
+	countQuery := regexp.QuoteMeta(rawCountQuery)
+
+	t.Run("Success", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(fixAutomaticScenarioAssignmentColumns()).
+			AddRow(fixAutomaticScenarioAssignmentRow(scenarioName1, tenantID)...).
+			AddRow(fixAutomaticScenarioAssignmentRow(scenarioName2, tenantID)...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(tenantID).
+			WillReturnRows(testdb.RowCount(2))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.EntityConverter{}
+		convMock.On("FromEntity", ent1).Return(mod1)
+		convMock.On("FromEntity", ent2).Return(mod2)
+		repo := scenarioassignment.NewRepository(convMock)
+		// WHEN
+		modelAssignment, err := repo.List(ctx, tenantID, inputPageSize, inputCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelAssignment.Data, 2)
+		assert.Equal(t, scenarioName1, modelAssignment.Data[0].ScenarioName)
+		assert.Equal(t, scenarioName2, modelAssignment.Data[1].ScenarioName)
+		assert.Equal(t, "", modelAssignment.PageInfo.StartCursor)
+		assert.Equal(t, totalCount, modelAssignment.TotalCount)
+
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		// GIVEN
+		repo := scenarioassignment.NewRepository(nil)
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		testError := errors.New("test error")
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID).
+			WillReturnError(testError)
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+		// WHEN
+		modelAssignment, err := repo.List(ctx, tenantID, inputPageSize, inputCursor)
+
+		// THEN
+		sqlMock.AssertExpectations(t)
+
+		assert.Nil(t, modelAssignment)
+		require.EqualError(t, err, fmt.Sprintf("while fetching list of objects from DB: %s", testError.Error()))
 	})
 }
 

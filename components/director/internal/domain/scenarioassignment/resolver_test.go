@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -263,6 +265,123 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 		require.EqualError(t, err, "while committing transaction: some persistence error")
 		require.Nil(t, actual)
 	})
+}
+
+func TestResolver_AutomaticScenarioAssignments(t *testing.T) {
+	// given
+	testErr := errors.New("test error")
+
+	mod1 := fixModelWithScenarioName("foo")
+	mod2 := fixModelWithScenarioName("bar")
+	modItems := []*model.AutomaticScenarioAssignment{
+		&mod1, &mod2,
+	}
+	modelPage := fixModelPageWithItems(modItems)
+
+	gql1 := fixGQLWithScenarioName("foo")
+	gql2 := fixGQLWithScenarioName("bar")
+	gqlItems := []*graphql.AutomaticScenarioAssignment{
+		&gql1, &gql2,
+	}
+	gqlPage := fixGQLPageWithItems(gqlItems)
+
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	first := 2
+	gqlAfter := graphql.PageCursor("test")
+	after := "test"
+
+	testCases := []struct {
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn       func() *automock.Service
+		ConverterFn     func() *automock.Converter
+		ExpectedResult  *graphql.AutomaticScenarioAssignmentPage
+		ExpectedErr     error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(&modelPage, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("MultipleToGraphQL", modItems).Return(gqlItems).Once()
+				return conv
+			},
+			ExpectedResult: &gqlPage,
+			ExpectedErr:    nil,
+		},
+		{
+			Name:            "Returns error when transaction begin failed",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				return svc
+			},
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Returns error when Assignments listing failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(nil, testErr).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Returns error when transaction commit failed",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(&modelPage, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			persist, transact := testCase.TransactionerFn()
+			svc := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+
+			resolver := scenarioassignment.NewResolver(transact, converter, svc)
+			// WHEN
+			result, err := resolver.AutomaticScenarioAssignments(context.TODO(), &first, &gqlAfter)
+
+			// THEN
+			assert.Equal(t, testCase.ExpectedResult, result)
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testErr.Error())
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, svc, converter)
+		})
+	}
 }
 
 func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {

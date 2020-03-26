@@ -5,6 +5,9 @@ import (
 	"database/sql/driver"
 	"errors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/DATA-DOG/go-sqlmock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -39,6 +42,50 @@ func fixModelWithScenarioName(scenario string) model.AutomaticScenarioAssignment
 			Key:   "key",
 			Value: "value",
 		},
+	}
+}
+
+func fixModelPage() model.AutomaticScenarioAssignmentPage {
+	mod1 := fixModelWithScenarioName("foo")
+	mod2 := fixModelWithScenarioName("bar")
+	modItems := []*model.AutomaticScenarioAssignment{
+		&mod1, &mod2,
+	}
+	return fixModelPageWithItems(modItems)
+}
+
+func fixModelPageWithItems(in []*model.AutomaticScenarioAssignment) model.AutomaticScenarioAssignmentPage {
+	return model.AutomaticScenarioAssignmentPage{
+		Data:       in,
+		PageInfo:   &pagination.Page{},
+		TotalCount: len(in),
+	}
+}
+
+func fixGQLWithScenarioName(scenario string) graphql.AutomaticScenarioAssignment {
+	return graphql.AutomaticScenarioAssignment{
+		ScenarioName: scenario,
+		Selector: &graphql.Label{
+			Key:   "key",
+			Value: "value",
+		},
+	}
+}
+
+func fixGQLPage() graphql.AutomaticScenarioAssignmentPage {
+	gql1 := fixGQLWithScenarioName("foo")
+	gql2 := fixGQLWithScenarioName("bar")
+	gqlItems := []*graphql.AutomaticScenarioAssignment{
+		&gql1, &gql2,
+	}
+	return fixGQLPageWithItems(gqlItems)
+}
+
+func fixGQLPageWithItems(in []*graphql.AutomaticScenarioAssignment) graphql.AutomaticScenarioAssignmentPage {
+	return graphql.AutomaticScenarioAssignmentPage{
+		Data:       in,
+		PageInfo:   &graphql.PageInfo{},
+		TotalCount: len(in),
 	}
 }
 

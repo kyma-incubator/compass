@@ -89,3 +89,26 @@ func (_m *Service) GetForSelector(ctx context.Context, in model.LabelSelector) (
 
 	return r0, r1
 }
+
+// List provides a mock function with given fields: ctx, pageSize, cursor
+func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error) {
+	ret := _m.Called(ctx, pageSize, cursor)
+
+	var r0 *model.AutomaticScenarioAssignmentPage
+	if rf, ok := ret.Get(0).(func(context.Context, int, string) *model.AutomaticScenarioAssignmentPage); ok {
+		r0 = rf(ctx, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.AutomaticScenarioAssignmentPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
+		r1 = rf(ctx, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
