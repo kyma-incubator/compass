@@ -44,7 +44,7 @@ func fixModelWithScenarioName(scenario string) model.AutomaticScenarioAssignment
 
 func fixEntity() scenarioassignment.Entity {
 	return scenarioassignment.Entity{
-		Scenario:      "scenario-A",
+		Scenario:      scenarioName,
 		TenantID:      tenantID,
 		SelectorKey:   "key",
 		SelectorValue: "value",

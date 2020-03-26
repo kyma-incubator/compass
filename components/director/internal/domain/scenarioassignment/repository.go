@@ -14,7 +14,7 @@ import (
 
 const tableName string = `public.automatic_scenario_assignments`
 
-var columns = []string{"scenario", tenantColumn, selectorKeyColumn, selectorValueColumn}
+var columns = []string{scenarioColumn, tenantColumn, selectorKeyColumn, selectorValueColumn}
 
 var (
 	tenantColumn        = "tenant_id"
