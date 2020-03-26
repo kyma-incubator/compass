@@ -172,12 +172,14 @@ func TestRepositoryGetForSelector(t *testing.T) {
 }
 
 func TestRepository_DeleteForSelector(t *testing.T) {
+	deleteQuery := regexp.QuoteMeta(`DELETE FROM public.automatic_scenario_assignments WHERE tenant_id = $1 AND selector_key = $2 AND selector_value = $3`)
+
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM public.automatic_scenario_assignments WHERE tenant_id = $1 AND selector_key = $2 AND selector_value = $3`)).
+		dbMock.ExpectExec(deleteQuery).
 			WithArgs(tenantID, "key", "value").
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
@@ -196,7 +198,7 @@ func TestRepository_DeleteForSelector(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM public.automatic_scenario_assignments WHERE tenant_id = $1 AND selector_key = $2 AND selector_value = $3`)).
+		dbMock.ExpectExec(deleteQuery).
 			WithArgs(tenantID, "key", "value").
 			WillReturnError(fixError())
 
