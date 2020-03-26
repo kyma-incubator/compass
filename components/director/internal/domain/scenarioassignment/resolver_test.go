@@ -352,7 +352,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 		actual, err := sut.DeleteAutomaticScenarioAssignmentForSelector(fixCtxWithTenant(), givenInput)
 		// THEN
 		require.Nil(t, actual)
-		require.EqualError(t, err, fmt.Sprintf("while getting the Assignments for selector [{key value}]: %s",errMsg))
+		require.EqualError(t, err, fmt.Sprintf("while getting the Assignments for selector [{key value}]: %s", errMsg))
 	})
 
 	t.Run("error on deleting assignments by service", func(t *testing.T) {
