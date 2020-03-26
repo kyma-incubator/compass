@@ -220,6 +220,7 @@ func (c *converter) statusConditionToModel(in *graphql.ApplicationStatusConditio
 	case graphql.ApplicationStatusConditionFailed:
 		condition = model.ApplicationStatusConditionFailed
 	case graphql.ApplicationStatusConditionInitial:
+		fallthrough
 	default:
 		condition = model.ApplicationStatusConditionInitial
 	}

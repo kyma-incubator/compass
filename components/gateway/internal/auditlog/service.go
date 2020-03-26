@@ -15,17 +15,17 @@ type AuditlogMessage struct {
 	proxy.Claims
 }
 
-type AuditlogSource struct {
+type Sink struct {
 	logsChannel chan AuditlogMessage
 }
 
-func NewAuditlogSink(logsChannel chan AuditlogMessage) *AuditlogSource {
-	return &AuditlogSource{
+func NewSink(logsChannel chan AuditlogMessage) *Sink {
+	return &Sink{
 		logsChannel: logsChannel,
 	}
 }
 
-func (sink *AuditlogSource) Log(request, response string, claims proxy.Claims) error {
+func (sink *Sink) Log(request, response string, claims proxy.Claims) error {
 	msg := AuditlogMessage{
 		Request:  request,
 		Response: response,
@@ -35,10 +35,10 @@ func (sink *AuditlogSource) Log(request, response string, claims proxy.Claims) e
 	return nil
 }
 
-type DummyAuditlog struct {
+type NoOpService struct {
 }
 
-func (sink *DummyAuditlog) Log(request, response string, claims proxy.Claims) error {
+func (sink *NoOpService) Log(request, response string, claims proxy.Claims) error {
 	return nil
 }
 
@@ -48,15 +48,15 @@ type AuditlogClient interface {
 	LogSecurityEvent(event model.SecurityEvent) error
 }
 
-type AuditlogService struct {
+type Service struct {
 	client AuditlogClient
 }
 
-func NewService(client AuditlogClient) *AuditlogService {
-	return &AuditlogService{client: client}
+func NewService(client AuditlogClient) *Service {
+	return &Service{client: client}
 }
 
-func (svc *AuditlogService) Log(request, response string, claims proxy.Claims) error {
+func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 	graphqlResponse, err := svc.parseResponse(response)
 	if err != nil {
 		return errors.Wrap(err, "while parsing response")
@@ -113,7 +113,7 @@ func (svc *AuditlogService) Log(request, response string, claims proxy.Claims) e
 	return errors.Wrap(err, "while sending configuration change")
 }
 
-func (svc *AuditlogService) parseResponse(response string) (model.GraphqlResponse, error) {
+func (svc *Service) parseResponse(response string) (model.GraphqlResponse, error) {
 	var graphqResponse model.GraphqlResponse
 	err := json.Unmarshal([]byte(response), &graphqResponse)
 	if err != nil {
@@ -122,7 +122,7 @@ func (svc *AuditlogService) parseResponse(response string) (model.GraphqlRespons
 	return graphqResponse, nil
 }
 
-func (svc *AuditlogService) createConfigChangeLog(claims proxy.Claims, request string) model.ConfigurationChange {
+func (svc *Service) createConfigChangeLog(claims proxy.Claims, request string) model.ConfigurationChange {
 	return model.ConfigurationChange{
 		User: "proxy",
 		Object: model.Object{
@@ -139,7 +139,7 @@ func (svc *AuditlogService) createConfigChangeLog(claims proxy.Claims, request s
 	}
 }
 
-func (svc *AuditlogService) hasInsufficientScopeError(errors []model.ErrorMessage) bool {
+func (svc *Service) hasInsufficientScopeError(errors []model.ErrorMessage) bool {
 	for _, msg := range errors {
 		if strings.Contains(msg.Message, "insufficient scopes provided") {
 			return true

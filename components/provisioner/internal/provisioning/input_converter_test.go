@@ -124,7 +124,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "gcp-verylon",
+			Name:                   "verylon",
 			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
@@ -189,7 +189,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "azu-verylon",
+			Name:                   "verylon",
 			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
@@ -260,7 +260,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "aws-verylon",
+			Name:                   "verylon",
 			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
@@ -412,73 +412,6 @@ func newInputConverterTester(uuidGenerator uuid.UUIDGenerator, releaseRepo relea
 	return &converter{
 		uuidGenerator: uuidGenerator,
 		releaseRepo:   releaseRepo,
-	}
-}
-
-func TestConverter_CreateGardenerClusterName(t *testing.T) {
-
-	providerInputs := []struct {
-		provider     string
-		expectedName string
-		description  string
-	}{
-		{
-			provider:     "gcp",
-			expectedName: "gcp-id",
-			description:  "regular GCP provider name",
-		},
-		{
-			provider:     "aws",
-			expectedName: "aws-id",
-			description:  "regular AWS provider name",
-		},
-		{
-			provider:     "azure",
-			expectedName: "azu-id",
-			description:  "regular Azure provider name",
-		},
-		{
-			provider:     "GCP",
-			expectedName: "gcp-id",
-			description:  "capitalized GCP provider name",
-		},
-		{
-			provider:     "AWS",
-			expectedName: "aws-id",
-			description:  "capitalized AWS provider name",
-		},
-		{
-			provider:     "AZURE",
-			expectedName: "azu-id",
-			description:  "capitalized Azure provider name",
-		},
-		{
-			provider:     "-",
-			expectedName: "c--id",
-			description:  "wrong provider name that contains only hyphen: \"-\"",
-		},
-		{
-			provider:     "!#$@^%&*gcp",
-			expectedName: "gcp-id",
-			description:  "wrong provider name with non-alphanumeric characters",
-		},
-		{
-			provider:     "912740131aws---",
-			expectedName: "aws-id",
-			description:  "wrong provider name with numbers",
-		},
-	}
-
-	for _, testCase := range providerInputs {
-		t.Run(testCase.description, func(t *testing.T) {
-			uuidGeneratorMock := &mocks.UUIDGenerator{}
-			uuidGeneratorMock.On("New").Return("id")
-
-			inputConverter := newInputConverterTester(uuidGeneratorMock, nil)
-			generatedName := inputConverter.createGardenerClusterName(testCase.provider)
-
-			assert.Equal(t, testCase.expectedName, generatedName)
-		})
 	}
 }
 

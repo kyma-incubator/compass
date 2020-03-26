@@ -2,9 +2,10 @@ package domain
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
@@ -65,6 +66,7 @@ type RootResolver struct {
 	tenant              *tenant.Resolver
 	mpPackage           *mp_package.Resolver
 	packageInstanceAuth *packageinstanceauth.Resolver
+	scenarioAssignment  *scenarioassignment.Resolver
 }
 
 func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, pairingAdaptersMapping map[string]string) *RootResolver {
@@ -87,6 +89,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter, packageConverter)
 	appTemplateConverter := apptemplate.NewConverter(appConverter)
 	packageInstanceAuthConv := packageinstanceauth.NewConverter(authConverter)
+	assignmentConv := scenarioassignment.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
@@ -150,6 +153,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
 		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, packageConverter, packageInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
 		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageSvc, packageInstanceAuthConv),
+		scenarioAssignment:  scenarioassignment.NewResolver(transact, assignmentConv, scenarioassignment.NewService(scenarioassignment.NewRepository(assignmentConv))),
 	}
 }
 
@@ -252,15 +256,15 @@ func (r *queryResolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) 
 }
 
 func (r *queryResolver) AutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
-	return nil, errors.New("not implemented")
+	return r.scenarioAssignment.GetAutomaticScenarioAssignmentForScenarioName(ctx, scenarioName)
 }
 
-func (r *queryResolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	return nil, errors.New("not implemented")
+func (r *queryResolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+	return r.scenarioAssignment.AutomaticScenarioAssignmentForSelector(ctx, selector)
 }
 
 func (r *queryResolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
-	return nil, errors.New("not implemented")
+	return r.scenarioAssignment.AutomaticScenarioAssignments(ctx, first, after)
 }
 
 type mutationResolver struct {
@@ -441,13 +445,13 @@ func (r *mutationResolver) DeletePackage(ctx context.Context, id string) (*graph
 }
 
 func (r *mutationResolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
-	return nil, errors.New("not implemented")
+	return r.scenarioAssignment.DeleteAutomaticScenarioAssignmentForScenario(ctx, scenarioName)
 }
-func (r *mutationResolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	return nil, errors.New("not implemented")
+func (r *mutationResolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+	return r.scenarioAssignment.DeleteAutomaticScenarioAssignmentForSelector(ctx, selector)
 }
 func (r *mutationResolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
-	return nil, errors.New("not implemented")
+	return r.scenarioAssignment.SetAutomaticScenarioAssignment(ctx, in)
 }
 
 type applicationResolver struct {

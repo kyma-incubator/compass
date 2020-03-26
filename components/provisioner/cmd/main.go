@@ -46,6 +46,7 @@ type config struct {
 	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
 	OauthCredentialsSecretName   string `envconfig:"default=compass-provisioner-credentials"`
+	DownloadPreReleases          bool   `envconfig:"default=true"`
 
 	Database struct {
 		User     string `envconfig:"default=postgres"`
@@ -74,14 +75,14 @@ type config struct {
 
 func (c *config) String() string {
 	return fmt.Sprintf("Address: %s, APIEndpoint: %s, CredentialsNamespace: %s, "+
-		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s"+
+		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s, DownloadPreReleases: %v, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
-		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, GardenerAuditLogsTenant: %s"+
-		"Provisioner: %s"+
+		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, GardenerAuditLogsTenant: %s, "+
+		"Provisioner: %s, "+
 		"SupportOnDemandReleases: %v",
 		c.Address, c.APIEndpoint, c.CredentialsNamespace,
-		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
+		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName, c.DownloadPreReleases,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenant,
@@ -156,7 +157,7 @@ func main() {
 	resolver := api.NewResolver(provisioningSVC, validator)
 
 	logger := log.WithField("Component", "Artifact Downloader")
-	downloader := release.NewArtifactsDownloader(releaseRepository, 5, false, httpClient, logger)
+	downloader := release.NewArtifactsDownloader(releaseRepository, 5, cfg.DownloadPreReleases, httpClient, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

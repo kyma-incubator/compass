@@ -20,6 +20,7 @@ import (
 
 const (
 	SubAccountLabel = "subaccount"
+	AccountLabel    = "account"
 )
 
 type GardenerConfig struct {
@@ -43,7 +44,7 @@ type GardenerConfig struct {
 	GardenerProviderConfig GardenerProviderConfig
 }
 
-func (c GardenerConfig) ToShootTemplate(namespace string, subAccountId string) (*gardener_types.Shoot, error) {
+func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string) (*gardener_types.Shoot, error) {
 	allowPrivlagedContainers := true
 	enableBasicAuthentication := false
 
@@ -58,6 +59,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, subAccountId string) (
 			Namespace: namespace,
 			Labels: map[string]string{
 				SubAccountLabel: subAccountId,
+				AccountLabel:    accountId,
 			},
 		},
 		Spec: gardener_types.ShootSpec{

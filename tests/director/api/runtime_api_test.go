@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,12 +44,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	actualLabel := graphql.Label{}
 
 	// WHEN
-	addLabelReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: setRuntimeLabel(runtimeID: "%s", key: "%s", value: %s) {
-					%s
-				}
-			}`, actualRuntime.ID, "new_label", "[\"bbb\"]", tc.gqlFieldsProvider.ForLabel()))
+	addLabelReq := fixSetRuntimeLabelRequest(actualRuntime.ID, "new_label", []string{"bbb"})
 	err = tc.RunOperation(ctx, addLabelReq, &actualLabel)
 
 	//THEN
@@ -323,12 +317,7 @@ func TestQueryRuntimes(t *testing.T) {
 	actualPage := graphql.RuntimePage{}
 
 	// WHEN
-	queryReq := gcli.NewRequest(
-		fmt.Sprintf(`query {
-			result: runtimes {
-					%s
-				}
-			}`, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
+	queryReq := fixRuntimesRequest()
 	err := tc.RunOperation(ctx, queryReq, &actualPage)
 	saveExampleInCustomDir(t, queryReq.Query(), queryRuntimesCategory, "query runtimes")
 
@@ -369,12 +358,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	queriedRuntime := graphql.Runtime{}
 
 	// WHEN
-	queryReq := gcli.NewRequest(
-		fmt.Sprintf(`query {
-			result: runtime(id: "%s") {
-					%s
-				}
-			}`, createdRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
+	queryReq := fixRuntimeRequest(createdRuntime.ID)
 	err = tc.RunOperation(ctx, queryReq, &queriedRuntime)
 	saveExample(t, queryReq.Query(), "query runtime")
 

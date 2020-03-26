@@ -177,6 +177,41 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 	}
 }
 
+func TestConverter_UpdateInputFromGraphQL_StatusCondition(t *testing.T) {
+	testCases := []struct {
+		Name           string
+		CondtionGQL    graphql.ApplicationStatusCondition
+		ConditionModel model.ApplicationStatusCondition
+	}{
+		{
+			Name:           "When status condition is FAILED",
+			CondtionGQL:    graphql.ApplicationStatusConditionFailed,
+			ConditionModel: model.ApplicationStatusConditionFailed,
+		},
+		{
+			Name:           "When status condition is CONNECTED",
+			CondtionGQL:    graphql.ApplicationStatusConditionConnected,
+			ConditionModel: model.ApplicationStatusConditionConnected,
+		},
+		{
+			Name:           "When status condition is INITIAL",
+			CondtionGQL:    graphql.ApplicationStatusConditionInitial,
+			ConditionModel: model.ApplicationStatusConditionInitial,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			gqlApp := graphql.ApplicationUpdateInput{StatusCondition: &testCase.CondtionGQL}
+
+			converter := application.NewConverter(nil, nil, nil, nil, nil)
+			modelApp := converter.UpdateInputFromGraphQL(gqlApp)
+
+			require.Equal(t, &testCase.ConditionModel, modelApp.StatusCondition)
+		})
+	}
+}
+
 func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 	allPropsInput := fixGQLApplicationUpdateInput("foo", "Lorem ipsum", testURL, graphql.ApplicationStatusConditionConnected)
 	allPropsExpected := fixModelApplicationUpdateInput("foo", "Lorem ipsum", testURL, model.ApplicationStatusConditionConnected)
