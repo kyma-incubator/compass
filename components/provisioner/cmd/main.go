@@ -71,6 +71,8 @@ type config struct {
 
 	Provisioner             string `envconfig:"default=gardener"`
 	SupportOnDemandReleases bool   `envconfig:"default=false"`
+
+	LogLevel string `envconfig:"default=info"`
 }
 
 func (c *config) String() string {
@@ -79,15 +81,15 @@ func (c *config) String() string {
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, GardenerAuditLogsTenant: %s, "+
-		"Provisioner: %s, "+
-		"SupportOnDemandReleases: %v",
+		"Provisioner: %s, SupportOnDemandReleases: %v, "+
+		"LogLevel: %s",
 		c.Address, c.APIEndpoint, c.CredentialsNamespace,
 		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName, c.DownloadPreReleases,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenant,
-		c.Provisioner,
-		c.SupportOnDemandReleases)
+		c.Provisioner, c.SupportOnDemandReleases,
+		c.LogLevel)
 }
 
 func main() {
@@ -99,6 +101,13 @@ func main() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Failed to load application config")
+
+	logLevel, err := log.ParseLevel(cfg.LogLevel)
+	if err != nil {
+		log.Warnf("Invalid log level: '%s', defaulting to 'info'", cfg.LogLevel)
+		logLevel = log.InfoLevel
+	}
+	log.SetLevel(logLevel)
 
 	log.Infof("Starting Provisioner")
 	log.Infof("Config: %s", cfg.String())

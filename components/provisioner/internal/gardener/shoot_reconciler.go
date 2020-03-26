@@ -3,6 +3,7 @@ package gardener
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"time"
 
 	proviRuntime "github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
@@ -41,9 +42,10 @@ func NewReconciler(
 	directorClient director.DirectorClient,
 	runtimeConfigurator proviRuntime.Configurator) *Reconciler {
 	return &Reconciler{
-		client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
-		log:    logrus.WithField("Component", "ShootReconciler"),
+		client:     mgr.GetClient(),
+		scheme:     mgr.GetScheme(),
+		log:        logrus.WithField("Component", "ShootReconciler"),
+		dbsFactory: dbsFactory,
 
 		provisioningOperator: &ProvisioningOperator{
 			dbsFactory:              dbsFactory,
@@ -58,8 +60,9 @@ func NewReconciler(
 }
 
 type Reconciler struct {
-	client client.Client
-	scheme *runtime.Scheme
+	client     client.Client
+	scheme     *runtime.Scheme
+	dbsFactory dbsession.Factory
 
 	log                  *logrus.Entry
 	provisioningOperator *ProvisioningOperator
@@ -89,6 +92,18 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		log.Error(err, "unable to get shoot")
 		return ctrl.Result{}, err
 	}
+
+	runtimeId := getRuntimeId(shoot)
+	shouldReconcile, err := r.shouldReconcileShoot(runtimeId)
+	if err != nil {
+		log.Errorf("Failed to verify if shoot should be reconciled")
+		return ctrl.Result{}, err
+	}
+	if !shouldReconcile {
+		log.Debugf("Runtime with id %s not found in database, shoot will be ignored", runtimeId)
+		return ctrl.Result{}, nil
+	}
+	log = log.WithField("RuntimeId", runtimeId)
 
 	// Get operationId from annotation
 	operationId := getOperationId(shoot)
@@ -134,8 +149,27 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 func (r *Reconciler) handleShootWithoutOperationId(log *logrus.Entry, shoot gardener_types.Shoot) error {
 	// TODO: We can verify shoot status here - ensure it is ok
-	log.Infof("Shoot without operation ID is ignored for now")
+	log.Debug("Shoot without operation ID is ignored for now")
 	return nil
+}
+
+func (r *Reconciler) shouldReconcileShoot(shootRuntimeId string) (bool, error) {
+	if shootRuntimeId == "" {
+		return false, nil
+	}
+
+	session := r.dbsFactory.NewReadSession()
+
+	_, err := session.GetCluster(shootRuntimeId)
+	if err != nil {
+		if err.Code() == dberrors.CodeNotFound {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
 }
 
 func isShootFailed(shoot gardener_types.Shoot) bool {
@@ -156,8 +190,6 @@ func (r *ProvisioningOperator) HandleShootDeletion(log *logrus.Entry, name types
 		log.Errorf("error getting Gardener cluster by name: %s", dberr.Error())
 		return ctrl.Result{}, dberr
 	}
-
-	log = log.WithField("RuntimeId", cluster.ID)
 
 	lastOperation, dberr := session.GetLastOperation(cluster.ID)
 	if dberr != nil {
