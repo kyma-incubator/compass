@@ -42,8 +42,8 @@ func (s *scenariosService) EnsureScenariosLabelDefinitionExists(ctx context.Cont
 	return nil
 }
 
-func (s *scenariosService) GetAvailableScenarios(ctx context.Context, tenant string) ([]string, error) {
-	def, err := s.repo.GetByKey(ctx, tenant, model.ScenariosKey)
+func (s *scenariosService) GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
+	def, err := s.repo.GetByKey(ctx, tenantID, model.ScenariosKey)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting `%s` label definition", model.ScenariosKey)
 	}

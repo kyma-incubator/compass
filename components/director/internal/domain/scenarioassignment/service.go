@@ -22,8 +22,8 @@ type Repository interface {
 
 //go:generate mockery -name=ScenariosDefService -output=automock -outpkg=automock -case=underscore
 type ScenariosDefService interface {
-	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-	GetAvailableScenarios(ctx context.Context, tenant string) ([]string, error)
+	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenantID string) error
+	GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error)
 }
 
 func NewService(repo Repository, scenarioDefSvc ScenariosDefService) *service {
