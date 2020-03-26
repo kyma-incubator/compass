@@ -34,3 +34,24 @@ func (_m *Service) Create(ctx context.Context, in model.AutomaticScenarioAssignm
 
 	return r0, r1
 }
+
+// GetForScenarioName provides a mock function with given fields: ctx, scenarioName
+func (_m *Service) GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error) {
+	ret := _m.Called(ctx, scenarioName)
+
+	var r0 model.AutomaticScenarioAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, string) model.AutomaticScenarioAssignment); ok {
+		r0 = rf(ctx, scenarioName)
+	} else {
+		r0 = ret.Get(0).(model.AutomaticScenarioAssignment)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, scenarioName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
