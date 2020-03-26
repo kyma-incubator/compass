@@ -42,10 +42,10 @@ type Config struct {
 
 	DbInMemory bool `envconfig:"default=false"`
 
-	// ProcessOperationsInProgress allows to disable processing operations
-	// which are in progress on starting application. Set to false if you are
-	// running in a separate testing deployment but with production DB.
-	ProcessOperationsInProgress bool `envconfig:"default=true"`
+	// DisableProcessOperationsInProgress allows to disable processing operations
+	// which are in progress on starting application. Set to true if you are
+	// running in a separate testing deployment but with the production DB.
+	DisableProcessOperationsInProgress bool `envconfig:"default=false"`
 
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
@@ -162,7 +162,7 @@ func main() {
 	queue := process.NewQueue(stepManager)
 	queue.Run(ctx.Done())
 
-	if cfg.ProcessOperationsInProgress {
+	if !cfg.DisableProcessOperationsInProgress {
 		err = processOperationsInProgress(db.Operations(), queue, logs)
 		fatalOnError(err)
 	} else {
