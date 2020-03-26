@@ -98,7 +98,7 @@ func TestService_GetForSelector(t *testing.T) {
 		result := []*model.AutomaticScenarioAssignment{&assignment}
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("GetForSelector", mock.Anything, selector, DefaultTenant).Return(result, nil)
+		mockRepo.On("GetForSelector", mock.Anything, selector, DefaultTenantID).Return(result, nil)
 		sut := scenarioassignment.NewService(mockRepo)
 		// WHEN
 		actual, err := sut.GetForSelector(fixCtxWithTenant(), selector)
@@ -113,7 +113,7 @@ func TestService_GetForSelector(t *testing.T) {
 		selector := fixLabelSelector()
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("GetForSelector", mock.Anything, selector, DefaultTenant).Return(nil, fixError())
+		mockRepo.On("GetForSelector", mock.Anything, selector, DefaultTenantID).Return(nil, fixError())
 		sut := scenarioassignment.NewService(mockRepo)
 		// WHEN
 		actual, err := sut.GetForSelector(fixCtxWithTenant(), selector)
@@ -122,7 +122,7 @@ func TestService_GetForSelector(t *testing.T) {
 		require.Nil(t, actual)
 	})
 
-	t.Run("returns error when empty tenant", func(t *testing.T) {
+	t.Run("returns error when no tenant in context", func(t *testing.T) {
 		sut := scenarioassignment.NewService(nil)
 		_, err := sut.GetForSelector(context.TODO(), fixLabelSelector())
 		require.EqualError(t, err, "cannot read tenant from context")

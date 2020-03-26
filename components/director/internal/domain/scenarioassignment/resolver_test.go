@@ -202,8 +202,7 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("LabelSelectorFromInput", givenInput).Return(fixLabelSelector())
-		mockConverter.On("ToGraphQL", *expectedModels[0]).Return(*expectedOutput[0])
-		mockConverter.On("ToGraphQL", *expectedModels[1]).Return(*expectedOutput[1])
+		mockConverter.On("MultipleToGraphQL", expectedModels).Return(expectedOutput)
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
@@ -251,8 +250,7 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("LabelSelectorFromInput", givenInput).Return(fixLabelSelector())
-		mockConverter.On("ToGraphQL", *expectedModels[0]).Return(*expectedOutput[0])
-		mockConverter.On("ToGraphQL", *expectedModels[1]).Return(*expectedOutput[1])
+		mockConverter.On("MultipleToGraphQL", expectedModels).Return(expectedOutput)
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)

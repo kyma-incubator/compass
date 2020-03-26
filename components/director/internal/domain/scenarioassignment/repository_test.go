@@ -132,18 +132,18 @@ func TestRepositoryGetForSelector(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{scenario: "scenario-a", tenantId: DefaultTenant, selectorKey: "key", selectorValue: "value"},
-			{scenario: "scenario-b", tenantId: DefaultTenant, selectorKey: "key", selectorValue: "value"},
+			{scenario: "scenario-a", tenantId: DefaultTenantID, selectorKey: "key", selectorValue: "value"},
+			{scenario: "scenario-b", tenantId: DefaultTenantID, selectorKey: "key", selectorValue: "value"},
 		})
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE tenant_id=$1 AND selector_key = 'key' AND selector_value = 'value'`)).
-			WithArgs(DefaultTenant).
+			WithArgs(DefaultTenantID).
 			WillReturnRows(rowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := scenarioassignment.NewRepository(mockConverter)
 
 		// when
-		result, err := repo.GetForSelector(ctx, fixLabelSelector(), DefaultTenant)
+		result, err := repo.GetForSelector(ctx, fixLabelSelector(), DefaultTenantID)
 
 		// then
 		assert.NoError(t, err)
@@ -163,7 +163,7 @@ func TestRepositoryGetForSelector(t *testing.T) {
 		repo := scenarioassignment.NewRepository(nil)
 
 		// when
-		result, err := repo.GetForSelector(ctx, fixLabelSelector(), DefaultTenant)
+		result, err := repo.GetForSelector(ctx, fixLabelSelector(), DefaultTenantID)
 
 		// then
 		require.EqualError(t, err, "while getting automatic scenario assignments from db: while fetching list of objects from DB: some error")

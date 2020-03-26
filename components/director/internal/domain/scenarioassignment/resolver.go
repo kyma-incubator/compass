@@ -16,6 +16,7 @@ type Converter interface {
 	FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput) model.AutomaticScenarioAssignment
 	ToGraphQL(in model.AutomaticScenarioAssignment) graphql.AutomaticScenarioAssignment
 	LabelSelectorFromInput(in graphql.LabelSelectorInput) model.LabelSelector
+	MultipleToGraphQL(assignments []*model.AutomaticScenarioAssignment) []*graphql.AutomaticScenarioAssignment
 }
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
@@ -146,20 +147,10 @@ func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, i
 		return nil, errors.Wrap(err, "while getting the assignments")
 	}
 
-	gqlAssignments := r.multipleToGraphql(assignments)
+	gqlAssignments := r.converter.MultipleToGraphQL(assignments)
 
 	if err = tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 	return gqlAssignments, nil
-}
-
-func (r *Resolver) multipleToGraphql(assignments []*model.AutomaticScenarioAssignment) []*graphql.AutomaticScenarioAssignment {
-	var gqlAssignments []*graphql.AutomaticScenarioAssignment
-
-	for _, v := range assignments {
-		assignment := r.converter.ToGraphQL(*v)
-		gqlAssignments = append(gqlAssignments, &assignment)
-	}
-	return gqlAssignments
 }

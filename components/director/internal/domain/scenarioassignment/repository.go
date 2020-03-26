@@ -14,9 +14,14 @@ import (
 
 const tableName string = `public.automatic_scenario_assignments`
 
-var columns = []string{scenarioColumn, tenantColumn, "selector_key", "selector_value"}
-var tenantColumn = "tenant_id"
-var scenarioColumn = "scenario"
+var columns = []string{"scenario", tenantColumn, selectorKeyColumn, selectorValueColumn}
+
+var (
+	tenantColumn        = "tenant_id"
+	selectorKeyColumn   = "selector_key"
+	selectorValueColumn = "selector_value"
+    scenarioColumn = "scenario"
+)
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
@@ -48,8 +53,9 @@ func (r *repository) Create(ctx context.Context, model model.AutomaticScenarioAs
 func (r *repository) GetForSelector(ctx context.Context, in model.LabelSelector, tenant string) ([]*model.AutomaticScenarioAssignment, error) {
 	var out EntityCollection
 
-	conditionKey := fmt.Sprintf("selector_key = %s", pq.QuoteLiteral(in.Key))
-	conditionValue := fmt.Sprintf("selector_value = %s", pq.QuoteLiteral(in.Value))
+	conditionKey := fmt.Sprintf("%s = %s", selectorKeyColumn, pq.QuoteLiteral(in.Key))
+	conditionValue := fmt.Sprintf("%s = %s", selectorValueColumn, pq.QuoteLiteral(in.Value))
+
 	if err := r.lister.List(ctx, tenant, &out, conditionKey, conditionValue); err != nil {
 		return nil, errors.Wrap(err, "while getting automatic scenario assignments from db")
 	}
