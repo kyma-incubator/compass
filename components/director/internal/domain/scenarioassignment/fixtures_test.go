@@ -34,7 +34,7 @@ var testTableColumns = []string{"scenario", "tenant_id", "selector_key", "select
 func fixModelWithScenarioName(scenario string) model.AutomaticScenarioAssignment {
 	return model.AutomaticScenarioAssignment{
 		ScenarioName: scenario,
-		Tenant:       DefaultTenantID,
+		Tenant:       tenantID,
 		Selector: model.LabelSelector{
 			Key:   "key",
 			Value: "value",
@@ -45,7 +45,7 @@ func fixModelWithScenarioName(scenario string) model.AutomaticScenarioAssignment
 func fixEntity() scenarioassignment.Entity {
 	return scenarioassignment.Entity{
 		Scenario:      "scenario-A",
-		TenantID:      DefaultTenantID,
+		TenantID:      tenantID,
 		SelectorKey:   "key",
 		SelectorValue: "value",
 	}
@@ -53,7 +53,7 @@ func fixEntity() scenarioassignment.Entity {
 
 func fixEntityWithScenarioName(scenario string) scenarioassignment.Entity {
 	return scenarioassignment.Entity{
-		Scenario:      scenarioName,
+		Scenario:      scenario,
 		TenantID:      tenantID,
 		SelectorKey:   "key",
 		SelectorValue: "value",
@@ -65,7 +65,7 @@ func fixError() error {
 }
 
 func fixCtxWithTenant() context.Context {
-	return tenant.SaveToContext(context.TODO(), DefaultTenantID)
+	return tenant.SaveToContext(context.TODO(), tenantID)
 }
 
 func fixLabelSelector() model.LabelSelector {

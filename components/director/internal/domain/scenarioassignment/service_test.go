@@ -98,7 +98,7 @@ func TestService_GetForSelector(t *testing.T) {
 		result := []*model.AutomaticScenarioAssignment{&assignment}
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("GetForSelector", mock.Anything, selector, DefaultTenantID).Return(result, nil)
+		mockRepo.On("GetForSelector", mock.Anything, selector, tenantID).Return(result, nil)
 		sut := scenarioassignment.NewService(mockRepo)
 		// WHEN
 		actual, err := sut.GetForSelector(fixCtxWithTenant(), selector)
@@ -113,7 +113,7 @@ func TestService_GetForSelector(t *testing.T) {
 		selector := fixLabelSelector()
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("GetForSelector", mock.Anything, selector, DefaultTenantID).Return(nil, fixError())
+		mockRepo.On("GetForSelector", mock.Anything, selector, tenantID).Return(nil, fixError())
 		sut := scenarioassignment.NewService(mockRepo)
 		// WHEN
 		actual, err := sut.GetForSelector(fixCtxWithTenant(), selector)

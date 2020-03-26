@@ -22,7 +22,7 @@ type Converter interface {
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
-	GetForSelector(ctx context.Context, in model.LabelSelector, tenant string) ([]*model.AutomaticScenarioAssignment, error)
+	GetForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
 }
 
@@ -106,16 +106,6 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Cont
 
 func (r *Resolver) AutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
 	return mock.FixAssignmentForScenario(scenarioName), nil
-}
-
-func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	sel := &graphql.Label{Key: selector.Key, Value: selector.Value}
-	data := []*graphql.AutomaticScenarioAssignment{
-		mock.FixAssignmentForScenarioWithSelector("DEFAULT", sel),
-		mock.FixAssignmentForScenarioWithSelector("Foo", sel),
-	}
-
-	return data, nil
 }
 
 func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {

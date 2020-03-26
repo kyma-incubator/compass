@@ -48,3 +48,26 @@ func (_m *Repository) GetForScenarioName(ctx context.Context, tenantID string, s
 
 	return r0, r1
 }
+
+// GetForSelector provides a mock function with given fields: ctx, in, tenant
+func (_m *Repository) GetForSelector(ctx context.Context, in model.LabelSelector, tenant string) ([]*model.AutomaticScenarioAssignment, error) {
+	ret := _m.Called(ctx, in, tenant)
+
+	var r0 []*model.AutomaticScenarioAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, model.LabelSelector, string) []*model.AutomaticScenarioAssignment); ok {
+		r0 = rf(ctx, in, tenant)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.AutomaticScenarioAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.LabelSelector, string) error); ok {
+		r1 = rf(ctx, in, tenant)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

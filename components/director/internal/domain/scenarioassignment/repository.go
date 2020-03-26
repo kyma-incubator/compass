@@ -20,13 +20,13 @@ var (
 	tenantColumn        = "tenant_id"
 	selectorKeyColumn   = "selector_key"
 	selectorValueColumn = "selector_value"
-    scenarioColumn = "scenario"
+	scenarioColumn      = "scenario"
 )
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator: repo.NewCreator(tableName, columns),
-		lister:  repo.NewLister(tableName, tenantColumn, columns),
+		creator:      repo.NewCreator(tableName, columns),
+		lister:       repo.NewLister(tableName, tenantColumn, columns),
 		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, columns),
 		conv:         conv,
 	}
@@ -35,8 +35,8 @@ func NewRepository(conv EntityConverter) *repository {
 type repository struct {
 	creator      repo.Creator
 	singleGetter repo.SingleGetter
-	lister  repo.Lister
-	conv    EntityConverter
+	lister       repo.Lister
+	conv         EntityConverter
 }
 
 //go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
@@ -63,7 +63,8 @@ func (r *repository) GetForSelector(ctx context.Context, in model.LabelSelector,
 	var items []*model.AutomaticScenarioAssignment
 
 	for _, v := range out {
-		items = append(items, r.conv.FromEntity(v))
+		item := r.conv.FromEntity(v)
+		items = append(items, &item)
 	}
 
 	return items, nil
