@@ -29,6 +29,11 @@ type AuditlogMetadata struct {
 	UUID   string `json:"uuid"`
 }
 
+type SecurityEventData struct {
+	ID     map[string]string `json:"id"`
+	Reason string            `json:"reason"`
+}
+
 type Object struct {
 	ID   map[string]string `json:"id"`
 	Type string            `json:"type"`

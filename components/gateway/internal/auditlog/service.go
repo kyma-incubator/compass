@@ -82,14 +82,20 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 	}
 
 	if svc.hasInsufficientScopeError(graphqlResponse.Errors) {
-		data, err := json.Marshal(&graphqlResponse.Errors)
+		response, err := json.Marshal(&graphqlResponse.Errors)
 		if err != nil {
 			return errors.Wrap(err, "while marshalling graphql err")
 		}
+
 		msg := svc.msgFactory.CreateSecurityEvent()
+		eventData := model.SecurityEventData{ID: fillID(claims, "Security Event"), Reason: string(response)}
+		data, err := json.Marshal(&eventData)
+		if err != nil {
+			return errors.Wrap(err, "while marshalling security event data")
+		}
+
 		msg.Data = string(data)
 		err = svc.client.LogSecurityEvent(msg)
-
 		return errors.Wrap(err, "while sending security event to auditlog")
 	}
 
@@ -130,13 +136,7 @@ func (svc *Service) parseResponse(response string) (model.GraphqlResponse, error
 
 func (svc *Service) createConfigChangeMsg(claims proxy.Claims, request string) model.ConfigurationChange {
 	msg := svc.msgFactory.CreateConfigurationChange()
-	msg.Object = model.Object{
-		ID: map[string]string{
-			"name":           "Config Change",
-			"externalTenant": claims.Tenant,
-			"apiConsumer":    claims.ConsumerType,
-			"consumerID":     claims.ConsumerID,
-		}}
+	msg.Object = model.Object{ID: fillID(claims, "Config Change")}
 	msg.Attributes = []model.Attribute{
 		{Name: "request", Old: "", New: request}}
 
@@ -191,4 +191,13 @@ func searchForMutationErr(response model.GraphqlResponse) bool {
 		}
 	}
 	return true
+}
+
+func fillID(claims proxy.Claims, name string) map[string]string {
+	return map[string]string{
+		"name":           name,
+		"externalTenant": claims.Tenant,
+		"apiConsumer":    claims.ConsumerType,
+		"consumerID":     claims.ConsumerID,
+	}
 }

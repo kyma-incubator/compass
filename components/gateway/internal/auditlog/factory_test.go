@@ -63,7 +63,6 @@ func TestMessageFactory(t *testing.T) {
 	})
 }
 
-//TODO: use it in factory tests
 func initMocks(msgID string, timestamp time.Time) (auditlog.UUIDService, auditlog.TimeService) {
 	uuidSvc := &automock.UUIDService{}
 	uuidSvc.On("Generate").Return(msgID).Once()

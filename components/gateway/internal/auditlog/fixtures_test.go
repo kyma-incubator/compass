@@ -1,8 +1,12 @@
 package auditlog_test
 
 import (
+	"encoding/json"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -29,18 +33,37 @@ func fixFabricatedSecurityEventMsg() model.SecurityEvent {
 
 func fixSuccessConfigChangeMsg(claims proxy.Claims, request, response string) model.ConfigurationChange {
 	msg := fixFabricatedConfigChangeMsg()
-	msg.Object = model.Object{
-		ID: map[string]string{
-			"name":           "Config Change",
-			"externalTenant": claims.Tenant,
-			"apiConsumer":    claims.ConsumerType,
-			"consumerID":     claims.ConsumerID,
-		}}
+	msg.Object = model.Object{ID: fillID(claims, "Config Change")}
 	msg.Attributes = []model.Attribute{
 		{Name: "request", Old: "", New: request},
 		{Name: "response", Old: "", New: response}}
 
 	return msg
+}
+
+func fixSecurityEventMsg(t *testing.T, errors []model.ErrorMessage, claims proxy.Claims) model.SecurityEvent {
+	reason, err := json.Marshal(&errors)
+	require.NoError(t, err)
+	msgData := model.SecurityEventData{
+		ID:     fillID(claims, "Security Event"),
+		Reason: string(reason),
+	}
+	data, err := json.Marshal(&msgData)
+	require.NoError(t, err)
+
+	msg := fixFabricatedSecurityEventMsg()
+	msg.Data = string(data)
+	return msg
+
+}
+
+func fillID(claims proxy.Claims, name string) map[string]string {
+	return map[string]string{
+		"name":           name,
+		"externalTenant": claims.Tenant,
+		"apiConsumer":    claims.ConsumerType,
+		"consumerID":     claims.ConsumerID,
+	}
 }
 
 func fixFilledConfigChangeMsg() model.ConfigurationChange {

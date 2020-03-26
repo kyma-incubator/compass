@@ -177,17 +177,15 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 		factory.On("CreateSecurityEvent").Return(fixFabricatedSecurityEventMsg())
 
 		request := fixRequest()
-		graphqlResponse := FixResponseUnsufficientScopes()
+		graphqlResponse := fixResponseUnsufficientScopes()
 		response, err := json.Marshal(&graphqlResponse)
 		require.NoError(t, err)
-		responseErr, err := json.Marshal(graphqlResponse.Errors)
-		require.NoError(t, err)
+
 		claims := fixClaims()
-		log := fixFabricatedSecurityEventMsg()
-		log.Data = string(responseErr)
+		msg := fixSecurityEventMsg(t, graphqlResponse.Errors, fixClaims())
 
 		client := &automock.AuditlogClient{}
-		client.On("LogSecurityEvent", log).Return(nil)
+		client.On("LogSecurityEvent", msg).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
@@ -316,7 +314,7 @@ func fixGraphqlMultiErrorWithMutation(t *testing.T) string {
 	return string(output)
 }
 
-func FixResponseUnsufficientScopes() model.GraphqlResponse {
+func fixResponseUnsufficientScopes() model.GraphqlResponse {
 	return model.GraphqlResponse{
 		Errors: []model.ErrorMessage{
 			{
