@@ -44,6 +44,6 @@ func fixCtxWithTenant() context.Context {
 	return tenant.SaveToContext(context.TODO(), tenantID)
 }
 
-func fixAutomaticScenarioAssignmentRow(scenarioName, tnt string) []driver.Value {
-	return []driver.Value{scenarioName, tnt, "key", "value"}
+func fixAutomaticScenarioAssignmentRow(scenarioName, tenantID string) []driver.Value {
+	return []driver.Value{scenarioName, tenantID, "key", "value"}
 }

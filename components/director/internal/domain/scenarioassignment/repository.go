@@ -38,14 +38,14 @@ func (r *repository) Create(ctx context.Context, model model.AutomaticScenarioAs
 	return r.creator.Create(ctx, entity)
 }
 
-func (r *repository) GetByScenarioName(ctx context.Context, tnt, scenarioName string) (model.AutomaticScenarioAssignment, error) {
+func (r *repository) GetByScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error) {
 	var ent Entity
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition(scenarioColumn, scenarioName),
 	}
 
-	if err := r.singleGetter.Get(ctx, tnt, conditions, repo.NoOrderBy, &ent); err != nil {
+	if err := r.singleGetter.Get(ctx, tenantID, conditions, repo.NoOrderBy, &ent); err != nil {
 		return model.AutomaticScenarioAssignment{}, err
 	}
 

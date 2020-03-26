@@ -13,7 +13,7 @@ import (
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
-	FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput) (model.AutomaticScenarioAssignment, error)
+	FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput) model.AutomaticScenarioAssignment
 	ToGraphQL(in model.AutomaticScenarioAssignment) graphql.AutomaticScenarioAssignment
 }
 
@@ -47,10 +47,8 @@ func (r *Resolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphq
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn, err := r.converter.FromInputGraphQL(in)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting to model")
-	}
+	convertedIn := r.converter.FromInputGraphQL(in)
+
 	out, err := r.svc.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating Assignment")

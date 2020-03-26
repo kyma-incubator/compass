@@ -12,7 +12,7 @@ import (
 //go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
 type Repository interface {
 	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
-	GetByScenarioName(ctx context.Context, tnt, scenarioName string) (model.AutomaticScenarioAssignment, error)
+	GetByScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error)
 }
 
 func NewService(repo Repository) *service {
@@ -26,12 +26,12 @@ type service struct {
 }
 
 func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
+	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return model.AutomaticScenarioAssignment{}, err
 	}
 
-	in.Tenant = tnt
+	in.Tenant = tenantID
 
 	err = s.repo.Create(ctx, in)
 	if err != nil {
@@ -41,12 +41,12 @@ func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignme
 }
 
 func (s *service) GetByScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
+	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return model.AutomaticScenarioAssignment{}, err
 	}
 
-	sa, err := s.repo.GetByScenarioName(ctx, tnt, scenarioName)
+	sa, err := s.repo.GetByScenarioName(ctx, tenantID, scenarioName)
 	if err != nil {
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while getting Assignment")
 	}

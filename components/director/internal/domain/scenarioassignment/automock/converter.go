@@ -14,13 +14,13 @@ type Converter struct {
 	mock.Mock
 }
 
-// FromInputGraphQL provides a mock function with given fields: in, tenant
-func (_m *Converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, tenant string) model.AutomaticScenarioAssignment {
-	ret := _m.Called(in, tenant)
+// FromInputGraphQL provides a mock function with given fields: in
+func (_m *Converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput) model.AutomaticScenarioAssignment {
+	ret := _m.Called(in)
 
 	var r0 model.AutomaticScenarioAssignment
-	if rf, ok := ret.Get(0).(func(graphql.AutomaticScenarioAssignmentSetInput, string) model.AutomaticScenarioAssignment); ok {
-		r0 = rf(in, tenant)
+	if rf, ok := ret.Get(0).(func(graphql.AutomaticScenarioAssignmentSetInput) model.AutomaticScenarioAssignment); ok {
+		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(model.AutomaticScenarioAssignment)
 	}

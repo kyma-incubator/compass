@@ -37,7 +37,7 @@ func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		tx, transact := txGen.ThatSucceeds()
 		mockConverter := &automock.Converter{}
-		mockConverter.On("FromInputGraphQL", givenInput).Return(fixModel(), nil)
+		mockConverter.On("FromInputGraphQL", givenInput).Return(fixModel())
 		mockConverter.On("ToGraphQL", fixModel()).Return(expectedOutput)
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
@@ -59,18 +59,6 @@ func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 		_, err := sut.SetAutomaticScenarioAssignment(context.TODO(), graphql.AutomaticScenarioAssignmentSetInput{})
 		// THEN
 		assert.EqualError(t, err, "while beginning transaction: some persistence error")
-	})
-
-	t.Run("error on converting input to model", func(t *testing.T) {
-		tx, transact := txGen.ThatDoesntExpectCommit()
-		mockConverter := &automock.Converter{}
-		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter)
-		mockConverter.On("FromInputGraphQL", mock.Anything).Return(model.AutomaticScenarioAssignment{}, errors.New("conversion error"))
-		sut := scenarioassignment.NewResolver(transact, mockConverter, nil)
-		// WHEN
-		_, err := sut.SetAutomaticScenarioAssignment(context.TODO(), givenInput)
-		// THEN
-		assert.EqualError(t, err, "while converting to model: conversion error")
 	})
 
 	t.Run("error on creating assignment by service", func(t *testing.T) {

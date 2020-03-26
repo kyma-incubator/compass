@@ -11,10 +11,9 @@ func NewConverter() *converter {
 
 type converter struct{}
 
-func (c *converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, tenant string) model.AutomaticScenarioAssignment {
+func (c *converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput) model.AutomaticScenarioAssignment {
 	out := model.AutomaticScenarioAssignment{
 		ScenarioName: in.ScenarioName,
-		Tenant:       tenant,
 	}
 
 	if in.Selector != nil {
