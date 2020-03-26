@@ -153,7 +153,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
 		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, packageConverter, packageInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
 		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageSvc, packageInstanceAuthConv),
-		scenarioAssignment:  scenarioassignment.NewResolver(transact, assignmentConv, scenarioassignment.NewService(scenarioassignment.NewRepository(assignmentConv))),
+		scenarioAssignment:  scenarioassignment.NewResolver(transact, assignmentConv, scenarioassignment.NewService(scenarioassignment.NewRepository(assignmentConv), scenariosSvc)),
 	}
 }
 
