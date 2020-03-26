@@ -153,7 +153,7 @@ func TestService_DeleteForSelector(t *testing.T) {
 		// WHEN
 		err := sut.DeleteForSelector(ctx, selector)
 		// THEN
-		require.EqualError(t, err, "while deleting the Assignments: some error")
+		require.EqualError(t, err, fmt.Sprintf("while deleting the Assignments: %s", errMsg))
 	})
 
 	t.Run("returns error when empty tenant", func(t *testing.T) {

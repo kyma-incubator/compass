@@ -207,6 +207,6 @@ func TestRepository_DeleteForSelector(t *testing.T) {
 		err := repo.DeleteForSelector(ctx, tenantID, fixLabelSelector())
 
 		// THEN
-		require.EqualError(t, err, "while deleting from database: some error")
+		require.EqualError(t, err, fmt.Sprintf("while deleting from database: %s", errMsg))
 	})
 }
