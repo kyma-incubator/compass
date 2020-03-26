@@ -122,7 +122,8 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
-	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, uidSvc)
+	// TODO provide missing deps
+	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, uidSvc, nil)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 	httpClient := getHttpClient()

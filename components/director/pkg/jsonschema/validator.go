@@ -81,7 +81,7 @@ func (v *validator) ValidateString(json string) (ValidationResult, error) {
 
 	return ValidationResult{
 		Valid: result.Valid(),
-		Error: validationError,
+		Error: validationError.ErrorOrNil(),
 	}, nil
 }
 

@@ -174,15 +174,14 @@ func TestValidator_ValidateRaw(t *testing.T) {
 			result, err := svc.ValidateRaw(testCase.InputJSON)
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result.Valid)
+			require.Equal(t, testCase.ExpectedError, err)
 			if testCase.ExpectedError != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+				return
+			}
+			if testCase.ExpectedResult {
+				require.NoError(t, result.Error)
 			} else {
-				if !testCase.ExpectedResult {
-					assert.NotNil(t, result.Error)
-				} else {
-					assert.Nil(t, result.Error)
-				}
+				require.Error(t, result.Error)
 			}
 		})
 	}
