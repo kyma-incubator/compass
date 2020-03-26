@@ -118,7 +118,7 @@ func (c *Client) DeprovisionRuntime() (string, error) {
 	response := provisionResponse{}
 	c.log.Infof("Deprovisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
 	err := wait.Poll(time.Second, time.Second*5, func() (bool, error) {
-		err := c.executeRequest(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
+		err := c.executeRequest(http.MethodDelete, deprovisionURL, http.StatusOK, nil, &response)
 		if err != nil {
 			c.log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil

@@ -16,22 +16,22 @@ global:
       version: "PR-634"
     connectivity_adapter:
       dir:
-      version: "PR-935"
+      version: "PR-892"
     pairing_adapter:
       dir:
       version: "PR-867"
     director:
       dir:
-      version: "PR-971"
+      version: "PR-1069"
     gateway:
       dir:
-      version: "PR-943"
+      version: "PR-988"
     healthchecker:
       dir: pr/
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-913"
+      version: "PR-1042"
     provisioner:
       dir:
       version: "PR-953"
@@ -46,7 +46,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-966"
+        version: "PR-1039"
       connector:
         dir:
         version: "02e8358c"
@@ -55,10 +55,10 @@ global:
         version: "PR-953"
       e2e_provisioning:
         dir:
-        version: "6b8099b5"
+        version: "PR-1018"
       connectivity_adapter:
         dir:
-        version: "PR-935"
+        version: "PR-984"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -66,16 +66,15 @@ global:
   director:
     port: 3000
 
-  auditlog:
-    enabled: false
-    configmap:
-      name: "compass-gateway-auditlog-config"
-    secret:
-      name: "compass-gateway-auditlog-secret"
+    tests:
+      scopes: "runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage tenant:read automatic_scenario_assignment:read automatic_scenario_assignment:write"
 
   tenantConfig:
     useDefaultTenants: true
     useExternalTenants: false
+    dbPool:
+      maxOpenConnections: 1
+      maxIdleConnections: 1
 
   connector:
     graphql:
@@ -169,21 +168,43 @@ global:
     manageSecrets: true
     embedded:
       enabled: true
+      director:
+        name: "postgres"
+      provisioner:
+        name: "provisioner"
+      broker:
+        name: "broker"
+
+      #TODO remove below after migration to separate user will be done
       directorDBName: "postgres"
       provisionerDBName: "provisioner"
       brokerDBName: "broker"
     # Values for GCP managed PostgreSQL database
     managedGCP:
+      director:
+        name: ""
+        user: ""
+        password: ""
+      provisioner:
+        name: ""
+        user: ""
+        password: ""
+      broker:
+        name: ""
+        user: ""
+        password: ""
       serviceAccountKey: ""
       instanceConnectionName: ""
+      host: "localhost"
+      hostPort: "5432"
+      sslMode: ""
+
+      #TODO remove below after migration to separate user will be done
       dbUser: ""
       dbPassword: ""
       directorDBName: ""
       provisionerDBName: ""
       brokerDBName: ""
-      host: "localhost"
-      hostPort: "5432"
-      sslMode: ""
 
   oathkeeper:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
@@ -238,6 +259,9 @@ global:
       nameField: "name"
       discriminatorField: ""
       discriminatorValue: ""
+    dbPool:
+      maxOpenConnections: 1
+      maxIdleConnections: 1
 
 pairing-adapter:
   enabled: false

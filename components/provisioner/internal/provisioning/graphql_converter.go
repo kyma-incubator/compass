@@ -79,7 +79,6 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 	return gqlschema.GardenerConfig{
 		Name:                   &config.Name,
 		KubernetesVersion:      &config.KubernetesVersion,
-		NodeCount:              &config.NodeCount,
 		DiskType:               &config.DiskType,
 		VolumeSizeGb:           &config.VolumeSizeGB,
 		MachineType:            &config.MachineType,

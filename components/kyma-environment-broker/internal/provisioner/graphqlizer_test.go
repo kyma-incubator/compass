@@ -34,6 +34,17 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 				},
 			},
 		},
+		Configuration: []*gqlschema.ConfigEntryInput{
+			{
+				Key:   "important-global-override",
+				Value: "false",
+			},
+			{
+				Key:    "ultimate.answer",
+				Value:  "42",
+				Secret: ptr.Bool(true),
+			},
+		},
 	}
 	expRender := `{
 		version: "966",
@@ -57,7 +68,18 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
               } 
             ] 
           } 
-        ]         
+        ]
+		configuration: [
+		  {
+			key: "important-global-override",
+			value: "false",
+		  }
+		  {
+			key: "ultimate.answer",
+			value: "42",
+			secret: true,
+		  }
+		]
 	}`
 
 	sut := Graphqlizer{}
@@ -77,7 +99,7 @@ func TestKymaConfigToGraphQLOnlyKymaVersion(t *testing.T) {
 		Version: "966",
 	}
 	expRender := `{
-		version: "966",         
+		version: "966",
 	}`
 
 	sut := Graphqlizer{}

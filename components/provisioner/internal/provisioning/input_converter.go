@@ -18,7 +18,7 @@ type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, error)
 }
 
-func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository, gardenerProject string) InputConverter {
+func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider, gardenerProject string) InputConverter {
 	return &converter{
 		uuidGenerator:   uuidGenerator,
 		releaseRepo:     releaseRepo,
@@ -28,7 +28,7 @@ func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Rea
 
 type converter struct {
 	uuidGenerator   uuid.UUIDGenerator
-	releaseRepo     release.ReadRepository
+	releaseRepo     release.Provider
 	gardenerProject string
 }
 
@@ -93,7 +93,6 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		Name:                   name,
 		ProjectName:            c.gardenerProject,
 		KubernetesVersion:      input.KubernetesVersion,
-		NodeCount:              input.NodeCount,
 		VolumeSizeGB:           input.VolumeSizeGb,
 		DiskType:               input.DiskType,
 		MachineType:            input.MachineType,
@@ -113,10 +112,9 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 
 func (c converter) createGardenerClusterName(provider string) string {
 	id := c.uuidGenerator.New()
-	provider = util.RemoveNotAllowedCharacters(provider)
 
 	name := strings.ReplaceAll(id, "-", "")
-	name = fmt.Sprintf("%.3s-%.7s", provider, name)
+	name = fmt.Sprintf("%.7s", name)
 	name = util.StartWithLetter(name)
 	name = strings.ToLower(name)
 	return name

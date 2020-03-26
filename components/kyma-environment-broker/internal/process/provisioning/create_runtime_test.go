@@ -84,7 +84,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 					Configuration: nil,
 				},
 			},
-			Configuration: nil,
+			Configuration: []*gqlschema.ConfigEntryInput{},
 		},
 		Credentials: nil,
 	}).Return(gqlschema.OperationStatus{

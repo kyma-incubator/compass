@@ -18,7 +18,7 @@ func TestGetConnString(t *testing.T) {
 			SSLMode:  "enable",
 		}
 
-		connStr := GetConnString(dbCfg)
+		connStr := dbCfg.GetConnString()
 
 		require.Equal(t, expectedConnStr, connStr)
 	})

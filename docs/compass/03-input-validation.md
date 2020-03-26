@@ -13,6 +13,7 @@ This document contains validation rules for all input types.
 - `max` - Maximal allowed length.
 - `oneof` - Value has to be one of specified values.
 - `[$VALIDATION_RULE]` - Array that can be nil or empty but every array element has to fulfill specified `$VALIDATION_RULE`.
+- `alphanumeric` - Only alphanumeric characters allowed
 
 ## Validation rules for Compass input types
 
@@ -78,7 +79,7 @@ Field | Required | Rules | Comment
 name: String! | true | `name` | max 36 characters
 providerName String!| true | `max=256` | varchar(256) in db
 description: String | false | `max=2000` |  
-labels: Labels (map[string]interface{}) | false | key: `required` |  
+labels: Labels (map[string]interface{}) | false | key: `required`, `alphanumeric` with underscore |  
 webhooks: [WebhookInput!] | false | `[required]` |  
 healthCheckURL: String | false | `url`, `max=256` | varchar(256) in db  
 apiDefinitions: [APIDefinitionInput!] | false | `[required]` |  
@@ -135,7 +136,7 @@ Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` | varchar(256) in db
 description: String | false | `max=2000` |
-labels: Labels (map[string]interface{}) | false | key: `required` |
+labels: Labels (map[string]interface{}) | false | key: `required`, `alphanumeric` with underscore |
 
 ### IntegrationSystemInput
 
@@ -168,14 +169,14 @@ auth: AuthInput | false | |
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
-key: String! | true | `max=256` | varchar(256) in db  
+key: String! | true | `max=256`, `alphanumeric` with underscore | varchar(256) in db  
 schema: JSONSchema (string) | false | |  
 
 ### LabelInput
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
-key: String! | true | `max=256` | varchar(256) in db  
+key: String! | true | `max=256`, `alphanumeric` with underscore | varchar(256) in db  
 value: Any! (interface{}) | true | | 
 
 ### FetchRequestInput

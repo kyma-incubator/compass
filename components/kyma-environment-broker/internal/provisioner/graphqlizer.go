@@ -76,7 +76,6 @@ func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		kubernetesVersion: "{{.KubernetesVersion}}",
-		nodeCount: 1,
 		volumeSizeGB: {{.VolumeSizeGb }},
 		machineType: "{{.MachineType}}",
 		region: "{{.Region}}",
@@ -165,10 +164,22 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
           }
 		  {{- end }} 
         ]
-      	{{- end }}         
+      	{{- end }}
+		{{- with .Configuration }}
+		configuration: [
+		  {{- range . }}
+		  {
+			key: "{{ .Key }}",
+			value: "{{ .Value }}",
+			{{- if .Secret }}
+			secret: true,
+			{{- end }}
+		  }
+		  {{- end }}
+		]
+		{{- end }}
 	}`)
 }
-
 func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
 	fm["RuntimeInputToGraphQL"] = g.RuntimeInputToGraphQL

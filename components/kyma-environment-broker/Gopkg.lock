@@ -21,6 +21,35 @@
   version = "v0.10.2"
 
 [[projects]]
+  digest = "1:298d4ba5657d3558241332cfdf2062b9ef91a7ab7543db7e47677eecc6d750c6"
+  name = "github.com/Azure/azure-sdk-for-go"
+  packages = [
+    "services/eventhub/mgmt/2017-04-01/eventhub",
+    "services/resources/mgmt/2019-05-01/resources",
+    "version",
+  ]
+  pruneopts = "UT"
+  revision = "ee7c54530df34dd03f392562bcb869613fd7efdc"
+  version = "v39.3.0"
+
+[[projects]]
+  digest = "1:24f3d5aa436b7cf0244efff65e6346602eb0af08e1026bb9d1940b458c5326f9"
+  name = "github.com/Azure/go-autorest"
+  packages = [
+    "autorest",
+    "autorest/adal",
+    "autorest/azure",
+    "autorest/date",
+    "autorest/to",
+    "autorest/validation",
+    "logger",
+    "tracing",
+  ]
+  pruneopts = "UT"
+  revision = "327ff6ce8b902f9afe648d5ea8ff6dc26c26f150"
+  version = "v13.4.0"
+
+[[projects]]
   digest = "1:3b10c6fd33854dc41de2cf78b7bae105da94c2789b6fa5b9ac9e593ea43484ac"
   name = "github.com/Masterminds/goutils"
   packages = ["."]
@@ -113,6 +142,14 @@
   pruneopts = "UT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
+
+[[projects]]
+  digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
 
 [[projects]]
   digest = "1:5d7f88f9487f370e3ae52155465156370fc5798102d811d2d4448d2385ccaf67"
@@ -468,10 +505,9 @@
   version = "v1.2"
 
 [[projects]]
-  digest = "1:bda5052505bc4179914b039975c4cf39579d68ed3ab5aa9351a22fe8ac9ad423"
+  digest = "1:6e4b922386609d8c0de747b071320f5b1bfde0cc33005d27cbf58d393b830644"
   name = "github.com/pivotal-cf/brokerapi"
   packages = [
-    ".",
     "v7/auth",
     "v7/domain",
     "v7/domain/apiresponses",
@@ -553,6 +589,14 @@
   pruneopts = "UT"
   revision = "0c6fcb48ff1cfa4d82a45b587e76b3588a4dc192"
   version = "v0.0.10"
+
+[[projects]]
+  branch = "master"
+  digest = "1:8126c338c3a93a2c86230e5ee671241ab5881404435d75f2ceb0353311ae268b"
+  name = "github.com/vburenin/nsync"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "9a75d1c80410815ac45d65fc01ccabac9c98dd4a"
 
 [[projects]]
   digest = "1:831b94be76a8fe3b3b882e52752423070f1b2d7940ecc381cdac66ac01492bfd"
@@ -856,7 +900,7 @@
   version = "v0.17.1"
 
 [[projects]]
-  digest = "1:e0ce2f07c93aa1fdfcc220a8dbe183a28bfa4fdb4f893301795f1f1ac3a3bc63"
+  digest = "1:c2001b25ae19e1af3389e8f824cc537449084b1d29be4e94cb2c16c98796501f"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -1018,11 +1062,17 @@
   analyzer-version = 1
   input-imports = [
     "code.cloudfoundry.org/lager",
+    "github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub",
+    "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources",
+    "github.com/Azure/go-autorest/autorest",
+    "github.com/Azure/go-autorest/autorest/adal",
+    "github.com/Azure/go-autorest/autorest/azure",
     "github.com/Masterminds/sprig",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
     "github.com/gocraft/dbr",
     "github.com/google/uuid",
     "github.com/gorilla/handlers",
+    "github.com/gorilla/mux",
     "github.com/hashicorp/go-multierror",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/director/pkg/jsonschema",
@@ -1031,9 +1081,11 @@
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
     "github.com/machinebox/graphql",
-    "github.com/pivotal-cf/brokerapi",
+    "github.com/pivotal-cf/brokerapi/v7/auth",
     "github.com/pivotal-cf/brokerapi/v7/domain",
     "github.com/pivotal-cf/brokerapi/v7/domain/apiresponses",
+    "github.com/pivotal-cf/brokerapi/v7/handlers",
+    "github.com/pivotal-cf/brokerapi/v7/middlewares",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
@@ -1041,7 +1093,9 @@
     "github.com/stretchr/testify/require",
     "github.com/testcontainers/testcontainers-go",
     "github.com/testcontainers/testcontainers-go/wait",
+    "github.com/vburenin/nsync",
     "github.com/vrischmann/envconfig",
+    "golang.org/x/oauth2",
     "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",

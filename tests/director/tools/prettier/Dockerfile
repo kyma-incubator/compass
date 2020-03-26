@@ -2,7 +2,7 @@
 
 FROM node:10-alpine
 
-RUN npm install --global prettier && npm cache --force clean
+RUN npm install --global prettier@2.0.1 && npm cache --force clean
 
 WORKDIR /prettier
 ENTRYPOINT ["prettier"]

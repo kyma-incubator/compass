@@ -27,6 +27,14 @@ func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	return &inst, nil
 }
 
+func (s *Instance) Delete(instanceID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	delete(s.instances, instanceID)
+	return nil
+}
+
 func (s *Instance) Insert(instance internal.Instance) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

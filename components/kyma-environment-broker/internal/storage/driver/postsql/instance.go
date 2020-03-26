@@ -22,20 +22,23 @@ func NewInstance(sess dbsession.Factory) *Instance {
 // TODO: Wrap retries in single method WithRetries
 func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	sess := s.NewReadSession()
-	instance := &internal.Instance{}
-	err := wait.Poll(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		inst, err := sess.GetInstanceByID(instanceID)
-		if err != nil {
-			if err.Code() == dberr.CodeNotFound {
+	instance := internal.Instance{}
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		instance, lastErr = sess.GetInstanceByID(instanceID)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("Instance with id %s not exist", instanceID)
 			}
-			log.Warn(errors.Wrapf(err, "while getting instance by ID %s", instanceID).Error())
+			log.Warn(errors.Wrapf(lastErr, "while getting instance by ID %s", instanceID).Error())
 			return false, nil
 		}
-		instance = &inst
 		return true, nil
 	})
-	return instance, err
+	if err != nil {
+		return nil, lastErr
+	}
+	return &instance, nil
 }
 
 func (s *Instance) Insert(instance internal.Instance) error {
@@ -45,7 +48,7 @@ func (s *Instance) Insert(instance internal.Instance) error {
 	}
 
 	sess := s.NewWriteSession()
-	return wait.Poll(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+	return wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		err := sess.InsertInstance(instance)
 		if err != nil {
 			log.Warn(errors.Wrapf(err, "while saving instance ID %s", instance.InstanceID).Error())
@@ -57,15 +60,25 @@ func (s *Instance) Insert(instance internal.Instance) error {
 
 func (s *Instance) Update(instance internal.Instance) error {
 	sess := s.NewWriteSession()
-	return wait.Poll(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		err := sess.UpdateInstance(instance)
-		if err != nil {
-			if err.Code() == dberr.CodeNotFound {
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		lastErr = sess.UpdateInstance(instance)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("Instance with id %s not exist", instance.InstanceID)
 			}
-			log.Warn(errors.Wrapf(err, "while updating instance ID %s", instance.InstanceID).Error())
+			log.Warn(errors.Wrapf(lastErr, "while updating instance ID %s", instance.InstanceID).Error())
 			return false, nil
 		}
 		return true, nil
 	})
+	if err != nil {
+		return lastErr
+	}
+	return nil
+}
+
+func (s *Instance) Delete(instanceID string) error {
+	sess := s.NewWriteSession()
+	return sess.DeleteInstance(instanceID)
 }

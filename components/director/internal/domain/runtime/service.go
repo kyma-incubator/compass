@@ -90,7 +90,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 
 func (s *service) GetByTokenIssuer(ctx context.Context, issuer string) (*model.Runtime, error) {
 	const (
-		consoleURLLabelKey = "runtime/console_url"
+		consoleURLLabelKey = "runtime_consoleUrl"
 		dexSubdomain       = "dex"
 		consoleSubdomain   = "console"
 	)
@@ -128,12 +128,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 	id := s.uidService.Generate()
-	rtm := in.ToRuntime(id, rtmTenant, time.Now())
-
-	rtm.Status = &model.RuntimeStatus{
-		Condition: model.RuntimeStatusConditionInitial,
-		Timestamp: time.Now(),
-	}
+	rtm := in.ToRuntime(id, rtmTenant, time.Now(), time.Now())
 
 	err = s.repo.Create(ctx, rtm)
 	if err != nil {
@@ -166,13 +161,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		return errors.Wrap(err, "while getting Runtime")
 	}
 
-	currentStatuts := rtm.Status
-
-	rtm = in.ToRuntime(id, rtm.Tenant, time.Now())
-
-	if rtm.Status.Condition == "" {
-		rtm.Status = currentStatuts
-	}
+	rtm = in.ToRuntime(id, rtm.Tenant, rtm.CreationTimestamp, time.Now())
 
 	err = s.repo.Update(ctx, rtm)
 	if err != nil {

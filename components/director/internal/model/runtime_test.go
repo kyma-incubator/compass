@@ -14,7 +14,9 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 	desc := "Sample"
 	id := "foo"
 	tenant := "sample"
-	timestamp := time.Now()
+	creationTimestamp := time.Now()
+	conditionTimestamp := time.Now()
+	conditionStatus := model.RuntimeStatusConditionConnected
 	testCases := []struct {
 		Name     string
 		Input    *model.RuntimeInput
@@ -28,14 +30,18 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 				Labels: map[string]interface{}{
 					"test": []string{"val", "val2"},
 				},
+				StatusCondition: &conditionStatus,
 			},
 			Expected: &model.Runtime{
-				Name:              "Foo",
-				ID:                id,
-				Tenant:            tenant,
-				Description:       &desc,
-				Status:            &model.RuntimeStatus{},
-				CreationTimestamp: timestamp,
+				Name:        "Foo",
+				ID:          id,
+				Tenant:      tenant,
+				Description: &desc,
+				Status: &model.RuntimeStatus{
+					Condition: conditionStatus,
+					Timestamp: conditionTimestamp,
+				},
+				CreationTimestamp: creationTimestamp,
 			},
 		},
 		{
@@ -48,7 +54,7 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			// when
-			result := testCase.Input.ToRuntime(id, tenant, timestamp)
+			result := testCase.Input.ToRuntime(id, tenant, creationTimestamp, conditionTimestamp)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

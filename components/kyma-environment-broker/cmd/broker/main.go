@@ -2,16 +2,19 @@ package main
 
 import (
 	"context"
+
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
@@ -19,12 +22,11 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
-	"github.com/pkg/errors"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
 	gcli "github.com/machinebox/graphql"
-	"github.com/pivotal-cf/brokerapi"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,6 +39,9 @@ type Config struct {
 		Username string
 		Password string
 	}
+
+	DbInMemory bool `envconfig:"default=false"`
+
 	Host string `envconfig:"optional"`
 	Port string `envconfig:"default=8080"`
 
@@ -45,14 +50,14 @@ type Config struct {
 	Database     storage.Config
 	Gardener     gardener.Config
 
-	ManagementPlaneURL string
-
 	ServiceManager provisioning.ServiceManagerOverrideConfig
 
 	KymaVersion                          string
 	ManagedRuntimeComponentsYAMLFilePath string
 
 	Broker broker.Config
+
+	Avs avs.Config
 }
 
 func main() {
@@ -71,12 +76,6 @@ func main() {
 
 	logger.Info("Starting Kyma Environment Broker")
 
-	// create broker credentials
-	brokerCredentials := brokerapi.BrokerCredentials{
-		Username: cfg.Auth.Username,
-		Password: cfg.Auth.Password,
-	}
-
 	// create provisioner client
 	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 
@@ -94,8 +93,13 @@ func main() {
 	directorClient := director.NewDirectorClient(oauthClient, graphQLClient)
 
 	// create storage
-	db, err := storage.New(cfg.Database.ConnectionURL())
-	fatalOnError(err)
+	var db storage.BrokerStorage
+	if cfg.DbInMemory {
+		db = storage.NewMemoryStorage()
+	} else {
+		db, err = storage.New(cfg.Database.ConnectionURL())
+		fatalOnError(err)
+	}
 
 	// Register disabler. Convention:
 	// {component-name} : {component-disabler-service}
@@ -104,6 +108,9 @@ func main() {
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
 		"Kiali":  runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
 		"Jaeger": runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
+		// TODO(workaround until #1049): following components should be always disabled and user should not be able to enable them in provisioning request. This implies following components cannot be specified under the plan schema definition.
+		"KnativeProvisionerNatss": runtime.NewGenericComponentDisabler("knative-provisioner-natss", "knative-eventing"),
+		"NatssStreaming":          runtime.NewGenericComponentDisabler("nats-streaming", "natss"),
 	}
 
 	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -124,16 +131,26 @@ func main() {
 	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion)
 
 	// create and run queue, steps provisioning
-	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, cfg.ManagementPlaneURL)
+	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory)
+
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
+	evaluationStep := provisioning.NewInternalEvaluationStep(cfg.Avs, db.Operations())
+	provisionAzureEventHub := provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
+	overridesStep := provisioning.NewOverridesFromSecretsAndConfigStep(ctx, cli, db.Operations())
 	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
+	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations())
 
 	logs := logrus.New()
 	stepManager := process.NewManager(db.Operations(), logs)
 	stepManager.InitStep(initialisation)
+
 	stepManager.AddStep(1, resolveCredentialsStep)
+	stepManager.AddStep(1, evaluationStep)
+	stepManager.AddStep(2, provisionAzureEventHub)
+	stepManager.AddStep(2, overridesStep)
 	stepManager.AddStep(2, smOverrideStep)
+	stepManager.AddStep(3, backupSetupStep)
 	stepManager.AddStep(10, runtimeStep)
 
 	queue := process.NewQueue(stepManager)
@@ -159,9 +176,23 @@ func main() {
 		broker.NewLastBindingOperation(logs),
 	}
 
-	// create and run broker OSB API
-	brokerAPI := brokerapi.New(kymaEnvBroker, logger, brokerCredentials)
-	r := handlers.LoggingHandler(os.Stdout, brokerAPI)
+	// create broker credentials
+	brokerCredentials := broker.BrokerCredentials{
+		Username: cfg.Auth.Username,
+		Password: cfg.Auth.Password,
+	}
+
+	// create and run broker OSB API in 2 modes:
+	// with basic auth
+	// with oauth
+	brokerAPI := broker.New(kymaEnvBroker, logger, nil)
+	brokerBasicAPI := broker.New(kymaEnvBroker, logger, &brokerCredentials)
+
+	sm := http.NewServeMux()
+	sm.Handle("/", brokerBasicAPI)
+	sm.Handle("/oauth/", http.StripPrefix("/oauth", brokerAPI))
+
+	r := handlers.LoggingHandler(os.Stdout, sm)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
 }

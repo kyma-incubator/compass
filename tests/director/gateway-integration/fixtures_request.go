@@ -116,7 +116,7 @@ func fixDeleteApplicationRequest(t *testing.T, id string) *gcli.Request {
 	}`, id, tc.gqlFieldsProvider.ForApplication()))
 }
 
-func fixUnregisterRuntime(id string) *gcli.Request {
+func fixUnregisterRuntimeRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{unregisterRuntime(id: "%s") {
 				%s

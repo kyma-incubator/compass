@@ -9,20 +9,23 @@ deployment:
 security:
   skipTLSCertificateVeryfication: false
 
-database:
-  schemaFilePath: "/assets/database/provisioner.sql"
-
 gardener:
   auditLogsPolicyConfigMap: ""
 
 provisioner: "gardener"
+
+kymaRelease:
+  preReleases:
+    enabled: true
+  onDemand:
+    enabled: true
 
 installation:
   timeout: 50m
   errorsCountFailureThreshold: 5
 
 tests:
-  enabled: true
+  enabled: false
   gcp:
     credentials: ""
     projectName: ""

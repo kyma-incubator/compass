@@ -26,7 +26,6 @@ func TestRuntimeConfig_UnmarshalJSON(t *testing.T) {
 	gardenerClusterConfig := GardenerConfig{
 		Name:              util.StringPtr("name"),
 		KubernetesVersion: util.StringPtr("1.16"),
-		NodeCount:         util.IntPtr(3),
 		VolumeSizeGb:      util.IntPtr(50),
 		MachineType:       util.StringPtr("machine"),
 		Region:            util.StringPtr("region"),

@@ -84,7 +84,6 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 	clusterConfigForGardenerWithGCP := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion: "version",
-			NodeCount:         3,
 			VolumeSizeGb:      1024,
 			MachineType:       "n1-standard-1",
 			Region:            "region",
@@ -108,7 +107,6 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 	clusterConfigForGardenerWithAzure := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion: "version",
-			NodeCount:         3,
 			VolumeSizeGb:      1024,
 			MachineType:       "n1-standard-1",
 			Region:            "region",
@@ -132,7 +130,6 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 	clusterConfigForGardenerWithAWS := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion: "version",
-			NodeCount:         3,
 			VolumeSizeGb:      1024,
 			MachineType:       "n1-standard-1",
 			Region:            "region",

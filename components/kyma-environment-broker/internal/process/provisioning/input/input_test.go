@@ -14,6 +14,71 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestInputBuilderFactoryOverrides(t *testing.T) {
+	t.Run("should append overrides for the same components multiple times", func(t *testing.T) {
+		// given
+		var (
+			dummyOptComponentsSvc = dummyOptionalComponentServiceMock(fixKymaComponentList())
+
+			overridesA1 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-1", Value: "pico"},
+				{Key: "key-2", Value: "bello"},
+			}
+			overridesA2 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-3", Value: "hakuna"},
+				{Key: "key-4", Value: "matata", Secret: ptr.Bool(true)},
+			}
+		)
+
+		builder, found := NewInputBuilderFactory(dummyOptComponentsSvc, fixKymaComponentList(), Config{}, "not-important").ForPlan(broker.AzurePlanID)
+		require.True(t, found)
+
+		// when
+		builder.
+			AppendOverrides("keb", overridesA1).
+			AppendOverrides("keb", overridesA2)
+
+		// then
+		out, err := builder.Create()
+		require.NoError(t, err)
+
+		overriddenComponent, found := find(out.KymaConfig.Components, "keb")
+		require.True(t, found)
+
+		assertContainsAllOverrides(t, overriddenComponent.Configuration, overridesA1, overridesA1)
+	})
+
+	t.Run("should append global overrides", func(t *testing.T) {
+		// given
+		var (
+			optComponentsSvc = dummyOptionalComponentServiceMock(fixKymaComponentList())
+
+			overridesA1 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-1", Value: "pico"},
+				{Key: "key-2", Value: "bello"},
+			}
+			overridesA2 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-3", Value: "hakuna"},
+				{Key: "key-4", Value: "matata", Secret: ptr.Bool(true)},
+			}
+		)
+
+		builder, found := NewInputBuilderFactory(optComponentsSvc, fixKymaComponentList(), Config{}, "not-important").ForPlan(broker.AzurePlanID)
+		require.True(t, found)
+
+		// when
+		builder.
+			AppendGlobalOverrides(overridesA1).
+			AppendGlobalOverrides(overridesA2)
+
+		// then
+		out, err := builder.Create()
+		require.NoError(t, err)
+
+		assertContainsAllOverrides(t, out.KymaConfig.Configuration, overridesA1, overridesA1)
+	})
+}
+
 func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	// given
 	var (
@@ -88,5 +153,26 @@ func fixKymaComponentList() []v1alpha1.KymaComponent {
 		{Name: "dex", Namespace: "kyma-system"},
 		{Name: "ory", Namespace: "kyma-system"},
 		{Name: "keb", Namespace: "kyma-system"},
+	}
+}
+
+func dummyOptionalComponentServiceMock(inputComponentList []v1alpha1.KymaComponent) *automock.OptionalComponentService {
+	mappedComponentList := mapToGQLComponentConfigurationInput(inputComponentList)
+
+	optComponentsSvc := &automock.OptionalComponentService{}
+	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return([]string{})
+	optComponentsSvc.On("ExecuteDisablers", mappedComponentList).Return(mappedComponentList, nil)
+	return optComponentsSvc
+}
+
+func assertContainsAllOverrides(t *testing.T, gotOverrides []*gqlschema.ConfigEntryInput, expOverrides ...[]*gqlschema.ConfigEntryInput) {
+	var expected []*gqlschema.ConfigEntryInput
+	for _, o := range expOverrides {
+		expected = append(expected, o...)
+	}
+
+	require.Len(t, gotOverrides, len(expected))
+	for _, o := range expected {
+		assert.Contains(t, gotOverrides, o)
 	}
 }

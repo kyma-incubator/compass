@@ -76,7 +76,7 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 			"cluster.id", "cluster.kubeconfig", "cluster.tenant",
 			"cluster.credentials_secret_name", "cluster.creation_timestamp", "cluster.deleted",
 			"name", "project_name", "kubernetes_version",
-			"node_count", "volume_size_gb", "disk_type", "machine_type", "provider", "seed",
+			"volume_size_gb", "disk_type", "machine_type", "provider", "seed",
 			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
 			"max_surge", "max_unavailable", "provider_specific_config").
 		From("gardener_config").
@@ -202,7 +202,7 @@ func (r readSession) getProviderConfig(runtimeID string) (model.ProviderConfigur
 
 	err := r.session.
 		Select("gardener_config.id", "cluster_id", "gardener_config.name", "project_name", "kubernetes_version",
-			"node_count", "volume_size_gb", "disk_type", "machine_type", "provider", "seed",
+			"volume_size_gb", "disk_type", "machine_type", "provider", "seed",
 			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
 			"max_surge", "max_unavailable", "provider_specific_config").
 		From("cluster").
