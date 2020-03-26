@@ -64,7 +64,7 @@ func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 	t.Run("error on creating assignment by service", func(t *testing.T) {
 		tx, transact := txGen.ThatDoesntExpectCommit()
 		mockConverter := &automock.Converter{}
-		mockConverter.On("FromInputGraphQL", mock.Anything).Return(fixModel(), nil)
+		mockConverter.On("FromInputGraphQL", mock.Anything).Return(fixModel())
 		mockSvc := &automock.Service{}
 		mockSvc.On("Create", mock.Anything, fixModel()).Return(model.AutomaticScenarioAssignment{}, fixError())
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
@@ -79,7 +79,7 @@ func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 		tx, transact := txGen.ThatFailsOnCommit()
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromInputGraphQL", givenInput).Return(fixModel(), nil)
+		mockConverter.On("FromInputGraphQL", givenInput).Return(fixModel())
 		mockSvc := &automock.Service{}
 		mockSvc.On("Create", mock.Anything, fixModel()).Return(fixModel(), nil)
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)

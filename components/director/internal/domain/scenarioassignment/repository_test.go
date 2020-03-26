@@ -63,11 +63,6 @@ func TestRepositoryCreate(t *testing.T) {
 	})
 }
 
-const tableName string = `public.automatic_scenario_assignments`
-
-var columns = []string{"scenario", tenantColumn, "selector_key", "selector_value"}
-var tenantColumn = "tenant_id"
-
 func TestRepository_GetByScenarioName(t *testing.T) {
 	ent := scenarioassignment.Entity{
 		Scenario:      scenarioName,
@@ -81,7 +76,7 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		rows := sqlmock.NewRows(columns).
+		rows := sqlmock.NewRows(fixAutomaticScenarioAssignmentColumns()).
 			AddRow(fixAutomaticScenarioAssignmentRow(scenarioName, tenantID)...)
 
 		dbMock.ExpectQuery(selectQuery).

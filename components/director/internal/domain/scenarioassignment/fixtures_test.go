@@ -47,3 +47,7 @@ func fixCtxWithTenant() context.Context {
 func fixAutomaticScenarioAssignmentRow(scenarioName, tenantID string) []driver.Value {
 	return []driver.Value{scenarioName, tenantID, "key", "value"}
 }
+
+func fixAutomaticScenarioAssignmentColumns() []string {
+	return []string{"scenario", "tenant_id", "selector_key", "selector_value"}
+}
