@@ -140,11 +140,11 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: {{ .Values.broker.port }}
+              port: {{ .Values.broker.statusPort }}
             failureThreshold: 3
-            periodSeconds: 10
+            periodSeconds: 90
             timeoutSeconds: 3
-            initialDelaySeconds: 20
+            initialDelaySeconds: 60
           resources:
               {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:

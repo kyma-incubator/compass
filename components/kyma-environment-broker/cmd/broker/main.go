@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+
 	"log"
 	"net/http"
 	"os"
@@ -48,8 +50,9 @@ type Config struct {
 	// running in a separate testing deployment but with the production DB.
 	DisableProcessOperationsInProgress bool `envconfig:"default=false"`
 
-	Host string `envconfig:"optional"`
-	Port string `envconfig:"default=8080"`
+	Host       string `envconfig:"optional"`
+	Port       string `envconfig:"default=8080"`
+	StatusPort string `envconfig:"default=8071"`
 
 	Provisioning input.Config
 	Director     director.Config
@@ -81,6 +84,9 @@ func main() {
 	logger := lager.NewLogger("kyma-env-broker")
 	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.DEBUG))
 	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.ERROR))
+
+	logger.Info("Registering healthz endpoint for health probes")
+	go health.NewHandler(fmt.Sprintf("%s:%s", cfg.Host, cfg.StatusPort)).Handle()
 
 	logger.Info("Starting Kyma Environment Broker")
 
@@ -217,8 +223,6 @@ func main() {
 	sm := http.NewServeMux()
 	sm.Handle("/", brokerBasicAPI)
 	sm.Handle("/oauth/", http.StripPrefix("/oauth", brokerAPI))
-
-	sm.HandleFunc("/healthz", health.LivenessHandler())
 
 	r := handlers.LoggingHandler(os.Stdout, sm)
 
