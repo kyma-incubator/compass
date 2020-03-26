@@ -42,12 +42,12 @@ func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignme
 }
 
 func (s *service) GetForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error) {
-	tenant, err := tenant.LoadFromContext(ctx)
+	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	assignments, err := s.repo.GetForSelector(ctx, in, tenant)
+	assignments, err := s.repo.GetForSelector(ctx, in, tenantID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting the assignments")
 	}

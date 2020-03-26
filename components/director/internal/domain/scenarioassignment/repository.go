@@ -50,13 +50,13 @@ func (r *repository) Create(ctx context.Context, model model.AutomaticScenarioAs
 	return r.creator.Create(ctx, entity)
 }
 
-func (r *repository) GetForSelector(ctx context.Context, in model.LabelSelector, tenant string) ([]*model.AutomaticScenarioAssignment, error) {
+func (r *repository) GetForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error) {
 	var out EntityCollection
 
 	conditionKey := fmt.Sprintf("%s = %s", selectorKeyColumn, pq.QuoteLiteral(in.Key))
 	conditionValue := fmt.Sprintf("%s = %s", selectorValueColumn, pq.QuoteLiteral(in.Value))
 
-	if err := r.lister.List(ctx, tenant, &out, conditionKey, conditionValue); err != nil {
+	if err := r.lister.List(ctx, tenantID, &out, conditionKey, conditionValue); err != nil {
 		return nil, errors.Wrap(err, "while getting automatic scenario assignments from db")
 	}
 
