@@ -93,16 +93,16 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	runtimeId := getRuntimeId(shoot)
-	shouldReconcile, err := r.shouldReconcileShoot(runtimeId)
+	shouldReconcile, err := r.shouldReconcileShoot(shoot)
 	if err != nil {
 		log.Errorf("Failed to verify if shoot should be reconciled")
 		return ctrl.Result{}, err
 	}
 	if !shouldReconcile {
-		log.Debugf("Runtime with id %s not found in database, shoot will be ignored", runtimeId)
+		log.Debugf("Gardener cluster not found in database, shoot will be ignored")
 		return ctrl.Result{}, nil
 	}
+	runtimeId := getRuntimeId(shoot)
 	log = log.WithField("RuntimeId", runtimeId)
 
 	// Get operationId from annotation
@@ -153,14 +153,10 @@ func (r *Reconciler) handleShootWithoutOperationId(log *logrus.Entry, shoot gard
 	return nil
 }
 
-func (r *Reconciler) shouldReconcileShoot(shootRuntimeId string) (bool, error) {
-	if shootRuntimeId == "" {
-		return false, nil
-	}
-
+func (r *Reconciler) shouldReconcileShoot(shoot gardener_types.Shoot) (bool, error) {
 	session := r.dbsFactory.NewReadSession()
 
-	_, err := session.GetCluster(shootRuntimeId)
+	_, err := session.GetGardenerClusterByName(shoot.Name)
 	if err != nil {
 		if err.Code() == dberrors.CodeNotFound {
 			return false, nil
