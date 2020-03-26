@@ -12,7 +12,7 @@ import (
 
 func TestMessageFactory(t *testing.T) {
 	t.Run("Security Event", func(t *testing.T) {
-		expected := model.SecurityEvent{User: "user", AuditlogMetadata: model.AuditlogMetadata{
+		expected := model.SecurityEvent{User: "user", Metadata: model.Metadata{
 			UUID:   TestMsgID,
 			Tenant: TestTenant,
 			Time:   Timestamp_text,
@@ -29,7 +29,7 @@ func TestMessageFactory(t *testing.T) {
 	})
 
 	t.Run("Configuration change", func(t *testing.T) {
-		expected := model.ConfigurationChange{User: "user", AuditlogMetadata: model.AuditlogMetadata{
+		expected := model.ConfigurationChange{User: "user", Metadata: model.Metadata{
 			UUID:   TestMsgID,
 			Time:   Timestamp_text,
 			Tenant: TestTenant,
@@ -46,7 +46,7 @@ func TestMessageFactory(t *testing.T) {
 	})
 
 	t.Run("Configuration change OAuth factory", func(t *testing.T) {
-		expected := model.ConfigurationChange{User: "$USER", AuditlogMetadata: model.AuditlogMetadata{
+		expected := model.ConfigurationChange{User: "$USER", Metadata: model.Metadata{
 			UUID:   TestMsgID,
 			Time:   Timestamp_text,
 			Tenant: "$PROVIDER",

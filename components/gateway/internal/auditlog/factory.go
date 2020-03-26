@@ -34,7 +34,7 @@ func (f *MessageFactory) CreateConfigurationChange() model.ConfigurationChange {
 	logTime := t.Format(LogFormatDate)
 
 	return model.ConfigurationChange{User: f.user,
-		AuditlogMetadata: model.AuditlogMetadata{Tenant: f.tenant,
+		Metadata: model.Metadata{Tenant: f.tenant,
 			Time: logTime,
 			UUID: f.uuidSvc.Generate(),
 		}}
@@ -45,7 +45,7 @@ func (f *MessageFactory) CreateSecurityEvent() model.SecurityEvent {
 	logTime := t.Format(LogFormatDate)
 
 	return model.SecurityEvent{User: f.user,
-		AuditlogMetadata: model.AuditlogMetadata{Tenant: f.tenant,
+		Metadata: model.Metadata{Tenant: f.tenant,
 			Time: logTime,
 			UUID: f.uuidSvc.Generate(),
 		}}

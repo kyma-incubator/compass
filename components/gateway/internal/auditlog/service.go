@@ -9,24 +9,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-type AuditlogMessage struct {
+type Message struct {
 	Request  string
 	Response string
 	proxy.Claims
 }
 
 type Sink struct {
-	logsChannel chan AuditlogMessage
+	logsChannel chan Message
 }
 
-func NewSink(logsChannel chan AuditlogMessage) *Sink {
+func NewSink(logsChannel chan Message) *Sink {
 	return &Sink{
 		logsChannel: logsChannel,
 	}
 }
 
 func (sink *Sink) Log(request, response string, claims proxy.Claims) error {
-	msg := AuditlogMessage{
+	msg := Message{
 		Request:  request,
 		Response: response,
 		Claims:   claims,
@@ -126,12 +126,12 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 }
 
 func (svc *Service) parseResponse(response string) (model.GraphqlResponse, error) {
-	var graphqResponse model.GraphqlResponse
-	err := json.Unmarshal([]byte(response), &graphqResponse)
+	var graphqlResponse model.GraphqlResponse
+	err := json.Unmarshal([]byte(response), &graphqlResponse)
 	if err != nil {
 		return model.GraphqlResponse{}, err
 	}
-	return graphqResponse, nil
+	return graphqlResponse, nil
 }
 
 func (svc *Service) createConfigChangeMsg(claims proxy.Claims, request string) model.ConfigurationChange {

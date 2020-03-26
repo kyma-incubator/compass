@@ -17,7 +17,7 @@ const (
 )
 
 func fixFabricatedConfigChangeMsg() model.ConfigurationChange {
-	return model.ConfigurationChange{User: User, AuditlogMetadata: model.AuditlogMetadata{
+	return model.ConfigurationChange{User: User, Metadata: model.Metadata{
 		Tenant: TestTenant,
 		UUID:   TestMsgID,
 		Time:   Timestamp_text,
@@ -25,7 +25,7 @@ func fixFabricatedConfigChangeMsg() model.ConfigurationChange {
 }
 
 func fixFabricatedSecurityEventMsg() model.SecurityEvent {
-	return model.SecurityEvent{User: User, AuditlogMetadata: model.AuditlogMetadata{
+	return model.SecurityEvent{User: User, Metadata: model.Metadata{
 		Tenant: TestTenant,
 		UUID:   TestMsgID,
 	}}

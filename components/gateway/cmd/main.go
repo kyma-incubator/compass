@@ -110,7 +110,7 @@ func initAuditLogsSvc(done chan bool) AuditogService {
 	auditlogClient, err := auditlog.NewClient(auditlogCfg, httpClient)
 	exitOnError(err, "Error while creating auditlog client from cfg")
 
-	auditlogMsgChannel := make(chan auditlog.AuditlogMessage)
+	auditlogMsgChannel := make(chan auditlog.Message)
 
 	logger := auditlog.NewService(auditlogClient, msgFactory)
 	worker := auditlog.NewWorker(logger, auditlogMsgChannel, done)
@@ -126,29 +126,36 @@ func initAuditlogClient(cfg auditlog.Config) (auditlog.HttpClient, *auditlog.Mes
 	uuidSvc := uuid.NewService()
 	timeSvc := &time.TimeService{}
 
-	if cfg.AuthMode == auditlog.Basic {
-		var basicCfg auditlog.BasicAuthConfig
-		err := envconfig.InitWithPrefix(&basicCfg, "APP")
-		exitOnError(err, "while loading basic auth config from envs")
+	switch cfg.AuthMode {
+	case auditlog.Basic:
+		{
+			var basicCfg auditlog.BasicAuthConfig
+			err := envconfig.InitWithPrefix(&basicCfg, "APP")
+			exitOnError(err, "while loading basic auth config from envs")
 
-		return auditlog.NewBasicAuthClient(basicCfg), auditlog.BasicAuthMessageFactory("proxy", basicCfg.Tenant, uuidSvc, timeSvc)
-	} else if cfg.AuthMode == auditlog.OAuth {
-		ctx := context.Background()
-
-		var oauthCfg auditlog.OAuthConfig
-		err := envconfig.InitWithPrefix(&oauthCfg, "APP")
-		exitOnError(err, "while loading oauth config from envs")
-
-		cfg := clientcredentials.Config{
-			ClientID:     oauthCfg.ClientID,
-			ClientSecret: oauthCfg.ClientSecret,
-			TokenURL:     oauthCfg.OAuthURL,
-			AuthStyle:    oauth2.AuthStyleAutoDetect,
+			return auditlog.NewBasicAuthClient(basicCfg), auditlog.BasicAuthMessageFactory("proxy", basicCfg.Tenant, uuidSvc, timeSvc)
 		}
+	case auditlog.OAuth:
+		{
+			ctx := context.Background()
 
-		return cfg.Client(ctx), auditlog.OAuthMessageFactory(uuidSvc, timeSvc)
-	} else {
-		log.Fatal(fmt.Sprintf("Invalid Auditlog Auth mode: %s", cfg.AuthMode))
-		return nil, nil
+			var oauthCfg auditlog.OAuthConfig
+			err := envconfig.InitWithPrefix(&oauthCfg, "APP")
+			exitOnError(err, "while loading oauth config from envs")
+
+			cfg := clientcredentials.Config{
+				ClientID:     oauthCfg.ClientID,
+				ClientSecret: oauthCfg.ClientSecret,
+				TokenURL:     oauthCfg.OAuthURL,
+				AuthStyle:    oauth2.AuthStyleAutoDetect,
+			}
+
+			return cfg.Client(ctx), auditlog.OAuthMessageFactory(uuidSvc, timeSvc)
+		}
+	default:
+		{
+			log.Fatal(fmt.Sprintf("Invalid Auditlog Auth mode: %s", cfg.AuthMode))
+			return nil, nil
+		}
 	}
 }
