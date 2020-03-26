@@ -112,3 +112,64 @@ func TestFromEntity(t *testing.T) {
 		},
 	}, actual)
 }
+
+func TestConverter_MultipleToGraphQL(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// GIVEN
+		in := []*model.AutomaticScenarioAssignment{
+			{
+				ScenarioName: "Scenario-A",
+				Tenant:       "4e7b4cc2-09d7-44e8-9e88-d70b8e7adef4",
+				Selector: model.LabelSelector{
+					Key:   "A-Key",
+					Value: "A-Value",
+				},
+			},
+			{
+				ScenarioName: "Scenario-B",
+				Tenant:       "475107c3-8938-4cec-b4f2-1b22df90a264",
+				Selector: model.LabelSelector{
+					Key:   "B-Key",
+					Value: "B-Value",
+				},
+			},
+			{
+				ScenarioName: "Scenario-C",
+				Tenant:       "4e3c3ae0-61f9-414f-b88d-7328c2bf4550",
+				Selector: model.LabelSelector{
+					Key:   "C-Key",
+					Value: "C-Value",
+				},
+			},
+		}
+		expected := []*graphql.AutomaticScenarioAssignment{
+			{
+				ScenarioName: "Scenario-A",
+				Selector: &graphql.Label{
+					Key:   "A-Key",
+					Value: "A-Value",
+				},
+			},
+			{
+				ScenarioName: "Scenario-B",
+				Selector: &graphql.Label{
+					Key:   "B-Key",
+					Value: "B-Value",
+				},
+			},
+			{
+				ScenarioName: "Scenario-C",
+				Selector: &graphql.Label{
+					Key:   "C-Key",
+					Value: "C-Value",
+				},
+			},
+		}
+		sut := scenarioassignment.NewConverter()
+
+		// WHEN
+		actual := sut.MultipleToGraphQL(in)
+		// THEN
+		assert.Equal(t, expected, actual)
+	})
+}

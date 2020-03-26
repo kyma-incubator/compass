@@ -221,7 +221,7 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 		defer mock.AssertExpectationsForObjects(t, tx, transact)
 		sut := scenarioassignment.NewResolver(transact, nil, nil)
 		// WHEN
-		_, err := sut.SetAutomaticScenarioAssignment(context.TODO(), graphql.AutomaticScenarioAssignmentSetInput{})
+		_, err := sut.AutomaticScenarioAssignmentForSelector(context.TODO(), graphql.LabelSelectorInput{})
 		// THEN
 		assert.EqualError(t, err, "while beginning transaction: some persistence error")
 	})

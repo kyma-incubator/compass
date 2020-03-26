@@ -111,7 +111,7 @@ func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int,
 func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
-		return nil, errors.Wrap(err, "while beginning transation")
+		return nil, errors.Wrap(err, "while beginning transaction")
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
