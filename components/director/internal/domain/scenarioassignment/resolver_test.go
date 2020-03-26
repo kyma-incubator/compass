@@ -108,11 +108,11 @@ func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 		mockConverter.On("ToGraphQL", fixModel()).Return(expectedOutput)
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetByScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(fixModel(), nil)
+		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(fixModel(), nil)
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 		// WHEN
-		actual, err := sut.GetAutomaticScenarioAssignmentByScenarioName(context.TODO(), scenarioName)
+		actual, err := sut.GetAutomaticScenarioAssignmentForScenarioName(context.TODO(), scenarioName)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, &expectedOutput, actual)
@@ -123,7 +123,7 @@ func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 		defer mock.AssertExpectationsForObjects(t, tx, transact)
 		sut := scenarioassignment.NewResolver(transact, nil, nil)
 		// WHEN
-		_, err := sut.GetAutomaticScenarioAssignmentByScenarioName(context.TODO(), scenarioName)
+		_, err := sut.GetAutomaticScenarioAssignmentForScenarioName(context.TODO(), scenarioName)
 		// THEN
 		assert.EqualError(t, err, "while beginning transaction: some persistence error")
 	})
@@ -131,11 +131,11 @@ func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 	t.Run("error on receiving assignment by service", func(t *testing.T) {
 		tx, transact := txGen.ThatDoesntExpectCommit()
 		mockSvc := &automock.Service{}
-		mockSvc.On("GetByScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(model.AutomaticScenarioAssignment{}, fixError())
+		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(model.AutomaticScenarioAssignment{}, fixError())
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockSvc)
 		sut := scenarioassignment.NewResolver(transact, nil, mockSvc)
 		// WHEN
-		_, err := sut.GetAutomaticScenarioAssignmentByScenarioName(context.TODO(), scenarioName)
+		_, err := sut.GetAutomaticScenarioAssignmentForScenarioName(context.TODO(), scenarioName)
 		// THEN
 		assert.EqualError(t, err, fmt.Sprintf("while getting Assignment: %s", errMsg))
 	})
@@ -144,11 +144,11 @@ func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 		tx, transact := txGen.ThatFailsOnCommit()
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockSvc)
-		mockSvc.On("GetByScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(fixModel(), nil)
+		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(fixModel(), nil)
 
 		sut := scenarioassignment.NewResolver(transact, nil, mockSvc)
 		// WHEN
-		_, err := sut.GetAutomaticScenarioAssignmentByScenarioName(context.TODO(), scenarioName)
+		_, err := sut.GetAutomaticScenarioAssignmentForScenarioName(context.TODO(), scenarioName)
 		// THEN
 		assert.EqualError(t, err, "while committing transaction: some persistence error")
 	})

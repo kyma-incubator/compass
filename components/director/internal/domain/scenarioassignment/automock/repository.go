@@ -28,20 +28,20 @@ func (_m *Repository) Create(ctx context.Context, _a1 model.AutomaticScenarioAss
 	return r0
 }
 
-// GetByScenarioName provides a mock function with given fields: ctx, tnt, scenarioName
-func (_m *Repository) GetByScenarioName(ctx context.Context, tnt string, scenarioName string) (model.AutomaticScenarioAssignment, error) {
-	ret := _m.Called(ctx, tnt, scenarioName)
+// GetForScenarioName provides a mock function with given fields: ctx, tenantID, scenarioName
+func (_m *Repository) GetForScenarioName(ctx context.Context, tenantID string, scenarioName string) (model.AutomaticScenarioAssignment, error) {
+	ret := _m.Called(ctx, tenantID, scenarioName)
 
 	var r0 model.AutomaticScenarioAssignment
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) model.AutomaticScenarioAssignment); ok {
-		r0 = rf(ctx, tnt, scenarioName)
+		r0 = rf(ctx, tenantID, scenarioName)
 	} else {
 		r0 = ret.Get(0).(model.AutomaticScenarioAssignment)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tnt, scenarioName)
+		r1 = rf(ctx, tenantID, scenarioName)
 	} else {
 		r1 = ret.Error(1)
 	}

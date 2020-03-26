@@ -57,10 +57,10 @@ func TestService_GetByScenarioName(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("GetByScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(fixModel(), nil)
+		mockRepo.On("GetForScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(fixModel(), nil)
 		sut := scenarioassignment.NewService(mockRepo)
 		// WHEN
-		actual, err := sut.GetByScenarioName(fixCtxWithTenant(), scenarioName)
+		actual, err := sut.GetForScenarioName(fixCtxWithTenant(), scenarioName)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, fixModel(), actual)
@@ -72,7 +72,7 @@ func TestService_GetByScenarioName(t *testing.T) {
 		defer mockRepo.AssertExpectations(t)
 		sut := scenarioassignment.NewService(mockRepo)
 		// WHEN
-		_, err := sut.GetByScenarioName(context.TODO(), scenarioName)
+		_, err := sut.GetForScenarioName(context.TODO(), scenarioName)
 		// THEN
 		assert.EqualError(t, err, "cannot read tenant from context")
 	})
@@ -81,10 +81,10 @@ func TestService_GetByScenarioName(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("GetByScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(model.AutomaticScenarioAssignment{}, fixError())
+		mockRepo.On("GetForScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(model.AutomaticScenarioAssignment{}, fixError())
 		sut := scenarioassignment.NewService(mockRepo)
 		// WHEN
-		_, err := sut.GetByScenarioName(fixCtxWithTenant(), scenarioName)
+		_, err := sut.GetForScenarioName(fixCtxWithTenant(), scenarioName)
 		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while getting Assignment: %s", errMsg))
 	})

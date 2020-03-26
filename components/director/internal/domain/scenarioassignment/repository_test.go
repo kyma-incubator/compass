@@ -94,7 +94,7 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 		defer convMock.AssertExpectations(t)
 		pgRepository := scenarioassignment.NewRepository(convMock)
 		// WHEN
-		_, err := pgRepository.GetByScenarioName(ctx, tenantID, scenarioName)
+		_, err := pgRepository.GetForScenarioName(ctx, tenantID, scenarioName)
 		//THEN
 		require.NoError(t, err)
 	})
@@ -112,7 +112,7 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 		repo := scenarioassignment.NewRepository(nil)
 
 		// when
-		_, err := repo.GetByScenarioName(ctx, tenantID, scenarioName)
+		_, err := repo.GetForScenarioName(ctx, tenantID, scenarioName)
 
 		// then
 		require.EqualError(t, err, fmt.Sprintf("while getting object from DB: %s", errMsg))

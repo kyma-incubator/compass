@@ -20,7 +20,7 @@ type Converter interface {
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
-	GetByScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
+	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
 }
 
 func NewResolver(transact persistence.Transactioner, converter Converter, svc Service) *Resolver {
@@ -64,7 +64,7 @@ func (r *Resolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphq
 	return &assignment, nil
 }
 
-func (r *Resolver) GetAutomaticScenarioAssignmentByScenarioName(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
+func (r *Resolver) GetAutomaticScenarioAssignmentForScenarioName(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while beginning transaction")
@@ -73,7 +73,7 @@ func (r *Resolver) GetAutomaticScenarioAssignmentByScenarioName(ctx context.Cont
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	out, err := r.svc.GetByScenarioName(ctx, scenarioName)
+	out, err := r.svc.GetForScenarioName(ctx, scenarioName)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting Assignment")
 	}

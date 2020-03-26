@@ -38,7 +38,7 @@ func (r *repository) Create(ctx context.Context, model model.AutomaticScenarioAs
 	return r.creator.Create(ctx, entity)
 }
 
-func (r *repository) GetByScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error) {
+func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error) {
 	var ent Entity
 
 	conditions := repo.Conditions{
@@ -49,7 +49,7 @@ func (r *repository) GetByScenarioName(ctx context.Context, tenantID, scenarioNa
 		return model.AutomaticScenarioAssignment{}, err
 	}
 
-	model := r.conv.FromEntity(ent)
+	assignmentModel := r.conv.FromEntity(ent)
 
-	return model, nil
+	return assignmentModel, nil
 }
