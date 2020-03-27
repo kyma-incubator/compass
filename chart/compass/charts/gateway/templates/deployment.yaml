@@ -76,13 +76,13 @@ spec:
                 configMapKeyRef:
                   name: {{ .Values.gateway.auditlog.configmap.name }}
                   key: auditlog-oauth-user-var
-                optinal: true
+                  optinal: true
             - name: APP_AUDITLOG_OAUTH_TENANT_VAR
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Values.gateway.auditlog.configmap.name }}
                   key: auditlog-oauth-tenant-var
-                optinal: true
+                  optinal: true
             {{ end }}
             - name: APP_AUDITLOG_URL
               valueFrom:
@@ -104,13 +104,13 @@ spec:
                 configMapKeyRef:
                   name: {{ .Values.gateway.auditlog.configmap.name }}
                   key: auditlog-channel-size
-                optinal: true
+                  optinal: true
             - name: APP_AUDITLOG_CHANNEL_TIMEOUT
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Values.gateway.auditlog.configmap.name }}
                   key: auditlog-channel-timeout
-                optinal: true
+                  optinal: true
 {{ end }}
           {{- with .Values.deployment.securityContext }}
           securityContext:
