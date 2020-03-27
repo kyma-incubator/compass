@@ -3,6 +3,7 @@ package scenarioassignment_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -118,4 +119,83 @@ func fixAutomaticScenarioAssigment(selectorScenario, selectorKey, selectorValue 
 			Value: selectorValue,
 		},
 	}
+}
+
+func TestEngine_GetScenariosForSelectorLabels_Success(t *testing.T) {
+	// given
+	key := "foo"
+	value := "bar"
+
+	selectorLabels := map[string]string{
+		key: value,
+	}
+
+	selector := model.LabelSelector{
+		Key:   key,
+		Value: value,
+	}
+
+	assignments := []*model.AutomaticScenarioAssignment{
+		{
+			ScenarioName: scenarioName,
+			Tenant:       tenantID,
+			Selector: model.LabelSelector{
+				Key:   key,
+				Value: value,
+			},
+		},
+	}
+
+	expectedScenarios := []string{scenarioName}
+
+	mockRepo := &automock.Repository{}
+	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(assignments, nil)
+	defer mock.AssertExpectationsForObjects(t, mockRepo)
+
+	engineSvc := scenarioassignment.NewEngine(mockRepo)
+
+	// when
+	actualScenarios, err := engineSvc.GetScenariosForSelectorLabels(fixCtxWithTenant(), selectorLabels)
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, expectedScenarios, actualScenarios)
+}
+
+func TestEngine_GetScenariosForSelectorLabels_ShouldFailOnGettingForSelector(t *testing.T) {
+	// given
+	testErr := errors.New("test error")
+	key := "foo"
+	value := "bar"
+
+	selectorLabels := map[string]string{
+		key: value,
+	}
+
+	selector := model.LabelSelector{
+		Key:   key,
+		Value: value,
+	}
+
+	mockRepo := &automock.Repository{}
+	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(nil, testErr)
+	defer mock.AssertExpectationsForObjects(t, mockRepo)
+
+	engineSvc := scenarioassignment.NewEngine(mockRepo)
+
+	// when
+	_, err := engineSvc.GetScenariosForSelectorLabels(fixCtxWithTenant(), selectorLabels)
+
+	// then
+	require.Error(t, err)
+	assert.EqualError(t, fmt.Errorf("while getting Automatic Scenario Assignments for selector [key: %s, val: %s]: %s", key, value, testErr.Error()), err.Error())
+}
+
+func TestEngine_GetScenariosForSelectorLabels_ShouldFailOnLoadingTenant(t *testing.T) {
+	// given
+	svc := scenarioassignment.NewEngine(nil)
+	// when
+	_, err := svc.GetScenariosForSelectorLabels(context.TODO(), nil)
+	// then
+	assert.EqualError(t, err, "cannot read tenant from context")
 }

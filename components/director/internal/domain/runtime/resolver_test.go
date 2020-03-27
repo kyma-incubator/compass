@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
@@ -20,7 +21,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
@@ -751,13 +751,24 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	runtimeID := "foo"
+	labelKey := "key"
+	labelValue := []string{"foo", "bar"}
 	gqlLabel := &graphql.Label{
-		Key:   "key",
-		Value: []string{"foo", "bar"},
+		Key:   labelKey,
+		Value: labelValue,
 	}
-	modelLabel := &model.LabelInput{
-		Key:        "key",
-		Value:      []string{"foo", "bar"},
+	modelLabelInput := &model.LabelInput{
+		Key:        labelKey,
+		Value:      labelValue,
+		ObjectID:   runtimeID,
+		ObjectType: model.RuntimeLabelableObject,
+	}
+
+	modelLabel := &model.Label{
+		ID:         "baz",
+		Tenant:     "quaz",
+		Key:        labelKey,
+		Value:      labelValue,
 		ObjectID:   runtimeID,
 		ObjectType: model.RuntimeLabelableObject,
 	}
@@ -790,7 +801,8 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			},
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("SetLabel", contextParam, modelLabel).Return(nil).Once()
+				svc.On("SetLabel", contextParam, modelLabelInput).Return(nil).Once()
+				svc.On("GetLabel", contextParam, runtimeID, modelLabelInput.Key).Return(modelLabel, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -818,7 +830,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			},
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("SetLabel", contextParam, modelLabel).Return(testErr).Once()
+				svc.On("SetLabel", contextParam, modelLabelInput).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {

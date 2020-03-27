@@ -44,6 +44,13 @@ type ScenariosService interface {
 	AddDefaultScenarioIfEnabled(labels *map[string]interface{})
 }
 
+//go:generate mockery -name=ScenarioAssignmentEngine -output=automock -outpkg=automock -case=underscore
+type ScenarioAssignmentEngine interface {
+	GetScenariosForSelectorLabels(ctx context.Context, inputLabels map[string]string) ([]string, error)
+	MergeScenariosFromInputAndAssignmentsFromInput(ctx context.Context, inputLabels map[string]interface{}) ([]interface{}, error)
+	ComputeScenarios(oldScenariosLabel, previousScenarios, newScenarios []interface{}) []interface{}
+}
+
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
 type UIDService interface {
 	Generate() string
@@ -53,13 +60,25 @@ type service struct {
 	repo      RuntimeRepository
 	labelRepo LabelRepository
 
-	labelUpsertService LabelUpsertService
-	uidService         UIDService
-	scenariosService   ScenariosService
+	labelUpsertService       LabelUpsertService
+	uidService               UIDService
+	scenariosService         ScenariosService
+	scenarioAssignmentEngine ScenarioAssignmentEngine
 }
 
-func NewService(repo RuntimeRepository, labelRepo LabelRepository, scenariosService ScenariosService, labelUpsertService LabelUpsertService, uidService UIDService) *service {
-	return &service{repo: repo, labelRepo: labelRepo, scenariosService: scenariosService, labelUpsertService: labelUpsertService, uidService: uidService}
+func NewService(repo RuntimeRepository,
+	labelRepo LabelRepository,
+	scenariosService ScenariosService,
+	labelUpsertService LabelUpsertService,
+	uidService UIDService,
+	scenarioAssignmentEngine ScenarioAssignmentEngine) *service {
+	return &service{
+		repo:                     repo,
+		labelRepo:                labelRepo,
+		scenariosService:         scenariosService,
+		labelUpsertService:       labelUpsertService,
+		uidService:               uidService,
+		scenarioAssignmentEngine: scenarioAssignmentEngine}
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
@@ -140,7 +159,23 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	if err != nil {
 		return "", errors.Wrapf(err, "while ensuring Label Definition with key %s exists", model.ScenariosKey)
 	}
-	s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
+
+	if in.Labels == nil {
+		if _, ok := in.Labels[model.ScenariosKey]; !ok {
+			in.Labels = map[string]interface{}{model.ScenariosKey: model.ScenariosDefaultValue}
+		}
+	}
+	//TODO check with new creation of default scenario label
+
+	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputAndAssignmentsFromInput(ctx, in.Labels)
+	if err != nil {
+		return "", errors.Wrap(err, "while merging scenarios from input and assignments")
+	}
+
+	if len(scenarios) > 0 {
+		in.Labels[model.ScenariosKey] = scenarios
+	}
+	s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels) //TODO CHECK
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
 	if err != nil {
@@ -151,6 +186,11 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) error {
+	rtmTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
 	rtm, err := s.Get(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "while getting Runtime")
@@ -163,14 +203,22 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		return errors.Wrap(err, "while updating Runtime")
 	}
 
-	rtmTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "while loading tenant from context")
-	}
-
 	err = s.labelRepo.DeleteAll(ctx, rtmTenant, model.RuntimeLabelableObject, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting all labels for Runtime")
+	}
+
+	if in.Labels == nil {
+		return nil
+	}
+
+	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputAndAssignmentsFromInput(ctx, in.Labels)
+	if err != nil {
+		return errors.Wrap(err, "while merging scenarios from input and assignments")
+	}
+
+	if len(scenarios) > 0 {
+		in.Labels[model.ScenariosKey] = scenarios
 	}
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
@@ -209,6 +257,52 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 	}
 	if !rtmExists {
 		return fmt.Errorf("Runtime with ID %s doesn't exist", labelInput.ObjectID)
+	}
+
+	currentRuntimeLabels, err := s.getCurrentLabelsForRuntime(ctx, rtmTenant, labelInput.ObjectID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting current labels for Runtime with id [%s]", labelInput.ObjectID)
+	}
+
+	if labelInput.Key == model.ScenariosKey {
+		currentRuntimeLabels[labelInput.Key] = labelInput.Value
+
+		scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputAndAssignmentsFromInput(ctx, currentRuntimeLabels)
+		if err != nil {
+			return errors.Wrap(err, "while merging scenarios from input and assignments")
+		}
+
+		labelInput.Value = scenarios
+
+	} else if labelInput.Key != model.ScenariosKey {
+
+		oldScenariosLabel, previousScenariosFromAssignments, err := s.getOldScenariosLabelAndPreviousScenariosFromAssignments(ctx, currentRuntimeLabels)
+		if err != nil {
+			return errors.Wrap(err, "while getting old scenarios label and scenarios from assignments")
+		}
+
+		currentRuntimeLabels[labelInput.Key] = labelInput.Value
+
+		newScenariosFromAssignments, err := s.getNewScenariosFromAssignments(ctx, currentRuntimeLabels)
+		if err != nil {
+			return errors.Wrap(err, "while getting new scenarios from assignments")
+		}
+
+		finalScenarios := s.scenarioAssignmentEngine.ComputeScenarios(oldScenariosLabel, previousScenariosFromAssignments, newScenariosFromAssignments)
+
+		scenariosLabelInput := &model.LabelInput{
+			Key:        model.ScenariosKey,
+			Value:      finalScenarios,
+			ObjectID:   labelInput.ObjectID,
+			ObjectType: labelInput.ObjectType,
+		}
+
+		if len(finalScenarios) > 0 {
+			err = s.labelUpsertService.UpsertLabel(ctx, rtmTenant, scenariosLabelInput)
+			if err != nil {
+				return errors.Wrapf(err, "while creating scenarios label for Runtime with id [%s]", labelInput.ObjectID)
+			}
+		}
 	}
 
 	err = s.labelUpsertService.UpsertLabel(ctx, rtmTenant, labelInput)
@@ -278,10 +372,127 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 		return fmt.Errorf("Runtime with ID %s doesn't exist", runtimeID)
 	}
 
+	currentRuntimeLabels, err := s.getCurrentLabelsForRuntime(ctx, rtmTenant, runtimeID)
+	if err != nil {
+		return errors.Wrapf(err, "while creating selector labels for Runtime with id [%s]", runtimeID)
+	}
+
 	err = s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, key)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Runtime label")
 	}
 
+	finalScenarios := make([]interface{}, 0)
+
+	if key == model.ScenariosKey {
+		delete(currentRuntimeLabels, key)
+
+		scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputAndAssignmentsFromInput(ctx, currentRuntimeLabels)
+		if err != nil {
+			return errors.Wrap(err, "while merging scenarios from input and assignments")
+		}
+
+		for _, scenario := range scenarios {
+			finalScenarios = append(finalScenarios, scenario)
+		}
+
+	} else if key != model.ScenariosKey {
+		oldScenariosLabel, previousScenariosFromAssignments, err := s.getOldScenariosLabelAndPreviousScenariosFromAssignments(ctx, currentRuntimeLabels)
+		if err != nil {
+			return errors.Wrap(err, "while getting old scenarios label and scenarios from assignments")
+		}
+
+		delete(currentRuntimeLabels, key)
+
+		newScenariosFromAssignments, err := s.getNewScenariosFromAssignments(ctx, currentRuntimeLabels)
+		if err != nil {
+			return errors.Wrap(err, "while getting new scenarios from assignments")
+		}
+
+		finalScenarios = s.scenarioAssignmentEngine.ComputeScenarios(oldScenariosLabel, previousScenariosFromAssignments, newScenariosFromAssignments)
+	}
+	if len(finalScenarios) > 0 {
+		scenariosLabelInput := &model.LabelInput{
+			Key:        model.ScenariosKey,
+			Value:      finalScenarios,
+			ObjectID:   runtimeID,
+			ObjectType: model.RuntimeLabelableObject,
+		}
+
+		err = s.labelUpsertService.UpsertLabel(ctx, rtmTenant, scenariosLabelInput)
+		if err != nil {
+			return errors.Wrapf(err, "while creating label for Runtime")
+		}
+	}
+
 	return nil
+}
+
+func (s *service) getCurrentLabelsForRuntime(ctx context.Context, tenantID, runtimeID string) (map[string]interface{}, error) {
+	labels, err := s.labelRepo.ListForObject(ctx, tenantID, model.RuntimeLabelableObject, runtimeID)
+	if err != nil {
+		return nil, err
+	}
+
+	currentLabels := make(map[string]interface{})
+	for _, v := range labels {
+		currentLabels[v.Key] = v.Value
+	}
+	return currentLabels, nil
+}
+
+func (s *service) getOldScenariosLabelAndPreviousScenariosFromAssignments(ctx context.Context, currentRuntimeLabels map[string]interface{}) ([]interface{}, []interface{}, error) {
+	oldSelectors := s.convertMapStringInterfaceToMapStringString(currentRuntimeLabels)
+	oldScenariosLabel, ok := currentRuntimeLabels[model.ScenariosKey]
+	var oldScenariosLabelInterfaceSlice []interface{}
+	if ok {
+		oldScenariosLabelInterfaceSlice, ok = oldScenariosLabel.([]interface{})
+		if !ok {
+			return nil, nil, errors.New("value for scenarios label must be []interface{}")
+		}
+	}
+
+	previousScenariosFromAssignments, err := s.scenarioAssignmentEngine.GetScenariosForSelectorLabels(ctx, oldSelectors)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "while merging scenarios from input and assignments")
+	}
+
+	previousScenariosFromAssignmentsInterfaceSlice := s.convertStringSliceToInterfaceSlice(previousScenariosFromAssignments)
+
+	return oldScenariosLabelInterfaceSlice, previousScenariosFromAssignmentsInterfaceSlice, nil
+}
+
+func (s *service) getNewScenariosFromAssignments(ctx context.Context, currentRuntimeLabels map[string]interface{}) ([]interface{}, error) {
+	newSelectors := s.convertMapStringInterfaceToMapStringString(currentRuntimeLabels)
+
+	newScenariosFromAssignments, err := s.scenarioAssignmentEngine.GetScenariosForSelectorLabels(ctx, newSelectors)
+	if err != nil {
+		return nil, errors.Wrap(err, "while merging scenarios from input and assignments")
+	}
+
+	newScenariosInterfaceSlice := s.convertStringSliceToInterfaceSlice(newScenariosFromAssignments)
+
+	return newScenariosInterfaceSlice, nil
+}
+
+func (s *service) convertMapStringInterfaceToMapStringString(in map[string]interface{}) map[string]string {
+	out := make(map[string]string)
+
+	for k, v := range in {
+		val, ok := v.(string)
+		if ok {
+			out[k] = val
+		}
+	}
+
+	return out
+}
+
+func (s *service) convertStringSliceToInterfaceSlice(in []string) []interface{} {
+	out := make([]interface{}, 0)
+	for _, v := range in {
+		out = append(out, v)
+	}
+
+	return out
 }

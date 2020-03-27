@@ -118,7 +118,7 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 	})
 }
 
-func TestRepository_GetForSelector(t *testing.T) {
+func TestRepository_ListForSelector(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		scenarioEntities := []scenarioassignment.Entity{fixEntityWithScenarioName(scenarioName),
