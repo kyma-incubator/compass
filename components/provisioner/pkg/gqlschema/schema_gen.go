@@ -57,6 +57,7 @@ type ComplexityRoot struct {
 		Component     func(childComplexity int) int
 		Configuration func(childComplexity int) int
 		Namespace     func(childComplexity int) int
+		SourceURL     func(childComplexity int) int
 	}
 
 	ConfigEntry struct {
@@ -227,6 +228,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ComponentConfiguration.Namespace(childComplexity), true
+
+	case "ComponentConfiguration.sourceURL":
+		if e.complexity.ComponentConfiguration.SourceURL == nil {
+			break
+		}
+
+		return e.complexity.ComponentConfiguration.SourceURL(childComplexity), true
 
 	case "ConfigEntry.key":
 		if e.complexity.ConfigEntry.Key == nil {
@@ -736,6 +744,7 @@ type ComponentConfiguration {
     component: String!
     namespace: String!
     configuration: [ConfigEntry]
+    sourceURL: String
 }
 
 type KymaConfig {
@@ -879,6 +888,7 @@ input ComponentConfigurationInput {
     component: String!                    # Kyma component name
     namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
+    sourceURL: String                     # Custom URL for the source files of the given component
 }
 
 input UpgradeRuntimeInput {
@@ -1331,6 +1341,40 @@ func (ec *executionContext) _ComponentConfiguration_configuration(ctx context.Co
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ComponentConfiguration_sourceURL(ctx context.Context, field graphql.CollectedField, obj *ComponentConfiguration) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ComponentConfiguration",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SourceURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ConfigEntry_key(ctx context.Context, field graphql.CollectedField, obj *ConfigEntry) (ret graphql.Marshaler) {
@@ -4427,6 +4471,12 @@ func (ec *executionContext) unmarshalInputComponentConfigurationInput(ctx contex
 			if err != nil {
 				return it, err
 			}
+		case "sourceURL":
+			var err error
+			it.SourceURL, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -4946,6 +4996,8 @@ func (ec *executionContext) _ComponentConfiguration(ctx context.Context, sel ast
 			}
 		case "configuration":
 			out.Values[i] = ec._ComponentConfiguration_configuration(ctx, field, obj)
+		case "sourceURL":
+			out.Values[i] = ec._ComponentConfiguration_sourceURL(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

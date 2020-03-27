@@ -180,6 +180,7 @@ func (c converter) kymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 			ID:            id,
 			Component:     model.KymaComponent(component.Component),
 			Namespace:     component.Namespace,
+			SourceURL:     sourceURLFromInput(component.SourceURL),
 			Configuration: c.configurationFromInput(component.Configuration),
 			KymaConfigID:  kymaConfigID,
 		}
@@ -194,6 +195,13 @@ func (c converter) kymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 		ClusterID:           runtimeID,
 		GlobalConfiguration: c.configurationFromInput(input.Configuration),
 	}, nil
+}
+
+func sourceURLFromInput(sourceURL *string) string {
+	if sourceURL == nil {
+		return ""
+	}
+	return *sourceURL
 }
 
 func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput) model.Configuration {

@@ -31,7 +31,7 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-1042"
+      version: "PR-1046"
     provisioner:
       dir:
       version: "5dcf9947"
@@ -52,7 +52,7 @@ global:
         version: "02e8358c"
       provisioner:
         dir:
-        version: "PR-1004"
+        version: "PR-1046"
       e2e_provisioning:
         dir:
         version: "PR-1018"

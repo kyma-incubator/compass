@@ -17,7 +17,7 @@ require (
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200123101435-9cd00b2924b8
 	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
 	github.com/kyma-incubator/hydroform/install v0.0.0-20200302090055-3f3b00d9799c
-	github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0
+	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442
 	github.com/lib/pq v1.2.0
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.2.0 // indirect

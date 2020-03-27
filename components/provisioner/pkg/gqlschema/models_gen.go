@@ -51,12 +51,14 @@ type ComponentConfiguration struct {
 	Component     string         `json:"component"`
 	Namespace     string         `json:"namespace"`
 	Configuration []*ConfigEntry `json:"configuration"`
+	SourceURL     *string        `json:"sourceURL"`
 }
 
 type ComponentConfigurationInput struct {
 	Component     string              `json:"component"`
 	Namespace     string              `json:"namespace"`
 	Configuration []*ConfigEntryInput `json:"configuration"`
+	SourceURL     *string             `json:"sourceURL"`
 }
 
 type ConfigEntry struct {

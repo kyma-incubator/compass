@@ -43,6 +43,7 @@ type KymaComponentConfig struct {
 	ID            string
 	Component     KymaComponent
 	Namespace     string
+	SourceURL     string
 	Configuration Configuration
 	KymaConfigID  string
 }

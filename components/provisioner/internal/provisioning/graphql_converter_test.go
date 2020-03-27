@@ -257,6 +257,12 @@ func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 				},
 			},
 			{
+				Component:     rafterComponent,
+				Namespace:     kymaSystemNamespace,
+				SourceURL:     util.StringPtr(rafterSourceURL),
+				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
+			},
+			{
 				Component: applicationConnectorComponent,
 				Namespace: kymaIntegrationNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
@@ -321,6 +327,14 @@ func fixKymaComponents() []model.KymaComponentConfig {
 					model.NewConfigEntry("test.config.key2", "value2", false),
 				},
 			},
+		},
+		{
+			ID:            "id",
+			KymaConfigID:  "id",
+			Component:     rafterComponent,
+			Namespace:     kymaSystemNamespace,
+			SourceURL:     rafterSourceURL,
+			Configuration: model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
 		},
 		{
 			ID:           "id",
