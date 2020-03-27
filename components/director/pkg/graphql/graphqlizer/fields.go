@@ -310,3 +310,9 @@ func (fp *GqlFieldsProvider) ForPackageInstanceAuthStatus() string {
 		message
 		reason`
 }
+
+func (fp *GqlFieldsProvider) ForAutomaticScenarioAssignment() string {
+	return `
+		scenarioName
+		selector`
+}
