@@ -73,6 +73,7 @@ func (r *repository) GetForSelector(ctx context.Context, in model.LabelSelector,
 
 	return items, nil
 }
+
 func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error) {
 	var ent Entity
 
@@ -111,6 +112,18 @@ func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cu
 }
 
 func (r *repository) DeleteForSelector(ctx context.Context, tenantID string, selector model.LabelSelector) error {
-	conditions := repo.Conditions{repo.NewEqualCondition(selectorKeyColumn, selector.Key), repo.NewEqualCondition(selectorValueColumn, selector.Value)}
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(selectorKeyColumn, selector.Key),
+		repo.NewEqualCondition(selectorValueColumn, selector.Value),
+	}
+
 	return r.deleter.DeleteMany(ctx, tenantID, conditions)
+}
+
+func (r *repository) DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error {
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(scenarioColumn, scenarioName),
+	}
+
+	return r.deleter.DeleteOne(ctx, tenantID, conditions)
 }

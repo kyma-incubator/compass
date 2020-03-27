@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRepositoryCreate(t *testing.T) {
+func TestRepository_Create(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 
@@ -118,7 +118,7 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 	})
 }
 
-func TestRepositoryGetForSelector(t *testing.T) {
+func TestRepository_GetForSelector(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		scenarioEntities := []scenarioassignment.Entity{fixEntityWithScenarioName(scenarioName),
@@ -293,5 +293,44 @@ func TestRepository_DeleteForSelector(t *testing.T) {
 
 		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while deleting from database: %s", errMsg))
+	})
+}
+
+func TestRepository_DeleteForScenarioName(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectExec(fmt.Sprintf(`^DELETE FROM public.automatic_scenario_assignments WHERE tenant_id = \$1 AND scenario = \$2$`)).
+			WithArgs(tenantID, scenarioName).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := scenarioassignment.NewRepository(nil)
+
+		// WHEN
+		err := repo.DeleteForScenarioName(ctx, tenantID, scenarioName)
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Database error", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectExec(fmt.Sprintf(`^DELETE FROM public.automatic_scenario_assignments WHERE tenant_id = \$1 AND scenario = \$2$`)).
+			WithArgs(tenantID, scenarioName).
+			WillReturnError(fixError())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := scenarioassignment.NewRepository(nil)
+
+		// WHEN
+		err := repo.DeleteForScenarioName(ctx, tenantID, scenarioName)
+
+		// THEN
+		require.EqualError(t, err, "while deleting from database: some error")
 	})
 }

@@ -3,7 +3,6 @@ package scenarioassignment
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment/mock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -26,6 +25,7 @@ type Service interface {
 	GetForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
 	DeleteForSelector(ctx context.Context, selector model.LabelSelector) error
+	DeleteForScenarioName(ctx context.Context, scenarioName string) error
 }
 
 // TODO: Change order of params: Service before Converter
@@ -91,10 +91,6 @@ func (r *Resolver) GetAutomaticScenarioAssignmentForScenarioName(ctx context.Con
 	assignment := r.converter.ToGraphQL(out)
 
 	return &assignment, nil
-}
-
-func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
-	return mock.FixAssignmentForScenario(scenarioName), nil
 }
 
 func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
@@ -188,4 +184,33 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Cont
 	}
 
 	return r.converter.MultipleToGraphQL(assignments), nil
+}
+
+func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "while beginning transaction")
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	model, err := r.svc.GetForScenarioName(ctx, scenarioName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting the Assignment for scenario [name=%s]", scenarioName)
+	}
+
+	err = r.svc.DeleteForScenarioName(ctx, scenarioName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while deleting the Assignment for scenario [name=%s]", scenarioName)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
+	}
+
+	gql := r.converter.ToGraphQL(model)
+
+	return &gql, nil
 }
