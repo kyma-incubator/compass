@@ -110,8 +110,6 @@ func main() {
 		fatalOnError(err)
 	}
 
-	logs := logrus.New()
-
 	// LMS
 	fatalOnError(cfg.LMS.Validate())
 	lmsClient := lms.NewClient(cfg.LMS, logs)
