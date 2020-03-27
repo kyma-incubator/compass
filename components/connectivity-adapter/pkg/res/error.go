@@ -1,4 +1,4 @@
-package reqerror
+package res
 
 import (
 	"encoding/json"
@@ -7,11 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-)
-
-const (
-	HeaderContentTypeKey   = "Content-Type"
-	HeaderContentTypeValue = "application/json;charset=UTF-8"
 )
 
 type ErrorResponse struct {

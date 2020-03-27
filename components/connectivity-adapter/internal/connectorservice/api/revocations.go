@@ -3,11 +3,12 @@ package api
 import (
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -28,7 +29,7 @@ func (rh *revocationsHandler) RevokeCertificate(w http.ResponseWriter, r *http.R
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
 		rh.logger.Errorf("Failed to read authorization context: %s.", err)
-		reqerror.WriteErrorMessage(w, "Failed to read authorization context.", apperrors.CodeForbidden)
+		res.WriteErrorMessage(w, "Failed to read authorization context.", apperrors.CodeForbidden)
 
 		return
 	}
