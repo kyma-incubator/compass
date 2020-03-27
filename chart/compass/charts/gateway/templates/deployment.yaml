@@ -71,6 +71,18 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.gateway.auditlog.secret.name }}
                   key: auditlog-oauth-url
+            - name: APP_AUDITLOG_OAUTH_USER_VAR
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.gateway.auditlog.configmap.name }}
+                  key: auditlog-oauth-user-var
+                optinal: true
+            - name: APP_AUDITLOG_OAUTH_TENANT_VAR
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.gateway.auditlog.configmap.name }}
+                  key: auditlog-oauth-tenant-var
+                optinal: true
             {{ end }}
             - name: APP_AUDITLOG_URL
               valueFrom:
@@ -87,6 +99,18 @@ spec:
                 configMapKeyRef:
                   name: {{ .Values.gateway.auditlog.configmap.name }}
                   key: auditlog-security-path
+            - name: APP_AUDITLOG_CHANNEL_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.gateway.auditlog.configmap.name }}
+                  key: auditlog-channel-size
+                optinal: true
+            - name: APP_AUDITLOG_CHANNEL_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.gateway.auditlog.configmap.name }}
+                  key: auditlog-channel-timeout
+                optinal: true
 {{ end }}
           {{- with .Values.deployment.securityContext }}
           securityContext:

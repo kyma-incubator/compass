@@ -40,7 +40,7 @@ type HTTPTransport interface {
 }
 
 const (
-	auditlogMsgChannelSize = 25
+	auditlogMsgChannelSize = 100
 	auditlogTimeout        = time.Second * 5
 )
 
@@ -155,11 +155,11 @@ func initAuditLogs(done chan bool) (AuditogService, error) {
 	}
 
 	auditlogSvc := auditlog.NewService(auditlogClient, msgFactory)
-	msgChannel := make(chan auditlog.Message, auditlogMsgChannelSize)
+	msgChannel := make(chan auditlog.Message, cfg.AutitlogMsgChannelSize)
 	initWorker(auditlogSvc, done, msgChannel)
 
 	log.Printf("Auditlog configured successfully, auth mode:%s\n", cfg.AuthMode)
-	return auditlog.NewSink(msgChannel, auditlogTimeout), nil
+	return auditlog.NewSink(msgChannel, cfg.AuditlogMsgChannelTimeout), nil
 }
 
 func fillJWTCredentials(cfg auditlog.OAuthConfig) clientcredentials.Config {

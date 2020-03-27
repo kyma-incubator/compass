@@ -13,25 +13,28 @@ Gateway binary allows you to override some configuration parameters. You can spe
 | **APP_ADDRESS**                  | The address and port for the service to listen on                 | `http://127.0.0.1:3000`  | 
 | **APP_DIRECTOR_ORIGIN**          | The address and port on which the Director service is listening   | `http://127.0.0.1:3001`  | 
 | **APP_CONNECTOR_ORIGIN**         | The address and port on which the Connector service is listening  | `http://127.0.0.1:3002`  | 
-| **APP_AUDITLOG_ENABLED**         | The variable that enables the audit log feature                   | `false`                  | 
+| **APP_AUDITLOG_ENABLED**         | The variable that enables the auditlog feature                   | `false`                  | 
 
-### Audit log authorization configuration
+### Auditlog authorization configuration
 
 If you set **APP_AUDITLOG_ENABLED** to `true`, the following environment variables are required:
 
-| Name                             | Description                                                                     | 
-| -------------------------------- | ------------------------------------------------------------------------------- |
-| **APP_AUDITLOG_URL**             | The URL under which the audit log service is available                          |
-| **APP_AUDITLOG_CONFIG_PATH**     | The path for logging configuration changes                                      |
-| **APP_AUDITLOG_SECURITY_PATH**   | The path for logging security events                                            |
-| **APP_AUDITLOG_AUTH_MODE**       | The audit log authorization mode. The possible values are `basic` and `oauth`.  |
+| Name                             | Description                                                                    |   Default value  |
+| -------------------------------- | ------------------------------------------------------------------------------ | ---------------- |
+| **APP_AUDITLOG_URL**             | The URL under which the auditlog service is available                          |                  |
+| **APP_AUDITLOG_CONFIG_PATH**     | The path for logging configuration changes                                     |                  |
+| **APP_AUDITLOG_SECURITY_PATH**   | The path for logging security events                                           |                  |
+| **APP_AUDITLOG_AUTH_MODE**       | The auditlog authorization mode. The possible values are `basic` and `oauth`.  |                  | 
+| **APP_AUDITLOG_CHANNEL_SIZE**    | The auditlog Message Channel size                                              | `100`            | 
+| **APP_AUDITLOG_CHANNEL_TIMEOUT** | The auditlog Message Channel timeout                                           | `5s`             | 
+
 
 If you set **APP_AUDITLOG_AUTH_MODE** to `basic`, you are required to pass the following values:
 
 | Name                             | Description                                                    |  
 | -------------------------------- | -------------------------------------------------------------- |  
-| **APP_AUDITLOG_USER**            | The username to the audit log service                          |
-| **APP_AUDITLOG_PASSWORD**        | The password to the audit log service                          |
+| **APP_AUDITLOG_USER**            | The username to the auditlog service                          |
+| **APP_AUDITLOG_PASSWORD**        | The password to the auditlog service                          |
 | **APP_AUDITLOG_TENANT**          | The tenant for which audit logs are created                    |
 
 If you set **APP_AUDITLOG_AUTH_MODE** to `oauth`, you are required to pass the following values:

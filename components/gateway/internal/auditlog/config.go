@@ -1,10 +1,14 @@
 package auditlog
 
+import "time"
+
 type Config struct {
-	URL          string   `envconfig:"APP_AUDITLOG_URL"`
-	ConfigPath   string   `envconfig:"APP_AUDITLOG_CONFIG_PATH"`
-	SecurityPath string   `envconfig:"APP_AUDITLOG_SECURITY_PATH"`
-	AuthMode     AuthMode `envconfig:"APP_AUDITLOG_AUTH_MODE"`
+	URL                       string        `envconfig:"APP_AUDITLOG_URL"`
+	ConfigPath                string        `envconfig:"APP_AUDITLOG_CONFIG_PATH"`
+	SecurityPath              string        `envconfig:"APP_AUDITLOG_SECURITY_PATH"`
+	AuthMode                  AuthMode      `envconfig:"APP_AUDITLOG_AUTH_MODE"`
+	AutitlogMsgChannelSize    int           `envconfig:"APP_AUDITLOG_CHANNEL_SIZE,default=100"`
+	AuditlogMsgChannelTimeout time.Duration `envconfig:"APP_AUDITLOG_CHANNEL_TIMEOUT,default=5s"`
 }
 
 type BasicAuthConfig struct {
