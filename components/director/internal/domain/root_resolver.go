@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
