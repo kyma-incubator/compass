@@ -275,7 +275,7 @@ func TestServiceUpdate(t *testing.T) {
 		require.EqualError(t, err, `label with key "oldProperty" is not valid against new schema for Runtime with ID "foo": (root): nonExistingProp is required`)
 	})
 
-	t.Run("returns error when error occured during receiving Label Definition", func(t *testing.T) {
+	t.Run("returns error when error occurred during receiving Label Definition", func(t *testing.T) {
 		// GIVEN
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
@@ -454,7 +454,7 @@ func TestServiceUpdate(t *testing.T) {
 		// WHEN
 		err := sut.Update(context.TODO(), ld)
 		// THEN
-		require.EqualError(t, err, "while validating Automatic Scenario Assignments against a new schema: while getting page of Automatic Scenario Assignments: some error")
+		require.EqualError(t, err, "while validating Scenario Assignments against a new schema: while getting page of Automatic Scenario Assignments: some error")
 	})
 
 	t.Run("returns error if automatic assignment is not valid against a new schema", func(t *testing.T) {
@@ -480,7 +480,7 @@ func TestServiceUpdate(t *testing.T) {
 		// WHEN
 		err := sut.Update(context.TODO(), ld)
 		// THEN
-		require.EqualError(t, err, "scenario assignment [scenario-that-is-invalid] is not valid against a new schema: 0: 0 must be one of the following: \"DEFAULT\", \"scenario-A\", \"scenario-B\"")
+		require.EqualError(t, err, "while validating Scenario Assignments against a new schema: Scenario Assignment [scenario=scenario-that-is-invalid] is not valid against a new schema: 0: 0 must be one of the following: \"DEFAULT\", \"scenario-A\", \"scenario-B\"")
 	})
 }
 

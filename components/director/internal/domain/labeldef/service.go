@@ -100,7 +100,7 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 			return err
 		}
 		if err := s.validateAutomaticScenarioAssignmentAgainstSchema(ctx, *def.Schema, def.Tenant, def.Key); err != nil {
-			return err
+			return errors.Wrap(err, "while validating Scenario Assignments against a new schema")
 		}
 	}
 
@@ -173,19 +173,19 @@ func (s *service) validateAutomaticScenarioAssignmentAgainstSchema(ctx context.C
 
 	validator, err := jsonschema.NewValidatorFromRawSchema(schema)
 	if err != nil {
-		return errors.Wrap(err, "while creating validator for new schema")
+		return errors.Wrap(err, "while creating validator for a new schema")
 	}
 	inUse, err := s.fetchScenariosFromAssignments(ctx, tenantID)
 	if err != nil {
-		return errors.Wrap(err, "while validating Automatic Scenario Assignments against a new schema")
+		return err
 	}
 	for _, used := range inUse {
 		res, err := validator.ValidateRaw([]interface{}{used})
 		if err != nil {
-			return errors.Wrapf(err, "while validating scenario assignment [%s] with a new schema", used)
+			return errors.Wrapf(err, "while validating scenario assignment [scenario=%s] with a new schema", used)
 		}
 		if res.Error != nil {
-			return errors.Wrapf(res.Error, "scenario assignment [%s] is not valid against a new schema", used)
+			return errors.Wrapf(res.Error, "Scenario Assignment [scenario=%s] is not valid against a new schema", used)
 		}
 	}
 	return nil
