@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -123,8 +123,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
-	// TODO provide missing deps
-	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, uidSvc, nil)
+	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, uidSvc, scenarioAssignmentRepo)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 	httpClient := getHttpClient()
