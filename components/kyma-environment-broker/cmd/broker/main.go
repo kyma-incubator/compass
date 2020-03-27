@@ -152,7 +152,7 @@ func main() {
 	fatalOnError(err)
 
 	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
-	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel)
+	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled)
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), logs)
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs)
