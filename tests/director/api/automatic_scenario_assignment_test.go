@@ -71,7 +71,7 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 	// THEN
 	saveExample(t, listAssignmentsRequest.Query(), "query automatic scenario assignments")
 	saveExample(t, getAssignmentForScenarioRequest.Query(), "query automatic scenario assignment for scenario")
-	saveExample(t, listAssignmentsForSelectorRequest.Query(), "query automatic scenario assignments for selector")
+	saveExample(t, listAssignmentsForSelectorRequest.Query(), "query automatic scenario assignment for selector")
 
 	assertAutomaticScenarioAssignments(t,
 		[]graphql.AutomaticScenarioAssignmentSetInput{inputAssignment1, inputAssignment2, inputAssignment3},
