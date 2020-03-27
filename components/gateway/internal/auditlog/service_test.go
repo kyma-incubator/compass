@@ -1,7 +1,6 @@
 package auditlog_test
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -225,38 +224,16 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 }
 func TestSink_ChannelStuck(t *testing.T) {
 	//GIVEN
-	timeout := time.Millisecond * 100
-	ctx, _ := context.WithTimeout(context.TODO(), timeout*2)
-	channelSize := 5
-	messageSize := channelSize + 1
-	chanMsg := make(chan auditlog.Message, channelSize)
-	done := make(chan error)
-	sink := auditlog.NewSink(chanMsg, timeout)
+	chanMsg := make(chan auditlog.Message)
+	defer close(chanMsg)
+	sink := auditlog.NewSink(chanMsg, time.Millisecond*100)
 
 	//WHEN
-	go func() {
-		for i := 0; i < messageSize; i++ {
-			err := sink.Log("", "", proxy.Claims{})
-			if err != nil {
-				done <- err
-				return
-			}
-		}
-		done <- nil
-	}()
+	err := sink.Log("test-request", "test-response", proxy.Claims{})
 
 	//THEN
-	select {
-	case <-ctx.Done():
-		{
-			t.Fatal("Sink stuck")
-		}
-	case err := <-done:
-		{
-			assert.Error(t, err)
-			assert.EqualError(t, err, "Cannot write to the channel")
-		}
-	}
+	require.Error(t, err)
+	assert.EqualError(t, err, "Cannot write to the channel")
 }
 
 func fixClaims() proxy.Claims {

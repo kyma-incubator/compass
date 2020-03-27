@@ -21,10 +21,10 @@ type Sink struct {
 	timeout     time.Duration
 }
 
-func NewSink(logsChannel chan Message, timeoutTime time.Duration) *Sink {
+func NewSink(logsChannel chan Message, timeout time.Duration) *Sink {
 	return &Sink{
 		logsChannel: logsChannel,
-		timeout:     timeoutTime,
+		timeout:     timeout,
 	}
 }
 

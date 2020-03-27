@@ -143,7 +143,7 @@ func initAuditLogs(done chan bool) (AuditogService, error) {
 
 			cfg := fillJWTCredentials(oauthCfg)
 			httpClient = cfg.Client(context.Background())
-			msgFactory = auditlog.NewMessageFactory(oauthCfg.UserVar, oauthCfg.TenantVar, uuidSvc, timeSvc)
+			msgFactory = auditlog.NewMessageFactory(oauthCfg.User, oauthCfg.Tenant, uuidSvc, timeSvc)
 		}
 	default:
 		return nil, errors.New(fmt.Sprintf("Invalid Auditlog Auth mode: %s", cfg.AuthMode))
@@ -155,11 +155,11 @@ func initAuditLogs(done chan bool) (AuditogService, error) {
 	}
 
 	auditlogSvc := auditlog.NewService(auditlogClient, msgFactory)
-	msgChannel := make(chan auditlog.Message, cfg.AutitlogMsgChannelSize)
+	msgChannel := make(chan auditlog.Message, cfg.MsgChannelSize)
 	initWorker(auditlogSvc, done, msgChannel)
 
 	log.Printf("Auditlog configured successfully, auth mode:%s\n", cfg.AuthMode)
-	return auditlog.NewSink(msgChannel, cfg.AuditlogMsgChannelTimeout), nil
+	return auditlog.NewSink(msgChannel, cfg.MsgChannelTimeout), nil
 }
 
 func fillJWTCredentials(cfg auditlog.OAuthConfig) clientcredentials.Config {

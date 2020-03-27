@@ -71,13 +71,13 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.gateway.auditlog.secret.name }}
                   key: auditlog-oauth-url
-            - name: APP_AUDITLOG_OAUTH_USER_VAR
+            - name: APP_AUDITLOG_OAUTH_USER
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Values.gateway.auditlog.configmap.name }}
                   key: auditlog-oauth-user-var
                   optional: true
-            - name: APP_AUDITLOG_OAUTH_TENANT_VAR
+            - name: APP_AUDITLOG_OAUTH_TENANT
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Values.gateway.auditlog.configmap.name }}
