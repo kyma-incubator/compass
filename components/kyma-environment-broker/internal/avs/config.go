@@ -8,4 +8,5 @@ type Config struct {
 	ApiEndpoint        string
 	DefinitionType     string `envconfig:"default=BASIC"`
 	ApiKey             string
+	Disabled           bool `envconfig:"default=false"`
 }
