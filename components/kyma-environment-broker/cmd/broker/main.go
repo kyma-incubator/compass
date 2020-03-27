@@ -161,7 +161,9 @@ func main() {
 	stepManager.InitStep(initialisation)
 
 	stepManager.AddStep(1, resolveCredentialsStep)
-	stepManager.AddStep(1, evaluationStep)
+	if !cfg.Avs.Disabled {
+		stepManager.AddStep(1, evaluationStep)
+	}
 	if !cfg.LMS.Disabled {
 		stepManager.AddStep(1, lmsProvideTenantStep)
 		stepManager.AddStep(4, lmsCertStep) // must be just before runtimeStep and after lmsProvideTenantStep
