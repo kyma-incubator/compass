@@ -381,7 +381,7 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 		err := svc.DeleteForScenarioName(fixCtxWithTenant(), scenarioName)
 
 		// THEN
-		require.EqualError(t, err, fmt.Sprintf("while deleting Assignment: %s", errMsg))
+		require.EqualError(t, err, fmt.Sprintf("while deleting the Assignment: %s", errMsg))
 	})
 }
 

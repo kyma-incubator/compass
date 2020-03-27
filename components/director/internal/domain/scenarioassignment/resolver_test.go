@@ -103,7 +103,7 @@ func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 
 func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(errors.New("some persistence error"))
-	expectedOutput := fixGQLAutomaticScenarioAssignment()
+	expectedOutput := fixGQL()
 
 	t.Run("happy path", func(t *testing.T) {
 		tx, transact := txGen.ThatSucceeds()
@@ -545,7 +545,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 func TestResolver_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 	expectedModel := fixModel()
-	expectedOutput := fixGQLAutomaticScenarioAssignment()
+	expectedOutput := fixGQL()
 
 	txGen := txtest.NewTransactionContextGenerator(errors.New("some persistence error"))
 

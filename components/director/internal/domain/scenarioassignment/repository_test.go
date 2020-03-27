@@ -271,7 +271,7 @@ func TestRepository_DeleteForSelector(t *testing.T) {
 
 		// WHEN
 		err := repo.DeleteForSelector(ctx, tenantID, fixLabelSelector())
-		
+
 		// THEN
 		require.NoError(t, err)
 	})
@@ -296,7 +296,7 @@ func TestRepository_DeleteForSelector(t *testing.T) {
 	})
 }
 
-func TestRepository_DeleteForScenarioName(t *testing.T) {		
+func TestRepository_DeleteForScenarioName(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
@@ -311,7 +311,7 @@ func TestRepository_DeleteForScenarioName(t *testing.T) {
 
 		// WHEN
 		err := repo.DeleteForScenarioName(ctx, tenantID, scenarioName)
-		
+
 		// THEN
 		require.NoError(t, err)
 	})
@@ -323,8 +323,8 @@ func TestRepository_DeleteForScenarioName(t *testing.T) {
 		dbMock.ExpectExec(fmt.Sprintf(`^DELETE FROM public.automatic_scenario_assignments WHERE tenant_id = \$1 AND scenario = \$2$`)).
 			WithArgs(tenantID, scenarioName).
 			WillReturnError(fixError())
-		
-			ctx := persistence.SaveToContext(context.TODO(), db)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := scenarioassignment.NewRepository(nil)
 
 		// WHEN
@@ -332,5 +332,5 @@ func TestRepository_DeleteForScenarioName(t *testing.T) {
 
 		// THEN
 		require.EqualError(t, err, "while deleting from database: some error")
-	}
+	})
 }

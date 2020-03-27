@@ -3,7 +3,6 @@ package scenarioassignment
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment/mock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -116,16 +115,6 @@ func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, i
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 	return gqlAssignments, nil
-}
-
-func (r *Resolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	sel := &graphql.Label{Key: selector.Key, Value: selector.Value}
-	data := []*graphql.AutomaticScenarioAssignment{
-		mock.FixAssignmentForScenarioWithSelector("DEFAULT", sel),
-		mock.FixAssignmentForScenarioWithSelector("Foo", sel),
-	}
-
-	return data, nil
 }
 
 func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {

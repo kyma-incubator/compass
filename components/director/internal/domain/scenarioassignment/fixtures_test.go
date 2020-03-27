@@ -5,15 +5,14 @@ import (
 	"database/sql/driver"
 	"errors"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-
 	"github.com/DATA-DOG/go-sqlmock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 const (
@@ -26,14 +25,8 @@ func fixModel() model.AutomaticScenarioAssignment {
 	return fixModelWithScenarioName(scenarioName)
 }
 
-func fixGQLAutomaticScenarioAssignment() graphql.AutomaticScenarioAssignment {
-	return graphql.AutomaticScenarioAssignment{
-		ScenarioName: scenarioName,
-		Selector: &graphql.Label{
-			Key:   "key",
-			Value: "value",
-		},
-	}
+func fixGQL() graphql.AutomaticScenarioAssignment {
+	return fixGQLWithScenarioName(scenarioName)
 }
 
 var testTableColumns = []string{"scenario", "tenant_id", "selector_key", "selector_value"}
