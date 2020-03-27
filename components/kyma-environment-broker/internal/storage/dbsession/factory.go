@@ -19,6 +19,7 @@ type ReadSession interface {
 	GetOperationByID(opID string) (OperationDTO, dberr.Error)
 	GetOperationsInProgressByType(operationType OperationType) ([]OperationDTO, dberr.Error)
 	GetOperationByInstanceID(inID string) (OperationDTO, dberr.Error)
+	GetLMSTenant(name, region string) (LMSTenantDTO, dberr.Error)
 }
 
 //go:generate mockery -name=WriteSession
@@ -27,6 +28,7 @@ type WriteSession interface {
 	InsertOperation(dto OperationDTO) dberr.Error
 	UpdateInstance(instance internal.Instance) dberr.Error
 	UpdateOperation(instance OperationDTO) dberr.Error
+	InsertLMSTenant(dto LMSTenantDTO) dberr.Error
 	DeleteInstance(instanceID string) dberr.Error
 }
 

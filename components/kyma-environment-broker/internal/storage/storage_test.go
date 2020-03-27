@@ -139,7 +139,7 @@ func TestSchemaInitializer(t *testing.T) {
 				Description:            "description",
 				Version:                1,
 			},
-			LmsTenantID:            "tenant-id",
+			Lms:                    internal.LMS{TenantID: "tenant-id"},
 			ProvisioningParameters: `{"k":"v"}`,
 		}
 
@@ -199,7 +199,7 @@ func TestSchemaInitializer(t *testing.T) {
 				ProvisionerOperationID: "target-op-id",
 				Description:            "description",
 			},
-			LmsTenantID:            "tenant-id",
+			Lms:                    internal.LMS{TenantID: "tenant-id"},
 			ProvisioningParameters: `{"key":"value"}`,
 		}
 
@@ -237,6 +237,41 @@ func TestSchemaInitializer(t *testing.T) {
 
 		// then
 		assertError(t, dberr.CodeAlreadyExists, err)
+	})
+
+	t.Run("LMS Tenants", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		lmsTenant := internal.LMSTenant{
+			ID:     "tenant-001",
+			Region: "na",
+			Name:   "some-company",
+		}
+		err = InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+
+		brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+		svc := brokerStorage.LMSTenants()
+		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
+		// when
+		err = svc.InsertTenant(lmsTenant)
+		require.NoError(t, err)
+		gotTenant, found, err := svc.FindTenantByName("some-company", "na")
+		_, differentRegionExists, drErr := svc.FindTenantByName("some-company", "us")
+		_, differentNameExists, dnErr := svc.FindTenantByName("some-company1", "na")
+
+		// then
+		assert.Equal(t, lmsTenant.Name, gotTenant.Name)
+		assert.True(t, found)
+		assert.NoError(t, err)
+		assert.False(t, differentRegionExists)
+		assert.NoError(t, drErr)
+		assert.False(t, differentNameExists)
+		assert.NoError(t, dnErr)
 	})
 }
 

@@ -29,6 +29,7 @@ func NewLastOperation(os storage.Operations, log logrus.FieldLogger) *LastOperat
 //   GET /v2/service_instances/{instance_id}/last_operation
 func (b *LastOperationEndpoint) LastOperation(ctx context.Context, instanceID string, details domain.PollDetails) (domain.LastOperation, error) {
 	logger := b.log.WithField("instanceID", instanceID).WithField("operationID", details.OperationData)
+	logger.Info("Get LastOperation")
 	operation, err := b.operationStorage.GetProvisioningOperationByID(details.OperationData)
 	if err != nil {
 		logger.Errorf("cannot get operation from storage: %s", err)

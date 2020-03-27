@@ -47,6 +47,13 @@ type OperationDTO struct {
 	Type OperationType
 }
 
+type LMSTenantDTO struct {
+	ID        string
+	Name      string
+	Region    string
+	CreatedAt time.Time
+}
+
 func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
 	_, err := ws.insertInto(postsql.InstancesTableName).
 		Pair("instance_id", instance.InstanceID).
@@ -123,6 +130,26 @@ func (ws writeSession) InsertOperation(op OperationDTO) dberr.Error {
 			}
 		}
 		return dberr.Internal("Failed to insert record to operations table: %s", err)
+	}
+
+	return nil
+}
+
+func (ws writeSession) InsertLMSTenant(dto LMSTenantDTO) dberr.Error {
+	_, err := ws.insertInto(postsql.LMSTenantTableName).
+		Pair("id", dto.ID).
+		Pair("name", dto.Name).
+		Pair("region", dto.Region).
+		Pair("created_at", dto.CreatedAt).
+		Exec()
+
+	if err != nil {
+		if err, ok := err.(*pq.Error); ok {
+			if err.Code == UniqueViolationErrorCode {
+				return dberr.AlreadyExists("lms tenant already exist")
+			}
+		}
+		return dberr.Internal("Failed to insert record to lms tenant table: %s", err)
 	}
 
 	return nil

@@ -68,3 +68,12 @@ serviceManager:
   url: "TBD"
   username: "TBD"
   password: "TBD"
+
+lms:
+  secretName: "lms-creds"
+  token: "TBD"
+  url: "TBD"
+  clusterType: "single-node"
+  environment: "dev"
+  samlTenant: "TBD"
+  disabled: false

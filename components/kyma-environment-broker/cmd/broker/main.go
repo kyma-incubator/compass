@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-
 	"log"
 	"net/http"
 	"os"
@@ -25,6 +24,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -63,6 +63,8 @@ type Config struct {
 	Broker broker.Config
 
 	Avs avs.Config
+
+	LMS lms.Config
 }
 
 func main() {
@@ -108,6 +110,11 @@ func main() {
 		fatalOnError(err)
 	}
 
+	// LMS
+	fatalOnError(cfg.LMS.Validate())
+	lmsClient := lms.NewClient(cfg.LMS, logs)
+	lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs.WithField("service", "lmsTenantManager"))
+
 	// Register disabler. Convention:
 	// {component-name} : {component-disabler-service}
 	//
@@ -142,6 +149,8 @@ func main() {
 
 	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
 	evaluationStep := provisioning.NewInternalEvaluationStep(cfg.Avs, db.Operations())
+	lmsProvideTenantStep := provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations())
+	lmsCertStep := provisioning.NewLmsCertificatesStep(lmsClient, db.Operations())
 	provisionAzureEventHub := provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)
 	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
 	overridesStep := provisioning.NewOverridesFromSecretsAndConfigStep(ctx, cli, db.Operations())
@@ -153,6 +162,10 @@ func main() {
 
 	stepManager.AddStep(1, resolveCredentialsStep)
 	stepManager.AddStep(1, evaluationStep)
+	if !cfg.LMS.Disabled {
+		stepManager.AddStep(1, lmsProvideTenantStep)
+		stepManager.AddStep(4, lmsCertStep) // must be just before runtimeStep and after lmsProvideTenantStep
+	}
 	stepManager.AddStep(2, provisionAzureEventHub)
 	stepManager.AddStep(2, overridesStep)
 	stepManager.AddStep(2, smOverrideStep)
