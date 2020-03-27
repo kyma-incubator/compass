@@ -312,7 +312,7 @@ func (fp *GqlFieldsProvider) ForPackageInstanceAuthStatus() string {
 }
 
 func (fp *GqlFieldsProvider) ForAutomaticScenarioAssignment() string {
-	return `
+	return fmt.Sprintf(`
 		scenarioName
-		selector`
+		selector {%s}`, fp.ForLabel())
 }
