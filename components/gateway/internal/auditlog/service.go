@@ -3,6 +3,7 @@ package auditlog
 import (
 	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
@@ -17,11 +18,13 @@ type Message struct {
 
 type Sink struct {
 	logsChannel chan Message
+	timeout     time.Duration
 }
 
-func NewSink(logsChannel chan Message) *Sink {
+func NewSink(logsChannel chan Message, timeoutTime time.Duration) *Sink {
 	return &Sink{
 		logsChannel: logsChannel,
+		timeout:     timeoutTime,
 	}
 }
 
@@ -31,7 +34,12 @@ func (sink *Sink) Log(request, response string, claims proxy.Claims) error {
 		Response: response,
 		Claims:   claims,
 	}
-	sink.logsChannel <- msg
+
+	select {
+	case sink.logsChannel <- msg:
+	case <-time.After(sink.timeout):
+		return errors.New("Cannot write to the channel")
+	}
 	return nil
 }
 

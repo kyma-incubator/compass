@@ -20,7 +20,7 @@ func TestMessageFactory(t *testing.T) {
 		timestamp := time.Date(2020, 3, 17, 12, 37, 44, 1093, time.FixedZone("test", 3600))
 		uuidSvc, timeSvc := initMocks(TestMsgID, timestamp)
 
-		factory := auditlog.BasicAuthMessageFactory("user", TestTenant, uuidSvc, timeSvc)
+		factory := auditlog.NewMessageFactory("user", TestTenant, uuidSvc, timeSvc)
 		//WHEN
 		output := factory.CreateSecurityEvent()
 
@@ -37,24 +37,7 @@ func TestMessageFactory(t *testing.T) {
 		timestamp := time.Date(2020, 3, 17, 12, 37, 44, 1093, time.FixedZone("test", 3600))
 		uuidSvc, timeSvc := initMocks(TestMsgID, timestamp)
 
-		factory := auditlog.BasicAuthMessageFactory("user", TestTenant, uuidSvc, timeSvc)
-		//WHEN
-		output := factory.CreateConfigurationChange()
-
-		//THEN
-		assert.Equal(t, expected, output)
-	})
-
-	t.Run("Configuration change OAuth factory", func(t *testing.T) {
-		expected := model.ConfigurationChange{User: "$USER", Metadata: model.Metadata{
-			UUID:   TestMsgID,
-			Time:   Timestamp_text,
-			Tenant: "$PROVIDER",
-		}}
-		timestamp := time.Date(2020, 3, 17, 12, 37, 44, 1093, time.FixedZone("test", 3600))
-		uuidSvc, timeSvc := initMocks(TestMsgID, timestamp)
-
-		factory := auditlog.OAuthMessageFactory(uuidSvc, timeSvc)
+		factory := auditlog.NewMessageFactory("user", TestTenant, uuidSvc, timeSvc)
 		//WHEN
 		output := factory.CreateConfigurationChange()
 

@@ -1,10 +1,12 @@
 package auditlog_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 
@@ -12,8 +14,8 @@ import (
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/automock"
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
 )
 
 func TestAuditlogService_LogConfigurationChange(t *testing.T) {
@@ -220,6 +222,41 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, client, factory)
 	})
 
+}
+func TestSink_ChannelStuck(t *testing.T) {
+	//GIVEN
+	timeout := time.Millisecond * 100
+	ctx, _ := context.WithTimeout(context.TODO(), timeout*2)
+	channelSize := 5
+	messageSize := channelSize + 1
+	chanMsg := make(chan auditlog.Message, channelSize)
+	done := make(chan error)
+	sink := auditlog.NewSink(chanMsg, timeout)
+
+	//WHEN
+	go func() {
+		for i := 0; i < messageSize; i++ {
+			err := sink.Log("", "", proxy.Claims{})
+			if err != nil {
+				done <- err
+				return
+			}
+		}
+		done <- nil
+	}()
+
+	//THEN
+	select {
+	case <-ctx.Done():
+		{
+			t.Fatal("Sink stuck")
+		}
+	case err := <-done:
+		{
+			assert.Error(t, err)
+			assert.EqualError(t, err, "Cannot write to the channel")
+		}
+	}
 }
 
 func fixClaims() proxy.Claims {

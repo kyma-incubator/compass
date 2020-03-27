@@ -51,16 +51,7 @@ func (f *MessageFactory) CreateSecurityEvent() model.SecurityEvent {
 		}}
 }
 
-func OAuthMessageFactory(uuidSvc UUIDService, timeSvc TimeService) *MessageFactory {
-	return &MessageFactory{
-		user:    UserVariable,
-		tenant:  TenantVariable,
-		uuidSvc: uuidSvc,
-		timeSvc: timeSvc,
-	}
-}
-
-func BasicAuthMessageFactory(user, tenant string, uuidSvc UUIDService, timeSvc TimeService) *MessageFactory {
+func NewMessageFactory(user, tenant string, uuidSvc UUIDService, timeSvc TimeService) *MessageFactory {
 	return &MessageFactory{
 		user:    user,
 		tenant:  tenant,

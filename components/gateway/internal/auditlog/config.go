@@ -17,6 +17,8 @@ type OAuthConfig struct {
 	ClientID     string `envconfig:"APP_AUDITLOG_CLIENT_ID"`
 	ClientSecret string `envconfig:"APP_AUDITLOG_CLIENT_SECRET"`
 	OAuthURL     string `envconfig:"APP_AUDITLOG_OAUTH_URL"`
+	UserVar      string `envconfig:"APP_AUDITLOG_OAUTH_USER_VAR,default=$USER"`
+	TenantVar    string `envconfig:"APP_AUDITLOG_OAUTH_TENANT_VAR,default=$PROVIDER"`
 }
 
 type AuthMode string
