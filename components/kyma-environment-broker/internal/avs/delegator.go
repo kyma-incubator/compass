@@ -29,7 +29,7 @@ func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Deleg
 }
 
 func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
-	logger.Infof("starting the step")
+	logger.Infof("starting the step avs internal id [%s] and avs external id [%s]", operation.AvsEvaluationInternalId, operation.AVSEvaluationExternalId)
 
 	if evalAssistant.CheckIfAlreadyDone(operation) {
 		logger.Infof("step has already been finished previously")
