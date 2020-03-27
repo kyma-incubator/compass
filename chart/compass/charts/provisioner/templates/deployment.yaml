@@ -41,7 +41,7 @@ spec:
             - name: APP_API_ENDPOINT
               value: "/graphql"
             - name: APP_CREDENTIALS_NAMESPACE
-              value: {{ .Release.Namespace }}/gardener/kubeconfig/gardener/kubeconfig/gardener/kubeconfig
+              value: {{ .Release.Namespace }}
             - name: APP_DATABASE_USER
               valueFrom:
                 secretKeyRef:
