@@ -240,7 +240,7 @@ func TestSchemaInitializer(t *testing.T) {
 	})
 
 	t.Run("LMS Tenants", func(t *testing.T) {
-		containerCleanupFunc, connString, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -249,10 +249,10 @@ func TestSchemaInitializer(t *testing.T) {
 			Region: "na",
 			Name:   "some-company",
 		}
-		err = InitTestDBTables(t, connString)
+		err = InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
 
-		brokerStorage, err := New(connString)
+		brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
 		svc := brokerStorage.LMSTenants()
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
