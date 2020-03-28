@@ -36,9 +36,9 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	assert.NoError(t, err)
 
 	// when
-	input, found := ibf.ForPlan(broker.GcpPlanID)
+	input, err := ibf.ForPlan(broker.GcpPlanID, "")
 
 	// Then
-	assert.True(t, found)
+	assert.NoError(t, err)
 	assert.IsType(t, &RuntimeInput{}, input)
 }

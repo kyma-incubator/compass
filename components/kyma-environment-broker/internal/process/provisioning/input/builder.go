@@ -26,8 +26,7 @@ type (
 
 	CreatorForPlan interface {
 		IsPlanSupport(planID string) bool
-		ForPlan(planID string) (internal.ProvisionInputCreator, bool)
-		SetKymaVersion(kymaVersion string) error
+		ForPlan(planID, kymaVersion string) (internal.ProvisionInputCreator, error)
 	}
 
 	ComponentListProvider interface {
@@ -58,18 +57,6 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, component
 	}, nil
 }
 
-func (f *InputBuilderFactory) SetKymaVersion(kymaVersion string) error {
-	f.kymaVersion = kymaVersion
-
-	allComponents, err := f.componentsProvider.AllComponents(f.kymaVersion)
-	if err != nil {
-		return errors.Wrapf(err, "while fetching components list for %q kyma version", f.kymaVersion)
-	}
-	f.fullComponentsList = mapToGQLComponentConfigurationInput(allComponents)
-
-	return nil
-}
-
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
 	case broker.GcpPlanID, broker.AzurePlanID:
@@ -79,9 +66,9 @@ func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	}
 }
 
-func (f *InputBuilderFactory) ForPlan(planID string) (internal.ProvisionInputCreator, bool) {
+func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.ProvisionInputCreator, error) {
 	if !f.IsPlanSupport(planID) {
-		return nil, false
+		return nil, errors.Errorf("plan %s in not supported", planID)
 	}
 
 	var provider HyperscalerInputProvider
@@ -92,10 +79,14 @@ func (f *InputBuilderFactory) ForPlan(planID string) (internal.ProvisionInputCre
 		provider = &cloudProvider.AzureInput{}
 	// insert cases for other providers like AWS or GCP
 	default:
-		return nil, false
+		return nil, errors.Errorf("case with plan %s is not supported", planID)
 	}
 
-	initInput := f.initInput(provider)
+	initInput, err := f.initInput(provider, kymaVersion)
+	if err != nil {
+		// do not wrap error, TemporaryError type can be return
+		return &RuntimeInput{}, err
+	}
 
 	return &RuntimeInput{
 		input:                     initInput,
@@ -104,18 +95,36 @@ func (f *InputBuilderFactory) ForPlan(planID string) (internal.ProvisionInputCre
 		mutex:                     nsync.NewNamedMutex(),
 		hyperscalerInputProvider:  provider,
 		optionalComponentsService: f.optComponentsSvc,
-	}, true
+	}, nil
 }
 
-func (f *InputBuilderFactory) initInput(provider HyperscalerInputProvider) gqlschema.ProvisionRuntimeInput {
+func (f *InputBuilderFactory) initInput(provider HyperscalerInputProvider, kymaVersion string) (gqlschema.ProvisionRuntimeInput, error) {
+	var (
+		version    string
+		components internal.ComponentConfigurationInputList
+	)
+
+	if kymaVersion != "" {
+		allComponents, err := f.componentsProvider.AllComponents(f.kymaVersion)
+		if err != nil {
+			// do not wrap error, TemporaryError type can be return
+			return gqlschema.ProvisionRuntimeInput{}, err
+		}
+		version = kymaVersion
+		components = mapToGQLComponentConfigurationInput(allComponents)
+	} else {
+		version = f.kymaVersion
+		components = f.fullComponentsList
+	}
+
 	return gqlschema.ProvisionRuntimeInput{
 		RuntimeInput:  &gqlschema.RuntimeInput{},
 		ClusterConfig: provider.Defaults(),
 		KymaConfig: &gqlschema.KymaConfigInput{
-			Version:    f.kymaVersion,
-			Components: f.fullComponentsList.DeepCopy(),
+			Version:    version,
+			Components: components.DeepCopy(),
 		},
-	}
+	}, nil
 }
 
 func mapToGQLComponentConfigurationInput(kymaComponents []v1alpha1.KymaComponent) internal.ComponentConfigurationInputList {

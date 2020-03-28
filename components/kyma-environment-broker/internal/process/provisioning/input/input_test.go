@@ -35,8 +35,8 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
-		creator, found := builder.ForPlan(broker.AzurePlanID)
-		require.True(t, found)
+		creator, err := builder.ForPlan(broker.AzurePlanID, "")
+		require.NoError(t, err)
 
 		// when
 		creator.
@@ -72,8 +72,8 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		builder, err := NewInputBuilderFactory(optComponentsSvc, componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
-		creator, found := builder.ForPlan(broker.AzurePlanID)
-		require.True(t, found)
+		creator, err := builder.ForPlan(broker.AzurePlanID, "")
+		require.NoError(t, err)
 
 		// when
 		creator.
@@ -117,10 +117,10 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assert.NoError(t, err)
 
 	// when
-	builder, found := factory.ForPlan(broker.AzurePlanID)
+	builder, err := factory.ForPlan(broker.AzurePlanID, "")
 
 	// then
-	require.True(t, found)
+	require.NoError(t, err)
 
 	// when
 	input, err := builder.
@@ -129,7 +129,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 			TargetSecret: ptr.String("azure-secret"),
 		}).
 		SetRuntimeLabels(fixID, fixID).
-		SetOverrides("keb", kebOverrides).Create()
+		AppendOverrides("keb", kebOverrides).Create()
 
 	// then
 	require.NoError(t, err)

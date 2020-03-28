@@ -202,9 +202,9 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{}, kymaVersion)
 	assert.NoError(t, err)
 
-	creator, found := ibf.ForPlan(broker.GcpPlanID)
-	if !found {
-		t.Errorf("input creator for %q plan does not exist", broker.GcpPlanID)
+	creator, err := ibf.ForPlan(broker.GcpPlanID, "")
+	if err != nil {
+		t.Errorf("cannot create input creator for %q plan", broker.GcpPlanID)
 	}
 
 	return creator
