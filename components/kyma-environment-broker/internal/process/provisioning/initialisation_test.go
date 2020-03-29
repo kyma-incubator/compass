@@ -53,7 +53,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 	directorClient := &automock.DirectorClient{}
 	directorClient.On("GetConsoleURL", statusGlobalAccountID, statusRuntimeID).Return(dashboardURL, nil)
 
-	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient, nil, false)
+	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient, nil)
 
 	// when
 	operation, repeat, err := step.Run(operation, log)

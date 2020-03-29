@@ -38,17 +38,15 @@ type InitialisationStep struct {
 	provisionerClient provisioner.Client
 	directorClient    DirectorClient
 	inputBuilder      input.CreatorForPlan
-	kymaVerOnDemand   bool
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan, kvod bool) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:  process.NewProvisionOperationManager(os),
 		instanceStorage:   is,
 		provisionerClient: pc,
 		directorClient:    dc,
 		inputBuilder:      b,
-		kymaVerOnDemand:   kvod,
 	}
 }
 
@@ -79,13 +77,11 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 	}
 
 	var kymaVersion string
-	if s.kymaVerOnDemand {
-		if pp.Parameters.KymaVersion == "" {
-			log.Info("input builder setting up to work with default Kyma version")
-		} else {
-			kymaVersion = pp.Parameters.KymaVersion
-			log.Infof("setting up input builder to work with %s Kyma version", kymaVersion)
-		}
+	if pp.Parameters.KymaVersion == "" {
+		log.Info("input builder setting up to work with default Kyma version")
+	} else {
+		kymaVersion = pp.Parameters.KymaVersion
+		log.Infof("setting up input builder to work with %s Kyma version", kymaVersion)
 	}
 
 	log.Infof("create input creator for %q plan ID", pp.PlanID)

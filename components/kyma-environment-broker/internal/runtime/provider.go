@@ -52,8 +52,7 @@ func (r *ComponentsListProvider) AllComponents(kymaVersion string) ([]v1alpha1.K
 	// Read Kyma installer yaml (url)
 	openSourceKymaComponents, err := r.getOpenSourceKymaComponents(kymaVersion)
 	if err != nil {
-		// do not wrap error, TemporaryError type can be return
-		return nil, err
+		return nil, kebError.Wrapf(err, "while getting open source kyma components")
 	}
 
 	// Read mounted config (path)

@@ -26,3 +26,13 @@ func IsTemporaryError(err error) bool {
 	})
 	return ok && nfe.Temporary()
 }
+
+func Wrapf(err error, format string, args ...interface{}) error {
+	msg := fmt.Sprintf(format, args...)
+	switch {
+	case IsTemporaryError(err):
+		return TemporaryError{message: fmt.Sprintf("%s: %s", err.Error(), msg)}
+	default:
+		return fmt.Errorf("%s: %s", err.Error(), msg)
+	}
+}

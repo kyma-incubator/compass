@@ -88,7 +88,7 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 			},
 			returnStatusCode: http.StatusNotFound,
 			tempError:        false,
-			expErrMessage:    "while checking response status code for Kyma components list: got unexpected status code, want 200, got 404, url: https://github.com/kyma-project/kyma/releases/download/111.000.111/kyma-installer-cluster.yaml, body: Not Found",
+			expErrMessage:    "while checking response status code for Kyma components list: got unexpected status code, want 200, got 404, url: https://github.com/kyma-project/kyma/releases/download/111.000.111/kyma-installer-cluster.yaml, body: Not Found: while getting open source kyma components",
 		},
 		{
 			name: "Provide on-demand version not found",
@@ -99,7 +99,7 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 			},
 			returnStatusCode: http.StatusNotFound,
 			tempError:        false,
-			expErrMessage:    "while checking response status code for Kyma components list: got unexpected status code, want 200, got 404, url: https://storage.googleapis.com/kyma-development-artifacts/master-123123/kyma-installer-cluster.yaml, body: Not Found",
+			expErrMessage:    "while checking response status code for Kyma components list: got unexpected status code, want 200, got 404, url: https://storage.googleapis.com/kyma-development-artifacts/master-123123/kyma-installer-cluster.yaml, body: Not Found: while getting open source kyma components",
 		},
 		{
 			name: "Provide on-demand version not found, temporary server error",
@@ -110,7 +110,7 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 			},
 			returnStatusCode: http.StatusInternalServerError,
 			tempError:        true,
-			expErrMessage:    "while checking response status code for Kyma components list: got unexpected status code, want 200, got 500, url: https://storage.googleapis.com/kyma-development-artifacts/master-123123/kyma-installer-cluster.yaml, body: Internal Server Error",
+			expErrMessage:    "while checking response status code for Kyma components list: got unexpected status code, want 200, got 500, url: https://storage.googleapis.com/kyma-development-artifacts/master-123123/kyma-installer-cluster.yaml, body: Internal Server Error: while getting open source kyma components",
 		},
 	}
 	for _, tc := range tests {

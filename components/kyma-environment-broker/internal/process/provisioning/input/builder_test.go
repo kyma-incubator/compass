@@ -27,18 +27,38 @@ func TestInputBuilderFactory_IsPlanSupport(t *testing.T) {
 }
 
 func TestInputBuilderFactory_ForPlan(t *testing.T) {
-	// given
-	componentsProvider := &automock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil)
-	defer componentsProvider.AssertExpectations(t)
+	t.Run("should build RuntimeInput with default version Kyma components", func(t *testing.T) {
+		// given
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil).Once()
+		defer componentsProvider.AssertExpectations(t)
 
-	ibf, err := NewInputBuilderFactory(nil, componentsProvider, Config{}, "1.10")
-	assert.NoError(t, err)
+		ibf, err := NewInputBuilderFactory(nil, componentsProvider, Config{}, "1.10")
+		assert.NoError(t, err)
 
-	// when
-	input, err := ibf.ForPlan(broker.GcpPlanID, "")
+		// when
+		input, err := ibf.ForPlan(broker.GcpPlanID, "")
 
-	// Then
-	assert.NoError(t, err)
-	assert.IsType(t, &RuntimeInput{}, input)
+		// Then
+		assert.NoError(t, err)
+		assert.IsType(t, &RuntimeInput{}, input)
+	})
+
+	t.Run("should build RuntimeInput with set version Kyma components", func(t *testing.T) {
+		// given
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", "PR-1").Return([]v1alpha1.KymaComponent{}, nil).Once()
+		defer componentsProvider.AssertExpectations(t)
+
+		ibf, err := NewInputBuilderFactory(nil, componentsProvider, Config{}, "1.10")
+		assert.NoError(t, err)
+
+		// when
+		input, err := ibf.ForPlan(broker.GcpPlanID, "PR-1")
+
+		// Then
+		assert.NoError(t, err)
+		assert.IsType(t, &RuntimeInput{}, input)
+	})
 }

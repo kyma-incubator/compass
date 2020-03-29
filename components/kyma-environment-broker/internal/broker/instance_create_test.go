@@ -48,6 +48,7 @@ func TestProvision_Provision(t *testing.T) {
 			queue,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
+			false,
 			logrus.StandardLogger(),
 		)
 
@@ -92,6 +93,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
+			false,
 			logrus.StandardLogger(),
 		)
 
@@ -126,6 +128,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
+			false,
 			logrus.StandardLogger(),
 		)
 
@@ -162,6 +165,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixValidator,
+			false,
 			logrus.StandardLogger(),
 		)
 
@@ -202,6 +206,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixValidator,
+			false,
 			logrus.StandardLogger(),
 		)
 
