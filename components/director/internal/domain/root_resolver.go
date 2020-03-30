@@ -108,6 +108,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	tenantRepo := tenant.NewRepository(tenantConverter)
 	packageRepo := mp_package.NewRepository(packageConverter)
 	packageInstanceAuthRepo := packageinstanceauth.NewRepository(packageInstanceAuthConv)
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 
 	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL)
 
@@ -122,7 +123,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
-	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, uidSvc)
+	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, uidSvc, scenarioAssignmentRepo)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 	httpClient := getHttpClient()
@@ -153,7 +154,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
 		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, packageConverter, packageInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
 		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageSvc, packageInstanceAuthConv),
-		scenarioAssignment:  scenarioassignment.NewResolver(transact, assignmentConv, scenarioassignment.NewService(scenarioassignment.NewRepository(assignmentConv), scenariosSvc)),
+		scenarioAssignment:  scenarioassignment.NewResolver(transact, assignmentConv, scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)),
 	}
 }
 

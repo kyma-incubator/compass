@@ -10,20 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type service struct {
-	repo       Repository
-	labelRepo  LabelRepository
-	uidService UIDService
-}
-
-func NewService(repo Repository, labelRepo LabelRepository, uidService UIDService) *service {
-	return &service{
-		repo:       repo,
-		labelRepo:  labelRepo,
-		uidService: uidService,
-	}
-}
-
 //go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
 type Repository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
@@ -32,6 +18,11 @@ type Repository interface {
 	Exists(ctx context.Context, tenant string, key string) (bool, error)
 	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
 	DeleteByKey(ctx context.Context, tenant, key string) error
+}
+
+//go:generate mockery -name=ScenarioAssignmentLister -output=automock -outpkg=automock -case=underscore
+type ScenarioAssignmentLister interface {
+	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 }
 
 //go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
@@ -47,6 +38,22 @@ type LabelRepository interface {
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
 type UIDService interface {
 	Generate() string
+}
+
+type service struct {
+	repo                     Repository
+	labelRepo                LabelRepository
+	scenarioAssignmentLister ScenarioAssignmentLister
+	uidService               UIDService
+}
+
+func NewService(repo Repository, labelRepo LabelRepository, uidService UIDService, scenarioAssignmentLister ScenarioAssignmentLister) *service {
+	return &service{
+		repo:                     repo,
+		labelRepo:                labelRepo,
+		uidService:               uidService,
+		scenarioAssignmentLister: scenarioAssignmentLister,
+	}
 }
 
 func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.LabelDefinition, error) {
@@ -91,6 +98,9 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 	if def.Schema != nil {
 		if err := s.validateExistingLabelsAgainstSchema(ctx, *def.Schema, def.Tenant, def.Key); err != nil {
 			return err
+		}
+		if err := s.validateAutomaticScenarioAssignmentAgainstSchema(ctx, *def.Schema, def.Tenant, def.Key); err != nil {
+			return errors.Wrap(err, "while validating Scenario Assignments against a new schema")
 		}
 	}
 
@@ -154,4 +164,54 @@ func (s *service) validateExistingLabelsAgainstSchema(ctx context.Context, schem
 		}
 	}
 	return nil
+}
+
+func (s *service) validateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID, key string) error {
+	if key != model.ScenariosKey {
+		return nil
+	}
+
+	validator, err := jsonschema.NewValidatorFromRawSchema(schema)
+	if err != nil {
+		return errors.Wrap(err, "while creating validator for a new schema")
+	}
+	inUse, err := s.fetchScenariosFromAssignments(ctx, tenantID)
+	if err != nil {
+		return err
+	}
+	for _, used := range inUse {
+		res, err := validator.ValidateRaw([]interface{}{used})
+		if err != nil {
+			return errors.Wrapf(err, "while validating scenario assignment [scenario=%s] with a new schema", used)
+		}
+		if res.Error != nil {
+			return errors.Wrapf(res.Error, "Scenario Assignment [scenario=%s] is not valid against a new schema", used)
+		}
+	}
+	return nil
+}
+
+func (s *service) fetchScenariosFromAssignments(ctx context.Context, tenantID string) ([]string, error) {
+	m := make(map[string]struct{})
+	pageSize := 100
+	cursor := ""
+	for {
+		page, err := s.scenarioAssignmentLister.List(ctx, tenantID, pageSize, cursor)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting page of Automatic Scenario Assignments")
+		}
+		for _, a := range page.Data {
+			m[a.ScenarioName] = struct{}{}
+		}
+		if !page.PageInfo.HasNextPage {
+			break
+		}
+		cursor = page.PageInfo.EndCursor
+	}
+
+	var out []string
+	for k, _ := range m {
+		out = append(out, k)
+	}
+	return out, nil
 }

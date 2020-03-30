@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
@@ -38,7 +40,7 @@ func TestServiceCreate(t *testing.T) {
 		mockRepository.On("Create", mock.Anything, defWithID).Return(nil)
 
 		ctx := context.TODO()
-		sut := labeldef.NewService(mockRepository, nil, mockUID)
+		sut := labeldef.NewService(mockRepository, nil, mockUID, nil)
 		// WHEN
 		actual, err := sut.Create(ctx, in)
 		// THEN
@@ -56,7 +58,7 @@ func TestServiceCreate(t *testing.T) {
 
 		mockUID.On("Generate").Return(fixUUID())
 		mockRepository.On("Create", mock.Anything, mock.Anything).Return(errors.New("some error"))
-		sut := labeldef.NewService(mockRepository, nil, mockUID)
+		sut := labeldef.NewService(mockRepository, nil, mockUID, nil)
 		// WHEN
 		_, err := sut.Create(context.TODO(), model.LabelDefinition{Key: "key", Tenant: "tenant"})
 		// THEN
@@ -76,7 +78,7 @@ func TestServiceGet(t *testing.T) {
 			Tenant: "tenant",
 		}
 		mockRepository.On("GetByKey", ctx, "tenant", "key").Return(&given, nil)
-		sut := labeldef.NewService(mockRepository, nil, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil, nil)
 		// WHEN
 		actual, err := sut.Get(ctx, "tenant", "key")
 		// THEN
@@ -91,7 +93,7 @@ func TestServiceGet(t *testing.T) {
 		mockRepository.On("GetByKey", mock.Anything, mock.Anything, mock.Anything).
 			Return(nil, errors.New("some error"))
 
-		sut := labeldef.NewService(mockRepository, nil, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil, nil)
 		// WHEN
 		_, err := sut.Get(context.TODO(), "tenant", "key")
 		// THEN
@@ -117,7 +119,7 @@ func TestServiceList(t *testing.T) {
 		}
 		mockRepository.On("List", ctx, "tenant").Return(givenDefs, nil)
 
-		sut := labeldef.NewService(mockRepository, nil, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil, nil)
 		// WHEN
 		actual, err := sut.List(ctx, "tenant")
 		// THEN
@@ -131,7 +133,7 @@ func TestServiceList(t *testing.T) {
 		defer mockRepository.AssertExpectations(t)
 		ctx := context.TODO()
 		mockRepository.On("List", ctx, "tenant").Return(nil, errors.New("some error"))
-		sut := labeldef.NewService(mockRepository, nil, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil, nil)
 		// WHEN
 		_, err := sut.List(ctx, "tenant")
 		// THEN
@@ -202,7 +204,7 @@ func TestServiceUpdate(t *testing.T) {
 		mockLabelRepository.On("ListByKey", context.TODO(), tenant, key).Return(existingLabels, nil).Once()
 
 		ctx := context.TODO()
-		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil, nil)
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN
@@ -265,7 +267,7 @@ func TestServiceUpdate(t *testing.T) {
 		mockLabelRepository.On("ListByKey", context.TODO(), tenant, key).Return(existingLabels, nil).Once()
 
 		ctx := context.TODO()
-		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil, nil)
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN
@@ -273,13 +275,13 @@ func TestServiceUpdate(t *testing.T) {
 		require.EqualError(t, err, `label with key "oldProperty" is not valid against new schema for Runtime with ID "foo": (root): nonExistingProp is required`)
 	})
 
-	t.Run("returns error when error occured during receiving Label Definition", func(t *testing.T) {
+	t.Run("returns error when error occurred during receiving Label Definition", func(t *testing.T) {
 		// GIVEN
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
 
 		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(nil, errors.New("some error"))
-		sut := labeldef.NewService(mockRepository, nil, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil, nil)
 		// WHEN
 		err := sut.Update(context.TODO(), model.LabelDefinition{Key: key, Tenant: tenant, Schema: fixBasicSchema(t)})
 		// THEN
@@ -292,7 +294,7 @@ func TestServiceUpdate(t *testing.T) {
 		defer mockRepository.AssertExpectations(t)
 
 		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(nil, nil)
-		sut := labeldef.NewService(mockRepository, nil, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil, nil)
 		// WHEN
 		err := sut.Update(context.TODO(), model.LabelDefinition{Key: key, Tenant: tenant, Schema: fixBasicSchema(t)})
 		// THEN
@@ -345,7 +347,7 @@ func TestServiceUpdate(t *testing.T) {
 
 		mockLabelRepository.On("ListByKey", context.TODO(), "tenant", "firstName").Return(existingLabels, nil).Once()
 
-		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil, nil)
 		// WHEN
 		err := sut.Update(context.TODO(), *ld)
 		// THEN
@@ -357,9 +359,6 @@ func TestServiceUpdate(t *testing.T) {
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
 
-		mockLabelRepository := &automock.LabelRepository{}
-		defer mockLabelRepository.AssertExpectations(t)
-
 		ld := &model.LabelDefinition{
 			ID:     "8b131225-f09d-4035-8091-1f12933863b3",
 			Tenant: tenant,
@@ -369,11 +368,119 @@ func TestServiceUpdate(t *testing.T) {
 		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(ld, nil).Once()
 		mockRepository.On("Update", context.TODO(), *ld).Return(nil).Once()
 
-		sut := labeldef.NewService(mockRepository, nil, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil, nil)
 		// WHEN
 		err := sut.Update(context.TODO(), *ld)
 		// THEN
 		require.NoError(t, err)
+	})
+
+	t.Run("success when updating scenarios label definition and no automatic assignment exists", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		mockLabelRepo := &automock.LabelRepository{}
+		mockScenarioAssignmentLister := &automock.ScenarioAssignmentLister{}
+		defer mock.AssertExpectationsForObjects(t, mockRepository, mockLabelRepo, mockScenarioAssignmentLister)
+		sut := labeldef.NewService(mockRepository, mockLabelRepo, nil, mockScenarioAssignmentLister)
+
+		defaultLD := fixDefaultScenariosLabelDefinition(tenant)
+		ld := fixModifiedScenariosLabelDefinition(tenant)
+		mockRepository.On("GetByKey", mock.Anything, tenant, model.ScenariosKey).Return(&defaultLD, nil)
+		mockRepository.On("Update", context.TODO(), ld).Return(nil).Once()
+
+		mockLabelRepo.On("ListByKey", mock.Anything, tenant, model.ScenariosKey).Return(nil, nil)
+		mockScenarioAssignmentLister.On("List", mock.Anything, tenant, 100, "").Return(&model.AutomaticScenarioAssignmentPage{
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				HasNextPage: false,
+			},
+		}, nil)
+		// WHEN
+		err := sut.Update(context.TODO(), fixModifiedScenariosLabelDefinition(tenant))
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("success when updating scenarios label definition and all automatic assignments are valid", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		mockLabelRepo := &automock.LabelRepository{}
+		mockScenarioAssignmentLister := &automock.ScenarioAssignmentLister{}
+		defer mock.AssertExpectationsForObjects(t, mockRepository, mockLabelRepo, mockScenarioAssignmentLister)
+		sut := labeldef.NewService(mockRepository, mockLabelRepo, nil, mockScenarioAssignmentLister)
+
+		defaultLD := fixDefaultScenariosLabelDefinition(tenant)
+		ld := fixModifiedScenariosLabelDefinition(tenant)
+		mockRepository.On("GetByKey", mock.Anything, tenant, model.ScenariosKey).Return(&defaultLD, nil)
+		mockRepository.On("Update", context.TODO(), ld).Return(nil).Once()
+
+		mockLabelRepo.On("ListByKey", mock.Anything, tenant, model.ScenariosKey).Return(nil, nil)
+		mockScenarioAssignmentLister.On("List", mock.Anything, tenant, 100, "").Return(&model.AutomaticScenarioAssignmentPage{
+			TotalCount: 200,
+			Data:       []*model.AutomaticScenarioAssignment{{ScenarioName: "scenario-A"}},
+			PageInfo: &pagination.Page{
+				HasNextPage: true,
+				EndCursor:   "secondPage",
+			},
+		}, nil).Once()
+		mockScenarioAssignmentLister.On("List", mock.Anything, tenant, 100, "secondPage").Return(&model.AutomaticScenarioAssignmentPage{
+			TotalCount: 200,
+			Data:       []*model.AutomaticScenarioAssignment{{ScenarioName: "scenario-B"}},
+			PageInfo: &pagination.Page{
+				HasNextPage: false,
+			},
+		}, nil).Once()
+		// WHEN
+		err := sut.Update(context.TODO(), ld)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("returns error if cannot fetch automatic assignments", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		mockLabelRepo := &automock.LabelRepository{}
+		mockScenarioAssignmentLister := &automock.ScenarioAssignmentLister{}
+		defer mock.AssertExpectationsForObjects(t, mockRepository, mockLabelRepo, mockScenarioAssignmentLister)
+		sut := labeldef.NewService(mockRepository, mockLabelRepo, nil, mockScenarioAssignmentLister)
+
+		defaultLD := fixDefaultScenariosLabelDefinition(tenant)
+		ld := fixModifiedScenariosLabelDefinition(tenant)
+		mockRepository.On("GetByKey", mock.Anything, tenant, model.ScenariosKey).Return(&defaultLD, nil)
+
+		mockLabelRepo.On("ListByKey", mock.Anything, tenant, model.ScenariosKey).Return(nil, nil)
+		mockScenarioAssignmentLister.On("List", mock.Anything, tenant, 100, "").Return(nil, errors.New("some error")).Once()
+
+		// WHEN
+		err := sut.Update(context.TODO(), ld)
+		// THEN
+		require.EqualError(t, err, "while validating Scenario Assignments against a new schema: while getting page of Automatic Scenario Assignments: some error")
+	})
+
+	t.Run("returns error if automatic assignment is not valid against a new schema", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		mockLabelRepo := &automock.LabelRepository{}
+		mockScenarioAssignmentLister := &automock.ScenarioAssignmentLister{}
+		defer mock.AssertExpectationsForObjects(t, mockRepository, mockLabelRepo, mockScenarioAssignmentLister)
+		sut := labeldef.NewService(mockRepository, mockLabelRepo, nil, mockScenarioAssignmentLister)
+
+		defaultLD := fixDefaultScenariosLabelDefinition(tenant)
+		ld := fixModifiedScenariosLabelDefinition(tenant)
+		mockRepository.On("GetByKey", mock.Anything, tenant, model.ScenariosKey).Return(&defaultLD, nil)
+
+		mockLabelRepo.On("ListByKey", mock.Anything, tenant, model.ScenariosKey).Return(nil, nil)
+		mockScenarioAssignmentLister.On("List", mock.Anything, tenant, 100, "").Return(&model.AutomaticScenarioAssignmentPage{
+			TotalCount: 1,
+			Data:       []*model.AutomaticScenarioAssignment{{ScenarioName: "scenario-that-is-invalid"}},
+			PageInfo: &pagination.Page{
+				HasNextPage: false,
+			},
+		}, nil).Once()
+		// WHEN
+		err := sut.Update(context.TODO(), ld)
+		// THEN
+		require.EqualError(t, err, "while validating Scenario Assignments against a new schema: Scenario Assignment [scenario=scenario-that-is-invalid] is not valid against a new schema: 0: 0 must be one of the following: \"DEFAULT\", \"scenario-A\", \"scenario-B\"")
 	})
 }
 
@@ -396,7 +503,7 @@ func TestServiceDelete(t *testing.T) {
 		mockRepository.On("DeleteByKey", ctx, tnt, given.Key).Return(nil).Once()
 		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return([]*model.Label{}, nil)
 
-		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil, nil)
 		// WHEN
 		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
 		// THEN
@@ -424,7 +531,7 @@ func TestServiceDelete(t *testing.T) {
 		mockLabelRepository.On("DeleteByKey", ctx, tnt, given.Key).Return(nil).Once()
 		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return([]*model.Label{}, nil).Once()
 
-		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil, nil)
 		// WHEN
 		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
 		// THEN
@@ -444,7 +551,7 @@ func TestServiceDelete(t *testing.T) {
 		}
 		deleteRelatedResources := false
 
-		sut := labeldef.NewService(mockRepository, nil, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil, nil)
 		// WHEN
 		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
 		// THEN
@@ -473,7 +580,7 @@ func TestServiceDelete(t *testing.T) {
 		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(&given, nil).Once()
 		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return(existingLabels, nil)
 
-		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil, nil)
 		// WHEN
 		err := sut.Delete(ctx, "tenant", given.Key, deleteRelatedResources)
 		// THEN
@@ -497,7 +604,7 @@ func TestServiceDelete(t *testing.T) {
 		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(&given, nil).Once()
 		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return([]*model.Label{}, errors.New("test"))
 
-		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil, nil)
 		// WHEN
 		err := sut.Delete(ctx, "tenant", given.Key, deleteRelatedResources)
 		// THEN
@@ -518,7 +625,7 @@ func TestServiceDelete(t *testing.T) {
 		deleteRelatedResources := false
 		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(nil, nil).Once()
 
-		sut := labeldef.NewService(mockRepository, nil, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil, nil)
 		// WHEN
 		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
 		// THEN
@@ -539,7 +646,7 @@ func TestServiceDelete(t *testing.T) {
 		deleteRelatedResources := false
 		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(nil, errors.New("")).Once()
 
-		sut := labeldef.NewService(mockRepository, nil, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil, nil)
 		// WHEN
 		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
 		// THEN
@@ -566,7 +673,7 @@ func TestServiceDelete(t *testing.T) {
 		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(&given, nil).Once()
 		mockLabelRepository.On("DeleteByKey", ctx, tnt, given.Key).Return(testErr).Once()
 
-		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil, nil)
 		// WHEN
 		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
 		// THEN
@@ -639,6 +746,38 @@ func fixSchema(t *testing.T, propertyName, propertyType, propertyDescription, re
 	var objTemp interface{}
 	objTemp = obj
 	return &objTemp
+}
+
+func fixDefaultScenariosLabelDefinition(tenantID string) model.LabelDefinition {
+	var schema interface{} = model.ScenariosSchema
+	ld := model.LabelDefinition{
+		Key:    model.ScenariosKey,
+		Tenant: tenantID,
+		Schema: &schema,
+	}
+	return ld
+}
+
+func fixModifiedScenariosLabelDefinition(tenantID string) model.LabelDefinition {
+	m := map[string]interface{}{
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+		"items": map[string]interface{}{
+			"type":      "string",
+			"pattern":   "^[A-Za-z0-9]([-_A-Za-z0-9\\s]*[A-Za-z0-9])$",
+			"enum":      []string{"DEFAULT", "scenario-A", "scenario-B"},
+			"maxLength": 128,
+		},
+	}
+
+	var schema interface{} = m
+	ld := model.LabelDefinition{
+		Key:    model.ScenariosKey,
+		Tenant: tenantID,
+		Schema: &schema,
+	}
+	return ld
 }
 
 func fixLabel(id, tenant, key string, value interface{}, objectID string, objectType model.LabelableObject) *model.Label {
