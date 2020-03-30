@@ -10,22 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type service struct {
-	repo                     Repository
-	labelRepo                LabelRepository
-	scenarioAssignmentLister ScenarioAssignmentLister
-	uidService               UIDService
-}
-
-func NewService(repo Repository, labelRepo LabelRepository, uidService UIDService, scenarioAssignmentLister ScenarioAssignmentLister) *service {
-	return &service{
-		repo:                     repo,
-		labelRepo:                labelRepo,
-		uidService:               uidService,
-		scenarioAssignmentLister: scenarioAssignmentLister,
-	}
-}
-
 //go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
 type Repository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
@@ -54,6 +38,22 @@ type LabelRepository interface {
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
 type UIDService interface {
 	Generate() string
+}
+
+type service struct {
+	repo                     Repository
+	labelRepo                LabelRepository
+	scenarioAssignmentLister ScenarioAssignmentLister
+	uidService               UIDService
+}
+
+func NewService(repo Repository, labelRepo LabelRepository, uidService UIDService, scenarioAssignmentLister ScenarioAssignmentLister) *service {
+	return &service{
+		repo:                     repo,
+		labelRepo:                labelRepo,
+		uidService:               uidService,
+		scenarioAssignmentLister: scenarioAssignmentLister,
+	}
 }
 
 func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.LabelDefinition, error) {
