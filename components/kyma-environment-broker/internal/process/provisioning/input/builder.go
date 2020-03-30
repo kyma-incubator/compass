@@ -3,7 +3,6 @@ package input
 import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
-	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
 	cloudProvider "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
@@ -85,7 +84,7 @@ func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.Prov
 
 	initInput, err := f.initInput(provider, kymaVersion)
 	if err != nil {
-		return &RuntimeInput{}, kebError.Wrapf(err, "while initialization input")
+		return &RuntimeInput{}, errors.Wrap(err, "while initialization input")
 	}
 
 	return &RuntimeInput{
@@ -107,7 +106,7 @@ func (f *InputBuilderFactory) initInput(provider HyperscalerInputProvider, kymaV
 	if kymaVersion != "" {
 		allComponents, err := f.componentsProvider.AllComponents(kymaVersion)
 		if err != nil {
-			return gqlschema.ProvisionRuntimeInput{}, kebError.Wrapf(err, "while fetching components for %s Kyma version", kymaVersion)
+			return gqlschema.ProvisionRuntimeInput{}, errors.Wrapf(err, "while fetching components for %s Kyma version", kymaVersion)
 		}
 		version = kymaVersion
 		components = mapToGQLComponentConfigurationInput(allComponents)

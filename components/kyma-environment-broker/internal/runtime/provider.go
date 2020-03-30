@@ -52,7 +52,7 @@ func (r *ComponentsListProvider) AllComponents(kymaVersion string) ([]v1alpha1.K
 	// Read Kyma installer yaml (url)
 	openSourceKymaComponents, err := r.getOpenSourceKymaComponents(kymaVersion)
 	if err != nil {
-		return nil, kebError.Wrapf(err, "while getting open source kyma components")
+		return nil, errors.Wrap(err, "while getting open source kyma components")
 	}
 
 	// Read mounted config (path)
@@ -80,7 +80,7 @@ func (r *ComponentsListProvider) getOpenSourceKymaComponents(version string) (co
 
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
-		return nil, kebError.NewTemporaryError("while making request for Kyma components list", err)
+		return nil, kebError.AsTemporaryError(err, "while making request for Kyma components list")
 	}
 	defer func() {
 		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
@@ -93,7 +93,6 @@ func (r *ComponentsListProvider) getOpenSourceKymaComponents(version string) (co
 	}()
 
 	if err := r.checkStatusCode(resp); err != nil {
-		// do not wrap error, TemporaryError type can be return
 		return nil, err
 	}
 
@@ -156,9 +155,9 @@ func (r *ComponentsListProvider) checkStatusCode(resp *http.Response) error {
 
 	switch {
 	case resp.StatusCode == http.StatusRequestTimeout:
-		return kebError.NewTemporaryError(msg, nil)
+		return kebError.NewTemporaryError(msg)
 	case resp.StatusCode >= http.StatusInternalServerError:
-		return kebError.NewTemporaryError(msg, nil)
+		return kebError.NewTemporaryError(msg)
 	default:
 		return errors.New(msg)
 	}

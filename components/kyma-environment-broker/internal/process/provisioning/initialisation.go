@@ -91,10 +91,10 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 		operation.InputCreator = creator
 		return operation, 0, nil
 	case kebError.IsTemporaryError(err):
-		log.Errorf("cannot create temporary input creator for plan %s and version %s: %s", pp.PlanID, kymaVersion, err)
+		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", pp.PlanID, kymaVersion, err)
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	default:
-		log.Errorf("cannot create input creator for plan %s", pp.PlanID)
+		log.Errorf("cannot create input creator for plan %s: %s", pp.PlanID, err)
 		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
 	}
 }

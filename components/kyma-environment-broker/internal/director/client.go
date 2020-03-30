@@ -111,7 +111,7 @@ func (dc *Client) call(req *machineGraph.Request) (*successResponse, error) {
 	var response successResponse
 	err := dc.graphQLClient.Run(context.Background(), req, &response)
 	if err != nil {
-		return nil, kebError.NewTemporaryError("while requesting to director client", err)
+		return nil, kebError.AsTemporaryError(err, "while requesting to director client")
 	}
 	return &response, nil
 }
@@ -134,7 +134,7 @@ func (dc *Client) setToken() error {
 
 func (dc *Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error) {
 	if response.Status == nil {
-		return "", kebError.NewTemporaryError("response status from director is nil", nil)
+		return "", kebError.NewTemporaryError("response status from director is nil")
 	}
 	if response.Status.Condition == graphql.RuntimeStatusConditionFailed {
 		return "", fmt.Errorf("response status condition from director is %s", graphql.RuntimeStatusConditionFailed)
@@ -142,7 +142,7 @@ func (dc *Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error
 
 	value, ok := response.Labels[consoleURLLabelKey]
 	if !ok {
-		return "", kebError.NewTemporaryError(fmt.Sprintf("response label key is not equal to %q", consoleURLLabelKey), nil)
+		return "", kebError.NewTemporaryError("response label key is not equal to %q", consoleURLLabelKey)
 	}
 
 	var URL string

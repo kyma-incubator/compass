@@ -59,7 +59,7 @@ type Config struct {
 	ServiceManager provisioning.ServiceManagerOverrideConfig
 
 	KymaVersion                          string
-	KymaVersionOnDemand                  bool `envconfig:"default=false"`
+	EnableOnDemandVersion                bool `envconfig:"default=false"`
 	ManagedRuntimeComponentsYAMLFilePath string
 
 	Broker broker.Config
