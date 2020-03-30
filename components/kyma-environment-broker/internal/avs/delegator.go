@@ -75,6 +75,8 @@ func (del *Delegator) postRequest(evaluationRequest *BasicEvaluationCreateReques
 		return nil, err
 	}
 
+	logger.Infof("Sending json body %s", string(objAsBytes))
+
 	resp, err := httpClient.Do(request)
 	if err != nil {
 		return nil, err
