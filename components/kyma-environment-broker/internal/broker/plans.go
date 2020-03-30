@@ -13,7 +13,7 @@ const (
 
 func AzureRegions() []string {
 	return []string{
-		"eastus2",
+		"westus2",
 		"westeurope",
 	}
 }
