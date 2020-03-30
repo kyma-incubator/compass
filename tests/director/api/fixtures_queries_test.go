@@ -450,44 +450,6 @@ func setAutomaticScenarioAssignmentFromInputWithinTenant(t *testing.T, ctx conte
 	return assignment
 }
 
-func listAutomaticScenarioAssignmentsWithinTenant(t *testing.T, ctx context.Context, tenantID string) graphql.AutomaticScenarioAssignmentPage {
-	assignmentsPage := graphql.AutomaticScenarioAssignmentPage{}
-	req := fixAutomaticScenarioAssignmentsRequest()
-	err := tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignmentsPage)
-	require.NoError(t, err)
-	return assignmentsPage
-}
-
-func listAutomaticScenarioAssignmentForSelectorWithinTenant(t *testing.T, ctx context.Context, tenantID string, labelSelectorInput graphql.LabelSelectorInput) []*graphql.AutomaticScenarioAssignment {
-	inStr, err := tc.graphqlizer.LabelSelectorInputToGQL(labelSelectorInput)
-	require.NoError(t, err)
-
-	assignments := []*graphql.AutomaticScenarioAssignment{}
-	req := fixAutomaticScenarioAssignmentForSelectorRequest(inStr)
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignments)
-	require.NoError(t, err)
-	return assignments
-}
-
-func getAutomaticScenarioAssignmentForScenarioWithinTenant(t *testing.T, ctx context.Context, tenantID, scenarioName string) graphql.AutomaticScenarioAssignment {
-	assignment := graphql.AutomaticScenarioAssignment{}
-	req := fixAutomaticScenarioAssignmentForScenarioRequest(scenarioName)
-	err := tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignment)
-	require.NoError(t, err)
-	return assignment
-}
-
-func deleteAutomaticScenarioAssignmentsForSelectorWithinTenant(t *testing.T, ctx context.Context, tenantID string, labelSelectorInput graphql.LabelSelectorInput) []*graphql.AutomaticScenarioAssignment {
-	inStr, err := tc.graphqlizer.LabelSelectorInputToGQL(labelSelectorInput)
-	require.NoError(t, err)
-
-	assignments := []*graphql.AutomaticScenarioAssignment{}
-	req := fixDeleteAutomaticScenarioAssignmentsForSelector(inStr)
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignments)
-	require.NoError(t, err)
-	return assignments
-}
-
 func deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t *testing.T, ctx context.Context, tenantID, scenarioName string) graphql.AutomaticScenarioAssignment {
 	assignment := graphql.AutomaticScenarioAssignment{}
 	req := fixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenarioName)

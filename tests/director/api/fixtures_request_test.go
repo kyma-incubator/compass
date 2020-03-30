@@ -855,16 +855,6 @@ func fixAutomaticScenarioAssignmentForScenarioRequest(scenarioName string) *gcli
 			scenarioName, tc.gqlFieldsProvider.ForAutomaticScenarioAssignment()))
 }
 
-func fixDeleteAutomaticScenarioAssignmentsForSelector(labelSelectorInput string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-            result: deleteAutomaticScenarioAssignmentForSelector(selector: %s) {
-                  %s
-               }
-            }`,
-			labelSelectorInput, tc.gqlFieldsProvider.ForAutomaticScenarioAssignment()))
-}
-
 func fixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenarioName string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
