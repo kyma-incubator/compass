@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	timeservices "github.com/kyma-incubator/compass/components/gateway/internal/time"
 
@@ -38,11 +37,6 @@ type AuditogService interface {
 type HTTPTransport interface {
 	RoundTrip(req *http.Request) (resp *http.Response, err error)
 }
-
-const (
-	auditlogMsgChannelSize = 100
-	auditlogTimeout        = time.Second * 5
-)
 
 func main() {
 	cfg := config{}

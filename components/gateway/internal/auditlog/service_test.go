@@ -222,7 +222,7 @@ func TestAuditlogService_LogConfigurationChange(t *testing.T) {
 	})
 
 }
-func TestSink_ChannelStuck(t *testing.T) {
+func TestSink_TimeoutOnWrite(t *testing.T) {
 	//GIVEN
 	chanMsg := make(chan auditlog.Message)
 	defer close(chanMsg)

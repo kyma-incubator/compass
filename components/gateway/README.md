@@ -26,7 +26,7 @@ If you set **APP_AUDITLOG_ENABLED** to `true`, you must specify the following en
 | **APP_AUDITLOG_SECURITY_PATH**   | The path for logging security events                                              |      None        | 
 | **APP_AUDITLOG_AUTH_MODE**       | The audit log authorization mode. The possible values are `basic` and `oauth`.    |      None        |  
 
-Gateway sends audit log messages to the local channel.
+Gateway process AuditLog messages asynchronously using configurable Go channel.
 The audit log feature reads the messages from the channel and sends them to the audit log service.
 You can configure the channel using the following environment variables:
 
