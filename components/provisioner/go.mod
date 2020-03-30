@@ -26,7 +26,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0
-	github.com/terraform-providers/terraform-provider-openstack v1.20.0 // indirect
 	github.com/testcontainers/testcontainers-go v0.3.1
 	github.com/vektah/gqlparser v1.2.0
 	github.com/vrischmann/envconfig v1.2.0
@@ -48,3 +47,5 @@ replace k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k
 replace github.com/Azure/go-autorest v11.5.0+incompatible => github.com/Azure/go-autorest v13.3.2+incompatible
 
 replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
+
+replace github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
