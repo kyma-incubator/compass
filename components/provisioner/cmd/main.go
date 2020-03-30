@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/healthz"
 	"net/http"
 	"strings"
 	"time"
@@ -183,6 +184,7 @@ func main() {
 
 	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
+	router.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
 
 	http.Handle("/", router)
 
