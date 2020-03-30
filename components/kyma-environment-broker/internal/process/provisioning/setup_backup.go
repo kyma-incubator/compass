@@ -5,7 +5,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -15,7 +14,7 @@ import (
 type SetupBackupStep struct {
 	bucketName       string
 	zone             string
-	operationManager *process.OperationManager
+	operationManager *OperationManager
 	accountProvider  hyperscaler.AccountProvider
 }
 
@@ -25,7 +24,7 @@ func (s *SetupBackupStep) Name() string {
 
 func NewSetupBackupStep(os storage.Operations) *SetupBackupStep {
 	return &SetupBackupStep{
-		operationManager: process.NewOperationManager(os),
+		operationManager: NewOperationManager(os),
 	}
 }
 

@@ -1,4 +1,4 @@
-package process
+package provisioning
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 )
 
 type OperationManager struct {
-	storage storage.Operations
+	storage storage.Provisioning
 }
 
 func NewOperationManager(storage storage.Operations) *OperationManager {
@@ -43,12 +43,12 @@ func (om *OperationManager) OperationFailed(operation internal.ProvisioningOpera
 	return updatedOperation, 0, errors.New(description)
 }
 
+// UpdateOperation updates a given operation
 func (om *OperationManager) UpdateOperation(operation internal.ProvisioningOperation) (internal.ProvisioningOperation, time.Duration) {
 	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
 	if err != nil {
 		return operation, 1 * time.Minute
 	}
-
 	return *updatedOperation, 0
 }
 
@@ -73,11 +73,5 @@ func (om *OperationManager) update(operation internal.ProvisioningOperation, sta
 	operation.State = state
 	operation.Description = fmt.Sprintf("%s : %s", operation.Description, description)
 
-	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
-	// repeat if there is a problem with the storage
-	if err != nil {
-		return operation, 1 * time.Minute
-	}
-
-	return *updatedOperation, 0
+	return om.UpdateOperation(operation)
 }

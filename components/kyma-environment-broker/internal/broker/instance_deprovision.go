@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
@@ -18,21 +21,26 @@ type DeprovisionEndpoint struct {
 	log logrus.FieldLogger
 
 	instancesStorage  storage.Instances
-	provisionerClient provisioner.Client
+	operationsStorage storage.Deprovisioning
+
+	queue Queue
 }
 
-func NewDeprovision(instancesStorage storage.Instances, provisionerClient provisioner.Client, log logrus.FieldLogger) *DeprovisionEndpoint {
+func NewDeprovision(instancesStorage storage.Instances, operationsStorage storage.Operations, q Queue, log logrus.FieldLogger) *DeprovisionEndpoint {
 	return &DeprovisionEndpoint{
 		log:               log,
 		instancesStorage:  instancesStorage,
-		provisionerClient: provisionerClient,
+		operationsStorage: operationsStorage,
+
+		queue: q,
 	}
 }
 
 // Deprovision deletes an existing service instance
 //  DELETE /v2/service_instances/{instance_id}
 func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string, details domain.DeprovisionDetails, asyncAllowed bool) (domain.DeprovisionServiceSpec, error) {
-	logger := b.log.WithField("instanceID", instanceID)
+	operationID := uuid.New().String()
+	logger := b.log.WithField("instanceID", instanceID).WithField("operationID", operationID)
 	logger.Infof("Deprovisioning triggered, details: %+v", details)
 
 	instance, err := b.instancesStorage.GetByID(instanceID)
@@ -46,20 +54,35 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponse(fmt.Errorf("unable to get instance from the storage"), http.StatusInternalServerError, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
 	}
 
-	logger.Infof("deprovision runtime: runtimeID=%s, globalAccountID=%s", instance.RuntimeID, instance.GlobalAccountID)
-	_, err = b.provisionerClient.DeprovisionRuntime(instance.GlobalAccountID, instance.RuntimeID)
-	if err != nil {
-		logger.Errorf("unable to deprovision runtime: %s", err)
-		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusInternalServerError, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
+	// check if operation with instance ID already created
+	existingOperation, errStorage := b.operationsStorage.GetDeprovisioningOperationByInstanceID(instanceID)
+	switch {
+	case errStorage != nil && !dberr.IsNotFound(errStorage):
+		logger.Errorf("cannot get existing operation from storage %s", errStorage)
+		return domain.DeprovisionServiceSpec{}, errors.New("cannot get existing operation from storage")
+	case existingOperation != nil && !dberr.IsNotFound(errStorage):
+		return domain.DeprovisionServiceSpec{
+			IsAsync:       true,
+			OperationData: existingOperation.ID,
+		}, nil
 	}
+	// create and save new operation
+	operation, err := internal.NewDeprovisioningOperationWithID(operationID, instanceID)
+	if err != nil {
+		logger.Errorf("cannot create new operation: %s", err)
+		return domain.DeprovisionServiceSpec{}, errors.New("cannot create new operation")
+	}
+	err = b.operationsStorage.InsertDeprovisioningOperation(operation)
+	if err != nil {
+		logger.Errorf("cannot save operations: %s", err)
+		return domain.DeprovisionServiceSpec{}, errors.New("cannot save operations")
+	}
+	logger.Infof("Deprovisioning runtime: runtimeID=%s, globalAccountID=%s", instance.RuntimeID, instance.GlobalAccountID)
 
-	err = b.instancesStorage.Delete(instanceID)
-	if err != nil {
-		logger.Errorf("unable to delete instance: %s", err)
-		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusInternalServerError, fmt.Sprintf("could not delete instance, instanceID %s", instanceID))
-	}
+	b.queue.Add(operationID)
 
 	return domain.DeprovisionServiceSpec{
-		IsAsync: false,
+		IsAsync:       true,
+		OperationData: operationID,
 	}, nil
 }

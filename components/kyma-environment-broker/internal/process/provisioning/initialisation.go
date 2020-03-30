@@ -7,7 +7,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -30,7 +29,7 @@ type DirectorClient interface {
 }
 
 type InitialisationStep struct {
-	operationManager  *process.OperationManager
+	operationManager  *OperationManager
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
 	directorClient    DirectorClient
@@ -39,7 +38,7 @@ type InitialisationStep struct {
 
 func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:  process.NewOperationManager(os),
+		operationManager:  NewOperationManager(os),
 		instanceStorage:   is,
 		provisionerClient: pc,
 		directorClient:    dc,
@@ -48,7 +47,7 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 }
 
 func (s *InitialisationStep) Name() string {
-	return "Initialization"
+	return "Provision_Init"
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {

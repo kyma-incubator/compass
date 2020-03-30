@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker/automock"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/sirupsen/logrus"
@@ -18,10 +19,10 @@ import (
 func TestDeprovisionEndpoint_DeprovisionNotExistingInstance(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
-	instStorage := memoryStorage.Instances()
-	provisionerClient := provisioner.NewFakeClient()
+	queue := &automock.Queue{}
+	queue.On("Add", mock.AnythingOfType("string"))
 
-	svc := NewDeprovision(instStorage, provisionerClient, logrus.StandardLogger())
+	svc := NewDeprovision(memoryStorage.Instances(), memoryStorage.Operations(), queue, logrus.StandardLogger())
 
 	// when
 	_, err := svc.Deprovision(context.TODO(), "inst-0001", domain.DeprovisionDetails{}, true)
@@ -33,21 +34,22 @@ func TestDeprovisionEndpoint_DeprovisionNotExistingInstance(t *testing.T) {
 func TestDeprovisionEndpoint_DeprovisionExistingInstance(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
-	instStorage := memoryStorage.Instances()
-	instStorage.Insert(internal.Instance{
-		InstanceID: "instance-001",
+	instanceID := "instance-001"
+	memoryStorage.Instances().Insert(internal.Instance{
+		InstanceID: instanceID,
 	})
-	provisionerClient := provisioner.NewFakeClient()
 
-	svc := NewDeprovision(instStorage, provisionerClient, logrus.StandardLogger())
+	queue := &automock.Queue{}
+	queue.On("Add", mock.AnythingOfType("string"))
+
+	svc := NewDeprovision(memoryStorage.Instances(), memoryStorage.Operations(), queue, logrus.StandardLogger())
 
 	// when
-	_, err := svc.Deprovision(context.TODO(), "instance-001", domain.DeprovisionDetails{}, true)
+	_, err := svc.Deprovision(context.TODO(), instanceID, domain.DeprovisionDetails{}, true)
 
 	// then
 	require.NoError(t, err)
-
-	// the instance must be removed
-	_, err = instStorage.GetByID("instance-001")
-	assert.True(t, dberr.IsNotFound(err))
+	operation, err := memoryStorage.Operations().GetDeprovisioningOperationByInstanceID(instanceID)
+	require.NoError(t, err)
+	assert.Equal(t, domain.InProgress, operation.State)
 }

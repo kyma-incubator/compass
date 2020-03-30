@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 )
 
 type lmsTenants struct {
@@ -37,7 +38,7 @@ func (s *lmsTenants) FindTenantByName(name, region string) (internal.LMSTenant, 
 
 func (s *lmsTenants) InsertTenant(tenant internal.LMSTenant) error {
 	sess := s.NewWriteSession()
-	return sess.InsertLMSTenant(dbsession.LMSTenantDTO{
+	return sess.InsertLMSTenant(dbmodel.LMSTenantDTO{
 		Name:      tenant.Name,
 		Region:    tenant.Region,
 		CreatedAt: tenant.CreatedAt,

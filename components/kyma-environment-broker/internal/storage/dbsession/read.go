@@ -4,6 +4,7 @@ import (
 	dbr "github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
@@ -30,24 +31,24 @@ func (r readSession) GetInstanceByID(instanceID string) (internal.Instance, dber
 	return instance, nil
 }
 
-func (r readSession) GetOperationByID(opID string) (OperationDTO, dberr.Error) {
+func (r readSession) GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.Error) {
 	condition := dbr.Eq("id", opID)
 	operation, err := r.getOperation(condition)
 	if err != nil {
 		switch {
 		case dberr.IsNotFound(err):
-			return OperationDTO{}, dberr.NotFound("for ID: %s %s", opID, err)
+			return dbmodel.OperationDTO{}, dberr.NotFound("for ID: %s %s", opID, err)
 		default:
-			return OperationDTO{}, err
+			return dbmodel.OperationDTO{}, err
 		}
 	}
 	return operation, nil
 }
 
-func (r readSession) GetOperationsInProgressByType(operationType OperationType) ([]OperationDTO, dberr.Error) {
+func (r readSession) GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
 	stateCondition := dbr.Eq("state", domain.InProgress)
 	typeCondition := dbr.Eq("type", operationType)
-	var operations []OperationDTO
+	var operations []dbmodel.OperationDTO
 
 	_, err := r.session.
 		Select("*").
@@ -61,22 +62,29 @@ func (r readSession) GetOperationsInProgressByType(operationType OperationType) 
 	return operations, nil
 }
 
-func (r readSession) GetOperationByInstanceID(inID string) (OperationDTO, dberr.Error) {
-	condition := dbr.Eq("instance_id", inID)
-	operation, err := r.getOperation(condition)
+func (r readSession) GetOperationByTypeAndInstanceID(inID string, opType dbmodel.OperationType) (dbmodel.OperationDTO, dberr.Error) {
+	idCondition := dbr.Eq("instance_id", inID)
+	typeCondition := dbr.Eq("type", string(opType))
+	var operation dbmodel.OperationDTO
+
+	err := r.session.
+		Select("*").
+		From(postsql.OperationTableName).
+		Where(idCondition).
+		Where(typeCondition).
+		LoadOne(&operation)
+
 	if err != nil {
-		switch {
-		case dberr.IsNotFound(err):
-			return OperationDTO{}, dberr.NotFound("for instanceID: %s %s", inID, err)
-		default:
-			return OperationDTO{}, err
+		if err == dbr.ErrNotFound {
+			return dbmodel.OperationDTO{}, dberr.NotFound("cannot find operation: %s", err)
 		}
+		return dbmodel.OperationDTO{}, dberr.Internal("Failed to get operation: %s", err)
 	}
 	return operation, nil
 }
 
-func (r readSession) getOperation(condition dbr.Builder) (OperationDTO, dberr.Error) {
-	var operation OperationDTO
+func (r readSession) getOperation(condition dbr.Builder) (dbmodel.OperationDTO, dberr.Error) {
+	var operation dbmodel.OperationDTO
 
 	err := r.session.
 		Select("*").
@@ -86,15 +94,15 @@ func (r readSession) getOperation(condition dbr.Builder) (OperationDTO, dberr.Er
 
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return OperationDTO{}, dberr.NotFound("cannot find operation: %s", err)
+			return dbmodel.OperationDTO{}, dberr.NotFound("cannot find operation: %s", err)
 		}
-		return OperationDTO{}, dberr.Internal("Failed to get operation: %s", err)
+		return dbmodel.OperationDTO{}, dberr.Internal("Failed to get operation: %s", err)
 	}
 	return operation, nil
 }
 
-func (r readSession) GetLMSTenant(name, region string) (LMSTenantDTO, dberr.Error) {
-	var dto LMSTenantDTO
+func (r readSession) GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, dberr.Error) {
+	var dto dbmodel.LMSTenantDTO
 	err := r.session.
 		Select("*").
 		From(postsql.LMSTenantTableName).
@@ -104,9 +112,9 @@ func (r readSession) GetLMSTenant(name, region string) (LMSTenantDTO, dberr.Erro
 
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return LMSTenantDTO{}, dberr.NotFound("Cannot find lms tenant for name/region: '%s/%s'", name, region)
+			return dbmodel.LMSTenantDTO{}, dberr.NotFound("Cannot find lms tenant for name/region: '%s/%s'", name, region)
 		}
-		return LMSTenantDTO{}, dberr.Internal("Failed to get operation: %s", err)
+		return dbmodel.LMSTenantDTO{}, dberr.Internal("Failed to get operation: %s", err)
 	}
 	return dto, nil
 }

@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 )
@@ -31,10 +30,10 @@ const (
 )
 
 // ensure the interface is implemented
-var _ process.Step = (*ProvisionAzureEventHubStep)(nil)
+var _ Step = (*ProvisionAzureEventHubStep)(nil)
 
 type ProvisionAzureEventHubStep struct {
-	operationManager    *process.OperationManager
+	operationManager    *OperationManager
 	hyperscalerProvider azure.HyperscalerProvider
 	accountProvider     hyperscaler.AccountProvider
 	context             context.Context
@@ -42,7 +41,7 @@ type ProvisionAzureEventHubStep struct {
 
 func NewProvisionAzureEventHubStep(os storage.Operations, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
 	return &ProvisionAzureEventHubStep{
-		operationManager:    process.NewOperationManager(os),
+		operationManager:    NewOperationManager(os),
 		accountProvider:     accountProvider,
 		context:             ctx,
 		hyperscalerProvider: hyperscalerProvider,

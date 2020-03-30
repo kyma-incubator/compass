@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 )
@@ -19,13 +18,13 @@ type LmsTenantProvider interface {
 // The step does not breaks the provisioning flow.
 type provideLmsTenantStep struct {
 	tenantProvider   LmsTenantProvider
-	operationManager *process.OperationManager
+	operationManager *OperationManager
 }
 
 func NewProvideLmsTenantStep(tp LmsTenantProvider, repo storage.Operations) *provideLmsTenantStep {
 	return &provideLmsTenantStep{
 		tenantProvider:   tp,
-		operationManager: process.NewOperationManager(repo),
+		operationManager: NewOperationManager(repo),
 	}
 }
 

@@ -3,6 +3,8 @@ package dbsession
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+
 	"github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
@@ -17,41 +19,6 @@ const (
 type writeSession struct {
 	session     *dbr.Session
 	transaction *dbr.Tx
-}
-
-// OperationType defines the possible types of an asynchronous operation to a broker.
-type OperationType string
-
-const (
-	// OperationTypeProvision means provisioning OperationType
-	OperationTypeProvision OperationType = "provision"
-	// OperationTypeDeprovision means deprovision OperationType
-	OperationTypeDeprovision OperationType = "deprovision"
-	// OperationTypeUndefined means undefined OperationType
-	OperationTypeUndefined OperationType = ""
-)
-
-type OperationDTO struct {
-	ID        string
-	Version   int
-	CreatedAt time.Time
-	UpdatedAt time.Time
-
-	InstanceID        string
-	TargetOperationID string
-	State             string
-	Description       string
-
-	Data string
-
-	Type OperationType
-}
-
-type LMSTenantDTO struct {
-	ID        string
-	Name      string
-	Region    string
-	CreatedAt time.Time
 }
 
 func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
@@ -109,7 +76,7 @@ func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
 	return nil
 }
 
-func (ws writeSession) InsertOperation(op OperationDTO) dberr.Error {
+func (ws writeSession) InsertOperation(op dbmodel.OperationDTO) dberr.Error {
 	_, err := ws.insertInto(postsql.OperationTableName).
 		Pair("id", op.ID).
 		Pair("instance_id", op.InstanceID).
@@ -135,7 +102,7 @@ func (ws writeSession) InsertOperation(op OperationDTO) dberr.Error {
 	return nil
 }
 
-func (ws writeSession) InsertLMSTenant(dto LMSTenantDTO) dberr.Error {
+func (ws writeSession) InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error {
 	_, err := ws.insertInto(postsql.LMSTenantTableName).
 		Pair("id", dto.ID).
 		Pair("name", dto.Name).
@@ -155,7 +122,7 @@ func (ws writeSession) InsertLMSTenant(dto LMSTenantDTO) dberr.Error {
 	return nil
 }
 
-func (ws writeSession) UpdateOperation(op OperationDTO) dberr.Error {
+func (ws writeSession) UpdateOperation(op dbmodel.OperationDTO) dberr.Error {
 	res, err := ws.update(postsql.OperationTableName).
 		Where(dbr.Eq("id", op.ID)).
 		Where(dbr.Eq("version", op.Version)).

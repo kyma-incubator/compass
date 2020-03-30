@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
@@ -21,14 +20,14 @@ const (
 )
 
 type Delegator struct {
-	operationManager *process.OperationManager
+	operationStorage storage.Provisioning
 	avsConfig        Config
 	clientHolder     *clientHolder
 }
 
 func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Delegator {
 	return &Delegator{
-		operationManager: process.NewOperationManager(operationsStorage),
+		operationStorage: operationsStorage,
 		avsConfig:        avsConfig,
 		clientHolder:     newClientHolder(avsConfig),
 	}
@@ -55,7 +54,11 @@ func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.Provis
 
 	operation.AvsEvaluationInternalId = evalResp.Id
 
-	updatedOperation, d := del.operationManager.UpdateOperation(operation)
+	updatedOperation, err := del.operationStorage.UpdateProvisioningOperation(operation)
+	if err != nil {
+		logger.Errorf("cannot update operation with error %v", err)
+		return *updatedOperation, 1 * time.Minute, nil
+	}
 
 	updatedOperation.InputCreator.SetOverrides("avs-bridge", []*gqlschema.ConfigEntryInput{
 		{
@@ -68,7 +71,7 @@ func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.Provis
 		},
 	})
 
-	return updatedOperation, d, nil
+	return *updatedOperation, 0, nil
 }
 
 func (del *Delegator) postRequest(evaluationRequest *BasicEvaluationCreateRequest, logger logrus.FieldLogger) (*BasicEvaluationCreateResponse, error) {
