@@ -36,11 +36,16 @@ func FromCtx(ctx context.Context) (PersistenceOp, error) {
 type Transactioner interface {
 	Begin() (PersistenceTx, error)
 	RollbackUnlessCommited(tx PersistenceTx)
+	PingContext(ctx context.Context) error
 }
 
 type db struct {
 	sqlDB  *sqlx.DB
 	logger *logrus.Logger
+}
+
+func (db *db) PingContext(ctx context.Context) error {
+	return db.sqlDB.PingContext(ctx)
 }
 
 func (db *db) Begin() (PersistenceTx, error) {
@@ -93,8 +98,9 @@ func waitForPersistance(logger *logrus.Logger, conf DatabaseConfig, retryCount i
 		if err != nil {
 			return nil, nil, err
 		}
-
-		err = sqlxDB.Ping()
+		ctx, cancelFunc := context.WithTimeout(context.Background(), time.Second)
+		err = sqlxDB.PingContext(ctx)
+		cancelFunc()
 		if err != nil {
 			logger.Infof("Got error on pinging DB: %v", err)
 			continue

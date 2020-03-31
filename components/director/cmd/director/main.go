@@ -134,7 +134,7 @@ func main() {
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
 
 	log.Infof("Registering Healthz endpoint...")
-	mainRouter.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
+	mainRouter.HandleFunc("/healthz", healthz.NewHTTPHandler(transact, log.StandardLogger()))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
