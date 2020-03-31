@@ -1,4 +1,4 @@
--- This schema is used only in tests, after adjusting it provide new migration in schema-migrator component
+w-- This schema is used only in tests, after adjusting it provide new migration in schema-migrator component
 
 -- Cluster
 
@@ -116,6 +116,7 @@ CREATE TABLE kyma_component_config
     namespace varchar(256) NOT NULL,
     source_url varchar(256),
     configuration jsonb,
+    component_order integer,
     kyma_config_id uuid NOT NULL,
     foreign key (kyma_config_id) REFERENCES kyma_config (id) ON DELETE CASCADE
 );

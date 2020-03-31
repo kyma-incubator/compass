@@ -3,6 +3,7 @@ package dbsession
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -121,6 +122,7 @@ func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 		Namespace           string
 		SourceURL           string
 		Configuration       []byte
+		ComponentOrder      int
 		ClusterID           string
 	}
 
@@ -128,6 +130,7 @@ func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.global_configuration",
 			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.namespace",
 			"kyma_component_config.source_url", "kyma_component_config.configuration",
+			"kyma_component_config.component_order",
 			"cluster_id",
 			"kyma_release.version", "kyma_release.tiller_yaml", "kyma_release.installer_yaml").
 		From("cluster").
@@ -145,7 +148,7 @@ func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 		return model.KymaConfig{}, dberrors.NotFound("Cannot find Kyma Config for runtimeID: %s", runtimeID)
 	}
 
-	kymaModules := make([]model.KymaComponentConfig, 0)
+	kymaModulesOrdered := make(map[int][]model.KymaComponentConfig, 0)
 
 	for _, componentCfg := range kymaConfig {
 		var configuration model.Configuration
@@ -155,14 +158,28 @@ func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 		}
 
 		kymaComponentConfig := model.KymaComponentConfig{
-			ID:            componentCfg.ID,
-			Component:     model.KymaComponent(componentCfg.Component),
-			Namespace:     componentCfg.Namespace,
-			SourceURL:     componentCfg.SourceURL,
-			Configuration: configuration,
-			KymaConfigID:  componentCfg.KymaConfigID,
+			ID:             componentCfg.ID,
+			Component:      model.KymaComponent(componentCfg.Component),
+			Namespace:      componentCfg.Namespace,
+			SourceURL:      componentCfg.SourceURL,
+			Configuration:  configuration,
+			KymaConfigID:   componentCfg.KymaConfigID,
+			ComponentOrder: componentCfg.ComponentOrder,
 		}
-		kymaModules = append(kymaModules, kymaComponentConfig)
+
+		// In case order is 0 for all components map stores slice (it is the case for Runtimes created before migration)
+		kymaModulesOrdered[componentCfg.ComponentOrder] = append(kymaModulesOrdered[componentCfg.ComponentOrder], kymaComponentConfig)
+	}
+
+	keys := make([]int, 0, len(kymaModulesOrdered))
+	for k, _ := range kymaModulesOrdered {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+
+	orderedComponents := make([]model.KymaComponentConfig, 0, len(kymaConfig))
+	for _, k := range keys {
+		orderedComponents = append(orderedComponents, kymaModulesOrdered[k]...)
 	}
 
 	var globalConfiguration model.Configuration
@@ -179,7 +196,7 @@ func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 			TillerYAML:    kymaConfig[0].TillerYAML,
 			InstallerYAML: kymaConfig[0].InstallerYAML,
 		},
-		Components:          kymaModules,
+		Components:          orderedComponents,
 		GlobalConfiguration: globalConfiguration,
 		ClusterID:           runtimeID,
 	}, nil
