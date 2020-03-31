@@ -4129,8 +4129,20 @@ type Mutation {
 	- [delete package](examples/delete-package/delete-package.graphql)
 	"""
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
+	"""
+	**Examples**
+	- [set automatic scenario assignment](examples/set-automatic-scenario-assignment/set-automatic-scenario-assignment.graphql)
+	"""
 	setAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.setAutomaticScenarioAssignment")
+	"""
+	**Examples**
+	- [delete automatic scenario assignment for scenario](examples/delete-automatic-scenario-assignment-for-scenario/delete-automatic-scenario-assignment-for-scenario.graphql)
+	"""
 	deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForScenario")
+	"""
+	**Examples**
+	- [delete automatic scenario assignment for selector](examples/delete-automatic-scenario-assignment-for-selector/delete-automatic-scenario-assignment-for-selector.graphql)
+	"""
 	deleteAutomaticScenarioAssignmentForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForSelector")
 }
 

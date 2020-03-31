@@ -9,7 +9,7 @@ require (
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/huandu/xstrings v1.3.0 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200327102145-56884fe1d326
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200327150114-3baf3892bd63
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/pkg/errors v0.9.1
