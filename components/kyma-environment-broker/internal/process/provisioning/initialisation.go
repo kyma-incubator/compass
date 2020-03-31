@@ -47,7 +47,7 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 }
 
 func (s *InitialisationStep) Name() string {
-	return "Provision_Init"
+	return "Provision_Initialization"
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {

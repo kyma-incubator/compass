@@ -37,7 +37,7 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 }
 
 func (s *InitialisationStep) Name() string {
-	return "Deprovision_Init"
+	return "Deprovision_Initialization"
 }
 
 func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
@@ -51,14 +51,14 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 		return operation, time.Minute, nil
 	}
 
-	_, err = s.instanceStorage.GetByID(operation.InstanceID)
+	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
 		if operation.ProvisionerOperationID == "" {
 			return operation, 0, nil
 		}
 		log.Info("instance being removed, check operation status")
-		return s.checkRuntimeStatus(operation, log)
+		return s.checkRuntimeStatus(operation, instance, log)
 	case dberr.IsNotFound(err):
 		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned")
 	default:
@@ -67,15 +67,10 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 	}
 }
 
-func (s *InitialisationStep) checkRuntimeStatus(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *InitialisationStep) checkRuntimeStatus(operation internal.DeprovisioningOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout))
-	}
-
-	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
-	if err != nil {
-		return operation, 10 * time.Second, nil
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
@@ -97,9 +92,9 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 		}
 		return s.operationManager.OperationSucceeded(operation, msg)
 	case gqlschema.OperationStateInProgress:
-		return operation, 2 * time.Minute, nil
+		return operation, 1 * time.Minute, nil
 	case gqlschema.OperationStatePending:
-		return operation, 2 * time.Minute, nil
+		return operation, 1 * time.Minute, nil
 	case gqlschema.OperationStateFailed:
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg))
 	}

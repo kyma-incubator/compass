@@ -2,11 +2,6 @@ package main
 
 import (
 	"context"
-
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/deprovisioning"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
-
 	"log"
 	"net/http"
 	"os"
@@ -22,10 +17,13 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/deprovisioning"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
 	gcli "github.com/machinebox/graphql"
