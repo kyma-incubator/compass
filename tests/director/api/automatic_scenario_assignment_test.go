@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -80,12 +82,8 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 	assertAutomaticScenarioAssignments(t,
 		[]graphql.AutomaticScenarioAssignmentSetInput{inputAssignment1, inputAssignment2},
 		actualAssignmentsForSelector)
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/stretchr/testify/assert"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/stretchr/testify/require"
-)
+}
 
 func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 	//GIVEN

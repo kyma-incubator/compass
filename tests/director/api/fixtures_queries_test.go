@@ -439,19 +439,6 @@ func fixPackageInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *
 	return authCtx, inputParams
 }
 
-func createScenariosLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, tenantID string, scenarios []string) *graphql.LabelDefinition {
-	jsonSchema := map[string]interface{}{
-		"items": map[string]interface{}{
-			"enum": scenarios,
-			"type": "string",
-		},
-		"type":        "array",
-		"minItems":    1,
-		"uniqueItems": true,
-	}
-	return createLabelDefinitionWithinTenant(t, ctx, "scenarios", jsonSchema, tenantID)
-}
-
 func setAutomaticScenarioAssignmentFromInputWithinTenant(t *testing.T, ctx context.Context, input graphql.AutomaticScenarioAssignmentSetInput, tenantID string) graphql.AutomaticScenarioAssignment {
 	inStr, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(input)
 	require.NoError(t, err)
@@ -463,12 +450,6 @@ func setAutomaticScenarioAssignmentFromInputWithinTenant(t *testing.T, ctx conte
 	return assignment
 }
 
-func deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t *testing.T, ctx context.Context, tenantID, scenarioName string) graphql.AutomaticScenarioAssignment {
-	assignment := graphql.AutomaticScenarioAssignment{}
-	req := fixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenarioName)
-	err := tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignment)
-	require.NoError(t, err)
-	return assignment
 func setAutomaticScenarioAssignmentInTenant(t *testing.T, ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput, tenantID string) *graphql.AutomaticScenarioAssignment {
 	assignmentInput, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(in)
 	require.NoError(t, err)
