@@ -1,4 +1,4 @@
-w-- This schema is used only in tests, after adjusting it provide new migration in schema-migrator component
+-- This schema is used only in tests, after adjusting it provide new migration in schema-migrator component
 
 -- Cluster
 
