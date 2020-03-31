@@ -384,6 +384,7 @@ func assertAutomaticScenarioAssignments(t *testing.T, expected []graphql.Automat
 			if expectedAssignment.ScenarioName == actualAssignment.ScenarioName {
 				found = true
 				assertAutomaticScenarioAssignment(t, expectedAssignment, *actualAssignment)
+				break
 			}
 		}
 		assert.True(t, found)
