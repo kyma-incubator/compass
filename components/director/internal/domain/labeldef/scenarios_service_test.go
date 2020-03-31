@@ -99,7 +99,7 @@ func TestScenariosService_EnsureScenariosLabelDefinitionExists(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			ldRepo := testCase.LabelDefRepoFn()
 			uidSvc := testCase.UIDServiceFn()
-			svc := labeldef.NewScenariosService(ldRepo, uidSvc)
+			svc := labeldef.NewScenariosService(ldRepo, uidSvc, true)
 
 			// when
 			err := svc.EnsureScenariosLabelDefinitionExists(ctx, tnt)
@@ -130,7 +130,7 @@ func TestGetAvailableScenarios(t *testing.T) {
 			Schema: &givenSchema,
 		}
 		mockService.On("GetByKey", mock.Anything, fixTenant(), model.ScenariosKey).Return(&givenDef, nil)
-		sut := labeldef.NewScenariosService(mockService, nil)
+		sut := labeldef.NewScenariosService(mockService, nil, true)
 		// WHEN
 		actualScenarios, err := sut.GetAvailableScenarios(context.TODO(), fixTenant())
 		// THEN
@@ -143,7 +143,7 @@ func TestGetAvailableScenarios(t *testing.T) {
 		mockService := &automock.Repository{}
 		defer mockService.AssertExpectations(t)
 		mockService.On("GetByKey", mock.Anything, fixTenant(), model.ScenariosKey).Return(nil, fixError())
-		sut := labeldef.NewScenariosService(mockService, nil)
+		sut := labeldef.NewScenariosService(mockService, nil, true)
 		// WHEN
 		_, err := sut.GetAvailableScenarios(context.TODO(), fixTenant())
 		// THEN
@@ -155,11 +155,73 @@ func TestGetAvailableScenarios(t *testing.T) {
 		mockService := &automock.Repository{}
 		defer mockService.AssertExpectations(t)
 		mockService.On("GetByKey", mock.Anything, fixTenant(), model.ScenariosKey).Return(&model.LabelDefinition{}, nil)
-		sut := labeldef.NewScenariosService(mockService, nil)
+		sut := labeldef.NewScenariosService(mockService, nil, true)
 		// WHEN
 		_, err := sut.GetAvailableScenarios(context.TODO(), fixTenant())
 		// THEN
 		require.EqualError(t, err, "missing schema for `scenarios` label definition")
 	})
 
+}
+
+func TestScenariosService_AddDefaultScenarioIfEnabled(t *testing.T) {
+	t.Run("Adds default scenario when enabled and no scenario assigned", func(t *testing.T) {
+		// GIVEN
+		expected := map[string]interface{}{
+			"scenarios": model.ScenariosDefaultValue,
+		}
+		sut := labeldef.NewScenariosService(nil, nil, true)
+		labels := map[string]interface{}{}
+
+		// WHEN
+		sut.AddDefaultScenarioIfEnabled(&labels)
+
+		// THEN
+		assert.Equal(t, expected, labels)
+	})
+
+	t.Run("Adds default scenario when enabled and labels is nil", func(t *testing.T) {
+		// GIVEN
+		expected := map[string]interface{}{
+			"scenarios": model.ScenariosDefaultValue,
+		}
+		sut := labeldef.NewScenariosService(nil, nil, true)
+		var labels map[string]interface{}
+
+		// WHEN
+		sut.AddDefaultScenarioIfEnabled(&labels)
+
+		// THEN
+		assert.Equal(t, expected, labels)
+	})
+
+	t.Run("Doesn't add default scenario when enable and any scenario assigned", func(t *testing.T) {
+		// GIVEN
+		expected := map[string]interface{}{
+			"scenarios": []string{"TEST"},
+		}
+		sut := labeldef.NewScenariosService(nil, nil, false)
+		labels := map[string]interface{}{
+			"scenarios": []string{"TEST"},
+		}
+
+		// WHEN
+		sut.AddDefaultScenarioIfEnabled(&labels)
+
+		// THEN
+		assert.Equal(t, expected, labels)
+	})
+
+	t.Run("Doesn't add default scenario when disabled and no scenario assigned", func(t *testing.T) {
+		// GIVEN
+		expected := map[string]interface{}{}
+		sut := labeldef.NewScenariosService(nil, nil, false)
+		labels := map[string]interface{}{}
+
+		// WHEN
+		sut.AddDefaultScenarioIfEnabled(&labels)
+
+		// THEN
+		assert.Equal(t, expected, labels)
+	})
 }

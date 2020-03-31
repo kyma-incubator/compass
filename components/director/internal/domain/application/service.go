@@ -92,6 +92,7 @@ type LabelUpsertService interface {
 //go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
+	AddDefaultScenarioIfEnabled(labels *map[string]interface{})
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -256,14 +257,11 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	if err != nil {
 		return "", err
 	}
+	s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
 
-	if _, ok := in.Labels[model.ScenariosKey]; !ok {
-		if in.Labels == nil {
-			in.Labels = map[string]interface{}{}
-		}
-		in.Labels[model.ScenariosKey] = model.ScenariosDefaultValue
+	if in.Labels == nil {
+		in.Labels = map[string]interface{}{}
 	}
-
 	in.Labels[intSysKey] = ""
 	if in.IntegrationSystemID != nil {
 		in.Labels[intSysKey] = *in.IntegrationSystemID
@@ -415,10 +413,6 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	if key == model.ScenariosKey {
-		return fmt.Errorf("%s label can not be deleted from application", model.ScenariosKey)
 	}
 
 	appExists, err := s.appRepo.Exists(ctx, appTenant, applicationID)

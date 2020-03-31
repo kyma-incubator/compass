@@ -8,7 +8,6 @@ var (
 	ScenariosDefaultValue = []interface{}{"DEFAULT"}
 	ScenariosSchema       = map[string]interface{}{
 		"type":        "array",
-		"minItems":    1,
 		"uniqueItems": true,
 		"items": map[string]interface{}{
 			"type":      "string",
@@ -21,13 +20,13 @@ var (
 	SchemaForScenariosSchema = map[string]interface{}{
 		"type":                 "object",
 		"additionalProperties": false,
-		"required":             []string{"type", "minItems", "uniqueItems", "items"},
+		"required":             []string{"type", "uniqueItems", "items"},
 		"properties": map[string]interface{}{
 			"type": map[string]interface{}{
 				"const": "array",
 			},
-			"minItems": map[string]interface{}{
-				"const": 1,
+			"minItems": map[string]interface{}{ // TODO: minItems can be completely removed once UI stops using it
+				"type": "number",
 			},
 			"uniqueItems": map[string]interface{}{
 				"const": true,
