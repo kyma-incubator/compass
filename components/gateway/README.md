@@ -19,12 +19,12 @@ Gateway binary allows you to override some configuration parameters. You can spe
 
 If you set **APP_AUDITLOG_ENABLED** to `true`, you must specify the following environment variables:
 
-| Name                             | Description                                                                       |   Default value  | 
-| -------------------------------- | --------------------------------------------------------------------------------- | ---------------- | 
-| **APP_AUDITLOG_URL**             | The URL under which the audit log service is available                            |      None        | 
-| **APP_AUDITLOG_CONFIG_PATH**     | The path for logging configuration changes                                        |      None        | 
-| **APP_AUDITLOG_SECURITY_PATH**   | The path for logging security events                                              |      None        | 
-| **APP_AUDITLOG_AUTH_MODE**       | The audit log authorization mode. The possible values are `basic` and `oauth`.    |      None        |  
+| Name                             | Description                                                                       | 
+| -------------------------------- | --------------------------------------------------------------------------------- | 
+| **APP_AUDITLOG_URL**             | The URL under which the audit log service is available                            | 
+| **APP_AUDITLOG_CONFIG_PATH**     | The path for logging configuration changes                                        | 
+| **APP_AUDITLOG_SECURITY_PATH**   | The path for logging security events                                              | 
+| **APP_AUDITLOG_AUTH_MODE**       | The audit log authorization mode. The possible values are `basic` and `oauth`.    |  
 
 Gateway processes audit log messages asynchronously using the configurable Go channel.
 The audit log feature reads the messages from the channel and sends them to the audit log service.
