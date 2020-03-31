@@ -7,7 +7,7 @@ type ConfigurationChange struct {
 	Object     Object      `json:"object"`
 	Attributes []Attribute `json:"attributes"`
 	Success    *bool       `json:"success"`
-	AuditlogMetadata
+	Metadata
 }
 
 type Attribute struct {
@@ -20,13 +20,18 @@ type SecurityEvent struct {
 	User string  `json:"user"`
 	IP   *net.IP `json:"ip"`
 	Data string  `json:"data"`
-	AuditlogMetadata
+	Metadata
 }
 
-type AuditlogMetadata struct {
+type Metadata struct {
 	Time   string `json:"time"`
 	Tenant string `json:"tenant"`
 	UUID   string `json:"uuid"`
+}
+
+type SecurityEventData struct {
+	ID     map[string]string `json:"id"`
+	Reason string            `json:"reason"`
 }
 
 type Object struct {

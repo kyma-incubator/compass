@@ -3,35 +3,43 @@ package auditlog
 import (
 	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/pkg/errors"
 )
 
-type AuditlogMessage struct {
+type Message struct {
 	Request  string
 	Response string
 	proxy.Claims
 }
 
 type Sink struct {
-	logsChannel chan AuditlogMessage
+	logsChannel chan Message
+	timeout     time.Duration
 }
 
-func NewSink(logsChannel chan AuditlogMessage) *Sink {
+func NewSink(logsChannel chan Message, timeout time.Duration) *Sink {
 	return &Sink{
 		logsChannel: logsChannel,
+		timeout:     timeout,
 	}
 }
 
 func (sink *Sink) Log(request, response string, claims proxy.Claims) error {
-	msg := AuditlogMessage{
+	msg := Message{
 		Request:  request,
 		Response: response,
 		Claims:   claims,
 	}
-	sink.logsChannel <- msg
+
+	select {
+	case sink.logsChannel <- msg:
+	case <-time.After(sink.timeout):
+		return errors.New("Cannot write to the channel")
+	}
 	return nil
 }
 
@@ -48,12 +56,19 @@ type AuditlogClient interface {
 	LogSecurityEvent(event model.SecurityEvent) error
 }
 
-type Service struct {
-	client AuditlogClient
+//go:generate mockery -name=AuditlogMessageFactory -output=automock -outpkg=automock -case=underscore
+type AuditlogMessageFactory interface {
+	CreateConfigurationChange() model.ConfigurationChange
+	CreateSecurityEvent() model.SecurityEvent
 }
 
-func NewService(client AuditlogClient) *Service {
-	return &Service{client: client}
+type Service struct {
+	client     AuditlogClient
+	msgFactory AuditlogMessageFactory
+}
+
+func NewService(client AuditlogClient, msgFactory AuditlogMessageFactory) *Service {
+	return &Service{client: client, msgFactory: msgFactory}
 }
 
 func (svc *Service) Log(request, response string, claims proxy.Claims) error {
@@ -63,7 +78,7 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 	}
 
 	if len(graphqlResponse.Errors) == 0 {
-		log := svc.createConfigChangeLog(claims, request)
+		log := svc.createConfigChangeMsg(claims, request)
 		log.Attributes = append(log.Attributes, model.Attribute{
 			Name: "response",
 			Old:  "",
@@ -75,15 +90,20 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 	}
 
 	if svc.hasInsufficientScopeError(graphqlResponse.Errors) {
-		data, err := json.Marshal(&graphqlResponse.Errors)
+		response, err := json.Marshal(&graphqlResponse.Errors)
 		if err != nil {
 			return errors.Wrap(err, "while marshalling graphql err")
 		}
 
-		err = svc.client.LogSecurityEvent(model.SecurityEvent{
-			User: "proxy",
-			Data: string(data),
-		})
+		msg := svc.msgFactory.CreateSecurityEvent()
+		eventData := model.SecurityEventData{ID: fillID(claims, "Security Event"), Reason: string(response)}
+		data, err := json.Marshal(&eventData)
+		if err != nil {
+			return errors.Wrap(err, "while marshalling security event data")
+		}
+
+		msg.Data = string(data)
+		err = svc.client.LogSecurityEvent(msg)
 		return errors.Wrap(err, "while sending security event to auditlog")
 	}
 
@@ -92,51 +112,43 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 		return errors.Wrap(err, "while checking if error is read error")
 	}
 
-	log := svc.createConfigChangeLog(claims, request)
+	msg := svc.createConfigChangeMsg(claims, request)
 	if isReadErr {
-		log.Attributes = append(log.Attributes, model.Attribute{
+		msg.Attributes = append(msg.Attributes, model.Attribute{
 			Name: "response",
 			Old:  "",
 			New:  "success",
 		})
-		err := svc.client.LogConfigurationChange(log)
+		err := svc.client.LogConfigurationChange(msg)
 		return errors.Wrap(err, "while sending configuration change")
 	} else {
-		log.Attributes = append(log.Attributes, model.Attribute{
+		msg.Attributes = append(msg.Attributes, model.Attribute{
 			Name: "response",
 			Old:  "",
 			New:  response,
 		})
 	}
 
-	err = svc.client.LogConfigurationChange(log)
+	err = svc.client.LogConfigurationChange(msg)
 	return errors.Wrap(err, "while sending configuration change")
 }
 
 func (svc *Service) parseResponse(response string) (model.GraphqlResponse, error) {
-	var graphqResponse model.GraphqlResponse
-	err := json.Unmarshal([]byte(response), &graphqResponse)
+	var graphqlResponse model.GraphqlResponse
+	err := json.Unmarshal([]byte(response), &graphqlResponse)
 	if err != nil {
 		return model.GraphqlResponse{}, err
 	}
-	return graphqResponse, nil
+	return graphqlResponse, nil
 }
 
-func (svc *Service) createConfigChangeLog(claims proxy.Claims, request string) model.ConfigurationChange {
-	return model.ConfigurationChange{
-		User: "proxy",
-		Object: model.Object{
-			ID: map[string]string{
-				"name":           "Config Change",
-				"externalTenant": claims.Tenant,
-				"apiConsumer":    claims.ConsumerType,
-				"consumerID":     claims.ConsumerID,
-			},
-			Type: "",
-		},
-		Attributes: []model.Attribute{
-			{Name: "request", Old: "", New: request}},
-	}
+func (svc *Service) createConfigChangeMsg(claims proxy.Claims, request string) model.ConfigurationChange {
+	msg := svc.msgFactory.CreateConfigurationChange()
+	msg.Object = model.Object{ID: fillID(claims, "Config Change")}
+	msg.Attributes = []model.Attribute{
+		{Name: "request", Old: "", New: request}}
+
+	return msg
 }
 
 func (svc *Service) hasInsufficientScopeError(errors []model.ErrorMessage) bool {
@@ -187,4 +199,13 @@ func searchForMutationErr(response model.GraphqlResponse) bool {
 		}
 	}
 	return true
+}
+
+func fillID(claims proxy.Claims, name string) map[string]string {
+	return map[string]string{
+		"name":           name,
+		"externalTenant": claims.Tenant,
+		"apiConsumer":    claims.ConsumerType,
+		"consumerID":     claims.ConsumerID,
+	}
 }
