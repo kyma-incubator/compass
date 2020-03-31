@@ -450,6 +450,27 @@ func setAutomaticScenarioAssignmentFromInputWithinTenant(t *testing.T, ctx conte
 	return assignment
 }
 
+func setAutomaticScenarioAssignmentInTenant(t *testing.T, ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput, tenantID string) *graphql.AutomaticScenarioAssignment {
+	assignmentInput, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(in)
+	require.NoError(t, err)
+
+	createRequest := fixSetAutomaticScenarioAssignmentRequest(assignmentInput)
+
+	assignment := graphql.AutomaticScenarioAssignment{}
+
+	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, tenantID, createRequest, &assignment))
+	require.NotEmpty(t, assignment.ScenarioName)
+	return &assignment
+}
+
+func listAutomaticScenarioAssignmentsWithinTenant(t *testing.T, ctx context.Context, tenantID string) graphql.AutomaticScenarioAssignmentPage {
+	assignmentsPage := graphql.AutomaticScenarioAssignmentPage{}
+	req := fixAutomaticScenarioAssignmentsRequest()
+	err := tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignmentsPage)
+	require.NoError(t, err)
+	return assignmentsPage
+}
+
 func deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t *testing.T, ctx context.Context, tenantID, scenarioName string) graphql.AutomaticScenarioAssignment {
 	assignment := graphql.AutomaticScenarioAssignment{}
 	req := fixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenarioName)
