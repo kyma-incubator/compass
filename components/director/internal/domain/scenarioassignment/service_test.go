@@ -5,15 +5,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -27,8 +24,11 @@ func TestService_Create(t *testing.T) {
 		mockRepo := &automock.Repository{}
 		mockRepo.On("Create", fixCtxWithTenant(), fixModel()).Return(nil)
 		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{scenarioName})
-		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc)
-		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc)
+		mockEngineSvc := &automock.AssignmentEngineService{}
+		mockEngineSvc.On("EnsureScenarioAssignedToRuntimesMatchingSelector", fixModel()).Return(nil).Once()
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc, mockEngineSvc)
+
+		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc, mockEngineSvc)
 
 		// WHEN
 		actual, err := sut.Create(fixCtxWithTenant(), fixModel())
@@ -39,9 +39,28 @@ func TestService_Create(t *testing.T) {
 
 	})
 
-	t.Run("error on missing tenant in context", func(t *testing.T) {
+	t.Run("return error when ensuring scenarios for runtimes fails", func(t *testing.T) {
 		// GIVEN
-		sut := scenarioassignment.NewService(nil, nil)
+		mockRepo := &automock.Repository{}
+		mockRepo.On("Create", fixCtxWithTenant(), fixModel()).Return(nil)
+		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{scenarioName})
+		mockEngineSvc := &automock.AssignmentEngineService{}
+		mockEngineSvc.On("EnsureScenarioAssignedToRuntimesMatchingSelector", fixModel()).Return(fixError()).Once()
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc, mockEngineSvc)
+
+		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc, mockEngineSvc)
+
+		// WHEN
+		_, err := sut.Create(fixCtxWithTenant(), fixModel())
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), fixError().Error())
+	})
+
+	t.Run("returns error on missing tenant in context", func(t *testing.T) {
+		// GIVEN
+		sut := scenarioassignment.NewService(nil, nil, nil)
 
 		// WHEN
 		_, err := sut.Create(context.TODO(), fixModel())
@@ -58,7 +77,7 @@ func TestService_Create(t *testing.T) {
 		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{scenarioName})
 
 		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc)
-		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc)
+		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc, nil)
 		// WHEN
 		_, err := sut.Create(fixCtxWithTenant(), fixModel())
 		// THEN
@@ -69,7 +88,7 @@ func TestService_Create(t *testing.T) {
 		// GIVEN
 		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{"completely-different-scenario"})
 		defer mock.AssertExpectationsForObjects(t, mockScenarioDefSvc)
-		sut := scenarioassignment.NewService(nil, mockScenarioDefSvc)
+		sut := scenarioassignment.NewService(nil, mockScenarioDefSvc, nil)
 
 		// WHEN
 		_, err := sut.Create(fixCtxWithTenant(), fixModel())
@@ -85,7 +104,7 @@ func TestService_Create(t *testing.T) {
 		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{scenarioName})
 
 		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc)
-		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc)
+		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc, nil)
 
 		// WHEN
 		_, err := sut.Create(fixCtxWithTenant(), fixModel())
@@ -99,7 +118,7 @@ func TestService_Create(t *testing.T) {
 		mockScenarioDefSvc := &automock.ScenariosDefService{}
 		defer mock.AssertExpectationsForObjects(t, mockScenarioDefSvc)
 		mockScenarioDefSvc.On("EnsureScenariosLabelDefinitionExists", mock.Anything, mock.Anything).Return(fixError())
-		sut := scenarioassignment.NewService(nil, mockScenarioDefSvc)
+		sut := scenarioassignment.NewService(nil, mockScenarioDefSvc, nil)
 		// WHEN
 		_, err := sut.Create(fixCtxWithTenant(), fixModel())
 		// THEN
@@ -112,7 +131,7 @@ func TestService_Create(t *testing.T) {
 		defer mock.AssertExpectationsForObjects(t, mockScenarioDefSvc)
 		mockScenarioDefSvc.On("EnsureScenariosLabelDefinitionExists", mock.Anything, mock.Anything).Return(nil)
 		mockScenarioDefSvc.On("GetAvailableScenarios", mock.Anything, tenantID).Return(nil, fixError())
-		sut := scenarioassignment.NewService(nil, mockScenarioDefSvc)
+		sut := scenarioassignment.NewService(nil, mockScenarioDefSvc, nil)
 		// WHEN
 		_, err := sut.Create(fixCtxWithTenant(), fixModel())
 		// THEN
@@ -127,7 +146,7 @@ func TestService_GetByScenarioName(t *testing.T) {
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("GetForScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(fixModel(), nil).Once()
-		sut := scenarioassignment.NewService(mockRepo, nil)
+		sut := scenarioassignment.NewService(mockRepo, nil, nil)
 
 		// WHEN
 		actual, err := sut.GetForScenarioName(fixCtxWithTenant(), scenarioName)
@@ -142,7 +161,7 @@ func TestService_GetByScenarioName(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		sut := scenarioassignment.NewService(mockRepo, nil)
+		sut := scenarioassignment.NewService(mockRepo, nil, nil)
 
 		// WHEN
 		_, err := sut.GetForScenarioName(context.TODO(), scenarioName)
@@ -156,7 +175,7 @@ func TestService_GetByScenarioName(t *testing.T) {
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("GetForScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(model.AutomaticScenarioAssignment{}, fixError()).Once()
-		sut := scenarioassignment.NewService(mockRepo, nil)
+		sut := scenarioassignment.NewService(mockRepo, nil, nil)
 
 		// WHEN
 		_, err := sut.GetForScenarioName(fixCtxWithTenant(), scenarioName)
@@ -174,11 +193,11 @@ func TestService_GetForSelector(t *testing.T) {
 		result := []*model.AutomaticScenarioAssignment{&assignment}
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("GetForSelector", mock.Anything, selector, tenantID).Return(result, nil).Once()
-		sut := scenarioassignment.NewService(mockRepo, nil)
+		mockRepo.On("ListForSelector", mock.Anything, selector, tenantID).Return(result, nil).Once()
+		sut := scenarioassignment.NewService(mockRepo, nil, nil)
 
 		// WHEN
-		actual, err := sut.GetForSelector(fixCtxWithTenant(), selector)
+		actual, err := sut.ListForSelector(fixCtxWithTenant(), selector)
 
 		// THEN
 		require.NoError(t, err)
@@ -190,11 +209,11 @@ func TestService_GetForSelector(t *testing.T) {
 		selector := fixLabelSelector()
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("GetForSelector", mock.Anything, selector, tenantID).Return(nil, fixError()).Once()
-		sut := scenarioassignment.NewService(mockRepo, nil)
+		mockRepo.On("ListForSelector", mock.Anything, selector, tenantID).Return(nil, fixError()).Once()
+		sut := scenarioassignment.NewService(mockRepo, nil, nil)
 
 		// WHEN
-		actual, err := sut.GetForSelector(fixCtxWithTenant(), selector)
+		actual, err := sut.ListForSelector(fixCtxWithTenant(), selector)
 
 		// THEN
 		require.EqualError(t, err, "while getting the assignments: some error")
@@ -202,8 +221,8 @@ func TestService_GetForSelector(t *testing.T) {
 	})
 
 	t.Run("returns error when no tenant in context", func(t *testing.T) {
-		sut := scenarioassignment.NewService(nil, nil)
-		_, err := sut.GetForSelector(context.TODO(), fixLabelSelector())
+		sut := scenarioassignment.NewService(nil, nil, nil)
+		_, err := sut.ListForSelector(context.TODO(), fixLabelSelector())
 
 		require.EqualError(t, err, "cannot read tenant from context")
 	})
@@ -281,7 +300,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := scenarioassignment.NewService(repo, nil)
+			svc := scenarioassignment.NewService(repo, nil, nil)
 
 			// WHEN
 			items, err := svc.List(ctx, testCase.PageSize, after)
@@ -299,7 +318,7 @@ func TestService_List(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := scenarioassignment.NewService(nil, nil)
+		svc := scenarioassignment.NewService(nil, nil, nil)
 		// WHEN
 		_, err := svc.List(context.TODO(), 5, "")
 		// THEN
@@ -308,36 +327,118 @@ func TestService_List(t *testing.T) {
 	})
 }
 
-func TestService_DeleteForSelector(t *testing.T) {
+func TestService_DeleteManyForSameSelector(t *testing.T) {
 	ctx := fixCtxWithTenant()
 	selector := fixLabelSelector()
+
+	scenarioNameA := "scenario-A"
+	scenarioNameB := "scenario-B"
+	models := []*model.AutomaticScenarioAssignment{
+		{
+			ScenarioName: scenarioNameA,
+			Selector: model.LabelSelector{
+				Key:   "key",
+				Value: "value",
+			},
+		},
+		{
+			ScenarioName: scenarioNameB,
+			Selector: model.LabelSelector{
+				Key:   "key",
+				Value: "value",
+			},
+		},
+	}
 
 	t.Run("happy path", func(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
-		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("DeleteForSelector", ctx, tenantID, selector).Return(nil).Once()
-		sut := scenarioassignment.NewService(mockRepo, nil)
+		mockEngineSvc := &automock.AssignmentEngineService{}
+		mockEngineSvc.On("UnassignScenariosFromRuntimesMatchingSelector", models).Return(nil).Once()
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngineSvc)
+
+		sut := scenarioassignment.NewService(mockRepo, nil, mockEngineSvc)
 		// WHEN
-		err := sut.DeleteForSelector(ctx, selector)
+		err := sut.DeleteManyForSameSelector(ctx, models)
 		// THEN
 		require.NoError(t, err)
 	})
 
+	t.Run("return error when unassigning scenarios from runtimes fails", func(t *testing.T) {
+		// GIVEN
+		mockEngineSvc := &automock.AssignmentEngineService{}
+		mockEngineSvc.On("UnassignScenariosFromRuntimesMatchingSelector", models).Return(fixError()).Once()
+		defer mock.AssertExpectationsForObjects(t, mockEngineSvc)
+
+		sut := scenarioassignment.NewService(nil, nil, mockEngineSvc)
+		// WHEN
+		err := sut.DeleteManyForSameSelector(ctx, models)
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), fixError().Error())
+	})
+
+	t.Run("return error when input slice is empty", func(t *testing.T) {
+		// GIVEN
+		mockEngineSvc := &automock.AssignmentEngineService{}
+		defer mock.AssertExpectationsForObjects(t, mockEngineSvc)
+
+		sut := scenarioassignment.NewService(nil, nil, mockEngineSvc)
+		// WHEN
+		err := sut.DeleteManyForSameSelector(ctx, []*model.AutomaticScenarioAssignment{})
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "expected at least one item in Assignments slice")
+	})
+
+	t.Run("return error when input slice contains assignments with different selectors", func(t *testing.T) {
+		// GIVEN
+		modelsWithDifferentSelectors := []*model.AutomaticScenarioAssignment{
+			{
+				ScenarioName: scenarioNameA,
+				Selector: model.LabelSelector{
+					Key:   "key",
+					Value: "value",
+				},
+			},
+			{
+				ScenarioName: scenarioNameB,
+				Selector: model.LabelSelector{
+					Key:   "key",
+					Value: "bar",
+				},
+			},
+		}
+
+		mockEngineSvc := &automock.AssignmentEngineService{}
+		defer mock.AssertExpectationsForObjects(t, mockEngineSvc)
+
+		sut := scenarioassignment.NewService(nil, nil, mockEngineSvc)
+		// WHEN
+		err := sut.DeleteManyForSameSelector(ctx, modelsWithDifferentSelectors)
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "all input items have to have the same selector")
+	})
+
 	t.Run("returns error on error from repository", func(t *testing.T) {
 		mockRepo := &automock.Repository{}
-		defer mockRepo.AssertExpectations(t)
+		mockEngineSvc := &automock.AssignmentEngineService{}
+		mockEngineSvc.On("UnassignScenariosFromRuntimesMatchingSelector", models).Return(nil).Once()
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngineSvc)
+
 		mockRepo.On("DeleteForSelector", ctx, tenantID, selector).Return(fixError()).Once()
-		sut := scenarioassignment.NewService(mockRepo, nil)
+		sut := scenarioassignment.NewService(mockRepo, nil, mockEngineSvc)
 		// WHEN
-		err := sut.DeleteForSelector(ctx, selector)
+		err := sut.DeleteManyForSameSelector(ctx, models)
 		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while deleting the Assignments: %s", errMsg))
 	})
 
 	t.Run("returns error when empty tenant", func(t *testing.T) {
-		sut := scenarioassignment.NewService(nil, nil)
-		err := sut.DeleteForSelector(context.TODO(), selector)
+		sut := scenarioassignment.NewService(nil, nil, nil)
+		err := sut.DeleteManyForSameSelector(context.TODO(), models)
 		require.EqualError(t, err, "cannot read tenant from context")
 	})
 }
@@ -346,25 +447,45 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
-		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("DeleteForScenarioName", fixCtxWithTenant(), tenantID, scenarioName).Return(nil)
-		svc := scenarioassignment.NewService(mockRepo, nil)
+		mockEngineSvc := &automock.AssignmentEngineService{}
+		mockEngineSvc.On("UnassignScenarioFromRuntimesMatchingSelector", fixModel()).Return(nil).Once()
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngineSvc)
+
+		svc := scenarioassignment.NewService(mockRepo, nil, mockEngineSvc)
 
 		// WHEN
-		err := svc.DeleteForScenarioName(fixCtxWithTenant(), scenarioName)
+		err := svc.Delete(fixCtxWithTenant(), fixModel())
 
 		// THEN
 		require.NoError(t, err)
+	})
+
+	t.Run("return error when unassigning scenarios from runtimes fails", func(t *testing.T) {
+		// GIVEN
+		mockRepo := &automock.Repository{}
+		mockEngineSvc := &automock.AssignmentEngineService{}
+		mockEngineSvc.On("UnassignScenarioFromRuntimesMatchingSelector", fixModel()).Return(fixError()).Once()
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngineSvc)
+
+		svc := scenarioassignment.NewService(mockRepo, nil, mockEngineSvc)
+
+		// WHEN
+		err := svc.Delete(fixCtxWithTenant(), fixModel())
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), fixError().Error())
 	})
 
 	t.Run("error on missing tenant in context", func(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		svc := scenarioassignment.NewService(mockRepo, nil)
+		svc := scenarioassignment.NewService(mockRepo, nil, nil)
 
 		// WHEN
-		err := svc.DeleteForScenarioName(context.TODO(), scenarioName)
+		err := svc.Delete(context.TODO(), fixModel())
 
 		// THEN
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
@@ -373,12 +494,15 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 	t.Run("returns error on error from repository", func(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
-		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("DeleteForScenarioName", fixCtxWithTenant(), tenantID, scenarioName).Return(fixError())
-		svc := scenarioassignment.NewService(mockRepo, nil)
+		mockEngineSvc := &automock.AssignmentEngineService{}
+		mockEngineSvc.On("UnassignScenarioFromRuntimesMatchingSelector", fixModel()).Return(nil).Once()
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngineSvc)
+
+		svc := scenarioassignment.NewService(mockRepo, nil, mockEngineSvc)
 
 		// WHEN
-		err := svc.DeleteForScenarioName(fixCtxWithTenant(), scenarioName)
+		err := svc.Delete(fixCtxWithTenant(), fixModel())
 
 		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while deleting the Assignment: %s", errMsg))

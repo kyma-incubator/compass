@@ -14,7 +14,7 @@ import (
 //go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
 type Repository interface {
 	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
-	GetForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
+	ListForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 	DeleteForSelector(ctx context.Context, tenantID string, selector model.LabelSelector) error
@@ -27,16 +27,25 @@ type ScenariosDefService interface {
 	GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error)
 }
 
-func NewService(repo Repository, scenarioDefSvc ScenariosDefService) *service {
+//go:generate mockery -name=AssignmentEngineService -output=automock -outpkg=automock -case=underscore
+type AssignmentEngineService interface {
+	EnsureScenarioAssignedToRuntimesMatchingSelector(in model.AutomaticScenarioAssignment) error
+	UnassignScenarioFromRuntimesMatchingSelector(in model.AutomaticScenarioAssignment) error
+	UnassignScenariosFromRuntimesMatchingSelector(in []*model.AutomaticScenarioAssignment) error
+}
+
+func NewService(repo Repository, scenarioDefSvc ScenariosDefService, engineSvc AssignmentEngineService) *service {
 	return &service{
 		repo:            repo,
 		scenariosDefSvc: scenarioDefSvc,
+		engineSvc:       engineSvc,
 	}
 }
 
 type service struct {
 	repo            Repository
 	scenariosDefSvc ScenariosDefService
+	engineSvc       AssignmentEngineService
 }
 
 func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error) {
@@ -50,14 +59,20 @@ func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignme
 		return model.AutomaticScenarioAssignment{}, err
 	}
 	err = s.repo.Create(ctx, in)
-	switch {
-	case err == nil:
-		return in, nil
-	case apperrors.IsNotUnique(err):
-		return model.AutomaticScenarioAssignment{}, errors.New("a given scenario already has an assignment")
-	default:
+	if err != nil {
+		if apperrors.IsNotUnique(err) {
+			return model.AutomaticScenarioAssignment{}, errors.New("a given scenario already has an assignment")
+		}
+
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while persisting Assignment")
 	}
+
+	err = s.engineSvc.EnsureScenarioAssignedToRuntimesMatchingSelector(in)
+	if err != nil {
+		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while assigning scenario to runtimes matching selector")
+	}
+
+	return in, nil
 }
 
 func (s *service) validateThatScenarioExists(ctx context.Context, in model.AutomaticScenarioAssignment) error {
@@ -87,13 +102,13 @@ func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([
 	return out, nil
 }
 
-func (s *service) GetForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error) {
+func (s *service) ListForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	assignments, err := s.repo.GetForSelector(ctx, in, tenantID)
+	assignments, err := s.repo.ListForSelector(ctx, in, tenantID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting the assignments")
 	}
@@ -126,10 +141,20 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 	return s.repo.List(ctx, tnt, pageSize, cursor)
 }
 
-func (s *service) DeleteForSelector(ctx context.Context, selector model.LabelSelector) error {
+func (s *service) DeleteManyForSameSelector(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
+	}
+
+	selector, err := s.ensureSameSelector(in)
+	if err != nil {
+		return errors.Wrap(err, "while ensuring input is valid")
+	}
+
+	err = s.engineSvc.UnassignScenariosFromRuntimesMatchingSelector(in)
+	if err != nil {
+		return errors.Wrap(err, "while unassigning scenario from runtimes")
 	}
 
 	err = s.repo.DeleteForSelector(ctx, tenantID, selector)
@@ -140,17 +165,38 @@ func (s *service) DeleteForSelector(ctx context.Context, selector model.LabelSel
 	return nil
 }
 
-// DeleteForScenarioName deletes the assignment for a given scenario in a scope of a tenant
-func (s *service) DeleteForScenarioName(ctx context.Context, scenarioName string) error {
+// Delete deletes the assignment for a given scenario in a scope of a tenant
+func (s *service) Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while loading tenant from context")
 	}
 
-	err = s.repo.DeleteForScenarioName(ctx, tenantID, scenarioName)
+	err = s.engineSvc.UnassignScenarioFromRuntimesMatchingSelector(in)
+	if err != nil {
+		return errors.Wrap(err, "while unassigning scenario from runtimes")
+	}
+
+	err = s.repo.DeleteForScenarioName(ctx, tenantID, in.ScenarioName)
 	if err != nil {
 		return errors.Wrap(err, "while deleting the Assignment")
 	}
 
 	return nil
+}
+
+func (s *service) ensureSameSelector(in []*model.AutomaticScenarioAssignment) (model.LabelSelector, error) {
+	if in == nil || len(in) == 0 || in[0] == nil {
+		return model.LabelSelector{}, errors.New("expected at least one item in Assignments slice")
+	}
+
+	selector := in[0].Selector
+
+	for _, item := range in {
+		if item != nil && item.Selector != selector {
+			return model.LabelSelector{}, errors.New("all input items have to have the same selector")
+		}
+	}
+
+	return selector, nil
 }
