@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -18,14 +20,14 @@ const (
 )
 
 type RemoveRuntimeStep struct {
-	operationManager  *OperationManager
+	operationManager  *process.DeprovisionOperationManager
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
 }
 
 func NewRemoveRuntimeStep(os storage.Operations, is storage.Instances, cli provisioner.Client) *RemoveRuntimeStep {
 	return &RemoveRuntimeStep{
-		operationManager:  NewOperationManager(os),
+		operationManager:  process.NewDeprovisionOperationManager(os),
 		instanceStorage:   is,
 		provisionerClient: cli,
 	}

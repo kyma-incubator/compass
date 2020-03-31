@@ -1,11 +1,10 @@
-package deprovisioning
+package process
 
 import (
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -13,18 +12,18 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 )
 
-func Test_RetryOperationOnce(t *testing.T) {
+func Test_Provision_RetryOperationOnce(t *testing.T) {
 	// given
 	memory := storage.NewMemoryStorage()
 	operations := memory.Operations()
-	opManager := NewOperationManager(operations)
-	op := internal.DeprovisioningOperation{}
+	opManager := NewProvisionOperationManager(operations)
+	op := internal.ProvisioningOperation{}
 	op.UpdatedAt = time.Now()
 	retryInterval := time.Hour
 	errorMessage := fmt.Sprintf("ups ... ")
 
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
-	err := operations.InsertDeprovisioningOperation(op)
+	err := operations.InsertProvisioningOperation(op)
 	require.NoError(t, err)
 
 	// then - first call
@@ -45,19 +44,19 @@ func Test_RetryOperationOnce(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func Test_RetryOperation(t *testing.T) {
+func Test_Provision_RetryOperation(t *testing.T) {
 	// given
 	memory := storage.NewMemoryStorage()
 	operations := memory.Operations()
-	opManager := NewOperationManager(operations)
-	op := internal.DeprovisioningOperation{}
+	opManager := NewProvisionOperationManager(operations)
+	op := internal.ProvisioningOperation{}
 	op.UpdatedAt = time.Now()
 	retryInterval := time.Hour
 	errorMessage := fmt.Sprintf("ups ... ")
 	maxtime := time.Hour * 3 // allow 2 retries
 
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
-	err := operations.InsertDeprovisioningOperation(op)
+	err := operations.InsertProvisioningOperation(op)
 	require.NoError(t, err)
 
 	// then - first call
@@ -76,8 +75,4 @@ func Test_RetryOperation(t *testing.T) {
 	// when - second call => retry
 	assert.True(t, when > 0)
 	assert.Nil(t, err)
-}
-
-func fixLogger() logrus.FieldLogger {
-	return logrus.StandardLogger()
 }

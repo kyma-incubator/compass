@@ -3,6 +3,8 @@ package provisioning
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
@@ -14,7 +16,7 @@ import (
 type SetupBackupStep struct {
 	bucketName       string
 	zone             string
-	operationManager *OperationManager
+	operationManager *process.ProvisionOperationManager
 	accountProvider  hyperscaler.AccountProvider
 }
 
@@ -24,7 +26,7 @@ func (s *SetupBackupStep) Name() string {
 
 func NewSetupBackupStep(os storage.Operations) *SetupBackupStep {
 	return &SetupBackupStep{
-		operationManager: NewOperationManager(os),
+		operationManager: process.NewProvisionOperationManager(os),
 	}
 }
 

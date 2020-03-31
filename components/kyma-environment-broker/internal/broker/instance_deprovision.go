@@ -75,7 +75,7 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 	err = b.operationsStorage.InsertDeprovisioningOperation(operation)
 	if err != nil {
 		logger.Errorf("cannot save operation: %s", err)
-		return domain.DeprovisionServiceSpec{}, errors.New("cannot save operations")
+		return domain.DeprovisionServiceSpec{}, errors.New("cannot save operation")
 	}
 	logger.Infof("Deprovisioning runtime: runtimeID=%s, globalAccountID=%s", instance.RuntimeID, instance.GlobalAccountID)
 

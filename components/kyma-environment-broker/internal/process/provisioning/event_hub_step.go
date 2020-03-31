@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/sirupsen/logrus"
 
@@ -33,7 +35,7 @@ const (
 var _ Step = (*ProvisionAzureEventHubStep)(nil)
 
 type ProvisionAzureEventHubStep struct {
-	operationManager    *OperationManager
+	operationManager    *process.ProvisionOperationManager
 	hyperscalerProvider azure.HyperscalerProvider
 	accountProvider     hyperscaler.AccountProvider
 	context             context.Context
@@ -41,7 +43,7 @@ type ProvisionAzureEventHubStep struct {
 
 func NewProvisionAzureEventHubStep(os storage.Operations, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
 	return &ProvisionAzureEventHubStep{
-		operationManager:    NewOperationManager(os),
+		operationManager:    process.NewProvisionOperationManager(os),
 		accountProvider:     accountProvider,
 		context:             ctx,
 		hyperscalerProvider: hyperscalerProvider,

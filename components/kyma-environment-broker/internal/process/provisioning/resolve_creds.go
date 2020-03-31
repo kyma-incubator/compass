@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
@@ -13,7 +15,7 @@ import (
 )
 
 type ResolveCredentialsStep struct {
-	operationManager *OperationManager
+	operationManager *process.ProvisionOperationManager
 	accountProvider  hyperscaler.AccountProvider
 	opStorage        storage.Operations
 	tenant           string
@@ -33,7 +35,7 @@ func getHyperscalerTypeForPlanID(planID string) (hyperscaler.HyperscalerType, er
 func NewResolveCredentialsStep(os storage.Operations, accountProvider hyperscaler.AccountProvider) *ResolveCredentialsStep {
 
 	return &ResolveCredentialsStep{
-		operationManager: NewOperationManager(os),
+		operationManager: process.NewProvisionOperationManager(os),
 		opStorage:        os,
 		accountProvider:  accountProvider,
 	}

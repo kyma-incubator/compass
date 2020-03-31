@@ -3,6 +3,8 @@ package provisioning
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -13,13 +15,13 @@ import (
 
 type ServiceManagerOverridesStep struct {
 	serviceManager   ServiceManagerOverrideConfig
-	operationManager *OperationManager
+	operationManager *process.ProvisionOperationManager
 }
 
 func NewServiceManagerOverridesStep(os storage.Operations, smOverride ServiceManagerOverrideConfig) *ServiceManagerOverridesStep {
 	return &ServiceManagerOverridesStep{
 		serviceManager:   smOverride,
-		operationManager: NewOperationManager(os),
+		operationManager: process.NewProvisionOperationManager(os),
 	}
 }
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -21,7 +23,7 @@ const (
 )
 
 type InitialisationStep struct {
-	operationManager  *OperationManager
+	operationManager  *process.DeprovisionOperationManager
 	operationStorage  storage.Provisioning
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
@@ -29,7 +31,7 @@ type InitialisationStep struct {
 
 func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:  NewOperationManager(os),
+		operationManager:  process.NewDeprovisionOperationManager(os),
 		operationStorage:  os,
 		instanceStorage:   is,
 		provisionerClient: pc,
@@ -41,6 +43,7 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	// rewrite necessary data from ProvisioningOperation to operation internal.DeprovisioningOperation
 	op, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {
 		log.Errorf("while getting provisioning operation from storage")
