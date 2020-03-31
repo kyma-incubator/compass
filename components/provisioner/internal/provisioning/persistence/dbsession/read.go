@@ -109,48 +109,28 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 	return cluster, nil
 }
 
-func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
-	var kymaConfig []struct {
-		ID                  string
-		KymaConfigID        string
-		GlobalConfiguration []byte
-		ReleaseID           string
-		Version             string
-		TillerYAML          string
-		InstallerYAML       string
-		Component           string
-		Namespace           string
-		SourceURL           string
-		Configuration       []byte
-		ComponentOrder      int
-		ClusterID           string
-	}
+type kymaComponentConfigDTO struct {
+	ID                  string
+	KymaConfigID        string
+	GlobalConfiguration []byte
+	ReleaseID           string
+	Version             string
+	TillerYAML          string
+	InstallerYAML       string
+	Component           string
+	Namespace           string
+	SourceURL           string
+	Configuration       []byte
+	ComponentOrder      int
+	ClusterID           string
+}
 
-	rowsCount, err := r.session.
-		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.global_configuration",
-			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.namespace",
-			"kyma_component_config.source_url", "kyma_component_config.configuration",
-			"kyma_component_config.component_order",
-			"cluster_id",
-			"kyma_release.version", "kyma_release.tiller_yaml", "kyma_release.installer_yaml").
-		From("cluster").
-		Join("kyma_config", "cluster.id=kyma_config.cluster_id").
-		Join("kyma_component_config", "kyma_config.id=kyma_component_config.kyma_config_id").
-		Join("kyma_release", "kyma_config.release_id=kyma_release.id").
-		Where(dbr.Eq("cluster.id", runtimeID)).
-		Load(&kymaConfig)
+type kymaConfigDTO []kymaComponentConfigDTO
 
-	if err != nil {
-		return model.KymaConfig{}, dberrors.Internal("Failed to get Kyma Config: %s", err)
-	}
-
-	if rowsCount == 0 {
-		return model.KymaConfig{}, dberrors.NotFound("Cannot find Kyma Config for runtimeID: %s", runtimeID)
-	}
-
+func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
 	kymaModulesOrdered := make(map[int][]model.KymaComponentConfig, 0)
 
-	for _, componentCfg := range kymaConfig {
+	for _, componentCfg := range c {
 		var configuration model.Configuration
 		err := json.Unmarshal(componentCfg.Configuration, &configuration)
 		if err != nil {
@@ -177,29 +157,57 @@ func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 	}
 	sort.Ints(keys)
 
-	orderedComponents := make([]model.KymaComponentConfig, 0, len(kymaConfig))
+	orderedComponents := make([]model.KymaComponentConfig, 0, len(c))
 	for _, k := range keys {
 		orderedComponents = append(orderedComponents, kymaModulesOrdered[k]...)
 	}
 
 	var globalConfiguration model.Configuration
-	err = json.Unmarshal(kymaConfig[0].GlobalConfiguration, &globalConfiguration)
+	err := json.Unmarshal(c[0].GlobalConfiguration, &globalConfiguration)
 	if err != nil {
 		return model.KymaConfig{}, dberrors.Internal("Failed to unmarshal global configuration: %s", err.Error())
 	}
 
 	return model.KymaConfig{
-		ID: kymaConfig[0].KymaConfigID,
+		ID: c[0].KymaConfigID,
 		Release: model.Release{
-			Id:            kymaConfig[0].ReleaseID,
-			Version:       kymaConfig[0].Version,
-			TillerYAML:    kymaConfig[0].TillerYAML,
-			InstallerYAML: kymaConfig[0].InstallerYAML,
+			Id:            c[0].ReleaseID,
+			Version:       c[0].Version,
+			TillerYAML:    c[0].TillerYAML,
+			InstallerYAML: c[0].InstallerYAML,
 		},
 		Components:          orderedComponents,
 		GlobalConfiguration: globalConfiguration,
 		ClusterID:           runtimeID,
 	}, nil
+}
+
+func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
+	var kymaConfig kymaConfigDTO
+
+	rowsCount, err := r.session.
+		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.global_configuration",
+			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.namespace",
+			"kyma_component_config.source_url", "kyma_component_config.configuration",
+			"kyma_component_config.component_order",
+			"cluster_id",
+			"kyma_release.version", "kyma_release.tiller_yaml", "kyma_release.installer_yaml").
+		From("cluster").
+		Join("kyma_config", "cluster.id=kyma_config.cluster_id").
+		Join("kyma_component_config", "kyma_config.id=kyma_component_config.kyma_config_id").
+		Join("kyma_release", "kyma_config.release_id=kyma_release.id").
+		Where(dbr.Eq("cluster.id", runtimeID)).
+		Load(&kymaConfig)
+
+	if err != nil {
+		return model.KymaConfig{}, dberrors.Internal("Failed to get Kyma Config: %s", err)
+	}
+
+	if rowsCount == 0 {
+		return model.KymaConfig{}, dberrors.NotFound("Cannot find Kyma Config for runtimeID: %s", runtimeID)
+	}
+
+	return kymaConfig.parseToKymaConfig(runtimeID)
 }
 
 type gardenerConfigRead struct {
