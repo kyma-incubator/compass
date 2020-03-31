@@ -364,3 +364,29 @@ func unmarshalJSONSchema(t *testing.T, schema *graphql.JSONSchema) interface{} {
 
 	return output
 }
+
+func assertAutomaticScenarioAssignment(t *testing.T, expected graphql.AutomaticScenarioAssignmentSetInput, actual graphql.AutomaticScenarioAssignment) {
+	assert.Equal(t, expected.ScenarioName, actual.ScenarioName)
+	require.NotNil(t, actual.Selector)
+	require.NotNil(t, expected.Selector)
+	assert.Equal(t, expected.Selector.Value, actual.Selector.Value)
+	assert.Equal(t, expected.Selector.Key, actual.Selector.Key)
+}
+
+func assertAutomaticScenarioAssignments(t *testing.T, expected []graphql.AutomaticScenarioAssignmentSetInput, actual []*graphql.AutomaticScenarioAssignment) {
+	assert.Equal(t, len(expected), len(actual))
+	for _, expectedAssignment := range expected {
+		found := false
+		for _, actualAssignment := range actual {
+			if actualAssignment == nil {
+				continue
+			}
+			if expectedAssignment.ScenarioName == actualAssignment.ScenarioName {
+				found = true
+				assertAutomaticScenarioAssignment(t, expectedAssignment, *actualAssignment)
+				break
+			}
+		}
+		assert.True(t, found)
+	}
+}

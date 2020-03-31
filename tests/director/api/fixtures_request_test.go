@@ -814,3 +814,53 @@ func fixDeleteDefaultEventingForApplication(appID string) *gcli.Request {
 				}`,
 			appID, tc.gqlFieldsProvider.ForEventingConfiguration()))
 }
+
+func fixSetAutomaticScenarioAssignmentRequest(automaticScenarioAssignmentInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: setAutomaticScenarioAssignment(in: %s) {
+						%s
+					}
+				}`,
+			automaticScenarioAssignmentInput, tc.gqlFieldsProvider.ForAutomaticScenarioAssignment()))
+}
+
+func fixAutomaticScenarioAssignmentsRequest() *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: automaticScenarioAssignments {
+						%s
+					}
+				}`,
+			tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForAutomaticScenarioAssignment())))
+}
+
+func fixAutomaticScenarioAssignmentForSelectorRequest(labelSelectorInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: automaticScenarioAssignmentForSelector(selector: %s) {
+						%s
+					}
+				}`,
+			labelSelectorInput, tc.gqlFieldsProvider.ForAutomaticScenarioAssignment()))
+}
+
+func fixAutomaticScenarioAssignmentForScenarioRequest(scenarioName string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: automaticScenarioAssignmentForScenario(scenarioName: "%s") {
+						%s
+					}
+				}`,
+			scenarioName, tc.gqlFieldsProvider.ForAutomaticScenarioAssignment()))
+}
+
+func fixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenarioName string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+            result: deleteAutomaticScenarioAssignmentForScenario(scenarioName: "%s") {
+                  %s
+               }
+            }`,
+			scenarioName, tc.gqlFieldsProvider.ForAutomaticScenarioAssignment()))
+}

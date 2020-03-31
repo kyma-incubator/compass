@@ -74,6 +74,13 @@ func (mgr *TestTenantsManager) InitializeDB(transact persistence.Transactioner) 
 			ProviderName:   testProvider,
 			Status:         Active,
 		},
+		"ASA1": {
+			ID:             "8263cc13-5698-4a2d-9257-e8e76b543e88",
+			Name:           "ASA1",
+			ExternalTenant: "8263cc13-5698-4a2d-9257-e8e76b543e88",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
 	}
 
 	tx, err := transact.Begin()
