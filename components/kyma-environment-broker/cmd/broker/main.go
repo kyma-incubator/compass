@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-
 	"log"
 	"net/http"
 	"os"
@@ -85,12 +83,12 @@ func main() {
 	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.DEBUG))
 	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.ERROR))
 
-	logger.Info("Registering healthz endpoint for health probes")
-	go health.NewHandler(fmt.Sprintf("%s:%s", cfg.Host, cfg.StatusPort)).Handle()
-
 	logger.Info("Starting Kyma Environment Broker")
 
 	logs := logrus.New()
+
+	logger.Info("Registering healthz endpoint for health probes")
+	health.NewServer(cfg.Host, cfg.StatusPort, logs).ServeAsync()
 
 	// create provisioner client
 	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
