@@ -439,6 +439,19 @@ func fixPackageInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *
 	return authCtx, inputParams
 }
 
+func createScenariosLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, tenantID string, scenarios []string) *graphql.LabelDefinition {
+	jsonSchema := map[string]interface{}{
+		"items": map[string]interface{}{
+			"enum": scenarios,
+			"type": "string",
+		},
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+	}
+	return createLabelDefinitionWithinTenant(t, ctx, "scenarios", jsonSchema, tenantID)
+}
+
 func setAutomaticScenarioAssignmentFromInputWithinTenant(t *testing.T, ctx context.Context, input graphql.AutomaticScenarioAssignmentSetInput, tenantID string) graphql.AutomaticScenarioAssignment {
 	inStr, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(input)
 	require.NoError(t, err)

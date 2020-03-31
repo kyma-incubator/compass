@@ -2,7 +2,7 @@
 mutation {
   result: setAutomaticScenarioAssignment(
     in: {
-      scenarioName: "Test1"
+      scenarioName: "test-scenario"
       selector: { key: "test-key", value: "test-value" }
     }
   ) {

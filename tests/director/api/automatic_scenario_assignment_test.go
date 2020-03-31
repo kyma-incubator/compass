@@ -86,31 +86,34 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 )
 
 func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
-	defaultValue := "DEFAULT"
-	scenario1 := "Test1"
-	scenario2 := "Test2"
-	scenarios := []string{defaultValue, scenario1, scenario2}
 	ctx := context.Background()
+
+	defaultValue := "DEFAULT"
+	scenario1 := "test-scenario"
+	scenario2 := "test-scenario-2"
+	selector := &graphql.LabelSelectorInput{
+		Value: "test-value",
+		Key:   "test-key",
+	}
+
+	scenarios := []string{defaultValue, scenario1, scenario2}
 	tenantID := testTenants.GetIDByName(t, "TestDeleteAssignmentsForScenario")
 	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, scenarios)
 
-	assignment1 := graphql.AutomaticScenarioAssignmentSetInput{ScenarioName: scenario1,
-		Selector: &graphql.LabelSelectorInput{
-			Value: "test-value",
-			Key:   "test-key",
-		},
+	assignment1 := graphql.AutomaticScenarioAssignmentSetInput{
+		ScenarioName: scenario1,
+		Selector:     selector,
 	}
-	assignment2 := graphql.AutomaticScenarioAssignmentSetInput{ScenarioName: scenario2,
-		Selector: &graphql.LabelSelectorInput{
-			Value: "test-value",
-			Key:   "test-key",
-		},
+	assignment2 := graphql.AutomaticScenarioAssignmentSetInput{
+		ScenarioName: scenario2,
+		Selector:     selector,
 	}
 
 	var output graphql.AutomaticScenarioAssignment
 
 	assignment1Gql, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(assignment1)
 	require.NoError(t, err)
+
 	req := fixSetAutomaticScenarioAssignmentRequest(assignment1Gql)
 	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, nil)
 	require.NoError(t, err)
@@ -133,11 +136,13 @@ func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 }
 
 func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
-	defaultValue := "DEFAULT"
-	scenario1 := "Test1"
-	scenario2 := "Test2"
-	scenarios := []string{defaultValue, scenario1, scenario2}
 	ctx := context.Background()
+	defaultValue := "DEFAULT"
+	scenario1 := "test-scenario"
+	scenario2 := "test-scenario-2"
+
+	scenarios := []string{defaultValue, scenario1, scenario2}
+
 	tenantID := testTenants.GetIDByName(t, "TestDeleteAssignmentsForSelector")
 	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, scenarios)
 
@@ -172,17 +177,4 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 	saveExample(t, req.Query(), "delete automatic scenario assignment for selector")
 
-}
-
-func createScenariosLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, tenantID string, scenarios []string) *graphql.LabelDefinition {
-	jsonSchema := map[string]interface{}{
-		"items": map[string]interface{}{
-			"enum": scenarios,
-			"type": "string",
-		},
-		"type":        "array",
-		"minItems":    1,
-		"uniqueItems": true,
-	}
-	return createLabelDefinitionWithinTenant(t, ctx, "scenarios", jsonSchema, tenantID)
 }
