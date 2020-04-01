@@ -94,7 +94,7 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, c
 }
 
 func generateNameAndDescription(globalAccountId string, subAccountId string, name string, definitionType string, instanceId string, beType string) (string, string) {
-	beName := fmt.Sprintf("%s_%s_%s_%s", name, globalAccountId, subAccountId, beType)
+	beName := fmt.Sprintf("K8S-Azure-Kyma-%s-%s-%s_%s", name, globalAccountId, subAccountId, beType)
 	beDescription := fmt.Sprintf("%s %s evaluation for SAP Kyma Runtime for Global Account [%s], Subaccount [%s], instance name [%s] and instance id [%s]",
 		definitionType, beType, globalAccountId, subAccountId, name, instanceId)
 	return beName, beDescription
