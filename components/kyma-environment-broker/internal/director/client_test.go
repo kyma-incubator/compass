@@ -88,7 +88,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 			arg.Result = graphql.RuntimeExt{
 				Runtime: graphql.Runtime{
 					Status: &graphql.RuntimeStatus{
-						Condition: graphql.RuntimeStatusConditionReady,
+						Condition: graphql.RuntimeStatusConditionConnected,
 					},
 				},
 				Labels: map[string]interface{}{
@@ -184,7 +184,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 			arg.Result = graphql.RuntimeExt{
 				Runtime: graphql.Runtime{
 					Status: &graphql.RuntimeStatus{
-						Condition: graphql.RuntimeStatusConditionReady,
+						Condition: graphql.RuntimeStatusConditionConnected,
 					},
 				},
 				Labels: map[string]interface{}{
@@ -221,7 +221,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 			arg.Result = graphql.RuntimeExt{
 				Runtime: graphql.Runtime{
 					Status: &graphql.RuntimeStatus{
-						Condition: graphql.RuntimeStatusConditionReady,
+						Condition: graphql.RuntimeStatusConditionConnected,
 					},
 				},
 				Labels: map[string]interface{}{
@@ -258,7 +258,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 			arg.Result = graphql.RuntimeExt{
 				Runtime: graphql.Runtime{
 					Status: &graphql.RuntimeStatus{
-						Condition: graphql.RuntimeStatusConditionReady,
+						Condition: graphql.RuntimeStatusConditionConnected,
 					},
 				},
 				Labels: map[string]interface{}{
