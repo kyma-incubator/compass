@@ -1,9 +1,10 @@
 package config
 
 import (
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/healthz"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
