@@ -5,10 +5,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
