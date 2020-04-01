@@ -22,10 +22,10 @@ type Converter interface {
 type Service interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
-	GetForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error)
+	ListForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
-	DeleteForSelector(ctx context.Context, selector model.LabelSelector) error
-	DeleteForScenarioName(ctx context.Context, scenarioName string) error
+	DeleteManyForSameSelector(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
+	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
 // TODO: Change order of params: Service before Converter
@@ -104,7 +104,7 @@ func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, i
 
 	modelInput := r.converter.LabelSelectorFromInput(in)
 
-	assignments, err := r.svc.GetForSelector(ctx, modelInput)
+	assignments, err := r.svc.ListForSelector(ctx, modelInput)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting the assignments")
 	}
@@ -168,12 +168,12 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Cont
 
 	selector := r.converter.LabelSelectorFromInput(in)
 
-	assignments, err := r.svc.GetForSelector(ctx, selector)
+	assignments, err := r.svc.ListForSelector(ctx, selector)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting the Assignments for selector [%v]", selector)
 	}
 
-	err = r.svc.DeleteForSelector(ctx, selector)
+	err = r.svc.DeleteManyForSameSelector(ctx, assignments)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while deleting the Assignments for selector [%v]", selector)
 	}
@@ -195,12 +195,12 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Cont
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	model, err := r.svc.GetForScenarioName(ctx, scenarioName)
+	assignment, err := r.svc.GetForScenarioName(ctx, scenarioName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting the Assignment for scenario [name=%s]", scenarioName)
 	}
 
-	err = r.svc.DeleteForScenarioName(ctx, scenarioName)
+	err = r.svc.Delete(ctx, assignment)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while deleting the Assignment for scenario [name=%s]", scenarioName)
 	}
@@ -210,7 +210,7 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Cont
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	gql := r.converter.ToGraphQL(model)
+	gql := r.converter.ToGraphQL(assignment)
 
 	return &gql, nil
 }

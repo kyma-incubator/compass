@@ -216,7 +216,7 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector()).Return(expectedModels, nil).Once()
+		mockSvc.On("ListForSelector", mock.Anything, fixLabelSelector()).Return(expectedModels, nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
@@ -248,7 +248,7 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector()).Return(nil, fixError()).Once()
+		mockSvc.On("ListForSelector", mock.Anything, fixLabelSelector()).Return(nil, fixError()).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
@@ -270,7 +270,7 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector()).Return(expectedModels, nil).Once()
+		mockSvc.On("ListForSelector", mock.Anything, fixLabelSelector()).Return(expectedModels, nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
@@ -406,16 +406,18 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 		Value: "value",
 	}
 
+	scenarioNameA := "scenario-A"
+	scenarioNameB := "scenario-B"
 	expectedModels := []*model.AutomaticScenarioAssignment{
 		{
-			ScenarioName: "scenario-A",
+			ScenarioName: scenarioNameA,
 			Selector: model.LabelSelector{
 				Key:   "key",
 				Value: "value",
 			},
 		},
 		{
-			ScenarioName: "scenario-B",
+			ScenarioName: scenarioNameB,
 			Selector: model.LabelSelector{
 				Key:   "key",
 				Value: "value",
@@ -425,14 +427,14 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 	expectedOutput := []*graphql.AutomaticScenarioAssignment{
 		{
-			ScenarioName: "scenario-A",
+			ScenarioName: scenarioNameA,
 			Selector: &graphql.Label{
 				Key:   "key",
 				Value: "value",
 			},
 		},
 		{
-			ScenarioName: "scenario-B",
+			ScenarioName: scenarioNameB,
 			Selector: &graphql.Label{
 				Key:   "key",
 				Value: "value",
@@ -452,8 +454,8 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(expectedModels, nil).Once()
-		mockSvc.On("DeleteForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(nil).Once()
+		mockSvc.On("ListForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(expectedModels, nil).Once()
+		mockSvc.On("DeleteManyForSameSelector", txtest.CtxWithDBMatcher(), expectedModels).Return(nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
@@ -486,7 +488,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(nil, fixError()).Once()
+		mockSvc.On("ListForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(nil, fixError()).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
@@ -507,8 +509,8 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(expectedModels, nil).Once()
-		mockSvc.On("DeleteForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(fixError()).Once()
+		mockSvc.On("ListForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(expectedModels, nil).Once()
+		mockSvc.On("DeleteManyForSameSelector", txtest.CtxWithDBMatcher(), expectedModels).Return(fixError()).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
@@ -529,8 +531,8 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(expectedModels, nil).Once()
-		mockSvc.On("DeleteForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(nil).Once()
+		mockSvc.On("ListForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(expectedModels, nil).Once()
+		mockSvc.On("DeleteManyForSameSelector", txtest.CtxWithDBMatcher(), expectedModels).Return(nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
@@ -558,7 +560,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(expectedModel, nil).Once()
-		mockSvc.On("DeleteForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(nil).Once()
+		mockSvc.On("Delete", txtest.CtxWithDBMatcher(), expectedModel).Return(nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
@@ -607,7 +609,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(expectedModel, nil).Once()
-		mockSvc.On("DeleteForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(fixError()).Once()
+		mockSvc.On("Delete", txtest.CtxWithDBMatcher(), expectedModel).Return(fixError()).Once()
 
 		sut := scenarioassignment.NewResolver(transact, nil, mockSvc)
 
@@ -625,7 +627,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(expectedModel, nil).Once()
-		mockSvc.On("DeleteForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(nil).Once()
+		mockSvc.On("Delete", txtest.CtxWithDBMatcher(), expectedModel).Return(nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, nil, mockSvc)
 

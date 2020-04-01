@@ -54,7 +54,7 @@ func (r *repository) Create(ctx context.Context, model model.AutomaticScenarioAs
 	return r.creator.Create(ctx, entity)
 }
 
-func (r *repository) GetForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error) {
+func (r *repository) ListForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error) {
 	var out EntityCollection
 
 	conditionKey := fmt.Sprintf("%s = %s", selectorKeyColumn, pq.QuoteLiteral(in.Key))
