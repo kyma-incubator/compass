@@ -1,25 +1,25 @@
-# Configure Runtime provisioning
+# Configure Runtime deprovisioning
 
-You can configure Runtime provisioning process by providing additional input objects in the form of overrides. For example, you may want to provide tokens/credentials/URLs to integrate Kyma Runtime with external systems. 
+The operation of deprovisioning a Runtime consists of several steps. Each step is represented by a file that is responsible for a separate part of cleaning Runtime dependencies. 
 
-The operation of provisioning a Runtime consists of several steps. Each step is represented by a file that is responsible for a separate part of preparing Runtime parameters. All data collected in steps are used in the step called [`create_runtime`](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
+All the necessary data required to properly deprovision runtime's dependencies can be fetched from the `ProvisioningOperation` in the [initialisation](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/deprovisioning/initialisation.go#L46) step.
 
 In case of a processing failure, every step can be re-launched multiple times. That is why, for each step you should determine a behavior in case of a processing failure. It can either:
-- Return an error, which interrupts the entire provisioning process, or 
+- Return an error, which interrupts the entire deprovisioning process, or 
 - Repeat the entire operation after the specified period. 
 
-## Add provisioning step
+## Add deprovisioning step
 
-To add a new provisioning step, follow these steps:
+To add a new deprovisioning step, follow these steps:
 
-1. Create a new file in [this](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/provisioning) directory. 
+1. Create a new file in [this](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/deprovisioning) directory. 
 
-2. Implement this interface in your provisioning step:
+2. Implement this interface in your deprovisioning step:
 
     ```go
     type Step interface {
         Name() string
-        Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error)
+        Run(operation internal.DeprovisioningOperation, logger logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error)
     }
     ```
 
@@ -42,20 +42,13 @@ To add a new provisioning step, follow these steps:
     ```
 
     If your functionality contains long-term processes, you can store data in the storage.
-    To do this, add this field to the provisioning operation in which you want to save data:
+    To do this, add this field to the deprovisioning operation in which you want to save data:
 
     ```go
-    type ProvisioningOperation struct {
+    type DeprovisioningOperation struct {
         Operation `json:"-"`
-    
-        // These fields are serialized to JSON and stored in the storage
-        LmsTenantID            string `json:"lms_tenant_id"`
-        ProvisioningParameters string `json:"provisioning_parameters"`
-    
-        NewFieldFromCustomStep string `json:"new_field_from_custom_step"`    
-    
-        // These fields are not stored in the storage
-        InputCreator ProvisionInputCreator `json:"-"`
+        
+        // add additional data here
     }
     ```
 
@@ -64,7 +57,7 @@ To add a new provisioning step, follow these steps:
     See the example of the step implementation:
 
     ```go
-    package provisioning
+    package deprovisioning
     
     import (
         "encoding/json"
@@ -100,7 +93,7 @@ To add a new provisioning step, follow these steps:
     }
     
     // Your step can be repeated in case any other step fails, even if your step has already done its job
-    func (s *HelloWorldStep) Run(operation internal.ProvisioningOperation, log *logrus.Entry) (internal.ProvisioningOperation, time.Duration, error) {
+    func (s *HelloWorldStep) Run(operation internal.DeprovisioningOperation, log *logrus.Entry) (internal.DeprovisioningOperation, time.Duration, error) {
         log.Info("Start step")
    
         // Check whether your step should be run or if its job has been done in the previous iteration
@@ -125,16 +118,16 @@ To add a new provisioning step, follow these steps:
         }
     
         // If a call or any other action is time-consuming, you can save the result in the operation
-        // If you need an extra field in the ProvisioningOperation structure, add it first
+        // If you need an extra field in the DeprovisioningOperation structure, add it first
         // in the step below; beforehand, you can check if a given value already exists in the operation
         operation.HelloWorlds = body.data
-        updatedOperation, err := s.operationStorage.UpdateProvisioningOperation(operation)
+        updatedOperation, err := s.operationStorage.UpdateDeprovisioningOperation(operation)
         if err != nil {
             log.Errorf("error: %s", err)
             // Handle a process failure by returning an error or time.Duration
         }
     
-        // If your step finishes with data which should be added to override used during the Runtime provisioning,
+        // If your step finishes with data which should be added to override used during the Runtime deprovisioning,
         // add an extra value to operation.InputCreator, then return the updated version of the Application
         updatedOperation.InputCreator.SetOverrides("component-name", []*gqlschema.ConfigEntryInput{
             {
@@ -151,15 +144,15 @@ To add a new provisioning step, follow these steps:
 3. Add the step to the [`/cmd/broker/main.go`](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/cmd/broker/main.go) file:
 
     ```go
-    provisioningSteps := []struct {
+    deprovisioningSteps := []struct {
    		weight   int
-   		step     provisioning.Step
+   		step     deprovisioning.Step
    	}{
    		{
    			weight: 1,
-   			step:   provisioning.NewHelloWorldStep(db.Operations(), &http.Client{}),
+   			step:   deprovisioning.NewHelloWorldStep(db.Operations(), &http.Client{}),
    		},
     }
     ```
 
-    The weight of the step should be greater than or equal to 1. If you want the step to be performed before a call to the Runtime Provisioner, its weight must be lower than `create_runtime` step.
+    The weight of the step should be greater than or equal to 1. If you want the step to be performed before a call to the Runtime Provisioner, its weight must be lower than `remove_runtime` step.
