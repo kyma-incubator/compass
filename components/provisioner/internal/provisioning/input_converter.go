@@ -173,16 +173,17 @@ func (c converter) kymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 	var components []model.KymaComponentConfig
 	kymaConfigID := c.uuidGenerator.New()
 
-	for _, component := range input.Components {
+	for i, component := range input.Components {
 		id := c.uuidGenerator.New()
 
 		kymaConfigModule := model.KymaComponentConfig{
-			ID:            id,
-			Component:     model.KymaComponent(component.Component),
-			Namespace:     component.Namespace,
-			SourceURL:     sourceURLFromInput(component.SourceURL),
-			Configuration: c.configurationFromInput(component.Configuration),
-			KymaConfigID:  kymaConfigID,
+			ID:             id,
+			Component:      model.KymaComponent(component.Component),
+			Namespace:      component.Namespace,
+			SourceURL:      sourceURLFromInput(component.SourceURL),
+			Configuration:  c.configurationFromInput(component.Configuration),
+			ComponentOrder: i + 1,
+			KymaConfigID:   kymaConfigID,
 		}
 
 		components = append(components, kymaConfigModule)

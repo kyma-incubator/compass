@@ -11,6 +11,8 @@ import (
 type BrokerStorage interface {
 	Instances() Instances
 	Operations() Operations
+	Provisioning() Provisioning
+	Deprovisioning() Deprovisioning
 	LMSTenants() LMSTenants
 }
 
@@ -54,6 +56,14 @@ func (s storage) Instances() Instances {
 }
 
 func (s storage) Operations() Operations {
+	return s.operation
+}
+
+func (s storage) Provisioning() Provisioning {
+	return s.operation
+}
+
+func (s storage) Deprovisioning() Deprovisioning {
 	return s.operation
 }
 

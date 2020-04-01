@@ -1,4 +1,4 @@
-package process
+package deprovisioning
 
 import (
 	"sort"
@@ -13,7 +13,7 @@ import (
 
 type Step interface {
 	Name() string
-	Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error)
+	Run(operation internal.DeprovisioningOperation, logger logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error)
 }
 
 type Manager struct {
@@ -42,14 +42,14 @@ func (m *Manager) AddStep(weight int, step Step) {
 }
 
 func (m *Manager) Execute(operationID string) (time.Duration, error) {
-	operation, err := m.operationStorage.GetProvisioningOperationByID(operationID)
+	op, err := m.operationStorage.GetDeprovisioningOperationByID(operationID)
 	if err != nil {
 		m.log.Errorf("Cannot fetch operation from storage: %s", err)
 		return 3 * time.Second, nil
 	}
+	operation := *op
 
 	var when time.Duration
-	processedOperation := *operation
 	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID})
 
 	logOperation.Info("Start process operation steps")
@@ -59,13 +59,13 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 			logStep := logOperation.WithField("step", step.Name())
 			logStep.Infof("Start step")
 
-			processedOperation, when, err = step.Run(processedOperation, logStep)
+			operation, when, err = step.Run(operation, logStep)
 			if err != nil {
 				logStep.Errorf("Process operation failed: %s", err)
 				return 0, err
 			}
-			if processedOperation.State != domain.InProgress {
-				logrus.Infof("Operation %q got status %s. Process finished.", operation.ID, processedOperation.State)
+			if operation.State != domain.InProgress {
+				logStep.Infof("Operation %q got status %s. Process finished.", operation.ID, operation.State)
 				return 0, nil
 			}
 			if when == 0 {
@@ -78,7 +78,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 		}
 	}
 
-	logrus.Infof("Operation %q got status %s. Process finished.", operation.ID, processedOperation.State)
+	logrus.Infof("Operation %q got status %s. Process finished.", operation.ID, operation.State)
 	return 0, nil
 }
 

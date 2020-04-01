@@ -145,7 +145,7 @@ func TestRepository_GetForSelector(t *testing.T) {
 		repo := scenarioassignment.NewRepository(mockConverter)
 
 		// WHEN
-		result, err := repo.GetForSelector(ctx, fixLabelSelector(), tenantID)
+		result, err := repo.ListForSelector(ctx, fixLabelSelector(), tenantID)
 
 		// THEN
 		assert.NoError(t, err)
@@ -165,7 +165,7 @@ func TestRepository_GetForSelector(t *testing.T) {
 		repo := scenarioassignment.NewRepository(nil)
 
 		// WHEN
-		result, err := repo.GetForSelector(ctx, fixLabelSelector(), tenantID)
+		result, err := repo.ListForSelector(ctx, fixLabelSelector(), tenantID)
 
 		// THEN
 		require.EqualError(t, err, "while getting automatic scenario assignments from db: while fetching list of objects from DB: some error")

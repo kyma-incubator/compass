@@ -1,4 +1,4 @@
-package process
+package provisioning
 
 import (
 	"fmt"
@@ -73,7 +73,7 @@ func TestManager_Execute(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.expectedRepeat, repeat)
 
-				operation, err := memoryStorage.Operations().GetOperation(tc.operationID)
+				operation, err := memoryStorage.Operations().GetOperationByID(tc.operationID)
 				assert.NoError(t, err)
 				assert.Equal(t, tc.expectedDesc, strings.Trim(operation.Description, " "))
 			}

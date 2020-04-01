@@ -10,13 +10,13 @@ type ScenariosDefService struct {
 	mock.Mock
 }
 
-// EnsureScenariosLabelDefinitionExists provides a mock function with given fields: ctx, tenant
-func (_m *ScenariosDefService) EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error {
-	ret := _m.Called(ctx, tenant)
+// EnsureScenariosLabelDefinitionExists provides a mock function with given fields: ctx, tenantID
+func (_m *ScenariosDefService) EnsureScenariosLabelDefinitionExists(ctx context.Context, tenantID string) error {
+	ret := _m.Called(ctx, tenantID)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, tenant)
+		r0 = rf(ctx, tenantID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -24,13 +24,13 @@ func (_m *ScenariosDefService) EnsureScenariosLabelDefinitionExists(ctx context.
 	return r0
 }
 
-// GetAvailableScenarios provides a mock function with given fields: ctx, tenant
-func (_m *ScenariosDefService) GetAvailableScenarios(ctx context.Context, tenant string) ([]string, error) {
-	ret := _m.Called(ctx, tenant)
+// GetAvailableScenarios provides a mock function with given fields: ctx, tenantID
+func (_m *ScenariosDefService) GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
+	ret := _m.Called(ctx, tenantID)
 
 	var r0 []string
 	if rf, ok := ret.Get(0).(func(context.Context, string) []string); ok {
-		r0 = rf(ctx, tenant)
+		r0 = rf(ctx, tenantID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
@@ -39,7 +39,7 @@ func (_m *ScenariosDefService) GetAvailableScenarios(ctx context.Context, tenant
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, tenant)
+		r1 = rf(ctx, tenantID)
 	} else {
 		r1 = ret.Error(1)
 	}

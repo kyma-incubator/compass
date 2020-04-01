@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provider"
 )
 
 func GetConfig(clientID, clientSecret, tenantID, subscriptionID, location string) (*Config, error) {
@@ -43,8 +44,8 @@ func mapRegion(credentials hyperscaler.Credentials, parameters internal.Provisio
 	if credentials.HyperscalerType != hyperscaler.Azure {
 		return "", fmt.Errorf("cannot use credential for hyperscaler of type %v on hyperscaler of type %v", credentials.HyperscalerType, hyperscaler.Azure)
 	}
-	if parameters.Parameters.Region == nil {
-		return "", fmt.Errorf("parameters region is nil")
+	if parameters.Parameters.Region == nil || *(parameters.Parameters.Region) == "" {
+		return provider.DefaultAzureRegion, nil
 	}
 	region := *(parameters.Parameters.Region)
 	switch parameters.PlanID {
