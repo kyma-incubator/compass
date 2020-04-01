@@ -10,6 +10,10 @@ deployment:
   dbPool:
     maxOpenConnections: 30
     maxIdleConnections: 2
+  liveness:
+    initialDelaySeconds: 50
+    timeoutSeconds: 1
+    periodSeconds: 10
 
 staticGroupNames:
   - "mps-superadmin"

@@ -93,7 +93,9 @@ spec:
               httpGet:
                   port: {{.Values.deployment.args.containerPort }}
                   path: "/healthz"
-              initialDelaySeconds: 30
+              initialDelaySeconds: {{ .Values.deployment.liveness.initialDelaySeconds }}
+              timeoutSeconds: {{ .Values.deployment.liveness.timeoutSeconds }}
+              periodSeconds: {{.Values.deployment.liveness.periodSeconds }}
           volumeMounts:
             - mountPath: /config
               name: director-config
