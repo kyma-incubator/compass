@@ -7,6 +7,7 @@ import (
 	"path"
 	"testing"
 
+	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
@@ -48,12 +49,12 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 			installerYAML := readKymaInstallerClusterYAMLFromFile(t)
 			fakeHTTPClient := newTestClient(t, installerYAML, http.StatusOK)
 
-			listProvider := runtime.NewComponentsListProvider(tc.given.kymaVersion, tc.given.managedRuntimeComponentsYAMLPath).WithHTTPClient(fakeHTTPClient)
+			listProvider := runtime.NewComponentsListProvider(tc.given.managedRuntimeComponentsYAMLPath).WithHTTPClient(fakeHTTPClient)
 
 			expManagedComponents := readManagedComponentsFromFile(t, tc.given.managedRuntimeComponentsYAMLPath)
 
 			// when
-			allComponents, err := listProvider.AllComponents()
+			allComponents, err := listProvider.AllComponents(tc.given.kymaVersion)
 
 			// then
 			require.NoError(t, err)
@@ -72,9 +73,11 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 		httpErrMessage                   string
 	}
 	tests := []struct {
-		name          string
-		given         given
-		expErrMessage string
+		name             string
+		given            given
+		returnStatusCode int
+		tempError        bool
+		expErrMessage    string
 	}{
 		{
 			name: "Provide release version not found",
@@ -83,7 +86,9 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
 				httpErrMessage:                   "Not Found",
 			},
-			expErrMessage: "while getting open source Kyma components list: got unexpected status code, want 200, got 404, url: https://github.com/kyma-project/kyma/releases/download/111.000.111/kyma-installer-cluster.yaml, body: Not Found",
+			returnStatusCode: http.StatusNotFound,
+			tempError:        false,
+			expErrMessage:    "while getting open source kyma components: while checking response status code for Kyma components list: got unexpected status code, want 200, got 404, url: https://github.com/kyma-project/kyma/releases/download/111.000.111/kyma-installer-cluster.yaml, body: Not Found",
 		},
 		{
 			name: "Provide on-demand version not found",
@@ -92,23 +97,37 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
 				httpErrMessage:                   "Not Found",
 			},
-			expErrMessage: "while getting open source Kyma components list: got unexpected status code, want 200, got 404, url: https://storage.googleapis.com/kyma-development-artifacts/master-123123/kyma-installer-cluster.yaml, body: Not Found",
+			returnStatusCode: http.StatusNotFound,
+			tempError:        false,
+			expErrMessage:    "while getting open source kyma components: while checking response status code for Kyma components list: got unexpected status code, want 200, got 404, url: https://storage.googleapis.com/kyma-development-artifacts/master-123123/kyma-installer-cluster.yaml, body: Not Found",
+		},
+		{
+			name: "Provide on-demand version not found, temporary server error",
+			given: given{
+				kymaVersion:                      "master-123123",
+				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
+				httpErrMessage:                   "Internal Server Error",
+			},
+			returnStatusCode: http.StatusInternalServerError,
+			tempError:        true,
+			expErrMessage:    "while getting open source kyma components: while checking response status code for Kyma components list: got unexpected status code, want 200, got 500, url: https://storage.googleapis.com/kyma-development-artifacts/master-123123/kyma-installer-cluster.yaml, body: Internal Server Error",
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			fakeHTTPClient := newTestClient(t, tc.given.httpErrMessage, http.StatusNotFound)
+			fakeHTTPClient := newTestClient(t, tc.given.httpErrMessage, tc.returnStatusCode)
 
-			listProvider := runtime.NewComponentsListProvider(tc.given.kymaVersion, tc.given.managedRuntimeComponentsYAMLPath).
+			listProvider := runtime.NewComponentsListProvider(tc.given.managedRuntimeComponentsYAMLPath).
 				WithHTTPClient(fakeHTTPClient)
 
 			// when
-			components, err := listProvider.AllComponents()
+			components, err := listProvider.AllComponents(tc.given.kymaVersion)
 
 			// then
 			assert.Nil(t, components)
 			assert.EqualError(t, err, tc.expErrMessage)
+			assert.Equal(t, tc.tempError, kebError.IsTemporaryError(err))
 		})
 	}
 }

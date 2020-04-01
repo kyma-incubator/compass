@@ -36,11 +36,12 @@ type ProvisionEndpoint struct {
 	builderFactory       PlanValidator
 	enabledPlanIDs       map[string]struct{}
 	plansSchemaValidator PlansSchemaValidator
+	kymaVerOnDemand      bool
 
 	log logrus.FieldLogger
 }
 
-func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory PlanValidator, validator PlansSchemaValidator, log logrus.FieldLogger) *ProvisionEndpoint {
+func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory PlanValidator, validator PlansSchemaValidator, kvod bool, log logrus.FieldLogger) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
 		id := planIDsMapping[planName]
@@ -54,6 +55,7 @@ func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, bui
 		builderFactory:       builderFactory,
 		log:                  log.WithField("service", "ProvisionEndpoint"),
 		enabledPlanIDs:       enabledPlanIDs,
+		kymaVerOnDemand:      kvod,
 	}
 }
 
@@ -64,7 +66,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	logger := b.log.WithField("instanceID", instanceID).WithField("operationID", operationID)
 	logger.Infof("Provision called: planID=%s", details.PlanID)
 	// validation of incoming input
-	ersContext, parameters, err := b.validateAndExtract(details)
+	ersContext, parameters, err := b.validateAndExtract(details, logger)
 	if err != nil {
 		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
@@ -111,7 +113,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}, nil
 }
 
-func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
+func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, logger logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
 	var ersContext internal.ERSContext
 	var parameters internal.ProvisioningParametersDTO
 
@@ -139,6 +141,11 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails) 
 	parameters, err = b.extractInputParameters(details)
 	if err != nil {
 		return ersContext, parameters, errors.Wrap(err, "while extracting input parameters")
+	}
+
+	if !b.kymaVerOnDemand && parameters.KymaVersion != "" {
+		logger.Infof("Kyma on demand functionality is disabled. Default Kyma version will be used instead %s", parameters.KymaVersion)
+		parameters.KymaVersion = ""
 	}
 
 	found := b.builderFactory.IsPlanSupport(details.PlanID)

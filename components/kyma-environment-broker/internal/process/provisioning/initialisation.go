@@ -5,10 +5,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
+	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -74,15 +73,27 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 
-	log.Infof("create input creator for %q plan ID", pp.PlanID)
-	creator, found := s.inputBuilder.ForPlan(pp.PlanID)
-	if !found {
-		log.Error("input creator does not exist")
-		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
+	var kymaVersion string
+	if pp.Parameters.KymaVersion == "" {
+		log.Info("input builder setting up to work with default Kyma version")
+	} else {
+		kymaVersion = pp.Parameters.KymaVersion
+		log.Infof("setting up input builder to work with %s Kyma version", kymaVersion)
 	}
 
-	operation.InputCreator = creator
-	return operation, 0, nil
+	log.Infof("create input creator for %q plan ID", pp.PlanID)
+	creator, err := s.inputBuilder.ForPlan(pp.PlanID, kymaVersion)
+	switch {
+	case err == nil:
+		operation.InputCreator = creator
+		return operation, 0, nil
+	case kebError.IsTemporaryError(err):
+		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", pp.PlanID, kymaVersion, err)
+		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+	default:
+		log.Errorf("cannot create input creator for plan %s: %s", pp.PlanID, err)
+		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
+	}
 }
 
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
@@ -132,7 +143,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 
 func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance) (time.Duration, error) {
 	dashboardURL, err := s.directorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
-	if director.IsTemporaryError(err) {
+	if kebError.IsTemporaryError(err) {
 		return 3 * time.Minute, nil
 	}
 	if err != nil {

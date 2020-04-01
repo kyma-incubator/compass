@@ -41,6 +41,7 @@ type ProvisioningParametersDTO struct {
 	MaxSurge                    *int     `json:"maxSurge"`
 	MaxUnavailable              *int     `json:"maxUnavailable"`
 	OptionalComponentsToInstall []string `json:"components"`
+	KymaVersion                 string   `json:"kymaVersion"`
 }
 
 type ERSContext struct {

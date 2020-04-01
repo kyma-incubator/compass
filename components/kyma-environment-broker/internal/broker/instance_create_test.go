@@ -48,6 +48,7 @@ func TestProvision_Provision(t *testing.T) {
 			queue,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
+			false,
 			logrus.StandardLogger(),
 		)
 
@@ -92,6 +93,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
+			false,
 			logrus.StandardLogger(),
 		)
 
@@ -126,6 +128,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
+			false,
 			logrus.StandardLogger(),
 		)
 
@@ -162,6 +165,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixValidator,
+			false,
 			logrus.StandardLogger(),
 		)
 
@@ -202,6 +206,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixValidator,
+			false,
 			logrus.StandardLogger(),
 		)
 
@@ -220,6 +225,94 @@ func TestProvision_Provision(t *testing.T) {
 		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Jaeger", components: No additional items allowed on array`)
 		assert.False(t, response.IsAsync)
 		assert.Empty(t, response.OperationData)
+	})
+
+	t.Run("kyma version parameters should be saved", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", planID).Return(true)
+
+		fixValidator, err := broker.NewPlansSchemaValidator()
+		require.NoError(t, err)
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			memoryStorage.Operations(),
+			queue,
+			factoryBuilder,
+			fixValidator,
+			true,
+			logrus.StandardLogger(),
+		)
+
+		// when
+		response, err := provisionEndpoint.Provision(context.TODO(), instanceID, domain.ProvisionDetails{
+			ServiceID: serviceID,
+			PlanID:    planID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{
+								"name": "%s",
+								"kymaVersion": "master-00e83e99"
+								}`, clusterName)),
+			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4")),
+		}, true)
+		assert.NoError(t, err)
+
+		// then
+		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
+		require.NoError(t, err)
+
+		parameters, err := operation.GetProvisioningParameters()
+		assert.NoError(t, err)
+		assert.Equal(t, "master-00e83e99", parameters.Parameters.KymaVersion)
+	})
+
+	t.Run("kyma version parameters should NOT be saved", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", planID).Return(true)
+
+		fixValidator, err := broker.NewPlansSchemaValidator()
+		require.NoError(t, err)
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			memoryStorage.Operations(),
+			queue,
+			factoryBuilder,
+			fixValidator,
+			false,
+			logrus.StandardLogger(),
+		)
+
+		// when
+		response, err := provisionEndpoint.Provision(context.TODO(), instanceID, domain.ProvisionDetails{
+			ServiceID: serviceID,
+			PlanID:    planID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{
+								"name": "%s",
+								"kymaVersion": "master-00e83e99"
+								}`, clusterName)),
+			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4")),
+		}, true)
+		assert.NoError(t, err)
+
+		// then
+		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
+		require.NoError(t, err)
+
+		parameters, err := operation.GetProvisioningParameters()
+		assert.NoError(t, err)
+		assert.Equal(t, "", parameters.Parameters.KymaVersion)
 	})
 }
 
