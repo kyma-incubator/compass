@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
@@ -22,14 +23,14 @@ const (
 )
 
 type CreateRuntimeStep struct {
-	operationManager  *process.OperationManager
+	operationManager  *process.ProvisionOperationManager
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
 }
 
 func NewCreateRuntimeStep(os storage.Operations, is storage.Instances, cli provisioner.Client) *CreateRuntimeStep {
 	return &CreateRuntimeStep{
-		operationManager:  process.NewOperationManager(os),
+		operationManager:  process.NewProvisionOperationManager(os),
 		instanceStorage:   is,
 		provisionerClient: cli,
 	}

@@ -31,7 +31,7 @@ type (
 )
 
 type ProvisionEndpoint struct {
-	operationsStorage    storage.Operations
+	operationsStorage    storage.Provisioning
 	queue                Queue
 	builderFactory       PlanValidator
 	enabledPlanIDs       map[string]struct{}

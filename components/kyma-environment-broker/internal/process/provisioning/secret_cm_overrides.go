@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -25,14 +26,14 @@ const (
 type OverridesFromSecretsAndConfigStep struct {
 	ctx              context.Context
 	k8sClient        client.Client
-	operationManager *process.OperationManager
+	operationManager *process.ProvisionOperationManager
 }
 
 func NewOverridesFromSecretsAndConfigStep(c context.Context, cli client.Client, os storage.Operations) *OverridesFromSecretsAndConfigStep {
 	return &OverridesFromSecretsAndConfigStep{
 		ctx:              c,
 		k8sClient:        cli,
-		operationManager: process.NewOperationManager(os),
+		operationManager: process.NewProvisionOperationManager(os),
 	}
 }
 

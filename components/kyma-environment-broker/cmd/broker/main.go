@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	"code.cloudfoundry.org/lager"
+	"github.com/gorilla/handlers"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
@@ -15,15 +17,14 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/deprovisioning"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 
-	"code.cloudfoundry.org/lager"
-	"github.com/gorilla/handlers"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -144,41 +145,90 @@ func main() {
 
 	inputFactory := input.NewInputBuilderFactory(optComponentsSvc, fullRuntimeComponentList, cfg.Provisioning, cfg.KymaVersion)
 
-	// create and run queue, steps provisioning
-	initialisation := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory)
+	// setup operation managers
+	provisionManager := provisioning.NewManager(db.Operations(), logs)
+	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs)
 
-	resolveCredentialsStep := provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider)
-	evaluationStep := provisioning.NewInternalEvaluationStep(cfg.Avs, db.Operations())
-	lmsProvideTenantStep := provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations())
-	lmsCertStep := provisioning.NewLmsCertificatesStep(lmsClient, db.Operations())
-	provisionAzureEventHub := provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)
-	runtimeStep := provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient)
-	overridesStep := provisioning.NewOverridesFromSecretsAndConfigStep(ctx, cli, db.Operations())
-	smOverrideStep := provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager)
-	backupSetupStep := provisioning.NewSetupBackupStep(db.Operations())
-
-	stepManager := process.NewManager(db.Operations(), logs)
-	stepManager.InitStep(initialisation)
-
-	stepManager.AddStep(1, resolveCredentialsStep)
-	if !cfg.Avs.Disabled {
-		stepManager.AddStep(1, evaluationStep)
+	// define steps
+	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory)
+	provisionManager.InitStep(provisioningInit)
+	provisioningSteps := []struct {
+		disabled bool
+		weight   int
+		step     provisioning.Step
+	}{
+		{
+			weight: 1,
+			step:   provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
+		},
+		{
+			weight:   1,
+			step:     provisioning.NewInternalEvaluationStep(cfg.Avs, db.Operations()),
+			disabled: cfg.Avs.Disabled,
+		},
+		{
+			weight:   1,
+			step:     provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations()),
+			disabled: cfg.LMS.Disabled,
+		},
+		{
+			weight: 2,
+			step:   provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
+		},
+		{
+			weight: 2,
+			step:   provisioning.NewOverridesFromSecretsAndConfigStep(ctx, cli, db.Operations()),
+		},
+		{
+			weight: 2,
+			step:   provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager),
+		},
+		{
+			weight: 3,
+			step:   provisioning.NewSetupBackupStep(db.Operations()),
+		},
+		{
+			weight:   4,
+			step:     provisioning.NewLmsCertificatesStep(lmsClient, db.Operations()),
+			disabled: cfg.LMS.Disabled,
+		},
+		{
+			weight: 10,
+			step:   provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient),
+		},
 	}
-	if !cfg.LMS.Disabled {
-		stepManager.AddStep(1, lmsProvideTenantStep)
-		stepManager.AddStep(4, lmsCertStep) // must be just before runtimeStep and after lmsProvideTenantStep
+	for _, step := range provisioningSteps {
+		if !step.disabled {
+			provisionManager.AddStep(step.weight, step.step)
+		}
 	}
-	stepManager.AddStep(2, provisionAzureEventHub)
-	stepManager.AddStep(2, overridesStep)
-	stepManager.AddStep(2, smOverrideStep)
-	stepManager.AddStep(3, backupSetupStep)
-	stepManager.AddStep(10, runtimeStep)
 
-	queue := process.NewQueue(stepManager)
-	queue.Run(ctx.Done())
+	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient)
+	deprovisionManager.InitStep(deprovisioningInit)
+	deprovisioningSteps := []struct {
+		weight int
+		step   deprovisioning.Step
+	}{
+		{
+			weight: 10,
+			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient),
+		},
+	}
+	for _, step := range deprovisioningSteps {
+		deprovisionManager.AddStep(step.weight, step.step)
+	}
+
+	// run queues
+	provisionQueue := process.NewQueue(provisionManager)
+	provisionQueue.Run(ctx.Done())
+
+	deprovisionQueue := process.NewQueue(deprovisionManager)
+	deprovisionQueue.Run(ctx.Done())
 
 	if !cfg.DisableProcessOperationsInProgress {
-		err = processOperationsInProgress(db.Operations(), queue, logs)
+		err = processOperationsInProgressByType(dbmodel.OperationTypeProvision, db.Operations(), provisionQueue, logs)
+		fatalOnError(err)
+		err = processOperationsInProgressByType(dbmodel.OperationTypeDeprovision, db.Operations(), deprovisionQueue, logs)
 		fatalOnError(err)
 	} else {
 		logger.Info("Skipping processing operation in progress on start")
@@ -190,8 +240,8 @@ func main() {
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
 		broker.NewServices(cfg.Broker, optComponentsSvc, logs),
-		broker.NewProvision(cfg.Broker, db.Operations(), queue, inputFactory, plansValidator, logs),
-		broker.NewDeprovision(db.Instances(), provisionerClient, logs),
+		broker.NewProvision(cfg.Broker, db.Operations(), provisionQueue, inputFactory, plansValidator, logs),
+		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
 		broker.NewUpdate(logs),
 		broker.NewGetInstance(db.Instances(), logs),
 		broker.NewLastOperation(db.Operations(), logs),
@@ -223,14 +273,14 @@ func main() {
 }
 
 // queues all in progress provision operations existing in the database
-func processOperationsInProgress(op storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
-	operations, err := op.GetOperationsInProgressByType(dbsession.OperationTypeProvision)
+func processOperationsInProgressByType(opType dbmodel.OperationType, op storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
+	operations, err := op.GetOperationsInProgressByType(opType)
 	if err != nil {
 		return errors.Wrap(err, "while getting in progress operations from storage")
 	}
 	for _, operation := range operations {
 		queue.Add(operation.ID)
-		log.Infof("Resuming the processing of operation ID: %s", operation.ID)
+		log.Infof("Resuming the processing of %s operation ID: %s", opType, operation.ID)
 	}
 	return nil
 }

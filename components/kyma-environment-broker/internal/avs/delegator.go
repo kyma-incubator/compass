@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
@@ -21,14 +22,14 @@ const (
 )
 
 type Delegator struct {
-	operationManager *process.OperationManager
+	operationManager *process.ProvisionOperationManager
 	avsConfig        Config
 	clientHolder     *clientHolder
 }
 
 func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Delegator {
 	return &Delegator{
-		operationManager: process.NewOperationManager(operationsStorage),
+		operationManager: process.NewProvisionOperationManager(operationsStorage),
 		avsConfig:        avsConfig,
 		clientHolder:     newClientHolder(avsConfig),
 	}

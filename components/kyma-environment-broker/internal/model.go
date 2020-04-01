@@ -29,6 +29,12 @@ type LMSTenant struct {
 	CreatedAt time.Time
 }
 
+type LMS struct {
+	TenantID    string    `json:"tenant_id"`
+	Failed      bool      `json:"failed"`
+	RequestedAt time.Time `json:"requested_at"`
+}
+
 type Instance struct {
 	InstanceID      string
 	RuntimeID       string
@@ -70,10 +76,9 @@ type ProvisioningOperation struct {
 	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
 }
 
-type LMS struct {
-	TenantID    string    `json:"tenant_id"`
-	Failed      bool      `json:"failed"`
-	RequestedAt time.Time `json:"requested_at"`
+// DeprovisioningOperation holds all information about provisioning operation
+type DeprovisioningOperation struct {
+	Operation `json:"-"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
@@ -99,6 +104,21 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			UpdatedAt:   time.Now(),
 		},
 		ProvisioningParameters: string(params),
+	}, nil
+}
+
+// NewProvisioningOperationWithID creates a fresh (just starting) instance of the ProvisioningOperation with provided ID
+func NewDeprovisioningOperationWithID(operationID, instanceID string) (DeprovisioningOperation, error) {
+	return DeprovisioningOperation{
+		Operation: Operation{
+			ID:          operationID,
+			Version:     0,
+			Description: "Operation created",
+			InstanceID:  instanceID,
+			State:       domain.InProgress,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		},
 	}, nil
 }
 
