@@ -23,7 +23,7 @@ func TestNewHTTPHandler(t *testing.T) {
 		mockPinger.On("PingContext", req.Context()).Return(nil)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(NewHTTPHandler(mockPinger, logrus.StandardLogger()))
+		handler := http.HandlerFunc(NewLivenessHandler(mockPinger, logrus.StandardLogger()))
 		// WHEN
 		handler.ServeHTTP(rr, req)
 		// THEN
@@ -40,7 +40,7 @@ func TestNewHTTPHandler(t *testing.T) {
 		mockPinger.On("PingContext", req.Context()).Return(errors.New("some error"))
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(NewHTTPHandler(mockPinger, logrus.StandardLogger()))
+		handler := http.HandlerFunc(NewLivenessHandler(mockPinger, logrus.StandardLogger()))
 		// WHEN
 		handler.ServeHTTP(rr, req)
 		// THEN

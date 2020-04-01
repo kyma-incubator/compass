@@ -14,7 +14,9 @@ deployment:
     initialDelaySeconds: 50
     timeoutSeconds: 1
     periodSeconds: 10
-
+  readiness:
+    timeoutSeconds: 1
+    periodSeconds: 2
 staticGroupNames:
   - "mps-superadmin"
   - "runtimeAdmin"
