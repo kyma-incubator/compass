@@ -27,14 +27,14 @@ type ScenariosDefService interface {
 	GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error)
 }
 
-//go:generate mockery -name=AssignmentEngineService -output=automock -outpkg=automock -case=underscore
-type AssignmentEngineService interface {
-	EnsureScenarioAssignedToRuntimesMatchingSelector(in model.AutomaticScenarioAssignment) error
-	UnassignScenarioFromRuntimesMatchingSelector(in model.AutomaticScenarioAssignment) error
-	UnassignScenariosFromRuntimesMatchingSelector(in []*model.AutomaticScenarioAssignment) error
+//go:generate mockery -name=AssignmentEngine -output=automock -outpkg=automock -case=underscore
+type AssignmentEngine interface {
+	EnsureScenarioAssigned(in model.AutomaticScenarioAssignment) error
+	RemoveAssignedScenario(in model.AutomaticScenarioAssignment) error
+	RemoveAssignedScenarios(in []*model.AutomaticScenarioAssignment) error
 }
 
-func NewService(repo Repository, scenarioDefSvc ScenariosDefService, engineSvc AssignmentEngineService) *service {
+func NewService(repo Repository, scenarioDefSvc ScenariosDefService, engineSvc AssignmentEngine) *service {
 	return &service{
 		repo:            repo,
 		scenariosDefSvc: scenarioDefSvc,
@@ -45,7 +45,7 @@ func NewService(repo Repository, scenarioDefSvc ScenariosDefService, engineSvc A
 type service struct {
 	repo            Repository
 	scenariosDefSvc ScenariosDefService
-	engineSvc       AssignmentEngineService
+	engineSvc       AssignmentEngine
 }
 
 func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error) {
@@ -67,7 +67,7 @@ func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignme
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while persisting Assignment")
 	}
 
-	err = s.engineSvc.EnsureScenarioAssignedToRuntimesMatchingSelector(in)
+	err = s.engineSvc.EnsureScenarioAssigned(in)
 	if err != nil {
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while assigning scenario to runtimes matching selector")
 	}
@@ -152,7 +152,7 @@ func (s *service) DeleteManyForSameSelector(ctx context.Context, in []*model.Aut
 		return errors.Wrap(err, "while ensuring input is valid")
 	}
 
-	err = s.engineSvc.UnassignScenariosFromRuntimesMatchingSelector(in)
+	err = s.engineSvc.RemoveAssignedScenarios(in)
 	if err != nil {
 		return errors.Wrap(err, "while unassigning scenario from runtimes")
 	}
@@ -172,7 +172,7 @@ func (s *service) Delete(ctx context.Context, in model.AutomaticScenarioAssignme
 		return errors.Wrap(err, "while loading tenant from context")
 	}
 
-	err = s.engineSvc.UnassignScenarioFromRuntimesMatchingSelector(in)
+	err = s.engineSvc.RemoveAssignedScenario(in)
 	if err != nil {
 		return errors.Wrap(err, "while unassigning scenario from runtimes")
 	}

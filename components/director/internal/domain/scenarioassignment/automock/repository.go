@@ -74,29 +74,6 @@ func (_m *Repository) GetForScenarioName(ctx context.Context, tenantID string, s
 	return r0, r1
 }
 
-// ListForSelector provides a mock function with given fields: ctx, in, tenantID
-func (_m *Repository) ListForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error) {
-	ret := _m.Called(ctx, in, tenantID)
-
-	var r0 []*model.AutomaticScenarioAssignment
-	if rf, ok := ret.Get(0).(func(context.Context, model.LabelSelector, string) []*model.AutomaticScenarioAssignment); ok {
-		r0 = rf(ctx, in, tenantID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.AutomaticScenarioAssignment)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.LabelSelector, string) error); ok {
-		r1 = rf(ctx, in, tenantID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // List provides a mock function with given fields: ctx, tenant, pageSize, cursor
 func (_m *Repository) List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error) {
 	ret := _m.Called(ctx, tenant, pageSize, cursor)
@@ -113,6 +90,29 @@ func (_m *Repository) List(ctx context.Context, tenant string, pageSize int, cur
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
 		r1 = rf(ctx, tenant, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListForSelector provides a mock function with given fields: ctx, in, tenantID
+func (_m *Repository) ListForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error) {
+	ret := _m.Called(ctx, in, tenantID)
+
+	var r0 []*model.AutomaticScenarioAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, model.LabelSelector, string) []*model.AutomaticScenarioAssignment); ok {
+		r0 = rf(ctx, in, tenantID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.AutomaticScenarioAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.LabelSelector, string) error); ok {
+		r1 = rf(ctx, in, tenantID)
 	} else {
 		r1 = ret.Error(1)
 	}
