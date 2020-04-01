@@ -868,11 +868,12 @@ type Query {
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)
 	"""
 	automaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.query.automaticScenarioAssignmentForScenario")
+	automaticScenarioAssignmentForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentForSelector") @deprecated(reason: "Use automaticScenarioAssignmentsForSelector")
 	"""
 	**Examples**
-	- [query automatic scenario assignment for selector](examples/query-automatic-scenario-assignment-for-selector/query-automatic-scenario-assignment-for-selector.graphql)
+	- [query automatic scenario assignments for selector](examples/query-automatic-scenario-assignments-for-selector/query-automatic-scenario-assignments-for-selector.graphql)
 	"""
-	automaticScenarioAssignmentForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentForSelector")
+	automaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentsForSelector")
 	"""
 	**Examples**
 	- [query automatic scenario assignments](examples/query-automatic-scenario-assignments/query-automatic-scenario-assignments.graphql)
@@ -1110,20 +1111,22 @@ type Mutation {
 	- [delete package](examples/delete-package/delete-package.graphql)
 	"""
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
+	setAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.setAutomaticScenarioAssignment") @deprecated(reason: "Use createAutomaticScenarioAssignment")
 	"""
 	**Examples**
-	- [set automatic scenario assignment](examples/set-automatic-scenario-assignment/set-automatic-scenario-assignment.graphql)
+	- [create automatic scenario assignment](examples/create-automatic-scenario-assignment/create-automatic-scenario-assignment.graphql)
 	"""
-	setAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.setAutomaticScenarioAssignment")
+	createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.createAutomaticScenarioAssignment")
 	"""
 	**Examples**
 	- [delete automatic scenario assignment for scenario](examples/delete-automatic-scenario-assignment-for-scenario/delete-automatic-scenario-assignment-for-scenario.graphql)
 	"""
 	deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForScenario")
+	deleteAutomaticScenarioAssignmentForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForSelector") @deprecated(reason: "Use deleteAutomaticScenarioAssignmentsForSelector")
 	"""
 	**Examples**
-	- [delete automatic scenario assignment for selector](examples/delete-automatic-scenario-assignment-for-selector/delete-automatic-scenario-assignment-for-selector.graphql)
+	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
 	"""
-	deleteAutomaticScenarioAssignmentForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForSelector")
+	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
 }
 

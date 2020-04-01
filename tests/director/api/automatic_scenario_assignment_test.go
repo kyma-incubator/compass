@@ -46,17 +46,17 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 		ScenarioName: testScenarioC,
 		Selector:     &testSelectorB,
 	}
-	setAutomaticScenarioAssignmentFromInputWithinTenant(t, ctx, inputAssignment1, tenantID)
+	createAutomaticScenarioAssignmentFromInputWithinTenant(t, ctx, inputAssignment1, tenantID)
 	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, testScenarioA)
-	setAutomaticScenarioAssignmentFromInputWithinTenant(t, ctx, inputAssignment2, tenantID)
+	createAutomaticScenarioAssignmentFromInputWithinTenant(t, ctx, inputAssignment2, tenantID)
 	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, testScenarioB)
-	setAutomaticScenarioAssignmentFromInputWithinTenant(t, ctx, inputAssignment3, tenantID)
+	createAutomaticScenarioAssignmentFromInputWithinTenant(t, ctx, inputAssignment3, tenantID)
 	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, testScenarioC)
 
 	// prepare queries
 	getAssignmentForScenarioRequest := fixAutomaticScenarioAssignmentForScenarioRequest(testScenarioA)
 	listAssignmentsRequest := fixAutomaticScenarioAssignmentsRequest()
-	listAssignmentsForSelectorRequest := fixAutomaticScenarioAssignmentForSelectorRequest(testSelectorAGQL)
+	listAssignmentsForSelectorRequest := fixAutomaticScenarioAssignmentsForSelectorRequest(testSelectorAGQL)
 
 	actualAssignmentsPage := graphql.AutomaticScenarioAssignmentPage{}
 	actualAssignmentForScenario := graphql.AutomaticScenarioAssignment{}
@@ -73,7 +73,7 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 	// THEN
 	saveExample(t, listAssignmentsRequest.Query(), "query automatic scenario assignments")
 	saveExample(t, getAssignmentForScenarioRequest.Query(), "query automatic scenario assignment for scenario")
-	saveExample(t, listAssignmentsForSelectorRequest.Query(), "query automatic scenario assignment for selector")
+	saveExample(t, listAssignmentsForSelectorRequest.Query(), "query automatic scenario assignments for selector")
 
 	assertAutomaticScenarioAssignments(t,
 		[]graphql.AutomaticScenarioAssignmentSetInput{inputAssignment1, inputAssignment2, inputAssignment3},
@@ -115,12 +115,12 @@ func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 	assignment1Gql, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(assignment1)
 	require.NoError(t, err)
 
-	req := fixSetAutomaticScenarioAssignmentRequest(assignment1Gql)
+	req := fixCreateAutomaticScenarioAssignmentRequest(assignment1Gql)
 	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, nil)
 	require.NoError(t, err)
-	saveExample(t, req.Query(), "set automatic scenario assignment")
+	saveExample(t, req.Query(), "create automatic scenario assignment")
 
-	setAutomaticScenarioAssignmentInTenant(t, ctx, assignment2, tenantID)
+	createAutomaticScenarioAssignmentInTenant(t, ctx, assignment2, tenantID)
 	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, scenario2)
 
 	//WHEN
@@ -166,9 +166,9 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 	var output []*graphql.AutomaticScenarioAssignment
 
-	setAutomaticScenarioAssignmentInTenant(t, ctx, assignments[0], tenantID)
-	setAutomaticScenarioAssignmentInTenant(t, ctx, assignments[1], tenantID)
-	setAutomaticScenarioAssignmentInTenant(t, ctx, anotherAssignment, tenantID)
+	createAutomaticScenarioAssignmentInTenant(t, ctx, assignments[0], tenantID)
+	createAutomaticScenarioAssignmentInTenant(t, ctx, assignments[1], tenantID)
+	createAutomaticScenarioAssignmentInTenant(t, ctx, anotherAssignment, tenantID)
 	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, scenario3)
 
 	selectorGql, err := tc.graphqlizer.LabelSelectorInputToGQL(selector)
@@ -187,6 +187,6 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 	require.Equal(t, 1, actualAssignments.TotalCount)
 	assertAutomaticScenarioAssignment(t, anotherAssignment, *actualAssignments.Data[0])
 
-	saveExample(t, req.Query(), "delete automatic scenario assignment for selector")
+	saveExample(t, req.Query(), "delete automatic scenario assignments for selector")
 
 }
