@@ -31,7 +31,7 @@ func TestNewHTTPHandler(t *testing.T) {
 		require.Equal(t, "ok", rr.Body.String())
 	})
 
-	t.Run("should return 500 with error inside response body", func(t *testing.T) {
+	t.Run("should return 500", func(t *testing.T) {
 		// GIVEN
 		mockPinger := &automock.Pinger{}
 		defer mockPinger.AssertExpectations(t)
@@ -45,7 +45,6 @@ func TestNewHTTPHandler(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 		// THEN
 		require.Equal(t, http.StatusInternalServerError, rr.Code)
-		require.Equal(t, "error: some error", rr.Body.String())
 	})
 
 }
