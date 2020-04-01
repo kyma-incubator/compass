@@ -42,7 +42,7 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-1006"
+      version: "PR-1098"
     tests:
       director:
         dir:
