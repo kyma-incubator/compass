@@ -184,10 +184,6 @@ func main() {
 			step:   provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager),
 		},
 		{
-			weight: 3,
-			step:   provisioning.NewSetupBackupStep(db.Operations()),
-		},
-		{
 			weight:   4,
 			step:     provisioning.NewLmsCertificatesStep(lmsClient, db.Operations()),
 			disabled: cfg.LMS.Disabled,
