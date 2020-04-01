@@ -378,15 +378,13 @@ func assertAutomaticScenarioAssignments(t *testing.T, expected []graphql.Automat
 	for _, expectedAssignment := range expected {
 		found := false
 		for _, actualAssignment := range actual {
-			if actualAssignment == nil {
-				continue
-			}
+			require.NotNil(t, actualAssignment)
 			if expectedAssignment.ScenarioName == actualAssignment.ScenarioName {
 				found = true
 				assertAutomaticScenarioAssignment(t, expectedAssignment, *actualAssignment)
 				break
 			}
 		}
-		assert.True(t, found)
+		assert.True(t, found, "Assignment for scenario: '%s' not found", expectedAssignment.ScenarioName)
 	}
 }

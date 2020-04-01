@@ -74,6 +74,20 @@ func (mgr *TestTenantsManager) InitializeDB(transact persistence.Transactioner) 
 			ProviderName:   testProvider,
 			Status:         Active,
 		},
+		"TestDeleteAssignmentsForScenario": {
+			ID:             "d08e4cb6-a77f-4a07-b021-e3317a373597",
+			Name:           "TestDeleteAssignments",
+			ExternalTenant: "d08e4cb6-a77f-4a07-b021-e3317a373597",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
+		"TestDeleteAssignmentsForSelector": {
+			ID:             "d9553135-6115-4c67-b4d9-962c00f3725f",
+			Name:           "TestDeleteAssignmentsForSelector",
+			ExternalTenant: "d9553135-6115-4c67-b4d9-962c00f3725f",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
 		"ASA1": {
 			ID:             "8263cc13-5698-4a2d-9257-e8e76b543e88",
 			Name:           "ASA1",
