@@ -28,7 +28,8 @@ import (
 const tenantHeaderName = "tenant"
 
 type Config struct {
-	ProvisionerURL string `default:"http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"`
+	ProvisionerURL       string `default:"http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"`
+	KubeconfigSecretName string `default:"e2e-runtime-kubeconfig"`
 
 	UUAInstanceName      string `default:"uaa-issuer"`
 	UUAInstanceNamespace string `default:"kyma-system"`

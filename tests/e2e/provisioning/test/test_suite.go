@@ -29,9 +29,10 @@ type Config struct {
 	TenantID             string `default:"3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
 	SkipCertVerification bool   `envconfig:"default=true"`
 
-	ProvisionTimeout   time.Duration
-	DeprovisionTimeout time.Duration
-	DummyTest          bool
+	ProvisionTimeout   time.Duration `default:"3h"`
+	DeprovisionTimeout time.Duration `default:"1h"`
+	DummyTest          bool `default:"false"`
+	CleanupPhase       bool `default:"false"`
 }
 
 // Suite provides set of clients able to provision and test Kyma runtime
@@ -46,9 +47,10 @@ type Suite struct {
 	ProvisionTimeout   time.Duration
 	DeprovisionTimeout time.Duration
 	IsDummyTest        bool
+	IsCleanupPhase     bool
 }
 
-func (ts *Suite) TearDown() {
+func (ts *Suite) Cleanup() {
 	ts.log.Info("Cleaning up...")
 	err := ts.runtimeClient.EnsureUAAInstanceRemoved()
 	assert.NoError(ts.t, err)
@@ -99,6 +101,7 @@ func newTestSuite(t *testing.T) *Suite {
 		ProvisionTimeout:   cfg.ProvisionTimeout,
 		DeprovisionTimeout: cfg.DeprovisionTimeout,
 		IsDummyTest:        cfg.DummyTest,
+		IsCleanupPhase:     cfg.CleanupPhase,
 	}
 }
 
