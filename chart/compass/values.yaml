@@ -52,7 +52,7 @@ global:
         version: "02e8358c"
       provisioner:
         dir:
-        version: "PR-1046"
+        version: "ffd45e1d"
       e2e_provisioning:
         dir:
         version: "PR-1018"
