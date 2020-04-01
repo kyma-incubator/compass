@@ -18,6 +18,7 @@ func NewLivenessHandler(p Pinger, log *logrus.Logger) func(writer http.ResponseW
 	return func(writer http.ResponseWriter, request *http.Request) {
 		err := p.PingContext(request.Context())
 		if err != nil {
+			log.Errorf("Got error on checking connection with DB: [%v]", err)
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
