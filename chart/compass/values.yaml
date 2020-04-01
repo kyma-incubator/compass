@@ -13,7 +13,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-634"
+      version: "PR-1107"
     connectivity_adapter:
       dir:
       version: "PR-1095"
@@ -34,7 +34,7 @@ global:
       version: "PR-1046"
     provisioner:
       dir:
-      version: "PR-1081"
+      version: "PR-1107"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
