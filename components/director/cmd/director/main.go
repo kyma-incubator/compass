@@ -134,7 +134,7 @@ func main() {
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
 
 	log.Infof("Registering readiness endpoint...")
-	mainRouter.HandleFunc("/ready", healthz.NewReadinessHandler())
+	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
 
 	log.Infof("Registering liveness endpoint...")
 	mainRouter.HandleFunc("/healthz", healthz.NewLivenessHandler(transact, log.StandardLogger()))

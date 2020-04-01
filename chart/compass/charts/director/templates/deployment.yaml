@@ -99,7 +99,7 @@ spec:
           readinessProbe:
               httpGet:
                   port: {{.Values.deployment.args.containerPort }}
-                  path: "/ready"
+                  path: "/readyz"
               initialDelaySeconds: {{ .Values.deployment.readiness.initialDelaySeconds }}
               timeoutSeconds: {{ .Values.deployment.readiness.timeoutSeconds }}
               periodSeconds: {{.Values.deployment.readiness.periodSeconds }}
