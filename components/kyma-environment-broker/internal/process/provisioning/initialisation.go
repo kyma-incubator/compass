@@ -52,14 +52,18 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	_, err := s.instanceStorage.GetByID(operation.InstanceID)
+	inst, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
-		log.Info("instance exist, check instance status")
+		if inst.RuntimeID == "" {
+			log.Info("runtimeID not exist, initialize runtime input request")
+			return s.initializeRuntimeInputRequest(operation, log)
+		}
+		log.Info("runtimeID exist, check instance status")
 		return s.checkRuntimeStatus(operation, log)
 	case dberr.IsNotFound(err):
-		log.Info("instance not exist, initialize runtime input request")
-		return s.initializeRuntimeInputRequest(operation, log)
+		log.Info("instance not exist")
+		return s.operationManager.OperationFailed(operation, "instance was not created")
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
 		return operation, 1 * time.Second, nil

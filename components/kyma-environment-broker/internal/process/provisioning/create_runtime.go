@@ -10,8 +10,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
-
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -44,17 +42,6 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	if time.Since(operation.UpdatedAt) > CreateRuntimeTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout))
-	}
-
-	_, err := s.instanceStorage.GetByID(operation.InstanceID)
-	switch {
-	case err == nil:
-		log.Info("instance exists, skip step")
-		return operation, 0, nil
-	case dberr.IsNotFound(err):
-	default:
-		log.Errorf("unable to get instance from storage: %s", err)
-		return operation, 1 * time.Second, nil
 	}
 
 	pp, err := operation.GetProvisioningParameters()
