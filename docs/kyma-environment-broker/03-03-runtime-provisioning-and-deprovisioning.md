@@ -1,8 +1,8 @@
 # Runtime provisioning and deprovisioning
 
-Kyma Environment Broker allows you to configure Runtime provisioning and deprovisioning processes by providing additional input objects in the form of overrides. Both provisioning and deprovisioning operation consist of several steps. Each step is represented by a separate file.
+Kyma Environment Broker allows you to configure Runtime provisioning and deprovisioning processes. 
 
-In case of a processing failure, every step can be re-launched multiple times. That is why for each step you should determine a behavior in case of a processing failure. It can either:
+Both provisioning and deprovisioning operation consist of several steps. Each step is represented by a separate file. As every step can be re-launched multiple times, for each step, you should determine a behavior in case of a processing failure. It can either:
 - Return an error, which interrupts the entire provisioning or deprovisioning process, or 
 - Repeat the entire operation after the specified period. 
 
