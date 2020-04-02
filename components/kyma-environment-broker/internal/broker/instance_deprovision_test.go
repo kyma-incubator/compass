@@ -16,6 +16,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	instanceID  = "instance-001"
+	operationID = "1234"
+)
+
 func TestDeprovisionEndpoint_DeprovisionNotExistingInstance(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
@@ -34,7 +39,6 @@ func TestDeprovisionEndpoint_DeprovisionNotExistingInstance(t *testing.T) {
 func TestDeprovisionEndpoint_DeprovisionExistingInstance(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
-	instanceID := "instance-001"
 	memoryStorage.Instances().Insert(internal.Instance{
 		InstanceID: instanceID,
 	})
@@ -52,4 +56,70 @@ func TestDeprovisionEndpoint_DeprovisionExistingInstance(t *testing.T) {
 	operation, err := memoryStorage.Operations().GetDeprovisioningOperationByInstanceID(instanceID)
 	require.NoError(t, err)
 	assert.Equal(t, domain.InProgress, operation.State)
+}
+
+func TestDeprovisionEndpoint_DeprovisionExistingOperationInProgress(t *testing.T) {
+	// given
+	memoryStorage := storage.NewMemoryStorage()
+	err := memoryStorage.Instances().Insert(internal.Instance{
+		InstanceID: instanceID,
+	})
+	require.NoError(t, err)
+
+	err = memoryStorage.Operations().InsertDeprovisioningOperation(fixDeprovisioningOperation(domain.InProgress))
+	require.NoError(t, err)
+
+	queue := &automock.Queue{}
+	queue.On("Add", mock.AnythingOfType("string"))
+
+	svc := NewDeprovision(memoryStorage.Instances(), memoryStorage.Operations(), queue, logrus.StandardLogger())
+
+	// when
+	res, err := svc.Deprovision(context.TODO(), instanceID, domain.DeprovisionDetails{}, true)
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, operationID, res.OperationData)
+
+	operation, err := memoryStorage.Operations().GetDeprovisioningOperationByInstanceID(instanceID)
+	require.NoError(t, err)
+	assert.Equal(t, domain.InProgress, operation.State)
+}
+
+func TestDeprovisionEndpoint_DeprovisionExistingOperationFailed(t *testing.T) {
+	// given
+	memoryStorage := storage.NewMemoryStorage()
+	err := memoryStorage.Instances().Insert(internal.Instance{
+		InstanceID: instanceID,
+	})
+	require.NoError(t, err)
+
+	err = memoryStorage.Operations().InsertDeprovisioningOperation(fixDeprovisioningOperation(domain.Failed))
+	require.NoError(t, err)
+
+	queue := &automock.Queue{}
+	queue.On("Add", mock.AnythingOfType("string"))
+
+	svc := NewDeprovision(memoryStorage.Instances(), memoryStorage.Operations(), queue, logrus.StandardLogger())
+
+	// when
+	res, err := svc.Deprovision(context.TODO(), instanceID, domain.DeprovisionDetails{}, true)
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, operationID, res.OperationData)
+
+	operation, err := memoryStorage.Operations().GetDeprovisioningOperationByInstanceID(instanceID)
+	require.NoError(t, err)
+	assert.Equal(t, domain.InProgress, operation.State)
+}
+
+func fixDeprovisioningOperation(state domain.LastOperationState) internal.DeprovisioningOperation {
+	return internal.DeprovisioningOperation{
+		Operation: internal.Operation{
+			ID:         operationID,
+			InstanceID: instanceID,
+			State:      state,
+		},
+	}
 }
