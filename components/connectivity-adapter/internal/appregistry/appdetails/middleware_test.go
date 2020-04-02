@@ -153,7 +153,7 @@ func TestMiddleware(t *testing.T) {
 		//THEN
 		assert.Equal(t, http.StatusInternalServerError, rw.Code)
 		mock.AssertExpectationsForObjects(t, gqlClient, cliProvider)
-		assertLogError(t, "while getting service: test error", hook)
+		assertLogError(t, "while getting service: All attempts fail:\n#1: test error\n#2: test error", hook)
 	})
 
 }
