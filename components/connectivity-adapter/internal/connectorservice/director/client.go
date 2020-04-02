@@ -4,7 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
+	defaults "github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/retry"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/machinebox/graphql"
 )
@@ -65,13 +67,12 @@ type ApplicationResponse struct {
 }
 
 func (c *client) execute(client *graphql.Client, query string, res interface{}) error {
+	return retry.Do(func() error {
+		req := graphql.NewRequest(query)
 
-	req := graphql.NewRequest(query)
+		ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+		defer cancel()
 
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-
-	err := client.Run(ctx, req, res)
-
-	return err
+		return client.Run(ctx, req, res)
+	}, defaults.DefaultRetryOptions()...)
 }

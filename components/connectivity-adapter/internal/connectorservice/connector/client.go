@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
-
+	defaults "github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/retry"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/machinebox/graphql"
 )
@@ -76,18 +77,17 @@ func (c *client) executeExternal(headers map[string]string, query string, res in
 }
 
 func (c *client) execute(client *graphql.Client, headers map[string]string, query string, res interface{}) error {
+	return retry.Do(func() error {
+		req := graphql.NewRequest(query)
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
 
-	req := graphql.NewRequest(query)
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
+		ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+		defer cancel()
 
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-
-	err := client.Run(ctx, req, res)
-
-	return err
+		return client.Run(ctx, req, res)
+	}, defaults.DefaultRetryOptions()...)
 }
 
 type ConfigurationResponse struct {

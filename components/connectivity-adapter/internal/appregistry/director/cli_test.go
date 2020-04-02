@@ -40,7 +40,7 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreatePackageResult"),
+					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
 					res, ok := arg.(*director.CreatePackageResult)
@@ -79,8 +79,8 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreatePackageResult"),
-				).Return(testErr).Once()
+					mock.Anything,
+				).Return(testErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -164,7 +164,7 @@ func TestDirectorClient_UpdatePackage(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Once()
+				).Return(testErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -215,7 +215,7 @@ func TestDirectorClient_GetPackage(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.GetPackageResult"),
+					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
 					res, ok := arg.(*director.GetPackageResult)
@@ -236,8 +236,8 @@ func TestDirectorClient_GetPackage(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.GetPackageResult"),
-				).Return(testErr).Once()
+					mock.Anything,
+				).Return(testErr).Twice()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -285,7 +285,7 @@ func TestDirectorClient_ListPackages(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.ListPackagesResult"),
+					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
 					res, ok := arg.(*director.ListPackagesResult)
@@ -306,8 +306,8 @@ func TestDirectorClient_ListPackages(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.ListPackagesResult"),
-				).Return(testErr).Once()
+					mock.Anything,
+				).Return(testErr).Twice()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -366,7 +366,7 @@ func TestDirectorClient_DeletePackage(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Once()
+				).Return(testErr).Twice()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -413,7 +413,7 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreateAPIDefinitionResult"),
+					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
 					res, ok := arg.(*director.CreateAPIDefinitionResult)
@@ -452,8 +452,8 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreateAPIDefinitionResult"),
-				).Return(testErr).Once()
+					mock.Anything,
+				).Return(testErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -518,7 +518,7 @@ func TestDirectorClient_DeleteAPIDefinition(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Once()
+				).Return(testErr).Twice()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -565,7 +565,7 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreateEventDefinitionResult"),
+					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
 					res, ok := arg.(*director.CreateEventDefinitionResult)
@@ -604,8 +604,8 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreateEventDefinitionResult"),
-				).Return(testErr).Once()
+					mock.Anything,
+				).Return(testErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -670,7 +670,7 @@ func TestDirectorClient_DeleteEventDefinition(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Once()
+				).Return(testErr).Twice()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -717,7 +717,7 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreateDocumentResult"),
+					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
 					res, ok := arg.(*director.CreateDocumentResult)
@@ -756,8 +756,8 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreateDocumentResult"),
-				).Return(testErr).Once()
+					mock.Anything,
+				).Return(testErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -822,7 +822,7 @@ func TestDirectorClient_DeleteDocument(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Once()
+				).Return(testErr).Twice()
 				return am
 			},
 			ExpectedErr: testErr,
