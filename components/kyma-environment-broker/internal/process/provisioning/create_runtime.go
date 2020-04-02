@@ -97,7 +97,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return operation, 1 * time.Minute, nil
 	}
 
-	err = s.instanceStorage.Insert(internal.Instance{
+	err = s.instanceStorage.Update(internal.Instance{
 		InstanceID:             operation.InstanceID,
 		GlobalAccountID:        pp.ErsContext.GlobalAccountID,
 		RuntimeID:              *provisionerResponse.RuntimeID,
@@ -106,7 +106,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		ProvisioningParameters: string(rawParameters),
 	})
 	if err != nil {
-		log.Errorf("cannot save instance in storage: %s", err)
+		log.Errorf("cannot update instance in storage: %s", err)
 		return operation, 10 * time.Second, nil
 	}
 
