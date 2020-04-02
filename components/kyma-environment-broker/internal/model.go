@@ -163,6 +163,7 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 		copiedList = append(copiedList, &gqlschema.ComponentConfigurationInput{
 			Component:     component.Component,
 			Namespace:     component.Namespace,
+			SourceURL:     component.SourceURL,
 			Configuration: cpyCfg,
 		})
 	}
