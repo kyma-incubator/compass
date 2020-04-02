@@ -3,10 +3,6 @@ package gardener
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
-
-	"time"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -25,9 +21,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func NewShootController(namespace string, mgr manager.Manager, shootClient gardener_apis.ShootInterface, secretsClient v1core.SecretInterface,
-	installationService installation.Service, dbsFactory dbsession.Factory, installationTimeout time.Duration, directorClient director.DirectorClient,
-	runtimeConfigurator runtime.Configurator) (*ShootController, error) {
+func NewShootController(
+	mgr manager.Manager,
+	shootClient gardener_apis.ShootInterface,
+	secretsClient v1core.SecretInterface,
+	dbsFactory dbsession.Factory,
+	directorClient director.DirectorClient,
+	installQueue installation.InstallationQueue) (*ShootController, error) {
 
 	err := gardener_types.AddToScheme(mgr.GetScheme())
 	if err != nil {
@@ -36,13 +36,12 @@ func NewShootController(namespace string, mgr manager.Manager, shootClient garde
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&gardener_types.Shoot{}).
-		Complete(NewReconciler(mgr, dbsFactory, secretsClient, shootClient, installationService, installationTimeout, directorClient, runtimeConfigurator))
+		Complete(NewReconciler(mgr, dbsFactory, secretsClient, shootClient, directorClient, installQueue))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create controller: %w", err)
 	}
 
 	return &ShootController{
-		namespace:         namespace,
 		controllerManager: mgr,
 		shootClient:       shootClient,
 		log:               logrus.WithField("Component", "ShootController"),

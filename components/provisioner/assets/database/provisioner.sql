@@ -82,7 +82,9 @@ CREATE TABLE operation
     start_timestamp timestamp without time zone NOT NULL,
     end_timestamp timestamp without time zone,
     cluster_id uuid NOT NULL,
-    foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE
+    foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE,
+    stage varchar(256),
+    last_transition timestamp without time zone
 );
 
 -- Kyma Release

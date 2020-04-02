@@ -22,7 +22,7 @@ import (
 //go:generate mockery -name=Service
 type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, error)
-	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
+	UpgradeRuntime(id string, config *gqlschema.UpgradeKymaOnRuntimeInput) (string, error)
 	DeprovisionRuntime(id, tenant string) (string, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
@@ -143,7 +143,8 @@ func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {
 	return operation.ID, nil
 }
 
-func (r *service) UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error) {
+func (r *service) UpgradeRuntime(id string, input *gqlschema.UpgradeKymaOnRuntimeInput) (string, error) {
+
 	return "", nil
 }
 
@@ -239,6 +240,8 @@ func (r *service) setOperationStarted(dbSession dbsession.WriteSession, runtimeI
 		State:          model.InProgress,
 		Message:        message,
 		ClusterID:      runtimeID,
+		Stage:          model.ShootProvisioning,
+		LastTransition: &timestamp,
 	}
 
 	err := dbSession.InsertOperation(operation)

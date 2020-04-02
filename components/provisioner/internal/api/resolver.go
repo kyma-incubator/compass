@@ -91,8 +91,17 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 	return operationID, nil
 }
 
-func (r *Resolver) UpgradeRuntime(ctx context.Context, id string, config gqlschema.UpgradeRuntimeInput) (string, error) {
-	return "", nil
+func (r *Resolver) UpgradeKymaOnRuntime(context.Context, string, gqlschema.UpgradeKymaOnRuntimeInput) (*gqlschema.OperationStatus, error) {
+
+	// TODO: validate if version is correct - +1
+
+	// TODO: start new upgrade operation
+	// TODO:
+	// TODO: in installation SDK I will need to trigger update
+
+	// TODO: return
+
+	return &gqlschema.OperationStatus{}, nil
 }
 
 func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string, error) {

@@ -7,8 +7,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 
-	proviRuntime "github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 
 	"k8s.io/client-go/util/retry"
@@ -38,10 +36,8 @@ func NewReconciler(
 	dbsFactory dbsession.Factory,
 	secretsClient v1core.SecretInterface,
 	shootClient v1beta1.ShootInterface,
-	installationService installation.Service,
-	installationTimeout time.Duration,
 	directorClient director.DirectorClient,
-	runtimeConfigurator proviRuntime.Configurator) *Reconciler {
+	installQueue installation.InstallationQueue) *Reconciler {
 	return &Reconciler{
 		client:     mgr.GetClient(),
 		scheme:     mgr.GetScheme(),
@@ -49,13 +45,11 @@ func NewReconciler(
 		dbsFactory: dbsFactory,
 
 		provisioningOperator: &ProvisioningOperator{
-			dbsFactory:              dbsFactory,
-			secretsClient:           secretsClient,
-			shootClient:             shootClient,
-			installationService:     installationService,
-			kymaInstallationTimeout: installationTimeout,
-			directorClient:          directorClient,
-			runtimeConfigurator:     runtimeConfigurator,
+			dbsFactory:        dbsFactory,
+			secretsClient:     secretsClient,
+			shootClient:       shootClient,
+			directorClient:    directorClient,
+			installationQueue: installQueue,
 		},
 	}
 }
@@ -70,14 +64,12 @@ type Reconciler struct {
 }
 
 type ProvisioningOperator struct {
-	installationErrorsThreshold int
-	secretsClient               v1core.SecretInterface
-	shootClient                 v1beta1.ShootInterface
-	installationService         installation.Service
-	dbsFactory                  dbsession.Factory
-	kymaInstallationTimeout     time.Duration
-	directorClient              director.DirectorClient
-	runtimeConfigurator         proviRuntime.Configurator
+	secretsClient  v1core.SecretInterface
+	shootClient    v1beta1.ShootInterface
+	dbsFactory     dbsession.Factory
+	directorClient director.DirectorClient
+
+	installationQueue installation.InstallationQueue
 }
 
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
@@ -122,7 +114,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	if isBeingDeleted(shoot) {
 		// TODO - here we can ensure if last operation for cluster is Deprovision
-		log.Infof("Shoot is being deleted: %s", getProvisioningState(shoot))
+		log.Infof("Shoot is being deleted, step: %s", getProvisioningStep(shoot))
 		return ctrl.Result{}, nil
 	}
 
@@ -136,10 +128,9 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	switch provisioningStep {
 	case ProvisioningInProgressStep:
 		return r.provisioningOperator.ProvisioningInProgress(log, shoot, operationId)
-	case InstallationInProgressStep:
-		return r.provisioningOperator.InstallationInProgress(log, shoot, operationId)
 	case ProvisioningFinishedStep:
-		return r.provisioningOperator.ProvisioningFinished(log, shoot)
+		log.Debug("Shoot provisioned")
+		return ctrl.Result{}, nil
 	case DeprovisioningInProgressStep:
 		return r.provisioningOperator.DeprovisioningInProgress(log, shoot, operationId)
 	default:
@@ -246,7 +237,7 @@ func (r *ProvisioningOperator) setDeprovisioningFinished(cluster model.Cluster, 
 		return fmt.Errorf("error marking cluster for deletion: %s", dberr.Error())
 	}
 
-	dberr = session.UpdateOperationState(lastOp.ID, "Operation succeeded.", model.Succeeded)
+	dberr = session.UpdateOperationState(lastOp.ID, "Operation succeeded.", model.Succeeded, time.Now())
 	if dberr != nil {
 		return fmt.Errorf("error setting deprovisioning operation %s as succeeded: %s", lastOp.ID, dberr.Error())
 	}

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -127,7 +128,7 @@ func (ws writeSession) insertKymaComponentConfig(kymaConfigModule model.KymaComp
 
 func (ws writeSession) InsertOperation(operation model.Operation) dberrors.Error {
 	_, err := ws.insertInto("operation").
-		Columns("id", "type", "state", "message", "start_timestamp", "cluster_id").
+		Columns(operationColumns...).
 		Record(operation).
 		Exec()
 
@@ -160,15 +161,31 @@ func (ws writeSession) DeleteCluster(runtimeID string) dberrors.Error {
 	return nil
 }
 
-func (ws writeSession) UpdateOperationState(operationID string, message string, state model.OperationState) dberrors.Error {
+func (ws writeSession) UpdateOperationState(operationID string, message string, state model.OperationState, endTime time.Time) dberrors.Error {
 	res, err := ws.update("operation").
 		Where(dbr.Eq("id", operationID)).
 		Set("state", state).
 		Set("message", message).
+		Set("end_timestamp", endTime).
 		Exec()
 
 	if err != nil {
 		return dberrors.Internal("Failed to update operation %s state: %s", operationID, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))
+}
+
+func (ws writeSession) TransitionOperation(operationID string, message string, stage model.OperationStage, transitionTime time.Time) dberrors.Error {
+	res, err := ws.update("operation").
+		Where(dbr.Eq("id", operationID)).
+		Set("stage", stage). // TODO: align with final naming
+		Set("message", message).
+		Set("last_transition", transitionTime).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update operation %s stage: %s", operationID, err)
 	}
 
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))

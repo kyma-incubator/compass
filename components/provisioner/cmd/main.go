@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/steps"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"k8s.io/client-go/rest"
 	"net/http"
 	"strings"
 	"time"
@@ -130,13 +133,20 @@ func main() {
 	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
 	exitOnError(err, "Failed to initialize persistence")
 
+	// TODO: temporary solution
+	installationHandlerConstructor := func(c *rest.Config, o ...installationSDK.InstallationOption) (installationSDK.Installer, error) {
+		return installationSDK.NewKymaInstaller(c, o...)
+	}
+
 	dbsFactory := dbsession.NewFactory(connection)
-	installationService := installation.NewInstallationService(cfg.Installation.Timeout, installationSDK.NewKymaInstaller, cfg.Installation.ErrorsCountFailureThreshold)
+	installationService := installation.NewInstallationService(cfg.Installation.Timeout, installationHandlerConstructor, cfg.Installation.ErrorsCountFailureThreshold)
 
 	directorClient, err := newDirectorClient(cfg)
 	exitOnError(err, "Failed to initialize Director client")
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(clientbuilder.NewConfigMapClientBuilder(), directorClient)
+
+	installationQueue := createInstallationQueue(dbsFactory, installationService, runtimeConfigurator)
 
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {
@@ -145,7 +155,7 @@ func main() {
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
 		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.AuditLogsTenant)
-		shootController, err := newShootController(cfg, gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, installationService, directorClient, runtimeConfigurator)
+		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, directorClient, installationQueue)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {
 			err := shootController.StartShootController()
@@ -170,9 +180,15 @@ func main() {
 	logger := log.WithField("Component", "Artifact Downloader")
 	downloader := release.NewArtifactsDownloader(releaseRepository, 5, cfg.DownloadPreReleases, httpClient, logger)
 
+	// Run release downloader
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go downloader.FetchPeriodically(ctx, release.ShortInterval, release.LongInterval)
+
+	// Run installation queue
+	installationQueue.Run(ctx.Done())
+	err = enqueueOperationsInProgress(dbsFactory, installationQueue)
+	exitOnError(err, "Failed to enqueue in progress operations")
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
@@ -194,6 +210,43 @@ func main() {
 	if err := http.ListenAndServe(cfg.Address, router); err != nil {
 		panic(err)
 	}
+}
+
+func createInstallationQueue(factory dbsession.Factory, installationClient installation.Service, configurator runtime.Configurator) *installation.Queue {
+
+	configureAgentStep := steps.NewConnectAgentStep(configurator, model.FinishedStep, 10*time.Minute)
+	waitForInstallStep := steps.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), 50*time.Minute) // TODO: take form config
+	installStep := steps.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
+
+	installSteps := map[model.OperationStage]installation.Step{
+		model.ConnectRuntimeAgent:    configureAgentStep,
+		model.WaitingForInstallation: waitForInstallStep,
+		model.StartingInstallation:   installStep,
+	}
+
+	executor := steps.NewStepsExecutor(factory.NewReadWriteSession(), installSteps, []installation.Step{})
+
+	return installation.NewQueue(executor)
+}
+
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, queue installation.InstallationQueue) error {
+	readSession := dbFactory.NewReadSession()
+
+	inProgressOps, err := readSession.ListInProgressOperations()
+	if err != nil {
+		return err
+	}
+
+	for _, op := range inProgressOps {
+		if op.Type == model.Provision && op.Stage != model.ShootProvisioning {
+			queue.Add(op.ID)
+		}
+
+		// TODO: upgrade ones to different queue
+
+	}
+
+	return nil
 }
 
 func exitOnError(err error, context string) {

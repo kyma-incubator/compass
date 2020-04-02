@@ -177,13 +177,13 @@ func (h *HydroformProvisioner) newLogger(runtimeId, operationId string) *logrus.
 func (h *HydroformProvisioner) setOperationAsFailed(log *logrus.Entry, operationID, message string) {
 	updateOperationStatus(log, func() error {
 		session := h.dbSessionFactory.NewWriteSession()
-		return session.UpdateOperationState(operationID, message, model.Failed)
+		return session.UpdateOperationState(operationID, message, model.Failed, time.Now())
 	})
 }
 
 func (h *HydroformProvisioner) setOperationAsSucceeded(operationID string) error {
 	session := h.dbSessionFactory.NewWriteSession()
-	return session.UpdateOperationState(operationID, "Operation succeeded.", model.Succeeded)
+	return session.UpdateOperationState(operationID, "Operation succeeded.", model.Succeeded, time.Now())
 }
 
 func updateOperationStatus(log *logrus.Entry, updateFunction func() error) {

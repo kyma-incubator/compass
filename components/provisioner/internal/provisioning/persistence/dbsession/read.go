@@ -271,11 +271,17 @@ func (r readSession) getProviderConfig(runtimeID string) (model.ProviderConfigur
 	return gcpConfig, nil
 }
 
+var (
+	operationColumns = []string{
+		"id", "type", "start_timestamp", "stage", "end_timestamp", "state", "message", "cluster_id", "last_transition",
+	}
+)
+
 func (r readSession) GetOperation(operationID string) (model.Operation, dberrors.Error) {
 	var operation model.Operation
 
 	err := r.session.
-		Select("id", "type", "start_timestamp", "end_timestamp", "state", "message", "cluster_id").
+		Select(operationColumns...).
 		From("operation").
 		Where(dbr.Eq("id", operationID)).
 		LoadOne(&operation)
@@ -299,7 +305,7 @@ func (r readSession) GetLastOperation(runtimeID string) (model.Operation, dberro
 	var operation model.Operation
 
 	err := r.session.
-		Select("id", "type", "start_timestamp", "end_timestamp", "state", "message", "cluster_id").
+		Select(operationColumns...).
 		From("operation").
 		Where(dbr.Eq("start_timestamp", lastOperationDateSelect)).
 		LoadOne(&operation)
@@ -312,4 +318,23 @@ func (r readSession) GetLastOperation(runtimeID string) (model.Operation, dberro
 	}
 
 	return operation, nil
+}
+
+func (r readSession) ListInProgressOperations() ([]model.Operation, dberrors.Error) {
+	var operations []model.Operation
+
+	_, err := r.session.
+		Select(operationColumns...).
+		From("operation").
+		Where(dbr.Eq("state", model.InProgress)).
+		Load(&operations)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return []model.Operation{}, nil
+		}
+		return nil, dberrors.Internal("Failed to list In Progress operation: %s", err)
+	}
+
+	return operations, nil
 }

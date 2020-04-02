@@ -21,6 +21,17 @@ const (
 	ReconnectRuntime OperationType = "RECONNECT_RUNTIME"
 )
 
+type OperationStage string
+
+const (
+	ShootProvisioning      OperationStage = "ShootProvisioning"
+	StartingInstallation   OperationStage = "StartingInstallation"
+	WaitingForInstallation OperationStage = "WaitingForInstallation"
+	ConnectRuntimeAgent    OperationStage = "ConnectRuntimeAgent"
+	StartingUpgrade        OperationStage = "StartingUpgrade"
+	FinishedStep           OperationStage = "Finished"
+)
+
 type Cluster struct {
 	ID             string
 	Kubeconfig     *string
@@ -56,6 +67,8 @@ type Operation struct {
 	State          OperationState
 	Message        string
 	ClusterID      string
+	Stage          OperationStage // TODO: add to db layer if you stick with it
+	LastTransition *time.Time     // TODO: add to db layer if you stick with it
 }
 
 type RuntimeAgentConnectionStatus int

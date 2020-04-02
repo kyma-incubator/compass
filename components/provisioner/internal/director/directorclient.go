@@ -114,6 +114,7 @@ func (cc *directorClient) GetConnectionToken(id, tenant string) (graphql.OneTime
 	return *response.Result, nil
 }
 
+// TODO: add retries
 func (cc *directorClient) getToken() error {
 	token, err := cc.oauthClient.GetAuthorizationToken()
 	if err != nil {
@@ -128,6 +129,7 @@ func (cc *directorClient) getToken() error {
 	return nil
 }
 
+// TODO: add retries
 func (cc *directorClient) executeDirectorGraphQLCall(directorQuery string, tenant string, response interface{}) error {
 	if cc.token.EmptyOrExpired() {
 		log.Infof("Refreshing token to access Director Service")

@@ -212,9 +212,8 @@ type UpgradeClusterInput struct {
 	Version string `json:"version"`
 }
 
-type UpgradeRuntimeInput struct {
-	ClusterConfig *UpgradeClusterInput `json:"clusterConfig"`
-	KymaConfig    *KymaConfigInput     `json:"kymaConfig"`
+type UpgradeKymaOnRuntimeInput struct {
+	Version string `json:"version"`
 }
 
 type OperationState string

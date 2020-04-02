@@ -2,6 +2,7 @@ package gardener
 
 import (
 	"fmt"
+	"time"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -10,7 +11,7 @@ import (
 
 func (r *ProvisioningOperator) ProceedToFailedStep(log *logrus.Entry, shoot gardener_types.Shoot, operationId, failMessage string) error {
 	session := r.dbsFactory.NewWriteSession()
-	dberr := session.UpdateOperationState(operationId, failMessage, model.Failed)
+	dberr := session.UpdateOperationState(operationId, failMessage, model.Failed, time.Now())
 	if dberr != nil {
 		return fmt.Errorf("error: failed to set operation as failed: %s", dberr.Error())
 	}

@@ -211,9 +211,8 @@ input ComponentConfigurationInput {
     sourceURL: String                     # Custom URL for the source files of the given component
 }
 
-input UpgradeRuntimeInput {
-    clusterConfig: UpgradeClusterInput  # Configuration of the cluster to upgrade
-    kymaConfig: KymaConfigInput         # Configuration of the Kyma Runtime to upgrade
+input UpgradeKymaOnRuntimeInput {
+    version: String! # Desired version of Kyma on the Runtime
 }
 
 input UpgradeClusterInput {
@@ -223,7 +222,7 @@ input UpgradeClusterInput {
 type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
     provisionRuntime(config: ProvisionRuntimeInput!): OperationStatus
-    upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): String!
+    upgradeKymaOnRuntime(id: String!, config: UpgradeKymaOnRuntimeInput!): OperationStatus
     deprovisionRuntime(id: String!): String!
 
     # Compass Runtime Agent Connection Management

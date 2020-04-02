@@ -18,19 +18,20 @@ func (r *ProvisioningOperator) DeprovisioningInProgress(log *logrus.Entry, shoot
 	}
 
 	log.Infof("Starting Uninstall")
-	k8sConfig, err := KubeconfigForShoot(r.secretsClient, shoot.Name)
-	if err != nil {
-		log.Errorf("error fetching kubeconfig: %s", err.Error())
-		return ctrl.Result{}, err
-	}
+	//k8sConfig, err := KubeconfigForShoot(r.secretsClient, shoot.Name)
+	//if err != nil {
+	//	log.Errorf("error fetching kubeconfig: %s", err.Error())
+	//	return ctrl.Result{}, err
+	//}
 
-	err = r.installationService.TriggerUninstall(k8sConfig)
-	if err != nil {
-		log.Errorf("error triggering uninstalling: %s", err.Error())
-		return ctrl.Result{}, err
-	}
+	// TODO: decide what to do with that
+	//err = r.installationService.TriggerUninstall(k8sConfig)
+	//if err != nil {
+	//	log.Errorf("error triggering uninstalling: %s", err.Error())
+	//	return ctrl.Result{}, err
+	//}
 
-	err = r.updateShoot(shoot, func(s *gardener_types.Shoot) {
+	err := r.updateShoot(shoot, func(s *gardener_types.Shoot) {
 		annotate(s, installationAnnotation, Uninstalling.String())
 	})
 	if err != nil {

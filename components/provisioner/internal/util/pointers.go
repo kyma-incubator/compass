@@ -1,6 +1,9 @@
 package util
 
-import "k8s.io/apimachinery/pkg/util/intstr"
+import (
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"time"
+)
 
 func StringPtr(str string) *string {
 	return &str
@@ -24,4 +27,8 @@ func BoolFromPtr(val *bool) bool {
 
 func IntOrStrPtr(intOrStr intstr.IntOrString) *intstr.IntOrString {
 	return &intOrStr
+}
+
+func TimePtr(time time.Time) *time.Time {
+	return &time
 }
