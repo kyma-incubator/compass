@@ -91,10 +91,16 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		return p.operationManager.OperationFailed(operation, errorMessage)
 	}
 
+	// prepare tags
+	tags := make(map[string]*string, 3) // TODO(marcobebway) increase initial capacity to 4 if the runtime name is provided
+	tags["SubAccountID"] = &pp.ErsContext.SubAccountID
+	tags["InstanceID"] = &operation.InstanceID
+	tags["OperationID"] = &operation.ProvisionerOperationID
+
 	// create Resource Group
 	groupName := pp.Parameters.Name
 	// TODO(nachtmaar): use different resource group name https://github.com/kyma-incubator/compass/issues/967
-	resourceGroup, err := namespaceClient.CreateResourceGroup(p.context, azureCfg, groupName)
+	resourceGroup, err := namespaceClient.CreateResourceGroup(p.context, azureCfg, groupName, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
@@ -104,7 +110,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	// create EventHubs Namespace
 	eventHubsNamespace := pp.Parameters.Name
-	eventHubNamespace, err := namespaceClient.CreateNamespace(p.context, azureCfg, groupName, eventHubsNamespace)
+	eventHubNamespace, err := namespaceClient.CreateNamespace(p.context, azureCfg, groupName, eventHubsNamespace, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
