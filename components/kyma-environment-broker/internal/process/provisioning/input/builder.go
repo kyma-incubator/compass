@@ -8,8 +8,8 @@ import (
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
-	"github.com/vburenin/nsync"
 	"github.com/sirupsen/logrus"
+	"github.com/vburenin/nsync"
 )
 
 //go:generate mockery -name=ComponentListProvider -output=automock -outpkg=automock -case=underscore
