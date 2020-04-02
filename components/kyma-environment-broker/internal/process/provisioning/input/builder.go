@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/vburenin/nsync"
+	"github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=ComponentListProvider -output=automock -outpkg=automock -case=underscore
@@ -131,6 +132,7 @@ func mapToGQLComponentConfigurationInput(kymaComponents []v1alpha1.KymaComponent
 		var sourceURL *string
 		if component.Source != nil {
 			sourceURL = &component.Source.URL
+			logrus.Infof("Source URL: %s", sourceURL)
 		}
 
 		input = append(input, &gqlschema.ComponentConfigurationInput{
@@ -139,5 +141,6 @@ func mapToGQLComponentConfigurationInput(kymaComponents []v1alpha1.KymaComponent
 			SourceURL: sourceURL,
 		})
 	}
+
 	return input
 }
