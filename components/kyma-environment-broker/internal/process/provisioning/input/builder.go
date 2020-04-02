@@ -128,9 +128,15 @@ func (f *InputBuilderFactory) initInput(provider HyperscalerInputProvider, kymaV
 func mapToGQLComponentConfigurationInput(kymaComponents []v1alpha1.KymaComponent) internal.ComponentConfigurationInputList {
 	var input internal.ComponentConfigurationInputList
 	for _, component := range kymaComponents {
+		var sourceURL *string
+		if component.Source != nil {
+			sourceURL = &component.Source.URL
+		}
+
 		input = append(input, &gqlschema.ComponentConfigurationInput{
 			Component: component.Name,
 			Namespace: component.Namespace,
+			SourceURL: sourceURL,
 		})
 	}
 	return input

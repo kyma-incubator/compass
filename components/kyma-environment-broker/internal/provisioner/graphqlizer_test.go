@@ -19,6 +19,11 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 				Namespace: "bello",
 			},
 			{
+				Component: "custom-component",
+				Namespace: "bello",
+				SourceURL: ptr.String("github.com/kyma-incubator/custom-component"),
+			},
+			{
 				Component: "hakuna",
 				Namespace: "matata",
 				Configuration: []*gqlschema.ConfigEntryInput{
@@ -52,6 +57,11 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
           {
             component: "pico",
             namespace: "bello", 
+          }
+          {
+            component: "custom-component",
+            namespace: "bello",
+            sourceURL: "github.com/kyma-incubator/custom-component", 
           }
           {
             component: "hakuna",
