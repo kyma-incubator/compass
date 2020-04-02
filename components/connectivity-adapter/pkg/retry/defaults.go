@@ -1,8 +1,9 @@
 package retry
 
 import (
-	"github.com/avast/retry-go"
 	"time"
+
+	"github.com/avast/retry-go"
 )
 
 func DefaultRetryOptions() []retry.Option {
