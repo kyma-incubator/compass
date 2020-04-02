@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
-
+	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/director"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/retry"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-
-	"github.com/gorilla/mux"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -45,7 +44,7 @@ func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 		query := directorCli.GetApplicationsByNameRequest(appName)
 
 		var apps GqlSuccessfulAppPage
-		err := client.Run(r.Context(), query, &apps)
+		err := retry.GQLRun(client.Run, r.Context(), query, &apps)
 		if err != nil {
 			wrappedErr := errors.Wrap(err, "while getting service")
 			mw.logger.Error(wrappedErr)
