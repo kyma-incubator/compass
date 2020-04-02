@@ -31,8 +31,9 @@ type Config struct {
 
 	ProvisionTimeout   time.Duration `default:"3h"`
 	DeprovisionTimeout time.Duration `default:"1h"`
-	DummyTest          bool `default:"false"`
-	CleanupPhase       bool `default:"false"`
+	DummyTest          bool          `default:"false"`
+	CleanupPhase       bool          `default:"false"`
+	InstanceID         string        `envconfig:"optional"`
 }
 
 // Suite provides set of clients able to provision and test Kyma runtime
@@ -48,6 +49,7 @@ type Suite struct {
 	DeprovisionTimeout time.Duration
 	IsDummyTest        bool
 	IsCleanupPhase     bool
+	InstanceID         string
 }
 
 func (ts *Suite) Cleanup() {
@@ -65,6 +67,10 @@ func newTestSuite(t *testing.T) *Suite {
 
 	log := logrus.New()
 	instanceID := uuid.New().String()
+	if cfg.CleanupPhase {
+		log.Info("using instance ID %s", cfg.InstanceID)
+		instanceID = cfg.InstanceID
+	}
 
 	httpClient := newHTTPClient(cfg.SkipCertVerification)
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	v1 "k8s.io/api/core/v1"
 	"net/http"
 	"os"
 	"time"
@@ -42,23 +43,52 @@ type Client struct {
 	directorClient *director.Client
 	log            logrus.FieldLogger
 
-	instanceID string
-	tenantID   string
+	configSecretName string
+	instanceID       string
+	tenantID         string
 }
 
-func NewClient(config Config, tenantID, instanceID string, clientHttp http.Client, directorClient *director.Client, log logrus.FieldLogger) *Client {
+func NewClient(config Config, tenantID, instanceID, configSecretName string, clientHttp http.Client, directorClient *director.Client, log logrus.FieldLogger) *Client {
 	return &Client{
-		tenantID:       tenantID,
-		instanceID:     instanceID,
-		config:         config,
-		httpClient:     clientHttp,
-		directorClient: directorClient,
-		log:            log,
+		tenantID:         tenantID,
+		instanceID:       instanceID,
+		configSecretName: configSecretName,
+		config:           config,
+		httpClient:       clientHttp,
+		directorClient:   directorClient,
+		log:              log,
 	}
 }
 
 type runtimeStatusResponse struct {
 	Result schema.RuntimeStatus `json:"result"`
+}
+
+func (c *Client) ExposeConfigAsSecret() error {
+	response, err := c.fetchRuntimeConfig()
+	if err != nil {
+		return errors.Wrap(err, "while fetching runtime config")
+	}
+	config := *response.Result.RuntimeConfiguration.Kubeconfig
+
+	// client for host cluster
+	cli, err := c.newClient("")
+	if err != nil {
+		return errors.Wrap(err, "while setting client config")
+	}
+	err = cli.Create(context.Background(), &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      c.configSecretName,
+			Namespace: "compass-system",
+		},
+		Data: map[string][]byte{
+			"config": []byte(config),
+		},
+	})
+	if err != nil {
+		return errors.Wrapf(err, "while creating a secret %s", c.configSecretName)
+	}
+	return nil
 }
 
 func (c *Client) EnsureUAAInstanceRemoved() error {
@@ -72,6 +102,24 @@ func (c *Client) EnsureUAAInstanceRemoved() error {
 	}
 	c.log.Info("Successfully ensured UAA instance was removed")
 	return nil
+}
+
+func (c *Client) newRuntimeClient() (client.Client, error) {
+	response, err := c.fetchRuntimeConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching runtime config")
+	}
+	tmpFile, err := c.writeConfigToFile(response)
+	if err != nil {
+		return nil, errors.Wrap(err, "while writing runtime config")
+	}
+	defer c.removeFile(tmpFile)
+
+	cli, err := c.newClient(tmpFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "while setting client config")
+	}
+	return cli, nil
 }
 
 func (c *Client) fetchRuntimeConfig() (*runtimeStatusResponse, error) {
@@ -103,37 +151,22 @@ func (c *Client) fetchRuntimeConfig() (*runtimeStatusResponse, error) {
 	return res, nil
 }
 
-func (c *Client) newRuntimeClient() (client.Client, error) {
-	response, err := c.fetchRuntimeConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "while fetching runtime config")
-	}
-
+func (c *Client) writeConfigToFile(response *runtimeStatusResponse) (string, error) {
 	runtimeConfig := *response.Result.RuntimeConfiguration.Kubeconfig
 	content := []byte(runtimeConfig)
 	runtimeConfigTmpFile, err := ioutil.TempFile("", "runtime.*.yaml")
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating runtime config temp file")
+		return "", errors.Wrap(err, "while creating runtime config temp file")
 	}
-	defer func() {
-		err = os.Remove(runtimeConfigTmpFile.Name())
-		if err != nil {
-			c.log.Fatal(err)
-		}
-	}()
 
 	if _, err := runtimeConfigTmpFile.Write(content); err != nil {
-		return nil, errors.Wrap(err, "while writing runtime config temp file")
+		return "", errors.Wrap(err, "while writing runtime config temp file")
 	}
 	if err := runtimeConfigTmpFile.Close(); err != nil {
-		return nil, errors.Wrap(err, "while closing runtime config temp file")
+		return "", errors.Wrap(err, "while closing runtime config temp file")
 	}
 
-	cli, err := c.newClient(runtimeConfigTmpFile.Name())
-	if err != nil {
-		return nil, errors.Wrap(err, "while setting client config")
-	}
-	return cli, nil
+	return runtimeConfigTmpFile.Name(), nil
 }
 
 func (c *Client) newClient(configPath string) (client.Client, error) {
@@ -168,6 +201,13 @@ func (c *Client) ensureInstanceRemoved(cli client.Client) error {
 		}
 		return false, nil
 	})
+}
+
+func (c *Client) removeFile(fileName string) {
+	err := os.Remove(fileName)
+	if err != nil {
+		c.log.Fatal(err)
+	}
 }
 
 func (c *Client) warnOnError(err error) {
