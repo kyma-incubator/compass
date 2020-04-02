@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -118,6 +119,12 @@ func (r *ComponentsListProvider) getManagedRuntimeComponents() ([]v1alpha1.KymaC
 		Components []v1alpha1.KymaComponent `json:"components"`
 	}
 	err = yaml.Unmarshal(yamlFile, &managedList)
+	logrus.Infof("%+v", managedList)
+	for _, c := range managedList.Components {
+		if c.Source != nil {
+			logrus.Infof(c.Source.URL)
+		}
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "while unmarshaling YAML file with managed components list")
 	}
