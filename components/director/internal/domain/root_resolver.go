@@ -262,8 +262,12 @@ func (r *queryResolver) AutomaticScenarioAssignmentForScenario(ctx context.Conte
 	return r.scenarioAssignment.GetAutomaticScenarioAssignmentForScenarioName(ctx, scenarioName)
 }
 
+//TODO: Deprecated; Remove it
 func (r *queryResolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	return r.scenarioAssignment.AutomaticScenarioAssignmentForSelector(ctx, selector)
+	return r.scenarioAssignment.AutomaticScenarioAssignmentsForSelector(ctx, selector)
+}
+func (r *queryResolver) AutomaticScenarioAssignmentsForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+	return r.scenarioAssignment.AutomaticScenarioAssignmentsForSelector(ctx, selector)
 }
 
 func (r *queryResolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
@@ -450,11 +454,21 @@ func (r *mutationResolver) DeletePackage(ctx context.Context, id string) (*graph
 func (r *mutationResolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
 	return r.scenarioAssignment.DeleteAutomaticScenarioAssignmentForScenario(ctx, scenarioName)
 }
+
+//TODO: Deprecated; Remove it
 func (r *mutationResolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	return r.scenarioAssignment.DeleteAutomaticScenarioAssignmentForSelector(ctx, selector)
+	return r.scenarioAssignment.DeleteAutomaticScenarioAssignmentsForSelector(ctx, selector)
 }
+
+//TODO: Deprecated; Remove it
 func (r *mutationResolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
-	return r.scenarioAssignment.SetAutomaticScenarioAssignment(ctx, in)
+	return r.scenarioAssignment.CreateAutomaticScenarioAssignment(ctx, in)
+}
+func (r *mutationResolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+	return r.scenarioAssignment.DeleteAutomaticScenarioAssignmentsForSelector(ctx, selector)
+}
+func (r *mutationResolver) CreateAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
+	return r.scenarioAssignment.CreateAutomaticScenarioAssignment(ctx, in)
 }
 
 type applicationResolver struct {

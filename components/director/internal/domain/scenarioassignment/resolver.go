@@ -43,7 +43,7 @@ type Resolver struct {
 	svc       Service
 }
 
-func (r *Resolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
+func (r *Resolver) CreateAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while beginning transaction")
@@ -93,7 +93,7 @@ func (r *Resolver) GetAutomaticScenarioAssignmentForScenarioName(ctx context.Con
 	return &assignment, nil
 }
 
-func (r *Resolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+func (r *Resolver) AutomaticScenarioAssignmentsForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while beginning transaction")
@@ -157,7 +157,7 @@ func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int,
 	}, nil
 }
 
-func (r *Resolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+func (r *Resolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while beginning transaction")
