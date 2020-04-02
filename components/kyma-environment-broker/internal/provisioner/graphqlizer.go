@@ -81,7 +81,6 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		region: "{{.Region}}",
 		provider: "{{ .Provider }}",
 		diskType: "{{.DiskType}}",
-		seed: "az-eu3",
 		targetSecret: "{{ .TargetSecret }}",
 		workerCidr: "{{ .WorkerCidr }}",
         autoScalerMin: {{ .AutoScalerMin }},
