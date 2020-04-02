@@ -83,7 +83,7 @@ func (del *Delegator) postRequest(evaluationRequest *BasicEvaluationCreateReques
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		msg := fmt.Sprintf("Got unexpected status %del while creating internal evaluation", resp.StatusCode)
+		msg := fmt.Sprintf("Got unexpected status %d while creating internal evaluation", resp.StatusCode)
 		logger.Error(msg)
 		return nil, fmt.Errorf(msg)
 	}
