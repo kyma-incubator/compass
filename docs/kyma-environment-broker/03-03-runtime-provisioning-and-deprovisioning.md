@@ -3,10 +3,8 @@
 You can configure Runtime provisioning and deprovisioning processes by providing additional input objects in the form of overrides. For example, you may want to provide tokens/credentials/URLs to integrate Kyma Runtime with external systems. 
 
 The operations of provisioning and deprovisioning a Runtime consist of several steps. Each step is represented by a separate file. 
-
-In case of the provisioning operation, each file is responsible for a separate part of preparing Runtime parameters. All data collected in provisioning steps are used in the step called [`create_runtime`](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
-
-In  case of the deprovisioning operation, each file is responsible for a separate part of cleaning Runtime dependencies. 
+ - In case of the provisioning operation, each file is responsible for a separate part of preparing Runtime parameters. All data collected in provisioning steps are used in the step called [`create_runtime`](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
+- In  case of the deprovisioning operation, each file is responsible for a separate part of cleaning Runtime dependencies. 
 >**TIP:** You can fetch the necessary data required to properly deprovision Runtime's dependencies from the `ProvisioningOperation` in the [initialisation](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/deprovisioning/initialisation.go#L46) step.
 
 In case of a processing failure, every step can be re-launched multiple times. That is why for each step you should determine a behavior in case of a processing failure. It can either:
