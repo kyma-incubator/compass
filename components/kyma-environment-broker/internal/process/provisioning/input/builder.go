@@ -132,7 +132,7 @@ func mapToGQLComponentConfigurationInput(kymaComponents []v1alpha1.KymaComponent
 		var sourceURL *string
 		if component.Source != nil {
 			sourceURL = &component.Source.URL
-			logrus.Infof("Source URL: %s", sourceURL)
+			logrus.Infof("Source URL: %s", *sourceURL)
 		}
 
 		input = append(input, &gqlschema.ComponentConfigurationInput{
