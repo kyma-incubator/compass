@@ -1,29 +1,30 @@
-# Tenant synchronization
+# Tenant Fetcher
 
 ## Overview
 
-This document describes the configuration of the Tenant Fetcher that fetches information about tenants from an external API.
+Tenant Fetcher fetches information about tenants from external APIs.
+
 It also contains details about the API schema that should be implemented to allow integration with the Tenant Fetcher.
 
-## Configuring the Tenant Fetcher
+## Configuration
 
-The Tenant Fetcher CronJob can be configured with the following Helm values overrides:
+You can configure Tenant Fetcher CronJob with the following Helm values overrides:
 
-| Parameter | Default value | Description |
+| Parameter | Description |  Default value |
 |-----------|-------------|---------------|
-| **global.tenantFetcher.enabled** | `false` | Tenant Fetcher CronJob |
-| **global.tenantFetcher.providerName** | `"compass"` | Name of the tenants provider |
-| **global.tenantFetcher.schedule** | `"*/5 * * * *"` | CronJob schedule |
-| **global.tenantFetcher.oauth.client** | None | OAuth 2.0 client ID |
-| **global.tenantFetcher.oauth.secret** | None | OAuth 2.0 client secret |
-| **global.tenantFetcher.oauth.tokenURL** | None | Endpoint for fetching the OAuth 2.0 access token to the Tenant Events API |
-| **global.tenantFetcher.endpoints.tenantCreated** | `"127.0.0.1/events?type=created"` | Tenant Events API endpoint for fetching created tenants |
-| **global.tenantFetcher.endpoints.tenantDeleted** | `"127.0.0.1/events?type=deleted"` | Tenant Events API endpoint for fetching deleted tenants |
-| **global.tenantFetcher.endpoints.tenantUpdated** | `"127.0.0.1/events?type=updated"` | Tenant Events API endpoint for fetching updated tenants |
-| **global.tenantFetcher.fieldMapping.idField** | `"id"` | Name of the field in the event data payload containing the tenant name |
-| **global.tenantFetcher.fieldMapping.nameField** | `"name"` | Name of the field in the event data payload containing the tenant ID |
-| **global.tenantFetcher.fieldMapping.discriminatorField** | None | Optional name of the field in the event data payload used to filter created tenants. If provided, only events containing this field with the value specified in **discriminatorValue** will be used. |
-| **global.tenantFetcher.fieldMapping.discriminatorValue** | None | Optional value of the discriminator field used to filter created tenants. It is used only if **discriminatorField** is provided. |
+| **global.tenantFetcher.enabled** | Enables the Tenant Fetcher CronJob. | `false` |
+| **global.tenantFetcher.providerName** | Specifies the name of the tenants provider. | `"compass"` |
+| **global.tenantFetcher.schedule** | CronJob schedule | `"*/5 * * * *"` |
+| **global.tenantFetcher.oauth.client** | OAuth 2.0 client ID | None |
+| **global.tenantFetcher.oauth.secret** | OAuth 2.0 client secret | None |
+| **global.tenantFetcher.oauth.tokenURL** | Endpoint for fetching the OAuth 2.0 access token to the Tenant Events API | None |
+| **global.tenantFetcher.endpoints.tenantCreated** | Tenant Events API endpoint for fetching created tenants | `"127.0.0.1/events?type=created"` |
+| **global.tenantFetcher.endpoints.tenantDeleted** | Tenant Events API endpoint for fetching deleted tenants | `"127.0.0.1/events?type=deleted"` |
+| **global.tenantFetcher.endpoints.tenantUpdated** | Tenant Events API endpoint for fetching updated tenants | `"127.0.0.1/events?type=updated"` |
+| **global.tenantFetcher.fieldMapping.idField** | Name of the field in the event data payload containing the tenant name | `"id"` |
+| **global.tenantFetcher.fieldMapping.nameField** | Name of the field in the event data payload containing the tenant ID | `"name"` |
+| **global.tenantFetcher.fieldMapping.discriminatorField** | Optional name of the field in the event data payload used to filter created tenants. If provided, only events containing this field with the value specified in **discriminatorValue** will be used. | None |
+| **global.tenantFetcher.fieldMapping.discriminatorValue** | Optional value of the discriminator field used to filter created tenants. It is used only if **discriminatorField** is provided. | None |
 
 ## Tenant Events API
 
@@ -34,7 +35,7 @@ Tenant Events API should use the OAuth 2.0 client credentials authorization flow
 
 Three endpoints are supported, each for different type of events.
 All endpoints should accept the same parameters specified in the **Query parameters** section.
-Every endpoint should return a specific payload. 
+Every endpoint should return a specific payload.
 
 - **Query parameters**
 
@@ -53,7 +54,7 @@ JSON payload:
       "eventData": "{\"$id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"$name\":\"Tenant 1\",\"$discriminator\":\"default\"}"
     }
   ],
-  "totalResults": 27, 
+  "totalResults": 27,
   "totalPages": 1
 }
 ```
@@ -73,7 +74,7 @@ JSON payload:
       "eventData": "{\"$id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"$name\":\"Tenant 1\"}"
     }
   ],
-  "totalResults": 27, 
+  "totalResults": 27,
   "totalPages": 1
 }
 ```
@@ -92,7 +93,7 @@ JSON payload:
       "eventData": "{\"$id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"$name\":\"Tenant 1\"}"
     }
   ],
-  "totalResults": 27, 
+  "totalResults": 27,
   "totalPages": 1
 }
 ```

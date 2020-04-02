@@ -1,8 +1,8 @@
-# Investigations
+# Investigations and proposals
 
 ## Overview
 
-This directory contains the following investigations:
+This directory contains the following investigations and proposals:
 
 - [Storage - Requirements](./storage/requirements.md)
 - [Storage - S3](./storage/s3/README.md)
