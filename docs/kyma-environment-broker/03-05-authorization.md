@@ -6,10 +6,19 @@ Kyma Environment Broker provides two ways to authorize users:
 
 ## Basic authorization
 
-To access the Kyma Environment Broker endpoints with the Basic authorization enabled, specify the `Authorization: Basic` token header:
+Follow these steps to obtain Kyma Environment Broker's credentials:
+
+1. Export these values as environment variables:
+
+```bash
+export CLIENT_SECRET="$(kubectl get secret -n compass-system compass-kyma-environment-broker -o jsonpath='{.data.broker-password}' | base64 --decode)"
+export ENCODED_CREDENTIALS=$(echo -n "broker:$CLIENT_SECRET" | base64)
+```
+
+To access the Kyma Environment Broker endpoints with the Basic authorization enabled, specify the `Authorization: Basic` request header:
 
 ```
-Authorization: Basic {BASE64_ENCODED_CREDENTIALS}
+Authorization: Basic $ENCODED_CREDENTIALS
 ```
 
 >**NOTE**: This implementation is currently being replaced with the Oauth2 implementation and will be deprecated soon.
@@ -26,7 +35,7 @@ To access the Kyma Environment Broker endpoints with the OAuth2 authorization en
 ```
 >**NOTE:** If you do not use the `/oauth` prefix, the Basic authorization is performed.
 
-You must also specify the `Authorization: Bearer` token header:
+You must also specify the `Authorization: Bearer` request header:
 ```
 Authorization: Bearer {ACCESS_TOKEN}
 ```
@@ -39,25 +48,25 @@ Follow these steps to obtain a new access token:
 
   - The name of your client and the Secret which stores the client credentials:
 
-    ```shell
+    ```bash
     export CLIENT_NAME={YOUR_CLIENT_NAME}
     ```
 
   - The Namespace in which you want to create the client and the Secret that stores its credentials:
 
-    ```shell
+    ```bash
     export CLIENT_NAMESPACE={YOUR_CLIENT_NAMESPACE}
     ```
 
   - The domain of your cluster:
 
-    ```shell
+    ```bash
     export DOMAIN={CLUSTER_DOMAIN}
     ```
 
 2. Create an OAuth2 client:
 
-```shell
+```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: hydra.ory.sh/v1alpha1
 kind: OAuth2Client
