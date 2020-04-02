@@ -165,16 +165,6 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			wantRepeatOperation: true,
 		},
 		{
-			name:          "Error when the length of name in parameter is less than 6 characters",
-			giveOperation: fixProvisioningOperationWithInvalidName,
-			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
-				accountProvider := fixAccountProvider()
-				return *fixEventHubStep(storage.Operations(), accountProvider)
-			},
-			wantRepeatOperation: false,
-		},
-
-		{
 			name:          "EventHubs Namespace creation error",
 			giveOperation: fixProvisioningOperation,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
@@ -440,22 +430,6 @@ func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
 			"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 			"parameters": {
         		"name": "nachtmaar-15",
-        		"components": [],
-				"region": "westeurope"
-			}
-		}`,
-		InputCreator: fixKnativeKafkaInputCreator(t),
-	}
-	return op
-}
-
-func fixProvisioningOperationWithInvalidName(t *testing.T) internal.ProvisioningOperation {
-	op := internal.ProvisioningOperation{
-		Operation: internal.Operation{},
-		ProvisioningParameters: `{
-			"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
-			"parameters": {
-                "name": "foo",
         		"components": [],
 				"region": "westeurope"
 			}

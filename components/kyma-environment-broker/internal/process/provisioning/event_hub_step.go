@@ -69,11 +69,6 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	}
 	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
-	// validate length of name parameter
-	if err = validateLengthOfName(pp.Parameters.Name); err != nil {
-		return p.operationManager.OperationFailed(operation, err.Error())
-	}
-
 	// get hyperscaler credentials from HAP
 	credentials, err := p.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
 	if err != nil {
@@ -139,13 +134,6 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	operation.InputCreator.SetOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
 
 	return operation, 0, nil
-}
-
-func validateLengthOfName(name string) error {
-	if len(name) < 6 {
-		return fmt.Errorf("length of name [%s] in parameter must be greater than or equal to 6", name)
-	}
-	return nil
 }
 
 func extractEndpoint(accessKeys eventhub.AccessKeys) string {
