@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/statusupdate"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -118,6 +119,8 @@ func main() {
 		})
 		go periodicExecutor.Run(stopCh)
 	}
+
+	statusMiddleware := statusupdate.NewUpdate(transact)
 
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
