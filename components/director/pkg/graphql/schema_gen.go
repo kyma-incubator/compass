@@ -3222,7 +3222,7 @@ input APIDefinitionInput {
 """
 **Validation:**
 - for ODATA type, accepted formats are XML and JSON, for OPEN_API accepted formats are YAML and JSON
-- data or fetchRequest provided
+- data or fetchRequest required
 """
 input APISpecInput {
 	data: CLOB
@@ -3231,17 +3231,38 @@ input APISpecInput {
 	fetchRequest: FetchRequestInput
 }
 
+"""
+**Validation:** provided placeholders' names are unique
+"""
 input ApplicationFromTemplateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
 	templateName: String!
 	values: [TemplateValueInput!]
 }
 
 input ApplicationRegisterInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
 	name: String!
+	"""
+	**Validation:** max=256
+	"""
 	providerName: String
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
+	"""
+	**Validation:** label key is alphanumeric with underscore
+	"""
 	labels: Labels
 	webhooks: [WebhookInput!]
+	"""
+	**Validation:** valid URL, max=256
+	"""
 	healthCheckURL: String
 	apiDefinitions: [APIDefinitionInput!] @deprecated(reason: "Use package.packages.apiDefinitions")
 	eventDefinitions: [EventDefinitionInput!] @deprecated(reason: "Use package.packages.eventDefinitions")
@@ -3251,8 +3272,17 @@ input ApplicationRegisterInput {
 	statusCondition: ApplicationStatusCondition
 }
 
+"""
+**Validation:** provided placeholders' names are unique and used in applicationInput
+"""
 input ApplicationTemplateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
 	name: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
@@ -3260,8 +3290,17 @@ input ApplicationTemplateInput {
 }
 
 input ApplicationUpdateInput {
+	"""
+	**Validation:** max=256
+	"""
 	providerName: String
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
+	"""
+	**Validation:** valid URL, max=256
+	"""
 	healthCheckURL: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
@@ -3269,7 +3308,13 @@ input ApplicationUpdateInput {
 
 input AuthInput {
 	credential: CredentialDataInput
+	"""
+	**Validation:** if provided, headers name and value required
+	"""
 	additionalHeaders: HttpHeaders
+	"""
+	**Validation:** if provided, query parameters name and value required
+	"""
 	additionalQueryParams: QueryParams
 	requestAuth: CredentialRequestAuthInput
 }
@@ -3288,39 +3333,80 @@ input BasicCredentialDataInput {
 }
 
 input CSRFTokenCredentialRequestAuthInput {
+	"""
+	**Validation:** valid URL
+	"""
 	tokenEndpointURL: String!
 	credential: CredentialDataInput
+	"""
+	**Validation:** if provided, headers name and value required
+	"""
 	additionalHeaders: HttpHeaders
+	"""
+	**Validation:** if provided, query parameters name and value required
+	"""
 	additionalQueryParams: QueryParams
 }
 
+"""
+**Validation:** basic or oauth field required
+"""
 input CredentialDataInput {
 	basic: BasicCredentialDataInput
 	oauth: OAuthCredentialDataInput
 }
 
 input CredentialRequestAuthInput {
+	"""
+	**Validation:** required
+	"""
 	csrf: CSRFTokenCredentialRequestAuthInput
 }
 
 input DocumentInput {
+	"""
+	**Validation:** max=128
+	"""
 	title: String!
+	"""
+	**Validation:** max=128
+	"""
 	displayName: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String!
 	format: DocumentFormat!
+	"""
+	**Validation:** max=256
+	"""
 	kind: String
 	data: CLOB
 	fetchRequest: FetchRequestInput
 }
 
 input EventDefinitionInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
 	name: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
 	spec: EventSpecInput
+	"""
+	**Validation:** max=36
+	"""
 	group: String
 	version: VersionInput
 }
 
+"""
+**Validation:**
+- data or fetchRequest required
+- for ASYNC_API type, accepted formats are YAML and JSON
+"""
 input EventSpecInput {
 	data: CLOB
 	type: EventSpecType!
@@ -3329,18 +3415,33 @@ input EventSpecInput {
 }
 
 input FetchRequestInput {
+	"""
+	**Validation:** valid URL, max=256
+	"""
 	url: String!
 	auth: AuthInput
 	mode: FetchMode = SINGLE
+	"""
+	**Validation:** max=256
+	"""
 	filter: String
 }
 
 input IntegrationSystemInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
 	name: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
 }
 
 input LabelDefinitionInput {
+	"""
+	**Validation:** max=256, alphanumeric chartacters and underscore
+	"""
 	key: String!
 	schema: JSONSchema
 }
@@ -3358,6 +3459,9 @@ input LabelFilter {
 }
 
 input LabelInput {
+	"""
+	**Validation:** max=256, alphanumeric chartacters and underscore
+	"""
 	key: String!
 	value: Any!
 }
@@ -3370,11 +3474,20 @@ input LabelSelectorInput {
 input OAuthCredentialDataInput {
 	clientId: ID!
 	clientSecret: String!
+	"""
+	**Validation:** valid URL
+	"""
 	url: String!
 }
 
 input PackageCreateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
 	name: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
 	instanceAuthRequestInputSchema: JSONSchema
 	defaultInstanceAuth: AuthInput
@@ -3389,18 +3502,18 @@ input PackageInstanceAuthRequestInput {
 	"""
 	context: JSON
 	"""
-	JSON validated against package.instanceAuthRequestInputSchema
+	**Validation:** JSON validated against package.instanceAuthRequestInputSchema
 	"""
 	inputParams: JSON
 }
 
 input PackageInstanceAuthSetInput {
 	"""
-	If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
+	**Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
 	"""
 	auth: AuthInput
 	"""
-	Optional if the auth is provided.
+	**Validation:** Optional if the auth is provided.
 	If the status condition is "FAILED", auth must be empty.
 	"""
 	status: PackageInstanceAuthStatusInput
@@ -3408,6 +3521,9 @@ input PackageInstanceAuthSetInput {
 
 input PackageInstanceAuthStatusInput {
 	condition: PackageInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	"""
+	**Validation:** required, if condition is FAILED
+	"""
 	message: String!
 	"""
 	Example reasons:
@@ -3416,12 +3532,20 @@ input PackageInstanceAuthStatusInput {
 	- CredentialsProvided
 	- CredentialsNotProvided
 	- PendingDeletion
+	
+	   **Validation**: required, if condition is FAILED
 	"""
 	reason: String!
 }
 
 input PackageUpdateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
 	name: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
 	instanceAuthRequestInputSchema: JSONSchema
 	"""
@@ -3431,31 +3555,58 @@ input PackageUpdateInput {
 }
 
 input PlaceholderDefinitionInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
 	name: String!
+	"""
+	**Validation:**  max=2000
+	"""
 	description: String
 }
 
 input RuntimeInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
 	name: String!
+	"""
+	**Validation:**  max=2000
+	"""
 	description: String
+	"""
+	**Validation:** key: required, alphanumeric with underscore
+	"""
 	labels: Labels
 	statusCondition: RuntimeStatusCondition
 }
 
 input TemplateValueInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
 	placeholder: String!
 	value: String!
 }
 
 input VersionInput {
+	"""
+	**Validation:** max=256
+	"""
 	value: String!
 	deprecated: Boolean = false
+	"""
+	**Validation:** max=256
+	"""
 	deprecatedSince: String
 	forRemoval: Boolean = false
 }
 
 input WebhookInput {
 	type: ApplicationWebhookType!
+	"""
+	**Validation:** valid URL, max=256
+	"""
 	url: String!
 	auth: AuthInput
 }
