@@ -187,7 +187,6 @@ func TestProvision_Provision(t *testing.T) {
 	})
 
 	t.Run("return error on using a cluster name of length less than 6 in parameters", func(t *testing.T) {
-
 		// given
 		// #setup memory storage
 		invalidClusterName := "foo"
