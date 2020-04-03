@@ -10,6 +10,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func SetAutomaticScenarioAssignment(t *testing.T, ctx context.Context, automaticScenario, selecterKey, selectorValue string) {
+	input := graphql.AutomaticScenarioAssignmentSetInput{
+		ScenarioName: automaticScenario,
+		Selector: &graphql.LabelSelectorInput{
+			Key:   selecterKey,
+			Value: selectorValue,
+		},
+	}
+	payload, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(input)
+	require.NoError(t, err)
+	request := fixSetAutomaticScenarioAssignmentRequest(payload)
+	err = tc.cli.Run(ctx, request, nil)
+	require.NoError(t, err)
+}
+
 //Application
 func getApplication(t *testing.T, ctx context.Context, id string) graphql.ApplicationExt {
 	appRequest := fixApplicationRequest(id)
@@ -104,10 +119,10 @@ func registerRuntime(t *testing.T, ctx context.Context, placeholder string) *gra
 }
 
 func registerRuntimeFromInput(t *testing.T, ctx context.Context, input *graphql.RuntimeInput) *graphql.RuntimeExt {
-	return createRuntimeFromInputWithinTenant(t, ctx, input, testTenants.GetDefaultTenantID())
+	return registerRuntimeFromInputWithinTenant(t, ctx, input, testTenants.GetDefaultTenantID())
 }
 
-func createRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, input *graphql.RuntimeInput, tenant string) *graphql.RuntimeExt {
+func registerRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, input *graphql.RuntimeInput, tenant string) *graphql.RuntimeExt {
 	inputGQL, err := tc.graphqlizer.RuntimeInputToGQL(*input)
 	require.NoError(t, err)
 

@@ -14,7 +14,7 @@ func TestGetConnString(t *testing.T) {
 			Password: "dbpass",
 			Host:     "dbhost",
 			Port:     "12345",
-			Name:     "dbname",
+			DBName:   "dbname",
 			SSLMode:  "enable",
 		}
 

@@ -30,8 +30,8 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 POSTGRES_CONTAINER="test-postgres"
 POSTGRES_VERSION="11"
 
-DB_USER="usr"
-DB_PWD="pwd"
+DB_USER="postgres"
+DB_PWD="pgsql@12345"
 DB_NAME="compass"
 DB_PORT="5432"
 

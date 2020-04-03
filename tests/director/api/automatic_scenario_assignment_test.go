@@ -82,7 +82,47 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 	assertAutomaticScenarioAssignments(t,
 		[]graphql.AutomaticScenarioAssignmentSetInput{inputAssignment1, inputAssignment2},
 		actualAssignmentsForSelector)
+}
 
+func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	prodScenario := "PRODUCTION"
+	devScenario := "DEVELOPMENT"
+	//TODO: use different tenant
+	createScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), []string{prodScenario, devScenario, "DEFAULT"})
+
+	rtm1 := registerRuntime(t, ctx, "runtime1")
+	defer unregisterRuntime(t, rtm1.ID)
+	rtm2 := registerRuntime(t, ctx, "runtime2")
+	defer unregisterRuntime(t, rtm2.ID)
+	rtm3 := registerRuntime(t, ctx, "runtime3")
+	defer unregisterRuntime(t, rtm3.ID)
+
+	selectorKey := "KEY"
+	selectorValue := "VALUE"
+	setRuntimeLabel(t, ctx, rtm1.ID, selectorKey, selectorValue)
+	setRuntimeLabel(t, ctx, rtm2.ID, selectorKey, selectorValue)
+
+	//WHEN
+	SetAutomaticScenarioAssignment(t, ctx, prodScenario, selectorKey, selectorValue)
+	SetAutomaticScenarioAssignment(t, ctx, devScenario, selectorKey, selectorValue)
+
+	// WHEN
+	runtimesPage := graphql.RuntimePageExt{}
+	queryReq := fixRuntimesRequest()
+	err := tc.RunOperation(ctx, queryReq, &runtimesPage)
+	require.NoError(t, err)
+	for _, rtm := range runtimesPage.Data {
+		if rtm.ID == rtm3.ID {
+			continue
+		}
+		val, ok := rtm.Labels["scenarios"]
+		require.True(t, ok)
+		scenarios, ok := val.([]interface{})
+		require.True(t, ok)
+		assert.Equal(t, scenarios, []interface{}{prodScenario, devScenario})
+	}
 }
 
 func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
