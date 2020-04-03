@@ -71,8 +71,7 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, c
 		return nil, err
 	}
 
-	beName, beDescription := generateNameAndDescription(provisionParams.ErsContext.GlobalAccountID,
-		provisionParams.ErsContext.SubAccountID, provisionParams.Parameters.Name, DefinitionType, operation.InstanceID, configurator.ProvideSuffix())
+	beName, beDescription := generateNameAndDescription(provisionParams.ErsContext.GlobalAccountID, provisionParams.ErsContext.SubAccountID, provisionParams.Parameters.Name, configurator.ProvideSuffix())
 
 	return &BasicEvaluationCreateRequest{
 		DefinitionType:   DefinitionType,
@@ -93,9 +92,18 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, c
 	}, nil
 }
 
-func generateNameAndDescription(globalAccountId string, subAccountId string, name string, definitionType string, instanceId string, beType string) (string, string) {
-	beName := fmt.Sprintf("K8S-Azure-Kyma-%s-%s-%s_%s", name, globalAccountId, subAccountId, beType)
-	beDescription := fmt.Sprintf("%s %s evaluation for SAP Kyma Runtime for Global Account [%s], Subaccount [%s], instance name [%s] and instance id [%s]",
-		definitionType, beType, globalAccountId, subAccountId, name, instanceId)
-	return beName, beDescription
+func generateNameAndDescription(globalAccountId string, subAccountId string, name string, beType string) (string, string) {
+	beName := fmt.Sprintf("K8S-AZR-Kyma-%s-%s-%s", beType, subAccountId, name)
+	beDescription := fmt.Sprintf("SKR instance Name: %s, Global Account: %s, Subaccount: %s",
+		name, globalAccountId, subAccountId)
+
+	return truncateString(beName, 80), truncateString(beDescription, 255)
+}
+
+func truncateString(input string, num int) string {
+	output := input
+	if len(input) > num {
+		output = input[0:num]
+	}
+	return output
 }

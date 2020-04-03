@@ -25,7 +25,7 @@ func (eea *ExternalEvalAssistant) CheckIfAlreadyDone(operation internal.Provisio
 }
 
 func (eea *ExternalEvalAssistant) ProvideSuffix() string {
-	return "external"
+	return "ext"
 }
 
 func (eea *ExternalEvalAssistant) ProvideTesterAccessId() int64 {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -81,9 +82,10 @@ func (del *Delegator) postRequest(evaluationRequest *BasicEvaluationCreateReques
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		msg := fmt.Sprintf("Got unexpected status %d while creating internal evaluation", resp.StatusCode)
+		msg := fmt.Sprintf("Got unexpected status %d and response %s while creating internal evaluation", resp.StatusCode, responseBody(resp))
 		logger.Error(msg)
 		return nil, fmt.Errorf(msg)
 	}
@@ -101,4 +103,12 @@ func deserialize(resp *http.Response, err error) (*BasicEvaluationCreateResponse
 	var responseObject BasicEvaluationCreateResponse
 	err = dec.Decode(&responseObject)
 	return &responseObject, err
+}
+
+func responseBody(resp *http.Response) string {
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+	return string(bodyBytes)
 }

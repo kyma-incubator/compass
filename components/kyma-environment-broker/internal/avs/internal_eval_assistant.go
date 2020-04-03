@@ -42,7 +42,7 @@ func (iec *InternalEvalAssistant) CheckIfAlreadyDone(operation internal.Provisio
 }
 
 func (iec *InternalEvalAssistant) ProvideSuffix() string {
-	return "internal"
+	return "int"
 }
 
 func (iec *InternalEvalAssistant) ProvideTesterAccessId() int64 {

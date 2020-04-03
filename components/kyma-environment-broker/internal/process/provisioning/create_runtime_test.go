@@ -161,6 +161,7 @@ func fixProvisioningParameters(t *testing.T) string {
 		},
 		Parameters: internal.ProvisioningParametersDTO{
 			Region: ptr.String("europe-west4-a"),
+			Name:   "dummy",
 		},
 	}
 
