@@ -32,6 +32,7 @@ type (
 
 type ProvisionEndpoint struct {
 	operationsStorage    storage.Provisioning
+	instanceStorage      storage.Instances
 	queue                Queue
 	builderFactory       PlanValidator
 	enabledPlanIDs       map[string]struct{}
@@ -41,7 +42,7 @@ type ProvisionEndpoint struct {
 	log logrus.FieldLogger
 }
 
-func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, builderFactory PlanValidator, validator PlansSchemaValidator, kvod bool, log logrus.FieldLogger) *ProvisionEndpoint {
+func NewProvision(cfg Config, operationsStorage storage.Operations, instanceStorage storage.Instances, q Queue, builderFactory PlanValidator, validator PlansSchemaValidator, kvod bool, log logrus.FieldLogger) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
 		id := planIDsMapping[planName]
@@ -51,6 +52,7 @@ func NewProvision(cfg Config, operationsStorage storage.Operations, q Queue, bui
 	return &ProvisionEndpoint{
 		plansSchemaValidator: validator,
 		operationsStorage:    operationsStorage,
+		instanceStorage:      instanceStorage,
 		queue:                q,
 		builderFactory:       builderFactory,
 		log:                  log.WithField("service", "ProvisionEndpoint"),
@@ -100,8 +102,19 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 
 	err = b.operationsStorage.InsertProvisioningOperation(operation)
 	if err != nil {
-		logger.Errorf("cannot save operations: %s", err)
-		return domain.ProvisionedServiceSpec{}, errors.New("cannot save operations")
+		logger.Errorf("cannot save operation: %s", err)
+		return domain.ProvisionedServiceSpec{}, errors.New("cannot save operation")
+	}
+	err = b.instanceStorage.Insert(internal.Instance{
+		InstanceID:             instanceID,
+		GlobalAccountID:        ersContext.GlobalAccountID,
+		ServiceID:              provisioningParameters.ServiceID,
+		ServicePlanID:          provisioningParameters.PlanID,
+		ProvisioningParameters: operation.ProvisioningParameters,
+	})
+	if err != nil {
+		logger.Errorf("cannot save instance in storage: %s", err)
+		return domain.ProvisionedServiceSpec{}, errors.New("cannot save instance")
 	}
 
 	// add new operation to queue

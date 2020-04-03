@@ -42,6 +42,9 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
+	err = memoryStorage.Instances().Insert(fixInstance())
+	assert.NoError(t, err)
+
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
@@ -129,6 +132,13 @@ func fixOperationCreateRuntime(t *testing.T) internal.ProvisioningOperation {
 		},
 		ProvisioningParameters: fixProvisioningParameters(t),
 		InputCreator:           fixInputCreator(t),
+	}
+}
+
+func fixInstance() internal.Instance {
+	return internal.Instance{
+		InstanceID:      instanceID,
+		GlobalAccountID: globalAccountID,
 	}
 }
 

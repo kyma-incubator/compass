@@ -45,6 +45,7 @@ func TestProvision_Provision(t *testing.T) {
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure"}},
 			memoryStorage.Operations(),
+			memoryStorage.Instances(),
 			queue,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
@@ -74,6 +75,12 @@ func TestProvision_Provision(t *testing.T) {
 
 		assert.Equal(t, globalAccountID, instanceParameters.ErsContext.GlobalAccountID)
 		assert.Equal(t, clusterName, instanceParameters.Parameters.Name)
+
+		instance, err := memoryStorage.Instances().GetByID(instanceID)
+		require.NoError(t, err)
+
+		assert.Equal(t, instance.ProvisioningParameters, operation.ProvisioningParameters)
+		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
 	})
 
 	t.Run("existing operation ID will be return", func(t *testing.T) {
@@ -90,6 +97,7 @@ func TestProvision_Provision(t *testing.T) {
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure"}},
 			memoryStorage.Operations(),
+			memoryStorage.Instances(),
 			nil,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
@@ -117,6 +125,8 @@ func TestProvision_Provision(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
 		assert.NoError(t, err)
+		err = memoryStorage.Instances().Insert(fixInstance())
+		assert.NoError(t, err)
 
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", planID).Return(true)
@@ -125,6 +135,7 @@ func TestProvision_Provision(t *testing.T) {
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure"}},
 			memoryStorage.Operations(),
+			memoryStorage.Instances(),
 			nil,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
@@ -141,7 +152,7 @@ func TestProvision_Provision(t *testing.T) {
 		}, true)
 
 		// then
-		assert.Error(t, err)
+		assert.EqualError(t, err, "provisioning operation already exist")
 		assert.Empty(t, response.OperationData)
 	})
 
@@ -162,6 +173,7 @@ func TestProvision_Provision(t *testing.T) {
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure"}},
 			memoryStorage.Operations(),
+			memoryStorage.Instances(),
 			nil,
 			factoryBuilder,
 			fixValidator,
@@ -203,6 +215,7 @@ func TestProvision_Provision(t *testing.T) {
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure"}},
 			memoryStorage.Operations(),
+			memoryStorage.Instances(),
 			nil,
 			factoryBuilder,
 			fixValidator,
@@ -243,6 +256,7 @@ func TestProvision_Provision(t *testing.T) {
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure"}},
 			memoryStorage.Operations(),
+			memoryStorage.Instances(),
 			queue,
 			factoryBuilder,
 			fixValidator,
@@ -287,6 +301,7 @@ func TestProvision_Provision(t *testing.T) {
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure"}},
 			memoryStorage.Operations(),
+			memoryStorage.Instances(),
 			queue,
 			factoryBuilder,
 			fixValidator,
@@ -338,4 +353,13 @@ func fixAlwaysPassJSONValidator() broker.PlansSchemaValidator {
 	}
 
 	return fixValidator
+}
+
+func fixInstance() internal.Instance {
+	return internal.Instance{
+		InstanceID:      instanceID,
+		GlobalAccountID: globalAccountID,
+		ServiceID:       serviceID,
+		ServicePlanID:   planID,
+	}
 }
