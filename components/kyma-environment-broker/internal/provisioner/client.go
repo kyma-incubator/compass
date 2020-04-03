@@ -1,10 +1,16 @@
 package provisioner
 
 import (
+	"context"
+	"crypto/tls"
+	"fmt"
+	"net/http"
+	"reflect"
+
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
+	"net/http/httputil"
 )
 
 // accountIDKey is a header key name for request send by graphQL client
@@ -25,14 +31,31 @@ type Client interface {
 }
 
 type client struct {
-	graphQLClient *graphql.Client
+	graphQLClient *gcli.Client
 	queryProvider queryProvider
 	graphqlizer   Graphqlizer
 }
 
-func NewProvisionerClient(endpoint string, queryLogging bool) Client {
+func NewProvisionerClient(endpoint string, queryDumping bool) Client {
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	httpclient := httputil.NewClientConn()
+
+	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))
+	if queryDumping {
+		graphQlClient.Log = func(s string) {
+			fmt.Println(s)
+		}
+	}
+
 	return &client{
-		graphQLClient: graphql.NewGraphQLClient(endpoint, true, queryLogging),
+		graphQLClient: graphQlClient,
 		queryProvider: queryProvider{},
 		graphqlizer:   Graphqlizer{},
 	}
@@ -50,7 +73,7 @@ func (c *client) ProvisionRuntime(accountID, subAccountID string, config schema.
 	req.Header.Add(subAccountIDKey, subAccountID)
 
 	var response schema.OperationStatus
-	err = c.graphQLClient.ExecuteRequest(req, &response)
+	err = c.executeRequest(req, &response)
 	if err != nil {
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to provision Runtime")
 	}
@@ -69,7 +92,7 @@ func (c *client) UpgradeRuntime(accountID, runtimeID string, config schema.Upgra
 	req.Header.Add(accountIDKey, accountID)
 
 	var operationId string
-	err = c.graphQLClient.ExecuteRequest(req, &operationId)
+	err = c.executeRequest(req, &operationId)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to upgrade Runtime")
 	}
@@ -82,7 +105,7 @@ func (c *client) DeprovisionRuntime(accountID, runtimeID string) (string, error)
 	req.Header.Add(accountIDKey, accountID)
 
 	var operationId string
-	err := c.graphQLClient.ExecuteRequest(req, &operationId)
+	err := c.executeRequest(req, &operationId)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to deprovision Runtime")
 	}
@@ -95,7 +118,7 @@ func (c *client) ReconnectRuntimeAgent(accountID, runtimeID string) (string, err
 	req.Header.Add(accountIDKey, accountID)
 
 	var operationId string
-	err := c.graphQLClient.ExecuteRequest(req, &operationId)
+	err := c.executeRequest(req, &operationId)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to reconnect Runtime agent")
 	}
@@ -119,7 +142,7 @@ func (c *client) GCPRuntimeStatus(accountID, runtimeID string) (GCPRuntimeStatus
 	req.Header.Add(accountIDKey, accountID)
 
 	var response GCPRuntimeStatus
-	err := c.graphQLClient.ExecuteRequest(req, &response)
+	err := c.executeRequest(req, &response)
 	if err != nil {
 		return GCPRuntimeStatus{}, errors.Wrap(err, "Failed to get Runtime status")
 	}
@@ -132,9 +155,27 @@ func (c *client) RuntimeOperationStatus(accountID, operationID string) (schema.O
 	req.Header.Add(accountIDKey, accountID)
 
 	var response schema.OperationStatus
-	err := c.graphQLClient.ExecuteRequest(req, &response)
+	err := c.executeRequest(req, &response)
 	if err != nil {
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to get Runtime operation status")
 	}
 	return response, nil
+}
+
+func (c *client) executeRequest(req *gcli.Request, respDestination interface{}) error {
+	if reflect.ValueOf(respDestination).Kind() != reflect.Ptr {
+		return errors.New("destination is not of pointer type")
+	}
+
+	type graphQLResponseWrapper struct {
+		Result interface{} `json:"result"`
+	}
+
+	wrapper := &graphQLResponseWrapper{Result: respDestination}
+	err := c.graphQLClient.Run(context.Background(), req, wrapper)
+	if err != nil {
+		return errors.Wrap(err, "Failed to execute request")
+	}
+
+	return nil
 }

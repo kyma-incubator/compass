@@ -3,6 +3,8 @@ package lms
 import (
 	"time"
 
+	"regexp"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -34,8 +36,14 @@ func NewTenantManager(storage TenantStorage, lmsClient TenantCreator, log logrus
 	}
 }
 
+var tenantNameNormalizationRegexp = regexp.MustCompile("[^a-zA-Z0-9]+")
+
 // ProvideLMSTenantID returns existing tenant ID or creates new one (if not exists)
-func (c *manager) ProvideLMSTenantID(name, region string) (string, error) {
+func (c *manager) ProvideLMSTenantID(globalAccountID, region string) (string, error) {
+	name := tenantNameNormalizationRegexp.ReplaceAllString(globalAccountID, "")
+	if len(name) > 50 {
+		name = name[:50]
+	}
 	tenant, exists, err := c.tenantStorage.FindTenantByName(name, region)
 	if err != nil {
 		return "", errors.Wrapf(err, "while checking if tenant is already created")
@@ -43,8 +51,9 @@ func (c *manager) ProvideLMSTenantID(name, region string) (string, error) {
 
 	if !exists {
 		output, err := c.lmsClient.CreateTenant(CreateTenantInput{
-			Name:   name,
-			Region: region, //todo: implement mapping
+			Name:            name,
+			Region:          region,
+			GlobalAccountID: globalAccountID,
 		})
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating tenant in lms")

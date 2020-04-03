@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -139,19 +141,18 @@ func TestLmsStepsHappyPath(t *testing.T) {
 	lmsClient.IsCertRequestedForTenant(op.Lms.TenantID)
 
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-		Key: "fluent-bit.conf.Service.Flush", Value: "30"})
+		Key: "fluent-bit.conf.Output.forward.enabled", Value: "true"})
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-		Key: "fluent-bit.conf.Output.Elasticsearch.enabled", Value: "true"})
+		Key: "fluent-bit.backend.forward.host", Value: fmt.Sprintf("forward.%s", lms.FakeLmsHost)})
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-		Key: "fluent-bit.backend.es.host", Value: lms.FakeLmsHost})
+		Key: "fluent-bit.backend.forward.port", Value: "8443"})
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-		Key: "fluent-bit.backend.es.port", Value: "443"})
+		Key: "fluent-bit.backend.forward.tls.ca", Value: "Y2VydC1jYS1wYXlsb2Fk"})
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-		Key: "fluent-bit.backend.es.tls_ca", Value: lms.FakeCaCertificate})
+		Key: "fluent-bit.backend.forward.tls.cert", Value: "c2lnbmVkLWNlcnQtcGF5bG9hZA=="})
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-		Key: "fluent-bit.backend.es.tls_crt", Value: lms.FakeSignedCertificate})
-	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-		Key: "fluent-bit.backend.es.tls_key", Value: lms.FakePrivateKey})
+		Key: "fluent-bit.backend.forward.tls.key", Value: "cHJpdmF0ZS1rZXk="})
+
 }
 
 func newFakeClientWithTenant(timeToReady time.Duration) (*lms.FakeClient, string) {

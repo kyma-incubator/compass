@@ -392,7 +392,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:1b82049d7fd8cd3f1c9e2899148b0d6e52cb37bad5ec953ee874d5f019d96e03"
+  digest = "1:b1088526fcb0be1a92ae8feb398260cdab4e648b6e541f1de28bb0f7590cd815"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -402,7 +402,6 @@
     "components/director/pkg/pagination",
     "components/director/pkg/scalar",
     "components/provisioner/pkg/gqlschema",
-    "tests/provisioner-tests/test/testkit/graphql",
   ]
   pruneopts = "UT"
   revision = "b43e05d8331a01c557eb7be4822dd17d24faf97f"
@@ -1093,7 +1092,6 @@
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/director/pkg/jsonschema",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
-    "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
     "github.com/machinebox/graphql",

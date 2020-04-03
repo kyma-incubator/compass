@@ -6,6 +6,8 @@ import (
 
 	"fmt"
 
+	"strconv"
+
 	"github.com/Masterminds/sprig"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -139,6 +141,11 @@ func (g *Graphqlizer) UpgradeClusterConfigToGraphQL(in gqlschema.UpgradeClusterI
 }
 
 func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string, error) {
+	for _, c := range in.Components {
+		for _, cfg := range c.Configuration {
+			cfg.Value = strconv.Quote(cfg.Value)
+		}
+	}
 	return g.genericToGraphQL(in, `{
 		version: "{{ .Version }}",
       	{{- with .Components }}
@@ -155,7 +162,7 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
 			  {{- range . }}
               {
                 key: "{{ .Key }}",
-                value: "{{ .Value }}",
+                value: {{ .Value }},
 				{{- if .Secret }}
                 secret: true,
 				{{- end }}

@@ -17,8 +17,9 @@ func TestManagerProvideLMSTenantIDIfNotExists(t *testing.T) {
 	lmsStorage := storage.NewMemoryStorage().LMSTenants()
 	tCreator := &automock.TenantCreator{}
 	tCreator.On("CreateTenant", lms.CreateTenantInput{
-		Name:   "newtenant",
-		Region: "eu",
+		Name:            "newtenant",
+		Region:          "eu",
+		GlobalAccountID: "newtenant",
 	}).Return(lms.CreateTenantOutput{ID: "tenant-id-001"}, nil)
 	defer tCreator.AssertExpectations(t)
 

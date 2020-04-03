@@ -93,20 +93,22 @@ func NewClient(cfg Config, log logrus.FieldLogger) Client {
 }
 
 type createTenantPayload struct {
-	Name        string   `json:"name"`
-	Region      string   `json:"region"`
-	SamlGroups  []string `json:"samlGroups"`
-	ClusterType string   `json:"ClusterType"`
-	DataCenter  string   `json:"datacenter"`
-	Environment string   `json:"Environment"`
-	Project     string   `json:"project"`
-	SamlTenant  string   `json:"samlTenant"`
-	Costcenter  int      `json:"costcenter"`
+	Name            string   `json:"name"`
+	Region          string   `json:"region"`
+	SamlGroups      []string `json:"samlGroups"`
+	ClusterType     string   `json:"clusterType"`
+	DataCenter      string   `json:"datacenter"`
+	Environment     string   `json:"environment"`
+	Project         string   `json:"project"`
+	SamlTenant      string   `json:"samlTenant"`
+	Costcenter      int      `json:"costcenter"`
+	GlobalAccountID string   `json:"globalAccountID"`
 }
 
 type CreateTenantInput struct {
-	Name   string
-	Region string
+	Name            string
+	Region          string
+	GlobalAccountID string
 }
 
 type CreateTenantOutput struct {
