@@ -68,9 +68,9 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			}
 			defer u.transact.RollbackUnlessCommited(tx)
 
-			persistence.SaveToContext(ctx, tx)
+			ctxWithDB := persistence.SaveToContext(ctx, tx)
 
-			isConnected, err := u.repo.IsConnected(ctx, consumerInfo.ConsumerID, string(u.table))
+			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerInfo.ConsumerID, string(u.table))
 			if err != nil {
 				u.writeError(w, errors.Wrap(err, "while checking status").Error(), http.StatusInternalServerError)
 				return
@@ -84,7 +84,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
-			err = u.repo.UpdateStatus(ctx, consumerInfo.ConsumerID, string(u.table))
+			err = u.repo.UpdateStatus(ctxWithDB, consumerInfo.ConsumerID, string(u.table))
 			if err != nil {
 
 				u.writeError(w, errors.Wrap(err, "while updating status").Error(), http.StatusInternalServerError)

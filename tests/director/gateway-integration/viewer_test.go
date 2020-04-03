@@ -73,17 +73,22 @@ func TestViewerQuery(t *testing.T) {
 		require.NotEmpty(t, appOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := getAccessToken(t, appOauthCredentialData, "")
+		accessToken := getAccessToken(t, appOauthCredentialData, "application:read")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
 
 		t.Log("Requesting Viewer as Application")
 		viewer := graphql.Viewer{}
 		req := fixGetViewerRequest()
 
+		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
+
 		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenant, req, &viewer)
 		require.NoError(t, err)
 		assert.Equal(t, app.ID, viewer.ID)
 		assert.Equal(t, graphql.ViewerTypeApplication, viewer.Type)
+
+		appAfterViewer := getApplication(t, ctx, oauthGraphQLClient, tenant, app.ID)
+		assert.Equal(t, graphql.ApplicationStatusConditionConnected, appAfterViewer.Status.Condition)
 	})
 
 	t.Run("Test viewer as Runtime", func(t *testing.T) {
@@ -108,17 +113,22 @@ func TestViewerQuery(t *testing.T) {
 		require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := getAccessToken(t, rtmOauthCredentialData, "")
+		accessToken := getAccessToken(t, rtmOauthCredentialData, "runtime:read")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
 
 		t.Log("Requesting Viewer as Runtime")
 		viewer := graphql.Viewer{}
 		req := fixGetViewerRequest()
 
+		assert.Equal(t, graphql.RuntimeStatusConditionInitial, runtime.Status.Condition)
+
 		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenant, req, &viewer)
 		require.NoError(t, err)
 		assert.Equal(t, runtime.ID, viewer.ID)
 		assert.Equal(t, graphql.ViewerTypeRuntime, viewer.Type)
+
+		runtimeAfterViewer := getRuntime(t, ctx, oauthGraphQLClient, tenant, runtime.ID)
+		assert.Equal(t, graphql.RuntimeStatusConditionConnected, runtimeAfterViewer.Status.Condition)
 	})
 
 }
