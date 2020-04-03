@@ -18,6 +18,15 @@ func fixRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
 			applicationInGQL, tc.gqlFieldsProvider.ForApplication()))
 }
 
+func fixUpdateApplicationRequest(id, updateInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+  				result: updateApplication(id: "%s", in: %s) {
+    					%s
+					}
+				}`, id, updateInputGQL, tc.gqlFieldsProvider.ForApplication()))
+}
+
 func fixCreateIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {

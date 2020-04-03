@@ -33,7 +33,7 @@ const (
 	runtimesTable     Table = "runtimes"
 )
 
-func NewUpdate(transact persistence.Transactioner, repo StatusUpdateRepository) *update {
+func New(transact persistence.Transactioner, repo StatusUpdateRepository) *update {
 	return &update{
 		table:    "",
 		transact: transact,

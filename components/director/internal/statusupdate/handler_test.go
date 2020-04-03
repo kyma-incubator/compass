@@ -187,7 +187,7 @@ func TestUpdate_Handler(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepoFn()
 			persist, transact := testCase.TxFn()
-			update := statusupdate.NewUpdate(transact, repo)
+			update := statusupdate.New(transact, repo)
 
 			// WHEN
 			rr := httptest.NewRecorder()

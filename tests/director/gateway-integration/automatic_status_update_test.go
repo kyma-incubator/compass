@@ -6,15 +6,18 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
+	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestViewerQuery(t *testing.T) {
+func TestAutomaticStatusUpdate(t *testing.T) {
 	domain := os.Getenv("DOMAIN")
 	require.NotEmpty(t, domain)
 	tenant := os.Getenv("DEFAULT_TENANT")
@@ -27,7 +30,32 @@ func TestViewerQuery(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	t.Run("Test viewer as Integration System", func(t *testing.T) {
+	t.Run("Test status update as static user", func(t *testing.T) {
+
+		t.Log("Register application as Static User")
+		appInput := graphql.ApplicationRegisterInput{
+			Name:         "app-static-user",
+			ProviderName: ptr.String("compass"),
+		}
+		app, err := registerApplicationWithinTenant(t, ctx, dexGraphQLClient, tenant, appInput)
+		require.NoError(t, err)
+
+		defer unregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+
+		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
+
+		t.Log("Update the application")
+		appUpdateInput := graphql.ApplicationUpdateInput{
+			Description: str.Ptr("New description"),
+		}
+		appUpdated, err := updateApplicationWithinTenant(t, ctx, dexGraphQLClient, tenant, app.ID, appUpdateInput)
+		require.NoError(t, err)
+
+		t.Log("Ensure the status condition")
+		assert.Equal(t, graphql.ApplicationStatusConditionInitial, appUpdated.Status.Condition)
+	})
+
+	t.Run("Test status update as Integration System", func(t *testing.T) {
 		t.Log("Register Integration System with Dex id token")
 		intSys := registerIntegrationSystem(t, ctx, dexGraphQLClient, tenant, "integration-system")
 
@@ -38,20 +66,34 @@ func TestViewerQuery(t *testing.T) {
 		intSysOauthCredentialData := requestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := getAccessToken(t, intSysOauthCredentialData, "")
+		accessToken := getAccessToken(t, intSysOauthCredentialData, "application:write")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
 
-		t.Log("Requesting Viewer as Integration System")
-		viewer := graphql.Viewer{}
-		req := fixGetViewerRequest()
-
-		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenant, req, &viewer)
+		t.Log("Register application as Integration System")
+		appInput := graphql.ApplicationRegisterInput{
+			Name:                "app-is",
+			ProviderName:        ptr.String("compass"),
+			IntegrationSystemID: &intSys.ID,
+		}
+		app, err := registerApplicationWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)
 		require.NoError(t, err)
-		assert.Equal(t, intSys.ID, viewer.ID)
-		assert.Equal(t, graphql.ViewerTypeIntegrationSystem, viewer.Type)
+
+		defer unregisterApplication(t, ctx, oauthGraphQLClient, tenant, app.ID)
+
+		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
+
+		t.Log("Update the application")
+		appUpdateInput := graphql.ApplicationUpdateInput{
+			Description: str.Ptr("New description"),
+		}
+		appUpdated, err := updateApplicationWithinTenant(t, ctx, oauthGraphQLClient, tenant, app.ID, appUpdateInput)
+		require.NoError(t, err)
+
+		t.Log("Ensure the status condition")
+		assert.Equal(t, graphql.ApplicationStatusConditionInitial, appUpdated.Status.Condition)
 	})
 
-	t.Run("Test viewer as Application", func(t *testing.T) {
+	t.Run("Test automatic status update as Application", func(t *testing.T) {
 		appInput := graphql.ApplicationRegisterInput{
 			Name: "test-app",
 			Labels: &graphql.Labels{
@@ -73,17 +115,23 @@ func TestViewerQuery(t *testing.T) {
 		require.NotEmpty(t, appOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := getAccessToken(t, appOauthCredentialData, "")
+		accessToken := getAccessToken(t, appOauthCredentialData, "application:read")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
 
 		t.Log("Requesting Viewer as Application")
 		viewer := graphql.Viewer{}
 		req := fixGetViewerRequest()
 
+		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
+
 		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenant, req, &viewer)
 		require.NoError(t, err)
 		assert.Equal(t, app.ID, viewer.ID)
 		assert.Equal(t, graphql.ViewerTypeApplication, viewer.Type)
+
+		t.Log("Ensure the status condition")
+		appAfterViewer := getApplication(t, ctx, oauthGraphQLClient, tenant, app.ID)
+		assert.Equal(t, graphql.ApplicationStatusConditionConnected, appAfterViewer.Status.Condition)
 	})
 
 	t.Run("Test viewer as Runtime", func(t *testing.T) {
@@ -108,17 +156,23 @@ func TestViewerQuery(t *testing.T) {
 		require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := getAccessToken(t, rtmOauthCredentialData, "")
+		accessToken := getAccessToken(t, rtmOauthCredentialData, "runtime:read")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
 
 		t.Log("Requesting Viewer as Runtime")
 		viewer := graphql.Viewer{}
 		req := fixGetViewerRequest()
 
+		assert.Equal(t, graphql.RuntimeStatusConditionInitial, runtime.Status.Condition)
+
 		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenant, req, &viewer)
 		require.NoError(t, err)
 		assert.Equal(t, runtime.ID, viewer.ID)
 		assert.Equal(t, graphql.ViewerTypeRuntime, viewer.Type)
+
+		t.Log("Ensure the status condition")
+		runtimeAfterViewer := getRuntime(t, ctx, oauthGraphQLClient, tenant, runtime.ID)
+		assert.Equal(t, graphql.RuntimeStatusConditionConnected, runtimeAfterViewer.Status.Condition)
 	})
 
 }
