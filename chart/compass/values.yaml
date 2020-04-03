@@ -255,5 +255,7 @@ global:
       maxOpenConnections: 1
       maxIdleConnections: 1
 
+  enableCompassDefaultScenarioAssignment: true
+
 pairing-adapter:
   enabled: false
