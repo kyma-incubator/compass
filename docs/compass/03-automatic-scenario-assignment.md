@@ -188,6 +188,7 @@ query  {
 ```
 
 In the response you can find that given runtime is assigned to the `MARKETING` scenario.
+
 // TODO in current implementation, it is not
 ```
 {
@@ -203,8 +204,8 @@ In the response you can find that given runtime is assigned to the `MARKETING` s
               "MARKETING"
             ]
           }
-        },
-
+        }
+        ...
       ]
     }
   }
