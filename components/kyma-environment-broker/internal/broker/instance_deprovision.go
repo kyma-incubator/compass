@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -61,34 +62,32 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		logger.Errorf("cannot get existing operation from storage %s", errStorage)
 		return domain.DeprovisionServiceSpec{}, errors.New("cannot get existing operation from storage")
 	case existingOperation != nil && !dberr.IsNotFound(errStorage):
-		switch existingOperation.State {
-		case domain.Failed:
+		if existingOperation.State == domain.Failed {
 			// reprocess operation again
-			operationID = existingOperation.ID
 			existingOperation.State = domain.InProgress
 			_, err = b.operationsStorage.UpdateDeprovisioningOperation(*existingOperation)
 			if err != nil {
 				return domain.DeprovisionServiceSpec{}, errors.New("cannot update existing operation")
 			}
-		case domain.InProgress:
-			// return existing operation
-			return domain.DeprovisionServiceSpec{
-				IsAsync:       true,
-				OperationData: existingOperation.ID,
-			}, nil
+			logger.Infof("Reprocessing failed deprovisioning of runtime: runtimeID=%s, globalAccountID=%s", instance.RuntimeID, instance.GlobalAccountID)
+			b.queue.Add(operationID)
 		}
-	case dberr.IsNotFound(errStorage):
-		// create and save new operation
-		operation, err := internal.NewDeprovisioningOperationWithID(operationID, instanceID)
-		if err != nil {
-			logger.Errorf("cannot create new operation: %s", err)
-			return domain.DeprovisionServiceSpec{}, errors.New("cannot create new operation")
-		}
-		err = b.operationsStorage.InsertDeprovisioningOperation(operation)
-		if err != nil {
-			logger.Errorf("cannot save operation: %s", err)
-			return domain.DeprovisionServiceSpec{}, errors.New("cannot save operation")
-		}
+		// return existing operation
+		return domain.DeprovisionServiceSpec{
+			IsAsync:       true,
+			OperationData: existingOperation.ID,
+		}, nil
+	}
+	// create and save new operation
+	operation, err := internal.NewDeprovisioningOperationWithID(operationID, instanceID)
+	if err != nil {
+		logger.Errorf("cannot create new operation: %s", err)
+		return domain.DeprovisionServiceSpec{}, errors.New("cannot create new operation")
+	}
+	err = b.operationsStorage.InsertDeprovisioningOperation(operation)
+	if err != nil {
+		logger.Errorf("cannot save operation: %s", err)
+		return domain.DeprovisionServiceSpec{}, errors.New("cannot save operation")
 	}
 
 	logger.Infof("Deprovisioning runtime: runtimeID=%s, globalAccountID=%s", instance.RuntimeID, instance.GlobalAccountID)
