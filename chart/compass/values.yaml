@@ -22,7 +22,7 @@ global:
       version: "PR-867"
     director:
       dir:
-      version: "PR-1128"
+      version: "PR-1122"
     gateway:
       dir:
       version: "PR-1074"
@@ -46,7 +46,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1110"
+        version: "PR-1122"
       connector:
         dir:
         version: "02e8358c"
@@ -254,6 +254,8 @@ global:
     dbPool:
       maxOpenConnections: 1
       maxIdleConnections: 1
+
+  enableCompassDefaultScenarioAssignment: true
 
 pairing-adapter:
   enabled: false

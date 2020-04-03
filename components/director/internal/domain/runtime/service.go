@@ -41,6 +41,7 @@ type LabelUpsertService interface {
 //go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
+	AddDefaultScenarioIfEnabled(labels *map[string]interface{})
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -139,13 +140,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	if err != nil {
 		return "", errors.Wrapf(err, "while ensuring Label Definition with key %s exists", model.ScenariosKey)
 	}
-
-	if _, ok := in.Labels[model.ScenariosKey]; !ok {
-		if in.Labels == nil {
-			in.Labels = map[string]interface{}{}
-		}
-		in.Labels[model.ScenariosKey] = model.ScenariosDefaultValue
-	}
+	s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
 	if err != nil {

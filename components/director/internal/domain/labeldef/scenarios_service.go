@@ -12,12 +12,15 @@ import (
 type scenariosService struct {
 	repo       Repository
 	uidService UIDService
+
+	defaultScenarioEnabled bool
 }
 
-func NewScenariosService(r Repository, uidService UIDService) *scenariosService {
+func NewScenariosService(r Repository, uidService UIDService, defaultScenarioEnabled bool) *scenariosService {
 	return &scenariosService{
-		repo:       r,
-		uidService: uidService,
+		repo:                   r,
+		uidService:             uidService,
+		defaultScenarioEnabled: defaultScenarioEnabled,
 	}
 }
 
@@ -60,7 +63,19 @@ func (s *scenariosService) GetAvailableScenarios(ctx context.Context, tenantID s
 		return nil, errors.Wrapf(err, "while unmarshaling schema to %T", sd)
 	}
 	return sd.Items.Enum, nil
+}
 
+func (s *scenariosService) AddDefaultScenarioIfEnabled(labels *map[string]interface{}) {
+	if labels == nil || !s.defaultScenarioEnabled {
+		return
+	}
+
+	if _, ok := (*labels)[model.ScenariosKey]; !ok {
+		if *labels == nil {
+			*labels = map[string]interface{}{}
+		}
+		(*labels)[model.ScenariosKey] = model.ScenariosDefaultValue
+	}
 }
 
 type ScenariosDefinition struct {
