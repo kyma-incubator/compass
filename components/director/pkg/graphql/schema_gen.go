@@ -3198,15 +3198,32 @@ interface Pageable {
 union CredentialData = BasicCredentialData | OAuthCredentialData
 
 input APIDefinitionInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
 	name: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
+	"""
+	**Validation:** valid URL, max=256
+	"""
 	targetURL: String!
+	"""
+	**Validation:** max=36
+	"""
 	group: String
 	spec: APISpecInput
 	version: VersionInput
 	defaultAuth: AuthInput @deprecated(reason: "Use package.defaultAuth")
 }
 
+"""
+**Validation:**
+- for ODATA type, accepted formats are XML and JSON, for OPEN_API accepted formats are YAML and JSON
+- data or fetchRequest provided
+"""
 input APISpecInput {
 	data: CLOB
 	type: APISpecType!

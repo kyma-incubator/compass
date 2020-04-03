@@ -137,15 +137,32 @@ interface Pageable {
 union CredentialData = BasicCredentialData | OAuthCredentialData
 
 input APIDefinitionInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
 	name: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
+	"""
+	**Validation:** valid URL, max=256
+	"""
 	targetURL: String!
+	"""
+	**Validation:** max=36
+	"""
 	group: String
 	spec: APISpecInput
 	version: VersionInput
 	defaultAuth: AuthInput @deprecated(reason: "Use package.defaultAuth")
 }
 
+"""
+**Validation:**
+- for ODATA type, accepted formats are XML and JSON, for OPEN_API accepted formats are YAML and JSON
+- data or fetchRequest provided
+"""
 input APISpecInput {
 	data: CLOB
 	type: APISpecType!
@@ -154,16 +171,34 @@ input APISpecInput {
 }
 
 input ApplicationFromTemplateInput {
+    """
+    **Validation:** ASCII printable characters, max=100
+    """
 	templateName: String!
 	values: [TemplateValueInput!]
 }
 
 input ApplicationRegisterInput {
+    """
+    **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+    """
 	name: String!
+    """
+    **Validation:** max=256
+    """
 	providerName: String
+    """
+    **Validation:** max=2000
+    """
 	description: String
+    """
+    **Validation:** label key is alphanumeric with underscore
+    """
 	labels: Labels
 	webhooks: [WebhookInput!]
+    """
+    **Validation:** valid URL, max=256
+    """
 	healthCheckURL: String
 	apiDefinitions: [APIDefinitionInput!] @deprecated(reason: "Use package.packages.apiDefinitions")
 	eventDefinitions: [EventDefinitionInput!] @deprecated(reason: "Use package.packages.eventDefinitions")
@@ -173,8 +208,17 @@ input ApplicationRegisterInput {
 	statusCondition: ApplicationStatusCondition
 }
 
+"""
+**Validation:** provided placeholders' names are unique and that they are used in applicationInput
+"""
 input ApplicationTemplateInput {
+    """
+    **Validation:** ASCII printable characters, max=100
+    """
 	name: String!
+    """
+    **Validation:** max=2000
+    """
 	description: String
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
@@ -182,8 +226,17 @@ input ApplicationTemplateInput {
 }
 
 input ApplicationUpdateInput {
+    """
+    **Validation:** max=256
+    """
 	providerName: String
+    """
+    **Validation:** max=2000
+    """
 	description: String
+    """
+    **Validation:** valid URL, max=256
+    """
 	healthCheckURL: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
@@ -225,6 +278,9 @@ input CredentialRequestAuthInput {
 	csrf: CSRFTokenCredentialRequestAuthInput
 }
 
+"""
+TODO
+"""
 input DocumentInput {
 	title: String!
 	displayName: String!
@@ -236,13 +292,25 @@ input DocumentInput {
 }
 
 input EventDefinitionInput {
+    """
+    **Validation:** ASCII printable characters, max=100
+    """
 	name: String!
+    """
+    **Validation:** max=2000
+    """
 	description: String
 	spec: EventSpecInput
+    """
+    **Validation:** max=36
+    """
 	group: String
 	version: VersionInput
 }
 
+"""
+**Validation:** data or fetchRequest provided
+"""
 input EventSpecInput {
 	data: CLOB
 	type: EventSpecType!
@@ -258,7 +326,13 @@ input FetchRequestInput {
 }
 
 input IntegrationSystemInput {
+    """
+    **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+    """
 	name: String!
+    """
+    **Validation:** max=2000
+    """
 	description: String
 }
 
@@ -353,25 +427,49 @@ input PackageUpdateInput {
 }
 
 input PlaceholderDefinitionInput {
+    """
+    **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+    """
 	name: String!
+    """
+    **Validation:**  max=2000
+    """
 	description: String
 }
 
 input RuntimeInput {
+    """
+    **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+    """
 	name: String!
+    """
+    **Validation:**  max=2000
+    """
 	description: String
+    """
+    **Validation:** key: required, alphanumeric with underscore
+    """
 	labels: Labels
 	statusCondition: RuntimeStatusCondition
 }
 
 input TemplateValueInput {
+    """
+    **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+    """
 	placeholder: String!
 	value: String!
 }
 
 input VersionInput {
+    """
+    **Validation:** max=256
+    """
 	value: String!
 	deprecated: Boolean = false
+    """
+    **Validation:** max=256
+    """
 	deprecatedSince: String
 	forRemoval: Boolean = false
 }

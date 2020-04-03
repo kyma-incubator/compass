@@ -25,9 +25,13 @@ type Pageable interface {
 }
 
 type APIDefinitionInput struct {
-	Name        string        `json:"name"`
-	Description *string       `json:"description"`
-	TargetURL   string        `json:"targetURL"`
+	// **Validation:** ASCII printable characters, max=100
+	Name string `json:"name"`
+	// **Validation:** max=2000
+	Description *string `json:"description"`
+	// **Validation:** valid URL, max=256
+	TargetURL string `json:"targetURL"`
+	// **Validation:** max=36
 	Group       *string       `json:"group"`
 	Spec        *APISpecInput `json:"spec"`
 	Version     *VersionInput `json:"version"`
@@ -48,6 +52,9 @@ type APIRuntimeAuth struct {
 	Auth      *Auth  `json:"auth"`
 }
 
+// **Validation:**
+// - for ODATA type, accepted formats are XML and JSON, for OPEN_API accepted formats are YAML and JSON
+// - data or fetchRequest provided
 type APISpecInput struct {
 	Data         *CLOB              `json:"data"`
 	Type         APISpecType        `json:"type"`
