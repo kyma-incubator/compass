@@ -48,7 +48,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
-			Name:        "",
+			Name:        "dummy",
 			Description: nil,
 			Labels: &gqlschema.Labels{
 				"broker_instance_id":   []string{instanceID},
