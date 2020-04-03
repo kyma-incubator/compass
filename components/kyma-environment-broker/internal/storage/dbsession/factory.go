@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/predicate"
 )
 
 //go:generate mockery -name=Factory
@@ -16,6 +17,7 @@ type Factory interface {
 
 //go:generate mockery -name=ReadSession
 type ReadSession interface {
+	FindAllInstancesJoinedWithProvisionOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error)
 	GetInstanceByID(instanceID string) (internal.Instance, dberr.Error)
 	GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.Error)
 	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error)

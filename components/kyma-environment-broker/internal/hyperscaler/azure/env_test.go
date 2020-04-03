@@ -27,7 +27,7 @@ func Test_mapRegion(t *testing.T) {
 			name: "invalid gcp mapping",
 			args: args{
 				hyperscalerType: hyperscaler.Azure,
-				planID:          broker.GcpPlanID,
+				planID:          broker.GCPPlanID,
 				region:          "munich",
 			},
 			wantRegion: "",
@@ -37,7 +37,7 @@ func Test_mapRegion(t *testing.T) {
 			name: "valid gcp mapping",
 			args: args{
 				hyperscalerType: hyperscaler.Azure,
-				planID:          broker.GcpPlanID,
+				planID:          broker.GCPPlanID,
 				region:          "europe-west1",
 			},
 			wantRegion: "westeurope",

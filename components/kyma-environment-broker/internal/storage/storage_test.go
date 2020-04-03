@@ -4,18 +4,18 @@ package storage
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
+	"sort"
 	"testing"
-
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
-
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
-
 	"time"
 
-	"fmt"
-
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/predicate"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -119,6 +119,66 @@ func TestSchemaInitializer(t *testing.T) {
 			// when
 			err = brokerStorage.Instances().Delete(fixInstance.InstanceID)
 			assert.NoError(t, err, "deletion non existing instance must not cause any error")
+		})
+
+		t.Run("Should fetch instances along with their operations", func(t *testing.T) {
+			// given
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			require.NoError(t, err)
+			defer containerCleanupFunc()
+
+			err = InitTestDBTables(t, cfg.ConnectionURL())
+			require.NoError(t, err)
+
+			psqlStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+			require.NoError(t, err)
+			require.NotNil(t, psqlStorage)
+
+			// populate database with samples
+			fixInstances := []internal.Instance{*fixInstance("A1"), *fixInstance("B1"), *fixInstance("C1")}
+			for _, i := range fixInstances {
+				err = psqlStorage.Instances().Insert(i)
+				require.NoError(t, err)
+			}
+
+			fixProvisionOp := []internal.ProvisioningOperation{fixProvisionOperation("A1"), fixProvisionOperation("B1"), fixProvisionOperation("C1")}
+			for _, op := range fixProvisionOp {
+				err = psqlStorage.Operations().InsertProvisioningOperation(op)
+				require.NoError(t, err)
+			}
+
+			fixDeprovisionOp := []internal.DeprovisioningOperation{fixDeprovisionOperation("A1"), fixDeprovisionOperation("B1"), fixDeprovisionOperation("C1")}
+			for _, op := range fixDeprovisionOp {
+				err = psqlStorage.Operations().InsertDeprovisioningOperation(op)
+				require.NoError(t, err)
+			}
+
+			// then
+			out, err := psqlStorage.Instances().FindAllJoinedWithOperations(predicate.SortAscByCreatedAt())
+			require.NoError(t, err)
+
+			require.Len(t, out, 6)
+
+			//  checks order of instance, the oldest should be first
+			sorted := sort.SliceIsSorted(out, func(i, j int) bool {
+				return out[i].CreatedAt.Before(out[j].CreatedAt)
+			})
+			assert.True(t, sorted)
+
+			// ignore time as this is set internally by database so will be different
+			assertInstanceByIgnoreTime(t, fixInstances[0], out[0].Instance)
+			assertInstanceByIgnoreTime(t, fixInstances[0], out[1].Instance)
+			assertInstanceByIgnoreTime(t, fixInstances[1], out[2].Instance)
+			assertInstanceByIgnoreTime(t, fixInstances[1], out[3].Instance)
+			assertInstanceByIgnoreTime(t, fixInstances[2], out[4].Instance)
+			assertInstanceByIgnoreTime(t, fixInstances[2], out[5].Instance)
+
+			assertEqualOperation(t, fixProvisionOp[0], out[0])
+			assertEqualOperation(t, fixDeprovisionOp[0], out[1])
+			assertEqualOperation(t, fixProvisionOp[1], out[2])
+			assertEqualOperation(t, fixDeprovisionOp[1], out[3])
+			assertEqualOperation(t, fixProvisionOp[2], out[4])
+			assertEqualOperation(t, fixDeprovisionOp[2], out[5])
 		})
 	})
 
@@ -429,14 +489,67 @@ func assertError(t *testing.T, expectedCode int, err error) {
 	assert.Equal(t, expectedCode, dbe.Code())
 }
 
+func assertInstanceByIgnoreTime(t *testing.T, want, got internal.Instance) {
+	t.Helper()
+	want.CreatedAt, got.CreatedAt = time.Time{}, time.Time{}
+	want.UpdatedAt, got.UpdatedAt = time.Time{}, time.Time{}
+	want.DelatedAt, got.DelatedAt = time.Time{}, time.Time{}
+
+	assert.EqualValues(t, want, got)
+}
+
+func assertEqualOperation(t *testing.T, want interface{}, got internal.InstanceWithOperation) {
+	t.Helper()
+	switch want := want.(type) {
+	case internal.ProvisioningOperation:
+		assert.EqualValues(t, dbmodel.OperationTypeProvision, got.Type.String)
+		assert.EqualValues(t, want.State, got.State.String)
+		assert.EqualValues(t, want.Description, got.Description.String)
+	case internal.DeprovisioningOperation:
+		assert.EqualValues(t, dbmodel.OperationTypeDeprovision, got.Type.String)
+		assert.EqualValues(t, want.State, got.State.String)
+		assert.EqualValues(t, want.Description, got.Description.String)
+	}
+}
+
 func fixInstance(testData string) *internal.Instance {
 	return &internal.Instance{
 		InstanceID:             testData,
 		RuntimeID:              testData,
 		GlobalAccountID:        testData,
+		SubAccountID:           testData,
 		ServiceID:              testData,
+		ServiceName:            testData,
 		ServicePlanID:          testData,
+		ServicePlanName:        testData,
 		DashboardURL:           testData,
 		ProvisioningParameters: testData,
 	}
+}
+
+func fixProvisionOperation(testData string) internal.ProvisioningOperation {
+	return internal.ProvisioningOperation{
+		Operation: fixSucceededOperation(testData),
+	}
+}
+func fixDeprovisionOperation(testData string) internal.DeprovisioningOperation {
+	return internal.DeprovisioningOperation{
+		Operation: fixSucceededOperation(testData),
+	}
+}
+
+func fixSucceededOperation(testData string) internal.Operation {
+	return internal.Operation{
+		ID:                     fmt.Sprintf("%s-%d", testData, rand.Int()),
+		CreatedAt:              fixTime().Add(24 * time.Hour),
+		UpdatedAt:              fixTime().Add(48 * time.Hour),
+		InstanceID:             testData,
+		ProvisionerOperationID: testData,
+		State:                  domain.Succeeded,
+		Description:            testData,
+	}
+}
+
+func fixTime() time.Time {
+	return time.Date(2020, 04, 21, 0, 0, 23, 42, time.UTC)
 }

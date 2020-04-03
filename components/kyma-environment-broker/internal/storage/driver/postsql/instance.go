@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/predicate"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -17,6 +18,27 @@ func NewInstance(sess dbsession.Factory) *Instance {
 	return &Instance{
 		Factory: sess,
 	}
+}
+
+func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error) {
+	sess := s.NewReadSession()
+	var (
+		instances []internal.InstanceWithOperation
+		lastErr   dberr.Error
+	)
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		instances, lastErr = sess.FindAllInstancesJoinedWithProvisionOperation(prct...)
+		if lastErr != nil {
+			log.Warn(errors.Wrapf(lastErr, "while fetching all instances").Error())
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+
+	return instances, nil
 }
 
 // TODO: Wrap retries in single method WithRetries

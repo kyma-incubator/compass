@@ -1,16 +1,40 @@
 package dbsession
 
 import (
-	dbr "github.com/gocraft/dbr"
+	"fmt"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/predicate"
+
+	"github.com/gocraft/dbr"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 type readSession struct {
 	session *dbr.Session
+}
+
+func (r readSession) FindAllInstancesJoinedWithProvisionOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error) {
+	var instances []internal.InstanceWithOperation
+
+	join := fmt.Sprintf("%s.instance_id = %s.instance_id", postsql.InstancesTableName, postsql.OperationTableName)
+	stmt := r.session.
+		Select("instances.instance_id, instances.runtime_id, instances.global_account_id, instances.service_id, instances.service_plan_id, instances.dashboard_url, instances.provisioning_parameters, instances.created_at, instances.updated_at, instances.delated_at, instances.sub_account_id, instances.service_name, instances.service_plan_name, operations.state, operations.description, operations.type").
+		From(postsql.InstancesTableName).
+		LeftJoin(postsql.OperationTableName, join)
+
+	for _, p := range prct {
+		p.ApplyToPostgres(stmt)
+	}
+
+	if _, err := stmt.Load(&instances); err != nil {
+		return nil, dberr.Internal("Failed to fetch all instances: %s", err)
+	}
+
+	return instances, nil
 }
 
 func (r readSession) GetInstanceByID(instanceID string) (internal.Instance, dberr.Error) {
