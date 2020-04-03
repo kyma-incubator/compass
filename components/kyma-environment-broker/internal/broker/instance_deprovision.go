@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -54,13 +55,24 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponse(fmt.Errorf("unable to get instance from the storage"), http.StatusInternalServerError, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
 	}
 
-	// check if operation with instance ID already created
+	// check if operation with the same instance ID is already created
 	existingOperation, errStorage := b.operationsStorage.GetDeprovisioningOperationByInstanceID(instanceID)
 	switch {
 	case errStorage != nil && !dberr.IsNotFound(errStorage):
 		logger.Errorf("cannot get existing operation from storage %s", errStorage)
 		return domain.DeprovisionServiceSpec{}, errors.New("cannot get existing operation from storage")
 	case existingOperation != nil && !dberr.IsNotFound(errStorage):
+		if existingOperation.State == domain.Failed {
+			// reprocess operation again
+			existingOperation.State = domain.InProgress
+			_, err = b.operationsStorage.UpdateDeprovisioningOperation(*existingOperation)
+			if err != nil {
+				return domain.DeprovisionServiceSpec{}, errors.New("cannot update existing operation")
+			}
+			logger.Infof("Reprocessing failed deprovisioning of runtime: runtimeID=%s, globalAccountID=%s", instance.RuntimeID, instance.GlobalAccountID)
+			b.queue.Add(operationID)
+		}
+		// return existing operation
 		return domain.DeprovisionServiceSpec{
 			IsAsync:       true,
 			OperationData: existingOperation.ID,
@@ -77,6 +89,7 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		logger.Errorf("cannot save operation: %s", err)
 		return domain.DeprovisionServiceSpec{}, errors.New("cannot save operation")
 	}
+
 	logger.Infof("Deprovisioning runtime: runtimeID=%s, globalAccountID=%s", instance.RuntimeID, instance.GlobalAccountID)
 
 	b.queue.Add(operationID)
