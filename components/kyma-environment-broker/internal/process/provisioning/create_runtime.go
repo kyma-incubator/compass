@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -48,10 +47,6 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	rawParameters, err := json.Marshal(pp.Parameters)
-	if err != nil {
-		return s.operationManager.OperationFailed(operation, "invalid operation parameters")
-	}
 
 	requestInput, err := s.createProvisionInput(operation, pp)
 	if err != nil {
@@ -84,14 +79,14 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return operation, 1 * time.Minute, nil
 	}
 
-	err = s.instanceStorage.Update(internal.Instance{
-		InstanceID:             operation.InstanceID,
-		GlobalAccountID:        pp.ErsContext.GlobalAccountID,
-		RuntimeID:              *provisionerResponse.RuntimeID,
-		ServiceID:              pp.ServiceID,
-		ServicePlanID:          pp.PlanID,
-		ProvisioningParameters: string(rawParameters),
-	})
+	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
+	if err != nil {
+		log.Errorf("cannot get instance: %s", err)
+		return operation, 1 * time.Minute, nil
+	}
+	instance.RuntimeID = *provisionerResponse.RuntimeID
+
+	err = s.instanceStorage.Update(*instance)
 	if err != nil {
 		log.Errorf("cannot update instance in storage: %s", err)
 		return operation, 10 * time.Second, nil
