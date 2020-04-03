@@ -59,7 +59,6 @@ type Queue struct {
 	executor Executor
 }
 
-// TODO: consider making two different executors and 2 queues separate for Install and Upgrade
 func NewQueue(executor Executor) *Queue {
 	return &Queue{
 		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "operations"),

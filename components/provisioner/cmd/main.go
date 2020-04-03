@@ -147,6 +147,7 @@ func main() {
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(clientbuilder.NewConfigMapClientBuilder(), directorClient)
 
 	installationQueue := createInstallationQueue(dbsFactory, installationService, runtimeConfigurator)
+	upgradeQueue := createUpgradeQueue(dbsFactory, installationService)
 
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {
@@ -187,7 +188,10 @@ func main() {
 
 	// Run installation queue
 	installationQueue.Run(ctx.Done())
-	err = enqueueOperationsInProgress(dbsFactory, installationQueue)
+	// Run upgrade queue
+	upgradeQueue.Run(ctx.Done())
+
+	err = enqueueOperationsInProgress(dbsFactory, installationQueue, upgradeQueue)
 	exitOnError(err, "Failed to enqueue in progress operations")
 
 	gqlCfg := gqlschema.Config{
@@ -213,7 +217,6 @@ func main() {
 }
 
 func createInstallationQueue(factory dbsession.Factory, installationClient installation.Service, configurator runtime.Configurator) *installation.Queue {
-
 	configureAgentStep := steps.NewConnectAgentStep(configurator, model.FinishedStep, 10*time.Minute)
 	waitForInstallStep := steps.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), 50*time.Minute) // TODO: take form config
 	installStep := steps.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
@@ -224,12 +227,29 @@ func createInstallationQueue(factory dbsession.Factory, installationClient insta
 		model.StartingInstallation:   installStep,
 	}
 
-	executor := steps.NewStepsExecutor(factory.NewReadWriteSession(), installSteps, []installation.Step{})
+	installationExecutor := steps.NewStepsExecutor(factory.NewReadWriteSession(), model.Provision, installSteps)
 
-	return installation.NewQueue(executor)
+	return installation.NewQueue(installationExecutor)
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, queue installation.InstallationQueue) error {
+func createUpgradeQueue(factory dbsession.Factory, installationClient installation.Service) *installation.Queue {
+
+	// TODO: probably you will need some step for "committing" the changes to database
+
+	waitForInstallStep := steps.NewWaitForInstallationStep(installationClient, model.FinishedStep, 50*time.Minute) // TODO: take form config
+	installStep := steps.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
+
+	upgradeSteps := map[model.OperationStage]installation.Step{
+		model.WaitingForInstallation: waitForInstallStep,
+		model.StartingInstallation:   installStep,
+	}
+
+	upgradeExecutor := steps.NewStepsExecutor(factory.NewReadWriteSession(), model.Upgrade, upgradeSteps)
+
+	return installation.NewQueue(upgradeExecutor)
+}
+
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue, upgradeQueue installation.InstallationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	inProgressOps, err := readSession.ListInProgressOperations()
@@ -239,11 +259,13 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, queue installation
 
 	for _, op := range inProgressOps {
 		if op.Type == model.Provision && op.Stage != model.ShootProvisioning {
-			queue.Add(op.ID)
+			installationQueue.Add(op.ID)
+			continue
 		}
 
-		// TODO: upgrade ones to different queue
-
+		if op.Type == model.Upgrade {
+			upgradeQueue.Add(op.ID)
+		}
 	}
 
 	return nil

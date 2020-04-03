@@ -19,22 +19,19 @@ const (
 	defaultDelay = 2 * time.Second
 )
 
-func NewStepsExecutor(session dbsession.ReadWriteSession, installSteps map[model.OperationStage]installation.Step, upgradeSteps []installation.Step) *Executor {
+func NewStepsExecutor(session dbsession.ReadWriteSession, operation model.OperationType, steps map[model.OperationStage]installation.Step) *Executor {
 	return &Executor{
 		dbSession:         session,
-		installationSteps: installSteps,
-		upgradeSteps:      upgradeSteps,
-		log:               logrus.WithField("Component", "StepsExecutor"),
+		installationSteps: steps,
+		operation:         operation,
+		log:               logrus.WithFields(logrus.Fields{"Component": "StepsExecutor", "OperationType": operation}),
 	}
 }
 
 type Executor struct {
-	dbSession           dbsession.ReadWriteSession
-	installationTimeout time.Duration
-
-	// TODO: consider adding weights
+	dbSession         dbsession.ReadWriteSession
 	installationSteps map[model.OperationStage]installation.Step
-	upgradeSteps      []installation.Step
+	operation         model.OperationType
 
 	log logrus.FieldLogger
 }
@@ -47,7 +44,7 @@ func (e *Executor) Execute(operationID string) installation.ProcessingResult {
 	operation, err := e.dbSession.GetOperation(operationID)
 	if err != nil {
 		log.Errorf("error getting operation while processing it: %s", err.Error())
-		return installation.ProcessingResult{Requeue: true, Delay: defaultDelay} // TODO: any delay?
+		return installation.ProcessingResult{Requeue: true, Delay: defaultDelay}
 	}
 
 	log = log.WithField("RuntimeId", operation.ClusterID)
@@ -63,7 +60,7 @@ func (e *Executor) Execute(operationID string) installation.ProcessingResult {
 		return installation.ProcessingResult{Requeue: true, Delay: defaultDelay}
 	}
 
-	if operation.Type == model.Provision {
+	if operation.Type == e.operation {
 		requeue, delay, err := e.processInstallation(operation, cluster, log)
 		if err != nil {
 			nonRecoverable := installation.NonRecoverableError{}
@@ -81,7 +78,6 @@ func (e *Executor) Execute(operationID string) installation.ProcessingResult {
 		return installation.ProcessingResult{Requeue: requeue, Delay: delay}
 	}
 
-	// TODO: upgrade
 	return installation.ProcessingResult{
 		Requeue: false,
 		Delay:   0,
