@@ -1,36 +1,60 @@
 package statusupdate
 
 import (
-	"context"
+	"database/sql"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/pkg/errors"
 )
 
-const query = "UPDATE %s SET status_condition = 'CONNECTED', status_timestamp = %s WHERE id = '%s'"
+const (
+	updateQuery = "UPDATE %s SET status_condition = 'CONNECTED', status_timestamp = $1 WHERE id = $2"
+	existsQuery = "SELECT 1 FROM %s WHERE id = $1 AND status_condition = 'CONNECTED'"
+)
 
-func (u *update) UpdateStatus(ctx context.Context, id string) error {
+func (u *update) UpdateStatus(id string) error {
 	tx, err := u.transact.Begin()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "while opening transaction")
 	}
 	defer u.transact.RollbackUnlessCommited(tx)
 
-	stmt := fmt.Sprintf(query, u.table, u.timestampGen(), id)
+	stmt := fmt.Sprintf(updateQuery, u.table)
 
-	persist, err := persistence.FromCtx(ctx)
+	_, err = tx.Exec(stmt, u.timestampGen(), id)
 	if err != nil {
-		return err
-	}
-
-	_, err := persist.NamedExec()
-	if err != nil {
-		return err
+		return errors.Wrap(err, fmt.Sprintf("while updating %s status", u.table))
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "while committing the automatic update")
 	}
 	return nil
+}
+
+func (u *update) IsConnected(id string) (bool, error) {
+	tx, err := u.transact.Begin()
+	if err != nil {
+		return false, errors.Wrap(err, "while opening transaction")
+	}
+	defer u.transact.RollbackUnlessCommited(tx)
+
+	stmt := fmt.Sprintf(existsQuery, u.table)
+
+	var count int
+	err = tx.Get(&count, stmt, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "while getting object from DB")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return false, errors.Wrap(err, "while committing transaction")
+	}
+	return true, nil
+
 }
