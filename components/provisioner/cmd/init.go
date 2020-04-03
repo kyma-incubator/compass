@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operation"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -13,7 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
@@ -63,7 +63,7 @@ func newDirectorClient(config config) (director.DirectorClient, error) {
 
 func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient.Config, gardenerClientSet *gardener_apis.CoreV1beta1Client,
 	dbsFactory dbsession.Factory, direcotrClietnt director.DirectorClient,
-	queue installation.InstallationQueue) (*gardener.ShootController, error) {
+	queue operation.OperationQueue) (*gardener.ShootController, error) {
 	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
 	if err != nil {
 		return nil, err

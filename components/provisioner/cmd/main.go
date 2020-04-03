@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/steps"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operation"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operation/stages"
 	"k8s.io/client-go/rest"
 	"net/http"
 	"strings"
@@ -216,40 +217,40 @@ func main() {
 	}
 }
 
-func createInstallationQueue(factory dbsession.Factory, installationClient installation.Service, configurator runtime.Configurator) *installation.Queue {
-	configureAgentStep := steps.NewConnectAgentStep(configurator, model.FinishedStep, 10*time.Minute)
-	waitForInstallStep := steps.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), 50*time.Minute) // TODO: take form config
-	installStep := steps.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
+func createInstallationQueue(factory dbsession.Factory, installationClient installation.Service, configurator runtime.Configurator) *operation.Queue {
+	configureAgentStep := stages.NewConnectAgentStep(configurator, model.FinishedStep, 10*time.Minute)
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), 50*time.Minute) // TODO: take form config
+	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
 
-	installSteps := map[model.OperationStage]installation.Step{
+	installSteps := map[model.OperationStage]operation.Stage{
 		model.ConnectRuntimeAgent:    configureAgentStep,
 		model.WaitingForInstallation: waitForInstallStep,
 		model.StartingInstallation:   installStep,
 	}
 
-	installationExecutor := steps.NewStepsExecutor(factory.NewReadWriteSession(), model.Provision, installSteps)
+	installationExecutor := operation.NewStepsExecutor(factory.NewReadWriteSession(), model.Provision, installSteps)
 
-	return installation.NewQueue(installationExecutor)
+	return operation.NewQueue(installationExecutor)
 }
 
-func createUpgradeQueue(factory dbsession.Factory, installationClient installation.Service) *installation.Queue {
+func createUpgradeQueue(factory dbsession.Factory, installationClient installation.Service) *operation.Queue {
 
 	// TODO: probably you will need some step for "committing" the changes to database
 
-	waitForInstallStep := steps.NewWaitForInstallationStep(installationClient, model.FinishedStep, 50*time.Minute) // TODO: take form config
-	installStep := steps.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, model.FinishedStep, 50*time.Minute) // TODO: take form config
+	installStep := stages.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
 
-	upgradeSteps := map[model.OperationStage]installation.Step{
+	upgradeSteps := map[model.OperationStage]operation.Stage{
 		model.WaitingForInstallation: waitForInstallStep,
 		model.StartingInstallation:   installStep,
 	}
 
-	upgradeExecutor := steps.NewStepsExecutor(factory.NewReadWriteSession(), model.Upgrade, upgradeSteps)
+	upgradeExecutor := operation.NewStepsExecutor(factory.NewReadWriteSession(), model.Upgrade, upgradeSteps)
 
-	return installation.NewQueue(upgradeExecutor)
+	return operation.NewQueue(upgradeExecutor)
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue, upgradeQueue installation.InstallationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue, upgradeQueue operation.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	inProgressOps, err := readSession.ListInProgressOperations()

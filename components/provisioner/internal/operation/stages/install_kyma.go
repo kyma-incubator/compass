@@ -1,10 +1,11 @@
-package steps
+package stages
 
 import (
 	"errors"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operation"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/sirupsen/logrus"
 	restclient "k8s.io/client-go/rest"
@@ -35,17 +36,17 @@ func (s *InstallKymaStep) TimeLimit() time.Duration {
 }
 
 // TODO: probably you can remove operation
-func (s *InstallKymaStep) Run(operation model.Operation, cluster model.Cluster, logger logrus.FieldLogger) (installation.StepResult, error) {
+func (s *InstallKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) (operation.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
-		return installation.StepResult{}, fmt.Errorf("error: kubeconfig is nil")
+		return operation.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
 
 	// TODO: cleanup kubeconfig stuff
 	k8sConfig, err := ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
 		// TODO: recoverable or not?
-		return installation.StepResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
+		return operation.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
 
 	// TODO: check if installation is started
@@ -54,15 +55,15 @@ func (s *InstallKymaStep) Run(operation model.Operation, cluster model.Cluster, 
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
 			logger.Warnf("Installation already in progress, proceeding to next step...")
-			return installation.StepResult{Step: s.Name(), Delay: 0}, nil
+			return operation.StageResult{Step: s.Name(), Delay: 0}, nil
 		}
 
-		return installation.StepResult{}, fmt.Errorf("error: failed to check installation state: %s", err.Error())
+		return operation.StageResult{}, fmt.Errorf("error: failed to check installation state: %s", err.Error())
 	}
 
 	if installationState.State != installationSDK.NoInstallationState {
 		logger.Warnf("Installation already in progress, proceeding to next step...")
-		return installation.StepResult{Step: s.nextStep, Delay: 0}, nil
+		return operation.StageResult{Step: s.nextStep, Delay: 0}, nil
 	}
 
 	// TODO: it needs to run apply instead of create
@@ -73,11 +74,11 @@ func (s *InstallKymaStep) Run(operation model.Operation, cluster model.Cluster, 
 		cluster.KymaConfig.Components)
 	if err != nil {
 		// TODO: if it runs apply then recoverable error (else not)
-		return installation.StepResult{}, fmt.Errorf("error: failed to start installation: %s", err.Error())
+		return operation.StageResult{}, fmt.Errorf("error: failed to start installation: %s", err.Error())
 	}
 
 	logger.Warnf("Installation started, proceeding to next step...")
-	return installation.StepResult{Step: s.nextStep, Delay: 30 * time.Second}, nil
+	return operation.StageResult{Step: s.nextStep, Delay: 30 * time.Second}, nil
 }
 
 func ParseToK8sConfig(kubeconfigRaw []byte) (*restclient.Config, error) {

@@ -2,11 +2,10 @@ package gardener
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operation"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 
@@ -27,7 +26,7 @@ func NewShootController(
 	secretsClient v1core.SecretInterface,
 	dbsFactory dbsession.Factory,
 	directorClient director.DirectorClient,
-	installQueue installation.InstallationQueue) (*ShootController, error) {
+	installQueue operation.OperationQueue) (*ShootController, error) {
 
 	err := gardener_types.AddToScheme(mgr.GetScheme())
 	if err != nil {

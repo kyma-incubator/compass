@@ -1,11 +1,8 @@
-package steps
-
-// TODO: consider renaming package to install
+package operation
 
 import (
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/sirupsen/logrus"
@@ -13,30 +10,29 @@ import (
 )
 
 // TODO: maybe move this to Runtime
-// TODO: where to put processing result
 
 const (
 	defaultDelay = 2 * time.Second
 )
 
-func NewStepsExecutor(session dbsession.ReadWriteSession, operation model.OperationType, steps map[model.OperationStage]installation.Step) *Executor {
-	return &Executor{
-		dbSession:         session,
-		installationSteps: steps,
-		operation:         operation,
-		log:               logrus.WithFields(logrus.Fields{"Component": "StepsExecutor", "OperationType": operation}),
+func NewStepsExecutor(session dbsession.ReadWriteSession, operation model.OperationType, stages map[model.OperationStage]Stage) *StagesExecutor {
+	return &StagesExecutor{
+		dbSession: session,
+		stages:    stages,
+		operation: operation,
+		log:       logrus.WithFields(logrus.Fields{"Component": "StepsExecutor", "OperationType": operation}),
 	}
 }
 
-type Executor struct {
-	dbSession         dbsession.ReadWriteSession
-	installationSteps map[model.OperationStage]installation.Step
-	operation         model.OperationType
+type StagesExecutor struct {
+	dbSession dbsession.ReadWriteSession
+	stages    map[model.OperationStage]Stage
+	operation model.OperationType
 
 	log logrus.FieldLogger
 }
 
-func (e *Executor) Execute(operationID string) installation.ProcessingResult {
+func (e *StagesExecutor) Execute(operationID string) ProcessingResult {
 
 	log := e.log.WithField("OperationId", operationID)
 
@@ -44,26 +40,26 @@ func (e *Executor) Execute(operationID string) installation.ProcessingResult {
 	operation, err := e.dbSession.GetOperation(operationID)
 	if err != nil {
 		log.Errorf("error getting operation while processing it: %s", err.Error())
-		return installation.ProcessingResult{Requeue: true, Delay: defaultDelay}
+		return ProcessingResult{Requeue: true, Delay: defaultDelay}
 	}
 
 	log = log.WithField("RuntimeId", operation.ClusterID)
 
 	if operation.State != model.InProgress {
 		log.Infof("Operation not InProgress. State: %s", operation.State)
-		return installation.ProcessingResult{Requeue: false}
+		return ProcessingResult{Requeue: false}
 	}
 
 	cluster, err := e.dbSession.GetCluster(operation.ClusterID)
 	if err != nil {
 		log.Errorf("error getting cluster while processing operation: %s", err.Error())
-		return installation.ProcessingResult{Requeue: true, Delay: defaultDelay}
+		return ProcessingResult{Requeue: true, Delay: defaultDelay}
 	}
 
 	if operation.Type == e.operation {
 		requeue, delay, err := e.processInstallation(operation, cluster, log)
 		if err != nil {
-			nonRecoverable := installation.NonRecoverableError{}
+			nonRecoverable := NonRecoverableError{}
 			if errors.As(err, &nonRecoverable) {
 				log.Errorf("unrecoverable error occurred while processing operation: %s", err.Error())
 				err := e.dbSession.UpdateOperationState(operation.ID, nonRecoverable.Error(), model.Failed, time.Now()) // TODO: Align message
@@ -72,37 +68,37 @@ func (e *Executor) Execute(operationID string) installation.ProcessingResult {
 				}
 			}
 
-			return installation.ProcessingResult{Requeue: true, Delay: defaultDelay}
+			return ProcessingResult{Requeue: true, Delay: defaultDelay}
 		}
 
-		return installation.ProcessingResult{Requeue: requeue, Delay: delay}
+		return ProcessingResult{Requeue: requeue, Delay: delay}
 	}
 
-	return installation.ProcessingResult{
+	return ProcessingResult{
 		Requeue: false,
 		Delay:   0,
 	}
 }
 
-func (e *Executor) processInstallation(operation model.Operation, cluster model.Cluster, logger logrus.FieldLogger) (bool, time.Duration, error) {
+func (e *StagesExecutor) processInstallation(operation model.Operation, cluster model.Cluster, logger logrus.FieldLogger) (bool, time.Duration, error) {
 
-	step, found := e.installationSteps[operation.Stage]
+	step, found := e.stages[operation.Stage]
 	if !found {
-		return false, 0, installation.NewNonRecoverableError(fmt.Errorf("error: step %s not found in installation steps", operation.Stage))
+		return false, 0, NewNonRecoverableError(fmt.Errorf("error: step %s not found in installation steps", operation.Stage))
 	}
 
 	for operation.Stage != model.FinishedStep {
-		log := logger.WithField("Step", step.Name())
+		log := logger.WithField("Stage", step.Name())
 		log.Infof("Starting step")
 
 		if e.timeoutReached(operation, step.TimeLimit()) {
 			log.Errorf("Timeout reached for operation")
-			return false, 0, installation.NewNonRecoverableError(fmt.Errorf("error: timeout while processing operation"))
+			return false, 0, NewNonRecoverableError(fmt.Errorf("error: timeout while processing operation"))
 		}
 
-		result, err := step.Run(operation, cluster, log)
+		result, err := step.Run(cluster, log)
 		if err != nil {
-			log.Errorf("Step failed: %s", err.Error())
+			log.Errorf("Stage failed: %s", err.Error())
 			return false, 0, err
 		}
 
@@ -121,10 +117,10 @@ func (e *Executor) processInstallation(operation model.Operation, cluster model.
 			if err != nil {
 				panic(err) // TODO handle
 			}
-			step = e.installationSteps[result.Step]
+			step = e.stages[result.Step]
 			operation.Stage = result.Step
 			operation.LastTransition = &transitionTime
-			log.Infof("Step finished")
+			log.Infof("Stage finished")
 		}
 
 		if result.Delay > 0 {
@@ -141,7 +137,7 @@ func (e *Executor) processInstallation(operation model.Operation, cluster model.
 	return false, 0, nil
 }
 
-func (e *Executor) timeoutReached(operation model.Operation, timeout time.Duration) bool {
+func (e *StagesExecutor) timeoutReached(operation model.Operation, timeout time.Duration) bool {
 
 	lastTimestamp := operation.StartTimestamp
 	if operation.LastTransition != nil {

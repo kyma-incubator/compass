@@ -1,10 +1,11 @@
-package steps
+package stages
 
 import (
 	"errors"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operation"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -35,18 +36,18 @@ func (s *UpgradeKymaStep) TimeLimit() time.Duration {
 }
 
 // TODO: I think it would be better to return some step result
-func (s *UpgradeKymaStep) Run(operation model.Operation, cluster model.Cluster, logger logrus.FieldLogger) (installation.StepResult, error) {
+func (s *UpgradeKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) (operation.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
 		// TODO: recoverable or not?
-		return installation.StepResult{}, fmt.Errorf("error: kubeconfig is nil")
+		return operation.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
 
 	// TODO: cleanup kubeconfig stuff
 	k8sConfig, err := ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
 		// TODO: recoverable or not?
-		return installation.StepResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
+		return operation.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
 
 	installationState, err := s.installationClient.CheckInstallationState(k8sConfig) // TODO: modify signature of this method
@@ -54,10 +55,10 @@ func (s *UpgradeKymaStep) Run(operation model.Operation, cluster model.Cluster, 
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
 			logger.Warnf("Upgrade already in progress, proceeding to next step...")
-			return installation.StepResult{Step: s.Name(), Delay: 0}, nil
+			return operation.StageResult{Step: s.Name(), Delay: 0}, nil
 		}
 
-		return installation.StepResult{}, fmt.Errorf("error: failed to check installation CR state: %s", err.Error())
+		return operation.StageResult{}, fmt.Errorf("error: failed to check installation CR state: %s", err.Error())
 	}
 
 	// TODO Start upgrade
@@ -65,7 +66,7 @@ func (s *UpgradeKymaStep) Run(operation model.Operation, cluster model.Cluster, 
 
 	}
 
-	return installation.StepResult{Step: s.nextStep, Delay: 0}, nil
+	return operation.StageResult{Step: s.nextStep, Delay: 0}, nil
 
 	//
 	//if installationState.State == installationSDK.NoInstallationState {

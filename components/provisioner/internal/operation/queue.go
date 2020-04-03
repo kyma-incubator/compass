@@ -1,7 +1,6 @@
-package installation
+package operation
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/workqueue"
@@ -9,41 +8,14 @@ import (
 	"time"
 )
 
-// TODO: add step timeout
-type Step interface {
-	Name() model.OperationStage
-	// TODO: consider changing Runtime Status to something eles
-	Run(operation model.Operation, cluster model.Cluster, logger logrus.FieldLogger) (StepResult, error)
-	TimeLimit() time.Duration
-	//NextStep() string
-}
-
-type StepResult struct {
-	Step  model.OperationStage
-	Delay time.Duration
-}
-
-type InstallationQueue interface {
+type OperationQueue interface {
 	Add(processId string)
 	Run(stop <-chan struct{})
-}
-
-type NonRecoverableError struct {
-	error error
-}
-
-func (r NonRecoverableError) Error() string {
-	return r.error.Error()
 }
 
 type ProcessingResult struct {
 	Requeue bool
 	Delay   time.Duration
-	//Retry   int
-}
-
-func NewNonRecoverableError(err error) NonRecoverableError {
-	return NonRecoverableError{error: err}
 }
 
 const (

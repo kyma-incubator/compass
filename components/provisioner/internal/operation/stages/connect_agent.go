@@ -1,9 +1,9 @@
-package steps
+package stages
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -31,16 +31,16 @@ func (s *ConnectAgentStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *ConnectAgentStep) Run(operation model.Operation, cluster model.Cluster, logger logrus.FieldLogger) (installation.StepResult, error) {
+func (s *ConnectAgentStep) Run(cluster model.Cluster, logger logrus.FieldLogger) (operation.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
-		return installation.StepResult{}, fmt.Errorf("error: kubeconfig is nil")
+		return operation.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
 
 	err := s.runtimeConfigurator.ConfigureRuntime(cluster, *cluster.Kubeconfig)
 	if err != nil {
-		return installation.StepResult{}, fmt.Errorf("error: kubeconfig is nil")
+		return operation.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
 
-	return installation.StepResult{Step: s.nextStep, Delay: 0}, nil
+	return operation.StageResult{Step: s.nextStep, Delay: 0}, nil
 }
