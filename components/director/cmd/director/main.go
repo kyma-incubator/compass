@@ -120,7 +120,7 @@ func main() {
 		go periodicExecutor.Run(stopCh)
 	}
 
-	statusMiddleware := statusupdate.NewUpdate(transact)
+	statusMiddleware := statusupdate.NewUpdate(transact, statusupdate.NewRepository())
 
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 

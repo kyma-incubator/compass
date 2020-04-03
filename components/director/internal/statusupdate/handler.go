@@ -1,6 +1,7 @@
 package statusupdate
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -8,31 +9,35 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
-	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
-
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 )
 
 type update struct {
-	table        Table
-	timestampGen timestamp.Generator
-	transact     persistence.Transactioner
+	table    Table
+	transact persistence.Transactioner
+	repo     StatusUpdateRepository
 }
 
 type Table string
+
+//go:generate mockery -name=StatusUpdateRepository -output=automock -outpkg=automock -case=underscore
+type StatusUpdateRepository interface {
+	UpdateStatus(ctx context.Context, id, table string) error
+	IsConnected(ctx context.Context, id, table string) (bool, error)
+}
 
 const (
 	applicationsTable Table = "applications"
 	runtimesTable     Table = "runtimes"
 )
 
-func NewUpdate(transact persistence.Transactioner) *update {
+func NewUpdate(transact persistence.Transactioner, repo StatusUpdateRepository) *update {
 	return &update{
-		table:        "",
-		timestampGen: timestamp.DefaultGenerator(),
-		transact:     transact,
+		table:    "",
+		transact: transact,
+		repo:     repo,
 	}
 }
 
@@ -43,7 +48,6 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			consumerInfo, err := consumer.LoadFromContext(ctx)
 			if err != nil {
 				u.writeError(w, errors.Wrap(err, "while fetching consumer info from from context").Error(), http.StatusBadRequest)
-				log.Error(err)
 				return
 			}
 
@@ -57,24 +61,40 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			isConnected, err := u.IsConnected(consumerInfo.ConsumerID)
+			tx, err := u.transact.Begin()
+			if err != nil {
+				u.writeError(w, errors.Wrap(err, "while opening transaction").Error(), http.StatusInternalServerError)
+				return
+			}
+			defer u.transact.RollbackUnlessCommited(tx)
+
+			persistence.SaveToContext(ctx, tx)
+
+			isConnected, err := u.repo.IsConnected(ctx, consumerInfo.ConsumerID, string(u.table))
 			if err != nil {
 				u.writeError(w, errors.Wrap(err, "while checking status").Error(), http.StatusInternalServerError)
-				log.Error(err)
 				return
 			}
 
 			if isConnected {
+				if err := tx.Commit(); err != nil {
+					u.writeError(w, errors.Wrap(err, "while committing").Error(), http.StatusInternalServerError)
+					return
+				}
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
-			err = u.UpdateStatus(consumerInfo.ConsumerID)
+			err = u.repo.UpdateStatus(ctx, consumerInfo.ConsumerID, string(u.table))
 			if err != nil {
 
 				u.writeError(w, errors.Wrap(err, "while updating status").Error(), http.StatusInternalServerError)
-				log.Error(err)
+				return
 			}
 
+			if err := tx.Commit(); err != nil {
+				u.writeError(w, errors.Wrap(err, "while committing").Error(), http.StatusInternalServerError)
+				return
+			}
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

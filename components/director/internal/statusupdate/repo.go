@@ -1,49 +1,64 @@
 package statusupdate
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/pkg/errors"
 )
 
 const (
-	updateQuery = "UPDATE %s SET status_condition = 'CONNECTED', status_timestamp = $1 WHERE id = $2"
-	existsQuery = "SELECT 1 FROM %s WHERE id = $1 AND status_condition = 'CONNECTED'"
+	updateQuery = "UPDATE public.%s SET status_condition = 'CONNECTED', status_timestamp = $1 WHERE id = $2"
+	existsQuery = "SELECT 1 FROM public.%s WHERE id = $1 AND status_condition = 'CONNECTED'"
 )
 
-func (u *update) UpdateStatus(id string) error {
-	tx, err := u.transact.Begin()
-	if err != nil {
-		return errors.Wrap(err, "while opening transaction")
-	}
-	defer u.transact.RollbackUnlessCommited(tx)
+type repository struct {
+	timestampGen timestamp.Generator
+}
 
-	stmt := fmt.Sprintf(updateQuery, u.table)
+func (r *repository) SetTimestampGen(timestampGen func() time.Time) {
+	r.timestampGen = timestampGen
+}
 
-	_, err = tx.Exec(stmt, u.timestampGen(), id)
+func NewRepository() *repository {
+	return &repository{timestampGen: timestamp.DefaultGenerator()}
+}
+
+func (r *repository) UpdateStatus(ctx context.Context, id, table string) error {
+
+	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("while updating %s status", u.table))
+		return errors.Wrap(err, "while loading persistence from context")
 	}
 
-	err = tx.Commit()
+	stmt := fmt.Sprintf(updateQuery, table)
+
+	_, err = persist.Exec(stmt, r.timestampGen(), id)
+
 	if err != nil {
-		return errors.Wrap(err, "while committing the automatic update")
+		return errors.Wrap(err, fmt.Sprintf("while updating %s status", table))
 	}
+
 	return nil
 }
 
-func (u *update) IsConnected(id string) (bool, error) {
-	tx, err := u.transact.Begin()
-	if err != nil {
-		return false, errors.Wrap(err, "while opening transaction")
-	}
-	defer u.transact.RollbackUnlessCommited(tx)
+func (r *repository) IsConnected(ctx context.Context, id, table string) (bool, error) {
 
-	stmt := fmt.Sprintf(existsQuery, u.table)
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return false, errors.Wrap(err, "while loading persistence from context")
+	}
+
+	stmt := fmt.Sprintf(existsQuery, table)
 
 	var count int
-	err = tx.Get(&count, stmt, id)
+	err = persist.Get(&count, stmt, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
@@ -51,10 +66,6 @@ func (u *update) IsConnected(id string) (bool, error) {
 		return false, errors.Wrap(err, "while getting object from DB")
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return false, errors.Wrap(err, "while committing transaction")
-	}
 	return true, nil
 
 }
