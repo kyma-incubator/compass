@@ -53,6 +53,11 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 		return operation, 1 * time.Second, nil
 	}
 
+	if instance.RuntimeID == "" {
+		log.Warn("Runtime not exist")
+		return s.operationManager.OperationSucceeded(operation, "runtime was never provisioned")
+	}
+
 	var provisionerResponse string
 	if operation.ProvisionerOperationID == "" {
 		provisionerResponse, err = s.provisionerClient.DeprovisionRuntime(instance.GlobalAccountID, instance.RuntimeID)
@@ -61,6 +66,8 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 			return operation, 10 * time.Second, nil
 		}
 		operation.ProvisionerOperationID = provisionerResponse
+		log.Infof("fetched ProvisionerOperationID=%s", provisionerResponse)
+
 		operation, repeat, err := s.operationManager.UpdateOperation(operation)
 		if repeat != 0 {
 			log.Errorf("cannot save operation ID from provisioner: %s", err)

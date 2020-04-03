@@ -78,6 +78,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	if provisionerResponse.RuntimeID == nil {
 		return operation, 1 * time.Minute, nil
 	}
+	log.Infof("fetched RuntimeID=%s", *provisionerResponse.RuntimeID)
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	if err != nil {
@@ -92,7 +93,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return operation, 10 * time.Second, nil
 	}
 
-	log.Infof("runtime creation process initiated successfully, RuntimeID=%s", *provisionerResponse.RuntimeID)
+	log.Info("runtime creation process initiated successfully")
 	// return repeat mode (1 sec) to start the initialization step which will now check the runtime status
 	return operation, 1 * time.Second, nil
 }
