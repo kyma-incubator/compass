@@ -64,7 +64,7 @@ func TestValidator_ValidateInput(t *testing.T) {
 		}
 
 		//when
-		err := validator.ValidateInput(config)
+		err := validator.ValidateProvisioningInput(config)
 
 		//then
 		require.NoError(t, err)
@@ -77,7 +77,7 @@ func TestValidator_ValidateInput(t *testing.T) {
 		config := gqlschema.ProvisionRuntimeInput{}
 
 		//when
-		err := validator.ValidateInput(config)
+		err := validator.ValidateProvisioningInput(config)
 
 		//then
 		require.Error(t, err)
@@ -107,7 +107,7 @@ func TestValidator_ValidateInput(t *testing.T) {
 		}
 
 		//when
-		err := validator.ValidateInput(config)
+		err := validator.ValidateProvisioningInput(config)
 
 		//then
 		require.Error(t, err)

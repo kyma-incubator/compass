@@ -212,7 +212,7 @@ input ComponentConfigurationInput {
 }
 
 input UpgradeKymaOnRuntimeInput {
-    version: String! # Desired version of Kyma on the Runtime
+    kymaConfig: KymaConfigInput! # Kyma config to upgrade to
 }
 
 input UpgradeClusterInput {

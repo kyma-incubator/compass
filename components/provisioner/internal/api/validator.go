@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -11,7 +12,8 @@ const RuntimeAgent = "compass-runtime-agent"
 
 //go:generate mockery -name=Validator
 type Validator interface {
-	ValidateInput(input gqlschema.ProvisionRuntimeInput) error
+	ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) error
+	ValidateUpgradeInput(input gqlschema.UpgradeKymaOnRuntimeInput) error
 	ValidateTenant(runtimeID, tenant string) error
 }
 
@@ -25,25 +27,46 @@ func NewValidator(readSession dbsession.ReadSession) Validator {
 	}
 }
 
-func (v *validator) ValidateInput(input gqlschema.ProvisionRuntimeInput) error {
-	if input.KymaConfig == nil {
-		return errors.New("cannot provision Runtime since Kyma config is missing")
-	}
-
-	if len(input.KymaConfig.Components) == 0 {
-		return errors.New("cannot provision Runtime since Kyma components list is empty")
-	}
-
-	if !configContainsRuntimeAgentComponent(input.KymaConfig.Components) {
-		return errors.New("cannot provision Runtime since Kyma components list does not contain Compass Runtime Agent")
+func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) error {
+	err := v.validateKymaConfig(input.KymaConfig)
+	if err != nil {
+		return fmt.Errorf("validation error while starting Runtime provisioning: %s", err.Error())
 	}
 
 	if input.RuntimeInput == nil {
-		return errors.New("cannot provision Runtime since runtime input is missing")
+		return fmt.Errorf("validation error while starting Runtime provisioning: runtime input is missing")
 	}
 
 	return nil
 }
+
+func (v *validator) ValidateUpgradeInput(input gqlschema.UpgradeKymaOnRuntimeInput) error {
+	err := v.validateKymaConfig(input.KymaConfig)
+	if err != nil {
+		return fmt.Errorf("validation error while starting Runtime upgrade: %s", err.Error())
+	}
+
+	// TODO: align with other if we should validate
+
+	return nil
+}
+
+func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) error {
+	if kymaConfig == nil {
+		return errors.New("error: Kyma config not provided")
+	}
+
+	if len(kymaConfig.Components) == 0 {
+		return errors.New("error: Kyma components list is empty")
+	}
+
+	if !configContainsRuntimeAgentComponent(kymaConfig.Components) {
+		return errors.New("error: Kyma components list does not contain Compass Runtime Agent")
+	}
+
+	return nil
+}
+
 func (v *validator) ValidateTenant(runtimeID, tenant string) error {
 	dbTenant, err := v.readSession.GetTenant(runtimeID)
 

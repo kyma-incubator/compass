@@ -67,8 +67,8 @@ type Operation struct {
 	State          OperationState
 	Message        string
 	ClusterID      string
-	Stage          OperationStage // TODO: add to db layer if you stick with it
-	LastTransition *time.Time     // TODO: add to db layer if you stick with it
+	Stage          OperationStage
+	LastTransition *time.Time
 }
 
 type RuntimeAgentConnectionStatus int

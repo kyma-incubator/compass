@@ -892,7 +892,7 @@ input ComponentConfigurationInput {
 }
 
 input UpgradeKymaOnRuntimeInput {
-    version: String! # Desired version of Kyma on the Runtime
+    kymaConfig: KymaConfigInput! # Kyma config to upgrade to
 }
 
 input UpgradeClusterInput {
@@ -4851,9 +4851,9 @@ func (ec *executionContext) unmarshalInputUpgradeKymaOnRuntimeInput(ctx context.
 
 	for k, v := range asMap {
 		switch k {
-		case "version":
+		case "kymaConfig":
 			var err error
-			it.Version, err = ec.unmarshalNString2string(ctx, v)
+			it.KymaConfig, err = ec.unmarshalNKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}

@@ -1,4 +1,4 @@
-package operation
+package operations
 
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"

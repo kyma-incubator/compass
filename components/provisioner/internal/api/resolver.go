@@ -39,7 +39,7 @@ func NewResolver(provisioningService provisioning.Service, validator Validator) 
 }
 
 func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.ProvisionRuntimeInput) (*gqlschema.OperationStatus, error) {
-	err := r.validator.ValidateInput(config)
+	err := r.validator.ValidateProvisioningInput(config)
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s", err)
 		return nil, err
@@ -75,7 +75,6 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 	log.Infof("Requested deprovisioning of Runtime %s.", id)
 
 	tenant, err := r.getAndValidateTenant(ctx, id)
-
 	if err != nil {
 		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
 		return "", err
@@ -91,17 +90,37 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 	return operationID, nil
 }
 
-func (r *Resolver) UpgradeKymaOnRuntime(context.Context, string, gqlschema.UpgradeKymaOnRuntimeInput) (*gqlschema.OperationStatus, error) {
+// TODO: tests
+func (r *Resolver) UpgradeKymaOnRuntime(ctx context.Context, runtimeId string, input gqlschema.UpgradeKymaOnRuntimeInput) (*gqlschema.OperationStatus, error) {
+	log.Infof("Requested upgrade of Runtime %s.", runtimeId)
 
-	// TODO: validate if version is correct - +1
+	// TODO: extract tenant validation to function (after rebase)
 
-	// TODO: start new upgrade operation
-	// TODO:
-	// TODO: in installation SDK I will need to trigger update
+	tenant, err := getTenant(ctx)
+	if err != nil {
+		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
+		return &gqlschema.OperationStatus{}, err
+	}
 
-	// TODO: return
+	err = r.validator.ValidateTenant(runtimeId, tenant)
+	if err != nil {
+		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
+		return &gqlschema.OperationStatus{}, err
+	}
 
-	return &gqlschema.OperationStatus{}, nil
+	err = r.validator.ValidateUpgradeInput(input)
+	if err != nil {
+		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
+		return nil, err
+	}
+
+	operationStatus, err := r.provisioning.UpgradeRuntime(runtimeId, input)
+	if err != nil {
+		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
+		return nil, err
+	}
+
+	return operationStatus, nil
 }
 
 func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string, error) {

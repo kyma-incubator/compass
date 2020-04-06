@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operation"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -40,13 +40,14 @@ func newProvisioningService(
 	provisioner provisioning.Provisioner,
 	dbsFactory dbsession.Factory,
 	releaseRepo release.Provider,
-	directorService director.DirectorClient) provisioning.Service {
+	directorService director.DirectorClient,
+	upgradeQueue operations.OperationQueue) provisioning.Service {
 	uuidGenerator := uuid.NewUUIDGenerator()
 
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo, gardenerProject)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
-	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator)
+	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, upgradeQueue)
 }
 
 func newDirectorClient(config config) (director.DirectorClient, error) {
@@ -63,7 +64,7 @@ func newDirectorClient(config config) (director.DirectorClient, error) {
 
 func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient.Config, gardenerClientSet *gardener_apis.CoreV1beta1Client,
 	dbsFactory dbsession.Factory, direcotrClietnt director.DirectorClient,
-	queue operation.OperationQueue) (*gardener.ShootController, error) {
+	queue operations.OperationQueue) (*gardener.ShootController, error) {
 	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
 	if err != nil {
 		return nil, err

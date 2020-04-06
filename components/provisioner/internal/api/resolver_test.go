@@ -82,7 +82,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		}
 
 		provisioningService.On("ProvisionRuntime", config, tenant, "").Return(operation, nil)
-		validator.On("ValidateInput", config).Return(nil)
+		validator.On("ValidateProvisioningInput", config).Return(nil)
 
 		//when
 		status, err := provisioner.ProvisionRuntime(ctx, config)
@@ -129,7 +129,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
 
-		validator.On("ValidateInput", config).Return(nil)
+		validator.On("ValidateProvisioningInput", config).Return(nil)
 
 		//when
 		status, err := provisioner.ProvisionRuntime(ctx, config)
@@ -151,7 +151,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
-		validator.On("ValidateInput", config).Return(errors.New("Some error"))
+		validator.On("ValidateProvisioningInput", config).Return(errors.New("Some error"))
 
 		//when
 		status, err := provisioner.ProvisionRuntime(ctx, config)
@@ -180,7 +180,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
 		provisioningService.On("ProvisionRuntime", config, tenant, "").Return(nil, errors.New("Provisioning failed"))
-		validator.On("ValidateInput", config).Return(nil)
+		validator.On("ValidateProvisioningInput", config).Return(nil)
 
 		//when
 		status, err := provisioner.ProvisionRuntime(ctx, config)
@@ -213,7 +213,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			KymaConfig:    kymaConfig,
 		}
 
-		validator.On("ValidateInput", config).Return(nil)
+		validator.On("ValidateProvisioningInput", config).Return(nil)
 
 		ctx := context.Background()
 

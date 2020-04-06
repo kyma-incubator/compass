@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"time"
 
 	uuid "github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
@@ -22,7 +23,7 @@ import (
 //go:generate mockery -name=Service
 type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, error)
-	UpgradeRuntime(id string, config *gqlschema.UpgradeKymaOnRuntimeInput) (string, error)
+	UpgradeRuntime(id string, config gqlschema.UpgradeKymaOnRuntimeInput) (*gqlschema.OperationStatus, error)
 	DeprovisionRuntime(id, tenant string) (string, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
@@ -43,6 +44,8 @@ type service struct {
 	dbSessionFactory dbsession.Factory
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
+
+	upgradeQueue operations.OperationQueue
 }
 
 func NewProvisioningService(
@@ -52,6 +55,7 @@ func NewProvisioningService(
 	factory dbsession.Factory,
 	provisioner Provisioner,
 	generator uuid.UUIDGenerator,
+	upgradeQueue operations.OperationQueue,
 ) Service {
 	return &service{
 		inputConverter:   inputConverter,
@@ -60,6 +64,7 @@ func NewProvisioningService(
 		dbSessionFactory: factory,
 		provisioner:      provisioner,
 		uuidGenerator:    generator,
+		upgradeQueue:     upgradeQueue,
 	}
 }
 
@@ -79,7 +84,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 
 	dbSession, err := r.dbSessionFactory.NewSessionWithinTransaction()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create repository: %s", err)
+		return nil, fmt.Errorf("Failed to start database transaction: %s", err)
 	}
 	defer dbSession.RollbackUnlessCommitted()
 
@@ -116,13 +121,9 @@ func (r *service) unregisterFailedRuntime(id, tenant string) {
 func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {
 	session := r.dbSessionFactory.NewReadWriteSession()
 
-	lastOperation, dberr := session.GetLastOperation(id)
-	if dberr != nil {
-		return "", fmt.Errorf("Failed to get last operation: %s", dberr.Error())
-	}
-
-	if lastOperation.State == model.InProgress {
-		return "", errors.Errorf("cannot start new operation for %s Runtime while previous one is in progress", id)
+	err := r.verifyLastOperationFinished(session, id)
+	if err != nil {
+		return "", err
 	}
 
 	cluster, dberr := session.GetCluster(id)
@@ -143,9 +144,60 @@ func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {
 	return operation.ID, nil
 }
 
-func (r *service) UpgradeRuntime(id string, input *gqlschema.UpgradeKymaOnRuntimeInput) (string, error) {
+func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, runtimeId string) error {
+	lastOperation, dberr := session.GetLastOperation(runtimeId)
+	if dberr != nil {
+		return fmt.Errorf("Failed to get last operation: %s", dberr.Error())
+	}
 
-	return "", nil
+	if lastOperation.State == model.InProgress {
+		return errors.Errorf("cannot start new operation for %s Runtime while previous one is in progress", id)
+	}
+
+	return nil
+}
+
+func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeKymaOnRuntimeInput) (*gqlschema.OperationStatus, error) {
+	if input.KymaConfig == nil {
+		return &gqlschema.OperationStatus{}, fmt.Errorf("error: Kyma config is nil")
+	}
+
+	session := r.dbSessionFactory.NewReadSession()
+
+	err := r.verifyLastOperationFinished(session, runtimeId)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, err
+	}
+
+	kymaConfig, err := r.inputConverter.KymaConfigFromInput(runtimeId, *input.KymaConfig)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to convert KymaConfigInput: %s", err.Error())
+	}
+
+	cluster, err := session.GetCluster(runtimeId)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to read cluster from database: %s", err.Error())
+	}
+
+	txSession, err := r.dbSessionFactory.NewSessionWithinTransaction()
+	if err != nil {
+		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to start database transaction: %s", err.Error())
+	}
+	defer txSession.RollbackUnlessCommitted()
+
+	operation, err := r.setUpgradeStarted(txSession, cluster, kymaConfig)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to set upgrade started: %s", err.Error())
+	}
+
+	err = txSession.Commit()
+	if err != nil {
+		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to commit upgrade transaction: %s", err.Error())
+	}
+
+	r.upgradeQueue.Add(operation.ID)
+
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
 func (r *service) ReconnectRuntimeAgent(id string) (string, error) {
@@ -222,15 +274,54 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, timestamp, "Provisioning started", "Failed to set provisioning started: %s")
+	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, model.ShootProvisioning, timestamp, "Provisioning started")
 	if err != nil {
-		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
+		return model.Operation{}, err.Append("Failed to set provisioning started: %s")
 	}
 
 	return operation, nil
 }
 
-func (r *service) setOperationStarted(dbSession dbsession.WriteSession, runtimeID string, operationType model.OperationType, timestamp time.Time, message string, errorMessageFmt string) (model.Operation, dberrors.Error) {
+func (r *service) setUpgradeStarted(txSession dbsession.WriteSession, cluster model.Cluster, kymaConfig model.KymaConfig) (model.Operation, dberrors.Error) {
+
+	err := txSession.InsertKymaConfig(kymaConfig)
+	if err != nil {
+		return model.Operation{}, err.Append("Failed to insert Kyma Config")
+	}
+
+	runtimeUpgrade := model.RuntimeUpgrade{
+		Id:                      r.uuidGenerator.New(),
+		State:                   model.UpgradeInProgress,
+		ClusterId:               cluster.ID,
+		PreUpgradeKymaConfigId:  cluster.KymaConfig.ID,
+		PostUpgradeKymaConfigId: kymaConfig.ID,
+	}
+
+	err = txSession.InsertRuntimeUpgrade(runtimeUpgrade)
+	if err != nil {
+		return model.Operation{}, err.Append("Failed to insert Runtime Upgrade")
+	}
+
+	err = txSession.UpdateClusterKymaConfig(cluster.ID, kymaConfig.ID)
+	if err != nil {
+		return model.Operation{}, err.Append("Failed to update Kyma config in cluster")
+	}
+
+	operation, err := r.setOperationStarted(txSession, cluster.ID, model.Upgrade, model.StartingUpgrade, time.Now(), "Starting Kyma upgrade")
+	if err != nil {
+		return model.Operation{}, err.Append("Failed to set operation started")
+	}
+
+	return operation, nil
+}
+
+func (r *service) setOperationStarted(
+	dbSession dbsession.WriteSession,
+	runtimeID string,
+	operationType model.OperationType,
+	operationStage model.OperationStage,
+	timestamp time.Time,
+	message string) (model.Operation, dberrors.Error) {
 	id := r.uuidGenerator.New()
 
 	operation := model.Operation{
@@ -240,13 +331,13 @@ func (r *service) setOperationStarted(dbSession dbsession.WriteSession, runtimeI
 		State:          model.InProgress,
 		Message:        message,
 		ClusterID:      runtimeID,
-		Stage:          model.ShootProvisioning,
+		Stage:          operationStage,
 		LastTransition: &timestamp,
 	}
 
 	err := dbSession.InsertOperation(operation)
 	if err != nil {
-		return model.Operation{}, dberrors.Internal(errorMessageFmt, err)
+		return model.Operation{}, err.Append("failed to insert operation")
 	}
 
 	return operation, nil

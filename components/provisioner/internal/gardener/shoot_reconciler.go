@@ -3,7 +3,7 @@ package gardener
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operation"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -36,7 +36,7 @@ func NewReconciler(
 	secretsClient v1core.SecretInterface,
 	shootClient v1beta1.ShootInterface,
 	directorClient director.DirectorClient,
-	installQueue operation.OperationQueue) *Reconciler {
+	installQueue operations.OperationQueue) *Reconciler {
 	return &Reconciler{
 		client:     mgr.GetClient(),
 		scheme:     mgr.GetScheme(),
@@ -68,7 +68,7 @@ type ProvisioningOperator struct {
 	dbsFactory     dbsession.Factory
 	directorClient director.DirectorClient
 
-	installationQueue operation.OperationQueue
+	installationQueue operations.OperationQueue
 }
 
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {

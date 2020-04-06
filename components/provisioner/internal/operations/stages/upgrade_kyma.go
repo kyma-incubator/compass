@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operation"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -35,16 +35,16 @@ func (s *UpgradeKymaStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *UpgradeKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) (operation.StageResult, error) {
+func (s *UpgradeKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) (operations.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
-		return operation.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
+		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
 
 	// TODO: cleanup kubeconfig stuff
 	k8sConfig, err := ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
-		return operation.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
+		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
 
 	installationState, err := s.installationClient.CheckInstallationState(k8sConfig) // TODO: modify signature of this method
@@ -52,16 +52,16 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) 
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
 			logger.Warnf("Upgrade already in progress, proceeding to next step...")
-			return operation.StageResult{Stage: s.Name(), Delay: 0}, nil
+			return operations.StageResult{Stage: s.Name(), Delay: 0}, nil
 		}
 
-		return operation.StageResult{}, fmt.Errorf("error: failed to check installation CR state: %s", err.Error())
+		return operations.StageResult{}, fmt.Errorf("error: failed to check installation CR state: %s", err.Error())
 	}
 
 	// TODO Start upgrade
 	if installationState.State == installationSDK.NoInstallationState {
 		// TODO: non recoverable
-		return operation.StageResult{}, fmt.Errorf("error: Installation CR not found in the cluster")
+		return operations.StageResult{}, fmt.Errorf("error: Installation CR not found in the cluster")
 	}
 
 	if installationState.State == "Installed" {
@@ -70,7 +70,7 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) 
 
 	// TODO: How should it handle when installation in progress? Should it check the Kyma version?
 
-	return operation.StageResult{Stage: s.nextStep, Delay: 0}, nil
+	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 
 	//
 	//if installationState.State == installationSDK.NoInstallationState {

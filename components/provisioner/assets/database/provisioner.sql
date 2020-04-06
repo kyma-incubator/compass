@@ -106,7 +106,6 @@ CREATE TABLE kyma_config
     release_id uuid NOT NULL,
     cluster_id uuid NOT NULL,
     global_configuration jsonb,
-    UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE,
     foreign key (release_id) REFERENCES kyma_release (id) ON DELETE RESTRICT
 );
@@ -121,4 +120,26 @@ CREATE TABLE kyma_component_config
     component_order integer,
     kyma_config_id uuid NOT NULL,
     foreign key (kyma_config_id) REFERENCES kyma_config (id) ON DELETE CASCADE
+);
+
+-- Kyma Config
+
+CREATE TYPE runtime_upgrade_state AS ENUM (
+    'IN_PROGRESS',
+    'SUCCEEDED',
+    'FAILED',
+    'ROLLED_BACK'
+);
+
+-- TODO: decide on the approach and align migrator
+CREATE TABLE runtime_upgrade
+(
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    cluster_id uuid NOT NULL,
+    state runtime_upgrade_state NOT NULL,
+    pre_upgrade_kyma_config_id uuid NOT NULL,
+    post_upgrade_kyma_config_id uuid NOT NULL,
+    foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE,
+    foreign key (pre_upgrade_kyma_config_id) REFERENCES kyma_config (id) ON DELETE CASCADE,
+    foreign key (post_upgrade_kyma_config_id) REFERENCES kyma_config (id) ON DELETE CASCADE
 );

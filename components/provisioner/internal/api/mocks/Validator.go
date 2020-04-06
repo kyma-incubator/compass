@@ -12,8 +12,8 @@ type Validator struct {
 	mock.Mock
 }
 
-// ValidateInput provides a mock function with given fields: input
-func (_m *Validator) ValidateInput(input gqlschema.ProvisionRuntimeInput) error {
+// ValidateProvisioningInput provides a mock function with given fields: input
+func (_m *Validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) error {
 	ret := _m.Called(input)
 
 	var r0 error

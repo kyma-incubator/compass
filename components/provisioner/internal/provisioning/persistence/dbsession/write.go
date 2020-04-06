@@ -205,6 +205,19 @@ func (ws writeSession) UpdateCluster(runtimeID string, kubeconfig string, terraf
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update cluster %s data: %s", runtimeID, err))
 }
 
+func (ws writeSession) UpdateClusterKymaConfig(runtimeID string, kymaConfigId string) dberrors.Error {
+	res, err := ws.update("cluster").
+		Where(dbr.Eq("id", runtimeID)).
+		Set("kyma_config_id", kymaConfigId).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update cluster %s Kyma config: %s", runtimeID, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update cluster %s kyma config: %s", runtimeID, err))
+}
+
 func (ws writeSession) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).
@@ -216,6 +229,18 @@ func (ws writeSession) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
 	}
 
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update cluster %s data: %s", runtimeID, err))
+}
+
+func (ws writeSession) InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) dberrors.Error {
+	_, err := ws.insertInto("runtime_upgrade").
+		Columns("id", "state", "cluster_id", "pre_upgrade_kyma_config_id", "post_upgrade_kyma_config_id").
+		Record(runtimeUpgrade).
+		Exec()
+	if err != nil {
+		return dberrors.Internal("Failed to insert Runtime Upgrade: %s", err.Error())
+	}
+
+	return nil
 }
 
 func (ws writeSession) updateSucceeded(result sql.Result, errorMsg string) dberrors.Error {
