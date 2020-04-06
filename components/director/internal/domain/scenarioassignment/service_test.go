@@ -26,7 +26,7 @@ func TestService_Create(t *testing.T) {
 		mockRepo.On("Create", ctx, fixModel()).Return(nil)
 		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{scenarioName})
 		mockEngine := &automock.AssignmentEngine{}
-		mockEngine.On("EnsureScenarioAssigned", ctx, fixModel()).Return(nil).Once()
+		mockEngine.On("EnsureScenarioAssigned", ctx, fixModel(), tenantID).Return(nil).Once()
 		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc, mockEngine)
 
 		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc, mockEngine)
@@ -47,7 +47,7 @@ func TestService_Create(t *testing.T) {
 		mockRepo.On("Create", ctx, fixModel()).Return(nil)
 		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{scenarioName})
 		mockEngineSvc := &automock.AssignmentEngine{}
-		mockEngineSvc.On("EnsureScenarioAssigned", ctx, fixModel()).Return(fixError()).Once()
+		mockEngineSvc.On("EnsureScenarioAssigned", ctx, fixModel(), tenantID).Return(fixError()).Once()
 		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc, mockEngineSvc)
 
 		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc, mockEngineSvc)

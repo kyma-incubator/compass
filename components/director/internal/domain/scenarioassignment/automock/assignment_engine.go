@@ -11,13 +11,13 @@ type AssignmentEngine struct {
 	mock.Mock
 }
 
-// EnsureScenarioAssigned provides a mock function with given fields: ctx, in
-func (_m *AssignmentEngine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	ret := _m.Called(ctx, in)
+// EnsureScenarioAssigned provides a mock function with given fields: ctx, in, tenantID
+func (_m *AssignmentEngine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment, tenantID string) error {
+	ret := _m.Called(ctx, in, tenantID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.AutomaticScenarioAssignment) error); ok {
-		r0 = rf(ctx, in)
+	if rf, ok := ret.Get(0).(func(context.Context, model.AutomaticScenarioAssignment, string) error); ok {
+		r0 = rf(ctx, in, tenantID)
 	} else {
 		r0 = ret.Error(0)
 	}

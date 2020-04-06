@@ -14,7 +14,7 @@ import (
 func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	tenantID := testTenants.GetIDByName(t, "ASA1")
+	tenantID := testTenants.GetTenantByName(t, "ASA1")
 
 	testScenarioA := "ASA1"
 	testScenarioB := "ASA2"
@@ -87,42 +87,52 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
+	tenantID := testTenants.GetTenantByName(t, "TestCreateAutomaticScenarioAssignment")
 	prodScenario := "PRODUCTION"
 	devScenario := "DEVELOPMENT"
-	//TODO: use different tenant
-	createScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), []string{prodScenario, devScenario, "DEFAULT"})
+	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{prodScenario, devScenario, "DEFAULT"})
 
-	rtm1 := registerRuntime(t, ctx, "runtime1")
-	defer unregisterRuntime(t, rtm1.ID)
-	rtm2 := registerRuntime(t, ctx, "runtime2")
-	defer unregisterRuntime(t, rtm2.ID)
-	rtm3 := registerRuntime(t, ctx, "runtime3")
-	defer unregisterRuntime(t, rtm3.ID)
+	rmtInput := fixRuntimeInput("runtime1")
+	rtm1 := registerRuntimeFromInputWithinTenant(t, ctx, &rmtInput, tenantID)
+	defer unregisterRuntimeWithinTenant(t, rtm1.ID, tenantID)
+
+	rmtInput = fixRuntimeInput("runtime2")
+	rtm2 := registerRuntimeFromInputWithinTenant(t, ctx, &rmtInput, tenantID)
+	defer unregisterRuntimeWithinTenant(t, rtm2.ID, tenantID)
+
+	rmtInput = fixRuntimeInput("runtime3")
+	rtm3 := registerRuntimeFromInputWithinTenant(t, ctx, &rmtInput, tenantID)
+	defer unregisterRuntimeWithinTenant(t, rtm3.ID, tenantID)
 
 	selectorKey := "KEY"
 	selectorValue := "VALUE"
-	setRuntimeLabel(t, ctx, rtm1.ID, selectorKey, selectorValue)
-	setRuntimeLabel(t, ctx, rtm2.ID, selectorKey, selectorValue)
+	setRuntimeLabelWithinTenant(t, ctx, tenantID, rtm1.ID, selectorKey, selectorValue)
+	setRuntimeLabelWithinTenant(t, ctx, tenantID, rtm2.ID, selectorKey, selectorValue)
 
 	//WHEN
-	SetAutomaticScenarioAssignment(t, ctx, prodScenario, selectorKey, selectorValue)
-	SetAutomaticScenarioAssignment(t, ctx, devScenario, selectorKey, selectorValue)
+	SetAutomaticScenarioAssignmentWithinTenant(t, ctx, tenantID, prodScenario, selectorKey, selectorValue)
+	SetAutomaticScenarioAssignmentWithinTenant(t, ctx, tenantID, devScenario, selectorKey, selectorValue)
 
-	// WHEN
+	//THEN
 	runtimesPage := graphql.RuntimePageExt{}
 	queryReq := fixRuntimesRequest()
-	err := tc.RunOperation(ctx, queryReq, &runtimesPage)
+	err := tc.RunOperationWithCustomTenant(ctx, tenantID, queryReq, &runtimesPage)
 	require.NoError(t, err)
+	require.Len(t, runtimesPage.Data, 3)
 	for _, rtm := range runtimesPage.Data {
-		if rtm.ID == rtm3.ID {
-			continue
+		if rtm.ID != rtm3.ID {
+			assertScenarios(t, rtm.Labels, []interface{}{prodScenario, devScenario})
+		} else {
+			assertScenarios(t, rtm.Labels, []interface{}{"DEFAULT"})
 		}
-		val, ok := rtm.Labels["scenarios"]
-		require.True(t, ok)
-		scenarios, ok := val.([]interface{})
-		require.True(t, ok)
-		assert.Equal(t, scenarios, []interface{}{prodScenario, devScenario})
 	}
+}
+func assertScenarios(t *testing.T, actual graphql.Labels, expected []interface{}) {
+	val, ok := actual["scenarios"]
+	require.True(t, ok)
+	scenarios, ok := val.([]interface{})
+	require.True(t, ok)
+	assert.ElementsMatch(t, scenarios, expected)
 }
 
 func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
@@ -138,7 +148,7 @@ func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 	}
 
 	scenarios := []string{defaultValue, scenario1, scenario2}
-	tenantID := testTenants.GetIDByName(t, "TestDeleteAssignmentsForScenario")
+	tenantID := testTenants.GetTenantByName(t, "TestDeleteAssignmentsForScenario")
 	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, scenarios)
 
 	assignment1 := graphql.AutomaticScenarioAssignmentSetInput{
@@ -189,7 +199,7 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 	scenarios := []string{defaultValue, scenario1, scenario2, scenario3}
 
-	tenantID := testTenants.GetIDByName(t, "TestDeleteAssignmentsForSelector")
+	tenantID := testTenants.GetTenantByName(t, "TestDeleteAssignmentsForSelector")
 	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, scenarios)
 
 	selector := graphql.LabelSelectorInput{Key: "test-key", Value: "test-value"}

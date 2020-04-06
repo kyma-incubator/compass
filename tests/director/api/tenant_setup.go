@@ -88,6 +88,13 @@ func (mgr *TestTenantsManager) InitializeDB(transact persistence.Transactioner) 
 			ProviderName:   testProvider,
 			Status:         Active,
 		},
+		"TestCreateAutomaticScenarioAssignment": {
+			ID:             "8c733a45-d988-4472-af10-1256b82c70c0",
+			Name:           "TestCreateAutomaticScenarioAssignment",
+			ExternalTenant: "8c733a45-d988-4472-af10-1256b82c70c0",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
 		"ASA1": {
 			ID:             "8263cc13-5698-4a2d-9257-e8e76b543e88",
 			Name:           "ASA1",
@@ -141,7 +148,7 @@ func (mgr TestTenantsManager) CleanupDB(transact persistence.Transactioner) {
 	}
 }
 
-func (mgr TestTenantsManager) GetIDByName(t *testing.T, name string) string {
+func (mgr TestTenantsManager) GetTenantByName(t *testing.T, name string) string {
 	val, ok := mgr.tenantsByName[name]
 	require.True(t, ok)
 	return val.ID

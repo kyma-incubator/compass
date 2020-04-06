@@ -932,7 +932,7 @@ func TestTenantSeparation(t *testing.T) {
 
 	// WHEN
 	getAppReq := fixApplicationsRequest()
-	customTenant := testTenants.GetIDByName(t, "Test1")
+	customTenant := testTenants.GetTenantByName(t, "Test1")
 	anotherTenantsApps := graphql.ApplicationPage{}
 	// THEN
 	err = tc.RunOperationWithCustomTenant(ctx, customTenant, getAppReq, &anotherTenantsApps)

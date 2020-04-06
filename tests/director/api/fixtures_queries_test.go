@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetAutomaticScenarioAssignment(t *testing.T, ctx context.Context, automaticScenario, selecterKey, selectorValue string) {
+func SetAutomaticScenarioAssignmentWithinTenant(t *testing.T, ctx context.Context, tenantID, automaticScenario, selecterKey, selectorValue string) {
 	input := graphql.AutomaticScenarioAssignmentSetInput{
 		ScenarioName: automaticScenario,
 		Selector: &graphql.LabelSelectorInput{
@@ -20,8 +20,8 @@ func SetAutomaticScenarioAssignment(t *testing.T, ctx context.Context, automatic
 	}
 	payload, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(input)
 	require.NoError(t, err)
-	request := fixSetAutomaticScenarioAssignmentRequest(payload)
-	err = tc.cli.Run(ctx, request, nil)
+	request := fixCreateAutomaticScenarioAssignmentRequest(payload)
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, nil)
 	require.NoError(t, err)
 }
 
@@ -149,10 +149,14 @@ func getRuntimeWithinTenant(t *testing.T, ctx context.Context, runtimeID string,
 }
 
 func setRuntimeLabel(t *testing.T, ctx context.Context, runtimeID string, labelKey string, labelValue interface{}) *graphql.Label {
+	return setRuntimeLabelWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), runtimeID, labelKey, labelValue)
+}
+
+func setRuntimeLabelWithinTenant(t *testing.T, ctx context.Context, tenantID, runtimeID string, labelKey string, labelValue interface{}) *graphql.Label {
 	setLabelRequest := fixSetRuntimeLabelRequest(runtimeID, labelKey, labelValue)
 	label := graphql.Label{}
 
-	err := tc.RunOperation(ctx, setLabelRequest, &label)
+	err := tc.RunOperationWithCustomTenant(ctx, tenantID, setLabelRequest, &label)
 	require.NoError(t, err)
 
 	return &label

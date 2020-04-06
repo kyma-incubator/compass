@@ -9,7 +9,7 @@ require (
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/huandu/xstrings v1.3.0 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200327150114-3baf3892bd63
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200403141306-1c5459e649a7
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/pkg/errors v0.9.1
@@ -22,5 +22,7 @@ require (
 	golang.org/x/sys v0.0.0-20200212091648-12a6c2dcc1e4 // indirect
 	k8s.io/apimachinery v0.17.3 // indirect
 )
+
+replace github.com/kyma-incubator/compass/components/director v0.0.0-20200403141306-1c5459e649a7 => github.com/dbadura/compass/components/director v0.0.0-20200403132654-f75f8e11a801
 
 replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
