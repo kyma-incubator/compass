@@ -42,6 +42,10 @@ type FakeNamespaceClient struct {
 	accessKeys                     *eventhub.AccessKeys
 }
 
+func (nc *FakeNamespaceClient) DeleteResourceGroup(ctx context.Context) error {
+	panic("implement me")
+}
+
 func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
 	if nc.accessKeys != nil {
 		return *nc.accessKeys, nil

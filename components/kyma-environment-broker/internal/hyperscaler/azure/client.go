@@ -10,7 +10,7 @@ import (
 type AzureInterface interface {
 	GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
 	CreateResourceGroup(ctx context.Context, config *Config, name string, tags map[string]*string) (resources.Group, error)
-	DeleteResourceGroup(ctx context.Context, instanceID string) error
+	DeleteResourceGroup(ctx context.Context) error
 	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags map[string]*string) (*eventhub.EHNamespace, error)
 }
 
@@ -39,7 +39,7 @@ func (nc *AzureClient) CreateResourceGroup(ctx context.Context, config *Config, 
 }
 
 // TODO(nachtmaar): can we have map[string]string here instead and do we nillness checking before ?
-func (nc *AzureClient) DeleteResourceGroup(ctx context.Context, instanceID string) error {
+func (nc *AzureClient) DeleteResourceGroup(ctx context.Context) error {
 	// we need to use a copy of the location, because the following azure call will modify it
 	resourceGroupName := nc.getResourceGroupName(ctx)
 	return nc.deleteAndWaitResourceGroup(ctx, resourceGroupName)

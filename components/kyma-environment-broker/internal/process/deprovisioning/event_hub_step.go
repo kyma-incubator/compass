@@ -39,11 +39,21 @@ func (s DeprovisionAzureEventHubStep) Name() string {
 	return "Deprovision Azure Event Hubs"
 }
 
-
 func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	// TODO(nachtmaar): global timeout as in remove_runtime.go ?
 	// TODO(nachtmaar): have shared code between provisioning/deprovisioning
 	hypType := hyperscaler.Azure
+
+	// parse provisioning parameters
+	pp, err := operation.GetDeprovisioningParameters()
+	if err != nil {
+		// if the parameters are incorrect, there is no reason to retry the operation
+		// a new request has to be issued by the user
+		log.Errorf("Aborting after failing to get valid operation provisioning parameters: %v", err)
+		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
+	}
+	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
+
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
@@ -67,7 +77,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
 		return s.operationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
-	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, operation.GetOperation())
+	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, pp)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure config: %v", err)
@@ -81,12 +91,12 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
 		return s.operationManager.OperationFailed(operation, errorMessage)
 	}
-	if err := namespaceClient.DeleteResourceGroup(s.context, instance.InstanceID); err != nil {
+	if err := namespaceClient.DeleteResourceGroup(s.context); err != nil {
 		// TODO(nachtmaar): be nice and create s.operationmanager.RetryForever
 		return operation, 20 * time.Second, nil
 	}
 
 	// TODO(nachtmaar): be nice and create s.operationmanager.RetryForever
-	return s.operationManager.OperationSucceeded(operation, "deproviosioning of event_hub_step succeeded")
+	return s.operationManager.OperationSucceeded(operation, "deprovisioning of event_hub_step succeeded")
 }
 

@@ -62,6 +62,11 @@ type Operation struct {
 	Description            string
 }
 
+
+type OperationInterface interface {
+	GetParameters() (ProvisioningParameters, error)
+}
+
 // ProvisioningOperation holds all information about provisioning operation
 type ProvisioningOperation struct {
 	Operation `json:"-"`
@@ -81,6 +86,8 @@ type ProvisioningOperation struct {
 // DeprovisioningOperation holds all information about provisioning operation
 type DeprovisioningOperation struct {
 	Operation `json:"-"`
+
+	DeprovisioningParameters string `json:"deprovisioning_parameters"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
@@ -122,6 +129,17 @@ func NewDeprovisioningOperationWithID(operationID, instanceID string) (Deprovisi
 			UpdatedAt:   time.Now(),
 		},
 	}, nil
+}
+
+func (do *DeprovisioningOperation) GetDeprovisioningParameters() (ProvisioningParameters, error) {
+	var pp ProvisioningParameters
+
+	err := json.Unmarshal([]byte(do.DeprovisioningParameters), &pp)
+	if err != nil {
+		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+	}
+
+	return pp, nil
 }
 
 func (po *ProvisioningOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
