@@ -44,15 +44,17 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
 
+		status := graphql.ApplicationStatusConditionFailed
 		t.Log("Update the application")
 		appUpdateInput := graphql.ApplicationUpdateInput{
-			Description: str.Ptr("New description"),
+			Description:     str.Ptr("New description"),
+			StatusCondition: &status,
 		}
 		appUpdated, err := updateApplicationWithinTenant(t, ctx, dexGraphQLClient, tenant, app.ID, appUpdateInput)
 		require.NoError(t, err)
 
 		t.Log("Ensure the status condition")
-		assert.Equal(t, graphql.ApplicationStatusConditionInitial, appUpdated.Status.Condition)
+		assert.Equal(t, graphql.ApplicationStatusConditionFailed, appUpdated.Status.Condition)
 	})
 
 	t.Run("Test status update as Integration System", func(t *testing.T) {
@@ -83,14 +85,16 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
 
 		t.Log("Update the application")
+		status := graphql.ApplicationStatusConditionFailed
 		appUpdateInput := graphql.ApplicationUpdateInput{
-			Description: str.Ptr("New description"),
+			Description:     str.Ptr("New description"),
+			StatusCondition: &status,
 		}
 		appUpdated, err := updateApplicationWithinTenant(t, ctx, oauthGraphQLClient, tenant, app.ID, appUpdateInput)
 		require.NoError(t, err)
 
 		t.Log("Ensure the status condition")
-		assert.Equal(t, graphql.ApplicationStatusConditionInitial, appUpdated.Status.Condition)
+		assert.Equal(t, graphql.ApplicationStatusConditionFailed, appUpdated.Status.Condition)
 	})
 
 	t.Run("Test automatic status update as Application", func(t *testing.T) {
