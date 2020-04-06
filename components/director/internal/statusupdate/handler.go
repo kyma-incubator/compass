@@ -20,17 +20,17 @@ type update struct {
 	logger   *log.Logger
 }
 
-type Table string
+type WithStatusObject string
 
 //go:generate mockery -name=StatusUpdateRepository -output=automock -outpkg=automock -case=underscore
 type StatusUpdateRepository interface {
-	UpdateStatus(ctx context.Context, id string, table Table) error
-	IsConnected(ctx context.Context, id string, table Table) (bool, error)
+	UpdateStatus(ctx context.Context, id string, object WithStatusObject) error
+	IsConnected(ctx context.Context, id string, object WithStatusObject) (bool, error)
 }
 
 const (
-	ApplicationsTable Table = "applications"
-	RuntimesTable     Table = "runtimes"
+	Applications WithStatusObject = "applications"
+	Runtimes     WithStatusObject = "runtimes"
 )
 
 func New(transact persistence.Transactioner, repo StatusUpdateRepository, logger *log.Logger) *update {
@@ -51,12 +51,12 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
-			var table Table
+			var object WithStatusObject
 			switch consumerInfo.ConsumerType {
 			case consumer.Application:
-				table = ApplicationsTable
+				object = Applications
 			case consumer.Runtime:
-				table = RuntimesTable
+				object = Runtimes
 			default:
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
@@ -72,7 +72,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 
 			ctxWithDB := persistence.SaveToContext(ctx, tx)
 
-			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerInfo.ConsumerID, table)
+			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerInfo.ConsumerID, object)
 			if err != nil {
 				u.logger.Error(errors.Wrap(err, "while checking status").Error())
 				next.ServeHTTP(w, r.WithContext(ctx))
@@ -80,7 +80,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			}
 
 			if !isConnected {
-				err = u.repo.UpdateStatus(ctxWithDB, consumerInfo.ConsumerID, table)
+				err = u.repo.UpdateStatus(ctxWithDB, consumerInfo.ConsumerID, object)
 				if err != nil {
 					u.logger.Error(errors.Wrap(err, "while updating status").Error())
 					next.ServeHTTP(w, r.WithContext(ctx))

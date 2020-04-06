@@ -14,20 +14,20 @@ type StatusUpdateRepository struct {
 	mock.Mock
 }
 
-// IsConnected provides a mock function with given fields: ctx, id, table
-func (_m *StatusUpdateRepository) IsConnected(ctx context.Context, id string, table statusupdate.Table) (bool, error) {
-	ret := _m.Called(ctx, id, table)
+// IsConnected provides a mock function with given fields: ctx, id, object
+func (_m *StatusUpdateRepository) IsConnected(ctx context.Context, id string, object statusupdate.WithStatusObject) (bool, error) {
+	ret := _m.Called(ctx, id, object)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, statusupdate.Table) bool); ok {
-		r0 = rf(ctx, id, table)
+	if rf, ok := ret.Get(0).(func(context.Context, string, statusupdate.WithStatusObject) bool); ok {
+		r0 = rf(ctx, id, object)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, statusupdate.Table) error); ok {
-		r1 = rf(ctx, id, table)
+	if rf, ok := ret.Get(1).(func(context.Context, string, statusupdate.WithStatusObject) error); ok {
+		r1 = rf(ctx, id, object)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -35,13 +35,13 @@ func (_m *StatusUpdateRepository) IsConnected(ctx context.Context, id string, ta
 	return r0, r1
 }
 
-// UpdateStatus provides a mock function with given fields: ctx, id, table
-func (_m *StatusUpdateRepository) UpdateStatus(ctx context.Context, id string, table statusupdate.Table) error {
-	ret := _m.Called(ctx, id, table)
+// UpdateStatus provides a mock function with given fields: ctx, id, object
+func (_m *StatusUpdateRepository) UpdateStatus(ctx context.Context, id string, object statusupdate.WithStatusObject) error {
+	ret := _m.Called(ctx, id, object)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, statusupdate.Table) error); ok {
-		r0 = rf(ctx, id, table)
+	if rf, ok := ret.Get(0).(func(context.Context, string, statusupdate.WithStatusObject) error); ok {
+		r0 = rf(ctx, id, object)
 	} else {
 		r0 = ret.Error(0)
 	}

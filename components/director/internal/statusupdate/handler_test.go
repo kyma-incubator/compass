@@ -74,8 +74,8 @@ func TestUpdate_Handler(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
-				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.ApplicationsTable).Return(false, nil)
-				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, statusupdate.ApplicationsTable).Return(nil)
+				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(false, nil)
+				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(nil)
 				return &repo
 			},
 			Request:          createRequestWithClaims(t, testID, consumer.Application),
@@ -88,8 +88,8 @@ func TestUpdate_Handler(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
-				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.RuntimesTable).Return(false, nil)
-				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, statusupdate.RuntimesTable).Return(nil)
+				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.Runtimes).Return(false, nil)
+				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, statusupdate.Runtimes).Return(nil)
 				return &repo
 			},
 			Request:          createRequestWithClaims(t, testID, consumer.Runtime),
@@ -102,7 +102,7 @@ func TestUpdate_Handler(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
-				repo.On("IsConnected", mock.Anything, testID, statusupdate.ApplicationsTable).Return(true, nil)
+				repo.On("IsConnected", mock.Anything, testID, statusupdate.Applications).Return(true, nil)
 				return &repo
 			},
 			Request:          createRequestWithClaims(t, testID, consumer.Application),
@@ -115,7 +115,7 @@ func TestUpdate_Handler(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
-				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.RuntimesTable).Return(true, nil)
+				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.Runtimes).Return(true, nil)
 				return &repo
 			},
 			Request:          createRequestWithClaims(t, testID, consumer.Runtime),
@@ -152,7 +152,7 @@ func TestUpdate_Handler(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
-				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.ApplicationsTable).Return(false, testErr)
+				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(false, testErr)
 				return &repo
 			},
 			Request:         createRequestWithClaims(t, testID, consumer.Application),
@@ -165,7 +165,7 @@ func TestUpdate_Handler(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
-				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.ApplicationsTable).Return(true, nil)
+				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(true, nil)
 				return &repo
 			},
 			Request:         createRequestWithClaims(t, testID, consumer.Application),
@@ -178,8 +178,8 @@ func TestUpdate_Handler(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
-				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.ApplicationsTable).Return(false, nil)
-				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, statusupdate.ApplicationsTable).Return(testErr)
+				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(false, nil)
+				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(testErr)
 				return &repo
 			},
 			Request:         createRequestWithClaims(t, testID, consumer.Application),

@@ -30,32 +30,32 @@ func NewRepository() *repository {
 	return &repository{timestampGen: timestamp.DefaultGenerator()}
 }
 
-func (r *repository) UpdateStatus(ctx context.Context, id string, table Table) error {
+func (r *repository) UpdateStatus(ctx context.Context, id string, object WithStatusObject) error {
 
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while loading persistence from context")
 	}
 
-	stmt := fmt.Sprintf(updateQuery, table)
+	stmt := fmt.Sprintf(updateQuery, object)
 
 	_, err = persist.Exec(stmt, r.timestampGen(), id)
 
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("while updating %s status", table))
+		return errors.Wrap(err, fmt.Sprintf("while updating %s status", object))
 	}
 
 	return nil
 }
 
-func (r *repository) IsConnected(ctx context.Context, id string, table Table) (bool, error) {
+func (r *repository) IsConnected(ctx context.Context, id string, object WithStatusObject) (bool, error) {
 
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return false, errors.Wrap(err, "while loading persistence from context")
 	}
 
-	stmt := fmt.Sprintf(existsQuery, table)
+	stmt := fmt.Sprintf(existsQuery, object)
 
 	var count int
 	err = persist.Get(&count, stmt, id)
