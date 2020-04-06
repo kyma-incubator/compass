@@ -3,6 +3,7 @@
 Automatic Scenario Assignment (ASA) feature allows defining condition when a Scenario is automatically assigned to the Runtime.
 Condition is defined as a label selector.
 For example, using this feature, you can specify a label that adds a given Scenario to each Runtime created by the given user, company or any other entity specified in the label.
+![](./assets/automatic-scenario-assign.svg) 
 
 ## API
 
@@ -44,8 +45,6 @@ Director API contains queries that allow you to fetch all assignments, fetch ass
 ## Example
 Let assume a situation, that Integration System that is responsible for registering Runtimes, label every runtime with information about a user who triggered provisioning a Runtime. 
 Then, you can define an Assignment, that every Runtime provisioned by a given person belongs to the specific Scenario.
-
-![](./assets/automatic-scenario-assign.svg) 
 
 ### Assign to the scenario when labeling Runtime
 
