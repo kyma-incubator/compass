@@ -27,7 +27,6 @@ Director API contains the following mutations for managing Automatic Scenario As
    createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment 
    deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment 
    deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! 
-}
 ```
 When creating Assignment, the following conditions are checked:
 * for given scenario, at most one Assignment exists
@@ -104,7 +103,7 @@ defined Automatic Scenario Assignment.
 }
 ```
 
-6. Remove Automatic Scenario Assignment.
+4. Remove Automatic Scenario Assignment.
 ```graphql
 mutation  {
   deleteAutomaticScenarioAssignmentForScenario(scenarioName: "WAREHOUSE") {
@@ -113,7 +112,7 @@ mutation  {
 }
 ```
 
-7. Fetch information about previously created Runtime, for example by listing all Runtimes
+5. Fetch information about previously created Runtime, for example by listing all Runtimes
 ```graphql
 query  {
   runtimes {
