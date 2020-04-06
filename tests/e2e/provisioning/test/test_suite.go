@@ -54,7 +54,9 @@ type Suite struct {
 
 func (ts *Suite) Cleanup() {
 	ts.log.Info("Cleaning up...")
-	err := ts.runtimeClient.EnsureUAAInstanceRemoved()
+	err := ts.runtimeClient.CleanupResources()
+	assert.NoError(ts.t, err)
+	err = ts.runtimeClient.EnsureUAAInstanceRemoved()
 	assert.NoError(ts.t, err)
 	_, err = ts.brokerClient.DeprovisionRuntime()
 	require.NoError(ts.t, err)
@@ -94,7 +96,7 @@ func newTestSuite(t *testing.T) *Suite {
 
 	directorClient := director.NewDirectorClient(oauthClient, graphQLClient, log.WithField("service", "director_client"))
 
-	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, instanceID, *httpClient, directorClient, log.WithField("service", "runtime_client"))
+	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, instanceID, cfg.Runtime.KubeconfigSecretName, *httpClient, directorClient, log.WithField("service", "runtime_client"))
 
 	dashboardChecker := runtime.NewDashboardChecker(*httpClient, log.WithField("service", "dashboard_checker"))
 
@@ -104,6 +106,7 @@ func newTestSuite(t *testing.T) *Suite {
 		dashboardChecker:   dashboardChecker,
 		brokerClient:       brokerClient,
 		runtimeClient:      runtimeClient,
+		InstanceID:         instanceID,
 		ProvisionTimeout:   cfg.ProvisionTimeout,
 		DeprovisionTimeout: cfg.DeprovisionTimeout,
 		IsDummyTest:        cfg.DummyTest,

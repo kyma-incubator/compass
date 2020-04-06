@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	v1 "k8s.io/api/core/v1"
 	"net/http"
 	"os"
 	"time"
+
+	v1 "k8s.io/api/core/v1"
 
 	"k8s.io/client-go/kubernetes/scheme"
 
@@ -30,7 +31,7 @@ const tenantHeaderName = "tenant"
 
 type Config struct {
 	ProvisionerURL       string `default:"http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"`
-	KubeconfigSecretName string `default:"e2e-runtime-kubeconfig"`
+	KubeconfigSecretName string `default:"e2e-runtime-config"`
 
 	UUAInstanceName      string `default:"uaa-issuer"`
 	UUAInstanceNamespace string `default:"kyma-system"`
@@ -43,50 +44,122 @@ type Client struct {
 	directorClient *director.Client
 	log            logrus.FieldLogger
 
-	configSecretName string
-	instanceID       string
-	tenantID         string
+	configName string
+	instanceID string
+	tenantID   string
 }
 
 func NewClient(config Config, tenantID, instanceID, configSecretName string, clientHttp http.Client, directorClient *director.Client, log logrus.FieldLogger) *Client {
 	return &Client{
-		tenantID:         tenantID,
-		instanceID:       instanceID,
-		configSecretName: configSecretName,
-		config:           config,
-		httpClient:       clientHttp,
-		directorClient:   directorClient,
-		log:              log,
+		tenantID:       tenantID,
+		instanceID:     instanceID,
+		configName:     configSecretName,
+		config:         config,
+		httpClient:     clientHttp,
+		directorClient: directorClient,
+		log:            log,
 	}
 }
+
+const (
+	deployNS = "compass-system"
+)
 
 type runtimeStatusResponse struct {
 	Result schema.RuntimeStatus `json:"result"`
 }
 
-func (c *Client) ExposeConfigAsSecret() error {
-	response, err := c.fetchRuntimeConfig()
+// ExposeResources creates a secret and config map with a data about the test
+func (c *Client) ExposeResources(dashboardURL string) error {
+	config, err := c.fetchRuntimeConfig()
 	if err != nil {
 		return errors.Wrap(err, "while fetching runtime config")
 	}
-	config := *response.Result.RuntimeConfiguration.Kubeconfig
 
-	// client for host cluster
 	cli, err := c.newClient("")
 	if err != nil {
 		return errors.Wrap(err, "while setting client config")
 	}
-	err = cli.Create(context.Background(), &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      c.configSecretName,
-			Namespace: "compass-system",
-		},
-		Data: map[string][]byte{
-			"config": []byte(config),
-		},
+	err = wait.PollImmediate(time.Second, time.Second*10, func() (bool, error) {
+		err = cli.Create(context.Background(), &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      c.configName,
+				Namespace: deployNS,
+			},
+			Data: map[string][]byte{
+				"config": []byte(*config),
+			},
+		})
+		if err != nil {
+			c.log.Errorf("while creating a secret %s: %v", c.configName, err)
+			return false, nil
+		}
+		return true, nil
 	})
 	if err != nil {
-		return errors.Wrapf(err, "while creating a secret %s", c.configSecretName)
+		return errors.Wrapf(err, "while waiting for secret %s creation", c.configName)
+	}
+
+	err = wait.PollImmediate(time.Second, time.Second*10, func() (bool, error) {
+		err = cli.Create(context.Background(), &v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      c.configName,
+				Namespace: deployNS,
+			},
+			Data: map[string]string{
+				"dashboardURL": dashboardURL,
+				"instanceID":   c.instanceID,
+			},
+		})
+		if err != nil {
+			c.log.Errorf("while creating a config map %s: %v", c.configName, err)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return errors.Wrapf(err, "while waiting for config map %s creation", c.configName)
+	}
+	return nil
+}
+
+// CleanupResources removes secret and config map used to store data about the test
+func (c *Client) CleanupResources() error {
+	cli, err := c.newClient("")
+	if err != nil {
+		return errors.Wrap(err, "while setting client config")
+	}
+	err = wait.PollImmediate(time.Second, time.Second*10, func() (bool, error) {
+		err = cli.Delete(context.Background(), &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      c.configName,
+				Namespace: deployNS,
+			},
+		})
+		if err != nil {
+			c.log.Errorf("while deleting secret %s: %v", c.configName, err)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return errors.Wrapf(err, "while waiting for secret %s deletion", c.configName)
+	}
+	err = wait.PollImmediate(time.Second, time.Second*10, func() (bool, error) {
+		err = cli.Delete(context.Background(), &v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      c.configName,
+				Namespace: deployNS,
+			},
+		})
+		if err != nil {
+			c.log.Errorf("while deleting config map %s: %v", c.configName, err)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return errors.Wrapf(err, "while waiting for config map %s deletion", c.configName)
 	}
 	return nil
 }
@@ -109,7 +182,7 @@ func (c *Client) newRuntimeClient() (client.Client, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching runtime config")
 	}
-	tmpFile, err := c.writeConfigToFile(response)
+	tmpFile, err := c.writeConfigToFile(*response)
 	if err != nil {
 		return nil, errors.Wrap(err, "while writing runtime config")
 	}
@@ -122,7 +195,7 @@ func (c *Client) newRuntimeClient() (client.Client, error) {
 	return cli, nil
 }
 
-func (c *Client) fetchRuntimeConfig() (*runtimeStatusResponse, error) {
+func (c *Client) fetchRuntimeConfig() (*string, error) {
 	runtimeID, err := c.directorClient.GetRuntimeID(c.tenantID, c.instanceID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting runtime id from director for instance ID %s", c.instanceID)
@@ -148,12 +221,14 @@ func (c *Client) fetchRuntimeConfig() (*runtimeStatusResponse, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting runtime config")
 	}
-	return res, nil
+	if res.Result.RuntimeConfiguration != nil {
+		return res.Result.RuntimeConfiguration.Kubeconfig, nil
+	}
+	return nil, nil
 }
 
-func (c *Client) writeConfigToFile(response *runtimeStatusResponse) (string, error) {
-	runtimeConfig := *response.Result.RuntimeConfiguration.Kubeconfig
-	content := []byte(runtimeConfig)
+func (c *Client) writeConfigToFile(config string) (string, error) {
+	content := []byte(config)
 	runtimeConfigTmpFile, err := ioutil.TempFile("", "runtime.*.yaml")
 	if err != nil {
 		return "", errors.Wrap(err, "while creating runtime config temp file")
