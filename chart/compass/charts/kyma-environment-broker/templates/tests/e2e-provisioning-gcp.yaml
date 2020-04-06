@@ -49,8 +49,8 @@ spec:
               value: "uaa-issuer"
             - name: APP_RUNTIME_UUA_INSTANCE_NAMESPACE
               value: "kyma-system"
-            - name: APP_RUNTIME_KUBECONFIG_SECRET_NAME
-              value: "e2e-runtime-kubeconfig"
+            - name: APP_RUNTIME_CONFIG_NAME
+              value: "{{ .Values.e2e.gcp.configName }}"
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_NAMESPACE
@@ -86,7 +86,7 @@ spec:
               value: "true"
             - name: APP_TENANT_ID
               value: "{{ .Values.global.defaultTenant }}"
-            - name: APP_DUMMY_TEST}
+            - name: APP_DUMMY_TEST
               value: "false"
             - name: APP_CLEANUP_PHASE
               value: "true"
@@ -107,8 +107,13 @@ spec:
               value: "uaa-issuer"
             - name: APP_RUNTIME_UUA_INSTANCE_NAMESPACE
               value: "kyma-system"
-            - name: APP_RUNTIME_KUBECONFIG_SECRET_NAME
-              value: "e2e-runtime-kubeconfig"
+            - name: APP_RUNTIME_CONFIG_NAME
+              value: "{{ .Values.e2e.gcp.configName }}"
+            - name: APP_INSTANCE_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Values.e2e.gcp.configName }}"
+                  key: instanceID
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_NAMESPACE

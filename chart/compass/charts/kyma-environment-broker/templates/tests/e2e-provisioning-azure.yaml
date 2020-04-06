@@ -49,8 +49,8 @@ spec:
               value: "uaa-issuer"
             - name: APP_RUNTIME_UUA_INSTANCE_NAMESPACE
               value: "kyma-system"
-            - name: APP_RUNTIME_KUBECONFIG_SECRET_NAME
-              value: "e2e-runtime-kubeconfig"
+            - name: APP_RUNTIME_CONFIG_NAME
+              value: "{{ .Values.e2e.azure.configName }}"
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_NAMESPACE
@@ -66,7 +66,7 @@ kind: TestDefinition
 metadata:
   name: e2e-provisioning-azure-cleanup
   labels:
-{{ include "kyma-env-broker.labels" . | indent 4 }}
+  {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
   disableConcurrency: false
   template:
@@ -108,8 +108,13 @@ spec:
               value: "uaa-issuer"
             - name: APP_RUNTIME_UUA_INSTANCE_NAMESPACE
               value: "kyma-system"
-            - name: APP_RUNTIME_KUBECONFIG_SECRET_NAME
-              value: "e2e-runtime-kubeconfig"
+            - name: APP_RUNTIME_CONFIG_NAME
+              value: "{{ .Values.e2e.azure.configName }}"
+            - name: APP_INSTANCE_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Values.e2e.azure.configName }}"
+                  key: instanceID
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_NAMESPACE

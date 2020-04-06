@@ -30,11 +30,13 @@ import (
 const tenantHeaderName = "tenant"
 
 type Config struct {
-	ProvisionerURL       string `default:"http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"`
-	KubeconfigSecretName string `default:"e2e-runtime-config"`
+	ProvisionerURL string `default:"http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"`
+	ConfigName     string `default:"e2e-runtime-config"`
 
 	UUAInstanceName      string `default:"uaa-issuer"`
 	UUAInstanceNamespace string `default:"kyma-system"`
+
+	DeployNamespace string `default:"compass-system"`
 }
 
 // Client allows to fetch runtime's config and execute the logic against it
@@ -44,26 +46,24 @@ type Client struct {
 	directorClient *director.Client
 	log            logrus.FieldLogger
 
-	configName string
-	instanceID string
-	tenantID   string
+	configName      string
+	instanceID      string
+	tenantID        string
+	deployNamespace string
 }
 
-func NewClient(config Config, tenantID, instanceID, configSecretName string, clientHttp http.Client, directorClient *director.Client, log logrus.FieldLogger) *Client {
+func NewClient(config Config, tenantID, instanceID, configName, deployNamespace string, clientHttp http.Client, directorClient *director.Client, log logrus.FieldLogger) *Client {
 	return &Client{
-		tenantID:       tenantID,
-		instanceID:     instanceID,
-		configName:     configSecretName,
-		config:         config,
-		httpClient:     clientHttp,
-		directorClient: directorClient,
-		log:            log,
+		tenantID:        tenantID,
+		instanceID:      instanceID,
+		configName:      configName,
+		deployNamespace: deployNamespace,
+		config:          config,
+		httpClient:      clientHttp,
+		directorClient:  directorClient,
+		log:             log,
 	}
 }
-
-const (
-	deployNS = "compass-system"
-)
 
 type runtimeStatusResponse struct {
 	Result schema.RuntimeStatus `json:"result"`
@@ -84,7 +84,7 @@ func (c *Client) ExposeResources(dashboardURL string) error {
 		err = cli.Create(context.Background(), &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      c.configName,
-				Namespace: deployNS,
+				Namespace: c.deployNamespace,
 			},
 			Data: map[string][]byte{
 				"config": []byte(*config),
@@ -104,7 +104,7 @@ func (c *Client) ExposeResources(dashboardURL string) error {
 		err = cli.Create(context.Background(), &v1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      c.configName,
-				Namespace: deployNS,
+				Namespace: c.deployNamespace,
 			},
 			Data: map[string]string{
 				"dashboardURL": dashboardURL,
@@ -133,7 +133,7 @@ func (c *Client) CleanupResources() error {
 		err = cli.Delete(context.Background(), &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      c.configName,
-				Namespace: deployNS,
+				Namespace: c.deployNamespace,
 			},
 		})
 		if err != nil {
@@ -149,7 +149,7 @@ func (c *Client) CleanupResources() error {
 		err = cli.Delete(context.Background(), &v1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      c.configName,
-				Namespace: deployNS,
+				Namespace: c.deployNamespace,
 			},
 		})
 		if err != nil {
