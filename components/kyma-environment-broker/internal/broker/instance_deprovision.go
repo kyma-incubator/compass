@@ -49,7 +49,9 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 	case err == nil:
 	case dberr.IsNotFound(err):
 		logger.Warn("instance does not exists")
-		return domain.DeprovisionServiceSpec{}, apiresponses.ErrInstanceDoesNotExist // HTTP 410 GONE
+		return domain.DeprovisionServiceSpec{
+			IsAsync: false,
+		}, nil
 	default:
 		logger.Errorf("unable to get instance from a storage: %s", err)
 		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponse(fmt.Errorf("unable to get instance from the storage"), http.StatusInternalServerError, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
