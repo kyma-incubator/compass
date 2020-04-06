@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-// TODO: maybe move this to Runtime
-
 const (
 	defaultDelay = 2 * time.Second
 )
@@ -87,7 +85,7 @@ func (e *StagesExecutor) processInstallation(operation model.Operation, cluster 
 		return false, 0, NewNonRecoverableError(fmt.Errorf("error: step %s not found in installation steps", operation.Stage))
 	}
 
-	for operation.Stage != model.FinishedStep {
+	for operation.Stage != model.FinishedStage {
 		log := logger.WithField("Stage", step.Name())
 		log.Infof("Starting step")
 
@@ -102,23 +100,23 @@ func (e *StagesExecutor) processInstallation(operation model.Operation, cluster 
 			return false, 0, err
 		}
 
-		if result.Step == model.FinishedStep {
+		if result.Stage == model.FinishedStage {
 			log.Infof("Finished processing operation. Setting operation to succeeded")
-			err := e.dbSession.TransitionOperation(operation.ID, "Provisioning steps finished", model.FinishedStep, time.Now())
+			err := e.dbSession.TransitionOperation(operation.ID, "Provisioning steps finished", model.FinishedStage, time.Now())
 			if err != nil {
 				panic(err) // TODO handle
 			}
 			break
 		}
 
-		if result.Step != step.Name() {
+		if result.Stage != step.Name() {
 			transitionTime := time.Now()
-			err = e.dbSession.TransitionOperation(operation.ID, "Operation in progress", result.Step, transitionTime) // TODO: Align message
+			err = e.dbSession.TransitionOperation(operation.ID, "Operation in progress", result.Stage, transitionTime) // TODO: Align message
 			if err != nil {
 				panic(err) // TODO handle
 			}
-			step = e.stages[result.Step]
-			operation.Stage = result.Step
+			step = e.stages[result.Stage]
+			operation.Stage = result.Stage
 			operation.LastTransition = &transitionTime
 			log.Infof("Stage finished")
 		}

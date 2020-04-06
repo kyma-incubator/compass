@@ -129,3 +129,28 @@ func (_m *ReadSession) GetTenant(runtimeID string) (string, dberrors.Error) {
 
 	return r0, r1
 }
+
+// ListInProgressOperations provides a mock function with given fields:
+func (_m *ReadSession) ListInProgressOperations() ([]model.Operation, dberrors.Error) {
+	ret := _m.Called()
+
+	var r0 []model.Operation
+	if rf, ok := ret.Get(0).(func() []model.Operation); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.Operation)
+		}
+	}
+
+	var r1 dberrors.Error
+	if rf, ok := ret.Get(1).(func() dberrors.Error); ok {
+		r1 = rf()
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(dberrors.Error)
+		}
+	}
+
+	return r0, r1
+}

@@ -29,7 +29,7 @@ const (
 	WaitingForInstallation OperationStage = "WaitingForInstallation"
 	ConnectRuntimeAgent    OperationStage = "ConnectRuntimeAgent"
 	StartingUpgrade        OperationStage = "StartingUpgrade"
-	FinishedStep           OperationStage = "Finished"
+	FinishedStage          OperationStage = "Finished"
 )
 
 type Cluster struct {

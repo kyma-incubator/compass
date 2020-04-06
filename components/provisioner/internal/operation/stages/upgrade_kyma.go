@@ -35,18 +35,15 @@ func (s *UpgradeKymaStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-// TODO: I think it would be better to return some step result
 func (s *UpgradeKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) (operation.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
-		// TODO: recoverable or not?
 		return operation.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
 
 	// TODO: cleanup kubeconfig stuff
 	k8sConfig, err := ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
-		// TODO: recoverable or not?
 		return operation.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
 
@@ -55,7 +52,7 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) 
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
 			logger.Warnf("Upgrade already in progress, proceeding to next step...")
-			return operation.StageResult{Step: s.Name(), Delay: 0}, nil
+			return operation.StageResult{Stage: s.Name(), Delay: 0}, nil
 		}
 
 		return operation.StageResult{}, fmt.Errorf("error: failed to check installation CR state: %s", err.Error())
@@ -63,10 +60,17 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) 
 
 	// TODO Start upgrade
 	if installationState.State == installationSDK.NoInstallationState {
-
+		// TODO: non recoverable
+		return operation.StageResult{}, fmt.Errorf("error: Installation CR not found in the cluster")
 	}
 
-	return operation.StageResult{Step: s.nextStep, Delay: 0}, nil
+	if installationState.State == "Installed" {
+		// TODO: start upgrade
+	}
+
+	// TODO: How should it handle when installation in progress? Should it check the Kyma version?
+
+	return operation.StageResult{Stage: s.nextStep, Delay: 0}, nil
 
 	//
 	//if installationState.State == installationSDK.NoInstallationState {

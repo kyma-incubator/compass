@@ -218,7 +218,7 @@ func main() {
 }
 
 func createInstallationQueue(factory dbsession.Factory, installationClient installation.Service, configurator runtime.Configurator) *operation.Queue {
-	configureAgentStep := stages.NewConnectAgentStep(configurator, model.FinishedStep, 10*time.Minute)
+	configureAgentStep := stages.NewConnectAgentStage(configurator, model.FinishedStage, 10*time.Minute)
 	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), 50*time.Minute) // TODO: take form config
 	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
 
@@ -237,7 +237,7 @@ func createUpgradeQueue(factory dbsession.Factory, installationClient installati
 
 	// TODO: probably you will need some step for "committing" the changes to database
 
-	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, model.FinishedStep, 50*time.Minute) // TODO: take form config
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, model.FinishedStage, 50*time.Minute) // TODO: take form config
 	installStep := stages.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
 
 	upgradeSteps := map[model.OperationStage]operation.Stage{

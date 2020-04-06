@@ -50,7 +50,7 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, logger logrus.Field
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
 			logger.Warnf("installation error occurred: %s", installErr.Error())
-			return operation.StageResult{Step: s.Name(), Delay: 30 * time.Second}, nil
+			return operation.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
 		}
 
 		return operation.StageResult{}, fmt.Errorf("error: failed to check installation state: %s", err.Error())
@@ -58,7 +58,7 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, logger logrus.Field
 
 	if installationState.State == "Installed" {
 		logger.Infof("Installation completed: %s", installationState.Description)
-		return operation.StageResult{Step: s.nextStep, Delay: 0}, nil
+		return operation.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
 
 	if installationState.State == installationSDK.NoInstallationState {
@@ -67,5 +67,5 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, logger logrus.Field
 	}
 
 	logger.Infof("Installation in progress: %s", installationState.Description)
-	return operation.StageResult{Step: s.Name(), Delay: 30 * time.Second}, nil
+	return operation.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
 }

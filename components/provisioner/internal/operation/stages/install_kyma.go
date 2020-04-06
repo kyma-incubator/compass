@@ -35,7 +35,6 @@ func (s *InstallKymaStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-// TODO: probably you can remove operation
 func (s *InstallKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) (operation.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
@@ -45,7 +44,6 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) 
 	// TODO: cleanup kubeconfig stuff
 	k8sConfig, err := ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
-		// TODO: recoverable or not?
 		return operation.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
 
@@ -55,7 +53,7 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) 
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
 			logger.Warnf("Installation already in progress, proceeding to next step...")
-			return operation.StageResult{Step: s.Name(), Delay: 0}, nil
+			return operation.StageResult{Stage: s.nextStep, Delay: 0}, nil
 		}
 
 		return operation.StageResult{}, fmt.Errorf("error: failed to check installation state: %s", err.Error())
@@ -63,7 +61,7 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) 
 
 	if installationState.State != installationSDK.NoInstallationState {
 		logger.Warnf("Installation already in progress, proceeding to next step...")
-		return operation.StageResult{Step: s.nextStep, Delay: 0}, nil
+		return operation.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
 
 	// TODO: it needs to run apply instead of create
@@ -78,7 +76,7 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) 
 	}
 
 	logger.Warnf("Installation started, proceeding to next step...")
-	return operation.StageResult{Step: s.nextStep, Delay: 30 * time.Second}, nil
+	return operation.StageResult{Stage: s.nextStep, Delay: 30 * time.Second}, nil
 }
 
 func ParseToK8sConfig(kubeconfigRaw []byte) (*restclient.Config, error) {

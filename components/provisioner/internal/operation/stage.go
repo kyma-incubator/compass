@@ -13,7 +13,7 @@ type Stage interface {
 }
 
 type StageResult struct {
-	Step  model.OperationStage
+	Stage model.OperationStage
 	Delay time.Duration
 }
 

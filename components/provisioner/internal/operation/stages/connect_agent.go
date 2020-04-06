@@ -9,29 +9,29 @@ import (
 	"time"
 )
 
-type ConnectAgentStep struct {
+type ConnectAgentStage struct {
 	runtimeConfigurator runtime.Configurator
 	nextStep            model.OperationStage
 	timeLimit           time.Duration
 }
 
-func NewConnectAgentStep(configurator runtime.Configurator, nextStep model.OperationStage, timeLimit time.Duration) *ConnectAgentStep {
-	return &ConnectAgentStep{
+func NewConnectAgentStage(configurator runtime.Configurator, nextStep model.OperationStage, timeLimit time.Duration) *ConnectAgentStage {
+	return &ConnectAgentStage{
 		runtimeConfigurator: configurator,
 		nextStep:            nextStep,
 		timeLimit:           timeLimit,
 	}
 }
 
-func (s *ConnectAgentStep) Name() model.OperationStage {
+func (s *ConnectAgentStage) Name() model.OperationStage {
 	return model.ConnectRuntimeAgent
 }
 
-func (s *ConnectAgentStep) TimeLimit() time.Duration {
+func (s *ConnectAgentStage) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *ConnectAgentStep) Run(cluster model.Cluster, logger logrus.FieldLogger) (operation.StageResult, error) {
+func (s *ConnectAgentStage) Run(cluster model.Cluster, logger logrus.FieldLogger) (operation.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
 		return operation.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
@@ -42,5 +42,5 @@ func (s *ConnectAgentStep) Run(cluster model.Cluster, logger logrus.FieldLogger)
 		return operation.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
 
-	return operation.StageResult{Step: s.nextStep, Delay: 0}, nil
+	return operation.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }
