@@ -323,7 +323,7 @@ func TestProvision_Provision(t *testing.T) {
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
 
-		parameters, err := operation.GetProvisioningParameters()
+		parameters, err := operation.GetParameters()
 		assert.NoError(t, err)
 		assert.Equal(t, "master-00e83e99", parameters.Parameters.KymaVersion)
 	})
@@ -368,7 +368,7 @@ func TestProvision_Provision(t *testing.T) {
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
 
-		parameters, err := operation.GetProvisioningParameters()
+		parameters, err := operation.GetParameters()
 		assert.NoError(t, err)
 		assert.Equal(t, "", parameters.Parameters.KymaVersion)
 	})

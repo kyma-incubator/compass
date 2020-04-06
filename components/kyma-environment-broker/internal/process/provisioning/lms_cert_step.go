@@ -68,7 +68,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 		return operation, 0, errors.New("the step needs to be run after 'Create LMS tenant' step")
 	}
 
-	pp, err := operation.GetProvisioningParameters()
+	pp, err := operation.GetParameters()
 	if err != nil {
 		logger.Errorf("Unable to get provisioning parameters", err.Error())
 		return operation, 0, errors.New("unable to get provisioning parameters")

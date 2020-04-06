@@ -47,7 +47,7 @@ func (s *ResolveCredentialsStep) Name() string {
 
 func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
-	pp, err := operation.GetProvisioningParameters()
+	pp, err := operation.GetParameters()
 
 	if err != nil {
 		logger.Error("Aborting after failing to get valid operation provisioning parameters")

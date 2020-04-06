@@ -43,7 +43,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout))
 	}
 
-	pp, err := operation.GetProvisioningParameters()
+	pp, err := operation.GetParameters()
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}

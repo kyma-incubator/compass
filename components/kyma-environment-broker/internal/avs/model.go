@@ -66,7 +66,7 @@ type BasicEvaluationCreateResponse struct {
 }
 
 func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, configurator ModelConfigurator, groupId int64, url string) (*BasicEvaluationCreateRequest, error) {
-	provisionParams, err := operation.GetProvisioningParameters()
+	provisionParams, err := operation.GetParameters()
 	if err != nil {
 		return nil, err
 	}

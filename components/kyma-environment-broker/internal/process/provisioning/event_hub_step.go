@@ -60,7 +60,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	hypType := hyperscaler.Azure
 
 	// parse provisioning parameters
-	pp, err := operation.GetProvisioningParameters()
+	pp, err := operation.GetParameters()
 	if err != nil {
 		// if the parameters are incorrect, there is no reason to retry the operation
 		// a new request has to be issued by the user

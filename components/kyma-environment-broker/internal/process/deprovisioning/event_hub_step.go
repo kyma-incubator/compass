@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 )
 
 type DeprovisionAzureEventHubStep struct {
@@ -45,7 +44,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	hypType := hyperscaler.Azure
 
 	// parse provisioning parameters
-	pp, err := operation.GetDeprovisioningParameters()
+	pp, err := operation.GetParameters()
 	if err != nil {
 		// if the parameters are incorrect, there is no reason to retry the operation
 		// a new request has to be issued by the user
@@ -55,23 +54,24 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
 
-	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
-	switch {
-	case err == nil:
-	case dberr.IsNotFound(err):
-		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned")
-	default:
-		log.Errorf("unable to get instance from storage: %s", err)
-		return operation, 1 * time.Second, nil
-	}
-
-	if instance.RuntimeID == "" {
-		log.Warn("Runtime not exist")
-		return s.operationManager.OperationSucceeded(operation, "runtime was never provisioned")
-	}
+	//instance, err := s.instanceStorage.GetByID(operation.InstanceID)
+	//switch {
+	//case err == nil:
+	//case dberr.IsNotFound(err):
+	//	return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned")
+	//default:
+	//	log.Errorf("unable to get instance from storage: %s", err)
+	//	return operation, 1 * time.Second, nil
+	//}
+	//
+	//if instance.RuntimeID == "" {
+	//	log.Warn("Runtime not exist")
+	//	return s.operationManager.OperationSucceeded(operation, "runtime was never provisioned")
+	//}
 
 	// get hyperscaler credentials from HAP
-	credentials, err := s.accountProvider.GardenerCredentials(hypType, instance.GlobalAccountID)
+	//credentials, err := s.accountProvider.GardenerCredentials(hypType, instance.GlobalAccountID)
+	credentials, err := s.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
 	if err != nil {
 		// retrying might solve the issue, the HAP could be temporarily unavailable
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)

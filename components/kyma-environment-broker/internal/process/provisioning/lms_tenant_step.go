@@ -39,7 +39,7 @@ func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, log
 		return operation, 0, nil
 	}
 
-	pp, err := operation.GetProvisioningParameters()
+	pp, err := operation.GetParameters()
 	if err != nil {
 		msg := fmt.Sprintf("Unable to get provisioning parameters: %s", err.Error())
 		logger.Errorf(msg)

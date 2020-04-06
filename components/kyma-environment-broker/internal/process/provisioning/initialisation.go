@@ -73,7 +73,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 }
 
 func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
+	pp, err := operation.GetParameters()
 	if err != nil {
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")

@@ -194,7 +194,7 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 }
 
 func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.ProvisioningOperation, input internal.ProvisioningParameters, log logrus.FieldLogger) (domain.ProvisionedServiceSpec, error) {
-	pp, err := operation.GetProvisioningParameters()
+	pp, err := operation.GetParameters()
 	if err != nil {
 		log.Errorf("cannot get provisioning parameters from exist operation", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot get provisioning parameters from exist operation")
