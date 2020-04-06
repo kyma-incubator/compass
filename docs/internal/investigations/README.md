@@ -1,8 +1,8 @@
-# Investigations and proposals
+# Investigations
 
 ## Overview
 
-This directory contains the following investigations and proposals:
+This directory contains the following investigations:
 
 - [Storage - Requirements](./storage/requirements.md)
 - [Storage - S3](./storage/s3/README.md)
@@ -15,4 +15,3 @@ This directory contains the following investigations and proposals:
 - [GraphQL - Secure Resolvers](./secure-resolvers/secure-resolvers.md)
 - [Documentation - Generating static page for our schema](./api-documentation/generate-api-documentation.md)
 - [REST Adapters for GraphQL API](./rest-adapters/rest-adapter-for-graphql.md)
-- [Proposal - Pairing Adapters architecture](./pairing-adapters/pairing-application-instance-with-compass.md)

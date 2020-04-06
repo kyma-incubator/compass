@@ -90,7 +90,7 @@ Tenant Fetcher binary allows you to override some configuration parameters. You 
 |-----------|-------------|---------------|
 | **global.tenantFetcher.enabled** | Parameter that enables the Tenant Fetcher CronJob | `false` |
 | **global.tenantFetcher.providerName** | Name of the tenants provider | `"compass"` |
-| **global.tenantFetcher.schedule** | Specifies how often Tenant Fetcher fetches information about tenants. | `"*/5 * * * *"` |
+| **global.tenantFetcher.schedule** | Parameter that specifies how often Tenant Fetcher fetches information about tenants | `"*/5 * * * *"` |
 | **global.tenantFetcher.oauth.client** | OAuth 2.0 client ID | None |
 | **global.tenantFetcher.oauth.secret** | OAuth 2.0 client Secret | None |
 | **global.tenantFetcher.oauth.tokenURL** | Endpoint for fetching an OAuth 2.0 access token to the Tenant Events API | None |
