@@ -1,9 +1,9 @@
 ---
-title: Provision Kyma environment through Kyma Environment Broker
+title: Provision Kyma Runtime through Kyma Environment Broker
 type: Tutorials
 ---
 
-This tutorial shows how to provision Kyma environment on Azure.
+This tutorial shows how to provision Kyma Runtime on Azure.
 
 ## Prerequisites
 
@@ -21,15 +21,15 @@ export GLOBAL_ACCOUNT_ID={GLOBAL_ACCOUNT_ID}
 export NAME={RUNTIME_NAME}
 ```
 
-> **NOTE:** INSTANCE_ID and NAME must be unique. It is recommended to use UUID as instance ID.
+> **NOTE:** INSTANCE_ID and NAME must be unique. It is recommended to use UUID as an INSTANCE_ID.
 
-2. Obtain Authorization credentials as described in [Authorization section](./03-05-authorization.md). Export this variable based on chosen authorization method:
+2. Get [authorization credentials](./03-05-authorization.md). Export this variable based on the chosen authorization method:
 
 ```bash
 export AUTHORIZATION_HEADER="Authorization: {Basic OR Bearer} $ENCODED_CREDENTIALS"
 ```
 
-3. Make a call to the Kyma Environment Broker to create a runtime on Azure. List of possible request parameters is available [here](./03-01-service-description.md)
+3. Make a call to the Kyma Environment Broker to create a Runtime on Azure. Find the list of possible request parameters [here](./03-01-service-description.md).
 
 ```bash
 curl --request PUT "https://$BROKER_URL/v2/service_instances/$INSTANCE_ID?accepts_incomplete=true" \
@@ -57,4 +57,4 @@ A successful call returns the operation ID:
 }
 ```
 
-4. Check operation state as described in [this tutorial](./08-03-keb-operation-state.md).
+4. Check the operation status as described [here](./08-03-keb-operation-state.md).

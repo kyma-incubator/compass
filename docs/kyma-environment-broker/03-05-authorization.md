@@ -6,9 +6,8 @@ Kyma Environment Broker provides two ways to authorize users:
 
 ## Basic authorization
 
-Follow these steps to obtain Kyma Environment Broker's credentials:
+To obtain Kyma Environment Broker credentials, export these values as environment variables:
 
-1. Export these values as environment variables:
 
 ```bash
 export CLIENT_SECRET="$(kubectl get secret -n compass-system compass-kyma-environment-broker -o jsonpath='{.data.broker-password}' | base64 --decode)"

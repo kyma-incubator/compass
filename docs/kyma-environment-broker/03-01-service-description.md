@@ -19,7 +19,7 @@ These are the provisioning parameters for this plan:
 | **name** | string | Specifies the name of the cluster. | Yes | None |
 | **nodeCount** | int | Specifies the number of Nodes in a cluster. | No | `3` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
-| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D2_v3` |
+| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D8_v3` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zone** | string | Defines the cluster zone. | No | None |
 | **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `2` |
@@ -28,3 +28,4 @@ These are the provisioning parameters for this plan:
 | **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
 | **components** | array | Defines optional components that are installed in Kyma Runtime. The possible values are `monitoring`, `kiali`, `loki`, and `jaeger`. | No | [] |
 | **providerSpecificConfig.AzureConfig.VnetCidr** | string | Provides configuration variables specific for Azure. | No | `10.250.0.0/19` |
+| **kymaVersion** | string | Provides Kyma version on demand. | No | None
