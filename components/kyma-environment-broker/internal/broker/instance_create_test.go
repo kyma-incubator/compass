@@ -216,6 +216,7 @@ func TestProvision_Provision(t *testing.T) {
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure"}},
 			memoryStorage.Operations(),
+			memoryStorage.Instances(),
 			nil,
 			factoryBuilder,
 			fixValidator,
