@@ -215,6 +215,10 @@ func main() {
 		step   deprovisioning.Step
 	}{
 		{
+			weight: 1,
+			step:   deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), db.Instances(), azure.NewAzureProvider(), accountProvider, ctx),
+		},
+		{
 			weight: 10,
 			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient),
 		},

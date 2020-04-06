@@ -43,6 +43,7 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", RemoveRuntimeTimeout))
 	}
 
+	// TODO(nachtmaar): reusable as well?
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:

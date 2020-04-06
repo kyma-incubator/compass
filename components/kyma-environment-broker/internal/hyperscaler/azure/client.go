@@ -10,6 +10,7 @@ import (
 type AzureInterface interface {
 	GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
 	CreateResourceGroup(ctx context.Context, config *Config, name string, tags map[string]*string) (resources.Group, error)
+	DeleteResourceGroup(ctx context.Context, instanceID string) error
 	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags map[string]*string) (*eventhub.EHNamespace, error)
 }
 
@@ -37,15 +38,38 @@ func (nc *AzureClient) CreateResourceGroup(ctx context.Context, config *Config, 
 	return nc.resourcegroupClient.CreateOrUpdate(ctx, name, resources.Group{Location: &locationCopy, Tags: tags})
 }
 
+// TODO(nachtmaar): can we have map[string]string here instead and do we nillness checking before ?
+func (nc *AzureClient) DeleteResourceGroup(ctx context.Context, instanceID string) error {
+	// we need to use a copy of the location, because the following azure call will modify it
+	resourceGroupName := nc.getResourceGroupName(ctx)
+	return nc.deleteAndWaitResourceGroup(ctx, resourceGroupName)
+}
+
+// TODO(nachtmaar): implement me
+func (nc *AzureClient) getResourceGroupName(ctx context.Context) string {
+	panic("todo")
+}
+
 func (nc *AzureClient) CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags map[string]*string) (*eventhub.EHNamespace, error) {
 	// we need to use a copy of the location, because the following azure call will modify it
 	locationCopy := azureCfg.GetLocation()
 	parameters := eventhub.EHNamespace{Location: &locationCopy, Tags: tags}
-	ehNamespace, err := nc.createAndWait(ctx, groupName, namespace, parameters)
+	ehNamespace, err := nc.createAndWaitNamespace(ctx, groupName, namespace, parameters)
 	return &ehNamespace, err
 }
 
-func (nc *AzureClient) createAndWait(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
+// TODO(nachtmaar): can we have a shared method to wait for azure futures ?
+func (nc *AzureClient) deleteAndWaitResourceGroup(ctx context.Context, resourceGroupName string) error {
+	future, err := nc.resourcegroupClient.Delete(ctx, resourceGroupName)
+	if err != nil {
+		return err
+	}
+
+	err = future.WaitForCompletionRef(ctx, nc.resourcegroupClient.Client)
+	return err
+}
+
+func (nc *AzureClient) createAndWaitNamespace(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
 	future, err := nc.eventhubNamespaceClient.CreateOrUpdate(ctx, resourceGroupName, namespaceName, parameters)
 	if err != nil {
 		return eventhub.EHNamespace{}, err
