@@ -93,7 +93,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	tags := make(azure.Tags, 3)
 	tags[azure.TagSubAccountID] = &pp.ErsContext.SubAccountID
 	tags[azure.TagInstanceID] = &operation.InstanceID
-	tags[azure.TagOperationID] = &operation.ProvisionerOperationID
+	tags[azure.TagOperationID] = &operation.ID
 
 	// create Resource Group
 	groupName := pp.Parameters.Name
