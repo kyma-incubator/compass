@@ -127,6 +127,8 @@ spec:
                   key: username
             - name: APP_KYMA_VERSION
               value: {{ .Values.kymaVersion }}
+            - name: APP_ENABLE_ON_DEMAND_VERSION
+              value: {{ .Values.kymaVersionOnDemand }}
             - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_FILE_PATH
               value: /config/additionalRuntimeComponents.yaml
             - name: APP_GARDENER_PROJECT
@@ -137,6 +139,14 @@ spec:
             - name: http
               containerPort: {{ .Values.broker.port }}
               protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.broker.statusPort }}
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 3
+            initialDelaySeconds: 20
           resources:
               {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:

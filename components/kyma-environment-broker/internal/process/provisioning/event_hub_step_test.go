@@ -22,7 +22,7 @@ import (
 	hyperscalerautomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
-	inputautomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
+	inputAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 )
@@ -342,7 +342,7 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 }
 
 func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
-	optComponentsSvc := &inputautomock.OptionalComponentService{}
+	optComponentsSvc := &inputAutomock.OptionalComponentService{}
 	componentConfigurationInputList := internal.ComponentConfigurationInputList{
 		{
 			Component:     "keb",
@@ -376,11 +376,16 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Namespace: "knative-eventing",
 		},
 	}
-	ibf := input.NewInputBuilderFactory(optComponentsSvc, kymaComponentList, input.Config{}, kymaVersion)
+	componentsProvider := &inputAutomock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
+	defer componentsProvider.AssertExpectations(t)
 
-	creator, found := ibf.ForPlan(broker.AzurePlanID)
-	if !found {
-		t.Errorf("input creator for %q plan does not exist", broker.AzurePlanID)
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{}, kymaVersion)
+	assert.NoError(t, err)
+
+	creator, err := ibf.ForPlan(broker.GcpPlanID, "")
+	if err != nil {
+		t.Errorf("cannot create input creator for %q plan", broker.GcpPlanID)
 	}
 
 	return creator

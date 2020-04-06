@@ -40,7 +40,38 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreatePackageResult"),
+					mock.Anything,
+				).Run(func(args mock.Arguments) {
+					arg := args.Get(2)
+					res, ok := arg.(*director.CreatePackageResult)
+					if !ok {
+						return
+					}
+
+					res.Result = graphql.PackageExt{Package: graphql.Package{ID: "resID"}}
+				}).Return(nil).Once()
+				return am
+			},
+			GraphqlizerFn: func() *automock.GraphQLizer {
+				am := &automock.GraphQLizer{}
+				am.On("PackageCreateInputToGQL", in).Return("input", nil).Once()
+				return am
+			},
+			ExpectedResult: str.Ptr("resID"),
+		},
+		{
+			Name: "Success - retry",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
+				).Return(testErr).Once()
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
 					res, ok := arg.(*director.CreatePackageResult)
@@ -79,8 +110,8 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreatePackageResult"),
-				).Return(testErr).Once()
+					mock.Anything,
+				).Return(testErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -144,6 +175,29 @@ func TestDirectorClient_UpdatePackage(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
+			Name: "Success - retry",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					nil,
+				).Return(testErr).Once()
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					nil,
+				).Return(nil).Once()
+				return am
+			},
+			GraphqlizerFn: func() *automock.GraphQLizer {
+				am := &automock.GraphQLizer{}
+				am.On("PackageUpdateInputToGQL", in).Return("input", nil).Once()
+				return am
+			},
+			ExpectedErr: nil,
+		},
+		{
 			Name: "Error - GraphQL input",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
@@ -164,7 +218,7 @@ func TestDirectorClient_UpdatePackage(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Once()
+				).Return(testErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -215,7 +269,33 @@ func TestDirectorClient_GetPackage(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.GetPackageResult"),
+					mock.Anything,
+				).Run(func(args mock.Arguments) {
+					arg := args.Get(2)
+					res, ok := arg.(*director.GetPackageResult)
+					if !ok {
+						return
+					}
+
+					res.Result = graphql.ApplicationExt{Package: successResult}
+				}).Return(nil).Once()
+				return am
+			},
+			ExpectedResult: &successResult,
+		},
+		{
+			Name: "Success - retry",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
+				).Return(testErr).Once()
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
 					res, ok := arg.(*director.GetPackageResult)
@@ -236,8 +316,8 @@ func TestDirectorClient_GetPackage(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.GetPackageResult"),
-				).Return(testErr).Once()
+					mock.Anything,
+				).Return(testErr).Twice()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -285,7 +365,33 @@ func TestDirectorClient_ListPackages(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.ListPackagesResult"),
+					mock.Anything,
+				).Run(func(args mock.Arguments) {
+					arg := args.Get(2)
+					res, ok := arg.(*director.ListPackagesResult)
+					if !ok {
+						return
+					}
+
+					res.Result = graphql.ApplicationExt{Packages: graphql.PackagePageExt{Data: successResult}}
+				}).Return(nil).Once()
+				return am
+			},
+			ExpectedResult: successResult,
+		},
+		{
+			Name: "Success - retry",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
+				).Return(testErr).Once()
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
 					res, ok := arg.(*director.ListPackagesResult)
@@ -306,8 +412,8 @@ func TestDirectorClient_ListPackages(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.ListPackagesResult"),
-				).Return(testErr).Once()
+					mock.Anything,
+				).Return(testErr).Twice()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -359,7 +465,7 @@ func TestDirectorClient_DeletePackage(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Success - retry",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
@@ -367,6 +473,24 @@ func TestDirectorClient_DeletePackage(t *testing.T) {
 					gqlRequest,
 					nil,
 				).Return(testErr).Once()
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					nil,
+				).Return(nil).Once()
+				return am
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Error - GraphQL client",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					nil,
+				).Return(testErr).Twice()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -413,7 +537,38 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreateAPIDefinitionResult"),
+					mock.Anything,
+				).Run(func(args mock.Arguments) {
+					arg := args.Get(2)
+					res, ok := arg.(*director.CreateAPIDefinitionResult)
+					if !ok {
+						return
+					}
+
+					res.Result = graphql.APIDefinition{ID: "resID"}
+				}).Return(nil).Once()
+				return am
+			},
+			GraphqlizerFn: func() *automock.GraphQLizer {
+				am := &automock.GraphQLizer{}
+				am.On("APIDefinitionInputToGQL", in).Return("input", nil).Once()
+				return am
+			},
+			ExpectedResult: str.Ptr("resID"),
+		},
+		{
+			Name: "Success - retry",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
+				).Return(testErr).Once()
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
 					res, ok := arg.(*director.CreateAPIDefinitionResult)
@@ -452,8 +607,8 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreateAPIDefinitionResult"),
-				).Return(testErr).Once()
+					mock.Anything,
+				).Return(testErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -511,7 +666,7 @@ func TestDirectorClient_DeleteAPIDefinition(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Success - retry",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
@@ -519,6 +674,24 @@ func TestDirectorClient_DeleteAPIDefinition(t *testing.T) {
 					gqlRequest,
 					nil,
 				).Return(testErr).Once()
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					nil,
+				).Return(nil).Once()
+				return am
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Error - GraphQL client",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					nil,
+				).Return(testErr).Twice()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -565,7 +738,38 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreateEventDefinitionResult"),
+					mock.Anything,
+				).Run(func(args mock.Arguments) {
+					arg := args.Get(2)
+					res, ok := arg.(*director.CreateEventDefinitionResult)
+					if !ok {
+						return
+					}
+
+					res.Result = graphql.EventDefinition{ID: "resID"}
+				}).Return(nil).Once()
+				return am
+			},
+			GraphqlizerFn: func() *automock.GraphQLizer {
+				am := &automock.GraphQLizer{}
+				am.On("EventDefinitionInputToGQL", in).Return("input", nil).Once()
+				return am
+			},
+			ExpectedResult: str.Ptr("resID"),
+		},
+		{
+			Name: "Success - retry",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
+				).Return(testErr).Once()
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
 					res, ok := arg.(*director.CreateEventDefinitionResult)
@@ -604,8 +808,8 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreateEventDefinitionResult"),
-				).Return(testErr).Once()
+					mock.Anything,
+				).Return(testErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -663,7 +867,7 @@ func TestDirectorClient_DeleteEventDefinition(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Success - retry",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
@@ -671,6 +875,24 @@ func TestDirectorClient_DeleteEventDefinition(t *testing.T) {
 					gqlRequest,
 					nil,
 				).Return(testErr).Once()
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					nil,
+				).Return(nil).Once()
+				return am
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Error - GraphQL client",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					nil,
+				).Return(testErr).Twice()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -717,7 +939,38 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreateDocumentResult"),
+					mock.Anything,
+				).Run(func(args mock.Arguments) {
+					arg := args.Get(2)
+					res, ok := arg.(*director.CreateDocumentResult)
+					if !ok {
+						return
+					}
+
+					res.Result = graphql.Document{ID: "resID"}
+				}).Return(nil).Once()
+				return am
+			},
+			GraphqlizerFn: func() *automock.GraphQLizer {
+				am := &automock.GraphQLizer{}
+				am.On("DocumentInputToGQL", &in).Return("input", nil).Once()
+				return am
+			},
+			ExpectedResult: str.Ptr("resID"),
+		},
+		{
+			Name: "Success - retry",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
+				).Return(testErr).Once()
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
 					res, ok := arg.(*director.CreateDocumentResult)
@@ -756,8 +1009,8 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
-					mock.AnythingOfType("*director.CreateDocumentResult"),
-				).Return(testErr).Once()
+					mock.Anything,
+				).Return(testErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -815,7 +1068,7 @@ func TestDirectorClient_DeleteDocument(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Success - retry",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
@@ -823,6 +1076,24 @@ func TestDirectorClient_DeleteDocument(t *testing.T) {
 					gqlRequest,
 					nil,
 				).Return(testErr).Once()
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					nil,
+				).Return(nil).Once()
+				return am
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Error - GraphQL client",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					nil,
+				).Return(testErr).Twice()
 				return am
 			},
 			ExpectedErr: testErr,

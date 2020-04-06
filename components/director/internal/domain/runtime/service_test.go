@@ -29,6 +29,7 @@ func TestService_Create(t *testing.T) {
 			model.ScenariosKey: "DEFAULT",
 		},
 	}
+	var nilLabels map[string]interface{}
 
 	runtimeModel := mock.MatchedBy(func(rtm *model.Runtime) bool {
 		return rtm.Name == modelInput.Name && rtm.Description == modelInput.Description &&
@@ -59,6 +60,7 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
+				repo.On("AddDefaultScenarioIfEnabled", &modelInput.Labels).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -72,6 +74,36 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       modelInput,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Success when default scenario assignment disabled",
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
+				repo.On("AddDefaultScenarioIfEnabled", &nilLabels).Once()
+				return repo
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				repo := &automock.LabelUpsertService{}
+				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, id, nilLabels).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			Input: model.RuntimeInput{
+				Name:        modelInput.Name,
+				Description: modelInput.Description,
+				Labels:      nilLabels,
+			},
 			ExpectedErr: nil,
 		},
 		{

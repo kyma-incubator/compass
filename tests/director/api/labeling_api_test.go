@@ -542,25 +542,6 @@ func TestDeleteLabelDefinition(t *testing.T) {
 	})
 }
 
-func TestDeleteScenariosLabel(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-	t.Log("Create application")
-	app := registerApplication(t, ctx, "app")
-	defer unregisterApplication(t, app.ID)
-
-	t.Log("Try to delete scenarios label on application")
-	labelKey := "scenarios"
-	deleteApplicationLabelRequest := fixDeleteApplicationLabelRequest(app.ID, labelKey)
-
-	// WHEN
-	err := tc.RunOperation(ctx, deleteApplicationLabelRequest, nil)
-
-	//THEN
-	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: scenarios label can not be deleted from application")
-}
-
 func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()

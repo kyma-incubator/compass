@@ -1,16 +1,14 @@
 package provisioning
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
-
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -22,14 +20,14 @@ const (
 )
 
 type CreateRuntimeStep struct {
-	operationManager  *process.OperationManager
+	operationManager  *process.ProvisionOperationManager
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
 }
 
 func NewCreateRuntimeStep(os storage.Operations, is storage.Instances, cli provisioner.Client) *CreateRuntimeStep {
 	return &CreateRuntimeStep{
-		operationManager:  process.NewOperationManager(os),
+		operationManager:  process.NewProvisionOperationManager(os),
 		instanceStorage:   is,
 		provisionerClient: cli,
 	}
@@ -45,24 +43,9 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout))
 	}
 
-	_, err := s.instanceStorage.GetByID(operation.InstanceID)
-	switch {
-	case err == nil:
-		log.Info("instance exists, skip step")
-		return operation, 0, nil
-	case dberr.IsNotFound(err):
-	default:
-		log.Errorf("unable to get instance from storage: %s", err)
-		return operation, 1 * time.Second, nil
-	}
-
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-	rawParameters, err := json.Marshal(pp.Parameters)
-	if err != nil {
-		return s.operationManager.OperationFailed(operation, "invalid operation parameters")
 	}
 
 	requestInput, err := s.createProvisionInput(operation, pp)
@@ -95,21 +78,22 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	if provisionerResponse.RuntimeID == nil {
 		return operation, 1 * time.Minute, nil
 	}
+	log.Infof("fetched RuntimeID=%s", *provisionerResponse.RuntimeID)
 
-	err = s.instanceStorage.Insert(internal.Instance{
-		InstanceID:             operation.InstanceID,
-		GlobalAccountID:        pp.ErsContext.GlobalAccountID,
-		RuntimeID:              *provisionerResponse.RuntimeID,
-		ServiceID:              pp.ServiceID,
-		ServicePlanID:          pp.PlanID,
-		ProvisioningParameters: string(rawParameters),
-	})
+	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	if err != nil {
-		log.Errorf("cannot save instance in storage: %s", err)
+		log.Errorf("cannot get instance: %s", err)
+		return operation, 1 * time.Minute, nil
+	}
+	instance.RuntimeID = *provisionerResponse.RuntimeID
+
+	err = s.instanceStorage.Update(*instance)
+	if err != nil {
+		log.Errorf("cannot update instance in storage: %s", err)
 		return operation, 10 * time.Second, nil
 	}
 
-	log.Infof("runtime creation process initiated successfully, RuntimeID=%s", *provisionerResponse.RuntimeID)
+	log.Info("runtime creation process initiated successfully")
 	// return repeat mode (1 sec) to start the initialization step which will now check the runtime status
 	return operation, 1 * time.Second, nil
 }

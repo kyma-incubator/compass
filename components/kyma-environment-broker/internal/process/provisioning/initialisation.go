@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
+	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
@@ -30,7 +30,7 @@ type DirectorClient interface {
 }
 
 type InitialisationStep struct {
-	operationManager  *process.OperationManager
+	operationManager  *process.ProvisionOperationManager
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
 	directorClient    DirectorClient
@@ -39,7 +39,7 @@ type InitialisationStep struct {
 
 func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:  process.NewOperationManager(os),
+		operationManager:  process.NewProvisionOperationManager(os),
 		instanceStorage:   is,
 		provisionerClient: pc,
 		directorClient:    dc,
@@ -48,18 +48,22 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 }
 
 func (s *InitialisationStep) Name() string {
-	return "Initialization"
+	return "Provision_Initialization"
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	_, err := s.instanceStorage.GetByID(operation.InstanceID)
+	inst, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
-		log.Info("instance exist, check instance status")
+		if inst.RuntimeID == "" {
+			log.Info("runtimeID not exist, initialize runtime input request")
+			return s.initializeRuntimeInputRequest(operation, log)
+		}
+		log.Info("runtimeID exist, check instance status")
 		return s.checkRuntimeStatus(operation, log)
 	case dberr.IsNotFound(err):
-		log.Info("instance not exist, initialize runtime input request")
-		return s.initializeRuntimeInputRequest(operation, log)
+		log.Info("instance not exist")
+		return s.operationManager.OperationFailed(operation, "instance was not created")
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
 		return operation, 1 * time.Second, nil
@@ -73,15 +77,27 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 
-	log.Infof("create input creator for %q plan ID", pp.PlanID)
-	creator, found := s.inputBuilder.ForPlan(pp.PlanID)
-	if !found {
-		log.Error("input creator does not exist")
-		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
+	var kymaVersion string
+	if pp.Parameters.KymaVersion == "" {
+		log.Info("input builder setting up to work with default Kyma version")
+	} else {
+		kymaVersion = pp.Parameters.KymaVersion
+		log.Infof("setting up input builder to work with %s Kyma version", kymaVersion)
 	}
 
-	operation.InputCreator = creator
-	return operation, 0, nil
+	log.Infof("create input creator for %q plan ID", pp.PlanID)
+	creator, err := s.inputBuilder.ForPlan(pp.PlanID, kymaVersion)
+	switch {
+	case err == nil:
+		operation.InputCreator = creator
+		return operation, 0, nil
+	case kebError.IsTemporaryError(err):
+		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", pp.PlanID, kymaVersion, err)
+		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+	default:
+		log.Errorf("cannot create input creator for plan %s: %s", pp.PlanID, err)
+		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
+	}
 }
 
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
@@ -131,7 +147,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 
 func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance) (time.Duration, error) {
 	dashboardURL, err := s.directorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
-	if director.IsTemporaryError(err) {
+	if kebError.IsTemporaryError(err) {
 		return 3 * time.Minute, nil
 	}
 	if err != nil {

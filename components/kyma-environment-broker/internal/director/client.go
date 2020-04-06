@@ -8,6 +8,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
+	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
 
 	machineGraph "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -110,7 +111,7 @@ func (dc *Client) call(req *machineGraph.Request) (*successResponse, error) {
 	var response successResponse
 	err := dc.graphQLClient.Run(context.Background(), req, &response)
 	if err != nil {
-		return nil, TemporaryError{fmt.Sprintf("while requesting to director client: %s", err)}
+		return nil, kebError.AsTemporaryError(err, "while requesting to director client")
 	}
 	return &response, nil
 }
@@ -133,7 +134,7 @@ func (dc *Client) setToken() error {
 
 func (dc *Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error) {
 	if response.Status == nil {
-		return "", TemporaryError{"response status from director is nil"}
+		return "", kebError.NewTemporaryError("response status from director is nil")
 	}
 	if response.Status.Condition == graphql.RuntimeStatusConditionFailed {
 		return "", fmt.Errorf("response status condition from director is %s", graphql.RuntimeStatusConditionFailed)
@@ -141,7 +142,7 @@ func (dc *Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error
 
 	value, ok := response.Labels[consoleURLLabelKey]
 	if !ok {
-		return "", TemporaryError{fmt.Sprintf("response label key is not equal to %q", consoleURLLabelKey)}
+		return "", kebError.NewTemporaryError("response label key is not equal to %q", consoleURLLabelKey)
 	}
 
 	var URL string

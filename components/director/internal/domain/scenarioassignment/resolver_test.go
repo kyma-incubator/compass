@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
+func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 	givenInput := graphql.AutomaticScenarioAssignmentSetInput{
 		ScenarioName: scenarioName,
 		Selector: &graphql.LabelSelectorInput{
@@ -48,7 +48,7 @@ func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
 		// WHEN
-		actual, err := sut.SetAutomaticScenarioAssignment(context.TODO(), givenInput)
+		actual, err := sut.CreateAutomaticScenarioAssignment(context.TODO(), givenInput)
 
 		// THEN
 		require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 		sut := scenarioassignment.NewResolver(transact, nil, nil)
 
 		// WHEN
-		_, err := sut.SetAutomaticScenarioAssignment(context.TODO(), graphql.AutomaticScenarioAssignmentSetInput{})
+		_, err := sut.CreateAutomaticScenarioAssignment(context.TODO(), graphql.AutomaticScenarioAssignmentSetInput{})
 
 		// THEN
 		assert.EqualError(t, err, "while beginning transaction: some persistence error")
@@ -77,7 +77,7 @@ func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
 		// WHEN
-		_, err := sut.SetAutomaticScenarioAssignment(context.TODO(), givenInput)
+		_, err := sut.CreateAutomaticScenarioAssignment(context.TODO(), givenInput)
 
 		// THEN
 		assert.EqualError(t, err, fmt.Sprintf("while creating Assignment: %s", errMsg))
@@ -94,7 +94,7 @@ func TestResolverSetAutomaticScenarioAssignment(t *testing.T) {
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
 		// WHEN
-		_, err := sut.SetAutomaticScenarioAssignment(context.TODO(), givenInput)
+		_, err := sut.CreateAutomaticScenarioAssignment(context.TODO(), givenInput)
 
 		// THEN
 		assert.EqualError(t, err, "while committing transaction: some persistence error")
@@ -165,7 +165,7 @@ func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 	})
 }
 
-func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
+func TestResolver_AutomaticScenarioAssignmentsForSelector(t *testing.T) {
 	givenInput := graphql.LabelSelectorInput{
 		Key:   "key",
 		Value: "value",
@@ -216,12 +216,12 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector()).Return(expectedModels, nil).Once()
+		mockSvc.On("ListForSelector", mock.Anything, fixLabelSelector()).Return(expectedModels, nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
 		// WHEN
-		actual, err := sut.AutomaticScenarioAssignmentForSelector(fixCtxWithTenant(), givenInput)
+		actual, err := sut.AutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
 
 		// THEN
 		require.NoError(t, err)
@@ -234,7 +234,7 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 		sut := scenarioassignment.NewResolver(transact, nil, nil)
 
 		// WHEN
-		_, err := sut.AutomaticScenarioAssignmentForSelector(context.TODO(), graphql.LabelSelectorInput{})
+		_, err := sut.AutomaticScenarioAssignmentsForSelector(context.TODO(), graphql.LabelSelectorInput{})
 
 		// THEN
 		assert.EqualError(t, err, "while beginning transaction: some persistence error")
@@ -248,12 +248,12 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector()).Return(nil, fixError()).Once()
+		mockSvc.On("ListForSelector", mock.Anything, fixLabelSelector()).Return(nil, fixError()).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
 		// WHEN
-		actual, err := sut.AutomaticScenarioAssignmentForSelector(fixCtxWithTenant(), givenInput)
+		actual, err := sut.AutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
 
 		// THEN
 		require.Nil(t, actual)
@@ -270,12 +270,12 @@ func TestResolver_AutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", mock.Anything, fixLabelSelector()).Return(expectedModels, nil).Once()
+		mockSvc.On("ListForSelector", mock.Anything, fixLabelSelector()).Return(expectedModels, nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
 		// WHEN
-		actual, err := sut.AutomaticScenarioAssignmentForSelector(fixCtxWithTenant(), givenInput)
+		actual, err := sut.AutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
 
 		// THEN
 		require.EqualError(t, err, "while committing transaction: some persistence error")
@@ -400,22 +400,24 @@ func TestResolver_AutomaticScenarioAssignments(t *testing.T) {
 	}
 }
 
-func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
+func TestResolver_DeleteAutomaticScenarioAssignmentsForSelector(t *testing.T) {
 	givenInput := graphql.LabelSelectorInput{
 		Key:   "key",
 		Value: "value",
 	}
 
+	scenarioNameA := "scenario-A"
+	scenarioNameB := "scenario-B"
 	expectedModels := []*model.AutomaticScenarioAssignment{
 		{
-			ScenarioName: "scenario-A",
+			ScenarioName: scenarioNameA,
 			Selector: model.LabelSelector{
 				Key:   "key",
 				Value: "value",
 			},
 		},
 		{
-			ScenarioName: "scenario-B",
+			ScenarioName: scenarioNameB,
 			Selector: model.LabelSelector{
 				Key:   "key",
 				Value: "value",
@@ -425,14 +427,14 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 	expectedOutput := []*graphql.AutomaticScenarioAssignment{
 		{
-			ScenarioName: "scenario-A",
+			ScenarioName: scenarioNameA,
 			Selector: &graphql.Label{
 				Key:   "key",
 				Value: "value",
 			},
 		},
 		{
-			ScenarioName: "scenario-B",
+			ScenarioName: scenarioNameB,
 			Selector: &graphql.Label{
 				Key:   "key",
 				Value: "value",
@@ -452,13 +454,13 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(expectedModels, nil).Once()
-		mockSvc.On("DeleteForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(nil).Once()
+		mockSvc.On("ListForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(expectedModels, nil).Once()
+		mockSvc.On("DeleteManyForSameSelector", txtest.CtxWithDBMatcher(), expectedModels).Return(nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
 		// WHEN
-		actual, err := sut.DeleteAutomaticScenarioAssignmentForSelector(fixCtxWithTenant(), givenInput)
+		actual, err := sut.DeleteAutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
 
 		// THEN
 		require.NoError(t, err)
@@ -471,7 +473,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 		sut := scenarioassignment.NewResolver(transact, nil, nil)
 
 		// WHEN
-		_, err := sut.DeleteAutomaticScenarioAssignmentForSelector(context.TODO(), graphql.LabelSelectorInput{})
+		_, err := sut.DeleteAutomaticScenarioAssignmentsForSelector(context.TODO(), graphql.LabelSelectorInput{})
 
 		// THEN
 		assert.EqualError(t, err, "while beginning transaction: some persistence error")
@@ -486,12 +488,12 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(nil, fixError()).Once()
+		mockSvc.On("ListForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(nil, fixError()).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
 		// WHEN
-		actual, err := sut.DeleteAutomaticScenarioAssignmentForSelector(fixCtxWithTenant(), givenInput)
+		actual, err := sut.DeleteAutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
 
 		// THEN
 		require.Nil(t, actual)
@@ -507,13 +509,13 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(expectedModels, nil).Once()
-		mockSvc.On("DeleteForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(fixError()).Once()
+		mockSvc.On("ListForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(expectedModels, nil).Once()
+		mockSvc.On("DeleteManyForSameSelector", txtest.CtxWithDBMatcher(), expectedModels).Return(fixError()).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
 		// WHEN
-		actual, err := sut.DeleteAutomaticScenarioAssignmentForSelector(fixCtxWithTenant(), givenInput)
+		actual, err := sut.DeleteAutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
 
 		// THEN
 		require.Nil(t, actual)
@@ -529,13 +531,13 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, mockSvc)
-		mockSvc.On("GetForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(expectedModels, nil).Once()
-		mockSvc.On("DeleteForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(nil).Once()
+		mockSvc.On("ListForSelector", txtest.CtxWithDBMatcher(), fixLabelSelector()).Return(expectedModels, nil).Once()
+		mockSvc.On("DeleteManyForSameSelector", txtest.CtxWithDBMatcher(), expectedModels).Return(nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
 		// WHEN
-		actual, err := sut.DeleteAutomaticScenarioAssignmentForSelector(fixCtxWithTenant(), givenInput)
+		actual, err := sut.DeleteAutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
 
 		// THEN
 		require.EqualError(t, err, "while committing transaction: some persistence error")
@@ -558,7 +560,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(expectedModel, nil).Once()
-		mockSvc.On("DeleteForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(nil).Once()
+		mockSvc.On("Delete", txtest.CtxWithDBMatcher(), expectedModel).Return(nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockConverter, mockSvc)
 
@@ -607,7 +609,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(expectedModel, nil).Once()
-		mockSvc.On("DeleteForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(fixError()).Once()
+		mockSvc.On("Delete", txtest.CtxWithDBMatcher(), expectedModel).Return(fixError()).Once()
 
 		sut := scenarioassignment.NewResolver(transact, nil, mockSvc)
 
@@ -625,7 +627,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 
 		mockSvc := &automock.Service{}
 		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(expectedModel, nil).Once()
-		mockSvc.On("DeleteForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(nil).Once()
+		mockSvc.On("Delete", txtest.CtxWithDBMatcher(), expectedModel).Return(nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, nil, mockSvc)
 

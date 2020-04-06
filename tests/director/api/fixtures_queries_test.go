@@ -439,22 +439,22 @@ func fixPackageInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *
 	return authCtx, inputParams
 }
 
-func setAutomaticScenarioAssignmentFromInputWithinTenant(t *testing.T, ctx context.Context, input graphql.AutomaticScenarioAssignmentSetInput, tenantID string) graphql.AutomaticScenarioAssignment {
+func createAutomaticScenarioAssignmentFromInputWithinTenant(t *testing.T, ctx context.Context, input graphql.AutomaticScenarioAssignmentSetInput, tenantID string) graphql.AutomaticScenarioAssignment {
 	inStr, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(input)
 	require.NoError(t, err)
 
 	assignment := graphql.AutomaticScenarioAssignment{}
-	req := fixSetAutomaticScenarioAssignmentRequest(inStr)
+	req := fixCreateAutomaticScenarioAssignmentRequest(inStr)
 	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignment)
 	require.NoError(t, err)
 	return assignment
 }
 
-func setAutomaticScenarioAssignmentInTenant(t *testing.T, ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput, tenantID string) *graphql.AutomaticScenarioAssignment {
+func createAutomaticScenarioAssignmentInTenant(t *testing.T, ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput, tenantID string) *graphql.AutomaticScenarioAssignment {
 	assignmentInput, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(in)
 	require.NoError(t, err)
 
-	createRequest := fixSetAutomaticScenarioAssignmentRequest(assignmentInput)
+	createRequest := fixCreateAutomaticScenarioAssignmentRequest(assignmentInput)
 
 	assignment := graphql.AutomaticScenarioAssignment{}
 

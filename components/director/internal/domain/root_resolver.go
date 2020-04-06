@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/features"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
@@ -69,7 +71,7 @@ type RootResolver struct {
 	scenarioAssignment  *scenarioassignment.Resolver
 }
 
-func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, pairingAdaptersMapping map[string]string) *RootResolver {
+func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, pairingAdaptersMapping map[string]string, featuresConfig features.Config) *RootResolver {
 	authConverter := auth.NewConverter()
 	apiRtmAuthConverter := apiruntimeauth.NewConverter(authConverter)
 	runtimeConverter := runtime.NewConverter()
@@ -115,7 +117,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	uidSvc := uid.NewService()
 	apiRtmAuthSvc := apiruntimeauth.NewService(apiRtmAuthRepo, uidSvc)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
-	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc)
+	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
@@ -134,6 +136,8 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
 	packageInstanceAuthSvc := packageinstanceauth.NewService(packageInstanceAuthRepo, uidSvc)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine()
+	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc, scenarioAssignmentEngine)
 
 	return &RootResolver{
 		app:                 application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc, packageSvc, packageConverter),
@@ -154,7 +158,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
 		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, packageConverter, packageInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
 		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageSvc, packageInstanceAuthConv),
-		scenarioAssignment:  scenarioassignment.NewResolver(transact, assignmentConv, scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)),
+		scenarioAssignment:  scenarioassignment.NewResolver(transact, assignmentConv, scenarioAssignmentSvc),
 	}
 }
 
@@ -260,8 +264,12 @@ func (r *queryResolver) AutomaticScenarioAssignmentForScenario(ctx context.Conte
 	return r.scenarioAssignment.GetAutomaticScenarioAssignmentForScenarioName(ctx, scenarioName)
 }
 
+//TODO: Deprecated; Remove it
 func (r *queryResolver) AutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	return r.scenarioAssignment.AutomaticScenarioAssignmentForSelector(ctx, selector)
+	return r.scenarioAssignment.AutomaticScenarioAssignmentsForSelector(ctx, selector)
+}
+func (r *queryResolver) AutomaticScenarioAssignmentsForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+	return r.scenarioAssignment.AutomaticScenarioAssignmentsForSelector(ctx, selector)
 }
 
 func (r *queryResolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
@@ -448,11 +456,21 @@ func (r *mutationResolver) DeletePackage(ctx context.Context, id string) (*graph
 func (r *mutationResolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
 	return r.scenarioAssignment.DeleteAutomaticScenarioAssignmentForScenario(ctx, scenarioName)
 }
+
+//TODO: Deprecated; Remove it
 func (r *mutationResolver) DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	return r.scenarioAssignment.DeleteAutomaticScenarioAssignmentForSelector(ctx, selector)
+	return r.scenarioAssignment.DeleteAutomaticScenarioAssignmentsForSelector(ctx, selector)
 }
+
+//TODO: Deprecated; Remove it
 func (r *mutationResolver) SetAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
-	return r.scenarioAssignment.SetAutomaticScenarioAssignment(ctx, in)
+	return r.scenarioAssignment.CreateAutomaticScenarioAssignment(ctx, in)
+}
+func (r *mutationResolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, selector graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
+	return r.scenarioAssignment.DeleteAutomaticScenarioAssignmentsForSelector(ctx, selector)
+}
+func (r *mutationResolver) CreateAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
+	return r.scenarioAssignment.CreateAutomaticScenarioAssignment(ctx, in)
 }
 
 type applicationResolver struct {

@@ -310,11 +310,12 @@ func fixGlobalConfig() model.Configuration {
 func fixKymaComponents() []model.KymaComponentConfig {
 	return []model.KymaComponentConfig{
 		{
-			ID:            "id",
-			KymaConfigID:  "id",
-			Component:     clusterEssentialsComponent,
-			Namespace:     kymaSystemNamespace,
-			Configuration: model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+			ID:             "id",
+			KymaConfigID:   "id",
+			Component:      clusterEssentialsComponent,
+			Namespace:      kymaSystemNamespace,
+			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+			ComponentOrder: 1,
 		},
 		{
 			ID:           "id",
@@ -327,14 +328,16 @@ func fixKymaComponents() []model.KymaComponentConfig {
 					model.NewConfigEntry("test.config.key2", "value2", false),
 				},
 			},
+			ComponentOrder: 2,
 		},
 		{
-			ID:            "id",
-			KymaConfigID:  "id",
-			Component:     rafterComponent,
-			Namespace:     kymaSystemNamespace,
-			SourceURL:     rafterSourceURL,
-			Configuration: model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+			ID:             "id",
+			KymaConfigID:   "id",
+			Component:      rafterComponent,
+			Namespace:      kymaSystemNamespace,
+			SourceURL:      rafterSourceURL,
+			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+			ComponentOrder: 3,
 		},
 		{
 			ID:           "id",
@@ -347,6 +350,7 @@ func fixKymaComponents() []model.KymaComponentConfig {
 					model.NewConfigEntry("test.secret.key", "secretValue", true),
 				},
 			},
+			ComponentOrder: 4,
 		},
 	}
 }

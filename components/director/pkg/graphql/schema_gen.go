@@ -265,64 +265,66 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddAPIDefinition                             func(childComplexity int, applicationID string, in APIDefinitionInput) int
-		AddAPIDefinitionToPackage                    func(childComplexity int, packageID string, in APIDefinitionInput) int
-		AddDocument                                  func(childComplexity int, applicationID string, in DocumentInput) int
-		AddDocumentToPackage                         func(childComplexity int, packageID string, in DocumentInput) int
-		AddEventDefinition                           func(childComplexity int, applicationID string, in EventDefinitionInput) int
-		AddEventDefinitionToPackage                  func(childComplexity int, packageID string, in EventDefinitionInput) int
-		AddPackage                                   func(childComplexity int, applicationID string, in PackageCreateInput) int
-		AddWebhook                                   func(childComplexity int, applicationID string, in WebhookInput) int
-		CreateApplicationTemplate                    func(childComplexity int, in ApplicationTemplateInput) int
-		CreateLabelDefinition                        func(childComplexity int, in LabelDefinitionInput) int
-		DeleteAPIAuth                                func(childComplexity int, apiID string, runtimeID string) int
-		DeleteAPIDefinition                          func(childComplexity int, id string) int
-		DeleteApplicationLabel                       func(childComplexity int, applicationID string, key string) int
-		DeleteApplicationTemplate                    func(childComplexity int, id string) int
-		DeleteAutomaticScenarioAssignmentForScenario func(childComplexity int, scenarioName string) int
-		DeleteAutomaticScenarioAssignmentForSelector func(childComplexity int, selector LabelSelectorInput) int
-		DeleteDefaultEventingForApplication          func(childComplexity int, appID string) int
-		DeleteDocument                               func(childComplexity int, id string) int
-		DeleteEventDefinition                        func(childComplexity int, id string) int
-		DeleteLabelDefinition                        func(childComplexity int, key string, deleteRelatedLabels *bool) int
-		DeletePackage                                func(childComplexity int, id string) int
-		DeletePackageInstanceAuth                    func(childComplexity int, authID string) int
-		DeleteRuntimeLabel                           func(childComplexity int, runtimeID string, key string) int
-		DeleteSystemAuthForApplication               func(childComplexity int, authID string) int
-		DeleteSystemAuthForIntegrationSystem         func(childComplexity int, authID string) int
-		DeleteSystemAuthForRuntime                   func(childComplexity int, authID string) int
-		DeleteWebhook                                func(childComplexity int, webhookID string) int
-		RefetchAPISpec                               func(childComplexity int, apiID string) int
-		RefetchEventDefinitionSpec                   func(childComplexity int, eventID string) int
-		RegisterApplication                          func(childComplexity int, in ApplicationRegisterInput) int
-		RegisterApplicationFromTemplate              func(childComplexity int, in ApplicationFromTemplateInput) int
-		RegisterIntegrationSystem                    func(childComplexity int, in IntegrationSystemInput) int
-		RegisterRuntime                              func(childComplexity int, in RuntimeInput) int
-		RequestClientCredentialsForApplication       func(childComplexity int, id string) int
-		RequestClientCredentialsForIntegrationSystem func(childComplexity int, id string) int
-		RequestClientCredentialsForRuntime           func(childComplexity int, id string) int
-		RequestOneTimeTokenForApplication            func(childComplexity int, id string) int
-		RequestOneTimeTokenForRuntime                func(childComplexity int, id string) int
-		RequestPackageInstanceAuthCreation           func(childComplexity int, packageID string, in PackageInstanceAuthRequestInput) int
-		RequestPackageInstanceAuthDeletion           func(childComplexity int, authID string) int
-		SetAPIAuth                                   func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
-		SetApplicationLabel                          func(childComplexity int, applicationID string, key string, value interface{}) int
-		SetAutomaticScenarioAssignment               func(childComplexity int, in AutomaticScenarioAssignmentSetInput) int
-		SetDefaultEventingForApplication             func(childComplexity int, appID string, runtimeID string) int
-		SetPackageInstanceAuth                       func(childComplexity int, authID string, in PackageInstanceAuthSetInput) int
-		SetRuntimeLabel                              func(childComplexity int, runtimeID string, key string, value interface{}) int
-		UnregisterApplication                        func(childComplexity int, id string) int
-		UnregisterIntegrationSystem                  func(childComplexity int, id string) int
-		UnregisterRuntime                            func(childComplexity int, id string) int
-		UpdateAPIDefinition                          func(childComplexity int, id string, in APIDefinitionInput) int
-		UpdateApplication                            func(childComplexity int, id string, in ApplicationUpdateInput) int
-		UpdateApplicationTemplate                    func(childComplexity int, id string, in ApplicationTemplateInput) int
-		UpdateEventDefinition                        func(childComplexity int, id string, in EventDefinitionInput) int
-		UpdateIntegrationSystem                      func(childComplexity int, id string, in IntegrationSystemInput) int
-		UpdateLabelDefinition                        func(childComplexity int, in LabelDefinitionInput) int
-		UpdatePackage                                func(childComplexity int, id string, in PackageUpdateInput) int
-		UpdateRuntime                                func(childComplexity int, id string, in RuntimeInput) int
-		UpdateWebhook                                func(childComplexity int, webhookID string, in WebhookInput) int
+		AddAPIDefinition                              func(childComplexity int, applicationID string, in APIDefinitionInput) int
+		AddAPIDefinitionToPackage                     func(childComplexity int, packageID string, in APIDefinitionInput) int
+		AddDocument                                   func(childComplexity int, applicationID string, in DocumentInput) int
+		AddDocumentToPackage                          func(childComplexity int, packageID string, in DocumentInput) int
+		AddEventDefinition                            func(childComplexity int, applicationID string, in EventDefinitionInput) int
+		AddEventDefinitionToPackage                   func(childComplexity int, packageID string, in EventDefinitionInput) int
+		AddPackage                                    func(childComplexity int, applicationID string, in PackageCreateInput) int
+		AddWebhook                                    func(childComplexity int, applicationID string, in WebhookInput) int
+		CreateApplicationTemplate                     func(childComplexity int, in ApplicationTemplateInput) int
+		CreateAutomaticScenarioAssignment             func(childComplexity int, in AutomaticScenarioAssignmentSetInput) int
+		CreateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
+		DeleteAPIAuth                                 func(childComplexity int, apiID string, runtimeID string) int
+		DeleteAPIDefinition                           func(childComplexity int, id string) int
+		DeleteApplicationLabel                        func(childComplexity int, applicationID string, key string) int
+		DeleteApplicationTemplate                     func(childComplexity int, id string) int
+		DeleteAutomaticScenarioAssignmentForScenario  func(childComplexity int, scenarioName string) int
+		DeleteAutomaticScenarioAssignmentForSelector  func(childComplexity int, selector LabelSelectorInput) int
+		DeleteAutomaticScenarioAssignmentsForSelector func(childComplexity int, selector LabelSelectorInput) int
+		DeleteDefaultEventingForApplication           func(childComplexity int, appID string) int
+		DeleteDocument                                func(childComplexity int, id string) int
+		DeleteEventDefinition                         func(childComplexity int, id string) int
+		DeleteLabelDefinition                         func(childComplexity int, key string, deleteRelatedLabels *bool) int
+		DeletePackage                                 func(childComplexity int, id string) int
+		DeletePackageInstanceAuth                     func(childComplexity int, authID string) int
+		DeleteRuntimeLabel                            func(childComplexity int, runtimeID string, key string) int
+		DeleteSystemAuthForApplication                func(childComplexity int, authID string) int
+		DeleteSystemAuthForIntegrationSystem          func(childComplexity int, authID string) int
+		DeleteSystemAuthForRuntime                    func(childComplexity int, authID string) int
+		DeleteWebhook                                 func(childComplexity int, webhookID string) int
+		RefetchAPISpec                                func(childComplexity int, apiID string) int
+		RefetchEventDefinitionSpec                    func(childComplexity int, eventID string) int
+		RegisterApplication                           func(childComplexity int, in ApplicationRegisterInput) int
+		RegisterApplicationFromTemplate               func(childComplexity int, in ApplicationFromTemplateInput) int
+		RegisterIntegrationSystem                     func(childComplexity int, in IntegrationSystemInput) int
+		RegisterRuntime                               func(childComplexity int, in RuntimeInput) int
+		RequestClientCredentialsForApplication        func(childComplexity int, id string) int
+		RequestClientCredentialsForIntegrationSystem  func(childComplexity int, id string) int
+		RequestClientCredentialsForRuntime            func(childComplexity int, id string) int
+		RequestOneTimeTokenForApplication             func(childComplexity int, id string) int
+		RequestOneTimeTokenForRuntime                 func(childComplexity int, id string) int
+		RequestPackageInstanceAuthCreation            func(childComplexity int, packageID string, in PackageInstanceAuthRequestInput) int
+		RequestPackageInstanceAuthDeletion            func(childComplexity int, authID string) int
+		SetAPIAuth                                    func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
+		SetApplicationLabel                           func(childComplexity int, applicationID string, key string, value interface{}) int
+		SetAutomaticScenarioAssignment                func(childComplexity int, in AutomaticScenarioAssignmentSetInput) int
+		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
+		SetPackageInstanceAuth                        func(childComplexity int, authID string, in PackageInstanceAuthSetInput) int
+		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
+		UnregisterApplication                         func(childComplexity int, id string) int
+		UnregisterIntegrationSystem                   func(childComplexity int, id string) int
+		UnregisterRuntime                             func(childComplexity int, id string) int
+		UpdateAPIDefinition                           func(childComplexity int, id string, in APIDefinitionInput) int
+		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput) int
+		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateInput) int
+		UpdateEventDefinition                         func(childComplexity int, id string, in EventDefinitionInput) int
+		UpdateIntegrationSystem                       func(childComplexity int, id string, in IntegrationSystemInput) int
+		UpdateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
+		UpdatePackage                                 func(childComplexity int, id string, in PackageUpdateInput) int
+		UpdateRuntime                                 func(childComplexity int, id string, in RuntimeInput) int
+		UpdateWebhook                                 func(childComplexity int, webhookID string, in WebhookInput) int
 	}
 
 	OAuthCredentialData struct {
@@ -395,23 +397,24 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Application                            func(childComplexity int, id string) int
-		ApplicationTemplate                    func(childComplexity int, id string) int
-		ApplicationTemplates                   func(childComplexity int, first *int, after *PageCursor) int
-		Applications                           func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
-		ApplicationsForRuntime                 func(childComplexity int, runtimeID string, first *int, after *PageCursor) int
-		AutomaticScenarioAssignmentForScenario func(childComplexity int, scenarioName string) int
-		AutomaticScenarioAssignmentForSelector func(childComplexity int, selector LabelSelectorInput) int
-		AutomaticScenarioAssignments           func(childComplexity int, first *int, after *PageCursor) int
-		HealthChecks                           func(childComplexity int, types []HealthCheckType, origin *string, first *int, after *PageCursor) int
-		IntegrationSystem                      func(childComplexity int, id string) int
-		IntegrationSystems                     func(childComplexity int, first *int, after *PageCursor) int
-		LabelDefinition                        func(childComplexity int, key string) int
-		LabelDefinitions                       func(childComplexity int) int
-		Runtime                                func(childComplexity int, id string) int
-		Runtimes                               func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
-		Tenants                                func(childComplexity int) int
-		Viewer                                 func(childComplexity int) int
+		Application                             func(childComplexity int, id string) int
+		ApplicationTemplate                     func(childComplexity int, id string) int
+		ApplicationTemplates                    func(childComplexity int, first *int, after *PageCursor) int
+		Applications                            func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
+		ApplicationsForRuntime                  func(childComplexity int, runtimeID string, first *int, after *PageCursor) int
+		AutomaticScenarioAssignmentForScenario  func(childComplexity int, scenarioName string) int
+		AutomaticScenarioAssignmentForSelector  func(childComplexity int, selector LabelSelectorInput) int
+		AutomaticScenarioAssignments            func(childComplexity int, first *int, after *PageCursor) int
+		AutomaticScenarioAssignmentsForSelector func(childComplexity int, selector LabelSelectorInput) int
+		HealthChecks                            func(childComplexity int, types []HealthCheckType, origin *string, first *int, after *PageCursor) int
+		IntegrationSystem                       func(childComplexity int, id string) int
+		IntegrationSystems                      func(childComplexity int, first *int, after *PageCursor) int
+		LabelDefinition                         func(childComplexity int, key string) int
+		LabelDefinitions                        func(childComplexity int) int
+		Runtime                                 func(childComplexity int, id string) int
+		Runtimes                                func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
+		Tenants                                 func(childComplexity int) int
+		Viewer                                  func(childComplexity int) int
 	}
 
 	Runtime struct {
@@ -564,8 +567,10 @@ type MutationResolver interface {
 	UpdatePackage(ctx context.Context, id string, in PackageUpdateInput) (*Package, error)
 	DeletePackage(ctx context.Context, id string) (*Package, error)
 	SetAutomaticScenarioAssignment(ctx context.Context, in AutomaticScenarioAssignmentSetInput) (*AutomaticScenarioAssignment, error)
+	CreateAutomaticScenarioAssignment(ctx context.Context, in AutomaticScenarioAssignmentSetInput) (*AutomaticScenarioAssignment, error)
 	DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
 	DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
+	DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
 }
 type OneTimeTokenForApplicationResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
@@ -603,6 +608,7 @@ type QueryResolver interface {
 	Tenants(ctx context.Context) ([]*Tenant, error)
 	AutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
 	AutomaticScenarioAssignmentForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
+	AutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
 	AutomaticScenarioAssignments(ctx context.Context, first *int, after *PageCursor) (*AutomaticScenarioAssignmentPage, error)
 }
 type RuntimeResolver interface {
@@ -1627,6 +1633,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateApplicationTemplate(childComplexity, args["in"].(ApplicationTemplateInput)), true
 
+	case "Mutation.createAutomaticScenarioAssignment":
+		if e.complexity.Mutation.CreateAutomaticScenarioAssignment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createAutomaticScenarioAssignment_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateAutomaticScenarioAssignment(childComplexity, args["in"].(AutomaticScenarioAssignmentSetInput)), true
+
 	case "Mutation.createLabelDefinition":
 		if e.complexity.Mutation.CreateLabelDefinition == nil {
 			break
@@ -1710,6 +1728,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteAutomaticScenarioAssignmentForSelector(childComplexity, args["selector"].(LabelSelectorInput)), true
+
+	case "Mutation.deleteAutomaticScenarioAssignmentsForSelector":
+		if e.complexity.Mutation.DeleteAutomaticScenarioAssignmentsForSelector == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteAutomaticScenarioAssignmentsForSelector_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteAutomaticScenarioAssignmentsForSelector(childComplexity, args["selector"].(LabelSelectorInput)), true
 
 	case "Mutation.deleteDefaultEventingForApplication":
 		if e.complexity.Mutation.DeleteDefaultEventingForApplication == nil {
@@ -2640,6 +2670,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.AutomaticScenarioAssignments(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
 
+	case "Query.automaticScenarioAssignmentsForSelector":
+		if e.complexity.Query.AutomaticScenarioAssignmentsForSelector == nil {
+			break
+		}
+
+		args, err := ec.field_Query_automaticScenarioAssignmentsForSelector_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AutomaticScenarioAssignmentsForSelector(childComplexity, args["selector"].(LabelSelectorInput)), true
+
 	case "Query.healthChecks":
 		if e.complexity.Query.HealthChecks == nil {
 			break
@@ -3156,15 +3198,32 @@ interface Pageable {
 union CredentialData = BasicCredentialData | OAuthCredentialData
 
 input APIDefinitionInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
 	name: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
+	"""
+	**Validation:** valid URL, max=256
+	"""
 	targetURL: String!
+	"""
+	**Validation:** max=36
+	"""
 	group: String
 	spec: APISpecInput
 	version: VersionInput
 	defaultAuth: AuthInput @deprecated(reason: "Use package.defaultAuth")
 }
 
+"""
+**Validation:**
+- for ODATA type, accepted formats are XML and JSON, for OPEN_API accepted formats are YAML and JSON
+- data or fetchRequest required
+"""
 input APISpecInput {
 	data: CLOB
 	type: APISpecType!
@@ -3172,17 +3231,38 @@ input APISpecInput {
 	fetchRequest: FetchRequestInput
 }
 
+"""
+**Validation:** provided placeholders' names are unique
+"""
 input ApplicationFromTemplateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
 	templateName: String!
 	values: [TemplateValueInput!]
 }
 
 input ApplicationRegisterInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
 	name: String!
+	"""
+	**Validation:** max=256
+	"""
 	providerName: String
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
+	"""
+	**Validation:** label key is alphanumeric with underscore
+	"""
 	labels: Labels
 	webhooks: [WebhookInput!]
+	"""
+	**Validation:** valid URL, max=256
+	"""
 	healthCheckURL: String
 	apiDefinitions: [APIDefinitionInput!] @deprecated(reason: "Use package.packages.apiDefinitions")
 	eventDefinitions: [EventDefinitionInput!] @deprecated(reason: "Use package.packages.eventDefinitions")
@@ -3192,8 +3272,17 @@ input ApplicationRegisterInput {
 	statusCondition: ApplicationStatusCondition
 }
 
+"""
+**Validation:** provided placeholders' names are unique and used in applicationInput
+"""
 input ApplicationTemplateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
 	name: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
@@ -3201,8 +3290,17 @@ input ApplicationTemplateInput {
 }
 
 input ApplicationUpdateInput {
+	"""
+	**Validation:** max=256
+	"""
 	providerName: String
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
+	"""
+	**Validation:** valid URL, max=256
+	"""
 	healthCheckURL: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
@@ -3210,7 +3308,13 @@ input ApplicationUpdateInput {
 
 input AuthInput {
 	credential: CredentialDataInput
+	"""
+	**Validation:** if provided, headers name and value required
+	"""
 	additionalHeaders: HttpHeaders
+	"""
+	**Validation:** if provided, query parameters name and value required
+	"""
 	additionalQueryParams: QueryParams
 	requestAuth: CredentialRequestAuthInput
 }
@@ -3229,39 +3333,80 @@ input BasicCredentialDataInput {
 }
 
 input CSRFTokenCredentialRequestAuthInput {
+	"""
+	**Validation:** valid URL
+	"""
 	tokenEndpointURL: String!
 	credential: CredentialDataInput
+	"""
+	**Validation:** if provided, headers name and value required
+	"""
 	additionalHeaders: HttpHeaders
+	"""
+	**Validation:** if provided, query parameters name and value required
+	"""
 	additionalQueryParams: QueryParams
 }
 
+"""
+**Validation:** basic or oauth field required
+"""
 input CredentialDataInput {
 	basic: BasicCredentialDataInput
 	oauth: OAuthCredentialDataInput
 }
 
 input CredentialRequestAuthInput {
+	"""
+	**Validation:** required
+	"""
 	csrf: CSRFTokenCredentialRequestAuthInput
 }
 
 input DocumentInput {
+	"""
+	**Validation:** max=128
+	"""
 	title: String!
+	"""
+	**Validation:** max=128
+	"""
 	displayName: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String!
 	format: DocumentFormat!
+	"""
+	**Validation:** max=256
+	"""
 	kind: String
 	data: CLOB
 	fetchRequest: FetchRequestInput
 }
 
 input EventDefinitionInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
 	name: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
 	spec: EventSpecInput
+	"""
+	**Validation:** max=36
+	"""
 	group: String
 	version: VersionInput
 }
 
+"""
+**Validation:**
+- data or fetchRequest required
+- for ASYNC_API type, accepted formats are YAML and JSON
+"""
 input EventSpecInput {
 	data: CLOB
 	type: EventSpecType!
@@ -3270,18 +3415,33 @@ input EventSpecInput {
 }
 
 input FetchRequestInput {
+	"""
+	**Validation:** valid URL, max=256
+	"""
 	url: String!
 	auth: AuthInput
 	mode: FetchMode = SINGLE
+	"""
+	**Validation:** max=256
+	"""
 	filter: String
 }
 
 input IntegrationSystemInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
 	name: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
 }
 
 input LabelDefinitionInput {
+	"""
+	**Validation:** max=256, alphanumeric chartacters and underscore
+	"""
 	key: String!
 	schema: JSONSchema
 }
@@ -3299,6 +3459,9 @@ input LabelFilter {
 }
 
 input LabelInput {
+	"""
+	**Validation:** max=256, alphanumeric chartacters and underscore
+	"""
 	key: String!
 	value: Any!
 }
@@ -3311,11 +3474,20 @@ input LabelSelectorInput {
 input OAuthCredentialDataInput {
 	clientId: ID!
 	clientSecret: String!
+	"""
+	**Validation:** valid URL
+	"""
 	url: String!
 }
 
 input PackageCreateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
 	name: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
 	instanceAuthRequestInputSchema: JSONSchema
 	defaultInstanceAuth: AuthInput
@@ -3330,18 +3502,18 @@ input PackageInstanceAuthRequestInput {
 	"""
 	context: JSON
 	"""
-	JSON validated against package.instanceAuthRequestInputSchema
+	**Validation:** JSON validated against package.instanceAuthRequestInputSchema
 	"""
 	inputParams: JSON
 }
 
 input PackageInstanceAuthSetInput {
 	"""
-	If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
+	**Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
 	"""
 	auth: AuthInput
 	"""
-	Optional if the auth is provided.
+	**Validation:** Optional if the auth is provided.
 	If the status condition is "FAILED", auth must be empty.
 	"""
 	status: PackageInstanceAuthStatusInput
@@ -3349,6 +3521,9 @@ input PackageInstanceAuthSetInput {
 
 input PackageInstanceAuthStatusInput {
 	condition: PackageInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	"""
+	**Validation:** required, if condition is FAILED
+	"""
 	message: String!
 	"""
 	Example reasons:
@@ -3357,12 +3532,20 @@ input PackageInstanceAuthStatusInput {
 	- CredentialsProvided
 	- CredentialsNotProvided
 	- PendingDeletion
+	
+	   **Validation**: required, if condition is FAILED
 	"""
 	reason: String!
 }
 
 input PackageUpdateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
 	name: String!
+	"""
+	**Validation:** max=2000
+	"""
 	description: String
 	instanceAuthRequestInputSchema: JSONSchema
 	"""
@@ -3372,31 +3555,58 @@ input PackageUpdateInput {
 }
 
 input PlaceholderDefinitionInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
 	name: String!
+	"""
+	**Validation:**  max=2000
+	"""
 	description: String
 }
 
 input RuntimeInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
 	name: String!
+	"""
+	**Validation:**  max=2000
+	"""
 	description: String
+	"""
+	**Validation:** key: required, alphanumeric with underscore
+	"""
 	labels: Labels
 	statusCondition: RuntimeStatusCondition
 }
 
 input TemplateValueInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
 	placeholder: String!
 	value: String!
 }
 
 input VersionInput {
+	"""
+	**Validation:** max=256
+	"""
 	value: String!
 	deprecated: Boolean = false
+	"""
+	**Validation:** max=256
+	"""
 	deprecatedSince: String
 	forRemoval: Boolean = false
 }
 
 input WebhookInput {
 	type: ApplicationWebhookType!
+	"""
+	**Validation:** valid URL, max=256
+	"""
 	url: String!
 	auth: AuthInput
 }
@@ -3887,11 +4097,12 @@ type Query {
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)
 	"""
 	automaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.query.automaticScenarioAssignmentForScenario")
+	automaticScenarioAssignmentForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentForSelector") @deprecated(reason: "Use automaticScenarioAssignmentsForSelector")
 	"""
 	**Examples**
-	- [query automatic scenario assignment for selector](examples/query-automatic-scenario-assignment-for-selector/query-automatic-scenario-assignment-for-selector.graphql)
+	- [query automatic scenario assignments for selector](examples/query-automatic-scenario-assignments-for-selector/query-automatic-scenario-assignments-for-selector.graphql)
 	"""
-	automaticScenarioAssignmentForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentForSelector")
+	automaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentsForSelector")
 	"""
 	**Examples**
 	- [query automatic scenario assignments](examples/query-automatic-scenario-assignments/query-automatic-scenario-assignments.graphql)
@@ -4129,21 +4340,23 @@ type Mutation {
 	- [delete package](examples/delete-package/delete-package.graphql)
 	"""
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
+	setAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.setAutomaticScenarioAssignment") @deprecated(reason: "Use createAutomaticScenarioAssignment")
 	"""
 	**Examples**
-	- [set automatic scenario assignment](examples/set-automatic-scenario-assignment/set-automatic-scenario-assignment.graphql)
+	- [create automatic scenario assignment](examples/create-automatic-scenario-assignment/create-automatic-scenario-assignment.graphql)
 	"""
-	setAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.setAutomaticScenarioAssignment")
+	createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.createAutomaticScenarioAssignment")
 	"""
 	**Examples**
 	- [delete automatic scenario assignment for scenario](examples/delete-automatic-scenario-assignment-for-scenario/delete-automatic-scenario-assignment-for-scenario.graphql)
 	"""
 	deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForScenario")
+	deleteAutomaticScenarioAssignmentForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForSelector") @deprecated(reason: "Use deleteAutomaticScenarioAssignmentsForSelector")
 	"""
 	**Examples**
-	- [delete automatic scenario assignment for selector](examples/delete-automatic-scenario-assignment-for-selector/delete-automatic-scenario-assignment-for-selector.graphql)
+	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
 	"""
-	deleteAutomaticScenarioAssignmentForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForSelector")
+	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
 }
 
 `},
@@ -4639,6 +4852,20 @@ func (ec *executionContext) field_Mutation_createApplicationTemplate_args(ctx co
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createAutomaticScenarioAssignment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 AutomaticScenarioAssignmentSetInput
+	if tmp, ok := rawArgs["in"]; ok {
+		arg0, err = ec.unmarshalNAutomaticScenarioAssignmentSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignmentSetInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["in"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createLabelDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4752,6 +4979,20 @@ func (ec *executionContext) field_Mutation_deleteAutomaticScenarioAssignmentForS
 }
 
 func (ec *executionContext) field_Mutation_deleteAutomaticScenarioAssignmentForSelector_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 LabelSelectorInput
+	if tmp, ok := rawArgs["selector"]; ok {
+		arg0, err = ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["selector"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteAutomaticScenarioAssignmentsForSelector_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 LabelSelectorInput
@@ -5974,6 +6215,20 @@ func (ec *executionContext) field_Query_automaticScenarioAssignmentForScenario_a
 }
 
 func (ec *executionContext) field_Query_automaticScenarioAssignmentForSelector_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 LabelSelectorInput
+	if tmp, ok := rawArgs["selector"]; ok {
+		arg0, err = ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["selector"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_automaticScenarioAssignmentsForSelector_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 LabelSelectorInput
@@ -14153,6 +14408,67 @@ func (ec *executionContext) _Mutation_setAutomaticScenarioAssignment(ctx context
 	return ec.marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_createAutomaticScenarioAssignment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createAutomaticScenarioAssignment_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateAutomaticScenarioAssignment(rctx, args["in"].(AutomaticScenarioAssignmentSetInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.createAutomaticScenarioAssignment")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(*AutomaticScenarioAssignment); ok {
+			return data, nil
+		} else if tmp == nil {
+			return nil, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.AutomaticScenarioAssignment`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*AutomaticScenarioAssignment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentForScenario(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -14245,6 +14561,68 @@ func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentForSelect
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteAutomaticScenarioAssignmentForSelector")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.([]*AutomaticScenarioAssignment); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.AutomaticScenarioAssignment`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*AutomaticScenarioAssignment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteAutomaticScenarioAssignmentsForSelector_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteAutomaticScenarioAssignmentsForSelector(rctx, args["selector"].(LabelSelectorInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
 			if err != nil {
 				return nil, err
 			}
@@ -16773,6 +17151,68 @@ func (ec *executionContext) _Query_automaticScenarioAssignmentForSelector(ctx co
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.query.automaticScenarioAssignmentForSelector")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.([]*AutomaticScenarioAssignment); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.AutomaticScenarioAssignment`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*AutomaticScenarioAssignment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_automaticScenarioAssignmentsForSelector(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_automaticScenarioAssignmentsForSelector_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().AutomaticScenarioAssignmentsForSelector(rctx, args["selector"].(LabelSelectorInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.automaticScenarioAssignmentsForSelector")
 			if err != nil {
 				return nil, err
 			}
@@ -21919,10 +22359,17 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "setAutomaticScenarioAssignment":
 			out.Values[i] = ec._Mutation_setAutomaticScenarioAssignment(ctx, field)
+		case "createAutomaticScenarioAssignment":
+			out.Values[i] = ec._Mutation_createAutomaticScenarioAssignment(ctx, field)
 		case "deleteAutomaticScenarioAssignmentForScenario":
 			out.Values[i] = ec._Mutation_deleteAutomaticScenarioAssignmentForScenario(ctx, field)
 		case "deleteAutomaticScenarioAssignmentForSelector":
 			out.Values[i] = ec._Mutation_deleteAutomaticScenarioAssignmentForSelector(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteAutomaticScenarioAssignmentsForSelector":
+			out.Values[i] = ec._Mutation_deleteAutomaticScenarioAssignmentsForSelector(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -22615,6 +23062,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_automaticScenarioAssignmentForSelector(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "automaticScenarioAssignmentsForSelector":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_automaticScenarioAssignmentsForSelector(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

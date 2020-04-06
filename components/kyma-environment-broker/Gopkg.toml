@@ -46,8 +46,12 @@
   version = "1.4.2"
 
 [[constraint]]
-  revision = "ad250cc742673ef5b628cc806841182bafe9750a"
+  revision = "b43e05d8331a01c557eb7be4822dd17d24faf97f"
   name = "github.com/kyma-incubator/compass"
+
+[[constraint]]
+  name = "github.com/kyma-project/kyma"
+  version = "1.11.0"
 
 [[constraint]]
   name = "github.com/lib/pq"

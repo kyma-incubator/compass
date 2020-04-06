@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +14,12 @@ import (
 
 func TestInputBuilderFactory_IsPlanSupport(t *testing.T) {
 	// given
-	ibf := NewInputBuilderFactory(nil, []v1alpha1.KymaComponent{}, Config{}, "1.10")
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil)
+	defer componentsProvider.AssertExpectations(t)
+
+	ibf, err := NewInputBuilderFactory(nil, componentsProvider, Config{}, "1.10")
+	assert.NoError(t, err)
 
 	// when/then
 	assert.True(t, ibf.IsPlanSupport(broker.GcpPlanID))
@@ -21,13 +27,38 @@ func TestInputBuilderFactory_IsPlanSupport(t *testing.T) {
 }
 
 func TestInputBuilderFactory_ForPlan(t *testing.T) {
-	// given
-	ibf := NewInputBuilderFactory(nil, []v1alpha1.KymaComponent{}, Config{}, "1.10")
+	t.Run("should build RuntimeInput with default version Kyma components", func(t *testing.T) {
+		// given
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil).Once()
+		defer componentsProvider.AssertExpectations(t)
 
-	// when
-	input, found := ibf.ForPlan(broker.GcpPlanID)
+		ibf, err := NewInputBuilderFactory(nil, componentsProvider, Config{}, "1.10")
+		assert.NoError(t, err)
 
-	// Then
-	assert.True(t, found)
-	assert.IsType(t, &RuntimeInput{}, input)
+		// when
+		input, err := ibf.ForPlan(broker.GcpPlanID, "")
+
+		// Then
+		assert.NoError(t, err)
+		assert.IsType(t, &RuntimeInput{}, input)
+	})
+
+	t.Run("should build RuntimeInput with set version Kyma components", func(t *testing.T) {
+		// given
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", "PR-1").Return([]v1alpha1.KymaComponent{}, nil).Once()
+		defer componentsProvider.AssertExpectations(t)
+
+		ibf, err := NewInputBuilderFactory(nil, componentsProvider, Config{}, "1.10")
+		assert.NoError(t, err)
+
+		// when
+		input, err := ibf.ForPlan(broker.GcpPlanID, "PR-1")
+
+		// Then
+		assert.NoError(t, err)
+		assert.IsType(t, &RuntimeInput{}, input)
+	})
 }

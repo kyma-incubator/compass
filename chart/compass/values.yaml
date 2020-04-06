@@ -16,13 +16,13 @@ global:
       version: "PR-1107"
     connectivity_adapter:
       dir:
-      version: "PR-1095"
+      version: "PR-1115"
     pairing_adapter:
       dir:
       version: "PR-867"
     director:
       dir:
-      version: "PR-1100"
+      version: "PR-1122"
     gateway:
       dir:
       version: "PR-1074"
@@ -31,7 +31,7 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-1046"
+      version: "PR-1105"
     provisioner:
       dir:
       version: "PR-1107"
@@ -42,17 +42,17 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-1006"
+      version: "PR-1131"
     tests:
       director:
         dir:
-        version: "PR-1100"
+        version: "PR-1122"
       connector:
         dir:
         version: "02e8358c"
       provisioner:
         dir:
-        version: "PR-1046"
+        version: "ffd45e1d"
       e2e_provisioning:
         dir:
         version: "PR-1018"
@@ -254,6 +254,8 @@ global:
     dbPool:
       maxOpenConnections: 1
       maxIdleConnections: 1
+
+  enableCompassDefaultScenarioAssignment: true
 
 pairing-adapter:
   enabled: false

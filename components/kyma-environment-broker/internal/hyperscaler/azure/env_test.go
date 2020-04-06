@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provider"
 )
 
 func Test_mapRegion(t *testing.T) {
@@ -49,8 +50,8 @@ func Test_mapRegion(t *testing.T) {
 				planID:          "microsoftcloud",
 				region:          "",
 			},
-			wantRegion: "",
-			wantErr:    true,
+			wantRegion: provider.DefaultAzureRegion,
+			wantErr:    false,
 		},
 		{
 			name: "unknown hyperscaler",
@@ -63,14 +64,14 @@ func Test_mapRegion(t *testing.T) {
 			wantErr:    true,
 		},
 		{
-			name: "invalid azure region",
+			name: "empty azure region",
 			args: args{
 				hyperscalerType: hyperscaler.Azure,
 				planID:          broker.AzurePlanID,
 				region:          "",
 			},
-			wantRegion: "",
-			wantErr:    true,
+			wantRegion: provider.DefaultAzureRegion,
+			wantErr:    false,
 		},
 		{
 			name: "valid azure region",

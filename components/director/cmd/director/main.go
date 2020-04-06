@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/features"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
@@ -67,6 +69,8 @@ type config struct {
 
 	OneTimeToken onetimetoken.Config
 	OAuth20      oauth20.Config
+
+	Features features.Config
 }
 
 func main() {
@@ -90,7 +94,7 @@ func main() {
 	pairingAdapters, err := getPairingAdaptersMapping(cfg.PairingAdapterSrc)
 	exitOnError(err, "Error while reading Pairing Adapters Configuration")
 	gqlCfg := graphql.Config{
-		Resolvers: domain.NewRootResolver(transact, scopeCfgProvider, cfg.OneTimeToken, cfg.OAuth20, pairingAdapters),
+		Resolvers: domain.NewRootResolver(transact, scopeCfgProvider, cfg.OneTimeToken, cfg.OAuth20, pairingAdapters, cfg.Features),
 		Directives: graphql.DirectiveRoot{
 			HasScopes: scope.NewDirective(scopeCfgProvider).VerifyScopes,
 			Validate:  inputvalidation.NewDirective().Validate,
@@ -128,13 +132,16 @@ func main() {
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	log.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHanderFunc(transact, cfg.JWKSSyncPeriod, stopCh)
+	runtimeMappingHandlerFunc, err := getRuntimeMappingHanderFunc(transact, cfg.JWKSSyncPeriod, stopCh, cfg.Features.DefaultScenarioEnabled)
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
 
-	log.Infof("Registering Healthz endpoint...")
-	mainRouter.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
+	log.Infof("Registering readiness endpoint...")
+	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
+
+	log.Infof("Registering liveness endpoint...")
+	mainRouter.HandleFunc("/healthz", healthz.NewLivenessHandler(transact, log.StandardLogger()))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
@@ -236,7 +243,7 @@ func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersS
 	return tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
 }
 
-func getRuntimeMappingHanderFunc(transact persistence.Transactioner, cachePeriod time.Duration, stopCh <-chan struct{}) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getRuntimeMappingHanderFunc(transact persistence.Transactioner, cachePeriod time.Duration, stopCh <-chan struct{}, defaultScenarioEnabled bool) (func(writer http.ResponseWriter, request *http.Request), error) {
 	logger := log.WithField("component", "runtime-mapping-handler").Logger
 
 	uidSvc := uid.NewService()
@@ -245,7 +252,7 @@ func getRuntimeMappingHanderFunc(transact persistence.Transactioner, cachePeriod
 	labelRepo := label.NewRepository(labelConv)
 	labelDefConverter := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
-	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc)
+	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, defaultScenarioEnabled)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	runtimeRepo := runtime.NewRepository()
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc)

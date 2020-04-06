@@ -81,7 +81,6 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		region: "{{.Region}}",
 		provider: "{{ .Provider }}",
 		diskType: "{{.DiskType}}",
-		seed: "az-eu3",
 		targetSecret: "{{ .TargetSecret }}",
 		workerCidr: "{{ .WorkerCidr }}",
         autoScalerMin: {{ .AutoScalerMin }},
@@ -148,6 +147,9 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
           {
             component: "{{ .Component }}",
             namespace: "{{ .Namespace }}",
+            {{- if .SourceURL }}
+            sourceURL: "{{ .SourceURL }}",
+            {{- end }}
       	    {{- with .Configuration }}
             configuration: [
 			  {{- range . }}
