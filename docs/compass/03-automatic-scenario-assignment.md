@@ -1,7 +1,8 @@
 # Automatic Scenario Assignment
 
-Automatic Scenario Assignment feature allows defining condition when a Scenario is automatically assigned to the Runtime.
+Automatic Scenario Assignment (ASA) feature allows defining condition when a Scenario is automatically assigned to the Runtime.
 Condition is defined as a label selector.
+For example, using this feature, you can specify a label that adds a given Scenario to each Runtime created by the given user, company or any other entity specified in the label.
 
 ## API
 
