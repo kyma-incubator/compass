@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/healthz"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder"
@@ -183,6 +185,7 @@ func main() {
 
 	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
+	router.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
 
 	http.Handle("/", router)
 
