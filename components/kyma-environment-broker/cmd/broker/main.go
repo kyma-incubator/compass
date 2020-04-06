@@ -151,13 +151,16 @@ func main() {
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, runtimeProvider, cfg.Provisioning, cfg.KymaVersion)
 	fatalOnError(err)
 
+	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
+	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled)
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), logs)
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs)
 
 	// define steps
-	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory)
+	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, externalEvalCreator)
 	provisionManager.InitStep(provisioningInit)
+
 	provisioningSteps := []struct {
 		disabled bool
 		weight   int
@@ -169,7 +172,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewInternalEvaluationStep(cfg.Avs, db.Operations()),
+			step:     provisioning.NewInternalEvaluationStep(cfg.Avs, avsDel),
 			disabled: cfg.Avs.Disabled,
 		},
 		{

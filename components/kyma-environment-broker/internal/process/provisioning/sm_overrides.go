@@ -76,7 +76,7 @@ func (s *ServiceManagerOverridesStep) Run(operation internal.ProvisioningOperati
 			},
 		}
 	}
-	operation.InputCreator.SetOverrides(ServiceManagerComponentName, smOverrides)
+	operation.InputCreator.AppendOverrides(ServiceManagerComponentName, smOverrides)
 
 	return operation, 0, nil
 }
