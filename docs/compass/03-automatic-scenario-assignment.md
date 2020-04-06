@@ -18,10 +18,10 @@ type Label {
 }
 
 ```
-If the Runtime is labeled with a label that matches the label's selector, the Runtime is assigned to the given Scenario.
+If a Runtime is labeled with a label that matches the value of the **selector** parameter, the Runtime is assigned to the given Scenario.
 
 ### Mutations
-Director API contains the following mutations for managing Automatic Scenario Assignments.
+Director API contains the following mutations for managing Automatic Scenario Assignments:
 ```graphql
    createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment 
    deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment 
@@ -34,7 +34,7 @@ When creating Assignment, the following conditions are checked:
 * selector's value type is a string
 
 ### Queries
-Director API contains queries for fetching all assignments, assignments for the given Scenario and the given label selector.
+Director API contains queries that allow you to fetch all assignments, fetch assignments for the given Scenario, and fetch assignments for the given label selector:
 ```graphql
    automaticScenarioAssignments(first: Int = 100, after: PageCursor): AutomaticScenarioAssignmentPage 
    automaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment 
