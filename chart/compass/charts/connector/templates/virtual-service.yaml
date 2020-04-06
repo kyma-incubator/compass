@@ -19,5 +19,5 @@ spec:
         route:
           - destination:
               port:
-                number: {{ .Values.global.provisioner.graphql.port }}
+                number: {{ .Values.global.connector.graphql.external.port }}
               host: {{ template "fullname" . }}
