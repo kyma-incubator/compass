@@ -198,6 +198,48 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Empty(t, response.OperationData)
 	})
 
+	t.Run("return error on using a cluster name of length less than 6 in parameters", func(t *testing.T) {
+		// given
+		// #setup memory storage
+		invalidClusterName := "foo"
+		memoryStorage := storage.NewMemoryStorage()
+		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
+		require.NoError(t, err)
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", planID).Return(true)
+
+		fixValidator, err := broker.NewPlansSchemaValidator()
+		require.NoError(t, err)
+
+		// #create provisioner endpoint
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			memoryStorage.Operations(),
+			nil,
+			factoryBuilder,
+			fixValidator,
+			false,
+			logrus.StandardLogger(),
+		)
+
+		// when
+		response, err := provisionEndpoint.Provision(context.TODO(), instanceID, domain.ProvisionDetails{
+			ServiceID: serviceID,
+			PlanID:    planID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{
+				"name": "%s",
+				"components": []
+				}`, invalidClusterName)),
+			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4")),
+		}, true)
+
+		// then
+		assert.EqualError(t, err, `while validating input parameters: name: String length must be greater than or equal to 6`)
+		assert.False(t, response.IsAsync)
+		assert.Empty(t, response.OperationData)
+	})
+
 	t.Run("return error on adding KnativeProvisionerNatss and NatssStreaming to list of components", func(t *testing.T) {
 		// given
 		// #setup memory storage

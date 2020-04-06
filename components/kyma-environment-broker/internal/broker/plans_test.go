@@ -32,7 +32,8 @@ func TestSchemaGenerator(t *testing.T) {
 			"uniqueItems": true
 		},
 			"name": {
-			"type": "string"
+			"type": "string",
+			"minLength": 6
 		},
 			"diskType": {
 			"type": "string"
@@ -88,7 +89,8 @@ func TestSchemaGenerator(t *testing.T) {
 			"uniqueItems": true
 		},
 			"name": {
-			"type": "string"
+			"type": "string",
+			"minLength": 6
 		},
 			"diskType": {
 			"type": "string"
