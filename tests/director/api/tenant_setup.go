@@ -148,7 +148,7 @@ func (mgr TestTenantsManager) CleanupDB(transact persistence.Transactioner) {
 	}
 }
 
-func (mgr TestTenantsManager) GetTenantByName(t *testing.T, name string) string {
+func (mgr TestTenantsManager) GetIDByName(t *testing.T, name string) string {
 	val, ok := mgr.tenantsByName[name]
 	require.True(t, ok)
 	return val.ID

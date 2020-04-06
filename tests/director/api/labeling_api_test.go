@@ -746,7 +746,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 
 func TestListLabelDefinitions(t *testing.T) {
 	//GIVEN
-	tenantID := testTenants.GetTenantByName(t, "Test3")
+	tenantID := testTenants.GetIDByName(t, "Test3")
 	ctx := context.TODO()
 	firstSchema := map[string]interface{}{
 		"test": "test",
@@ -773,7 +773,7 @@ func TestListLabelDefinitions(t *testing.T) {
 func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	tenantID := testTenants.GetTenantByName(t, "Test4")
+	tenantID := testTenants.GetIDByName(t, "Test4")
 	name := "deleting-last-scenario-for-app-fail"
 	scenarios := []string{"DEFAULT", "Christmas", "New Year"}
 

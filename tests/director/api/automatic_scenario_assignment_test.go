@@ -14,7 +14,7 @@ import (
 func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	tenantID := testTenants.GetTenantByName(t, "ASA1")
+	tenantID := testTenants.GetIDByName(t, "ASA1")
 
 	testScenarioA := "ASA1"
 	testScenarioB := "ASA2"
@@ -87,7 +87,7 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	tenantID := testTenants.GetTenantByName(t, "TestCreateAutomaticScenarioAssignment")
+	tenantID := testTenants.GetIDByName(t, "TestCreateAutomaticScenarioAssignment")
 	prodScenario := "PRODUCTION"
 	devScenario := "DEVELOPMENT"
 	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{prodScenario, devScenario, "DEFAULT"})
@@ -148,7 +148,7 @@ func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 	}
 
 	scenarios := []string{defaultValue, scenario1, scenario2}
-	tenantID := testTenants.GetTenantByName(t, "TestDeleteAssignmentsForScenario")
+	tenantID := testTenants.GetIDByName(t, "TestDeleteAssignmentsForScenario")
 	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, scenarios)
 
 	assignment1 := graphql.AutomaticScenarioAssignmentSetInput{
@@ -199,7 +199,7 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 	scenarios := []string{defaultValue, scenario1, scenario2, scenario3}
 
-	tenantID := testTenants.GetTenantByName(t, "TestDeleteAssignmentsForSelector")
+	tenantID := testTenants.GetIDByName(t, "TestDeleteAssignmentsForSelector")
 	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, scenarios)
 
 	selector := graphql.LabelSelectorInput{Key: "test-key", Value: "test-value"}
