@@ -51,11 +51,12 @@ Director API contains queries that allow you to fetch all assignments, fetch ass
 
 ## Assign Runtime to Scenario
 
-You can assign a Runtime to a Scenario in two ways:
-- Assign a Runtime to a Scenario using [LabelDefinitions](https://kyma-project.io/docs/master/components/compass/#details-labels-label-definitions)
-- Assign a Runtime to a Scenario using Automatic Scenario Assignment
+You can assign a Runtime to a Scenario either by:
+- Creating ASA and then creating a Runtime that matches
+- Creating ASA when the Runtime already exists
 
-### Assign Runtime using LabelDefinition
+
+### Create ASA and Runtime
 
 1. Create or update the `scenarios` LabelDefinition and specify the following scenarios: 
 * DEFAULT
@@ -155,9 +156,9 @@ Runtime is unassigned from the `WAREHOUSE` Scenario:
 >**NOTE:** The same situation occurs if you modify or remove the `createdBy` label for the Runtime.
 
 
-### Assign Runtime using ASA
+### Create ASA when Runtime exists
 
-You can also assign Runtimes to Scenarios by defining an assignment. If there is a Runtime that matches an assignment, it is automatically assigned to the Scenario.
+You can also assign a Runtimes to a given Scenario using ASA when the Runtime already exists. If there is a Runtime that matches a new assignment, it is automatically assigned to the Scenario.
 
 1. Create a Runtime with the `owner:marketing-admin@mycompany.com` label:
 
