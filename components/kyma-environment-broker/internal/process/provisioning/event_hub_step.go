@@ -6,18 +6,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
-
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/sirupsen/logrus"
-
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
 const (
@@ -91,11 +89,11 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		return p.operationManager.OperationFailed(operation, errorMessage)
 	}
 
-	// prepare tags
-	tags := make(map[string]*string, 3) // TODO(marcobebway) increase initial capacity to 4 if the runtime name is provided
-	tags["SubAccountID"] = &pp.ErsContext.SubAccountID
-	tags["InstanceID"] = &operation.InstanceID
-	tags["OperationID"] = &operation.ProvisionerOperationID
+	// prepare azure tags
+	tags := make(azure.Tags, 3)
+	tags[azure.TagSubAccountID] = &pp.ErsContext.SubAccountID
+	tags[azure.TagInstanceID] = &operation.InstanceID
+	tags[azure.TagOperationID] = &operation.ProvisionerOperationID
 
 	// create Resource Group
 	groupName := pp.Parameters.Name

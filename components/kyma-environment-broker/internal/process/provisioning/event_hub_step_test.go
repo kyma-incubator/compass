@@ -51,13 +51,14 @@ func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resour
 	}, nc.accessKeysError
 }
 
-func (nc *FakeNamespaceClient) CreateResourceGroup(ctx context.Context, config *azure.Config, name string, tags map[string]*string) (resources.Group, error) {
+func (nc *FakeNamespaceClient) CreateResourceGroup(ctx context.Context, config *azure.Config, name string, tags azure.Tags) (resources.Group, error) {
 	return resources.Group{
 		Name: ptr.String("my-resourcegroup"),
+		Tags: tags,
 	}, nc.resourceGroupError
 }
 
-func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *azure.Config, groupName, namespace string, tags map[string]*string) (*eventhub.EHNamespace, error) {
+func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *azure.Config, groupName, namespace string, tags azure.Tags) (*eventhub.EHNamespace, error) {
 	return &eventhub.EHNamespace{
 		Name: ptr.String(namespace),
 	}, nc.persistEventhubsNamespaceError

@@ -9,8 +9,8 @@ import (
 
 type AzureInterface interface {
 	GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
-	CreateResourceGroup(ctx context.Context, config *Config, name string, tags map[string]*string) (resources.Group, error)
-	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags map[string]*string) (*eventhub.EHNamespace, error)
+	CreateResourceGroup(ctx context.Context, config *Config, name string, tags Tags) (resources.Group, error)
+	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags Tags) (*eventhub.EHNamespace, error)
 }
 
 var _ AzureInterface = (*AzureClient)(nil)
@@ -27,17 +27,18 @@ func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourcegroupClie
 		resourcegroupClient:     resourcegroupClient,
 	}
 }
+
 func (nc *AzureClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
 	return nc.eventhubNamespaceClient.ListKeys(ctx, resourceGroupName, namespaceName, authorizationRuleName)
 }
 
-func (nc *AzureClient) CreateResourceGroup(ctx context.Context, config *Config, name string, tags map[string]*string) (resources.Group, error) {
+func (nc *AzureClient) CreateResourceGroup(ctx context.Context, config *Config, name string, tags Tags) (resources.Group, error) {
 	// we need to use a copy of the location, because the following azure call will modify it
 	locationCopy := config.GetLocation()
 	return nc.resourcegroupClient.CreateOrUpdate(ctx, name, resources.Group{Location: &locationCopy, Tags: tags})
 }
 
-func (nc *AzureClient) CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags map[string]*string) (*eventhub.EHNamespace, error) {
+func (nc *AzureClient) CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags Tags) (*eventhub.EHNamespace, error) {
 	// we need to use a copy of the location, because the following azure call will modify it
 	locationCopy := azureCfg.GetLocation()
 	parameters := eventhub.EHNamespace{Location: &locationCopy, Tags: tags}
