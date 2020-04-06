@@ -15,9 +15,9 @@ import (
 )
 
 type update struct {
-	table    Table
 	transact persistence.Transactioner
 	repo     StatusUpdateRepository
+	logger   *log.Logger
 }
 
 type Table string
@@ -33,11 +33,11 @@ const (
 	runtimesTable     Table = "runtimes"
 )
 
-func New(transact persistence.Transactioner, repo StatusUpdateRepository) *update {
+func New(transact persistence.Transactioner, repo StatusUpdateRepository, logger *log.Logger) *update {
 	return &update{
-		table:    "",
 		transact: transact,
 		repo:     repo,
+		logger:   logger,
 	}
 }
 
@@ -47,15 +47,16 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			ctx := r.Context()
 			consumerInfo, err := consumer.LoadFromContext(ctx)
 			if err != nil {
-				u.writeError(w, errors.Wrap(err, "while fetching consumer info from from context").Error(), http.StatusBadRequest)
+				u.logger.Error(errors.Wrap(err, "while fetching consumer info from from context").Error())
+				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
-
+			var table Table
 			switch consumerInfo.ConsumerType {
 			case consumer.Application:
-				u.table = applicationsTable
+				table = applicationsTable
 			case consumer.Runtime:
-				u.table = runtimesTable
+				table = runtimesTable
 			default:
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
@@ -63,36 +64,35 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 
 			tx, err := u.transact.Begin()
 			if err != nil {
-				u.writeError(w, errors.Wrap(err, "while opening transaction").Error(), http.StatusInternalServerError)
+				u.logger.Error(errors.Wrap(err, "while opening transaction").Error())
+				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
 			defer u.transact.RollbackUnlessCommited(tx)
 
 			ctxWithDB := persistence.SaveToContext(ctx, tx)
 
-			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerInfo.ConsumerID, string(u.table))
+			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerInfo.ConsumerID, string(table))
 			if err != nil {
-				u.writeError(w, errors.Wrap(err, "while checking status").Error(), http.StatusInternalServerError)
-				return
-			}
-
-			if isConnected {
-				if err := tx.Commit(); err != nil {
-					u.writeError(w, errors.Wrap(err, "while committing").Error(), http.StatusInternalServerError)
-					return
-				}
+				u.logger.Error(errors.Wrap(err, "while checking status").Error())
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
-			err = u.repo.UpdateStatus(ctxWithDB, consumerInfo.ConsumerID, string(u.table))
-			if err != nil {
 
-				u.writeError(w, errors.Wrap(err, "while updating status").Error(), http.StatusInternalServerError)
-				return
+			if !isConnected {
+				err = u.repo.UpdateStatus(ctxWithDB, consumerInfo.ConsumerID, string(table))
+				if err != nil {
+					u.logger.Error(errors.Wrap(err, "while updating status").Error())
+					next.ServeHTTP(w, r.WithContext(ctx))
+
+					return
+				}
 			}
 
 			if err := tx.Commit(); err != nil {
-				u.writeError(w, errors.Wrap(err, "while committing").Error(), http.StatusInternalServerError)
+				u.logger.Error(errors.Wrap(err, "while committing").Error())
+				next.ServeHTTP(w, r.WithContext(ctx))
+
 				return
 			}
 			next.ServeHTTP(w, r.WithContext(ctx))

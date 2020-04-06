@@ -1,11 +1,15 @@
 package statusupdate_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/stretchr/testify/mock"
 
@@ -40,10 +44,11 @@ func TestUpdate_Handler(t *testing.T) {
 		Request          *http.Request
 		ExpectedStatus   int
 		ExpectedResponse string
-		MockHandler      http.Handler
+		ExpectedLog      bytes.Buffer
+		MockNextHandler  http.Handler
 	}{
 		{
-			Name: "Success when integration system",
+			Name: "In case of Integration System do nothing and execute next handler",
 			TxFn: txGen.ThatDoesntStartTransaction,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				return nil
@@ -51,10 +56,10 @@ func TestUpdate_Handler(t *testing.T) {
 			Request:          createRequestWithClaims(t, testID, consumer.IntegrationSystem),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
-			MockHandler:      testHandler(t, testID, consumer.IntegrationSystem),
+			MockNextHandler:  fixNextHandler(t, testID, consumer.IntegrationSystem),
 		},
 		{
-			Name: "Success when user",
+			Name: "In case of Static User do nothing and execute next handler",
 			TxFn: txGen.ThatDoesntStartTransaction,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				return nil
@@ -62,38 +67,38 @@ func TestUpdate_Handler(t *testing.T) {
 			Request:          createRequestWithClaims(t, testID, consumer.User),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
-			MockHandler:      testHandler(t, testID, consumer.User),
+			MockNextHandler:  fixNextHandler(t, testID, consumer.User),
 		},
 		{
-			Name: "Success when application",
+			Name: "In case of Application update status and execute next handler",
 			TxFn: txGen.ThatSucceeds,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
-				repo.On("IsConnected", mock.Anything, testID, applicationsTable).Return(false, nil)
-				repo.On("UpdateStatus", mock.Anything, testID, applicationsTable).Return(nil)
+				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, applicationsTable).Return(false, nil)
+				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, applicationsTable).Return(nil)
 				return &repo
 			},
 			Request:          createRequestWithClaims(t, testID, consumer.Application),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
-			MockHandler:      testHandler(t, testID, consumer.Application),
+			MockNextHandler:  fixNextHandler(t, testID, consumer.Application),
 		},
 		{
-			Name: "Success when runtime",
+			Name: "In case of Runtime update status and execute next handler",
 			TxFn: txGen.ThatSucceeds,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
-				repo.On("IsConnected", mock.Anything, testID, runtimesTable).Return(false, nil)
-				repo.On("UpdateStatus", mock.Anything, testID, runtimesTable).Return(nil)
+				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, runtimesTable).Return(false, nil)
+				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, runtimesTable).Return(nil)
 				return &repo
 			},
 			Request:          createRequestWithClaims(t, testID, consumer.Runtime),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
-			MockHandler:      testHandler(t, testID, consumer.Runtime),
+			MockNextHandler:  fixNextHandler(t, testID, consumer.Runtime),
 		},
 		{
-			Name: "Success when application already connected",
+			Name: "In case of application already connected do nothing and execute next handler",
 			TxFn: txGen.ThatSucceeds,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
@@ -103,20 +108,20 @@ func TestUpdate_Handler(t *testing.T) {
 			Request:          createRequestWithClaims(t, testID, consumer.Application),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
-			MockHandler:      testHandler(t, testID, consumer.Application),
+			MockNextHandler:  fixNextHandler(t, testID, consumer.Application),
 		},
 		{
-			Name: "Success when runtime already connected",
+			Name: "In case of runtime already connected do nothing and execute next handler",
 			TxFn: txGen.ThatSucceeds,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
-				repo.On("IsConnected", mock.Anything, testID, runtimesTable).Return(true, nil)
+				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, runtimesTable).Return(true, nil)
 				return &repo
 			},
 			Request:          createRequestWithClaims(t, testID, consumer.Runtime),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
-			MockHandler:      testHandler(t, testID, consumer.Runtime),
+			MockNextHandler:  fixNextHandler(t, testID, consumer.Runtime),
 		},
 		{
 			Name: "Error when no consumer info in context",
@@ -125,10 +130,10 @@ func TestUpdate_Handler(t *testing.T) {
 				repo := automock.StatusUpdateRepository{}
 				return &repo
 			},
-			Request:          &http.Request{},
-			ExpectedStatus:   http.StatusBadRequest,
-			ExpectedResponse: "{\"errors\":[{\"message\":\"while fetching consumer info from from context: cannot read consumer from context\"}]}\n",
-			MockHandler:      testHandler(t, testID, consumer.IntegrationSystem),
+			Request:         &http.Request{},
+			ExpectedStatus:  http.StatusOK,
+			ExpectedLog:     *bytes.NewBufferString("while fetching consumer info from from context: cannot read consumer from context"),
+			MockNextHandler: fixNextHandler(t, testID, consumer.IntegrationSystem),
 		},
 		{
 			Name: "Error when starting transaction",
@@ -137,67 +142,79 @@ func TestUpdate_Handler(t *testing.T) {
 				repo := automock.StatusUpdateRepository{}
 				return &repo
 			},
-			Request:          createRequestWithClaims(t, testID, consumer.Application),
-			ExpectedStatus:   http.StatusInternalServerError,
-			ExpectedResponse: "{\"errors\":[{\"message\":\"while opening transaction: test\"}]}\n",
-			MockHandler:      testHandler(t, testID, consumer.Application),
+			Request:         createRequestWithClaims(t, testID, consumer.Application),
+			ExpectedStatus:  http.StatusOK,
+			ExpectedLog:     *bytes.NewBufferString("while opening transaction: test"),
+			MockNextHandler: fixNextHandler(t, testID, consumer.Application),
 		},
 		{
 			Name: "Error when checking if already connected",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
-				repo.On("IsConnected", mock.Anything, testID, applicationsTable).Return(false, testErr)
+				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, applicationsTable).Return(false, testErr)
 				return &repo
 			},
-			Request:          createRequestWithClaims(t, testID, consumer.Application),
-			ExpectedStatus:   http.StatusInternalServerError,
-			ExpectedResponse: "{\"errors\":[{\"message\":\"while checking status: test\"}]}\n",
-			MockHandler:      testHandler(t, testID, consumer.Application),
+			Request:         createRequestWithClaims(t, testID, consumer.Application),
+			ExpectedStatus:  http.StatusOK,
+			ExpectedLog:     *bytes.NewBufferString("while checking status: test"),
+			MockNextHandler: fixNextHandler(t, testID, consumer.Application),
 		},
 		{
 			Name: "Error when failing on commit",
 			TxFn: txGen.ThatFailsOnCommit,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
-				repo.On("IsConnected", mock.Anything, testID, applicationsTable).Return(true, nil)
+				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, applicationsTable).Return(true, nil)
 				return &repo
 			},
-			Request:          createRequestWithClaims(t, testID, consumer.Application),
-			ExpectedStatus:   http.StatusInternalServerError,
-			ExpectedResponse: "{\"errors\":[{\"message\":\"while committing: test\"}]}\n",
-			MockHandler:      testHandler(t, testID, consumer.Application),
+			Request:         createRequestWithClaims(t, testID, consumer.Application),
+			ExpectedStatus:  http.StatusOK,
+			ExpectedLog:     *bytes.NewBufferString("while committing: test"),
+			MockNextHandler: fixNextHandler(t, testID, consumer.Application),
 		},
 		{
-			Name: "Error when updating",
+			Name: "Error when updating status",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
-				repo.On("IsConnected", mock.Anything, testID, applicationsTable).Return(false, nil)
-				repo.On("UpdateStatus", mock.Anything, testID, applicationsTable).Return(testErr)
+				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, applicationsTable).Return(false, nil)
+				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, applicationsTable).Return(testErr)
 				return &repo
 			},
-			Request:          createRequestWithClaims(t, testID, consumer.Application),
-			ExpectedStatus:   http.StatusInternalServerError,
-			ExpectedResponse: "{\"errors\":[{\"message\":\"while updating status: test\"}]}\n",
-			MockHandler:      testHandler(t, testID, consumer.Application),
+			Request:         createRequestWithClaims(t, testID, consumer.Application),
+			ExpectedStatus:  http.StatusOK,
+			ExpectedLog:     *bytes.NewBufferString("while updating status: test"),
+			MockNextHandler: fixNextHandler(t, testID, consumer.Application),
 		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepoFn()
 			persist, transact := testCase.TxFn()
-			update := statusupdate.New(transact, repo)
+			var actualLog bytes.Buffer
+			logger := logrus.New()
+			logger.SetFormatter(&logrus.TextFormatter{
+				DisableTimestamp: true,
+			})
+			logger.SetOutput(&actualLog)
+			update := statusupdate.New(transact, repo, logger)
 
 			// WHEN
 			rr := httptest.NewRecorder()
 			updateHandler := update.Handler()
-			updateHandler(testCase.MockHandler).ServeHTTP(rr, testCase.Request)
+			updateHandler(testCase.MockNextHandler).ServeHTTP(rr, testCase.Request)
 
 			// THEN
 			response := rr.Body.String()
 			assert.Equal(t, testCase.ExpectedStatus, rr.Code)
-			assert.Equal(t, testCase.ExpectedResponse, response)
+			if testCase.ExpectedResponse == "OK" {
+				assert.Equal(t, testCase.ExpectedResponse, response)
+			}
+			if testCase.ExpectedLog.String() != "" {
+				expectedLog := fmt.Sprintf("level=error msg=\"%s\"\n", testCase.ExpectedLog.String())
+				assert.Equal(t, expectedLog, actualLog.String())
+			}
 			persist.AssertExpectations(t)
 			transact.AssertExpectations(t)
 		})
@@ -212,15 +229,10 @@ func createRequestWithClaims(t *testing.T, id string, consumerType consumer.Cons
 	return req.WithContext(ctxWithConsumerInfo)
 }
 
-func testHandler(t *testing.T, consumerID string, consumerType consumer.ConsumerType) http.HandlerFunc {
+func fixNextHandler(t *testing.T, consumerID string, consumerType consumer.ConsumerType) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cons, err := consumer.LoadFromContext(r.Context())
-		require.NoError(t, err)
 
-		require.Equal(t, consumerID, cons.ConsumerID)
-		require.Equal(t, consumerType, cons.ConsumerType)
-
-		_, err = w.Write([]byte("OK"))
+		_, err := w.Write([]byte("OK"))
 		require.NoError(t, err)
 	}
 }

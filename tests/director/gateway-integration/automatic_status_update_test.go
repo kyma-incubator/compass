@@ -98,11 +98,13 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 	})
 
 	t.Run("Test automatic status update as Application", func(t *testing.T) {
+		status := graphql.ApplicationStatusConditionFailed
 		appInput := graphql.ApplicationRegisterInput{
 			Name: "test-app",
 			Labels: &graphql.Labels{
 				"scenarios": []interface{}{"DEFAULT"},
 			},
+			StatusCondition: &status,
 		}
 
 		t.Log("Register Application with Dex id token")
@@ -122,28 +124,26 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		accessToken := getAccessToken(t, appOauthCredentialData, "application:read")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
 
-		t.Log("Requesting Viewer as Application")
-		viewer := graphql.Viewer{}
-		req := fixGetViewerRequest()
+		t.Log("Get Application as Application")
+		actualApp := graphql.ApplicationExt{}
+		req := fixGetApplicationRequest(app.ID)
 
-		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
+		assert.Equal(t, graphql.ApplicationStatusConditionFailed, app.Status.Condition)
 
-		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenant, req, &viewer)
+		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenant, req, &actualApp)
 		require.NoError(t, err)
-		assert.Equal(t, app.ID, viewer.ID)
-		assert.Equal(t, graphql.ViewerTypeApplication, viewer.Type)
 
-		t.Log("Ensure the status condition")
-		appAfterViewer := getApplication(t, ctx, oauthGraphQLClient, tenant, app.ID)
-		assert.Equal(t, graphql.ApplicationStatusConditionConnected, appAfterViewer.Status.Condition)
+		assert.Equal(t, graphql.ApplicationStatusConditionConnected, actualApp.Status.Condition)
 	})
 
-	t.Run("Test viewer as Runtime", func(t *testing.T) {
+	t.Run("Test automatic status update as Runtime", func(t *testing.T) {
+		status := graphql.RuntimeStatusConditionFailed
 		runtimeInput := graphql.RuntimeInput{
 			Name: "test-runtime",
 			Labels: &graphql.Labels{
 				"scenarios": []interface{}{"DEFAULT"},
 			},
+			StatusCondition: &status,
 		}
 
 		t.Log("Register Runtime with Dex id token")
@@ -163,20 +163,17 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		accessToken := getAccessToken(t, rtmOauthCredentialData, "runtime:read")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
 
-		t.Log("Requesting Viewer as Runtime")
-		viewer := graphql.Viewer{}
-		req := fixGetViewerRequest()
+		t.Log("Get Runtime as Runtime")
+		actualRuntime := graphql.RuntimeExt{}
+		req := fixRuntimeRequest(runtime.ID)
 
-		assert.Equal(t, graphql.RuntimeStatusConditionInitial, runtime.Status.Condition)
+		assert.Equal(t, graphql.RuntimeStatusConditionFailed, runtime.Status.Condition)
 
-		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenant, req, &viewer)
+		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenant, req, &actualRuntime)
 		require.NoError(t, err)
-		assert.Equal(t, runtime.ID, viewer.ID)
-		assert.Equal(t, graphql.ViewerTypeRuntime, viewer.Type)
 
 		t.Log("Ensure the status condition")
-		runtimeAfterViewer := getRuntime(t, ctx, oauthGraphQLClient, tenant, runtime.ID)
-		assert.Equal(t, graphql.RuntimeStatusConditionConnected, runtimeAfterViewer.Status.Condition)
+		assert.Equal(t, graphql.RuntimeStatusConditionConnected, actualRuntime.Status.Condition)
 	})
 
 }
