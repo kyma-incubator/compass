@@ -1,9 +1,13 @@
 # Automatic Scenario Assignment
 
-Automatic Scenario Assignment (ASA) feature allows defining condition when a Scenario is automatically assigned to the Runtime.
-Condition is defined as a label selector.
-For example, using this feature, you can specify a label that adds a given Scenario to each Runtime created by the given user, company or any other entity specified in the label.
+Automatic Scenario Assignment (ASA) feature allows you to define a condition that specifies when a Scenario is automatically assigned to a Runtime. For example, using this feature, you can specify a label that adds a given Scenario to each Runtime created by the given user, company or any other entity specified in the label. See the diagram:
+
 ![](./assets/automatic-scenario-assign.svg) 
+
+1. Administrator defines Scenarios.
+2. Administrator defines conditions to label Runtimes using Automatic Scenario Assignment. 
+3. User registers a Runtime that matches the conditions specified in the ASA.
+4. Runtime is automatically assigned to the matching Scenario. 
 
 ## API
 
@@ -20,21 +24,24 @@ type Label {
 }
 
 ```
-If a Runtime is labeled with a label that matches the value of the **selector** parameter, the Runtime is assigned to the given Scenario.
+
+A condition is defined as a label selector in the **selector** field. If a Runtime is labeled with a label that matches the value of the **selector** parameter, the Runtime is assigned to the given Scenario.
 
 ### Mutations
+
 Director API contains the following mutations for managing Automatic Scenario Assignments:
 ```graphql
    createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment 
    deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment 
    deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! 
 ```
-When creating Assignment, the following conditions are checked:
-* for given scenario, at most one Assignment exists
-* given scenario has to exists
-* selector's value type is a string
+When creating an assignment, you must fulfill the following conditions:
+- For a given Scenario, at most one Assignment exists
+- A given Scenario exists
+- Selector value type is a string
 
 ### Queries
+
 Director API contains queries that allow you to fetch all assignments, fetch assignments for the given Scenario, and fetch assignments for the given label selector:
 ```graphql
    automaticScenarioAssignments(first: Int = 100, after: PageCursor): AutomaticScenarioAssignmentPage 
@@ -42,13 +49,15 @@ Director API contains queries that allow you to fetch all assignments, fetch ass
    automaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! 
 ```
 
-## Example
-Let assume a situation, that Integration System that is responsible for registering Runtimes, label every runtime with information about a user who triggered provisioning a Runtime. 
-Then, you can define an Assignment, that every Runtime provisioned by a given person belongs to the specific Scenario.
+## Assign Runtime to Scenario
 
-### Assign to the scenario when labeling Runtime
+You can assign a Runtime to a Scenario in two ways:
+- Assign a Runtime to a Scenario using [LabelDefinitions](https://kyma-project.io/docs/master/components/compass/#details-labels-label-definitions)
+- Assign a Runtime to a Scenario using Automatic Scenario Assignment
 
-1. Create or update `scenarios` Label Definition and specify the following scenarios: 
+### Assign Runtime using LabelDefinition
+
+1. Create or update the `scenarios` LabelDefinition and specify the following scenarios: 
 * DEFAULT
 * MARKETING
 * WAREHOUSE
@@ -62,7 +71,7 @@ mutation  {
 }
 ```
 
-2. Create an Assignment, that Runtimes created by a Warehouse administrator are assigned to the `WAREHOUSE` scenario.
+2. Create an assignment with a condition that Runtimes created by a `WAREHOUSE` Administrator are assigned to the `WAREHOUSE` Scenario:
 ```graphql
 mutation  {
   createAutomaticScenarioAssignment(in: {scenarioName: "WAREHOUSE", selector: {key: "owner", value: "warehouse-admin@mycompany.com"}}) {
@@ -74,7 +83,8 @@ mutation  {
   }
 }
 ```
-3. Register a Runtime, with a label that indicates that it was created by the Warehouse administrator.
+
+3. Register a Runtime with a label that indicates that it was created by the `WAREHOUSE` Administrator.
 ```graphql
 mutation  {
   registerRuntime(in:{name: "warehouse-runtime-1", labels:{owner:"warehouse-admin@mycompany.com"}}) {
@@ -84,8 +94,7 @@ mutation  {
 }
 ```
 
-As you can see from the output below, the Runtime is assigned to the `WAREHOUSE` scenario, thanks to the previously
-defined Automatic Scenario Assignment. 
+Automatic Scenario Assignment assigns the Runtime to the `WAREHOUSE` Scenario: 
 ```json
 {
   "data": {
@@ -102,7 +111,7 @@ defined Automatic Scenario Assignment.
 }
 ```
 
-4. Remove Automatic Scenario Assignment.
+4. Remove Automatic Scenario Assignment:
 ```graphql
 mutation  {
   deleteAutomaticScenarioAssignmentForScenario(scenarioName: "WAREHOUSE") {
@@ -124,7 +133,7 @@ query  {
 }
 ```
 
-As you can see, Runtime was unassigned from the `WAREHOUSE` scenario:
+Runtime is unassigned from the `WAREHOUSE` Scenario:
 ```json
 {
   "data": {
@@ -143,13 +152,14 @@ As you can see, Runtime was unassigned from the `WAREHOUSE` scenario:
 }
 ```
 
-The same situation occurs if you modify or remove the label `createdBy` for the Runtime.
+>**NOTE:** The same situation occurs if you modify or remove the `createdBy` label for the Runtime.
 
-### Assign to the Scenario when Automatic Scenario Assignment created
-Assignment Runtime to scenarios occurs also when we define Assignment.
-If there is a runtime, that matches aa coming Assignment, it will be automatically assigned to the Scenario.
 
-1. Create runtime with label `owner`:`marketing-admin@mycompany.com`
+### Assign Runtime using ASA
+
+You can also assign Runtimes to Scenarios by defining an assignment. If there is a Runtime that matches an assignment, it is automatically assigned to the Scenario.
+
+1. Create a Runtime with the `owner:marketing-admin@mycompany.com` label:
 
 ```graphql
 mutation  {
@@ -160,6 +170,7 @@ mutation  {
 }
 
 ```
+
 2. Create an assignment:
 ```graphql
 mutation  {
@@ -173,7 +184,7 @@ mutation  {
 }
 ```
 
-3. Check that the Runtime is assigned to the `MARKETING` scenario.
+3. Check if the Runtime is assigned to the `MARKETING` Scenario:
 ```graphql
 query  {
   runtimes {
@@ -186,7 +197,7 @@ query  {
 }
 ```
 
-In the response you can find that given runtime is assigned to the `MARKETING` scenario.
+In the response you can see that your Runtime is assigned to the `MARKETING` Scenario:
 
 ```
 {
