@@ -5,6 +5,7 @@ package automock
 import (
 	context "context"
 
+	statusupdate "github.com/kyma-incubator/compass/components/director/internal/statusupdate"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -14,18 +15,18 @@ type StatusUpdateRepository struct {
 }
 
 // IsConnected provides a mock function with given fields: ctx, id, table
-func (_m *StatusUpdateRepository) IsConnected(ctx context.Context, id string, table string) (bool, error) {
+func (_m *StatusUpdateRepository) IsConnected(ctx context.Context, id string, table statusupdate.Table) (bool, error) {
 	ret := _m.Called(ctx, id, table)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, statusupdate.Table) bool); ok {
 		r0 = rf(ctx, id, table)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, statusupdate.Table) error); ok {
 		r1 = rf(ctx, id, table)
 	} else {
 		r1 = ret.Error(1)
@@ -35,11 +36,11 @@ func (_m *StatusUpdateRepository) IsConnected(ctx context.Context, id string, ta
 }
 
 // UpdateStatus provides a mock function with given fields: ctx, id, table
-func (_m *StatusUpdateRepository) UpdateStatus(ctx context.Context, id string, table string) error {
+func (_m *StatusUpdateRepository) UpdateStatus(ctx context.Context, id string, table statusupdate.Table) error {
 	ret := _m.Called(ctx, id, table)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, statusupdate.Table) error); ok {
 		r0 = rf(ctx, id, table)
 	} else {
 		r0 = ret.Error(0)

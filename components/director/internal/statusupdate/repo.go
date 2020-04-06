@@ -30,7 +30,7 @@ func NewRepository() *repository {
 	return &repository{timestampGen: timestamp.DefaultGenerator()}
 }
 
-func (r *repository) UpdateStatus(ctx context.Context, id, table string) error {
+func (r *repository) UpdateStatus(ctx context.Context, id string, table Table) error {
 
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
@@ -48,7 +48,7 @@ func (r *repository) UpdateStatus(ctx context.Context, id, table string) error {
 	return nil
 }
 
-func (r *repository) IsConnected(ctx context.Context, id, table string) (bool, error) {
+func (r *repository) IsConnected(ctx context.Context, id string, table Table) (bool, error) {
 
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {

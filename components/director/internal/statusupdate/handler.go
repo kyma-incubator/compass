@@ -24,13 +24,13 @@ type Table string
 
 //go:generate mockery -name=StatusUpdateRepository -output=automock -outpkg=automock -case=underscore
 type StatusUpdateRepository interface {
-	UpdateStatus(ctx context.Context, id, table string) error
-	IsConnected(ctx context.Context, id, table string) (bool, error)
+	UpdateStatus(ctx context.Context, id string, table Table) error
+	IsConnected(ctx context.Context, id string, table Table) (bool, error)
 }
 
 const (
-	applicationsTable Table = "applications"
-	runtimesTable     Table = "runtimes"
+	ApplicationsTable Table = "applications"
+	RuntimesTable     Table = "runtimes"
 )
 
 func New(transact persistence.Transactioner, repo StatusUpdateRepository, logger *log.Logger) *update {
@@ -54,9 +54,9 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			var table Table
 			switch consumerInfo.ConsumerType {
 			case consumer.Application:
-				table = applicationsTable
+				table = ApplicationsTable
 			case consumer.Runtime:
-				table = runtimesTable
+				table = RuntimesTable
 			default:
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
@@ -72,7 +72,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 
 			ctxWithDB := persistence.SaveToContext(ctx, tx)
 
-			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerInfo.ConsumerID, string(table))
+			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerInfo.ConsumerID, table)
 			if err != nil {
 				u.logger.Error(errors.Wrap(err, "while checking status").Error())
 				next.ServeHTTP(w, r.WithContext(ctx))
@@ -80,7 +80,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			}
 
 			if !isConnected {
-				err = u.repo.UpdateStatus(ctxWithDB, consumerInfo.ConsumerID, string(table))
+				err = u.repo.UpdateStatus(ctxWithDB, consumerInfo.ConsumerID, table)
 				if err != nil {
 					u.logger.Error(errors.Wrap(err, "while updating status").Error())
 					next.ServeHTTP(w, r.WithContext(ctx))
