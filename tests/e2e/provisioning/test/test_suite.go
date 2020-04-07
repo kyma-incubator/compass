@@ -52,8 +52,10 @@ func (ts *Suite) TearDown() {
 	ts.log.Info("Cleaning up...")
 	err := ts.runtimeClient.EnsureUAAInstanceRemoved()
 	assert.NoError(ts.t, err)
-	_, err = ts.brokerClient.DeprovisionRuntime()
+	operationID, err := ts.brokerClient.DeprovisionRuntime()
 	require.NoError(ts.t, err)
+	err = ts.brokerClient.AwaitOperationSucceeded(operationID, ts.DeprovisionTimeout)
+	assert.NoError(ts.t, err)
 }
 
 func newTestSuite(t *testing.T) *Suite {
