@@ -44,11 +44,10 @@ func New(transact persistence.Transactioner, repo StatusUpdateRepository, logger
 func (u *update) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			consumerInfo, err := consumer.LoadFromContext(ctx)
+			consumerInfo, err := consumer.LoadFromContext(r.Context())
 			if err != nil {
 				u.logger.Error(errors.Wrap(err, "while fetching consumer info from from context").Error())
-				next.ServeHTTP(w, r.WithContext(ctx))
+				next.ServeHTTP(w, r)
 				return
 			}
 			var object WithStatusObject
@@ -58,24 +57,24 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			case consumer.Runtime:
 				object = Runtimes
 			default:
-				next.ServeHTTP(w, r.WithContext(ctx))
+				next.ServeHTTP(w, r)
 				return
 			}
 
 			tx, err := u.transact.Begin()
 			if err != nil {
 				u.logger.Error(errors.Wrap(err, "while opening transaction").Error())
-				next.ServeHTTP(w, r.WithContext(ctx))
+				next.ServeHTTP(w, r)
 				return
 			}
 			defer u.transact.RollbackUnlessCommited(tx)
 
-			ctxWithDB := persistence.SaveToContext(ctx, tx)
+			ctxWithDB := persistence.SaveToContext(r.Context(), tx)
 
 			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerInfo.ConsumerID, object)
 			if err != nil {
 				u.logger.Error(errors.Wrap(err, "while checking status").Error())
-				next.ServeHTTP(w, r.WithContext(ctx))
+				next.ServeHTTP(w, r)
 				return
 			}
 
@@ -83,7 +82,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 				err = u.repo.UpdateStatus(ctxWithDB, consumerInfo.ConsumerID, object)
 				if err != nil {
 					u.logger.Error(errors.Wrap(err, "while updating status").Error())
-					next.ServeHTTP(w, r.WithContext(ctx))
+					next.ServeHTTP(w, r)
 
 					return
 				}
@@ -91,11 +90,11 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 
 			if err := tx.Commit(); err != nil {
 				u.logger.Error(errors.Wrap(err, "while committing").Error())
-				next.ServeHTTP(w, r.WithContext(ctx))
+				next.ServeHTTP(w, r)
 
 				return
 			}
-			next.ServeHTTP(w, r.WithContext(ctx))
+			next.ServeHTTP(w, r)
 		})
 	}
 }
