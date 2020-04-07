@@ -58,8 +58,10 @@ func (ts *Suite) Cleanup() {
 	assert.NoError(ts.t, err)
 	err = ts.runtimeClient.EnsureUAAInstanceRemoved()
 	assert.NoError(ts.t, err)
-	_, err = ts.brokerClient.DeprovisionRuntime()
+	operationID, err := ts.brokerClient.DeprovisionRuntime()
 	require.NoError(ts.t, err)
+	err = ts.brokerClient.AwaitOperationSucceeded(operationID, ts.DeprovisionTimeout)
+	assert.NoError(ts.t, err)
 }
 
 func newTestSuite(t *testing.T) *Suite {
@@ -70,7 +72,7 @@ func newTestSuite(t *testing.T) *Suite {
 	log := logrus.New()
 	instanceID := uuid.New().String()
 	if cfg.CleanupPhase {
-		log.Info("using instance ID %s", cfg.InstanceID)
+		log.Infof("using instance ID %s", cfg.InstanceID)
 		instanceID = cfg.InstanceID
 	}
 

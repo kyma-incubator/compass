@@ -31,8 +31,8 @@ metadata:
   {{ include "kyma-env-broker.labels" . | indent 4 }}
 rules:
   - apiGroups: ["*"]
-    resources: ["secrets"]
-    verbs: ["get"]
+    resources: ["secrets", "configmaps"]
+    verbs: ["get", "create", "delete"]
   - apiGroups: ["*"]
     resources: ["pods", "pods/log"]
     verbs: ["get", "list"]

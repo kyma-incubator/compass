@@ -69,18 +69,19 @@ type runtimeStatusResponse struct {
 	Result schema.RuntimeStatus `json:"result"`
 }
 
-// ExposeResources creates a secret and config map with a data about the test
-func (c *Client) ExposeResources(dashboardURL string) error {
+// ExposeRuntimeData creates secret and config map with data about the test
+func (c *Client) ExposeRuntimeData(dashboardURL string) error {
 	config, err := c.fetchRuntimeConfig()
 	if err != nil {
 		return errors.Wrap(err, "while fetching runtime config")
 	}
 
 	cli, err := c.newClient("")
+	c.log.Infof("creating secret %s", c.configName)
 	if err != nil {
 		return errors.Wrap(err, "while setting client config")
 	}
-	err = wait.PollImmediate(time.Second, time.Second*10, func() (bool, error) {
+	err = c.wait(func() error {
 		err = cli.Create(context.Background(), &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      c.configName,
@@ -91,16 +92,16 @@ func (c *Client) ExposeResources(dashboardURL string) error {
 			},
 		})
 		if err != nil {
-			c.log.Errorf("while creating a secret %s: %v", c.configName, err)
-			return false, nil
+			return err
 		}
-		return true, nil
+		return nil
 	})
 	if err != nil {
 		return errors.Wrapf(err, "while waiting for secret %s creation", c.configName)
 	}
 
-	err = wait.PollImmediate(time.Second, time.Second*10, func() (bool, error) {
+	c.log.Infof("creating config map %s", c.configName)
+	err = c.wait(func() error {
 		err = cli.Create(context.Background(), &v1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      c.configName,
@@ -112,24 +113,25 @@ func (c *Client) ExposeResources(dashboardURL string) error {
 			},
 		})
 		if err != nil {
-			c.log.Errorf("while creating a config map %s: %v", c.configName, err)
-			return false, nil
+			return err
 		}
-		return true, nil
+		return nil
 	})
 	if err != nil {
 		return errors.Wrapf(err, "while waiting for config map %s creation", c.configName)
 	}
+
 	return nil
 }
 
 // CleanupResources removes secret and config map used to store data about the test
 func (c *Client) CleanupResources() error {
 	cli, err := c.newClient("")
+	c.log.Infof("removing secret %s", c.configName)
 	if err != nil {
 		return errors.Wrap(err, "while setting client config")
 	}
-	err = wait.PollImmediate(time.Second, time.Second*10, func() (bool, error) {
+	err = c.wait(func() error {
 		err = cli.Delete(context.Background(), &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      c.configName,
@@ -137,15 +139,16 @@ func (c *Client) CleanupResources() error {
 			},
 		})
 		if err != nil {
-			c.log.Errorf("while deleting secret %s: %v", c.configName, err)
-			return false, nil
+			return err
 		}
-		return true, nil
+		return nil
 	})
+
+	c.log.Infof("removing config map %s", c.configName)
 	if err != nil {
 		return errors.Wrapf(err, "while waiting for secret %s deletion", c.configName)
 	}
-	err = wait.PollImmediate(time.Second, time.Second*10, func() (bool, error) {
+	err = c.wait(func() error {
 		err = cli.Delete(context.Background(), &v1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      c.configName,
@@ -153,10 +156,9 @@ func (c *Client) CleanupResources() error {
 			},
 		})
 		if err != nil {
-			c.log.Errorf("while deleting config map %s: %v", c.configName, err)
-			return false, nil
+			return err
 		}
-		return true, nil
+		return nil
 	})
 	if err != nil {
 		return errors.Wrapf(err, "while waiting for config map %s deletion", c.configName)
@@ -174,6 +176,24 @@ func (c *Client) EnsureUAAInstanceRemoved() error {
 		return errors.Wrap(err, "while removing UUA instance")
 	}
 	c.log.Info("Successfully ensured UAA instance was removed")
+	return nil
+}
+
+func (c *Client) wait(call func() error) error {
+	err := wait.PollImmediate(time.Second, time.Second*10, func() (bool, error) {
+		err := call()
+		if err != nil {
+			if apiErrors.IsNotFound(err) || apiErrors.IsAlreadyExists(err) {
+				return true, nil
+			}
+			c.log.Errorf("while executing request: %v", err)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return errors.Wrap(err, "while waiting executing request")
+	}
 	return nil
 }
 
