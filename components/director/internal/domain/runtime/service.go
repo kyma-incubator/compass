@@ -13,6 +13,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	nameKey   = "name"
+)
+
 //go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -141,6 +145,8 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		return "", errors.Wrapf(err, "while ensuring Label Definition with key %s exists", model.ScenariosKey)
 	}
 	s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
+
+	in.Labels[nameKey] = in.Name
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
 	if err != nil {
