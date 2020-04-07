@@ -80,8 +80,24 @@ spec:
             - name: APP_LMS_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: "{{ .Values.lms.secretName}}"
+                  name: "{{ .Values.lms.secretName }}"
                   key: token
+            - name: APP_IAS_URL
+              value: "{{ .Values.ias.url }}"
+            - name: APP_IAS_USER_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.ias.secretName }}"
+                  key: id
+            - name: APP_IAS_USER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.ias.secretName }}"
+                  key: secret
+            - name: APP_IAS_IDENTITY_PROVIDER
+              value: "{{ .Values.ias.identityProvider }}"
+            - name: APP_IAS_DISABLED
+              value: "{{ .Values.ias.disabled }}"
             - name: APP_DATABASE_USER
               valueFrom:
                 secretKeyRef:
@@ -132,7 +148,7 @@ spec:
             - name: APP_KYMA_VERSION
               value: {{ .Values.kymaVersion }}
             - name: APP_ENABLE_ON_DEMAND_VERSION
-              value: {{ .Values.kymaVersionOnDemand }}
+              value: "{{ .Values.kymaVersionOnDemand }}"
             - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_FILE_PATH
               value: /config/additionalRuntimeComponents.yaml
             - name: APP_GARDENER_PROJECT

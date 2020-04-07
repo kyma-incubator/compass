@@ -81,8 +81,8 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		request := createGraphQLRequest(client, accountID, runtimeID)
 
 		// #mock on Run method for grapQL client
-		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.successResponse")).Run(func(args mock.Arguments) {
-			arg, ok := args.Get(2).(*successResponse)
+		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getURLResponse")).Run(func(args mock.Arguments) {
+			arg, ok := args.Get(2).(*getURLResponse)
 			if !ok {
 				return
 			}
@@ -118,7 +118,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		request := createGraphQLRequest(client, accountID, runtimeID)
 
 		// #mock on Run method for grapQL client
-		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.successResponse")).Return(nil)
+		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getURLResponse")).Return(nil)
 
 		// When
 		URL, tokenErr := client.GetConsoleURL(accountID, runtimeID)
@@ -140,8 +140,8 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		request := createGraphQLRequest(client, accountID, runtimeID)
 
 		// #mock on Run method for grapQL client
-		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.successResponse")).Run(func(args mock.Arguments) {
-			arg, ok := args.Get(2).(*successResponse)
+		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getURLResponse")).Run(func(args mock.Arguments) {
+			arg, ok := args.Get(2).(*getURLResponse)
 			if !ok {
 				return
 			}
@@ -177,8 +177,8 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		request := createGraphQLRequest(client, accountID, runtimeID)
 
 		// #mock on Run method for grapQL client
-		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.successResponse")).Run(func(args mock.Arguments) {
-			arg, ok := args.Get(2).(*successResponse)
+		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getURLResponse")).Run(func(args mock.Arguments) {
+			arg, ok := args.Get(2).(*getURLResponse)
 			if !ok {
 				return
 			}
@@ -214,8 +214,8 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		request := createGraphQLRequest(client, accountID, runtimeID)
 
 		// #mock on Run method for grapQL client
-		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.successResponse")).Run(func(args mock.Arguments) {
-			arg, ok := args.Get(2).(*successResponse)
+		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getURLResponse")).Run(func(args mock.Arguments) {
+			arg, ok := args.Get(2).(*getURLResponse)
 			if !ok {
 				return
 			}
@@ -251,8 +251,8 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		request := createGraphQLRequest(client, accountID, runtimeID)
 
 		// #mock on Run method for grapQL client
-		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.successResponse")).Run(func(args mock.Arguments) {
-			arg, ok := args.Get(2).(*successResponse)
+		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getURLResponse")).Run(func(args mock.Arguments) {
+			arg, ok := args.Get(2).(*getURLResponse)
 			if !ok {
 				return
 			}
@@ -292,7 +292,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		oc.On("GetAuthorizationToken").Return(token, nil)
 
 		// #mock on Run method for grapQL client
-		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.successResponse")).Times(3).Return(fmt.Errorf("director error"))
+		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getURLResponse")).Times(3).Return(fmt.Errorf("director error"))
 
 		// When
 		URL, tokenErr := client.GetConsoleURL(accountID, runtimeID)
@@ -304,10 +304,57 @@ func TestClient_GetConsoleURL(t *testing.T) {
 	})
 }
 
+func TestClient_SetLabel(t *testing.T) {
+	// given
+	var (
+		accountID  = "ad568853-ecf3-433a-8638-e53aa6bead5d"
+		runtimeID  = "775dc85e-825b-4ddf-abf6-da0dd002b66e"
+		labelKey   = "testKey"
+		labelValue = "testValue"
+	)
+
+	oc := &mocks.OauthClient{}
+	qc := &mocks.GraphQLClient{}
+
+	client := NewDirectorClient(oc, qc)
+	client.token = oauth.Token{
+		AccessToken: "1234xyza",
+		Expiration:  time.Now().Unix() + 999,
+	}
+
+	request := createGraphQLLabelRequest(client, accountID, runtimeID, labelKey, labelValue)
+
+	qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.runtimeLabelResponse")).Run(func(args mock.Arguments) {
+		arg, ok := args.Get(2).(*runtimeLabelResponse)
+		if !ok {
+			return
+		}
+		arg.Result = &graphql.Label{
+			Key:   labelKey,
+			Value: labelValue,
+		}
+	}).Return(nil)
+
+	// when
+	err := client.SetLabel(accountID, runtimeID, labelKey, labelValue)
+
+	// then
+	assert.NoError(t, err)
+}
+
 func createGraphQLRequest(client *Client, accountID, runtimeID string) *machineGraphql.Request {
 	query := client.queryProvider.Runtime(runtimeID)
 	request := machineGraphql.NewRequest(query)
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", client.token.AccessToken))
+	request.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", client.token.AccessToken))
+	request.Header.Add(accountIDKey, accountID)
+
+	return request
+}
+
+func createGraphQLLabelRequest(client *Client, accountID, runtimeID, key, label string) *machineGraphql.Request {
+	query := client.queryProvider.SetRuntimeLabel(runtimeID, key, label)
+	request := machineGraphql.NewRequest(query)
+	request.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", client.token.AccessToken))
 	request.Header.Add(accountIDKey, accountID)
 
 	return request

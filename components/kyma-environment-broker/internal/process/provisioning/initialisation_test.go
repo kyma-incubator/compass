@@ -5,9 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/automock"
 	provisionerAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner/automock"
@@ -64,8 +63,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
 	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
 	externalEvalCreator := NewExternalEvalCreator(avsConfig, avsDel, false, externalEvalAssistant)
+	iasType := NewIASType(nil, true)
 
 	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient, nil, externalEvalCreator, time.Hour)
+	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient, nil, externalEvalCreator, iasType)
 
 	// when
 	operation, repeat, err := step.Run(operation, log)

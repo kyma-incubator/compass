@@ -16,6 +16,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
@@ -81,8 +82,8 @@ type Config struct {
 	Broker broker.Config
 
 	Avs avs.Config
-
 	LMS lms.Config
+	IAS ias.Config
 }
 
 func main() {
@@ -170,11 +171,17 @@ func main() {
 	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled, externalEvalAssistant)
+	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled)
+
+	bundleBuilder := ias.NewBundleBuilder(httpClient, cfg.IAS)
+	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
+
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), logs)
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs)
 
 	// define steps
+	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, externalEvalCreator, iasTypeSetter)
 	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
 		provisionerClient, directorClient, inputFactory, externalEvalCreator, cfg.Provisioning.Timeout)
 	provisionManager.InitStep(provisioningInit)
@@ -197,6 +204,11 @@ func main() {
 			weight:   1,
 			step:     provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations()),
 			disabled: cfg.LMS.Disabled,
+		},
+		{
+			weight:   1,
+			step:     provisioning.NewIASRegistration(db.Operations(), bundleBuilder),
+			disabled: cfg.IAS.Disabled,
 		},
 		{
 			weight: 2,
@@ -229,12 +241,18 @@ func main() {
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient)
 	deprovisionManager.InitStep(deprovisioningInit)
 	deprovisioningSteps := []struct {
-		weight int
-		step   deprovisioning.Step
+		disabled bool
+		weight   int
+		step     deprovisioning.Step
 	}{
 		{
 			weight: 1,
 			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+		},
+		{
+			weight:   1,
+			step:     deprovisioning.NewIASDeregistration(db.Operations(), bundleBuilder),
+			disabled: cfg.IAS.Disabled,
 		},
 		{
 			weight: 10,
@@ -242,7 +260,9 @@ func main() {
 		},
 	}
 	for _, step := range deprovisioningSteps {
-		deprovisionManager.AddStep(step.weight, step.step)
+		if !step.disabled {
+			deprovisionManager.AddStep(step.weight, step.step)
+		}
 	}
 
 	// run queues
