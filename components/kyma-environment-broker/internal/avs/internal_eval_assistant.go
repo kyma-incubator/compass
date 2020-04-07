@@ -37,7 +37,7 @@ func (iec *InternalEvalAssistant) AppendOverrides(inputCreator internal.Provisio
 	})
 }
 
-func (iec *InternalEvalAssistant) CheckIfAlreadyDone(operation internal.ProvisioningOperation) bool {
+func (iec *InternalEvalAssistant) IsAlreadyCreated(operation internal.ProvisioningOperation) bool {
 	return operation.AvsEvaluationInternalId != 0
 }
 
@@ -55,4 +55,15 @@ func (iec *InternalEvalAssistant) ProvideCheckType() string {
 
 func (iec *InternalEvalAssistant) SetEvalId(operation *internal.ProvisioningOperation, evalId int64) {
 	operation.AvsEvaluationInternalId = evalId
+}
+
+func (iec *InternalEvalAssistant) IsAlreadyDeleted(deProvisioningOperation internal.DeprovisioningOperation) bool {
+	return deProvisioningOperation.AVSInternalEvaluationDeleted
+}
+func (iec *InternalEvalAssistant) GetEvaluationId(provisioningOperation *internal.ProvisioningOperation) int64 {
+	return provisioningOperation.AvsEvaluationInternalId
+}
+
+func (iec *InternalEvalAssistant) markDeleted(deProvisioningOperation *internal.DeprovisioningOperation) {
+	deProvisioningOperation.AVSInternalEvaluationDeleted = true
 }

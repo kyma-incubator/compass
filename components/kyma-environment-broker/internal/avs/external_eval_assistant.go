@@ -20,7 +20,7 @@ func (eea *ExternalEvalAssistant) AppendOverrides(inputCreator internal.Provisio
 	//do nothing
 }
 
-func (eea *ExternalEvalAssistant) CheckIfAlreadyDone(operation internal.ProvisioningOperation) bool {
+func (eea *ExternalEvalAssistant) IsAlreadyCreated(operation internal.ProvisioningOperation) bool {
 	return operation.AVSEvaluationExternalId != 0
 }
 
@@ -38,4 +38,15 @@ func (eea *ExternalEvalAssistant) SetEvalId(operation *internal.ProvisioningOper
 
 func (eea *ExternalEvalAssistant) ProvideCheckType() string {
 	return externalEvalCheckType
+}
+
+func (eea *ExternalEvalAssistant) IsAlreadyDeleted(deProvisioningOperation internal.DeprovisioningOperation) bool {
+	return deProvisioningOperation.AVSExternalEvaluationDeleted
+}
+func (eea *ExternalEvalAssistant) GetEvaluationId(provisioningOperation *internal.ProvisioningOperation) int64 {
+	return provisioningOperation.AVSEvaluationExternalId
+}
+
+func (eea *ExternalEvalAssistant) markDeleted(deProvisioningOperation *internal.DeprovisioningOperation) {
+	deProvisioningOperation.AVSExternalEvaluationDeleted = true
 }

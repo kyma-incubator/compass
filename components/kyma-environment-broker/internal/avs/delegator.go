@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
@@ -16,23 +18,25 @@ import (
 )
 
 type Delegator struct {
-	operationManager *process.ProvisionOperationManager
-	avsConfig        Config
-	clientHolder     *clientHolder
+	operationManager  *process.ProvisionOperationManager
+	avsConfig         Config
+	clientHolder      *clientHolder
+	operationsStorage storage.Operations
 }
 
 func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Delegator {
 	return &Delegator{
-		operationManager: process.NewProvisionOperationManager(operationsStorage),
-		avsConfig:        avsConfig,
-		clientHolder:     newClientHolder(avsConfig),
+		operationManager:  process.NewProvisionOperationManager(operationsStorage),
+		avsConfig:         avsConfig,
+		clientHolder:      newClientHolder(avsConfig),
+		operationsStorage: operationsStorage,
 	}
 }
 
-func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
+func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
 	logger.Infof("starting the step avs internal id [%d] and avs external id [%d]", operation.AvsEvaluationInternalId, operation.AVSEvaluationExternalId)
 
-	if evalAssistant.CheckIfAlreadyDone(operation) {
+	if evalAssistant.IsAlreadyCreated(operation) {
 		logger.Infof("step has already been finished previously")
 		return operation, 0, nil
 	}
@@ -85,12 +89,12 @@ func (del *Delegator) postRequest(evaluationRequest *BasicEvaluationCreateReques
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		msg := fmt.Sprintf("Got unexpected status %d and response %s while creating internal evaluation", resp.StatusCode, responseBody(resp))
+		msg := fmt.Sprintf("Got unexpected status %d and response %s while creating evaluation", resp.StatusCode, responseBody(resp))
 		logger.Error(msg)
 		return nil, fmt.Errorf(msg)
 	}
 
-	responseObject, err := deserialize(resp, err)
+	responseObject, err := deserializeCreateResponse(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +102,7 @@ func (del *Delegator) postRequest(evaluationRequest *BasicEvaluationCreateReques
 	return responseObject, nil
 }
 
-func deserialize(resp *http.Response, err error) (*BasicEvaluationCreateResponse, error) {
+func deserializeCreateResponse(resp *http.Response, err error) (*BasicEvaluationCreateResponse, error) {
 	dec := json.NewDecoder(resp.Body)
 	var responseObject BasicEvaluationCreateResponse
 	err = dec.Decode(&responseObject)
@@ -111,4 +115,67 @@ func responseBody(resp *http.Response) string {
 		return ""
 	}
 	return string(bodyBytes)
+}
+
+func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.DeprovisioningOperation, provisioningOperation *internal.ProvisioningOperation, logger logrus.FieldLogger, assistant EvalAssistant) (internal.DeprovisioningOperation, time.Duration, error) {
+	if assistant.IsAlreadyDeleted(deProvisioningOperation) {
+		logger.Infof("Evaluations have been deleted previously")
+	}
+
+	if err := del.tryDeleting(assistant, deProvisioningOperation, provisioningOperation, logger); err != nil {
+		return deProvisioningOperation, time.Second * 10, nil
+	}
+
+	assistant.markDeleted(&deProvisioningOperation)
+
+	updatedDeProvisioningOp, err := del.operationsStorage.UpdateDeprovisioningOperation(deProvisioningOperation)
+	if err != nil {
+		return deProvisioningOperation, time.Second * 10, nil
+	}
+	return *updatedDeProvisioningOp, 0, nil
+}
+
+func (del *Delegator) tryDeleting(assistant EvalAssistant, deProvisioningOperation internal.DeprovisioningOperation, provisioningOperation *internal.ProvisioningOperation, logger logrus.FieldLogger) error {
+	err := del.deleteRequest(logger, assistant.GetEvaluationId(provisioningOperation))
+	if err != nil {
+		logger.Errorf("error while deleting evaluation %v", err)
+	}
+	return err
+}
+
+func (del *Delegator) deleteRequest(logger logrus.FieldLogger, evaluationId int64) error {
+	absoluteURL := appendId(del.avsConfig.ApiEndpoint, evaluationId)
+
+	req, err := http.NewRequest(http.MethodDelete, absoluteURL, nil)
+	if err != nil {
+		return err
+	}
+
+	httpClient, err := del.clientHolder.getClient(logger)
+	if err != nil {
+		return err
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 200 || resp.StatusCode == 400 {
+		return nil
+	} else {
+		msg := fmt.Sprintf("Got unexpected status %d while deleting evaluation", resp.StatusCode)
+		logger.Error(msg)
+		return fmt.Errorf(msg)
+	}
+
+}
+
+func appendId(baseUrl string, id int64) string {
+	if strings.HasSuffix(baseUrl, "/") {
+		return baseUrl + strconv.FormatInt(id, 10)
+	} else {
+		return baseUrl + "/" + strconv.FormatInt(id, 10)
+	}
 }

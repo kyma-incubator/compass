@@ -163,7 +163,9 @@ func main() {
 	fatalOnError(err)
 
 	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
-	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled)
+	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
+	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
+	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), logs)
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs)
@@ -183,7 +185,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewInternalEvaluationStep(cfg.Avs, avsDel),
+			step:     provisioning.NewInternalEvaluationStep(cfg.Avs, avsDel, internalEvalAssistant),
 			disabled: cfg.Avs.Disabled,
 		},
 		{
@@ -228,6 +230,10 @@ func main() {
 		{
 			weight: 10,
 			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient),
+		},
+		{
+			weight: 1,
+			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
 		},
 	}
 	for _, step := range deprovisioningSteps {

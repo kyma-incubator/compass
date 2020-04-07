@@ -15,10 +15,10 @@ type ExternalEvalCreator struct {
 	disabled  bool
 }
 
-func NewExternalEvalCreator(config avs.Config, delegator *avs.Delegator, disabled bool) *ExternalEvalCreator {
+func NewExternalEvalCreator(config avs.Config, delegator *avs.Delegator, disabled bool, assistant *avs.ExternalEvalAssistant) *ExternalEvalCreator {
 	return &ExternalEvalCreator{
 		delegator: delegator,
-		assistant: avs.NewExternalEvalAssistant(config),
+		assistant: assistant,
 		logger:    logrus.New(),
 		disabled:  disabled,
 	}
@@ -28,6 +28,6 @@ func (eec *ExternalEvalCreator) createEval(operation internal.ProvisioningOperat
 	if eec.disabled {
 		return operation, 0, nil
 	} else {
-		return eec.delegator.DoRun(eec.logger, operation, eec.assistant, url)
+		return eec.delegator.CreateEvaluation(eec.logger, operation, eec.assistant, url)
 	}
 }

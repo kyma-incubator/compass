@@ -90,9 +90,12 @@ type ProvisioningOperation struct {
 	AVSEvaluationExternalId int64 `json:"avs_evaluation_external_id"`
 }
 
-// DeprovisioningOperation holds all information about provisioning operation
+// DeprovisioningOperation holds all information about de-provisioning operation
 type DeprovisioningOperation struct {
 	Operation `json:"-"`
+
+	AVSInternalEvaluationDeleted bool `json:"avs_internal_evaluation_deleted"`
+	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
