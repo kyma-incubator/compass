@@ -59,7 +59,7 @@ For simplicity reasons, use the available Order Service as the sample external A
 
     c. Untick the **Enable authentication** field as there is no need to secure the connection for the purpose of this tutorial. Click **Add**.
 
-    d. Scroll down to the end of your lambda view and bind your lambda to your instance by clicking the **Create Service Binding** button in the **Service Binding** section. Choose the ServiceInstance you want to bind your lambda to, and click **Create Service Binding**.
+    d. Scroll down to the end of your lambda view and bind your lambda to your instance by clicking the **Create Service Binding** button in the **Service Binding** section. Choose the ServiceInstance you want to bind your lambda to and click **Create Service Binding**.
 
     e. Save the settings in the right top-right corner of the page.
 

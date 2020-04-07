@@ -14,19 +14,19 @@ Tenant Events API should use the OAuth 2.0 client credentials authorization flow
 
 ### Endpoints
 
-There are three types of supported endpoints that receive different type of events:
+There are three types of supported endpoints that receive different types of events:
 - Tenant creation endpoint
 - Tenant deletion endpoint
 - Tenant update endpoint
 
 Every endpoints must return a specific payload and accept the following query parameters:
-- **ts** - specifies a timestamp in Unix time, that is the date since events are fetched
-- **page** - specifies the number of page to be fetched, starting from `1`
+- **ts** - specifies a timestamp in Unix time, that is the date from which events are fetched
+- **page** - specifies the number of the page to be fetched, starting from `1`
 - **resultsPerPage** - specifies the number of results included on a single page
 
 #### Tenant creation endpoint
 
-The endpoint should return the following JSON payload:
+On success, the endpoint returns the following JSON payload:
 ```json
 {
   "events": [
@@ -46,7 +46,7 @@ The **eventData** field contains an escaped JSON string with the following field
 
 #### Tenant deletion endpoint
 
-The endpoint should return the following JSON payload:
+On success, the endpoint returns the following JSON payload:
 ```json
 {
   "events": [
@@ -65,7 +65,7 @@ The **eventData** field contains an escaped JSON string with the following field
 
 #### Tenant update endpoint
 
-The endpoint should return the following JSON payload:
+On success, the endpoint returns the following JSON payload:
 ```json
 {
   "events": [

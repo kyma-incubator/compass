@@ -14,7 +14,7 @@ These are the currently supported API specification versions and formats in diff
 ## Planned support for API specification versions and formats
 
 The following table shows the proposed supported API specification versions and formats in different components.
-Rendering would support only a single version of API specifications. Rafter would be responsible for validating and converting API specifications for Console UI. Because Compass UI does not use Rafter, the conversion would have to be done in Compass Backend. Preferably Rafter's converters and validators should be exposed as services or libraries that could be used by Compass Backend and Compass UI.
+Rendering would support only a single version of API specifications. Rafter would be responsible for validating and converting API specifications for Console UI. Because Compass UI does not use Rafter, the conversion would have to be done in Compass Backend. Preferably Rafter's converters and validators should be exposed as services or libraries that could be used by the Compass Backend and Compass UI.
 
 > **NOTE:**  The last row describes support for extracting API specifications from archive files.
 
