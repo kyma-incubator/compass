@@ -46,7 +46,7 @@ func (v *validator) ValidateUpgradeInput(input gqlschema.UpgradeKymaOnRuntimeInp
 		return fmt.Errorf("validation error while starting Runtime upgrade: %s", err.Error())
 	}
 
-	// TODO: align with other if we should validate
+	// TODO: align with others if we should validate versions
 
 	return nil
 }

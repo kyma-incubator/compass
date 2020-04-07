@@ -8,6 +8,7 @@ type KymaConfig struct {
 	Components          []KymaComponentConfig
 	GlobalConfiguration Configuration
 	ClusterID           string
+	Active              bool
 }
 
 func (c KymaConfig) GetComponentConfig(name string) (KymaComponentConfig, bool) {

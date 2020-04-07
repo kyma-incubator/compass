@@ -145,6 +145,22 @@ func (_m *WriteSession) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
 	return r0
 }
 
+// SetActiveKymaConfig provides a mock function with given fields: runtimeID, kymaConfigId
+func (_m *WriteSession) SetActiveKymaConfig(runtimeID string, kymaConfigId string) dberrors.Error {
+	ret := _m.Called(runtimeID, kymaConfigId)
+
+	var r0 dberrors.Error
+	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+		r0 = rf(runtimeID, kymaConfigId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dberrors.Error)
+		}
+	}
+
+	return r0
+}
+
 // TransitionOperation provides a mock function with given fields: operationID, message, stage, transitionTime
 func (_m *WriteSession) TransitionOperation(operationID string, message string, stage model.OperationStage, transitionTime time.Time) dberrors.Error {
 	ret := _m.Called(operationID, message, stage, transitionTime)
@@ -168,22 +184,6 @@ func (_m *WriteSession) UpdateCluster(runtimeID string, kubeconfig string, terra
 	var r0 dberrors.Error
 	if rf, ok := ret.Get(0).(func(string, string, []byte) dberrors.Error); ok {
 		r0 = rf(runtimeID, kubeconfig, terraformState)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
-		}
-	}
-
-	return r0
-}
-
-// UpdateClusterKymaConfig provides a mock function with given fields: runtimeID, kymaConfigId
-func (_m *WriteSession) UpdateClusterKymaConfig(runtimeID string, kymaConfigId string) dberrors.Error {
-	ret := _m.Called(runtimeID, kymaConfigId)
-
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
-		r0 = rf(runtimeID, kymaConfigId)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dberrors.Error)

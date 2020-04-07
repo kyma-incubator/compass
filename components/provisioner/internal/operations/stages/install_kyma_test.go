@@ -5,10 +5,10 @@ import (
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 	"github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -51,6 +51,9 @@ func TestInstallKymaStep_Run(t *testing.T) {
 		},
 	}
 
+	k8sConfig, err := k8s.ParseToK8sConfig([]byte(kubeconfig))
+	require.NoError(t, err)
+
 	for _, testCase := range []struct {
 		description string
 		mockFunc    func(installationSvc *installationMocks.Service)
@@ -58,23 +61,23 @@ func TestInstallKymaStep_Run(t *testing.T) {
 		{
 			description: "should proceed to the next step when installation already in progress and installation error occurred",
 			mockFunc: func(installationSvc *installationMocks.Service) {
-				installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
+				installationSvc.On("CheckInstallationState", k8sConfig).
 					Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "error"})
 			},
 		},
 		{
 			description: "should proceed to the next step when installation already in progress",
 			mockFunc: func(installationSvc *installationMocks.Service) {
-				installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
+				installationSvc.On("CheckInstallationState", k8sConfig).
 					Return(installation.InstallationState{State: "InProgress"}, nil)
 			},
 		},
 		{
 			description: "should proceed to the next step after starting the installation",
 			mockFunc: func(installationSvc *installationMocks.Service) {
-				installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
+				installationSvc.On("CheckInstallationState", k8sConfig).
 					Return(installation.InstallationState{State: installation.NoInstallationState}, nil)
-				installationSvc.On("TriggerInstallation", []byte(kubeconfig), release, globalConfig, components).
+				installationSvc.On("TriggerInstallation", k8sConfig, release, globalConfig, components).
 					Return(nil)
 			},
 		},
@@ -100,9 +103,9 @@ func TestInstallKymaStep_Run(t *testing.T) {
 	t.Run("should return error when failed to start installation", func(t *testing.T) {
 		// given
 		installationSvc := &installationMocks.Service{}
-		installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
+		installationSvc.On("CheckInstallationState", k8sConfig).
 			Return(installation.InstallationState{State: installation.NoInstallationState}, nil)
-		installationSvc.On("TriggerInstallation", []byte(kubeconfig), release, globalConfig, components).
+		installationSvc.On("TriggerInstallation", k8sConfig, release, globalConfig, components).
 			Return(fmt.Errorf("error"))
 
 		installStep := NewInstallKymaStep(installationSvc, nextStageName, 10*time.Minute)

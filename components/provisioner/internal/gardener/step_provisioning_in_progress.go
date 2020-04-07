@@ -75,8 +75,6 @@ func (r *ProvisioningOperator) ProceedToInstallation(log *logrus.Entry, shoot ga
 	log.Infof("Updating Shoot...")
 	err = r.updateShoot(shoot, func(shootToUpdate *gardener_types.Shoot) {
 		annotate(shootToUpdate, provisioningAnnotation, Provisioned.String())
-		annotate(shootToUpdate, installationTimestampAnnotation, time.Now().Format(timeLayout)) // TODO: modify this to provisioning finished annotation?
-		annotate(shootToUpdate, provisioningStepAnnotation, ProvisioningFinishedStep.String())
 	})
 	if err != nil {
 		log.Errorf("Error updating Shoot with retries: %s", err.Error())

@@ -113,7 +113,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	if isBeingDeleted(shoot) {
 		// TODO - here we can ensure if last operation for cluster is Deprovision
-		log.Infof("Shoot is being deleted, step: %s", getProvisioningStep(shoot))
+		log.Infof("Shoot is being deleted")
 		return ctrl.Result{}, nil
 	}
 
@@ -122,15 +122,15 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	provisioningStep := getProvisioningStep(shoot)
+	provisioningStep := getProvisioningState(shoot)
 
 	switch provisioningStep {
-	case ProvisioningInProgressStep:
+	case Provisioning:
 		return r.provisioningOperator.ProvisioningInProgress(log, shoot, operationId)
-	case ProvisioningFinishedStep:
+	case Provisioned:
 		log.Debug("Shoot provisioned")
 		return ctrl.Result{}, nil
-	case DeprovisioningInProgressStep:
+	case Deprovisioning:
 		return r.provisioningOperator.DeprovisioningInProgress(log, shoot, operationId)
 	default:
 		log.Warnf("Unknown state of Shoot")

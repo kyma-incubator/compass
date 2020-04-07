@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -40,7 +41,7 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, logger logrus.Field
 	}
 
 	// TODO: cleanup kubeconfig stuff
-	k8sConfig, err := ParseToK8sConfig([]byte(*cluster.Kubeconfig))
+	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
 		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}

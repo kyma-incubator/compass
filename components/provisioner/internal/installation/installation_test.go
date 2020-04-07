@@ -3,6 +3,7 @@ package installation
 import (
 	"context"
 	"errors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 	"testing"
 	"time"
 
@@ -70,12 +71,15 @@ func TestInstallationService_TriggerInstallation(t *testing.T) {
 		Configuration: fixInstallationConfig(),
 	}
 
+	k8sConfig, err := k8s.ParseToK8sConfig([]byte(kubeconfig))
+	require.NoError(t, err)
+
 	t.Run("should trigger installation", func(t *testing.T) {
 		installationHandlerConstructor := newMockInstallerHandler(t, expectedInstallation, nil, nil)
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
 
 		// when
-		err := installationSvc.TriggerInstallation([]byte(kubeconfig), kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.TriggerInstallation(k8sConfig, kymaRelease, globalConfig, componentsConfig)
 
 		// then
 		require.NoError(t, err)

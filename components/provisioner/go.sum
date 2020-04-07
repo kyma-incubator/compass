@@ -92,10 +92,8 @@ github.com/PuerkitoBio/urlesc v0.0.0-20160726150825-5bd2802263f2/go.mod h1:uGdko
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
-github.com/Szymongib/hydroform/install v0.0.0-20200331094652-ffaead80f855 h1:cwe9u0ySpgaO7dJuMh8veAr+SXcI3nMNADXn+L7wTV4=
-github.com/Szymongib/hydroform/install v0.0.0-20200331094652-ffaead80f855/go.mod h1:9rcPl//pnqa0feJeK1/CPG63S6tS5GVxVkqh5HbVFwc=
-github.com/Szymongib/hydroform/install v0.0.0-20200401113539-261bfddbe77b h1:cLxXuGq1o9eqot8f/7si3ZbSU9PePqS+4Q2ZGce6mp4=
-github.com/Szymongib/hydroform/install v0.0.0-20200401113539-261bfddbe77b/go.mod h1:9rcPl//pnqa0feJeK1/CPG63S6tS5GVxVkqh5HbVFwc=
+github.com/Szymongib/hydroform/install v0.0.0-20200407111754-cc32df79c5a5 h1:1ljsYPvQqNtAOi4ML8wUjLJMe2uS1plqgDlWuk37OEs=
+github.com/Szymongib/hydroform/install v0.0.0-20200407111754-cc32df79c5a5/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
 github.com/Unknwon/com v0.0.0-20151008135407-28b053d5a292 h1:tuQ7w+my8a8mkwN7x2TSd7OzTjkZ7rAeSyH4xncuAMI=
 github.com/Unknwon/com v0.0.0-20151008135407-28b053d5a292/go.mod h1:KYCjqMOeHpNuTOiFQU6WEcTG7poCJrUs0YgyHNtn1no=
 github.com/abdullin/seq v0.0.0-20160510034733-d5467c17e7af h1:DBNMBMuMiWYu0b+8KMJuWmfCkcxl09JwdlqwDZZ6U14=
@@ -642,7 +640,6 @@ github.com/kubernetes/client-go v11.0.0+incompatible/go.mod h1:kszVi2i+FeqECZHhj
 github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348/go.mod h1:B69LEHPfb2qLo0BaaOLcbitczOKLWTsrBG9LczfCD4k=
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
-github.com/kyma-incubator/compass v0.0.0-20200406092219-56735d0a12fe h1:fBWnQ+afQSyrmVpD3xtYWdZ/jT0Muaa5FZetYBopL3E=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200123101435-9cd00b2924b8 h1:NFIS20LPr7hmgaaaIBn+fT8RlWtKyKsY2FI7RGYniF8=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200123101435-9cd00b2924b8/go.mod h1:bENHuI5/ZTfg7wLSSfL7CIHKBUwRnDwzGTYKkY0H8R8=
 github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9 h1:YERsmPrrApdKkGuOOUwznIZxfIURticqgJpKjN5AYu0=

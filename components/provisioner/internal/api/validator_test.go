@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestValidator_ValidateInput(t *testing.T) {
+func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -108,6 +108,72 @@ func TestValidator_ValidateInput(t *testing.T) {
 
 		//when
 		err := validator.ValidateProvisioningInput(config)
+
+		//then
+		require.Error(t, err)
+	})
+}
+
+func TestValidator_ValidateUpgradeInput(t *testing.T) {
+
+	t.Run("Should return nil when input is correct", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		kymaConfig := &gqlschema.KymaConfigInput{
+			Version: "1.5",
+			Components: []*gqlschema.ComponentConfigurationInput{
+				{
+					Component:     "core",
+					Configuration: nil,
+				},
+				{
+					Component:     "compass-runtime-agent",
+					Configuration: nil,
+				},
+			},
+		}
+
+		input := gqlschema.UpgradeKymaOnRuntimeInput{KymaConfig: kymaConfig}
+
+		//when
+		err := validator.ValidateUpgradeInput(input)
+
+		//then
+		require.NoError(t, err)
+	})
+
+	t.Run("Should return error when kyma config input not provided", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		config := gqlschema.UpgradeKymaOnRuntimeInput{}
+
+		//when
+		err := validator.ValidateUpgradeInput(config)
+
+		//then
+		require.Error(t, err)
+	})
+
+	t.Run("Should return error when Runtime Agent component is not passed in kyma input", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		kymaConfig := &gqlschema.KymaConfigInput{
+			Version: "1.5",
+			Components: []*gqlschema.ComponentConfigurationInput{
+				{
+					Component:     "core",
+					Configuration: nil,
+				},
+			},
+		}
+
+		input := gqlschema.UpgradeKymaOnRuntimeInput{KymaConfig: kymaConfig}
+
+		//when
+		err := validator.ValidateUpgradeInput(input)
 
 		//then
 		require.Error(t, err)

@@ -24,6 +24,7 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 		Pair("creation_timestamp", cluster.CreationTimestamp).
 		Pair("tenant", cluster.Tenant).
 		Pair("sub_account_id", cluster.SubAccountId).
+		Pair("active_kyma_config_id", cluster.KymaConfig.ID). // Possible due to deferred constrain
 		Exec()
 
 	if err != nil {
@@ -205,10 +206,10 @@ func (ws writeSession) UpdateCluster(runtimeID string, kubeconfig string, terraf
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update cluster %s data: %s", runtimeID, err))
 }
 
-func (ws writeSession) UpdateClusterKymaConfig(runtimeID string, kymaConfigId string) dberrors.Error {
+func (ws writeSession) SetActiveKymaConfig(runtimeID string, kymaConfigId string) dberrors.Error {
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).
-		Set("kyma_config_id", kymaConfigId).
+		Set("active_kyma_config_id", kymaConfigId).
 		Exec()
 
 	if err != nil {

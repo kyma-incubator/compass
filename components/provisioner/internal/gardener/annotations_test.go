@@ -14,8 +14,8 @@ func Test_annotate(t *testing.T) {
 	}
 
 	// when
-	annotate(shoot, provisioningStepAnnotation, ProvisioningInProgressStep.String())
+	annotate(shoot, runtimeIdAnnotation, "abcd-efgh")
 
 	// then
-	assertAnnotation(t, shoot, provisioningStepAnnotation, "provisioning-in-progress")
+	assertAnnotation(t, shoot, runtimeIdAnnotation, "abcd-efgh")
 }

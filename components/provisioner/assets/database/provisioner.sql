@@ -14,7 +14,6 @@ CREATE TABLE cluster
     sub_account_id varchar(256)
 );
 
-
 -- Cluster Config
 
 CREATE TABLE gardener_config
@@ -122,7 +121,13 @@ CREATE TABLE kyma_component_config
     foreign key (kyma_config_id) REFERENCES kyma_config (id) ON DELETE CASCADE
 );
 
--- Kyma Config
+-- Active Kyma Config column
+
+ALTER TABLE cluster ADD COLUMN active_kyma_config_id uuid NOT NULL;
+ALTER TABLE cluster ADD CONSTRAINT cluster_active_kyma_config_id_fkey foreign key (active_kyma_config_id) REFERENCES kyma_config (id) DEFERRABLE INITIALLY DEFERRED;
+
+
+-- Runtime Upgrade
 
 CREATE TYPE runtime_upgrade_state AS ENUM (
     'IN_PROGRESS',
@@ -131,7 +136,6 @@ CREATE TYPE runtime_upgrade_state AS ENUM (
     'ROLLED_BACK'
 );
 
--- TODO: decide on the approach and align migrator
 CREATE TABLE runtime_upgrade
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),

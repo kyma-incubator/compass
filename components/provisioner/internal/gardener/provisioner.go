@@ -43,7 +43,6 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	annotate(shootTemplate, operationIdAnnotation, operationId)
 	annotate(shootTemplate, provisioningAnnotation, Provisioning.String())
 	annotate(shootTemplate, runtimeIdAnnotation, cluster.ID)
-	annotate(shootTemplate, provisioningStepAnnotation, ProvisioningInProgressStep.String())
 
 	_, err = g.client.Create(shootTemplate)
 	if err != nil {
@@ -53,7 +52,6 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	return nil
 }
 
-// TODO: If already deleted - try to unregister Runtime in Director?
 func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error) {
 	gardenerCfg, ok := cluster.GardenerConfig()
 	if !ok {
@@ -77,7 +75,6 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 
 	// TODO: consider adding some annotation and uninstall before deleting shoot
 	annotate(shoot, provisioningAnnotation, Deprovisioning.String())
-	annotate(shoot, provisioningStepAnnotation, DeprovisioningInProgressStep.String())
 	annotate(shoot, operationIdAnnotation, operationId)
 	AnnotateWithConfirmDeletion(shoot)
 	err = UpdateAndDeleteShoot(g.client, shoot)

@@ -3,6 +3,9 @@ package api
 import (
 	"context"
 	"fmt"
+	installation2 "github.com/kyma-incubator/compass/components/provisioner/internal/installation"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages"
 	"os"
 	"path/filepath"
 	"testing"
@@ -124,13 +127,14 @@ func setupEnv() error {
 func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	//given
 	installationServiceMock := &installationMocks.Service{}
-	installationServiceMock.On("InstallKyma", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("model.Release"),
-		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
-
 	installationServiceMock.On("TriggerInstallation", mock.Anything, mock.AnythingOfType("model.Release"),
 		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
 
 	installationServiceMock.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
+
+	installationServiceMock.On("TriggerUpgrade", mock.Anything, mock.AnythingOfType("model.Release"),
+		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
+
 	installationServiceMock.On("TriggerUninstall", mock.Anything).Return(nil)
 
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
@@ -168,7 +172,14 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	secretsInterface := setupSecretsClient(t, cfg)
 	dbsFactory := dbsession.NewFactory(connection)
 
-	controler, err := gardener.NewShootController(namespace, mgr, shootInterface, secretsInterface, installationServiceMock, dbsFactory, timeout, directorServiceMock, runtimeConfigurator)
+	queueCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	installationQueue := createInstallationQueue(dbsFactory, installationServiceMock, runtimeConfigurator)
+	installationQueue.Run(queueCtx.Done())
+	upgradeQueue := createUpgradeQueue(dbsFactory, installationServiceMock)
+	upgradeQueue.Run(queueCtx.Done())
+
+	controler, err := gardener.NewShootController(mgr, shootInterface, secretsInterface, dbsFactory, directorServiceMock, installationQueue)
 	require.NoError(t, err)
 
 	go func() {
@@ -195,7 +206,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project")
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, upgradeQueue)
 
 			validator := NewValidator(dbsFactory.NewReadSession())
 
@@ -228,7 +239,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
 			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
 			assert.Equal(t, "provisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
-			assert.Equal(t, "provisioning-in-progress", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning-step"])
 
 			simmulateSuccessfullClusterProvisioning(t, shootInterface, secretsInterface, shoot)
 
@@ -240,14 +250,24 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			//then
 			require.NoError(t, err)
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-			assert.Equal(t, "provisioning-finished", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning-step"])
 			assert.Equal(t, "provisioned", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
-			assert.Equal(t, "installed", shoot.Annotations["compass.provisioner.kyma-project.io/kyma-installation"])
+
+			// when
+			upgradeRuntimeOp, err := resolver.UpgradeKymaOnRuntime(ctx, config.runtimeID, gqlschema.UpgradeKymaOnRuntimeInput{KymaConfig: fixKymaGraphQLConfigInput()})
+
+			// then
+			require.NoError(t, err)
+			assert.NotEmpty(t, upgradeRuntimeOp.ID)
+			assert.Equal(t, gqlschema.OperationTypeUpgrade, upgradeRuntimeOp.Operation)
+			assert.Equal(t, gqlschema.OperationStateInProgress, upgradeRuntimeOp.State)
+			require.NotNil(t, upgradeRuntimeOp.RuntimeID)
+			assert.Equal(t, config.runtimeID, *upgradeRuntimeOp.RuntimeID)
+
+			// wait for queue to process operation
+			time.Sleep(waitPeriod)
 
 			//when
 			deprovisionRuntimeID, err := resolver.DeprovisionRuntime(ctx, config.runtimeID)
-
-			//then
 			require.NoError(t, err)
 			require.NotEmpty(t, deprovisionRuntimeID)
 
@@ -259,10 +279,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			//then
 			require.NoError(t, err)
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-			assert.Equal(t, "deprovisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning-step"])
 			assert.Equal(t, deprovisionRuntimeID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
 			assert.Equal(t, "deprovisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
-			assert.Equal(t, "uninstalling", shoot.Annotations["compass.provisioner.kyma-project.io/kyma-installation"])
 
 			//when
 			shoot = removeFinalizers(t, shootInterface, shoot)
@@ -273,16 +291,16 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.Error(t, err)
 			require.Empty(t, shoot)
 
-			// when
+			// then
+			// assert database content
 			readSession := dbsFactory.NewReadSession()
 			runtimeFromDb, err := readSession.GetCluster(config.runtimeID)
-
-			// then
 			require.NoError(t, err)
 			assert.Equal(t, tenant, runtimeFromDb.Tenant)
 			assert.Equal(t, subAccountId, runtimeFromDb.SubAccountId)
 			assert.Equal(t, true, runtimeFromDb.Deleted)
 
+			// TODO: do some assertions on the runtime_upgrade tablee
 		})
 	}
 
@@ -495,4 +513,38 @@ func setupSecretsClient(t *testing.T, config *rest.Config) v1core.SecretInterfac
 	require.NoError(t, err)
 
 	return coreClient.Secrets(namespace)
+}
+
+// TODO: this functions are copied from main - maybe move it somewhere else
+func createInstallationQueue(factory dbsession.Factory, installationClient installation2.Service, configurator runtimeConfigrtr.Configurator) *operations.Queue {
+	configureAgentStep := stages.NewConnectAgentStage(configurator, model.FinishedStage, 10*time.Minute)
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), 50*time.Minute) // TODO: take form config
+	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
+
+	installSteps := map[model.OperationStage]operations.Stage{
+		model.ConnectRuntimeAgent:    configureAgentStep,
+		model.WaitingForInstallation: waitForInstallStep,
+		model.StartingInstallation:   installStep,
+	}
+
+	installationExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(), model.Provision, installSteps)
+
+	return operations.NewQueue(installationExecutor)
+}
+
+func createUpgradeQueue(factory dbsession.Factory, installationClient installation2.Service) *operations.Queue {
+
+	// TODO: probably you will need some step for "committing" the changes to database
+
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, model.FinishedStage, 50*time.Minute) // TODO: take form config
+	upgradeStep := stages.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
+
+	upgradeSteps := map[model.OperationStage]operations.Stage{
+		model.WaitingForInstallation: waitForInstallStep,
+		model.StartingUpgrade:        upgradeStep,
+	}
+
+	upgradeExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(), model.Upgrade, upgradeSteps)
+
+	return operations.NewQueue(upgradeExecutor)
 }

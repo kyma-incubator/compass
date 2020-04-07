@@ -53,11 +53,11 @@ func (_m *Service) InstallKyma(runtimeId string, kubeconfigRaw string, release m
 }
 
 // TriggerInstallation provides a mock function with given fields: kubeconfigRaw, release, globalConfig, componentsConfig
-func (_m *Service) TriggerInstallation(kubeconfigRaw []byte, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+func (_m *Service) TriggerInstallation(kubeconfigRaw *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
 	ret := _m.Called(kubeconfigRaw, release, globalConfig, componentsConfig)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func([]byte, model.Release, model.Configuration, []model.KymaComponentConfig) error); ok {
+	if rf, ok := ret.Get(0).(func(*rest.Config, model.Release, model.Configuration, []model.KymaComponentConfig) error); ok {
 		r0 = rf(kubeconfigRaw, release, globalConfig, componentsConfig)
 	} else {
 		r0 = ret.Error(0)
@@ -73,6 +73,20 @@ func (_m *Service) TriggerUninstall(kubeconfig *rest.Config) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*rest.Config) error); ok {
 		r0 = rf(kubeconfig)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TriggerUpgrade provides a mock function with given fields: kubeconfigRaw, release, globalConfig, componentsConfig
+func (_m *Service) TriggerUpgrade(kubeconfigRaw *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+	ret := _m.Called(kubeconfigRaw, release, globalConfig, componentsConfig)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*rest.Config, model.Release, model.Configuration, []model.KymaComponentConfig) error); ok {
+		r0 = rf(kubeconfigRaw, release, globalConfig, componentsConfig)
 	} else {
 		r0 = ret.Error(0)
 	}

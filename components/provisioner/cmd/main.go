@@ -134,7 +134,6 @@ func main() {
 	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
 	exitOnError(err, "Failed to initialize persistence")
 
-	// TODO: temporary solution
 	installationHandlerConstructor := func(c *rest.Config, o ...installationSDK.InstallationOption) (installationSDK.Installer, error) {
 		return installationSDK.NewKymaInstaller(c, o...)
 	}

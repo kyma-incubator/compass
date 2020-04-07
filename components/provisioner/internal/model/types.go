@@ -42,6 +42,7 @@ type Cluster struct {
 	Deleted               bool
 	Tenant                string
 	SubAccountId          string
+	ActiveKymaConfigId    string
 
 	ClusterConfig ProviderConfiguration `db:"-"`
 	KymaConfig    KymaConfig            `db:"-"`

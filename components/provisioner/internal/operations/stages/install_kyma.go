@@ -6,10 +6,9 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/sirupsen/logrus"
-	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"time"
 )
 
@@ -41,8 +40,7 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) 
 		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
 
-	// TODO: cleanup kubeconfig stuff
-	k8sConfig, err := ParseToK8sConfig([]byte(*cluster.Kubeconfig))
+	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
 		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
@@ -66,7 +64,7 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) 
 
 	// TODO: it needs to run apply instead of create
 	err = s.installationClient.TriggerInstallation(
-		[]byte(*cluster.Kubeconfig),
+		k8sConfig,
 		cluster.KymaConfig.Release,
 		cluster.KymaConfig.GlobalConfiguration,
 		cluster.KymaConfig.Components)
@@ -77,18 +75,4 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) 
 
 	logger.Warnf("Installation started, proceeding to next step...")
 	return operations.StageResult{Stage: s.nextStep, Delay: 30 * time.Second}, nil
-}
-
-func ParseToK8sConfig(kubeconfigRaw []byte) (*restclient.Config, error) {
-	kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigRaw)
-	if err != nil {
-		return nil, fmt.Errorf("error constructing kubeconfig from raw config: %s", err.Error())
-	}
-
-	clientConfig, err := kubeconfig.ClientConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get client kubeconfig from parsed config: %s", err.Error())
-	}
-
-	return clientConfig, nil
 }

@@ -302,7 +302,7 @@ func (r *service) setUpgradeStarted(txSession dbsession.WriteSession, cluster mo
 		return model.Operation{}, err.Append("Failed to insert Runtime Upgrade")
 	}
 
-	err = txSession.UpdateClusterKymaConfig(cluster.ID, kymaConfig.ID)
+	err = txSession.SetActiveKymaConfig(cluster.ID, kymaConfig.ID)
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to update Kyma config in cluster")
 	}

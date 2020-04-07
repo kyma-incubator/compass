@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -41,8 +42,7 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) 
 		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
 
-	// TODO: cleanup kubeconfig stuff
-	k8sConfig, err := ParseToK8sConfig([]byte(*cluster.Kubeconfig))
+	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
 		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
@@ -52,50 +52,33 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) 
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
 			logger.Warnf("Upgrade already in progress, proceeding to next step...")
-			return operations.StageResult{Stage: s.Name(), Delay: 0}, nil
+			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 		}
 
 		return operations.StageResult{}, fmt.Errorf("error: failed to check installation CR state: %s", err.Error())
 	}
 
-	// TODO Start upgrade
 	if installationState.State == installationSDK.NoInstallationState {
-		// TODO: non recoverable
-		return operations.StageResult{}, fmt.Errorf("error: Installation CR not found in the cluster")
+		return operations.StageResult{}, operations.NewNonRecoverableError(fmt.Errorf("error: Installation CR not found in the cluster, cannot trigger upgrade"))
 	}
 
 	if installationState.State == "Installed" {
-		// TODO: start upgrade
+		err = s.installationClient.TriggerUpgrade(
+			k8sConfig,
+			cluster.KymaConfig.Release,
+			cluster.KymaConfig.GlobalConfiguration,
+			cluster.KymaConfig.Components)
+		if err != nil {
+			return operations.StageResult{}, fmt.Errorf("error: failed to trigger upgrade: %s", err.Error())
+		}
 	}
 
-	// TODO: How should it handle when installation in progress? Should it check the Kyma version?
+	if installationState.State == "InProgress" {
+		// TODO: How should it handle when installation in progress? Should it check the Kyma version?
+
+		logger.Warnf("Upgrade already in progress, proceeding to next step...")
+		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+	}
 
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
-
-	//
-	//if installationState.State == installationSDK.NoInstallationState {
-	//	// TODO: it needs to run apply instead of create
-	//	err := s.installationClient.TriggerInstallation(
-	//		[]byte(*cluster.Kubeconfig),
-	//		cluster.KymaConfig.Release,
-	//		cluster.KymaConfig.GlobalConfiguration,
-	//		cluster.KymaConfig.Components)
-	//	if err != nil {
-	//		// TODO: if it runs apply then recoverable error (else not)
-	//		return operation, 2 * time.Second, fmt.Errorf("error: failed to start installation: %s", err.Error())
-	//	}
-	//
-	//	// TODO: update operation that installation started
-	//}
-	//
-	//if installationState.State == "Installed" {
-	//	operation.Message = "Installation completed"
-	//	logger.Infof("Installation completed: %s", installationState.Description)
-	//	return operation, 0, nil
-	//}
-	//
-	//operation.Message = fmt.Sprintf("Installation in progress: %s", installationState.Description)
-	//
-	//logger.Infof("Installation in progress: %s", installationState.Description)
-	//return operation, 10 * time.Second, nil
 }

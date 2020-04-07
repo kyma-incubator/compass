@@ -18,8 +18,7 @@ func (r *ProvisioningOperator) ProceedToFailedStep(log *logrus.Entry, shoot gard
 
 	err := r.updateShoot(shoot, func(s *gardener_types.Shoot) {
 		removeAnnotation(s, operationIdAnnotation)
-		annotate(s, installationAnnotation, InstallationFailed.String())
-		annotate(s, provisioningStepAnnotation, ProvisioningFailedStep.String())
+		annotate(s, provisioningAnnotation, ProvisioningFailed.String())
 	})
 	if err != nil {
 		return fmt.Errorf("error: failed to update shoot, after installation timeout")

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 	"time"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
@@ -11,8 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-
-	"k8s.io/client-go/tools/clientcmd"
 
 	pkgErrors "github.com/pkg/errors"
 
@@ -31,7 +30,8 @@ type Service interface {
 	InstallKyma(runtimeId, kubeconfigRaw string, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
 	CheckInstallationState(kubeconfig *rest.Config) (installation.InstallationState, error)
 	// TODO: this will block for quite a while, consider running it in gorutine or split it to more steps (install tillert -> check periodicaly -> deploy installer -> trigger installation)
-	TriggerInstallation(kubeconfigRaw []byte, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
+	TriggerInstallation(kubeconfigRaw *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
+	TriggerUpgrade(kubeconfigRaw *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
 	TriggerUninstall(kubeconfig *rest.Config) error
 }
 
@@ -49,10 +49,21 @@ type installationService struct {
 	installationHandler                InstallationHandler
 }
 
-func (s *installationService) TriggerInstallation(kubeconfigRaw []byte, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
-	kymaInstaller, err := s.deployInstaller(kubeconfigRaw, release, globalConfig, componentsConfig)
+func (s *installationService) TriggerInstallation(kubeconfig *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+	kymaInstaller, err := s.createKymaInstaller(kubeconfig, componentsConfig)
 	if err != nil {
 		return fmt.Errorf("failed to trigger installation: %s", err.Error())
+	}
+
+	installationConfig := installation.Installation{
+		TillerYaml:    release.TillerYAML,
+		InstallerYaml: release.InstallerYAML,
+		Configuration: NewInstallationConfiguration(globalConfig, componentsConfig),
+	}
+
+	err = kymaInstaller.PrepareInstallation(installationConfig)
+	if err != nil {
+		return pkgErrors.Wrap(err, "Failed to prepare installation")
 	}
 
 	installationCtx, cancel := context.WithCancel(context.Background())
@@ -67,24 +78,59 @@ func (s *installationService) TriggerInstallation(kubeconfigRaw []byte, release 
 	return nil
 }
 
-func (s *installationService) deployInstaller(kubeconfigRaw []byte, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) (installation.Installer, error) {
-	kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigRaw)
+// TODO: consider refactoring this function
+func (s *installationService) TriggerUpgrade(kubeconfig *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+	kymaInstaller, err := s.createKymaInstaller(kubeconfig, componentsConfig)
 	if err != nil {
-		return nil, fmt.Errorf("error constructing kubeconfig from raw config: %s", err.Error())
+		return fmt.Errorf("failed to trigger installation: %s", err.Error())
 	}
 
-	clientConfig, err := kubeconfig.ClientConfig()
+	//installationConfig := installation.Installation{
+	//	TillerYaml:    release.TillerYAML,
+	//	InstallerYaml: release.InstallerYAML,
+	//	Configuration: NewInstallationConfiguration(globalConfig, componentsConfig),
+	//}
+
+	// TODO: call prepare upgrade here
+	//err = kymaInstaller.PrepareInstallation(installationConfig)
+	//if err != nil {
+	//	return pkgErrors.Wrap(err, "Failed to prepare upgrade")
+	//}
+
+	installationCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// We are not waiting for events, just triggering installation
+	_, _, err = kymaInstaller.StartInstallation(installationCtx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get client kubeconfig from parsed config: %s", err.Error())
+		return pkgErrors.Wrap(err, "Failed to start Kyma installation")
 	}
 
+	return nil
+}
+
+func (s *installationService) createKymaInstaller(kubeconfig *rest.Config, componentsConfig []model.KymaComponentConfig) (installation.Installer, error) {
 	kymaInstaller, err := s.installationHandler(
-		clientConfig,
+		kubeconfig,
 		installation.WithTillerWaitTime(tillerWaitTime),
 		installation.WithInstallationCRModification(GetInstallationCRModificationFunc(componentsConfig)),
 	)
 	if err != nil {
 		return nil, pkgErrors.Wrap(err, "Failed to create Kyma installer")
+	}
+
+	return kymaInstaller, nil
+}
+
+func (s *installationService) InstallKyma(runtimeId, kubeconfigRaw string, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+	kubeconfig, err := k8s.ParseToK8sConfig([]byte(kubeconfigRaw))
+	if err != nil {
+		return fmt.Errorf("error parsing kubeconfig from raw config: %s", err.Error())
+	}
+
+	kymaInstaller, err := s.createKymaInstaller(kubeconfig, componentsConfig)
+	if err != nil {
+		return fmt.Errorf("failed to deploy Kyma installer: %s", err.Error())
 	}
 
 	installationConfig := installation.Installation{
@@ -95,16 +141,7 @@ func (s *installationService) deployInstaller(kubeconfigRaw []byte, release mode
 
 	err = kymaInstaller.PrepareInstallation(installationConfig)
 	if err != nil {
-		return nil, pkgErrors.Wrap(err, "Failed to prepare installation")
-	}
-
-	return kymaInstaller, nil
-}
-
-func (s *installationService) InstallKyma(runtimeId, kubeconfigRaw string, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
-	kymaInstaller, err := s.deployInstaller([]byte(kubeconfigRaw), release, globalConfig, componentsConfig)
-	if err != nil {
-		return fmt.Errorf("failed to deploy Kyma installer: %s", err.Error())
+		return pkgErrors.Wrap(err, "Failed to prepare installation")
 	}
 
 	installationCtx, cancel := context.WithTimeout(context.Background(), s.kymaInstallationTimeout)
