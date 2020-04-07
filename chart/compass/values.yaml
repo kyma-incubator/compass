@@ -55,7 +55,7 @@ global:
         version: "PR-1046"
       e2e_provisioning:
         dir:
-        version: "PR-1018"
+        version: "PR-1139"
       connectivity_adapter:
         dir:
         version: "PR-984"

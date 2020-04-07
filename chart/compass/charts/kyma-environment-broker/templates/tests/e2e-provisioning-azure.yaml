@@ -18,8 +18,6 @@ spec:
               value: "3h"
             - name: APP_DEPROVISION_TIMEOUT
               value: "1h"
-            - name: APP_CONFIG_MAP_NAME
-              value: "e2e-runtime-config"
             - name: APP_SKIP_CERT_VERIFICATION
               value: "true"
             - name: APP_TENANT_ID
@@ -49,8 +47,10 @@ spec:
               value: "uaa-issuer"
             - name: APP_RUNTIME_UUA_INSTANCE_NAMESPACE
               value: "kyma-system"
-            - name: APP_RUNTIME_CONFIG_NAME
+            - name: APP_CONFIG_NAME
               value: "{{ .Values.e2e.azure.configName }}"
+            - name: APP_DEPLOY_NAMESPACE
+              value: "compass-system"
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_NAMESPACE
@@ -81,8 +81,6 @@ spec:
               value: "3h"
             - name: APP_DEPROVISION_TIMEOUT
               value: "1h"
-            - name: APP_CONFIG_MAP_NAME
-              value: "e2e-runtime-config"
             - name: APP_SKIP_CERT_VERIFICATION
               value: "true"
             - name: APP_TENANT_ID
@@ -108,13 +106,10 @@ spec:
               value: "uaa-issuer"
             - name: APP_RUNTIME_UUA_INSTANCE_NAMESPACE
               value: "kyma-system"
-            - name: APP_RUNTIME_CONFIG_NAME
+            - name: APP_CONFIG_NAME
               value: "{{ .Values.e2e.azure.configName }}"
-            - name: APP_INSTANCE_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: "{{ .Values.e2e.azure.configName }}"
-                  key: instanceID
+            - name: APP_DEPLOY_NAMESPACE
+              value: "compass-system"
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_NAMESPACE
