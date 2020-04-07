@@ -440,11 +440,11 @@ func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
 		ProvisioningParameters: `{
 			"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 			"ers_context": {
-        		"subaccount_id": "` + fixSubAccountID + `"
+				"subaccount_id": "` + fixSubAccountID + `"
 			},
 			"parameters": {
-        		"name": "nachtmaar-15",
-        		"components": [],
+				"name": "nachtmaar-15",
+				"components": [],
 				"region": "westeurope"
 			}
 		}`,
