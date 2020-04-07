@@ -25,6 +25,7 @@ type Type struct {
 	Items           []Type        `json:"items,omitempty"`
 	AdditionalItems *bool         `json:"additionalItems,omitempty"`
 	UniqueItems     *bool         `json:"uniqueItems,omitempty"`
+	MinLength       int           `json:"minLength,omitempty"`
 }
 type RootSchema struct {
 	Schema string `json:"$schema"`
@@ -69,7 +70,8 @@ func GCPSchema() []byte {
 				UniqueItems:     t,
 			},
 			Name: Type{
-				Type: "string",
+				Type:      "string",
+				MinLength: 6,
 			},
 			DiskType: Type{Type: "string"},
 			VolumeSizeGb: Type{
@@ -152,7 +154,8 @@ func AzureSchema() []byte {
 				UniqueItems:     t,
 			},
 			Name: Type{
-				Type: "string",
+				Type:      "string",
+				MinLength: 6,
 			},
 			DiskType: Type{Type: "string"},
 			VolumeSizeGb: Type{

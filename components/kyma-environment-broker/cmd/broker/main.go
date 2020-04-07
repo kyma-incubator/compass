@@ -127,8 +127,10 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Kiali":  runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"Jaeger": runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
+		"Kiali":     runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
+		"Jaeger":    runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
+		"BackupInt": runtime.NewGenericComponentDisabler("backup-init", "kyma-system"),
+		"Backup":    runtime.NewGenericComponentDisabler("backup", "kyma-system"),
 		// TODO(workaround until #1049): following components should be always disabled and user should not be able to enable them in provisioning request. This implies following components cannot be specified under the plan schema definition.
 		"KnativeProvisionerNatss": runtime.NewGenericComponentDisabler("knative-provisioner-natss", "knative-eventing"),
 		"NatssStreaming":          runtime.NewGenericComponentDisabler("nats-streaming", "natss"),
@@ -149,13 +151,16 @@ func main() {
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, runtimeProvider, cfg.Provisioning, cfg.KymaVersion)
 	fatalOnError(err)
 
+	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
+	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled)
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), logs)
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs)
 
 	// define steps
-	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory)
+	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, externalEvalCreator)
 	provisionManager.InitStep(provisioningInit)
+
 	provisioningSteps := []struct {
 		disabled bool
 		weight   int
@@ -167,7 +172,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewInternalEvaluationStep(cfg.Avs, db.Operations()),
+			step:     provisioning.NewInternalEvaluationStep(cfg.Avs, avsDel),
 			disabled: cfg.Avs.Disabled,
 		},
 		{
@@ -240,7 +245,7 @@ func main() {
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
 		broker.NewServices(cfg.Broker, optComponentsSvc, logs),
-		broker.NewProvision(cfg.Broker, db.Operations(), provisionQueue, inputFactory, plansValidator, cfg.EnableOnDemandVersion, logs),
+		broker.NewProvision(cfg.Broker, db.Operations(), db.Instances(), provisionQueue, inputFactory, plansValidator, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
 		broker.NewUpdate(logs),
 		broker.NewGetInstance(db.Instances(), logs),

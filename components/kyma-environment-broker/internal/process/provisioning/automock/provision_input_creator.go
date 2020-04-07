@@ -64,7 +64,7 @@ func (_m *ProvisionInputCreator) Create() (gqlschema.ProvisionRuntimeInput, erro
 	return r0, r1
 }
 
-// SetOverrides provides a mock function with given fields: component, overrides
+// AppendOverrides provides a mock function with given fields: component, overrides
 func (_m *ProvisionInputCreator) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {
 	ret := _m.Called(component, overrides)
 

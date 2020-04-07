@@ -23,7 +23,7 @@ import (
 const (
 	authorizationRuleName = "RootManageSharedAccessKey"
 
-	kafkaPort = 9093
+	kafkaPort = "9093"
 
 	k8sSecretNamespace                = "knative-eventing"
 	componentNameKnativeEventing      = "knative-eventing"
@@ -126,12 +126,11 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		return p.operationManager.RetryOperationOnce(operation, errorMessage, time.Second*15, log)
 	}
 	kafkaEndpoint := extractEndpoint(accessKeys)
-	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
 	// set installation overrides
 	operation.InputCreator.SetOverrides(componentNameKnativeEventing, getKnativeEventingOverrides())
-	operation.InputCreator.SetOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
+	operation.InputCreator.SetOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, kafkaPort, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
 
 	return operation, 0, nil
 }
@@ -141,10 +140,6 @@ func extractEndpoint(accessKeys eventhub.AccessKeys) string {
 	endpoint = strings.TrimPrefix(endpoint, "Endpoint=sb://")
 	endpoint = strings.TrimSuffix(endpoint, "/")
 	return endpoint
-}
-
-func appendPort(endpoint string, port int) string {
-	return fmt.Sprintf("%s:%d", endpoint, port)
 }
 
 func getKnativeEventingOverrides() []*gqlschema.ConfigEntryInput {
@@ -160,11 +155,16 @@ func getKnativeEventingOverrides() []*gqlschema.ConfigEntryInput {
 	}
 }
 
-func getKafkaChannelOverrides(broker, namespace, username, password, kafkaProvider string) []*gqlschema.ConfigEntryInput {
+func getKafkaChannelOverrides(brokerHostname, brokerPort, namespace, username, password, kafkaProvider string) []*gqlschema.ConfigEntryInput {
 	return []*gqlschema.ConfigEntryInput{
 		{
-			Key:    "kafka.brokers",
-			Value:  broker,
+			Key:    "kafka.brokers.hostname",
+			Value:  brokerHostname,
+			Secret: ptr.Bool(true),
+		},
+		{
+			Key:    "kafka.brokers.port",
+			Value:  brokerPort,
 			Secret: ptr.Bool(true),
 		},
 		{

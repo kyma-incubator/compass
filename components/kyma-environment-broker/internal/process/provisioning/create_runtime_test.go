@@ -42,10 +42,13 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
+	err = memoryStorage.Instances().Insert(fixInstance())
+	assert.NoError(t, err)
+
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
-			Name:        "",
+			Name:        "dummy",
 			Description: nil,
 			Labels: &gqlschema.Labels{
 				"broker_instance_id":   []string{instanceID},
@@ -132,6 +135,13 @@ func fixOperationCreateRuntime(t *testing.T) internal.ProvisioningOperation {
 	}
 }
 
+func fixInstance() internal.Instance {
+	return internal.Instance{
+		InstanceID:      instanceID,
+		GlobalAccountID: globalAccountID,
+	}
+}
+
 func fixProvisioningParameters(t *testing.T) string {
 	parameters := internal.ProvisioningParameters{
 		PlanID:    broker.GcpPlanID,
@@ -151,6 +161,7 @@ func fixProvisioningParameters(t *testing.T) string {
 		},
 		Parameters: internal.ProvisioningParametersDTO{
 			Region: ptr.String("europe-west4-a"),
+			Name:   "dummy",
 		},
 	}
 

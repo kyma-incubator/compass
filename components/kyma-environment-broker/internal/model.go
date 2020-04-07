@@ -74,6 +74,8 @@ type ProvisioningOperation struct {
 	InputCreator ProvisionInputCreator `json:"-"`
 
 	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
+
+	AVSEvaluationExternalId int64 `json:"avs_evaluation_external_id"`
 }
 
 // DeprovisioningOperation holds all information about provisioning operation

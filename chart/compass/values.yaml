@@ -13,7 +13,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-634"
+      version: "PR-1107"
     connectivity_adapter:
       dir:
       version: "PR-1115"
@@ -34,7 +34,7 @@ global:
       version: "PR-1129"
     provisioner:
       dir:
-      version: "PR-1002"
+      version: "PR-1107"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -42,11 +42,11 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-1113"
+      version: "PR-1120"
     tests:
       director:
         dir:
-        version: "PR-1110"
+        version: "PR-1122"
       connector:
         dir:
         version: "02e8358c"
@@ -254,6 +254,8 @@ global:
     dbPool:
       maxOpenConnections: 1
       maxIdleConnections: 1
+
+  enableCompassDefaultScenarioAssignment: true
 
 pairing-adapter:
   enabled: false

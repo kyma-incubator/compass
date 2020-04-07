@@ -30,20 +30,22 @@ type DirectorClient interface {
 }
 
 type InitialisationStep struct {
-	operationManager  *process.ProvisionOperationManager
-	instanceStorage   storage.Instances
-	provisionerClient provisioner.Client
-	directorClient    DirectorClient
-	inputBuilder      input.CreatorForPlan
+	operationManager    *process.ProvisionOperationManager
+	instanceStorage     storage.Instances
+	provisionerClient   provisioner.Client
+	directorClient      DirectorClient
+	inputBuilder        input.CreatorForPlan
+	externalEvalCreator *ExternalEvalCreator
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan, avsExternalEvalCreator *ExternalEvalCreator) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:  process.NewProvisionOperationManager(os),
-		instanceStorage:   is,
-		provisionerClient: pc,
-		directorClient:    dc,
-		inputBuilder:      b,
+		operationManager:    process.NewProvisionOperationManager(os),
+		instanceStorage:     is,
+		provisionerClient:   pc,
+		directorClient:      dc,
+		inputBuilder:        b,
+		externalEvalCreator: avsExternalEvalCreator,
 	}
 }
 
@@ -52,14 +54,18 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	_, err := s.instanceStorage.GetByID(operation.InstanceID)
+	inst, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
-		log.Info("instance exist, check instance status")
+		if inst.RuntimeID == "" {
+			log.Info("runtimeID not exist, initialize runtime input request")
+			return s.initializeRuntimeInputRequest(operation, log)
+		}
+		log.Info("runtimeID exist, check instance status")
 		return s.checkRuntimeStatus(operation, log)
 	case dberr.IsNotFound(err):
-		log.Info("instance not exist, initialize runtime input request")
-		return s.initializeRuntimeInputRequest(operation, log)
+		log.Info("instance not exist")
+		return s.operationManager.OperationFailed(operation, "instance was not created")
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
 		return operation, 1 * time.Second, nil
@@ -109,7 +115,12 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 
 	_, err = url.ParseRequestURI(instance.DashboardURL)
 	if err == nil {
-		return s.operationManager.OperationSucceeded(operation, "URL dashboard already exist")
+		operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL)
+		if err != nil || repeat != 0 {
+			return operation, repeat, nil
+		} else {
+			return s.operationManager.OperationSucceeded(operation, "URL dashboard already exist")
+		}
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
@@ -129,7 +140,12 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 		if err != nil || repeat != 0 {
 			return operation, repeat, err
 		}
-		return s.operationManager.OperationSucceeded(operation, msg)
+		operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL)
+		if err != nil || repeat != 0 {
+			return operation, repeat, nil
+		} else {
+			return s.operationManager.OperationSucceeded(operation, msg)
+		}
 	case gqlschema.OperationStateInProgress:
 		return operation, 2 * time.Minute, nil
 	case gqlschema.OperationStatePending:
