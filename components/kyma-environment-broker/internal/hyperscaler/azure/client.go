@@ -40,14 +40,12 @@ func (nc *AzureClient) CreateResourceGroup(ctx context.Context, config *Config, 
 
 // TODO(nachtmaar): can we have map[string]string here instead and do we nillness checking before ?
 func (nc *AzureClient) DeleteResourceGroup(ctx context.Context) error {
-	// we need to use a copy of the location, because the following azure call will modify it
 	resourceGroupName := nc.getResourceGroupName(ctx)
 	return nc.deleteAndWaitResourceGroup(ctx, resourceGroupName)
 }
 
-// TODO(nachtmaar): implement me
 func (nc *AzureClient) getResourceGroupName(ctx context.Context) string {
-	panic("todo")
+	return nc.getResourceGroupName(ctx)
 }
 
 func (nc *AzureClient) CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags map[string]*string) (*eventhub.EHNamespace, error) {

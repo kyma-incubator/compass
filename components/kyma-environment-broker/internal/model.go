@@ -131,7 +131,7 @@ func NewDeprovisioningOperationWithID(operationID, instanceID string) (Deprovisi
 	}, nil
 }
 
-func (do *DeprovisioningOperation) GetParameters() (ProvisioningParameters, error) {
+func (do DeprovisioningOperation) GetParameters() (ProvisioningParameters, error) {
 	var pp ProvisioningParameters
 
 	err := json.Unmarshal([]byte(do.DeprovisioningParameters), &pp)
@@ -142,7 +142,7 @@ func (do *DeprovisioningOperation) GetParameters() (ProvisioningParameters, erro
 	return pp, nil
 }
 
-func (po *ProvisioningOperation) GetParameters() (ProvisioningParameters, error) {
+func (po ProvisioningOperation) GetParameters() (ProvisioningParameters, error) {
 	var pp ProvisioningParameters
 
 	err := json.Unmarshal([]byte(po.ProvisioningParameters), &pp)

@@ -6,18 +6,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
-
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/sirupsen/logrus"
-
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+	processazure "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
 const (
@@ -36,17 +35,17 @@ var _ Step = (*ProvisionAzureEventHubStep)(nil)
 
 type ProvisionAzureEventHubStep struct {
 	operationManager    *process.ProvisionOperationManager
-	hyperscalerProvider azure.HyperscalerProvider
-	accountProvider     hyperscaler.AccountProvider
-	context             context.Context
+	processazure.EventHub
 }
 
 func NewProvisionAzureEventHubStep(os storage.Operations, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
 	return &ProvisionAzureEventHubStep{
 		operationManager:    process.NewProvisionOperationManager(os),
-		accountProvider:     accountProvider,
-		context:             ctx,
-		hyperscalerProvider: hyperscalerProvider,
+		EventHub: processazure.EventHub{
+			HyperscalerProvider: hyperscalerProvider,
+			AccountProvider:     accountProvider,
+			Context:             ctx,
+		},
 	}
 }
 
@@ -70,7 +69,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
 	// get hyperscaler credentials from HAP
-	credentials, err := p.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	credentials, err := p.EventHub.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
 	if err != nil {
 		// retrying might solve the issue, the HAP could be temporarily unavailable
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
@@ -84,7 +83,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	}
 
 	// create hyperscaler client
-	namespaceClient, err := p.hyperscalerProvider.GetClient(azureCfg)
+	namespaceClient, err := p.EventHub.HyperscalerProvider.GetClient(azureCfg)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
@@ -100,7 +99,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	// create Resource Group
 	groupName := pp.Parameters.Name
 	// TODO(nachtmaar): use different resource group name https://github.com/kyma-incubator/compass/issues/967
-	resourceGroup, err := namespaceClient.CreateResourceGroup(p.context, azureCfg, groupName, tags)
+	resourceGroup, err := namespaceClient.CreateResourceGroup(p.EventHub.Context, azureCfg, groupName, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
@@ -110,7 +109,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	// create EventHubs Namespace
 	eventHubsNamespace := pp.Parameters.Name
-	eventHubNamespace, err := namespaceClient.CreateNamespace(p.context, azureCfg, groupName, eventHubsNamespace, tags)
+	eventHubNamespace, err := namespaceClient.CreateNamespace(p.EventHub.Context, azureCfg, groupName, eventHubsNamespace, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
@@ -119,7 +118,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
 
 	// get EventHubs Namespace secret
-	accessKeys, err := namespaceClient.GetEventhubAccessKeys(p.context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
+	accessKeys, err := namespaceClient.GetEventhubAccessKeys(p.EventHub.Context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Unable to retrieve access keys to azure event-hub namespace: %v", err)
