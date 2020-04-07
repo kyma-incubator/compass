@@ -3,7 +3,6 @@ package gateway_integration
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -18,10 +17,7 @@ import (
 )
 
 func TestAutomaticStatusUpdate(t *testing.T) {
-	domain := os.Getenv("DOMAIN")
-	require.NotEmpty(t, domain)
-	tenant := os.Getenv("DEFAULT_TENANT")
-	require.NotEmpty(t, tenant)
+
 	ctx := context.Background()
 
 	t.Log("Get Dex id_token")
@@ -37,10 +33,10 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			Name:         "app-static-user",
 			ProviderName: ptr.String("compass"),
 		}
-		app, err := registerApplicationWithinTenant(t, ctx, dexGraphQLClient, tenant, appInput)
+		app, err := registerApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 		require.NoError(t, err)
 
-		defer unregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+		defer unregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 
 		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
 
@@ -50,7 +46,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			Description:     str.Ptr("New description"),
 			StatusCondition: &status,
 		}
-		appUpdated, err := updateApplicationWithinTenant(t, ctx, dexGraphQLClient, tenant, app.ID, appUpdateInput)
+		appUpdated, err := updateApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID, appUpdateInput)
 		require.NoError(t, err)
 
 		t.Log("Ensure the status condition")
@@ -59,17 +55,17 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 	t.Run("Test status update as Integration System", func(t *testing.T) {
 		t.Log("Register Integration System with Dex id token")
-		intSys := registerIntegrationSystem(t, ctx, dexGraphQLClient, tenant, "integration-system")
+		intSys := registerIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "integration-system")
 
 		t.Logf("Registered Integration System with [id=%s]", intSys.ID)
-		defer unregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
+		defer unregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 
 		t.Log("Request Client Credentials for Integration System")
-		intSysOauthCredentialData := requestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
+		intSysOauthCredentialData := requestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
 		accessToken := getAccessToken(t, intSysOauthCredentialData, "application:write")
-		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain))
 
 		t.Log("Register application as Integration System")
 		appInput := graphql.ApplicationRegisterInput{
@@ -77,10 +73,10 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			ProviderName:        ptr.String("compass"),
 			IntegrationSystemID: &intSys.ID,
 		}
-		app, err := registerApplicationWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)
+		app, err := registerApplicationWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
 		require.NoError(t, err)
 
-		defer unregisterApplication(t, ctx, oauthGraphQLClient, tenant, app.ID)
+		defer unregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, app.ID)
 
 		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
 
@@ -90,7 +86,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			Description:     str.Ptr("New description"),
 			StatusCondition: &status,
 		}
-		appUpdated, err := updateApplicationWithinTenant(t, ctx, oauthGraphQLClient, tenant, app.ID, appUpdateInput)
+		appUpdated, err := updateApplicationWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, app.ID, appUpdateInput)
 		require.NoError(t, err)
 
 		t.Log("Ensure the status condition")
@@ -108,13 +104,13 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		}
 
 		t.Log("Register Application with Dex id token")
-		app := registerApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, appInput)
+		app := registerApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 
 		t.Logf("Registered Application with [id=%s]", app.ID)
-		defer unregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+		defer unregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 
 		t.Log("Request Client Credentials for Application")
-		appAuth := requestClientCredentialsForApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+		appAuth := requestClientCredentialsForApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 		appOauthCredentialData, ok := appAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 		require.True(t, ok)
 		require.NotEmpty(t, appOauthCredentialData.ClientSecret)
@@ -122,7 +118,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 		t.Log("Issue a Hydra token with Client Credentials")
 		accessToken := getAccessToken(t, appOauthCredentialData, "application:read")
-		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain))
 
 		t.Log("Get Application as Application")
 		actualApp := graphql.ApplicationExt{}
@@ -130,7 +126,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 		assert.Equal(t, graphql.ApplicationStatusConditionFailed, app.Status.Condition)
 
-		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenant, req, &actualApp)
+		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &actualApp)
 		require.NoError(t, err)
 
 		assert.Equal(t, graphql.ApplicationStatusConditionConnected, actualApp.Status.Condition)
@@ -147,13 +143,13 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		}
 
 		t.Log("Register Runtime with Dex id token")
-		runtime := registerRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &runtimeInput)
+		runtime := registerRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, &runtimeInput)
 
 		t.Logf("Registered Runtime with [id=%s]", runtime.ID)
-		defer unregisterRuntimeWithinTenant(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+		defer unregisterRuntimeWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, runtime.ID)
 
 		t.Log("Request Client Credentials for Runtime")
-		rtmAuth := requestClientCredentialsForRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+		rtmAuth := requestClientCredentialsForRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, runtime.ID)
 		rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 		require.True(t, ok)
 		require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
@@ -161,7 +157,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 		t.Log("Issue a Hydra token with Client Credentials")
 		accessToken := getAccessToken(t, rtmOauthCredentialData, "runtime:read")
-		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain))
 
 		t.Log("Get Runtime as Runtime")
 		actualRuntime := graphql.RuntimeExt{}
@@ -169,7 +165,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 		assert.Equal(t, graphql.RuntimeStatusConditionFailed, runtime.Status.Condition)
 
-		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenant, req, &actualRuntime)
+		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &actualRuntime)
 		require.NoError(t, err)
 
 		t.Log("Ensure the status condition")
