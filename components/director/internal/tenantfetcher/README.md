@@ -97,7 +97,7 @@ Tenant Fetcher binary allows you to override some configuration parameters. You 
 | **global.tenantFetcher.endpoints.tenantCreated** | Tenant Events API endpoint for fetching created tenants | `"127.0.0.1/events?type=created"` |
 | **global.tenantFetcher.endpoints.tenantDeleted** | Tenant Events API endpoint for fetching deleted tenants | `"127.0.0.1/events?type=deleted"` |
 | **global.tenantFetcher.endpoints.tenantUpdated** | Tenant Events API endpoint for fetching updated tenants | `"127.0.0.1/events?type=updated"` |
-| **global.tenantFetcher.fieldMapping.idField** | Name of the field in the event data payload containing the tenant name | `"id"` |
-| **global.tenantFetcher.fieldMapping.nameField** | Name of the field in the event data payload containing the tenant ID | `"name"` |
-| **global.tenantFetcher.fieldMapping.discriminatorField** | Optional name of the field in the event data payload used to filter created tenants. If provided, only the events containing this field with the value specified in **discriminatorValue** are used. | None |
+| **global.tenantFetcher.fieldMapping.idField** | Name of the field in the event data payload that contains the tenant ID | `"id"` |
+| **global.tenantFetcher.fieldMapping.nameField** | Name of the field in the event data payload that contains the tenant name | `"name"` |
+| **global.tenantFetcher.fieldMapping.discriminatorField** | Optional name of the field in the event data payload used to filter created tenants. If provided, only the events that contain this field with the value specified in **discriminatorValue** are used. | None |
 | **global.tenantFetcher.fieldMapping.discriminatorValue** | Optional value of the discriminator field used to filter  created tenants. It is used only if **discriminatorField** is provided. | None |
