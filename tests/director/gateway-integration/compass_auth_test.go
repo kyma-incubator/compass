@@ -37,7 +37,7 @@ func TestCompassAuth(t *testing.T) {
 
 	accessToken := getAccessToken(t, intSysOauthCredentialData, applicationScopes)
 
-	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain))
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 	t.Log("Register an application as Integration System")
 	appInput := graphql.ApplicationRegisterInput{

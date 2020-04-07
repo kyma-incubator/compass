@@ -2,7 +2,6 @@ package gateway_integration
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -65,7 +64,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 		t.Log("Issue a Hydra token with Client Credentials")
 		accessToken := getAccessToken(t, intSysOauthCredentialData, "application:write")
-		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain))
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 		t.Log("Register application as Integration System")
 		appInput := graphql.ApplicationRegisterInput{
@@ -118,7 +117,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 		t.Log("Issue a Hydra token with Client Credentials")
 		accessToken := getAccessToken(t, appOauthCredentialData, "application:read")
-		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain))
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 		t.Log("Get Application as Application")
 		actualApp := graphql.ApplicationExt{}
@@ -157,7 +156,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 		t.Log("Issue a Hydra token with Client Credentials")
 		accessToken := getAccessToken(t, rtmOauthCredentialData, "runtime:read")
-		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain))
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 		t.Log("Get Runtime as Runtime")
 		actualRuntime := graphql.RuntimeExt{}

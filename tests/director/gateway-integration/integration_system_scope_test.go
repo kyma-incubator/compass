@@ -2,7 +2,6 @@ package gateway_integration
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
@@ -31,7 +30,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 
 	t.Log("Issue a token with Client Credentials")
 	token := getAccessToken(t, intSysOauthCredentialData, integrationSystemScopes)
-	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(token, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain))
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(token, testConfig.DirectorURL)
 	t.Run("Test application scopes", func(t *testing.T) {
 		t.Log("Register an application")
 		appInput := graphql.ApplicationRegisterInput{

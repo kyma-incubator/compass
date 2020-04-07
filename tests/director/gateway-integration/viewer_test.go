@@ -34,7 +34,7 @@ func TestViewerQuery(t *testing.T) {
 
 		t.Log("Issue a Hydra token with Client Credentials")
 		accessToken := getAccessToken(t, intSysOauthCredentialData, "")
-		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain))
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 		t.Log("Requesting Viewer as Integration System")
 		viewer := graphql.Viewer{}
