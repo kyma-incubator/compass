@@ -30,8 +30,8 @@ type ScenariosDefService interface {
 //go:generate mockery -name=AssignmentEngine -output=automock -outpkg=automock -case=underscore
 type AssignmentEngine interface {
 	EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error
-	RemoveAssignedScenario(in model.AutomaticScenarioAssignment) error
-	RemoveAssignedScenarios(in []*model.AutomaticScenarioAssignment) error
+	RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error
+	RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
 }
 
 func NewService(repo Repository, scenarioDefSvc ScenariosDefService, engineSvc AssignmentEngine) *service {
@@ -152,7 +152,7 @@ func (s *service) DeleteManyForSameSelector(ctx context.Context, in []*model.Aut
 		return errors.Wrap(err, "while ensuring input is valid")
 	}
 
-	err = s.engineSvc.RemoveAssignedScenarios(in)
+	err = s.engineSvc.RemoveAssignedScenarios(ctx, in)
 	if err != nil {
 		return errors.Wrap(err, "while unassigning scenario from runtimes")
 	}
@@ -172,7 +172,7 @@ func (s *service) Delete(ctx context.Context, in model.AutomaticScenarioAssignme
 		return errors.Wrap(err, "while loading tenant from context")
 	}
 
-	err = s.engineSvc.RemoveAssignedScenario(in)
+	err = s.engineSvc.RemoveAssignedScenario(ctx, in)
 	if err != nil {
 		return errors.Wrap(err, "while unassigning scenario from runtimes")
 	}

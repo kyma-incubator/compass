@@ -38,20 +38,24 @@ func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticS
 	return e.upsertMergedScenarios(ctx, labels, in.ScenarioName, e.uniqueScenarios)
 }
 
-func (e *engine) uniqueScenarios(scenarios []interface{}, newScenario string) ([]string, error) {
-	set := make(map[string]struct{})
-	set[newScenario] = struct{}{}
-
-	for _, scenario := range scenarios {
-		output, ok := scenario.(string)
-		if !ok {
-			return nil, errors.New("scenario is not a string")
-		}
-		set[output] = struct{}{}
+func (e engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+	labels, err := e.labelRepo.GetRuntimeScenariosWhereLabelsMatchSelector(ctx, in.Tenant, in.Selector.Key, in.Selector.Value)
+	if err != nil {
+		return errors.Wrap(err, "while getting runtimes scenarios which match given selector")
 	}
-
-	return str.MapToSlice(set), nil
+	return e.upsertMergedScenarios(ctx, labels, in.ScenarioName, e.removeScenario)
 }
+
+func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
+	for _, asa := range in {
+		err := e.RemoveAssignedScenario(ctx, *asa)
+		if err != nil {
+			return errors.Wrapf(err, "while deleting automatic scenario assigment: %s", asa.ScenarioName)
+		}
+	}
+	return nil
+}
+
 func (e *engine) upsertMergedScenarios(ctx context.Context, labels []model.Label, scenarioName string, mergeFn func(scenarios []interface{}, diffScenario string) ([]string, error)) error {
 	for _, label := range labels {
 		scenarios, ok := label.Value.([]interface{})
@@ -72,18 +76,34 @@ func (e *engine) upsertMergedScenarios(ctx context.Context, labels []model.Label
 	return nil
 }
 
-func (engine) RemoveAssignedScenario(in model.AutomaticScenarioAssignment) error {
-	// TODO: Implement it
+func (e *engine) uniqueScenarios(scenarios []interface{}, newScenario string) ([]string, error) {
+	set := make(map[string]struct{})
+	set[newScenario] = struct{}{}
 
-	// remove scenario from runtimes, which have label matching selector
-	return nil
+	for _, scenario := range scenarios {
+		output, ok := scenario.(string)
+		if !ok {
+			return nil, errors.New("scenario is not a string")
+		}
+		set[output] = struct{}{}
+	}
+
+	return str.MapToSlice(set), nil
 }
 
-func (engine) RemoveAssignedScenarios(in []*model.AutomaticScenarioAssignment) error {
-	// TODO: Implement it
+func (e *engine) removeScenario(scenarios []interface{}, toRemove string) ([]string, error) {
+	var newScenarios []string
+	for _, scenario := range scenarios {
+		output, ok := scenario.(string)
+		if !ok {
+			return nil, errors.New("scenario is not a string")
+		}
 
-	// remove scenarios from runtimes, which have label matching selector
-	return nil
+		if output != toRemove {
+			newScenarios = append(newScenarios, output)
+		}
+	}
+	return newScenarios, nil
 }
 
 func (e engine) GetScenariosForSelectorLabels(ctx context.Context, inputLabels map[string]string) ([]string, error) {

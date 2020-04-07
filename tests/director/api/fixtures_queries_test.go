@@ -120,6 +120,14 @@ func registerRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, inp
 	return &runtime
 }
 
+func listRuntimes(t *testing.T, ctx context.Context, tenant string) graphql.RuntimePageExt {
+	runtimesPage := graphql.RuntimePageExt{}
+	queryReq := fixRuntimesRequest()
+	err := tc.RunOperationWithCustomTenant(ctx, tenant, queryReq, &runtimesPage)
+	require.NoError(t, err)
+	return runtimesPage
+}
+
 func getRuntime(t *testing.T, ctx context.Context, runtimeID string) *graphql.RuntimeExt {
 	return getRuntimeWithinTenant(t, ctx, runtimeID, testTenants.GetDefaultTenantID())
 }
@@ -131,14 +139,6 @@ func getRuntimeWithinTenant(t *testing.T, ctx context.Context, runtimeID string,
 	err := tc.RunOperationWithCustomTenant(ctx, tenant, runtimeQuery, &runtime)
 	require.NoError(t, err)
 	return &runtime
-}
-
-func listRuntimes(t *testing.T, ctx context.Context, tenant string) graphql.RuntimePageExt {
-	runtimesPage := graphql.RuntimePageExt{}
-	queryReq := fixRuntimesRequest()
-	err := tc.RunOperationWithCustomTenant(ctx, tenant, queryReq, &runtimesPage)
-	require.NoError(t, err)
-	return runtimesPage
 }
 
 func setRuntimeLabel(t *testing.T, ctx context.Context, runtimeID string, labelKey string, labelValue interface{}) *graphql.Label {
