@@ -65,7 +65,7 @@ func TestService_Create(t *testing.T) {
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, id, modelInput.Labels).Return(nil).Once()
+				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, id, labelsWithName(modelInput.Name, modelInput.Labels)).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -91,7 +91,7 @@ func TestService_Create(t *testing.T) {
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, id, nilLabels).Return(nil).Once()
+				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, id, labelsWithName(modelInput.Name, nilLabels)).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -1121,4 +1121,15 @@ func contextThatHasTenant(expectedTenant string) interface{} {
 		}
 		return actualTenant == expectedTenant
 	})
+}
+
+func labelsWithName(name string, labels map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+	result["name"] = name
+	if labels != nil {
+		for k, v := range labels {
+			result[k] = v
+		}
+	}
+	return result
 }

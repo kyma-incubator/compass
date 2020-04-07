@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	nameKey   = "name"
+	nameKey = "name"
 )
 
 //go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
@@ -146,6 +146,9 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	}
 	s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
 
+	if in.Labels == nil {
+		in.Labels = make(map[string]interface{})
+	}
 	in.Labels[nameKey] = in.Name
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
