@@ -124,18 +124,20 @@ func (_m *Service) RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error) {
 }
 
 // UpgradeRuntime provides a mock function with given fields: id, config
-func (_m *Service) UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error) {
+func (_m *Service) UpgradeRuntime(id string, config gqlschema.UpgradeKymaOnRuntimeInput) (*gqlschema.OperationStatus, error) {
 	ret := _m.Called(id, config)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string, *gqlschema.UpgradeRuntimeInput) string); ok {
+	var r0 *gqlschema.OperationStatus
+	if rf, ok := ret.Get(0).(func(string, gqlschema.UpgradeKymaOnRuntimeInput) *gqlschema.OperationStatus); ok {
 		r0 = rf(id, config)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*gqlschema.OperationStatus)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, *gqlschema.UpgradeRuntimeInput) error); ok {
+	if rf, ok := ret.Get(1).(func(string, gqlschema.UpgradeKymaOnRuntimeInput) error); ok {
 		r1 = rf(id, config)
 	} else {
 		r1 = ret.Error(1)

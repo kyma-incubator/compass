@@ -151,7 +151,7 @@ func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, run
 	}
 
 	if lastOperation.State == model.InProgress {
-		return errors.Errorf("cannot start new operation for %s Runtime while previous one is in progress", id)
+		return errors.Errorf("cannot start new operation for %s Runtime while previous one is in progress", runtimeId)
 	}
 
 	return nil

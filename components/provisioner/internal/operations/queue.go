@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+//go:generate mockery -name=OperationQueue
 type OperationQueue interface {
 	Add(processId string)
 	Run(stop <-chan struct{})

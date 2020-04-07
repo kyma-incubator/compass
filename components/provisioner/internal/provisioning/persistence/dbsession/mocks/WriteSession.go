@@ -113,6 +113,22 @@ func (_m *WriteSession) InsertOperation(operation model.Operation) dberrors.Erro
 	return r0
 }
 
+// InsertRuntimeUpgrade provides a mock function with given fields: runtimeUpgrade
+func (_m *WriteSession) InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) dberrors.Error {
+	ret := _m.Called(runtimeUpgrade)
+
+	var r0 dberrors.Error
+	if rf, ok := ret.Get(0).(func(model.RuntimeUpgrade) dberrors.Error); ok {
+		r0 = rf(runtimeUpgrade)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dberrors.Error)
+		}
+	}
+
+	return r0
+}
+
 // MarkClusterAsDeleted provides a mock function with given fields: runtimeID
 func (_m *WriteSession) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
 	ret := _m.Called(runtimeID)
@@ -152,6 +168,22 @@ func (_m *WriteSession) UpdateCluster(runtimeID string, kubeconfig string, terra
 	var r0 dberrors.Error
 	if rf, ok := ret.Get(0).(func(string, string, []byte) dberrors.Error); ok {
 		r0 = rf(runtimeID, kubeconfig, terraformState)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dberrors.Error)
+		}
+	}
+
+	return r0
+}
+
+// UpdateClusterKymaConfig provides a mock function with given fields: runtimeID, kymaConfigId
+func (_m *WriteSession) UpdateClusterKymaConfig(runtimeID string, kymaConfigId string) dberrors.Error {
+	ret := _m.Called(runtimeID, kymaConfigId)
+
+	var r0 dberrors.Error
+	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+		r0 = rf(runtimeID, kymaConfigId)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dberrors.Error)
