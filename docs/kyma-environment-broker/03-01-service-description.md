@@ -28,4 +28,4 @@ These are the provisioning parameters for this plan:
 | **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
 | **components** | array | Defines optional components that are installed in Kyma Runtime. The possible values are `monitoring`, `kiali`, `loki`, and `jaeger`. | No | [] |
 | **providerSpecificConfig.AzureConfig.VnetCidr** | string | Provides configuration variables specific for Azure. | No | `10.250.0.0/19` |
-| **kymaVersion** | string | Provides Kyma version on demand. | No | None
+| **kymaVersion** | string | Provides Kyma version on demand. | No | None |

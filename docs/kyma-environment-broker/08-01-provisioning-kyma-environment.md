@@ -1,15 +1,12 @@
----
-title: Provision Kyma Runtime through Kyma Environment Broker
-type: Tutorials
----
+# Provision Kyma Runtime using Kyma Environment Broker
 
-This tutorial shows how to provision Kyma Runtime on Azure.
+This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environment Broker.
 
 ## Prerequisites
 
 - Compass with:
-  * configured Runtime Provisioner and Azure provider [set up](../provisioner/08-02-provisioning-gardener.md)
-  * configured Kyma Environment Broker and chosen [overrides](03-06-runtime-overrides.md) set up
+  * Runtime Provisioner [configured](../provisioner/08-02-provisioning-gardener.md) for Azure provider
+  * Kyma Environment Broker configured and chosen [overrides](03-06-runtime-overrides.md) set up
 
 ## Steps
 

@@ -1,9 +1,6 @@
----
-title: Deprovision Kyma Runtime through Kyma Environment Broker
-type: Tutorials
----
+# Deprovision Kyma Runtime using Kyma Environment Broker
 
-This tutorial shows how to deprovision Kyma Runtime on Azure.
+This tutorial shows how to deprovision Kyma Runtime on Azure using Kyma Environment Broker.
 
 ## Steps
 

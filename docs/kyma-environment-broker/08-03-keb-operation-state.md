@@ -1,7 +1,4 @@
----
-title: Check Kyma Environment Broker operation status
-type: Tutorials
----
+# Check Kyma Environment Broker operation status using Kyma Environment Broker
 
 This tutorial shows how to check the Kyma Environment Broker operation status for the provisioning and deprovisioning operations.
 
@@ -13,7 +10,7 @@ This tutorial shows how to check the Kyma Environment Broker operation status fo
 export OPERATION_ID={OBTAINED_OPERATION_ID}
 ```
 
-> **NOTE:** Ensure that BROKER_URL and INSTANCE_ID environment variables are exported as well before you proceed.
+> **NOTE:** Ensure that the BROKER_URL and INSTANCE_ID environment variables are exported as well before you proceed.
 
 2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](./03-05-authorization.md) to verify that provisioning/deprovisioning succeeded.
 
