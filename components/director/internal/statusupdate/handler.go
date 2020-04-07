@@ -20,13 +20,13 @@ type update struct {
 	logger   *log.Logger
 }
 
-type WithStatusObject string
-
 //go:generate mockery -name=StatusUpdateRepository -output=automock -outpkg=automock -case=underscore
 type StatusUpdateRepository interface {
 	UpdateStatus(ctx context.Context, id string, object WithStatusObject) error
 	IsConnected(ctx context.Context, id string, object WithStatusObject) (bool, error)
 }
+
+type WithStatusObject string
 
 const (
 	Applications WithStatusObject = "applications"
@@ -83,7 +83,6 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 				if err != nil {
 					u.logger.Error(errors.Wrap(err, "while updating status").Error())
 					next.ServeHTTP(w, r)
-
 					return
 				}
 			}
@@ -91,7 +90,6 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			if err := tx.Commit(); err != nil {
 				u.logger.Error(errors.Wrap(err, "while committing").Error())
 				next.ServeHTTP(w, r)
-
 				return
 			}
 			next.ServeHTTP(w, r)
