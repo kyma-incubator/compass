@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/failure"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages"
 	"k8s.io/client-go/rest"
 	"net/http"
@@ -227,7 +228,7 @@ func createInstallationQueue(factory dbsession.Factory, installationClient insta
 		model.StartingInstallation:   installStep,
 	}
 
-	installationExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(), model.Provision, installSteps)
+	installationExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(), model.Provision, installSteps, failure.NewNoopFailureHandler())
 
 	return operations.NewQueue(installationExecutor)
 }
@@ -244,7 +245,7 @@ func createUpgradeQueue(factory dbsession.Factory, installationClient installati
 		model.StartingUpgrade:        upgradeStep,
 	}
 
-	upgradeExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(), model.Upgrade, upgradeSteps)
+	upgradeExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(), model.Upgrade, upgradeSteps, failure.NewUpgradeFailureHandler())
 
 	return operations.NewQueue(upgradeExecutor)
 }

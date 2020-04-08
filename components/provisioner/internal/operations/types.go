@@ -28,3 +28,7 @@ func (r NonRecoverableError) Error() string {
 func NewNonRecoverableError(err error) NonRecoverableError {
 	return NonRecoverableError{error: err}
 }
+
+type FailureHandler interface {
+	HandleFailure(operation model.Operation, cluster model.Cluster) error
+}

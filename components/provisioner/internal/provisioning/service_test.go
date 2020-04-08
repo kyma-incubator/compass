@@ -546,7 +546,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 	}
 
 	runtimeUpgradeMatcher := func(rUp model.RuntimeUpgrade) bool {
-		return rUp.ClusterId == runtimeID && rUp.PreUpgradeKymaConfigId == oldKymaConfigId && rUp.PostUpgradeKymaConfigId != oldKymaConfigId
+		return rUp.OperationId != "" && rUp.PreUpgradeKymaConfigId == oldKymaConfigId && rUp.PostUpgradeKymaConfigId != oldKymaConfigId
 	}
 
 	upgradeInput := gqlschema.UpgradeRuntimeInput{

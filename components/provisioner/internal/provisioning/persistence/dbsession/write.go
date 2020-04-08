@@ -234,7 +234,7 @@ func (ws writeSession) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
 
 func (ws writeSession) InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) dberrors.Error {
 	_, err := ws.insertInto("runtime_upgrade").
-		Columns("id", "state", "cluster_id", "pre_upgrade_kyma_config_id", "post_upgrade_kyma_config_id").
+		Columns("id", "state", "operation_id", "pre_upgrade_kyma_config_id", "post_upgrade_kyma_config_id").
 		Record(runtimeUpgrade).
 		Exec()
 	if err != nil {

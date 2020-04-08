@@ -12,7 +12,7 @@ const (
 type RuntimeUpgrade struct {
 	Id                      string
 	State                   UpgradeState
-	ClusterId               string
+	OperationId             string
 	PreUpgradeKymaConfigId  string
 	PostUpgradeKymaConfigId string
 

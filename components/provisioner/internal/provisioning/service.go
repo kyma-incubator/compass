@@ -289,10 +289,15 @@ func (r *service) setUpgradeStarted(txSession dbsession.WriteSession, cluster mo
 		return model.Operation{}, err.Append("Failed to insert Kyma Config")
 	}
 
+	operation, err := r.setOperationStarted(txSession, cluster.ID, model.Upgrade, model.StartingUpgrade, time.Now(), "Starting Kyma upgrade")
+	if err != nil {
+		return model.Operation{}, err.Append("Failed to set operation started")
+	}
+
 	runtimeUpgrade := model.RuntimeUpgrade{
 		Id:                      r.uuidGenerator.New(),
 		State:                   model.UpgradeInProgress,
-		ClusterId:               cluster.ID,
+		OperationId:             operation.ID,
 		PreUpgradeKymaConfigId:  cluster.KymaConfig.ID,
 		PostUpgradeKymaConfigId: kymaConfig.ID,
 	}
@@ -305,11 +310,6 @@ func (r *service) setUpgradeStarted(txSession dbsession.WriteSession, cluster mo
 	err = txSession.SetActiveKymaConfig(cluster.ID, kymaConfig.ID)
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to update Kyma config in cluster")
-	}
-
-	operation, err := r.setOperationStarted(txSession, cluster.ID, model.Upgrade, model.StartingUpgrade, time.Now(), "Starting Kyma upgrade")
-	if err != nil {
-		return model.Operation{}, err.Append("Failed to set operation started")
 	}
 
 	return operation, nil

@@ -3,6 +3,7 @@ package operations
 import (
 	"errors"
 	"fmt"
+	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/sirupsen/logrus"
@@ -13,19 +14,25 @@ const (
 	defaultDelay = 2 * time.Second
 )
 
-func NewStepsExecutor(session dbsession.ReadWriteSession, operation model.OperationType, stages map[model.OperationStage]Stage) *StagesExecutor {
+func NewStepsExecutor(
+	session dbsession.ReadWriteSession,
+	operation model.OperationType,
+	stages map[model.OperationStage]Stage,
+	failureHandler FailureHandler) *StagesExecutor {
 	return &StagesExecutor{
-		dbSession: session,
-		stages:    stages,
-		operation: operation,
-		log:       logrus.WithFields(logrus.Fields{"Component": "StepsExecutor", "OperationType": operation}),
+		dbSession:      session,
+		stages:         stages,
+		operation:      operation,
+		failureHandler: failureHandler,
+		log:            logrus.WithFields(logrus.Fields{"Component": "StepsExecutor", "OperationType": operation}),
 	}
 }
 
 type StagesExecutor struct {
-	dbSession dbsession.ReadWriteSession
-	stages    map[model.OperationStage]Stage
-	operation model.OperationType
+	dbSession      dbsession.ReadWriteSession
+	stages         map[model.OperationStage]Stage
+	operation      model.OperationType
+	failureHandler FailureHandler
 
 	log logrus.FieldLogger
 }
@@ -60,10 +67,9 @@ func (e *StagesExecutor) Execute(operationID string) ProcessingResult {
 			nonRecoverable := NonRecoverableError{}
 			if errors.As(err, &nonRecoverable) {
 				log.Errorf("unrecoverable error occurred while processing operation: %s", err.Error())
-				err := e.dbSession.UpdateOperationState(operation.ID, nonRecoverable.Error(), model.Failed, time.Now()) // TODO: Align message
-				if err != nil {
-					panic(err) // TODO handle
-				}
+				e.handleOperationFailure(operation, cluster, log)
+				e.updateOperationStatus(log, operation.ID, nonRecoverable.Error(), model.Failed, time.Now()) // TODO: what should be the massega?
+				return ProcessingResult{Requeue: false}
 			}
 
 			return ProcessingResult{Requeue: true, Delay: defaultDelay}
@@ -127,11 +133,9 @@ func (e *StagesExecutor) processInstallation(operation model.Operation, cluster 
 	}
 
 	// TODO: are we gaurenteed that it finished? Consider doing it in if statement above
-	err := e.dbSession.UpdateOperationState(operation.ID, "Operation succeeded", model.Succeeded, time.Now()) // TODO: Align message
-	if err != nil {
-		panic(err) // TODO: handle
-	}
+	// TODO: update with retries
 
+	e.updateOperationStatus(logger, operation.ID, "Operation succeeded", model.Succeeded, time.Now())
 	return false, 0, nil
 }
 
@@ -145,4 +149,22 @@ func (e *StagesExecutor) timeoutReached(operation model.Operation, timeout time.
 	timePassed := time.Now().Sub(lastTimestamp)
 
 	return timePassed > timeout
+}
+
+func (e *StagesExecutor) handleOperationFailure(operation model.Operation, cluster model.Cluster, log logrus.FieldLogger) {
+	err := retry.Do(func() error {
+		return e.failureHandler.HandleFailure(operation, cluster)
+	}, retry.Attempts(5))
+	if err != nil {
+		log.Errorf("error handling operation failure operation failure: %s", err.Error())
+	}
+}
+
+func (e *StagesExecutor) updateOperationStatus(log logrus.FieldLogger, id, message string, state model.OperationState, t time.Time) {
+	err := retry.Do(func() error {
+		return e.dbSession.UpdateOperationState(id, message, state, t)
+	}, retry.Attempts(5))
+	if err != nil {
+		log.Errorf("Failed to set operation status to %s: %s", state, err.Error())
+	}
 }
