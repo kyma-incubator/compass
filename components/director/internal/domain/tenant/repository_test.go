@@ -378,3 +378,45 @@ func TestPgRepository_Update(t *testing.T) {
 		assert.Contains(t, err.Error(), testError.Error())
 	})
 }
+
+func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
+	deleteStatement := regexp.QuoteMeta(`DELETE FROM public.business_tenant_mappings WHERE external_tenant = $1`)
+
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectExec(deleteStatement).
+			WithArgs(testExternal).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := tenant.NewRepository(nil)
+
+		// WHEN
+		err := repo.DeleteByExternalTenant(ctx, testExternal)
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Database error", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectExec(deleteStatement).
+			WithArgs(testExternal).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := tenant.NewRepository(nil)
+
+		// WHEN
+		err := repo.DeleteByExternalTenant(ctx, testExternal)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testError.Error())
+	})
+}
