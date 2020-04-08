@@ -305,8 +305,13 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 			allOverridesFound[componentNameKnativeEventing] = true
 		case componentNameKnativeEventingKafka:
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
-				Key:    "kafka.brokers",
-				Value:  "name:9093",
+				Key:    "kafka.brokers.hostname",
+				Value:  "name",
+				Secret: ptr.Bool(true),
+			})
+			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
+				Key:    "kafka.brokers.port",
+				Value:  "9093",
 				Secret: ptr.Bool(true),
 			})
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{

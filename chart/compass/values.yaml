@@ -22,7 +22,7 @@ global:
       version: "PR-867"
     director:
       dir:
-      version: "PR-1122"
+      version: "PR-1142"
     gateway:
       dir:
       version: "PR-1074"
@@ -42,11 +42,11 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-1131"
+      version: "PR-1120"
     tests:
       director:
         dir:
-        version: "PR-1122"
+        version: "PR-1133"
       connector:
         dir:
         version: "02e8358c"
