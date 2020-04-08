@@ -5,8 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -184,8 +182,6 @@ func TestService_DeleteMany(t *testing.T) {
 	//GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test")
 	tenantInput := newModelBusinessTenantMappingInput(testName)
-	tenantModel := newModelBusinessTenantMapping(testID, testName)
-	tenantModelInactive := newModelBusinessTenantMapping(testID, testName).WithStatus(model.Inactive)
 	testErr := errors.New("test")
 	testCases := []struct {
 		Name                string
@@ -196,37 +192,16 @@ func TestService_DeleteMany(t *testing.T) {
 			Name: "Success",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).Return(tenantModel, nil).Once()
-				tenantMappingRepo.On("Update", ctx, &tenantModelInactive).Return(nil).Once()
+				tenantMappingRepo.On("DeleteByExternalTenant", ctx, tenantInput.ExternalTenant).Return(nil).Once()
 				return tenantMappingRepo
 			},
 			ExpectedOutput: nil,
 		},
 		{
-			Name: "Success when tenant not found",
+			Name: "Error while deleting the tenant mapping",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).
-					Return(tenantModel, apperrors.NewNotFoundError("test")).Once()
-				return tenantMappingRepo
-			},
-			ExpectedOutput: nil,
-		},
-		{
-			Name: "Error while getting the tenant mapping",
-			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
-				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).Return(nil, testErr).Once()
-				return tenantMappingRepo
-			},
-			ExpectedOutput: testErr,
-		},
-		{
-			Name: "Error while marking as inactive",
-			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
-				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).Return(tenantModel, nil).Once()
-				tenantMappingRepo.On("Update", ctx, &tenantModelInactive).Return(testErr).Once()
+				tenantMappingRepo.On("DeleteByExternalTenant", ctx, tenantInput.ExternalTenant).Return(testErr).Once()
 				return tenantMappingRepo
 			},
 			ExpectedOutput: testErr,

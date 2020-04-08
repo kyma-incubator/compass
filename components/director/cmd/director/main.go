@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/features"
+	"github.com/kyma-incubator/compass/components/director/internal/statusupdate"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
@@ -119,10 +120,13 @@ func main() {
 		go periodicExecutor.Run(stopCh)
 	}
 
+	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository(), log.New())
+
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
+	gqlAPIRouter.Use(statusMiddleware.Handler())
 	gqlAPIRouter.HandleFunc("", handler.GraphQL(executableSchema))
 
 	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
