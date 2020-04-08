@@ -6,7 +6,10 @@ import (
 	installation2 "github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages"
-	//"os"
+	"github.com/sirupsen/logrus"
+	"os"
+
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -33,7 +36,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/pkg/errors"
-	//"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -85,30 +88,30 @@ users:
 	subAccountId   = "sub-account"
 )
 
-//func TestMain(m *testing.M) {
-//	err := setupEnv()
-//	if err != nil {
-//		logrus.Errorf("Failed to setup test environment: %s", err.Error())
-//		os.Exit(1)
-//	}
-//	defer func() {
-//		err := testEnv.Stop()
-//		if err != nil {
-//			logrus.Errorf("error while deleting Compass Connection: %s", err.Error())
-//		}
-//	}()
-//
-//	syncPeriod := syncPeriod
-//
-//	mgr, err = ctrl.NewManager(cfg, ctrl.Options{SyncPeriod: &syncPeriod, Namespace: namespace})
-//
-//	if err != nil {
-//		logrus.Errorf("unable to create shoot controller mgr: %s", err.Error())
-//		os.Exit(1)
-//	}
-//
-//	os.Exit(m.Run())
-//}
+func TestMain(m *testing.M) {
+	err := setupEnv()
+	if err != nil {
+		logrus.Errorf("Failed to setup test environment: %s", err.Error())
+		os.Exit(1)
+	}
+	defer func() {
+		err := testEnv.Stop()
+		if err != nil {
+			logrus.Errorf("error while deleting Compass Connection: %s", err.Error())
+		}
+	}()
+
+	syncPeriod := syncPeriod
+
+	mgr, err = ctrl.NewManager(cfg, ctrl.Options{SyncPeriod: &syncPeriod, Namespace: namespace})
+
+	if err != nil {
+		logrus.Errorf("unable to create shoot controller mgr: %s", err.Error())
+		os.Exit(1)
+	}
+
+	os.Exit(m.Run())
+}
 
 func setupEnv() error {
 	testEnv = &envtest.Environment{
