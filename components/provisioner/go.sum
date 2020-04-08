@@ -68,6 +68,8 @@ github.com/ChrisTrenkamp/goxpath v0.0.0-20170922090931-c385f95c6022 h1:y8Gs8CzNf
 github.com/ChrisTrenkamp/goxpath v0.0.0-20170922090931-c385f95c6022/go.mod h1:nuWgzSkT5PnyOd+272uUmV0dnAnAn42Mk7PiQC5VzN4=
 github.com/DATA-DOG/go-sqlmock v1.3.3 h1:CWUqKXe0s8A2z6qCgkP4Kru7wC11YoAnoupUKFDnH08=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
+github.com/Maladie/hydroform/install v0.0.0-20200407121418-58964765de18 h1:UU2zr57SeH2oxpXDO/KK6GL8f62Czm2+d7e+p5EY9mY=
+github.com/Maladie/hydroform/install v0.0.0-20200407121418-58964765de18/go.mod h1:o378j3+QaYxUcygQJvbNyDGFa8ONmOypGFjc461YBEY=
 github.com/Masterminds/goutils v1.1.0 h1:zukEsf/1JZwCMgHiK3GZftabmxiCw4apj3a28RPBiVg=
 github.com/Masterminds/goutils v1.1.0/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
 github.com/Masterminds/semver v1.4.2/go.mod h1:MB6lktGJrhw8PrUyiEoblNEGEQ+RzHPF078ddwwvV3Y=
@@ -92,8 +94,6 @@ github.com/PuerkitoBio/urlesc v0.0.0-20160726150825-5bd2802263f2/go.mod h1:uGdko
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
-github.com/Szymongib/hydroform/install v0.0.0-20200407111754-cc32df79c5a5 h1:1ljsYPvQqNtAOi4ML8wUjLJMe2uS1plqgDlWuk37OEs=
-github.com/Szymongib/hydroform/install v0.0.0-20200407111754-cc32df79c5a5/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
 github.com/Unknwon/com v0.0.0-20151008135407-28b053d5a292 h1:tuQ7w+my8a8mkwN7x2TSd7OzTjkZ7rAeSyH4xncuAMI=
 github.com/Unknwon/com v0.0.0-20151008135407-28b053d5a292/go.mod h1:KYCjqMOeHpNuTOiFQU6WEcTG7poCJrUs0YgyHNtn1no=
 github.com/abdullin/seq v0.0.0-20160510034733-d5467c17e7af h1:DBNMBMuMiWYu0b+8KMJuWmfCkcxl09JwdlqwDZZ6U14=

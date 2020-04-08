@@ -303,6 +303,11 @@ func (i installerMock) PrepareInstallation(installation installation.Installatio
 	return nil
 }
 
+func (i installerMock) PrepareUpgrade(installation installation.Installation) error {
+	assert.Equal(i.t, i.expectedInstallation, installation)
+	return nil
+}
+
 func (i installerMock) StartInstallation(context context.Context) (<-chan installation.InstallationState, <-chan error, error) {
 	assert.NotEmpty(i.t, context)
 	return i.stateChannel, i.errorChannel, nil
@@ -320,27 +325,31 @@ func newMockInstallerHandler(t *testing.T, expectedInstallation installation.Ins
 }
 
 type errorInstallerMock struct {
-	t                        *testing.T
-	prepareInstallationError error
-	startInstallationError   error
+	t                      *testing.T
+	prepareError           error
+	startInstallationError error
 }
 
 func newErrorInstallerHandler(t *testing.T, prepareErr, startErr error) InstallationHandler {
 	return func(config *rest.Config, option ...installation.InstallationOption) (installer installation.Installer, e error) {
 		return errorInstallerMock{
-			t:                        t,
-			prepareInstallationError: prepareErr,
-			startInstallationError:   startErr,
+			t:                      t,
+			prepareError:           prepareErr,
+			startInstallationError: startErr,
 		}, nil
 	}
 }
 
 func (i errorInstallerMock) PrepareInstallation(installation installation.Installation) error {
-	return i.prepareInstallationError
+	return i.prepareError
 }
 
 func (i errorInstallerMock) StartInstallation(context context.Context) (<-chan installation.InstallationState, <-chan error, error) {
 	return nil, nil, i.startInstallationError
+}
+
+func (i errorInstallerMock) PrepareUpgrade(installation installation.Installation) error {
+	return i.prepareError
 }
 
 func assertComponent(t *testing.T, expectedName, expectedNamespace string, expectedSource *v1alpha1.ComponentSource, component v1alpha1.KymaComponent) {

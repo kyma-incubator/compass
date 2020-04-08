@@ -85,17 +85,16 @@ func (s *installationService) TriggerUpgrade(kubeconfig *rest.Config, release mo
 		return fmt.Errorf("failed to trigger installation: %s", err.Error())
 	}
 
-	//installationConfig := installation.Installation{
-	//	TillerYaml:    release.TillerYAML,
-	//	InstallerYaml: release.InstallerYAML,
-	//	Configuration: NewInstallationConfiguration(globalConfig, componentsConfig),
-	//}
+	installationConfig := installation.Installation{
+		TillerYaml:    release.TillerYAML,
+		InstallerYaml: release.InstallerYAML,
+		Configuration: NewInstallationConfiguration(globalConfig, componentsConfig),
+	}
 
-	// TODO: call prepare upgrade here
-	//err = kymaInstaller.PrepareInstallation(installationConfig)
-	//if err != nil {
-	//	return pkgErrors.Wrap(err, "Failed to prepare upgrade")
-	//}
+	err = kymaInstaller.PrepareUpgrade(installationConfig)
+	if err != nil {
+		return pkgErrors.Wrap(err, "Failed to prepare upgrade")
+	}
 
 	installationCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()

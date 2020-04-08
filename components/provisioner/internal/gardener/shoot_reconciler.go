@@ -87,7 +87,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	shouldReconcile, err := r.shouldReconcileShoot(shoot)
 	if err != nil {
-		log.Errorf("Failed to verify if shoot should be reconciled")
+		log.Errorf("Failed to verify if shoot should be reconciled: %s", err.Error())
 		return ctrl.Result{}, err
 	}
 	if !shouldReconcile {
