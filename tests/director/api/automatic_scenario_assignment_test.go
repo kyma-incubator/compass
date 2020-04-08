@@ -315,6 +315,43 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 }
 
+func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
+	//GIVEN
+	ctx := context.Background()
+	defaultValue := "DEFAULT"
+	scenario1 := "test-scenario"
+	scenario2 := "test-scenario-2"
+	scenario3 := "test-scenario-3"
+
+	scenarios := []string{defaultValue, scenario1, scenario2, scenario3}
+
+	tenantID := testTenants.GetIDByName(t, "TestWholeScenario")
+	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, scenarios)
+	selector := graphql.LabelSelectorInput{Key: "test-key", Value: "test-value"}
+	assignments := []graphql.AutomaticScenarioAssignmentSetInput{
+		{ScenarioName: scenario1, Selector: &selector},
+		{ScenarioName: scenario2, Selector: &selector},
+	}
+	createAutomaticScenarioAssignmentInTenant(t, ctx, assignments[0], tenantID)
+	createAutomaticScenarioAssignmentInTenant(t, ctx, assignments[1], tenantID)
+
+	rtm := registerRuntime(t, ctx, "test")
+	setRuntimeLabel(t, ctx, rtm.ID, selector.Key, selector.Value)
+	rtmWithScenarios := getRuntime(t, ctx, rtm.ID)
+	assertScenarios(t, rtmWithScenarios.Labels, []string{scenario1, scenario2})
+}
+
+func assertScenarios(t *testing.T, actual graphql.Labels, expected []string) {
+	val, ok := actual["scenarios"]
+	require.True(t, ok)
+	if val == nil {
+		require.Len(t, expected, 0)
+	} else {
+		scenarios, ok := val.([]interface{})
+		require.True(t, ok, "label value:%+v", val)
+		assert.ElementsMatch(t, scenarios, expected, "expected: %+v, actual:%+v", expected, scenarios)
+
+	}
 func fixAutomaticScenarioAssigmentInput(automaticScenario, selecterKey, selectorValue string) graphql.AutomaticScenarioAssignmentSetInput {
 	return graphql.AutomaticScenarioAssignmentSetInput{
 		ScenarioName: automaticScenario,
