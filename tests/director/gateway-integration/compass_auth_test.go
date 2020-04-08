@@ -3,7 +3,6 @@ package gateway_integration
 import (
 	"context"
 	"encoding/base64"
-	"os"
 
 	"fmt"
 	"testing"
@@ -19,10 +18,7 @@ import (
 )
 
 func TestCompassAuth(t *testing.T) {
-	domain := os.Getenv("DOMAIN")
-	require.NotEmpty(t, domain)
-	tenant := os.Getenv("DEFAULT_TENANT")
-	require.NotEmpty(t, tenant)
+
 	ctx := context.Background()
 
 	t.Log("Get Dex id_token")
@@ -32,23 +28,23 @@ func TestCompassAuth(t *testing.T) {
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log("Register Integration System with Dex id token")
-	intSys := registerIntegrationSystem(t, ctx, dexGraphQLClient, tenant, "integration-system")
+	intSys := registerIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "integration-system")
 
 	t.Log("Request Client Credentials for Integration System")
-	intSysOauthCredentialData := requestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
+	intSysOauthCredentialData := requestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 
 	t.Log("Issue a Hydra token with Client Credentials")
 
 	accessToken := getAccessToken(t, intSysOauthCredentialData, applicationScopes)
 
-	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 	t.Log("Register an application as Integration System")
 	appInput := graphql.ApplicationRegisterInput{
 		Name:                "app-registered-by-integration-system",
 		IntegrationSystemID: &intSys.ID,
 	}
-	appByIntSys := registerApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)
+	appByIntSys := registerApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
 	require.NotEmpty(t, appByIntSys.ID)
 
 	t.Log("Add API Spec to Application")
@@ -56,12 +52,12 @@ func TestCompassAuth(t *testing.T) {
 		Name:      "new-api-name",
 		TargetURL: "https://kyma-project.io",
 	}
-	addAPIWithinTenant(t, ctx, oauthGraphQLClient, tenant, apiInput, appByIntSys.ID)
+	addAPIWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, apiInput, appByIntSys.ID)
 	t.Log("Try removing Integration System")
-	unregisterIntegrationSystemWithErr(t, ctx, dexGraphQLClient, tenant, intSys.ID)
+	unregisterIntegrationSystemWithErr(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 
 	t.Log("Check if SystemAuths are still present in the db")
-	auths := getSystemAuthsForIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
+	auths := getSystemAuthsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 	require.NotEmpty(t, auths)
 	require.NotNil(t, auths[0])
 	credentialDataFromDB, ok := auths[0].Auth.Credential.(*graphql.OAuthCredentialData)
@@ -69,13 +65,13 @@ func TestCompassAuth(t *testing.T) {
 	assert.Equal(t, intSysOauthCredentialData, credentialDataFromDB)
 
 	t.Log("Remove application to check if the oAuth token is still valid")
-	unregisterApplication(t, ctx, oauthGraphQLClient, tenant, appByIntSys.ID)
+	unregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
 
 	t.Log("Remove Integration System")
-	unregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
+	unregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 
 	t.Log("Check if token granted for Integration System is invalid")
-	appByIntSys = registerApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)
+	appByIntSys = registerApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
 	require.Empty(t, appByIntSys.ID)
 
 	t.Log("Check if token can not be fetched with old client credentials")
