@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/pkg/errors"
 )
 
@@ -18,6 +16,7 @@ type TenantMappingRepository interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error)
 	Update(ctx context.Context, model *model.BusinessTenantMapping) error
+	DeleteByExternalTenant(ctx context.Context, externalTenant string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -126,17 +125,9 @@ func (s *service) createIfNotExists(ctx context.Context, tenants []model.Busines
 
 func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
 	for _, tenantInput := range tenantInputs {
-		tenant, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenantInput.ExternalTenant)
+		err := s.tenantMappingRepo.DeleteByExternalTenant(ctx, tenantInput.ExternalTenant)
 		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				continue
-			}
-			return errors.Wrap(err, "while getting the tenant mapping")
-		}
-
-		err = s.markAsInactive(ctx, *tenant)
-		if err != nil {
-			return errors.Wrap(err, "while marking the tenant as inactive")
+			return errors.Wrap(err, "while deleting tenant")
 		}
 	}
 
