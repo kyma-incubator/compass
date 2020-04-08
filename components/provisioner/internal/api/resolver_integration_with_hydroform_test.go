@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
@@ -247,7 +249,7 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			installationQueue := createInstallationQueue(dbSessionFactory, installationServiceMock, runtimeConfigurator)
+			installationQueue := queue.CreateInstallationQueue(dbSessionFactory, installationServiceMock, runtimeConfigurator)
 			installationQueue.Run(ctx.Done())
 
 			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock, runtimeConfigurator)

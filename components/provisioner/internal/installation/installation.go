@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 

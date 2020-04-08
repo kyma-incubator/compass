@@ -2,9 +2,10 @@ package provisioning
 
 import (
 	"errors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/mocks"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	uuidMocks "github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"

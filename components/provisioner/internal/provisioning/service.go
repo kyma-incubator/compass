@@ -2,8 +2,9 @@ package provisioning
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 
 	uuid "github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
@@ -45,7 +46,7 @@ type service struct {
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
 
-	upgradeQueue operations.OperationQueue
+	upgradeQueue queue.OperationQueue
 }
 
 func NewProvisioningService(
@@ -55,7 +56,7 @@ func NewProvisioningService(
 	factory dbsession.Factory,
 	provisioner Provisioner,
 	generator uuid.UUIDGenerator,
-	upgradeQueue operations.OperationQueue,
+	upgradeQueue queue.OperationQueue,
 ) Service {
 	return &service{
 		inputConverter:   inputConverter,

@@ -2,12 +2,13 @@ package gardener
 
 import (
 	"fmt"
+	"time"
+
 	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/sirupsen/logrus"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"time"
 )
 
 func (r *ProvisioningOperator) ProvisioningInProgress(log *logrus.Entry, shoot gardener_types.Shoot, operationId string) (ctrl.Result, error) {

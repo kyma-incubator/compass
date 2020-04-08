@@ -2,7 +2,8 @@ package gardener
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -26,7 +27,7 @@ func NewShootController(
 	secretsClient v1core.SecretInterface,
 	dbsFactory dbsession.Factory,
 	directorClient director.DirectorClient,
-	installQueue operations.OperationQueue) (*ShootController, error) {
+	installQueue queue.OperationQueue) (*ShootController, error) {
 
 	err := gardener_types.AddToScheme(mgr.GetScheme())
 	if err != nil {

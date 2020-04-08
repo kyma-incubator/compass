@@ -1,8 +1,9 @@
 package util
 
 import (
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func StringPtr(str string) *string {

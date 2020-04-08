@@ -1,10 +1,16 @@
 package operations
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/sirupsen/logrus"
-	"time"
 )
+
+type ProcessingResult struct {
+	Requeue bool
+	Delay   time.Duration
+}
 
 type Stage interface {
 	Name() model.OperationStage

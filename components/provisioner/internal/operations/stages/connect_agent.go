@@ -2,11 +2,12 @@ package stages
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 type ConnectAgentStage struct {

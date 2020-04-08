@@ -107,6 +107,29 @@ func (_m *ReadSession) GetOperation(operationID string) (model.Operation, dberro
 	return r0, r1
 }
 
+// GetRuntimeUpgrade provides a mock function with given fields: operationId
+func (_m *ReadSession) GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade, dberrors.Error) {
+	ret := _m.Called(operationId)
+
+	var r0 model.RuntimeUpgrade
+	if rf, ok := ret.Get(0).(func(string) model.RuntimeUpgrade); ok {
+		r0 = rf(operationId)
+	} else {
+		r0 = ret.Get(0).(model.RuntimeUpgrade)
+	}
+
+	var r1 dberrors.Error
+	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+		r1 = rf(operationId)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(dberrors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
 // GetTenant provides a mock function with given fields: runtimeID
 func (_m *ReadSession) GetTenant(runtimeID string) (string, dberrors.Error) {
 	ret := _m.Called(runtimeID)

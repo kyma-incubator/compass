@@ -3,15 +3,12 @@ package api
 import (
 	"context"
 	"fmt"
-	installation2 "github.com/kyma-incubator/compass/components/provisioner/internal/installation"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/failure"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages"
-
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 
@@ -58,7 +55,6 @@ var mgr ctrl.Manager
 
 const (
 	namespace  = "default"
-	timeout    = 10 * time.Second
 	syncPeriod = 5 * time.Second
 	waitPeriod = syncPeriod + 3*time.Second
 
@@ -176,9 +172,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	installationQueue := createInstallationQueue(dbsFactory, installationServiceMock, runtimeConfigurator)
+	installationQueue := queue.CreateInstallationQueue(dbsFactory, installationServiceMock, runtimeConfigurator)
 	installationQueue.Run(queueCtx.Done())
-	upgradeQueue := createUpgradeQueue(dbsFactory, installationServiceMock)
+	upgradeQueue := queue.CreateUpgradeQueue(dbsFactory, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
 	controler, err := gardener.NewShootController(mgr, shootInterface, secretsInterface, dbsFactory, directorServiceMock, installationQueue)
@@ -302,7 +298,11 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, subAccountId, runtimeFromDb.SubAccountId)
 			assert.Equal(t, true, runtimeFromDb.Deleted)
 
-			// TODO: do some assertions on the runtime_upgrade tablee
+			runtimeUpgrade, err := readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
+			require.NoError(t, err)
+			assert.Equal(t, model.UpgradeSucceeded, runtimeUpgrade.State)
+			assert.NotEmpty(t, runtimeUpgrade.PostUpgradeKymaConfigId)
+			assert.NotEmpty(t, runtimeUpgrade.PreUpgradeKymaConfigId)
 		})
 	}
 
@@ -515,38 +515,4 @@ func setupSecretsClient(t *testing.T, config *rest.Config) v1core.SecretInterfac
 	require.NoError(t, err)
 
 	return coreClient.Secrets(namespace)
-}
-
-// TODO: this functions are copied from main - maybe move it somewhere else
-func createInstallationQueue(factory dbsession.Factory, installationClient installation2.Service, configurator runtimeConfigrtr.Configurator) *operations.Queue {
-	configureAgentStep := stages.NewConnectAgentStage(configurator, model.FinishedStage, 10*time.Minute)
-	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), 50*time.Minute) // TODO: take form config
-	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
-
-	installSteps := map[model.OperationStage]operations.Stage{
-		model.ConnectRuntimeAgent:    configureAgentStep,
-		model.WaitingForInstallation: waitForInstallStep,
-		model.StartingInstallation:   installStep,
-	}
-
-	installationExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(), model.Provision, installSteps, failure.NewNoopFailureHandler())
-
-	return operations.NewQueue(installationExecutor)
-}
-
-func createUpgradeQueue(factory dbsession.Factory, installationClient installation2.Service) *operations.Queue {
-
-	// TODO: probably you will need some step for "committing" the changes to database
-
-	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, model.FinishedStage, 50*time.Minute) // TODO: take form config
-	upgradeStep := stages.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
-
-	upgradeSteps := map[model.OperationStage]operations.Stage{
-		model.WaitingForInstallation: waitForInstallStep,
-		model.StartingUpgrade:        upgradeStep,
-	}
-
-	upgradeExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(), model.Upgrade, upgradeSteps, failure.NewNoopFailureHandler())
-
-	return operations.NewQueue(upgradeExecutor)
 }

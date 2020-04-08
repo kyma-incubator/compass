@@ -338,3 +338,22 @@ func (r readSession) ListInProgressOperations() ([]model.Operation, dberrors.Err
 
 	return operations, nil
 }
+
+func (r readSession) GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade, dberrors.Error) {
+	var runtimeUpgrade model.RuntimeUpgrade
+
+	_, err := r.session.
+		Select("id", "state", "operation_id", "pre_upgrade_kyma_config_id", "post_upgrade_kyma_config_id").
+		From("runtime_upgrade").
+		Where(dbr.Eq("operation_id", operationId)).
+		Load(&runtimeUpgrade)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return model.RuntimeUpgrade{}, dberrors.NotFound("Runtime upgrade not found for operation with %s id", operationId)
+		}
+		return model.RuntimeUpgrade{}, dberrors.Internal("Failed to get Runtime upgrade for operation %s: %s", operationId, err)
+	}
+
+	return runtimeUpgrade, nil
+}

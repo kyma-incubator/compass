@@ -2,14 +2,15 @@ package stages
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 const (

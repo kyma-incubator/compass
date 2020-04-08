@@ -2,14 +2,15 @@ package operations
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/failure"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
-	"time"
 )
 
 const (

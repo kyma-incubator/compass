@@ -3,9 +3,10 @@ package installation
 import (
 	"context"
 	"errors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"

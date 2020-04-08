@@ -3,11 +3,12 @@ package operations
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 const (

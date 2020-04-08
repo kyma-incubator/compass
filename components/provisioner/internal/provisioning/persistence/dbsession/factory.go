@@ -1,10 +1,11 @@
 package dbsession
 
 import (
+	"time"
+
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	"time"
 )
 
 //go:generate mockery -name=Factory
@@ -23,6 +24,7 @@ type ReadSession interface {
 	GetGardenerClusterByName(name string) (model.Cluster, dberrors.Error)
 	GetTenant(runtimeID string) (string, dberrors.Error)
 	ListInProgressOperations() ([]model.Operation, dberrors.Error)
+	GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade, dberrors.Error)
 }
 
 //go:generate mockery -name=WriteSession

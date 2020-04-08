@@ -3,11 +3,12 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 
@@ -41,7 +42,7 @@ func newProvisioningService(
 	dbsFactory dbsession.Factory,
 	releaseRepo release.Provider,
 	directorService director.DirectorClient,
-	upgradeQueue operations.OperationQueue) provisioning.Service {
+	upgradeQueue queue.OperationQueue) provisioning.Service {
 	uuidGenerator := uuid.NewUUIDGenerator()
 
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo, gardenerProject)
@@ -64,7 +65,7 @@ func newDirectorClient(config config) (director.DirectorClient, error) {
 
 func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient.Config, gardenerClientSet *gardener_apis.CoreV1beta1Client,
 	dbsFactory dbsession.Factory, direcotrClietnt director.DirectorClient,
-	queue operations.OperationQueue) (*gardener.ShootController, error) {
+	queue queue.OperationQueue) (*gardener.ShootController, error) {
 	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
 	if err != nil {
 		return nil, err
