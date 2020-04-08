@@ -235,17 +235,21 @@ func createInstallationQueue(factory dbsession.Factory, installationClient insta
 
 func createUpgradeQueue(factory dbsession.Factory, installationClient installation.Service) *operations.Queue {
 
-	// TODO: probably you will need some step for "committing" the changes to database
-
-	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, model.FinishedStage, 50*time.Minute) // TODO: take form config
+	updatingUpgradeState := stages.NewUpdateUpgradeStateStep(factory.NewWriteSession(), model.FinishedStage, 5*time.Minute)
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, updatingUpgradeState.Name(), 50*time.Minute) // TODO: take form config
 	upgradeStep := stages.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
 
 	upgradeSteps := map[model.OperationStage]operations.Stage{
+		model.UpdatingUpgradeState:   updatingUpgradeState,
 		model.WaitingForInstallation: waitForInstallStep,
 		model.StartingUpgrade:        upgradeStep,
 	}
 
-	upgradeExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(), model.Upgrade, upgradeSteps, failure.NewUpgradeFailureHandler(factory.NewReadWriteSession()))
+	upgradeExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(),
+		model.Upgrade,
+		upgradeSteps,
+		failure.NewUpgradeFailureHandler(factory.NewWriteSession()),
+	)
 
 	return operations.NewQueue(upgradeExecutor)
 }

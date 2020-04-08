@@ -168,7 +168,7 @@ func (m mockStep) Name() model.OperationStage {
 	return m.name
 }
 
-func (m *mockStep) Run(cluster model.Cluster, logger logrus.FieldLogger) (StageResult, error) {
+func (m *mockStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (StageResult, error) {
 
 	m.called = true
 

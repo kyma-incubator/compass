@@ -34,11 +34,10 @@ func (s *UpdateUpgradeStateStep) TimeLimit() time.Duration {
 
 func (s *UpdateUpgradeStateStep) Run(_ model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 	dberr := s.session.UpdateUpgradeState(operation.ID, model.UpgradeSucceeded)
-
 	if dberr != nil {
 		return operations.StageResult{}, dberr
 	}
 
-	logger.Warn("Upgrade state updated. Proceeding to next step...")
+	logger.Info("Runtime upgrade state updated. Proceeding to next step...")
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }

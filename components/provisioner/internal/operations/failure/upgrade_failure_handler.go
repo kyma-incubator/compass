@@ -6,10 +6,10 @@ import (
 )
 
 type UpgradeFailureHandler struct {
-	session dbsession.ReadWriteSession
+	session dbsession.WriteSession
 }
 
-func NewUpgradeFailureHandler(session dbsession.ReadWriteSession) *UpgradeFailureHandler {
+func NewUpgradeFailureHandler(session dbsession.WriteSession) *UpgradeFailureHandler {
 	return &UpgradeFailureHandler{
 		session: session,
 	}

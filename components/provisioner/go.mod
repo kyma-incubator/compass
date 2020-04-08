@@ -34,7 +34,6 @@ require (
 	google.golang.org/appengine v1.6.4 // indirect
 	google.golang.org/genproto v0.0.0-20190927181202-20e1ac93f88c // indirect
 	google.golang.org/grpc v1.24.0 // indirect
-	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.15.8-beta.1
 	k8s.io/apimachinery v0.15.8-beta.1
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible // tag kubernetes-1.15.6
