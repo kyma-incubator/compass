@@ -28,7 +28,7 @@ For simplicity reasons, use the available Order Service as the sample external A
 
 ### Register your Application in the Compass UI
 
-1. Open a separate tab in your browser and go to `https://compass.{CLUSTER_DOMAIN}`. It will navigate you to the Compass UI. From the drop-down list on the top navigation panel, select a tenant you want to work on. For the purpose of this tutorial, select the `default` tenant. In the **Runtimes** tab, there is already the default `kymaruntime` that you can work on to complete this tutorial. Make sure that your Runtime is assigned to the `DEFAULT` scenario.
+1. Open a separate tab in your browser and go to `https://compass.{CLUSTER_DOMAIN}`. It will navigate you to the Compass UI. From the drop-down list on the top navigation panel, select the tenant you want to work on. For the purpose of this tutorial, select the `default` tenant. In the **Runtimes** tab, there is already the default `kymaruntime` that you can work on to complete this tutorial. Make sure that your Runtime is assigned to the `DEFAULT` scenario.
 
 2. In the left navigation panel, navigate to the **Application** tab and click **Create application...** to register your Application in Compass. Choose **From scratch** from the drop-down list. For the purpose of this tutorial, name your Application `test-app`. By default, your Application is assigned to the `DEFAULT` scenario.
 
@@ -57,7 +57,7 @@ For simplicity reasons, use the available Order Service as the sample external A
 
     b. In the **Settings & Code** section, click the **Select Function Trigger** button and expose your lambda via HTTPS.
 
-    c. Untick the **Enable authentication** field as there is no need to secure the connection for the purpose of this tutorial. Click **Add**.
+    c. Untick the **Enable authentication** option as there is no need to secure the connection for the purpose of this tutorial. Click **Add**.
 
     d. Scroll down to the end of your lambda view and bind your lambda to your instance by clicking the **Create Service Binding** button in the **Service Binding** section. Choose the ServiceInstance you want to bind your lambda to and click **Create Service Binding**.
 

@@ -19,7 +19,7 @@ There are three types of supported endpoints that receive different types of eve
 - Tenant deletion endpoint
 - Tenant update endpoint
 
-Every endpoints must return a specific payload and accept the following query parameters:
+Every endpoint must return a specific payload and accept the following query parameters:
 - **ts** - specifies a timestamp in Unix time, that is the date from which events are fetched
 - **page** - specifies the number of the page to be fetched, starting from `1`
 - **resultsPerPage** - specifies the number of results included on a single page
