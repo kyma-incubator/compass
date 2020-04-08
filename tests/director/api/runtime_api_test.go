@@ -57,7 +57,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	getRuntimeReq := fixRuntimeRequest(actualRuntime.ID)
 	err = tc.RunOperation(ctx, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
-	assert.Len(t, actualRuntime.Labels, 3)
+	assert.Len(t, actualRuntime.Labels, 4)
 
 	// add agent auth
 	// GIVEN

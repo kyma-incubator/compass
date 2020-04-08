@@ -228,12 +228,14 @@ func assertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []
 func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.RuntimeExt) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
-	assertRuntimeLabels(t, in.Labels, actualRuntime.Labels)
+	assertRuntimeLabels(t, in.Name, in.Labels, actualRuntime.Labels)
 }
 
-func assertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels) {
+func assertRuntimeLabels(t *testing.T, name string, inLabels *graphql.Labels, actualLabels graphql.Labels) {
 	const scenariosKey = "scenarios"
+	const nameKey = "name"
 
+	assertLabel(t, actualLabels, nameKey, name)
 	if inLabels == nil {
 		assertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
 		assert.Equal(t, 1, len(actualLabels))
