@@ -43,10 +43,6 @@ func (s DeprovisionAzureEventHubStep) Name() string {
 }
 
 func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
-	if time.Since(operation.UpdatedAt) > DeleteEventHubTimeout {
-		log.Infof("delete eventhub operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.OperationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", DeleteEventHubTimeout))
-	}
 	// TODO(nachtmaar): have shared code between provisioning/deprovisioning
 	hypType := hyperscaler.Azure
 
@@ -83,15 +79,10 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	}
 
 	if err := namespaceClient.DeleteResourceGroup(s.EventHub.Context); err != nil {
-		// TODO(nachtmaar): be nice and create s.operationmanager.RetryForever
-		//return operation, 20 * time.Second, nil
-		//TODO(montaro) Is this enough?
 		errorMessage := fmt.Sprintf("Unable to delete Azure resource group: %v", err)
 		return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
 
-	// TODO(nachtmaar): be nice and create s.operationmanager.RetryForever
-	//TODO(montaro) why?
 	return s.OperationManager.OperationSucceeded(operation, "deprovisioning of event_hub_step succeeded")
 }
 

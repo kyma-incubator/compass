@@ -42,10 +42,6 @@ type FakeNamespaceClient struct {
 	accessKeys                     *eventhub.AccessKeys
 }
 
-func (nc *FakeNamespaceClient) DeleteResourceGroup(ctx context.Context) error {
-	panic("implement me")
-}
-
 func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
 	if nc.accessKeys != nil {
 		return *nc.accessKeys, nil
@@ -65,6 +61,11 @@ func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *az
 	return &eventhub.EHNamespace{
 		Name: ptr.String(namespace),
 	}, nc.persistEventhubsNamespaceError
+}
+
+func (nc *FakeNamespaceClient) DeleteResourceGroup(ctx context.Context) error {
+	//TODO(montaro) double check me
+	return nil
 }
 
 func NewFakeNamespaceClientCreationError() azure.AzureInterface {
