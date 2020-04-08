@@ -549,7 +549,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 		return rUp.ClusterId == runtimeID && rUp.PreUpgradeKymaConfigId == oldKymaConfigId && rUp.PostUpgradeKymaConfigId != oldKymaConfigId
 	}
 
-	upgradeInput := gqlschema.UpgradeKymaOnRuntimeInput{
+	upgradeInput := gqlschema.UpgradeRuntimeInput{
 		KymaConfig: fixKymaGraphQLConfigInput(),
 	}
 

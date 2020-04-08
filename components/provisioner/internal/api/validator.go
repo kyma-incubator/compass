@@ -13,7 +13,7 @@ const RuntimeAgent = "compass-runtime-agent"
 //go:generate mockery -name=Validator
 type Validator interface {
 	ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) error
-	ValidateUpgradeInput(input gqlschema.UpgradeKymaOnRuntimeInput) error
+	ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) error
 	ValidateTenant(runtimeID, tenant string) error
 }
 
@@ -40,7 +40,7 @@ func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeIn
 	return nil
 }
 
-func (v *validator) ValidateUpgradeInput(input gqlschema.UpgradeKymaOnRuntimeInput) error {
+func (v *validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) error {
 	err := v.validateKymaConfig(input.KymaConfig)
 	if err != nil {
 		return fmt.Errorf("validation error while starting Runtime upgrade: %s", err.Error())

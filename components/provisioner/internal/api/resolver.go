@@ -90,19 +90,10 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 	return operationID, nil
 }
 
-// TODO: tests
-func (r *Resolver) UpgradeKymaOnRuntime(ctx context.Context, runtimeId string, input gqlschema.UpgradeKymaOnRuntimeInput) (*gqlschema.OperationStatus, error) {
+func (r *Resolver) UpgradeRuntime(ctx context.Context, runtimeId string, input gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
 	log.Infof("Requested upgrade of Runtime %s.", runtimeId)
 
-	// TODO: extract tenant validation to function (after rebase)
-
-	tenant, err := getTenant(ctx)
-	if err != nil {
-		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
-		return &gqlschema.OperationStatus{}, err
-	}
-
-	err = r.validator.ValidateTenant(runtimeId, tenant)
+	_, err := r.getAndValidateTenant(ctx, runtimeId)
 	if err != nil {
 		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
 		return &gqlschema.OperationStatus{}, err

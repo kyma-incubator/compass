@@ -54,7 +54,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
+		resolver := NewResolver(provisioningService, validator)
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -68,7 +68,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		operation := &gqlschema.OperationStatus{
 			ID:        util.StringPtr(operationID),
-			Operation: operationID,
+			Operation: gqlschema.OperationTypeProvision,
 			State:     gqlschema.OperationStateInProgress,
 			Message:   util.StringPtr("Message"),
 			RuntimeID: util.StringPtr(runtimeID),
@@ -85,7 +85,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		validator.On("ValidateProvisioningInput", config).Return(nil)
 
 		//when
-		status, err := provisioner.ProvisionRuntime(ctx, config)
+		status, err := resolver.ProvisionRuntime(ctx, config)
 
 		//then
 		require.NoError(t, err)
@@ -95,6 +95,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		assert.Equal(t, operationID, *status.ID)
 		assert.Equal(t, runtimeID, *status.RuntimeID)
 		assert.Equal(t, gqlschema.OperationStateInProgress, status.State)
+		assert.Equal(t, gqlschema.OperationTypeProvision, status.Operation)
 		assert.Equal(t, util.StringPtr("Message"), status.Message)
 	})
 
@@ -302,6 +303,96 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		//then
 		require.Error(t, err)
 		assert.Empty(t, operationID)
+	})
+}
+
+func TestResolver_UpgradeRuntime(t *testing.T) {
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
+
+	upgradeInput := gqlschema.UpgradeRuntimeInput{
+		KymaConfig: fixKymaGraphQLConfigInput(),
+	}
+
+	t.Run("Should start upgrade and return operation id", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+
+		operation := &gqlschema.OperationStatus{
+			ID:        util.StringPtr(operationID),
+			Operation: gqlschema.OperationTypeUpgrade,
+			State:     gqlschema.OperationStateInProgress,
+			Message:   util.StringPtr("Message"),
+			RuntimeID: util.StringPtr(runtimeID),
+		}
+
+		provisioningService.On("UpgradeRuntime", runtimeID, upgradeInput).Return(operation, nil)
+		validator.On("ValidateUpgradeInput", upgradeInput).Return(nil)
+		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+
+		resolver := NewResolver(provisioningService, validator)
+
+		//when
+		status, err := resolver.UpgradeRuntime(ctx, runtimeID, upgradeInput)
+
+		//then
+		require.NoError(t, err)
+		require.NotNil(t, status)
+		require.NotNil(t, status.ID)
+		require.NotNil(t, status.RuntimeID)
+		assert.Equal(t, operation, status)
+	})
+
+	t.Run("Should return error when upgrade fails", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+
+		provisioningService.On("UpgradeRuntime", runtimeID, upgradeInput).Return(nil, errors.Errorf("error"))
+		validator.On("ValidateUpgradeInput", upgradeInput).Return(nil)
+		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+
+		resolver := NewResolver(provisioningService, validator)
+
+		//when
+		_, err := resolver.UpgradeRuntime(ctx, runtimeID, upgradeInput)
+
+		//then
+		require.Error(t, err)
+	})
+
+	t.Run("Should return error when tenant validation fails", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+
+		validator.On("ValidateUpgradeInput", upgradeInput).Return(nil)
+		validator.On("ValidateTenant", runtimeID, tenant).Return(errors.Errorf("error"))
+
+		resolver := NewResolver(provisioningService, validator)
+
+		//when
+		_, err := resolver.UpgradeRuntime(ctx, runtimeID, upgradeInput)
+
+		//then
+		require.Error(t, err)
+	})
+
+	t.Run("Should return error when validation fails", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+
+		validator.On("ValidateUpgradeInput", upgradeInput).Return(nil)
+		validator.On("ValidateTenant", runtimeID, tenant).Return(errors.Errorf("error"))
+
+		resolver := NewResolver(provisioningService, validator)
+
+		//when
+		_, err := resolver.UpgradeRuntime(ctx, runtimeID, upgradeInput)
+
+		//then
+		require.Error(t, err)
 	})
 }
 

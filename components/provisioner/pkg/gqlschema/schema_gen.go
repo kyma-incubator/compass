@@ -113,7 +113,7 @@ type ComplexityRoot struct {
 		DeprovisionRuntime    func(childComplexity int, id string) int
 		ProvisionRuntime      func(childComplexity int, config ProvisionRuntimeInput) int
 		ReconnectRuntimeAgent func(childComplexity int, id string) int
-		UpgradeKymaOnRuntime  func(childComplexity int, id string, config UpgradeKymaOnRuntimeInput) int
+		UpgradeRuntime        func(childComplexity int, id string, input UpgradeRuntimeInput) int
 	}
 
 	OperationStatus struct {
@@ -149,7 +149,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	ProvisionRuntime(ctx context.Context, config ProvisionRuntimeInput) (*OperationStatus, error)
-	UpgradeKymaOnRuntime(ctx context.Context, id string, config UpgradeKymaOnRuntimeInput) (*OperationStatus, error)
+	UpgradeRuntime(ctx context.Context, id string, input UpgradeRuntimeInput) (*OperationStatus, error)
 	DeprovisionRuntime(ctx context.Context, id string) (string, error)
 	ReconnectRuntimeAgent(ctx context.Context, id string) (string, error)
 }
@@ -489,17 +489,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.ReconnectRuntimeAgent(childComplexity, args["id"].(string)), true
 
-	case "Mutation.upgradeKymaOnRuntime":
-		if e.complexity.Mutation.UpgradeKymaOnRuntime == nil {
+	case "Mutation.upgradeRuntime":
+		if e.complexity.Mutation.UpgradeRuntime == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_upgradeKymaOnRuntime_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_upgradeRuntime_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpgradeKymaOnRuntime(childComplexity, args["id"].(string), args["config"].(UpgradeKymaOnRuntimeInput)), true
+		return e.complexity.Mutation.UpgradeRuntime(childComplexity, args["id"].(string), args["input"].(UpgradeRuntimeInput)), true
 
 	case "OperationStatus.id":
 		if e.complexity.OperationStatus.ID == nil {
@@ -891,18 +891,14 @@ input ComponentConfigurationInput {
     sourceURL: String                     # Custom URL for the source files of the given component
 }
 
-input UpgradeKymaOnRuntimeInput {
+input UpgradeRuntimeInput {
     kymaConfig: KymaConfigInput! # Kyma config to upgrade to
-}
-
-input UpgradeClusterInput {
-    version: String!
 }
 
 type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
     provisionRuntime(config: ProvisionRuntimeInput!): OperationStatus
-    upgradeKymaOnRuntime(id: String!, config: UpgradeKymaOnRuntimeInput!): OperationStatus
+    upgradeRuntime(id: String!, input: UpgradeRuntimeInput!): OperationStatus
     deprovisionRuntime(id: String!): String!
 
     # Compass Runtime Agent Connection Management
@@ -964,7 +960,7 @@ func (ec *executionContext) field_Mutation_reconnectRuntimeAgent_args(ctx contex
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_upgradeKymaOnRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_upgradeRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -975,14 +971,14 @@ func (ec *executionContext) field_Mutation_upgradeKymaOnRuntime_args(ctx context
 		}
 	}
 	args["id"] = arg0
-	var arg1 UpgradeKymaOnRuntimeInput
-	if tmp, ok := rawArgs["config"]; ok {
-		arg1, err = ec.unmarshalNUpgradeKymaOnRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeKymaOnRuntimeInput(ctx, tmp)
+	var arg1 UpgradeRuntimeInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg1, err = ec.unmarshalNUpgradeRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["config"] = arg1
+	args["input"] = arg1
 	return args, nil
 }
 
@@ -2477,7 +2473,7 @@ func (ec *executionContext) _Mutation_provisionRuntime(ctx context.Context, fiel
 	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_upgradeKymaOnRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_upgradeRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -2494,7 +2490,7 @@ func (ec *executionContext) _Mutation_upgradeKymaOnRuntime(ctx context.Context, 
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_upgradeKymaOnRuntime_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_upgradeRuntime_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -2503,7 +2499,7 @@ func (ec *executionContext) _Mutation_upgradeKymaOnRuntime(ctx context.Context, 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpgradeKymaOnRuntime(rctx, args["id"].(string), args["config"].(UpgradeKymaOnRuntimeInput))
+		return ec.resolvers.Mutation().UpgradeRuntime(rctx, args["id"].(string), args["input"].(UpgradeRuntimeInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4827,26 +4823,8 @@ func (ec *executionContext) unmarshalInputRuntimeInput(ctx context.Context, obj 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUpgradeClusterInput(ctx context.Context, obj interface{}) (UpgradeClusterInput, error) {
-	var it UpgradeClusterInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "version":
-			var err error
-			it.Version, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputUpgradeKymaOnRuntimeInput(ctx context.Context, obj interface{}) (UpgradeKymaOnRuntimeInput, error) {
-	var it UpgradeKymaOnRuntimeInput
+func (ec *executionContext) unmarshalInputUpgradeRuntimeInput(ctx context.Context, obj interface{}) (UpgradeRuntimeInput, error) {
+	var it UpgradeRuntimeInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -5216,8 +5194,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = graphql.MarshalString("Mutation")
 		case "provisionRuntime":
 			out.Values[i] = ec._Mutation_provisionRuntime(ctx, field)
-		case "upgradeKymaOnRuntime":
-			out.Values[i] = ec._Mutation_upgradeKymaOnRuntime(ctx, field)
+		case "upgradeRuntime":
+			out.Values[i] = ec._Mutation_upgradeRuntime(ctx, field)
 		case "deprovisionRuntime":
 			out.Values[i] = ec._Mutation_deprovisionRuntime(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -5814,8 +5792,8 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalNUpgradeKymaOnRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeKymaOnRuntimeInput(ctx context.Context, v interface{}) (UpgradeKymaOnRuntimeInput, error) {
-	return ec.unmarshalInputUpgradeKymaOnRuntimeInput(ctx, v)
+func (ec *executionContext) unmarshalNUpgradeRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx context.Context, v interface{}) (UpgradeRuntimeInput, error) {
+	return ec.unmarshalInputUpgradeRuntimeInput(ctx, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

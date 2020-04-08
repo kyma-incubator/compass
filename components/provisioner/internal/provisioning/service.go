@@ -23,7 +23,7 @@ import (
 //go:generate mockery -name=Service
 type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, error)
-	UpgradeRuntime(id string, config gqlschema.UpgradeKymaOnRuntimeInput) (*gqlschema.OperationStatus, error)
+	UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error)
 	DeprovisionRuntime(id, tenant string) (string, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
@@ -157,7 +157,7 @@ func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, run
 	return nil
 }
 
-func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeKymaOnRuntimeInput) (*gqlschema.OperationStatus, error) {
+func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
 	if input.KymaConfig == nil {
 		return &gqlschema.OperationStatus{}, fmt.Errorf("error: Kyma config is nil")
 	}

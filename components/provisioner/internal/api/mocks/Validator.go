@@ -41,11 +41,11 @@ func (_m *Validator) ValidateTenant(runtimeID string, tenant string) error {
 }
 
 // ValidateUpgradeInput provides a mock function with given fields: input
-func (_m *Validator) ValidateUpgradeInput(input gqlschema.UpgradeKymaOnRuntimeInput) error {
+func (_m *Validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) error {
 	ret := _m.Called(input)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(gqlschema.UpgradeKymaOnRuntimeInput) error); ok {
+	if rf, ok := ret.Get(0).(func(gqlschema.UpgradeRuntimeInput) error); ok {
 		r0 = rf(input)
 	} else {
 		r0 = ret.Error(0)

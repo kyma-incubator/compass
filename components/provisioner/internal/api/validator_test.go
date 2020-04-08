@@ -134,7 +134,7 @@ func TestValidator_ValidateUpgradeInput(t *testing.T) {
 			},
 		}
 
-		input := gqlschema.UpgradeKymaOnRuntimeInput{KymaConfig: kymaConfig}
+		input := gqlschema.UpgradeRuntimeInput{KymaConfig: kymaConfig}
 
 		//when
 		err := validator.ValidateUpgradeInput(input)
@@ -147,7 +147,7 @@ func TestValidator_ValidateUpgradeInput(t *testing.T) {
 		//given
 		validator := NewValidator(nil)
 
-		config := gqlschema.UpgradeKymaOnRuntimeInput{}
+		config := gqlschema.UpgradeRuntimeInput{}
 
 		//when
 		err := validator.ValidateUpgradeInput(config)
@@ -170,7 +170,7 @@ func TestValidator_ValidateUpgradeInput(t *testing.T) {
 			},
 		}
 
-		input := gqlschema.UpgradeKymaOnRuntimeInput{KymaConfig: kymaConfig}
+		input := gqlschema.UpgradeRuntimeInput{KymaConfig: kymaConfig}
 
 		//when
 		err := validator.ValidateUpgradeInput(input)
