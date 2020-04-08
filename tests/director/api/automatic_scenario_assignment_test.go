@@ -46,11 +46,11 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 		ScenarioName: testScenarioC,
 		Selector:     &testSelectorB,
 	}
-	createAutomaticScenarioAssignmentFromInputWithinTenant(t, ctx, inputAssignment1, tenantID)
+	createAutomaticScenarioAssignmentInTenant(t, ctx, inputAssignment1, tenantID)
 	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, testScenarioA)
-	createAutomaticScenarioAssignmentFromInputWithinTenant(t, ctx, inputAssignment2, tenantID)
+	createAutomaticScenarioAssignmentInTenant(t, ctx, inputAssignment2, tenantID)
 	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, testScenarioB)
-	createAutomaticScenarioAssignmentFromInputWithinTenant(t, ctx, inputAssignment3, tenantID)
+	createAutomaticScenarioAssignmentInTenant(t, ctx, inputAssignment3, tenantID)
 	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, testScenarioC)
 
 	// prepare queries
@@ -110,8 +110,10 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	setRuntimeLabelWithinTenant(t, ctx, tenantID, rtm2.ID, selectorKey, selectorValue)
 
 	//WHEN
-	SetAutomaticScenarioAssignmentWithinTenant(t, ctx, tenantID, prodScenario, selectorKey, selectorValue)
-	SetAutomaticScenarioAssignmentWithinTenant(t, ctx, tenantID, devScenario, selectorKey, selectorValue)
+	asaInput := fixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
+	createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
+	asaInput.ScenarioName = devScenario
+	createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
 
 	//THEN
 	runtimesPage := graphql.RuntimePageExt{}
@@ -238,5 +240,16 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 	assertAutomaticScenarioAssignment(t, anotherAssignment, *actualAssignments.Data[0])
 
 	saveExample(t, req.Query(), "delete automatic scenario assignments for selector")
+
+}
+
+func fixAutomaticScenarioAssigmentInput(automaticScenario, selecterKey, selectorValue string) graphql.AutomaticScenarioAssignmentSetInput {
+	return graphql.AutomaticScenarioAssignmentSetInput{
+		ScenarioName: automaticScenario,
+		Selector: &graphql.LabelSelectorInput{
+			Key:   selecterKey,
+			Value: selectorValue,
+		},
+	}
 
 }

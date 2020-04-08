@@ -136,7 +136,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
 	packageInstanceAuthSvc := packageinstanceauth.NewService(packageInstanceAuthRepo, uidSvc)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine()
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(scenarioAssignmentRepo)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc, scenarioAssignmentEngine)
 
 	return &RootResolver{

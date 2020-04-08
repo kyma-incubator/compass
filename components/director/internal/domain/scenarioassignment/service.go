@@ -19,6 +19,7 @@ type Repository interface {
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 	DeleteForSelector(ctx context.Context, tenantID string, selector model.LabelSelector) error
 	DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error
+	EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
 //go:generate mockery -name=ScenariosDefService -output=automock -outpkg=automock -case=underscore
@@ -29,7 +30,7 @@ type ScenariosDefService interface {
 
 //go:generate mockery -name=AssignmentEngine -output=automock -outpkg=automock -case=underscore
 type AssignmentEngine interface {
-	EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment, tenantID string) error
+	EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error
 	RemoveAssignedScenario(in model.AutomaticScenarioAssignment) error
 	RemoveAssignedScenarios(in []*model.AutomaticScenarioAssignment) error
 }
@@ -67,7 +68,7 @@ func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignme
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while persisting Assignment")
 	}
 
-	err = s.engineSvc.EnsureScenarioAssigned(ctx, in, tenantID)
+	err = s.engineSvc.EnsureScenarioAssigned(ctx, in)
 	if err != nil {
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while assigning scenario to runtimes matching selector")
 	}

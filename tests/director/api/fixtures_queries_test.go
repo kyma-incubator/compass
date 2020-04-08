@@ -10,21 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetAutomaticScenarioAssignmentWithinTenant(t *testing.T, ctx context.Context, tenantID, automaticScenario, selecterKey, selectorValue string) {
-	input := graphql.AutomaticScenarioAssignmentSetInput{
-		ScenarioName: automaticScenario,
-		Selector: &graphql.LabelSelectorInput{
-			Key:   selecterKey,
-			Value: selectorValue,
-		},
-	}
-	payload, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(input)
-	require.NoError(t, err)
-	request := fixCreateAutomaticScenarioAssignmentRequest(payload)
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, nil)
-	require.NoError(t, err)
-}
-
 //Application
 func getApplication(t *testing.T, ctx context.Context, id string) graphql.ApplicationExt {
 	appRequest := fixApplicationRequest(id)
@@ -456,17 +441,6 @@ func fixPackageInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *
 	inputParams := marshalJSON(t, inputParamsData)
 
 	return authCtx, inputParams
-}
-
-func createAutomaticScenarioAssignmentFromInputWithinTenant(t *testing.T, ctx context.Context, input graphql.AutomaticScenarioAssignmentSetInput, tenantID string) graphql.AutomaticScenarioAssignment {
-	inStr, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(input)
-	require.NoError(t, err)
-
-	assignment := graphql.AutomaticScenarioAssignment{}
-	req := fixCreateAutomaticScenarioAssignmentRequest(inStr)
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignment)
-	require.NoError(t, err)
-	return assignment
 }
 
 func createAutomaticScenarioAssignmentInTenant(t *testing.T, ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput, tenantID string) *graphql.AutomaticScenarioAssignment {

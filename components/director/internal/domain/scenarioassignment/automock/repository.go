@@ -53,6 +53,20 @@ func (_m *Repository) DeleteForSelector(ctx context.Context, tenantID string, se
 	return r0
 }
 
+// EnsureScenarioAssigned provides a mock function with given fields: ctx, in
+func (_m *Repository) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+	ret := _m.Called(ctx, in)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.AutomaticScenarioAssignment) error); ok {
+		r0 = rf(ctx, in)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetForScenarioName provides a mock function with given fields: ctx, tenantID, scenarioName
 func (_m *Repository) GetForScenarioName(ctx context.Context, tenantID string, scenarioName string) (model.AutomaticScenarioAssignment, error) {
 	ret := _m.Called(ctx, tenantID, scenarioName)
