@@ -28,7 +28,7 @@ func TestConnectAgentStep_Run(t *testing.T) {
 		stage := NewConnectAgentStage(configurator, nextStageName, time.Minute)
 
 		// when
-		result, err := stage.Run(cluster, &logrus.Entry{})
+		result, err := stage.Run(cluster, model.Operation{}, &logrus.Entry{})
 
 		// then
 		require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestConnectAgentStep_Run(t *testing.T) {
 		stage := NewConnectAgentStage(configurator, nextStageName, time.Minute)
 
 		// when
-		_, err := stage.Run(cluster, &logrus.Entry{})
+		_, err := stage.Run(cluster, model.Operation{}, &logrus.Entry{})
 
 		// then
 		require.Error(t, err)

@@ -8,7 +8,7 @@ import (
 
 type Stage interface {
 	Name() model.OperationStage
-	Run(cluster model.Cluster, logger logrus.FieldLogger) (StageResult, error)
+	Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (StageResult, error)
 	TimeLimit() time.Duration
 }
 

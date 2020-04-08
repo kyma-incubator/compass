@@ -100,7 +100,7 @@ func (e *StagesExecutor) processInstallation(operation model.Operation, cluster 
 			return false, 0, NewNonRecoverableError(fmt.Errorf("error: timeout while processing operation"))
 		}
 
-		result, err := step.Run(cluster, log)
+		result, err := step.Run(cluster, operation, log)
 		if err != nil {
 			log.Errorf("Stage failed: %s", err.Error())
 			return false, 0, err

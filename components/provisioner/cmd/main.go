@@ -245,7 +245,7 @@ func createUpgradeQueue(factory dbsession.Factory, installationClient installati
 		model.StartingUpgrade:        upgradeStep,
 	}
 
-	upgradeExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(), model.Upgrade, upgradeSteps, failure.NewUpgradeFailureHandler())
+	upgradeExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(), model.Upgrade, upgradeSteps, failure.NewUpgradeFailureHandler(factory.NewReadWriteSession()))
 
 	return operations.NewQueue(upgradeExecutor)
 }

@@ -31,7 +31,7 @@ func (s *ConnectAgentStage) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *ConnectAgentStage) Run(cluster model.Cluster, logger logrus.FieldLogger) (operations.StageResult, error) {
+func (s *ConnectAgentStage) Run(cluster model.Cluster, _ model.Operation, _ logrus.FieldLogger) (operations.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
 		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")

@@ -91,7 +91,7 @@ func TestInstallKymaStep_Run(t *testing.T) {
 			installStep := NewInstallKymaStep(installationSvc, nextStageName, 10*time.Minute)
 
 			// when
-			result, err := installStep.Run(cluster, logrus.New())
+			result, err := installStep.Run(cluster, model.Operation{}, logrus.New())
 
 			// then
 			require.NoError(t, err)
@@ -111,7 +111,7 @@ func TestInstallKymaStep_Run(t *testing.T) {
 		installStep := NewInstallKymaStep(installationSvc, nextStageName, 10*time.Minute)
 
 		// when
-		_, err := installStep.Run(cluster, logrus.New())
+		_, err := installStep.Run(cluster, model.Operation{}, logrus.New())
 
 		// then
 		require.Error(t, err)

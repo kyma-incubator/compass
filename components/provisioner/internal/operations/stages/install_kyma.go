@@ -34,7 +34,7 @@ func (s *InstallKymaStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *InstallKymaStep) Run(cluster model.Cluster, logger logrus.FieldLogger) (operations.StageResult, error) {
+func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
 		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")

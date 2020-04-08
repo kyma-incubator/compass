@@ -29,6 +29,7 @@ const (
 	WaitingForInstallation OperationStage = "WaitingForInstallation"
 	ConnectRuntimeAgent    OperationStage = "ConnectRuntimeAgent"
 	StartingUpgrade        OperationStage = "StartingUpgrade"
+	UpdatingUpgradeState   OperationStage = "UpdatingUpgradeState"
 	FinishedStage          OperationStage = "Finished"
 )
 

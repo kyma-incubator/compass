@@ -62,7 +62,7 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 			waitForInstallationStep := NewWaitForInstallationStep(installationSvc, nextStageName, 10*time.Minute)
 
 			// when
-			result, err := waitForInstallationStep.Run(cluster, logrus.New())
+			result, err := waitForInstallationStep.Run(cluster, model.Operation{}, logrus.New())
 
 			// then
 			require.NoError(t, err)
@@ -81,7 +81,7 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		waitForInstallationStep := NewWaitForInstallationStep(installationSvc, nextStageName, 10*time.Minute)
 
 		// when
-		_, err := waitForInstallationStep.Run(cluster, logrus.New())
+		_, err := waitForInstallationStep.Run(cluster, model.Operation{}, logrus.New())
 
 		// then
 		require.Error(t, err)

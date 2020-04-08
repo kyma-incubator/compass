@@ -219,6 +219,19 @@ func (ws writeSession) SetActiveKymaConfig(runtimeID string, kymaConfigId string
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update cluster %s kyma config: %s", runtimeID, err))
 }
 
+func (ws writeSession) UpdateUpgradeState(operationID string, upgradeState model.UpgradeState) dberrors.Error {
+	res, err := ws.update("runtime_upgrade").
+		Where(dbr.Eq("operation_id", operationID)).
+		Set("state", upgradeState).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update operation %s upgrade state: %s", operationID, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s upgrade state: %s", operationID, err))
+}
+
 func (ws writeSession) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).
