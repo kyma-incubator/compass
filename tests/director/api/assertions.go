@@ -238,7 +238,7 @@ func assertRuntimeLabels(t *testing.T, name string, inLabels *graphql.Labels, ac
 	assertLabel(t, actualLabels, nameKey, name)
 	if inLabels == nil {
 		assertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
-		assert.Equal(t, 1, len(actualLabels))
+		assert.Equal(t, 2, len(actualLabels))
 		return
 	}
 
