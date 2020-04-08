@@ -162,7 +162,7 @@ func (del *Delegator) deleteRequest(logger logrus.FieldLogger, evaluationId int6
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 200 || resp.StatusCode == 400 {
+	if resp.StatusCode == 200 || resp.StatusCode == 404 {
 		return nil
 	} else {
 		msg := fmt.Sprintf("Got unexpected status %d while deleting evaluation", resp.StatusCode)
