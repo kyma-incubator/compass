@@ -66,7 +66,7 @@ func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation
 				ServiceClassName:  svcNameOrDefault(inst),
 				ServicePlanID:     inst.ServicePlanID,
 				ServicePlanName:   planNameOrDefault(inst),
-				Status: DTOStatus{
+				Status: StatusDTO{
 					CreatedAt: getIfNotZero(inst.CreatedAt),
 					UpdatedAt: getIfNotZero(inst.UpdatedAt),
 					DeletedAt: getIfNotZero(inst.DelatedAt),

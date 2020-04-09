@@ -12,10 +12,10 @@ type (
 		ServiceClassName  string    `json:"serviceClassName"`
 		ServicePlanID     string    `json:"servicePlanId"`
 		ServicePlanName   string    `json:"servicePlanName"`
-		Status            DTOStatus `json:"status"`
+		Status            StatusDTO `json:"status"`
 	}
 
-	DTOStatus struct {
+	StatusDTO struct {
 		CreatedAt      *time.Time          `json:"createdAt,omitempty"`
 		UpdatedAt      *time.Time          `json:"updatedAt,omitempty"`
 		DeletedAt      *time.Time          `json:"deletedAt,omitempty"`

@@ -17,7 +17,7 @@ type Factory interface {
 
 //go:generate mockery -name=ReadSession
 type ReadSession interface {
-	FindAllInstancesJoinedWithProvisionOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error)
+	FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error)
 	GetInstanceByID(instanceID string) (internal.Instance, dberr.Error)
 	GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.Error)
 	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error)

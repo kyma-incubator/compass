@@ -17,7 +17,7 @@ type readSession struct {
 	session *dbr.Session
 }
 
-func (r readSession) FindAllInstancesJoinedWithProvisionOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error) {
+func (r readSession) FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error) {
 	var instances []internal.InstanceWithOperation
 
 	join := fmt.Sprintf("%s.instance_id = %s.instance_id", postsql.InstancesTableName, postsql.OperationTableName)

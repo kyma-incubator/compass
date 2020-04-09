@@ -27,7 +27,7 @@ func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]i
 		lastErr   dberr.Error
 	)
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		instances, lastErr = sess.FindAllInstancesJoinedWithProvisionOperation(prct...)
+		instances, lastErr = sess.FindAllInstancesJoinedWithOperation(prct...)
 		if lastErr != nil {
 			log.Warn(errors.Wrapf(lastErr, "while fetching all instances").Error())
 			return false, nil
