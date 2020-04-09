@@ -66,7 +66,7 @@ func (c *SecretClient) Delete(secret v1.Secret) error {
 		return true, nil
 	})
 	if err != nil {
-		return errors.Wrap(err, "while waiting for secret update")
+		return errors.Wrap(err, "while waiting for secret delete")
 	}
 	return nil
 }

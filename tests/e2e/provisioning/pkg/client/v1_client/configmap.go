@@ -68,7 +68,6 @@ func (c *ConfigMapClient) Create(configMap v1.ConfigMap) error {
 		return true, nil
 	})
 	if err != nil {
-		c.log.Errorf("while creating secret: %v", err)
 		return err
 	}
 	return nil
@@ -84,7 +83,7 @@ func (c *ConfigMapClient) Update(configMap v1.ConfigMap) error {
 		return true, nil
 	})
 	if err != nil {
-		return errors.Wrap(err, "while waiting for secret update")
+		return errors.Wrap(err, "while waiting for config map update")
 	}
 	return nil
 }
@@ -97,13 +96,13 @@ func (c *ConfigMapClient) Delete(configMap v1.ConfigMap) error {
 				c.log.Warn("config map not found")
 				return true, nil
 			}
-			c.log.Errorf("while creating config map: %v", err)
+			c.log.Errorf("while deleting config map: %v", err)
 			return false, nil
 		}
 		return true, nil
 	})
 	if err != nil {
-		return errors.Wrap(err, "while waiting for secret update")
+		return errors.Wrap(err, "while waiting for config map delete")
 	}
 	return nil
 }
