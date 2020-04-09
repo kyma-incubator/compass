@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
@@ -390,6 +391,61 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 
 		//when
 		_, err := resolver.UpgradeRuntime(ctx, runtimeID, upgradeInput)
+
+		//then
+		require.Error(t, err)
+	})
+}
+
+func TestResolver_RollBackUpgradeOperation(t *testing.T) {
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
+
+	runtimeStatus := gqlschema.RuntimeStatus{}
+
+	t.Run("Should start upgrade and return operation id", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+
+		provisioningService.On("RollBackLastUpgrade", runtimeID).Return(&runtimeStatus, nil)
+		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+
+		resolver := NewResolver(provisioningService, validator)
+
+		//when
+		status, err := resolver.RollBackUpgradeOperation(ctx, runtimeID)
+
+		//then
+		require.NoError(t, err)
+		require.NotNil(t, status)
+	})
+
+	t.Run("Should return error when failed to roll back upgrade", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+
+		provisioningService.On("RollBackLastUpgrade", runtimeID).Return(nil, fmt.Errorf("error"))
+		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+
+		resolver := NewResolver(provisioningService, validator)
+
+		//when
+		_, err := resolver.RollBackUpgradeOperation(ctx, runtimeID)
+
+		//then
+		require.Error(t, err)
+	})
+
+	t.Run("Should return error when failed to validate tenant", func(t *testing.T) {
+		//given
+		validator := &validatorMocks.Validator{}
+		validator.On("ValidateTenant", runtimeID, tenant).Return(fmt.Errorf("error"))
+
+		resolver := NewResolver(nil, validator)
+
+		//when
+		_, err := resolver.RollBackUpgradeOperation(ctx, runtimeID)
 
 		//then
 		require.Error(t, err)
