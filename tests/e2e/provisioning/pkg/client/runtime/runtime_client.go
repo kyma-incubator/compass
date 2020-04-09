@@ -120,7 +120,7 @@ func (c *Client) FetchRuntimeConfig() (*string, error) {
 	if res.Result.RuntimeConfiguration != nil {
 		return res.Result.RuntimeConfiguration.Kubeconfig, nil
 	}
-	return nil, nil
+	return nil, errors.New("kubeconfig shouldn't be nil")
 }
 
 func (c *Client) writeConfigToFile(config string) (string, error) {

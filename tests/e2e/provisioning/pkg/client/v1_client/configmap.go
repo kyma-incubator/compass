@@ -46,8 +46,7 @@ func (c *ConfigMapClient) Get(name, namespace string) (*v1.ConfigMap, error) {
 		return true, nil
 	})
 	if err != nil {
-		c.log.Errorf("while getting config map: %v", err)
-		return nil, err
+		return nil, errors.Wrap(err, "while getting config map")
 	}
 	return &configMap, nil
 }
@@ -61,6 +60,7 @@ func (c *ConfigMapClient) Create(configMap v1.ConfigMap) error {
 				if err != nil {
 					return false, errors.Wrap(err, "while updating a config map")
 				}
+				return true, nil
 			}
 			c.log.Errorf("while creating config map: %v", err)
 			return false, nil
@@ -68,7 +68,7 @@ func (c *ConfigMapClient) Create(configMap v1.ConfigMap) error {
 		return true, nil
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "while creating config map")
 	}
 	return nil
 }
@@ -77,7 +77,7 @@ func (c *ConfigMapClient) Update(configMap v1.ConfigMap) error {
 	err := wait.PollImmediate(time.Second, timeout, func() (bool, error) {
 		err := c.client.Update(context.Background(), &configMap)
 		if err != nil {
-			c.log.Errorf("while creating config map: %v", err)
+			c.log.Errorf("while updating config map: %v", err)
 			return false, nil
 		}
 		return true, nil
