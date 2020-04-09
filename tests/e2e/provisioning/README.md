@@ -19,9 +19,10 @@ You must also have the Kyma Environment Broker [configured](https://github.com/k
 The provisioning end-to-end test contains a broker client implementation which mocks Registry. It is an external dependency that calls the broker in the regular scenario. The test is divided into two phases:
 
 1. Provisioning
-During the provisioning phase, the test executes the following steps:
+
+    During the provisioning phase, the test executes the following steps:
     
-    a. Sends a call to KEB to provision a Runtime. KEB creates an operation and sends a request to the Runtime Provisioner. Wait until the operation is successful. It takes about 30 minutes on GCP and a few hours on Azure. You can configure the timeout using the environment variable. 
+    a. Sends a call to KEB to provision a Runtime. KEB creates an operation and sends a request to the Runtime Provisioner. The test waits until the operation is successful. It takes about 30 minutes on GCP and a few hours on Azure. You can configure the timeout using the environment variable. 
     
     b. Creates a ConfigMap with **instanceId** specified.
     
