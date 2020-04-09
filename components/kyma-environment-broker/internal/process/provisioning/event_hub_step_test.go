@@ -72,7 +72,7 @@ func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *az
 	}, nc.persistEventhubsNamespaceError
 }
 
-func (nc *FakeNamespaceClient) DeleteResourceGroup(ctx context.Context) error {
+func (nc *FakeNamespaceClient) DeleteResourceGroup(ctx context.Context, tags azure.Tags) error {
 	//TODO(montaro) double check me
 	return nil
 }

@@ -77,8 +77,10 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
 		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
+	// prepare azure tags
+	tags := azure.Tags{azure.TagInstanceID: &operation.InstanceID}
 
-	if err := namespaceClient.DeleteResourceGroup(s.EventHub.Context); err != nil {
+	if err := namespaceClient.DeleteResourceGroup(s.EventHub.Context, tags); err != nil {
 		errorMessage := fmt.Sprintf("Unable to delete Azure resource group: %v", err)
 		return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}

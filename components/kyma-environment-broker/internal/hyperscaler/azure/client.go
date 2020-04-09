@@ -2,6 +2,7 @@ package azure
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
@@ -11,7 +12,7 @@ type AzureInterface interface {
 	GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
 	CreateResourceGroup(ctx context.Context, config *Config, name string, tags Tags) (resources.Group, error)
 	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags Tags) (*eventhub.EHNamespace, error)
-	DeleteResourceGroup(ctx context.Context) error
+	DeleteResourceGroup(ctx context.Context, tags Tags) error
 }
 
 var _ AzureInterface = (*AzureClient)(nil)
@@ -48,22 +49,42 @@ func (nc *AzureClient) CreateNamespace(ctx context.Context, azureCfg *Config, gr
 }
 
 // TODO(nachtmaar): can we have map[string]string here instead and do we nillness checking before ?
-func (nc *AzureClient) DeleteResourceGroup(ctx context.Context) error {
-	resourceGroupName := nc.getResourceGroupName(ctx)
-	return nc.deleteAndWaitResourceGroup(ctx, resourceGroupName)
+func (nc *AzureClient) DeleteResourceGroup(ctx context.Context, tags Tags) error {
+	resourceGroup, err := nc.getResourceGroup(ctx, *tags[TagInstanceID])
+	if err != nil {
+		return err
+	}
+	// TODO: use logger
+	fmt.Printf("found resource group with name: %s\n", *resourceGroup.Name)
+	return nc.deleteAndWaitResourceGroup(ctx, *resourceGroup.Name)
 }
 
-func (nc *AzureClient) getResourceGroupName(ctx context.Context) string {
-	return nc.getResourceGroupName(ctx)
+func (nc *AzureClient) getResourceGroup(ctx context.Context, serviceInstanceID string) (resources.Group, error) {
+	filter := fmt.Sprintf("tagName eq 'InstanceID' and tagValue eq '%s'", serviceInstanceID)
+	resourceGroupIterator, err := nc.resourcegroupClient.ListComplete(ctx, filter, nil)
+	if err != nil {
+		return resources.Group{}, err
+	}
+	// TODO(nachtmaar): return error if there are more than one entry
+	for resourceGroupIterator.NotDone() {
+		resourceGroup := resourceGroupIterator.Value()
+		// there should only be one resource group with the given service instance id
+		return resourceGroup, nil
+	}
+	return resources.Group{}, fmt.Errorf("no resource group found for service instance id: %s", serviceInstanceID)
 }
 
 // TODO(nachtmaar): can we have a shared method to wait for azure futures ?
 func (nc *AzureClient) deleteAndWaitResourceGroup(ctx context.Context, resourceGroupName string) error {
+
+	fmt.Printf("deleting resource group: %s", resourceGroupName)
 	future, err := nc.resourcegroupClient.Delete(ctx, resourceGroupName)
-	if err != nil {
+		if err != nil {
 		return err
 	}
 
+	// TODO: instead of blocking just re-enqueue the task
+	fmt.Printf("waiting for deletion of resource group: %s", resourceGroupName)
 	err = future.WaitForCompletionRef(ctx, nc.resourcegroupClient.Client)
 	return err
 }
