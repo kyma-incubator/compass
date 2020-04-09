@@ -81,7 +81,7 @@ func (om *DeprovisionOperationManager) RetryOperation(operation internal.Deprovi
 }
 
 // RetryOperationWithoutFail retries an operation for at maxTime in retryInterval steps and omits the operation if retrying failed
-func (om *DeprovisionOperationManager) RetryOperationWithoutFail(operation internal.DeprovisioningOperation, description string, retryInterval time.Duration, maxTime time.Duration, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+func (om *DeprovisionOperationManager) RetryOperationWithoutFail(operation internal.DeprovisioningOperation, description string, retryInterval, maxTime time.Duration, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	since := time.Since(operation.UpdatedAt)
 
 	log.Infof("Retrying for %s in %s steps", maxTime.String(), retryInterval.String())
