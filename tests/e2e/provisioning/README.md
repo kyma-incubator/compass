@@ -34,7 +34,7 @@ The provisioning end-to-end test contains a broker client implementation which m
 
 2. Cleanup
 
-    The cleanup logic is executed at the end of the end-to-end test or when the provisioning phase fails. It consists of the following steps:
+    The cleanup logic is executed at the end of the end-to-end test or when the provisioning phase fails. During this phase, the test executes the following steps:
     
     a. Gets **instanceId** from the ConfigMap.
     
