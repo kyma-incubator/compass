@@ -199,3 +199,172 @@ func TestEngine_GetScenariosForSelectorLabels_ShouldFailOnLoadingTenant(t *testi
 	// then
 	assert.EqualError(t, err, "cannot read tenant from context")
 }
+
+func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_Success(t *testing.T) {
+	// given
+	labelKey := "key"
+	labelValue := "val"
+
+	inputLabels := map[string]interface{}{
+		labelKey: labelValue,
+	}
+
+	selector := model.LabelSelector{
+		Key:   labelKey,
+		Value: labelValue,
+	}
+
+	assignments := []*model.AutomaticScenarioAssignment{
+		{
+			ScenarioName: scenarioName,
+			Tenant:       tenantID,
+			Selector: model.LabelSelector{
+				Key:   labelKey,
+				Value: labelValue,
+			},
+		},
+	}
+
+	expectedScenarios := []interface{}{scenarioName}
+
+	mockRepo := &automock.Repository{}
+	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(assignments, nil)
+	engineSvc := scenarioassignment.NewEngine(mockRepo)
+
+	// when
+	actualScenarios, err := engineSvc.MergeScenariosFromInputAndAssignmentsFromInput(fixCtxWithTenant(), inputLabels)
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, expectedScenarios, actualScenarios)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_SuccessIfScenariosLabelIsInInput(t *testing.T) {
+	// given
+	labelKey := "key"
+	labelValue := "val"
+
+	scenario := "SCENARIO"
+	inputLabels := map[string]interface{}{
+		labelKey:           labelValue,
+		model.ScenariosKey: []interface{}{scenario},
+	}
+
+	selector := model.LabelSelector{
+		Key:   labelKey,
+		Value: labelValue,
+	}
+
+	assignments := []*model.AutomaticScenarioAssignment{
+		{
+			ScenarioName: scenarioName,
+			Tenant:       tenantID,
+			Selector: model.LabelSelector{
+				Key:   labelKey,
+				Value: labelValue,
+			},
+		},
+	}
+
+	expectedScenarios := []interface{}{scenarioName, scenario}
+
+	mockRepo := &automock.Repository{}
+	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(assignments, nil)
+	engineSvc := scenarioassignment.NewEngine(mockRepo)
+
+	// when
+	actualScenarios, err := engineSvc.MergeScenariosFromInputAndAssignmentsFromInput(fixCtxWithTenant(), inputLabels)
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, expectedScenarios, actualScenarios)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_ReturnsErrorIfListForSelectorFailed(t *testing.T) {
+	// given
+	testErr := errors.New("testErr")
+	labelKey := "key"
+	labelValue := "val"
+
+	inputLabels := map[string]interface{}{
+		labelKey: labelValue,
+	}
+
+	selector := model.LabelSelector{
+		Key:   labelKey,
+		Value: labelValue,
+	}
+
+	mockRepo := &automock.Repository{}
+	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(nil, testErr)
+	engineSvc := scenarioassignment.NewEngine(mockRepo)
+
+	// when
+	_, err := engineSvc.MergeScenariosFromInputAndAssignmentsFromInput(fixCtxWithTenant(), inputLabels)
+
+	// then
+	require.Error(t, err)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_ReturnsErrorIfScenariosFromInputWereNotInterfaceSlice(t *testing.T) {
+	// given
+	labelKey := "key"
+	labelValue := "val"
+
+	scenario := "SCENARIO"
+	inputLabels := map[string]interface{}{
+		labelKey:           labelValue,
+		model.ScenariosKey: []string{scenario},
+	}
+
+	selector := model.LabelSelector{
+		Key:   labelKey,
+		Value: labelValue,
+	}
+
+	assignments := []*model.AutomaticScenarioAssignment{
+		{
+			ScenarioName: scenarioName,
+			Tenant:       tenantID,
+			Selector: model.LabelSelector{
+				Key:   labelKey,
+				Value: labelValue,
+			},
+		},
+	}
+
+	mockRepo := &automock.Repository{}
+	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(assignments, nil)
+	engineSvc := scenarioassignment.NewEngine(mockRepo)
+
+	// when
+	_, err := engineSvc.MergeScenariosFromInputAndAssignmentsFromInput(fixCtxWithTenant(), inputLabels)
+
+	// then
+	require.Error(t, err)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestEngine_ComputeScenarios_Success(t *testing.T) {
+	// given
+	oldScenariosLabel := []interface{}{"DEFAULT", "CUSTOM"}
+	previousScenariosFromAssignments := []interface{}{"DEFAULT"}
+	newScenariosFromAssignments := []interface{}{"CUSTOM"}
+
+	expectedScenarios := []interface{}{"CUSTOM"}
+
+	engineSvc := scenarioassignment.NewEngine(nil)
+
+	// when
+	actualScenarios := engineSvc.ComputeScenarios(oldScenariosLabel, previousScenariosFromAssignments, newScenariosFromAssignments)
+
+	// then
+	assert.Equal(t, expectedScenarios, actualScenarios)
+}
