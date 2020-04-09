@@ -3,6 +3,8 @@ package deprovisioning
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -14,6 +16,7 @@ type AvsEvaluationRemovalStep struct {
 	operationsStorage     storage.Operations
 	externalEvalAssistant avs.EvalAssistant
 	internalEvalAssistant avs.EvalAssistant
+	deProvisioningManager *process.DeprovisionOperationManager
 }
 
 func NewAvsEvaluationsRemovalStep(delegator *avs.Delegator, operationsStorage storage.Operations, externalEvalAssistant, internalEvalAssistant avs.EvalAssistant) *AvsEvaluationRemovalStep {
@@ -22,6 +25,7 @@ func NewAvsEvaluationsRemovalStep(delegator *avs.Delegator, operationsStorage st
 		operationsStorage:     operationsStorage,
 		externalEvalAssistant: externalEvalAssistant,
 		internalEvalAssistant: internalEvalAssistant,
+		deProvisioningManager: process.NewDeprovisionOperationManager(operationsStorage),
 	}
 }
 
@@ -35,11 +39,15 @@ func (ars *AvsEvaluationRemovalStep) Run(deProvisioningOperation internal.Deprov
 		return deProvisioningOperation, 0, nil
 	}
 
-	deProvisioningOperation, duration, _ := ars.delegator.DeleteAvsEvaluation(deProvisioningOperation, logger, ars.internalEvalAssistant)
-	if duration != 0 {
-		return deProvisioningOperation, duration, nil
+	deProvisioningOperation, err := ars.delegator.DeleteAvsEvaluation(deProvisioningOperation, logger, ars.internalEvalAssistant)
+	if err != nil {
+		return ars.deProvisioningManager.RetryOperation(deProvisioningOperation, err.Error(), 10*time.Second, 1*time.Hour, logger)
 	}
 
-	return ars.delegator.DeleteAvsEvaluation(deProvisioningOperation, logger, ars.externalEvalAssistant)
+	deProvisioningOperation, err = ars.delegator.DeleteAvsEvaluation(deProvisioningOperation, logger, ars.externalEvalAssistant)
+	if err != nil {
+		return ars.deProvisioningManager.RetryOperation(deProvisioningOperation, err.Error(), 10*time.Second, 1*time.Hour, logger)
+	}
+	return deProvisioningOperation, 0, nil
 
 }

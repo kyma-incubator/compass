@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -117,22 +119,22 @@ func responseBody(resp *http.Response) string {
 	return string(bodyBytes)
 }
 
-func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger, assistant EvalAssistant) (internal.DeprovisioningOperation, time.Duration, error) {
+func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger, assistant EvalAssistant) (internal.DeprovisioningOperation, error) {
 	if assistant.IsAlreadyDeleted(deProvisioningOperation.Avs) {
 		logger.Infof("Evaluations have been deleted previously")
 	}
 
 	if err := del.tryDeleting(assistant, deProvisioningOperation.Avs, logger); err != nil {
-		return deProvisioningOperation, time.Second * 10, nil
+		return deProvisioningOperation, err
 	}
 
 	assistant.markDeleted(&deProvisioningOperation.Avs)
 
 	updatedDeProvisioningOp, err := del.operationsStorage.UpdateDeprovisioningOperation(deProvisioningOperation)
 	if err != nil {
-		return deProvisioningOperation, time.Second * 10, nil
+		return deProvisioningOperation, err
 	}
-	return *updatedDeProvisioningOp, 0, nil
+	return *updatedDeProvisioningOp, nil
 }
 
 func (del *Delegator) tryDeleting(assistant EvalAssistant, lifecycleData internal.AvsLifecycleData, logger logrus.FieldLogger) error {
@@ -158,7 +160,7 @@ func (del *Delegator) deleteRequest(logger logrus.FieldLogger, evaluationId int6
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Error during Http call")
 	}
 	defer resp.Body.Close()
 
