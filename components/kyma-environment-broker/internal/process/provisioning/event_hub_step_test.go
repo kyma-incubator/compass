@@ -19,12 +19,18 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/automock"
+	hyperscalerautomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	inputAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+)
+
+const (
+	fixSubAccountID = "test-sub-account-id"
+	fixInstanceID   = "test-instance-id"
+	fixOperationID  = "test-operation-id"
 )
 
 func fixLogger() logrus.FieldLogger {
@@ -40,6 +46,7 @@ type FakeNamespaceClient struct {
 	resourceGroupError             error
 	accessKeysError                error
 	accessKeys                     *eventhub.AccessKeys
+	tags                           azure.Tags
 }
 
 func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
@@ -51,13 +58,15 @@ func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resour
 	}, nc.accessKeysError
 }
 
-func (nc *FakeNamespaceClient) CreateResourceGroup(ctx context.Context, config *azure.Config, name string) (resources.Group, error) {
+func (nc *FakeNamespaceClient) CreateResourceGroup(ctx context.Context, config *azure.Config, name string, tags azure.Tags) (resources.Group, error) {
+	nc.tags = tags
 	return resources.Group{
 		Name: ptr.String("my-resourcegroup"),
 	}, nc.resourceGroupError
 }
 
-func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *azure.Config, groupName, namespace string) (*eventhub.EHNamespace, error) {
+func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *azure.Config, groupName, namespace string, tags azure.Tags) (*eventhub.EHNamespace, error) {
+	nc.tags = tags
 	return &eventhub.EHNamespace{
 		Name: ptr.String(namespace),
 	}, nc.persistEventhubsNamespaceError
@@ -86,7 +95,7 @@ func NewFakeNamespaceAccessKeysNil() azure.AzureInterface {
 	}
 }
 
-func NewFakeNamespaceClientHappyPath() azure.AzureInterface {
+func NewFakeNamespaceClientHappyPath() *FakeNamespaceClient {
 	return &FakeNamespaceClient{}
 }
 
@@ -118,9 +127,11 @@ func NewFakeHyperscalerProviderError() azure.HyperscalerProvider {
 
 func Test_HappyPath(t *testing.T) {
 	// given
+	tags := fixTags()
 	memoryStorage := storage.NewMemoryStorage()
 	accountProvider := fixAccountProvider()
-	step := fixEventHubStep(memoryStorage.Operations(), accountProvider)
+	namespaceClient := NewFakeNamespaceClientHappyPath()
+	step := fixEventHubStep(memoryStorage.Operations(), NewFakeHyperscalerProvider(namespaceClient), accountProvider)
 	op := fixProvisioningOperation(t)
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
 	err := memoryStorage.Operations().InsertProvisioningOperation(op)
@@ -137,6 +148,7 @@ func Test_HappyPath(t *testing.T) {
 	allOverridesFound := ensureOverrides(t, provisionRuntimeInput)
 	assert.True(t, allOverridesFound[componentNameKnativeEventing], "overrides for %s were not found", componentNameKnativeEventing)
 	assert.True(t, allOverridesFound[componentNameKnativeEventingKafka], "overrides for %s were not found", componentNameKnativeEventingKafka)
+	assert.Equal(t, namespaceClient.tags, tags)
 }
 
 func Test_StepsUnhappyPath(t *testing.T) {
@@ -151,7 +163,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			giveOperation: fixInvalidProvisioningOperation,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
-				return *fixEventHubStep(storage.Operations(), accountProvider)
+				return *fixEventHubStep(storage.Operations(), NewFakeHyperscalerProvider(NewFakeNamespaceClientHappyPath()), accountProvider)
 			},
 			wantRepeatOperation: false,
 		},
@@ -160,7 +172,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			giveOperation: fixProvisioningOperation,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
 				accountProvider := fixAccountProviderGardenerCredentialsError()
-				return *fixEventHubStep(storage.Operations(), accountProvider)
+				return *fixEventHubStep(storage.Operations(), NewFakeHyperscalerProvider(NewFakeNamespaceClientHappyPath()), accountProvider)
 			},
 			wantRepeatOperation: true,
 		},
@@ -303,11 +315,15 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 				Secret: nil,
 			})
 			allOverridesFound[componentNameKnativeEventing] = true
-			break
 		case componentNameKnativeEventingKafka:
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
-				Key:    "kafka.brokers",
-				Value:  "name:9093",
+				Key:    "kafka.brokers.hostname",
+				Value:  "name",
+				Secret: ptr.Bool(true),
+			})
+			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
+				Key:    "kafka.brokers.port",
+				Value:  "9093",
 				Secret: ptr.Bool(true),
 			})
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
@@ -336,7 +352,6 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 				Secret: ptr.Bool(true),
 			})
 			allOverridesFound[componentNameKnativeEventingKafka] = true
-			break
 		}
 	}
 
@@ -378,19 +393,25 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Namespace: "knative-eventing",
 		},
 	}
-	ibf := input.NewInputBuilderFactory(optComponentsSvc, kymaComponentList, input.Config{}, kymaVersion)
+	componentsProvider := &inputAutomock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
+	defer componentsProvider.AssertExpectations(t)
 
-	creator, found := ibf.ForPlan(broker.AzurePlanID)
-	if !found {
-		t.Errorf("input creator for %q plan does not exist", broker.AzurePlanID)
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{}, kymaVersion)
+	assert.NoError(t, err)
+
+	creator, err := ibf.ForPlan(broker.GcpPlanID, "")
+	if err != nil {
+		t.Errorf("cannot create input creator for %q plan", broker.GcpPlanID)
 	}
 
 	return creator
 }
 
-func fixAccountProvider() automock.AccountProvider {
-	accountProvider := automock.AccountProvider{}
+func fixAccountProvider() hyperscalerautomock.AccountProvider {
+	accountProvider := hyperscalerautomock.AccountProvider{}
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.Azure,
 		CredentialData: map[string][]byte{
 			"subscriptionID": []byte("subscriptionID"),
 			"clientID":       []byte("clientID"),
@@ -401,31 +422,35 @@ func fixAccountProvider() automock.AccountProvider {
 	return accountProvider
 }
 
-func fixAccountProviderGardenerCredentialsError() automock.AccountProvider {
-	accountProvider := automock.AccountProvider{}
+func fixAccountProviderGardenerCredentialsError() hyperscalerautomock.AccountProvider {
+	accountProvider := hyperscalerautomock.AccountProvider{}
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
-		CredentialData: map[string][]byte{},
+		HyperscalerType: hyperscaler.Azure,
+		CredentialData:  map[string][]byte{},
 	}, fmt.Errorf("ups ... gardener credentials could not be retrieved"))
 	return accountProvider
 }
 
-func fixEventHubStep(memoryStorageOp storage.Operations, accountProvider automock.AccountProvider) *ProvisionAzureEventHubStep {
-	step := NewProvisionAzureEventHubStep(memoryStorageOp,
-		NewFakeHyperscalerProvider(NewFakeNamespaceClientHappyPath()),
-		&accountProvider,
-		context.Background(),
-	)
-	return step
+func fixEventHubStep(memoryStorageOp storage.Operations, hyperscalerProvider azure.HyperscalerProvider,
+	accountProvider hyperscalerautomock.AccountProvider) *ProvisionAzureEventHubStep {
+	return NewProvisionAzureEventHubStep(memoryStorageOp, hyperscalerProvider, &accountProvider, context.Background())
 }
 
 func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
 	op := internal.ProvisioningOperation{
-		Operation: internal.Operation{},
+		Operation: internal.Operation{
+			ID:         fixOperationID,
+			InstanceID: fixInstanceID,
+		},
 		ProvisioningParameters: `{
+			"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+			"ers_context": {
+				"subaccount_id": "` + fixSubAccountID + `"
+			},
 			"parameters": {
-        		"name": "nachtmaar-15",
-        		"components": [],
-				"region": "europe-west3"
+				"name": "nachtmaar-15",
+				"components": [],
+				"region": "westeurope"
 			}
 		}`,
 		InputCreator: fixKnativeKafkaInputCreator(t),
@@ -443,4 +468,12 @@ func fixInvalidProvisioningOperation(t *testing.T) internal.ProvisioningOperatio
 		InputCreator: fixKnativeKafkaInputCreator(t),
 	}
 	return op
+}
+
+func fixTags() azure.Tags {
+	return azure.Tags{
+		azure.TagSubAccountID: ptr.String(fixSubAccountID),
+		azure.TagOperationID:  ptr.String(fixOperationID),
+		azure.TagInstanceID:   ptr.String(fixInstanceID),
+	}
 }

@@ -57,7 +57,7 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		auths {%s}
 		eventingConfiguration { defaultURL }
 	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventDefinition()), fp.Page(fp.ForDocument()), fp.Page(fp.ForPackage()), fp.ForSystemAuth()),
-		ctx, []string{"Application.package"})
+		ctx, []string{"Application.package", "Application.apiDefinition", "Application.eventDefinition"})
 }
 
 func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
@@ -309,4 +309,10 @@ func (fp *GqlFieldsProvider) ForPackageInstanceAuthStatus() string {
 		timestamp
 		message
 		reason`
+}
+
+func (fp *GqlFieldsProvider) ForAutomaticScenarioAssignment() string {
+	return fmt.Sprintf(`
+		scenarioName
+		selector {%s}`, fp.ForLabel())
 }

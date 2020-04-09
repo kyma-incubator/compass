@@ -7,16 +7,13 @@ import (
 )
 
 const (
-	DefinitionType         = "BASIC"
-	checkType              = "HTTPSGET"
-	interval               = 180
-	timeout                = 30000
-	contentCheck           = "SAP Kyma Runtime Monitoring"
-	contentCheckType       = "CONTAINS"
-	threshold              = "30000"
-	visibility             = "PUBLIC"
-	internalTesterAccessId = 8281610
-	groupId                = 8278726
+	DefinitionType   = "BASIC"
+	interval         = 180
+	timeout          = 30000
+	contentCheck     = "SAP Kyma Runtime Monitoring"
+	contentCheckType = "CONTAINS"
+	threshold        = "30000"
+	visibility       = "PUBLIC"
 )
 
 type BasicEvaluationCreateRequest struct {
@@ -33,7 +30,7 @@ type BasicEvaluationCreateRequest struct {
 	ContentCheck     string `json:"content_check"`
 	ContentCheckType string `json:"content_check_type"`
 	Threshold        string `json:"threshold"`
-	GroupId          int    `json:"group_id"`
+	GroupId          int64  `json:"group_id"`
 	Visibility       string `json:"visibility"`
 }
 
@@ -51,7 +48,7 @@ type BasicEvaluationCreateResponse struct {
 	ContentCheck     string `json:"content_check"`
 	ContentCheckType string `json:"content_check_type"`
 	Threshold        int64  `json:"threshold"`
-	GroupId          int    `json:"group_id"`
+	GroupId          int64  `json:"group_id"`
 	Visibility       string `json:"visibility"`
 
 	DateCreated                int64    `json:"dateCreated"`
@@ -68,45 +65,23 @@ type BasicEvaluationCreateResponse struct {
 	IdOnTester                 string   `json:"id_on_tester"`
 }
 
-func NewInternalBasicEvaluation(operation internal.ProvisioningOperation) (*BasicEvaluationCreateRequest, error) {
-	return newBasicEvaluationCreateRequest(operation, true)
-}
-
-func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, isInternal bool) (*BasicEvaluationCreateRequest, error) {
+func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, configurator ModelConfigurator, groupId int64, url string) (*BasicEvaluationCreateRequest, error) {
 	provisionParams, err := operation.GetProvisioningParameters()
 	if err != nil {
 		return nil, err
 	}
 
-	var nameSuffix string
-	if isInternal {
-		nameSuffix = "internal"
-	} else {
-		nameSuffix = "external"
-	}
-
-	beName, beDescription := generateNameAndDescription(provisionParams.ErsContext.GlobalAccountID,
-		provisionParams.ErsContext.SubAccountID, provisionParams.Parameters.Name, DefinitionType, operation.InstanceID, nameSuffix)
-
-	var url string
-	if isInternal {
-		url = ""
-	}
-
-	var testerAccessId int64
-	if isInternal {
-		testerAccessId = internalTesterAccessId
-	}
+	beName, beDescription := generateNameAndDescription(provisionParams.ErsContext.GlobalAccountID, provisionParams.ErsContext.SubAccountID, provisionParams.Parameters.Name, configurator.ProvideSuffix())
 
 	return &BasicEvaluationCreateRequest{
 		DefinitionType:   DefinitionType,
 		Name:             beName,
 		Description:      beDescription,
-		Service:          beName, //TODO: waiting for Gabor's inputs regarding service value
-		URL:              url,    //only required for external e.g. site 24X7
-		CheckType:        checkType,
+		Service:          beName,
+		URL:              url,
+		CheckType:        configurator.ProvideCheckType(),
 		Interval:         interval,
-		TesterAccessId:   testerAccessId,
+		TesterAccessId:   configurator.ProvideTesterAccessId(),
 		Timeout:          timeout,
 		ReadOnly:         false,
 		ContentCheck:     contentCheck,
@@ -117,9 +92,18 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, i
 	}, nil
 }
 
-func generateNameAndDescription(globalAccountId string, subAccountId string, name string, definitionType string, instanceId string, beType string) (string, string) {
-	beName := fmt.Sprintf("%s_%s_%s_%s", name, globalAccountId, subAccountId, beType)
-	beDescription := fmt.Sprintf("%s %s evaluation for SAP Kyma Runtime for Global Account [%s], Subaccount [%s], instance name [%s] and instance id [%s]",
-		definitionType, beType, globalAccountId, subAccountId, name, instanceId)
-	return beName, beDescription
+func generateNameAndDescription(globalAccountId string, subAccountId string, name string, beType string) (string, string) {
+	beName := fmt.Sprintf("K8S-AZR-Kyma-%s-%s-%s", beType, subAccountId, name)
+	beDescription := fmt.Sprintf("SKR instance Name: %s, Global Account: %s, Subaccount: %s",
+		name, globalAccountId, subAccountId)
+
+	return truncateString(beName, 80), truncateString(beDescription, 255)
+}
+
+func truncateString(input string, num int) string {
+	output := input
+	if len(input) > num {
+		output = input[0:num]
+	}
+	return output
 }

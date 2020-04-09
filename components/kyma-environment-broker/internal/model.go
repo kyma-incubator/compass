@@ -22,6 +22,19 @@ type ProvisionInputCreator interface {
 	Create() (gqlschema.ProvisionRuntimeInput, error)
 }
 
+type LMSTenant struct {
+	ID        string
+	Name      string
+	Region    string
+	CreatedAt time.Time
+}
+
+type LMS struct {
+	TenantID    string    `json:"tenant_id"`
+	Failed      bool      `json:"failed"`
+	RequestedAt time.Time `json:"requested_at"`
+}
+
 type Instance struct {
 	InstanceID      string
 	RuntimeID       string
@@ -54,13 +67,20 @@ type ProvisioningOperation struct {
 	Operation `json:"-"`
 
 	// following fields are serialized to JSON and stored in the storage
-	LmsTenantID            string `json:"lms_tenant_id"`
+	Lms                    LMS    `json:"lms"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionInputCreator `json:"-"`
 
 	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
+
+	AVSEvaluationExternalId int64 `json:"avs_evaluation_external_id"`
+}
+
+// DeprovisioningOperation holds all information about provisioning operation
+type DeprovisioningOperation struct {
+	Operation `json:"-"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
@@ -86,6 +106,21 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			UpdatedAt:   time.Now(),
 		},
 		ProvisioningParameters: string(params),
+	}, nil
+}
+
+// NewProvisioningOperationWithID creates a fresh (just starting) instance of the ProvisioningOperation with provided ID
+func NewDeprovisioningOperationWithID(operationID, instanceID string) (DeprovisioningOperation, error) {
+	return DeprovisioningOperation{
+		Operation: Operation{
+			ID:          operationID,
+			Version:     0,
+			Description: "Operation created",
+			InstanceID:  instanceID,
+			State:       domain.InProgress,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		},
 	}, nil
 }
 
@@ -130,6 +165,7 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 		copiedList = append(copiedList, &gqlschema.ComponentConfigurationInput{
 			Component:     component.Component,
 			Namespace:     component.Namespace,
+			SourceURL:     component.SourceURL,
 			Configuration: cpyCfg,
 		})
 	}

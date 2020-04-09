@@ -72,6 +72,14 @@ func TestGraphqlizer_LabelsToGQL(t *testing.T) {
 			Expected:      "{bar:\"test\",baz:true,biz:{asdf:\"c\",best:\"b\",test:\"a\",},buz:10,foo:[\"test\",\"best\",\"asdf\"],}",
 			ExpectedError: nil,
 		},
+		{
+			Name: "Success when nested iterables",
+			Input: graphql.Labels{
+				"foo": []interface{}{"test", map[string]string{"asdf": "fdsa", "fdsa": "asdf"}, []string{"aaaa", "bbbb"}},
+			},
+			Expected:      "{foo:[\"test\",{asdf:\"fdsa\",fdsa:\"asdf\",},[\"aaaa\",\"bbbb\"]],}",
+			ExpectedError: nil,
+		},
 	}
 
 	for _, testCase := range testCases {

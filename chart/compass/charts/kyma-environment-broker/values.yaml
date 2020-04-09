@@ -16,6 +16,8 @@ broker:
   username: "broker"
   # password can be set manually by user. If empty then it will be randomized.
   password: ""
+  # serving health probes routes on statusPort
+  statusPort: "8071"
 
 service:
   type: ClusterIP
@@ -48,8 +50,11 @@ additionalRuntimeComponents:
     namespace: "kyma-system"
   - name: "compass-runtime-agent"
     namespace: "compass-system"
+  - name: "knative-eventing-kafka"
+    namespace: "knative-eventing"
 
-kymaVersion: "1.10.0"
+kymaVersion: "1.11.0-rc2"
+kymaVersionOnDemand: "false"
 
 enablePlans: "azure,gcp"
 
@@ -66,3 +71,12 @@ serviceManager:
   url: "TBD"
   username: "TBD"
   password: "TBD"
+
+lms:
+  secretName: "lms-creds"
+  token: "TBD"
+  url: "TBD"
+  clusterType: "single-node"
+  environment: "dev"
+  samlTenant: "TBD"
+  disabled: false

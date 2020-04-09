@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/retry"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -71,7 +71,7 @@ func (c *directorClient) CreatePackage(appID string, in graphql.PackageCreateInp
 
 	var resp CreatePackageResult
 
-	err = c.cli.Run(context.Background(), gqlRequest, &resp)
+	err = retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -92,7 +92,7 @@ func (c *directorClient) UpdatePackage(packageID string, in graphql.PackageUpdat
 			}
 		}`, packageID, inStr))
 
-	err = c.cli.Run(context.Background(), gqlRequest, nil)
+	err = retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, nil)
 	if err != nil {
 		return errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -116,7 +116,7 @@ func (c *directorClient) GetPackage(appID string, packageID string) (graphql.Pac
 
 	var resp GetPackageResult
 
-	err := c.cli.Run(context.Background(), gqlRequest, &resp)
+	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, &resp)
 	if err != nil {
 		return graphql.PackageExt{}, errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -139,7 +139,7 @@ func (c *directorClient) ListPackages(appID string) ([]*graphql.PackageExt, erro
 
 	var resp ListPackagesResult
 
-	err := c.cli.Run(context.Background(), gqlRequest, &resp)
+	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -157,7 +157,7 @@ func (c *directorClient) DeletePackage(packageID string) error {
 		}	
 	}`, packageID))
 
-	err := c.cli.Run(context.Background(), gqlRequest, nil)
+	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, nil)
 	if err != nil {
 		return errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -183,7 +183,7 @@ func (c *directorClient) CreateAPIDefinition(packageID string, apiDefinitionInpu
 
 	var resp CreateAPIDefinitionResult
 
-	err = c.cli.Run(context.Background(), gqlRequest, &resp)
+	err = retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -199,7 +199,7 @@ func (c *directorClient) DeleteAPIDefinition(apiID string) error {
 		}	
 	}`, apiID))
 
-	err := c.cli.Run(context.Background(), gqlRequest, nil)
+	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, nil)
 	if err != nil {
 		return errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -225,7 +225,7 @@ func (c *directorClient) CreateEventDefinition(packageID string, eventDefinition
 
 	var resp CreateEventDefinitionResult
 
-	err = c.cli.Run(context.Background(), gqlRequest, &resp)
+	err = retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -241,7 +241,7 @@ func (c *directorClient) DeleteEventDefinition(eventID string) error {
 		}	
 	}`, eventID))
 
-	err := c.cli.Run(context.Background(), gqlRequest, nil)
+	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, nil)
 	if err != nil {
 		return errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -267,7 +267,7 @@ func (c *directorClient) CreateDocument(packageID string, documentInput graphql.
 
 	var resp CreateDocumentResult
 
-	err = c.cli.Run(context.Background(), gqlRequest, &resp)
+	err = retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -283,7 +283,7 @@ func (c *directorClient) DeleteDocument(documentID string) error {
 		}	
 	}`, documentID))
 
-	err := c.cli.Run(context.Background(), gqlRequest, nil)
+	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, nil)
 	if err != nil {
 		return errors.Wrap(err, "while doing GraphQL request")
 	}

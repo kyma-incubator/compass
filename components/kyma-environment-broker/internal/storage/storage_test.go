@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
@@ -17,6 +17,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,12 +32,12 @@ func TestSchemaInitializer(t *testing.T) {
 	t.Run("Init tests", func(t *testing.T) {
 		t.Run("Should initialize database when schema not applied", func(t *testing.T) {
 			// given
-			containerCleanupFunc, connString, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
 			// when
-			connection, err := postsql.InitializeDatabase(connString)
+			connection, err := postsql.InitializeDatabase(cfg.ConnectionURL())
 
 			require.NoError(t, err)
 			require.NotNil(t, connection)
@@ -68,15 +69,15 @@ func TestSchemaInitializer(t *testing.T) {
 	t.Run("Instances", func(t *testing.T) {
 		t.Run("Should create and update instance", func(t *testing.T) {
 			// given
-			containerCleanupFunc, connString, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = InitTestDBTables(t, connString)
+			err = InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
 			// when
-			brokerStorage, err := New(connString)
+			brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
 
 			require.NoError(t, err)
 			require.NotNil(t, brokerStorage)
@@ -122,120 +123,270 @@ func TestSchemaInitializer(t *testing.T) {
 	})
 
 	t.Run("Operations", func(t *testing.T) {
-		containerCleanupFunc, connString, err := InitTestDBContainer(t, ctx, "test_DB_1")
-		require.NoError(t, err)
-		defer containerCleanupFunc()
+		t.Run("Provisioning", func(t *testing.T) {
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			require.NoError(t, err)
+			defer containerCleanupFunc()
 
-		givenOperation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ID:    "operation-id",
-				State: domain.InProgress,
-				// used Round and set timezone to be able to compare timestamps
-				CreatedAt:              time.Now().Truncate(time.Millisecond),
-				UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
-				InstanceID:             "inst-id",
-				ProvisionerOperationID: "target-op-id",
-				Description:            "description",
-				Version:                1,
-			},
-			LmsTenantID:            "tenant-id",
-			ProvisioningParameters: `{"k":"v"}`,
-		}
+			givenOperation := internal.ProvisioningOperation{
+				Operation: internal.Operation{
+					ID:    "operation-id",
+					State: domain.InProgress,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
+					InstanceID:             "inst-id",
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+					Version:                1,
+				},
+				Lms:                    internal.LMS{TenantID: "tenant-id"},
+				ProvisioningParameters: `{"k":"v"}`,
+			}
 
-		err = InitTestDBTables(t, connString)
-		require.NoError(t, err)
+			err = InitTestDBTables(t, cfg.ConnectionURL())
+			require.NoError(t, err)
 
-		brokerStorage, err := New(connString)
-		svc := brokerStorage.Operations()
+			brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+			require.NoError(t, err)
 
-		require.NoError(t, err)
-		require.NotNil(t, brokerStorage)
+			svc := brokerStorage.Operations()
 
-		// when
-		err = svc.InsertProvisioningOperation(givenOperation)
-		require.NoError(t, err)
+			// when
+			err = svc.InsertProvisioningOperation(givenOperation)
+			require.NoError(t, err)
 
-		ops, err := svc.GetOperationsInProgressByType(dbsession.OperationTypeProvision)
-		require.NoError(t, err)
-		assert.Len(t, ops, 1)
-		assertOperation(t, givenOperation.Operation, ops[0])
+			ops, err := svc.GetOperationsInProgressByType(dbmodel.OperationTypeProvision)
+			require.NoError(t, err)
+			assert.Len(t, ops, 1)
+			assertOperation(t, givenOperation.Operation, ops[0])
 
-		gotOperation, err := svc.GetProvisioningOperationByID("operation-id")
-		require.NoError(t, err)
+			gotOperation, err := svc.GetProvisioningOperationByID("operation-id")
+			require.NoError(t, err)
 
-		op, err := svc.GetOperation("operation-id")
-		require.NoError(t, err)
-		assert.Equal(t, givenOperation.Operation.ID, op.ID)
+			op, err := svc.GetOperationByID("operation-id")
+			require.NoError(t, err)
+			assert.Equal(t, givenOperation.Operation.ID, op.ID)
 
-		// then
-		assertProvisioningOperation(t, givenOperation, *gotOperation)
+			// then
+			assertProvisioningOperation(t, givenOperation, *gotOperation)
 
-		// when
-		gotOperation.Description = "new modified description"
-		_, err = svc.UpdateProvisioningOperation(*gotOperation)
-		require.NoError(t, err)
+			// when
+			gotOperation.Description = "new modified description"
+			_, err = svc.UpdateProvisioningOperation(*gotOperation)
+			require.NoError(t, err)
 
-		// then
-		gotOperation2, err := svc.GetProvisioningOperationByID("operation-id")
-		require.NoError(t, err)
+			// then
+			gotOperation2, err := svc.GetProvisioningOperationByID("operation-id")
+			require.NoError(t, err)
 
-		assert.Equal(t, "new modified description", gotOperation2.Description)
+			assert.Equal(t, "new modified description", gotOperation2.Description)
+
+		})
+		t.Run("Deprovisioning", func(t *testing.T) {
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			require.NoError(t, err)
+			defer containerCleanupFunc()
+
+			givenOperation := internal.DeprovisioningOperation{
+				Operation: internal.Operation{
+					ID:    "operation-id",
+					State: domain.InProgress,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
+					InstanceID:             "inst-id",
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+					Version:                1,
+				},
+			}
+
+			err = InitTestDBTables(t, cfg.ConnectionURL())
+			require.NoError(t, err)
+
+			brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+			require.NoError(t, err)
+
+			svc := brokerStorage.Operations()
+
+			// when
+			err = svc.InsertDeprovisioningOperation(givenOperation)
+			require.NoError(t, err)
+
+			ops, err := svc.GetOperationsInProgressByType(dbmodel.OperationTypeDeprovision)
+			require.NoError(t, err)
+			assert.Len(t, ops, 1)
+			assertOperation(t, givenOperation.Operation, ops[0])
+
+			gotOperation, err := svc.GetDeprovisioningOperationByID("operation-id")
+			require.NoError(t, err)
+
+			op, err := svc.GetOperationByID("operation-id")
+			require.NoError(t, err)
+			assert.Equal(t, givenOperation.Operation.ID, op.ID)
+
+			// then
+			assertDeprovisioningOperation(t, givenOperation, *gotOperation)
+
+			// when
+			gotOperation.Description = "new modified description"
+			_, err = svc.UpdateDeprovisioningOperation(*gotOperation)
+			require.NoError(t, err)
+
+			// then
+			gotOperation2, err := svc.GetDeprovisioningOperationByID("operation-id")
+			require.NoError(t, err)
+
+			assert.Equal(t, "new modified description", gotOperation2.Description)
+
+		})
 	})
 
 	t.Run("Operations conflicts", func(t *testing.T) {
-		containerCleanupFunc, connString, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		t.Run("Provisioning", func(t *testing.T) {
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			require.NoError(t, err)
+			defer containerCleanupFunc()
+
+			givenOperation := internal.ProvisioningOperation{
+				Operation: internal.Operation{
+					ID:    "operation-001",
+					State: domain.InProgress,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now(),
+					UpdatedAt:              time.Now().Add(time.Second),
+					InstanceID:             "inst-id",
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+				},
+				Lms:                    internal.LMS{TenantID: "tenant-id"},
+				ProvisioningParameters: `{"key":"value"}`,
+			}
+
+			err = InitTestDBTables(t, cfg.ConnectionURL())
+			require.NoError(t, err)
+
+			brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+			svc := brokerStorage.Provisioning()
+
+			require.NoError(t, err)
+			require.NotNil(t, brokerStorage)
+			err = svc.InsertProvisioningOperation(givenOperation)
+			require.NoError(t, err)
+
+			// when
+			gotOperation1, err := svc.GetProvisioningOperationByID("operation-001")
+			require.NoError(t, err)
+
+			gotOperation2, err := svc.GetProvisioningOperationByID("operation-001")
+			require.NoError(t, err)
+
+			// when
+			gotOperation1.Description = "new modified description 1"
+			gotOperation2.Description = "new modified description 2"
+			_, err = svc.UpdateProvisioningOperation(*gotOperation1)
+			require.NoError(t, err)
+
+			_, err = svc.UpdateProvisioningOperation(*gotOperation2)
+
+			// then
+			assertError(t, dberr.CodeConflict, err)
+
+			// when
+			err = svc.InsertProvisioningOperation(*gotOperation1)
+
+			// then
+			assertError(t, dberr.CodeAlreadyExists, err)
+		})
+		t.Run("Deprovisioning", func(t *testing.T) {
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			require.NoError(t, err)
+			defer containerCleanupFunc()
+
+			givenOperation := internal.DeprovisioningOperation{
+				Operation: internal.Operation{
+					ID:    "operation-001",
+					State: domain.InProgress,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now(),
+					UpdatedAt:              time.Now().Add(time.Second),
+					InstanceID:             "inst-id",
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+				},
+			}
+
+			err = InitTestDBTables(t, cfg.ConnectionURL())
+			require.NoError(t, err)
+
+			brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+			require.NoError(t, err)
+
+			svc := brokerStorage.Deprovisioning()
+
+			err = svc.InsertDeprovisioningOperation(givenOperation)
+			require.NoError(t, err)
+
+			// when
+			gotOperation1, err := svc.GetDeprovisioningOperationByID("operation-001")
+			require.NoError(t, err)
+
+			gotOperation2, err := svc.GetDeprovisioningOperationByID("operation-001")
+			require.NoError(t, err)
+
+			// when
+			gotOperation1.Description = "new modified description 1"
+			gotOperation2.Description = "new modified description 2"
+			_, err = svc.UpdateDeprovisioningOperation(*gotOperation1)
+			require.NoError(t, err)
+
+			_, err = svc.UpdateDeprovisioningOperation(*gotOperation2)
+
+			// then
+			assertError(t, dberr.CodeConflict, err)
+
+			// when
+			err = svc.InsertDeprovisioningOperation(*gotOperation1)
+
+			// then
+			assertError(t, dberr.CodeAlreadyExists, err)
+		})
+	})
+
+	t.Run("LMS Tenants", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
-		givenOperation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ID:    "operation-001",
-				State: domain.InProgress,
-				// used Round and set timezone to be able to compare timestamps
-				CreatedAt:              time.Now(),
-				UpdatedAt:              time.Now().Add(time.Second),
-				InstanceID:             "inst-id",
-				ProvisionerOperationID: "target-op-id",
-				Description:            "description",
-			},
-			LmsTenantID:            "tenant-id",
-			ProvisioningParameters: `{"key":"value"}`,
+		lmsTenant := internal.LMSTenant{
+			ID:     "tenant-001",
+			Region: "na",
+			Name:   "some-company",
 		}
-
-		err = InitTestDBTables(t, connString)
+		err = InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
 
-		brokerStorage, err := New(connString)
-		svc := brokerStorage.Operations()
-
+		brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+		svc := brokerStorage.LMSTenants()
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
-		err = svc.InsertProvisioningOperation(givenOperation)
-		require.NoError(t, err)
 
 		// when
-		gotOperation1, err := svc.GetProvisioningOperationByID("operation-001")
+		err = svc.InsertTenant(lmsTenant)
 		require.NoError(t, err)
-
-		gotOperation2, err := svc.GetProvisioningOperationByID("operation-001")
-		require.NoError(t, err)
-
-		// when
-		gotOperation1.Description = "new modified description 1"
-		gotOperation2.Description = "new modified description 2"
-		_, err = svc.UpdateProvisioningOperation(*gotOperation1)
-		require.NoError(t, err)
-
-		_, err = svc.UpdateProvisioningOperation(*gotOperation2)
+		gotTenant, found, err := svc.FindTenantByName("some-company", "na")
+		_, differentRegionExists, drErr := svc.FindTenantByName("some-company", "us")
+		_, differentNameExists, dnErr := svc.FindTenantByName("some-company1", "na")
 
 		// then
-		assertError(t, dberr.CodeConflict, err)
-
-		// when
-		err = svc.InsertProvisioningOperation(*gotOperation1)
-
-		// then
-		assertError(t, dberr.CodeAlreadyExists, err)
+		assert.Equal(t, lmsTenant.Name, gotTenant.Name)
+		assert.True(t, found)
+		assert.NoError(t, err)
+		assert.False(t, differentRegionExists)
+		assert.NoError(t, drErr)
+		assert.False(t, differentNameExists)
+		assert.NoError(t, dnErr)
 	})
 }
 
@@ -247,6 +398,15 @@ func assertProvisioningOperation(t *testing.T, expected, got internal.Provisioni
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
 	expected.ProvisioningParameters = got.ProvisioningParameters
+	assert.Equal(t, expected, got)
+}
+
+func assertDeprovisioningOperation(t *testing.T, expected, got internal.DeprovisioningOperation) {
+	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
+	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
+
+	expected.CreatedAt = got.CreatedAt
+	expected.UpdatedAt = got.UpdatedAt
 	assert.Equal(t, expected, got)
 }
 

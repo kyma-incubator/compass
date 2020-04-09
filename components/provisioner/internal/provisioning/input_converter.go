@@ -93,7 +93,6 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		Name:                   name,
 		ProjectName:            c.gardenerProject,
 		KubernetesVersion:      input.KubernetesVersion,
-		NodeCount:              input.NodeCount,
 		VolumeSizeGB:           input.VolumeSizeGb,
 		DiskType:               input.DiskType,
 		MachineType:            input.MachineType,
@@ -113,10 +112,9 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 
 func (c converter) createGardenerClusterName(provider string) string {
 	id := c.uuidGenerator.New()
-	provider = util.RemoveNotAllowedCharacters(provider)
 
 	name := strings.ReplaceAll(id, "-", "")
-	name = fmt.Sprintf("%.3s-%.7s", provider, name)
+	name = fmt.Sprintf("%.7s", name)
 	name = util.StartWithLetter(name)
 	name = strings.ToLower(name)
 	return name
@@ -175,15 +173,17 @@ func (c converter) kymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 	var components []model.KymaComponentConfig
 	kymaConfigID := c.uuidGenerator.New()
 
-	for _, component := range input.Components {
+	for i, component := range input.Components {
 		id := c.uuidGenerator.New()
 
 		kymaConfigModule := model.KymaComponentConfig{
-			ID:            id,
-			Component:     model.KymaComponent(component.Component),
-			Namespace:     component.Namespace,
-			Configuration: c.configurationFromInput(component.Configuration),
-			KymaConfigID:  kymaConfigID,
+			ID:             id,
+			Component:      model.KymaComponent(component.Component),
+			Namespace:      component.Namespace,
+			SourceURL:      sourceURLFromInput(component.SourceURL),
+			Configuration:  c.configurationFromInput(component.Configuration),
+			ComponentOrder: i + 1,
+			KymaConfigID:   kymaConfigID,
 		}
 
 		components = append(components, kymaConfigModule)
@@ -196,6 +196,13 @@ func (c converter) kymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 		ClusterID:           runtimeID,
 		GlobalConfiguration: c.configurationFromInput(input.Configuration),
 	}, nil
+}
+
+func sourceURLFromInput(sourceURL *string) string {
+	if sourceURL == nil {
+		return ""
+	}
+	return *sourceURL
 }
 
 func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput) model.Configuration {

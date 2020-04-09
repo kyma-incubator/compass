@@ -76,13 +76,11 @@ func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		kubernetesVersion: "{{.KubernetesVersion}}",
-		nodeCount: 1,
 		volumeSizeGB: {{.VolumeSizeGb }},
 		machineType: "{{.MachineType}}",
 		region: "{{.Region}}",
 		provider: "{{ .Provider }}",
 		diskType: "{{.DiskType}}",
-		seed: "az-eu3",
 		targetSecret: "{{ .TargetSecret }}",
 		workerCidr: "{{ .WorkerCidr }}",
         autoScalerMin: {{ .AutoScalerMin }},
@@ -149,6 +147,9 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
           {
             component: "{{ .Component }}",
             namespace: "{{ .Namespace }}",
+            {{- if .SourceURL }}
+            sourceURL: "{{ .SourceURL }}",
+            {{- end }}
       	    {{- with .Configuration }}
             configuration: [
 			  {{- range . }}

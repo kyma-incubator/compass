@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"time"
 )
 
 const (
@@ -15,6 +16,10 @@ type Config struct {
 	Port     string `envconfig:"default=5432"`
 	Name     string `envconfig:"default=broker"`
 	SSLMode  string `envconfig:"default=disable"`
+
+	MaxOpenConns    int           `envconfig:"default=8"`
+	MaxIdleConns    int           `envconfig:"default=2"`
+	ConnMaxLifetime time.Duration `envconfig:"default=30m"`
 }
 
 func (cfg *Config) ConnectionURL() string {

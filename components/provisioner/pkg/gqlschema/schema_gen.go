@@ -57,6 +57,7 @@ type ComplexityRoot struct {
 		Component     func(childComplexity int) int
 		Configuration func(childComplexity int) int
 		Namespace     func(childComplexity int) int
+		SourceURL     func(childComplexity int) int
 	}
 
 	ConfigEntry struct {
@@ -93,7 +94,6 @@ type ComplexityRoot struct {
 		MaxSurge               func(childComplexity int) int
 		MaxUnavailable         func(childComplexity int) int
 		Name                   func(childComplexity int) int
-		NodeCount              func(childComplexity int) int
 		Provider               func(childComplexity int) int
 		ProviderSpecificConfig func(childComplexity int) int
 		Region                 func(childComplexity int) int
@@ -228,6 +228,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ComponentConfiguration.Namespace(childComplexity), true
+
+	case "ComponentConfiguration.sourceURL":
+		if e.complexity.ComponentConfiguration.SourceURL == nil {
+			break
+		}
+
+		return e.complexity.ComponentConfiguration.SourceURL(childComplexity), true
 
 	case "ConfigEntry.key":
 		if e.complexity.ConfigEntry.Key == nil {
@@ -375,13 +382,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.Name(childComplexity), true
-
-	case "GardenerConfig.nodeCount":
-		if e.complexity.GardenerConfig.NodeCount == nil {
-			break
-		}
-
-		return e.complexity.GardenerConfig.NodeCount(childComplexity), true
 
 	case "GardenerConfig.provider":
 		if e.complexity.GardenerConfig.Provider == nil {
@@ -691,7 +691,6 @@ union ClusterConfig = GardenerConfig | GCPConfig
 type GardenerConfig {
     name: String
     kubernetesVersion: String
-    nodeCount: Int
     volumeSizeGB: Int
     machineType: String
     region: String
@@ -745,6 +744,7 @@ type ComponentConfiguration {
     component: String!
     namespace: String!
     configuration: [ConfigEntry]
+    sourceURL: String
 }
 
 type KymaConfig {
@@ -825,7 +825,6 @@ input ClusterConfigInput {
 
 input GardenerConfigInput {                   # Gardener project in which the cluster is created
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
-    nodeCount: Int!                                 # Number of nodes to create
     volumeSizeGB: Int!                              # Size of the available disk, provided in GB
     machineType: String!                            # Type of node machines, varies depending on the target provider
     region: String!                                 # Region in which the cluster is created
@@ -889,6 +888,7 @@ input ComponentConfigurationInput {
     component: String!                    # Kyma component name
     namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
+    sourceURL: String                     # Custom URL for the source files of the given component
 }
 
 input UpgradeRuntimeInput {
@@ -1341,6 +1341,40 @@ func (ec *executionContext) _ComponentConfiguration_configuration(ctx context.Co
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ComponentConfiguration_sourceURL(ctx context.Context, field graphql.CollectedField, obj *ComponentConfiguration) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ComponentConfiguration",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SourceURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ConfigEntry_key(ctx context.Context, field graphql.CollectedField, obj *ConfigEntry) (ret graphql.Marshaler) {
@@ -1857,40 +1891,6 @@ func (ec *executionContext) _GardenerConfig_kubernetesVersion(ctx context.Contex
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GardenerConfig_nodeCount(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GardenerConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.NodeCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _GardenerConfig_volumeSizeGB(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
@@ -4471,6 +4471,12 @@ func (ec *executionContext) unmarshalInputComponentConfigurationInput(ctx contex
 			if err != nil {
 				return it, err
 			}
+		case "sourceURL":
+			var err error
+			it.SourceURL, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -4612,12 +4618,6 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 		case "kubernetesVersion":
 			var err error
 			it.KubernetesVersion, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "nodeCount":
-			var err error
-			it.NodeCount, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4996,6 +4996,8 @@ func (ec *executionContext) _ComponentConfiguration(ctx context.Context, sel ast
 			}
 		case "configuration":
 			out.Values[i] = ec._ComponentConfiguration_configuration(ctx, field, obj)
+		case "sourceURL":
+			out.Values[i] = ec._ComponentConfiguration_sourceURL(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5142,8 +5144,6 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_name(ctx, field, obj)
 		case "kubernetesVersion":
 			out.Values[i] = ec._GardenerConfig_kubernetesVersion(ctx, field, obj)
-		case "nodeCount":
-			out.Values[i] = ec._GardenerConfig_nodeCount(ctx, field, obj)
 		case "volumeSizeGB":
 			out.Values[i] = ec._GardenerConfig_volumeSizeGB(ctx, field, obj)
 		case "machineType":

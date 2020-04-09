@@ -13,28 +13,28 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-634"
+      version: "PR-1156"
     connectivity_adapter:
       dir:
-      version: "PR-892"
+      version: "PR-1156"
     pairing_adapter:
       dir:
-      version: "PR-867"
+      version: "PR-1156"
     director:
       dir:
-      version: "PR-989"
+      version: "PR-1156"
     gateway:
       dir:
-      version: "PR-943"
+      version: "PR-1156"
     healthchecker:
       dir: pr/
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-913"
+      version: "PR-1129"
     provisioner:
       dir:
-      version: "PR-957"
+      version: "PR-1156"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -42,23 +42,23 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-991"
+      version: "PR-1156"
     tests:
       director:
         dir:
-        version: "PR-966"
+        version: "PR-1161"
       connector:
         dir:
-        version: "02e8358c"
+        version: "PR-1156"
       provisioner:
         dir:
-        version: "PR-565"
+        version: "ffd45e1d"
       e2e_provisioning:
         dir:
-        version: "6b8099b5"
+        version: "PR-1018"
       connectivity_adapter:
         dir:
-        version: "PR-935"
+        version: "PR-1156"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -66,16 +66,15 @@ global:
   director:
     port: 3000
 
-  auditlog:
-    enabled: false
-    configmap:
-      name: "compass-gateway-auditlog-config"
-    secret:
-      name: "compass-gateway-auditlog-secret"
+    tests:
+      scopes: "runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage tenant:read automatic_scenario_assignment:read automatic_scenario_assignment:write"
 
   tenantConfig:
     useDefaultTenants: true
     useExternalTenants: false
+    dbPool:
+      maxOpenConnections: 1
+      maxIdleConnections: 1
 
   connector:
     graphql:
@@ -161,21 +160,43 @@ global:
     manageSecrets: true
     embedded:
       enabled: true
+      director:
+        name: "postgres"
+      provisioner:
+        name: "provisioner"
+      broker:
+        name: "broker"
+
+      #TODO remove below after migration to separate user will be done
       directorDBName: "postgres"
       provisionerDBName: "provisioner"
       brokerDBName: "broker"
     # Values for GCP managed PostgreSQL database
     managedGCP:
+      director:
+        name: ""
+        user: ""
+        password: ""
+      provisioner:
+        name: ""
+        user: ""
+        password: ""
+      broker:
+        name: ""
+        user: ""
+        password: ""
       serviceAccountKey: ""
       instanceConnectionName: ""
+      host: "localhost"
+      hostPort: "5432"
+      sslMode: ""
+
+      #TODO remove below after migration to separate user will be done
       dbUser: ""
       dbPassword: ""
       directorDBName: ""
       provisionerDBName: ""
       brokerDBName: ""
-      host: "localhost"
-      hostPort: "5432"
-      sslMode: ""
 
   oathkeeper:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
@@ -230,6 +251,11 @@ global:
       nameField: "name"
       discriminatorField: ""
       discriminatorValue: ""
+    dbPool:
+      maxOpenConnections: 1
+      maxIdleConnections: 1
+
+  enableCompassDefaultScenarioAssignment: true
 
 pairing-adapter:
   enabled: false

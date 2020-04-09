@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"testing"
 
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
@@ -28,7 +27,7 @@ func TestGardenerConfig_ToHydroformConfiguration(t *testing.T) {
 		KubernetesVersion: "1.15",
 		CPU:               0,
 		DiskSizeGB:        30,
-		NodeCount:         2,
+		NodeCount:         1,
 		MachineType:       "machine",
 		Location:          "eu",
 		ClusterInfo:       nil,
@@ -260,6 +259,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
 					Labels: map[string]string{
+						"account":    "account",
 						"subaccount": "sub-account",
 					},
 				},
@@ -284,8 +284,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							},
 						},
 						Workers: []gardener_types.Worker{
-							fixWorker(0, []string{"zone"}),
-							fixWorker(1, []string{"zone"}),
+							fixWorker([]string{"zone"}),
 						},
 					},
 					Kubernetes: gardener_types.Kubernetes{
@@ -308,6 +307,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
 					Labels: map[string]string{
+						"account":    "account",
 						"subaccount": "sub-account",
 					},
 				},
@@ -332,8 +332,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							},
 						},
 						Workers: []gardener_types.Worker{
-							fixWorker(0, nil),
-							fixWorker(1, nil),
+							fixWorker(nil),
 						},
 					},
 					Kubernetes: gardener_types.Kubernetes{
@@ -356,6 +355,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
 					Labels: map[string]string{
+						"account":    "account",
 						"subaccount": "sub-account",
 					},
 				},
@@ -380,8 +380,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							},
 						},
 						Workers: []gardener_types.Worker{
-							fixWorker(0, []string{"zone"}),
-							fixWorker(1, []string{"zone"}),
+							fixWorker([]string{"zone"}),
 						},
 					},
 					Kubernetes: gardener_types.Kubernetes{
@@ -401,12 +400,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			gardenerProviderConfig := fixGardenerConfig(testCase.provider, testCase.providerConfig)
 
 			// when
-			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "sub-account")
+			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "account", "sub-account")
 
 			// then
-			fmt.Println(string(template.Spec.Provider.InfrastructureConfig.Raw))
-			fmt.Println(string(template.Spec.Provider.ControlPlaneConfig.Raw))
-
 			require.NoError(t, err)
 			assert.Equal(t, testCase.expectedShootTemplate, template)
 		})
@@ -421,7 +417,6 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		Name:                   "cluster",
 		ProjectName:            "project",
 		KubernetesVersion:      "1.15",
-		NodeCount:              2,
 		VolumeSizeGB:           30,
 		DiskType:               "SSD",
 		MachineType:            "machine",
@@ -455,9 +450,9 @@ func fixAzureGardenerInput() *gqlschema.AzureProviderConfigInput {
 	return &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255"}
 }
 
-func fixWorker(index int, zones []string) gardener_types.Worker {
+func fixWorker(zones []string) gardener_types.Worker {
 	return gardener_types.Worker{
-		Name:           fmt.Sprintf("cpu-worker-%d", index),
+		Name:           "cpu-worker-0",
 		MaxSurge:       util.IntOrStrPtr(intstr.FromInt(30)),
 		MaxUnavailable: util.IntOrStrPtr(intstr.FromInt(1)),
 		Machine: gardener_types.Machine{

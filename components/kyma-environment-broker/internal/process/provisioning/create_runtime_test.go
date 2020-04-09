@@ -42,10 +42,13 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
+	err = memoryStorage.Instances().Insert(fixInstance())
+	assert.NoError(t, err)
+
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
-			Name:        "",
+			Name:        "dummy",
 			Description: nil,
 			Labels: &gqlschema.Labels{
 				"broker_instance_id":   []string{instanceID},
@@ -132,6 +135,13 @@ func fixOperationCreateRuntime(t *testing.T) internal.ProvisioningOperation {
 	}
 }
 
+func fixInstance() internal.Instance {
+	return internal.Instance{
+		InstanceID:      instanceID,
+		GlobalAccountID: globalAccountID,
+	}
+}
+
 func fixProvisioningParameters(t *testing.T) string {
 	parameters := internal.ProvisioningParameters{
 		PlanID:    broker.GcpPlanID,
@@ -151,6 +161,7 @@ func fixProvisioningParameters(t *testing.T) string {
 		},
 		Parameters: internal.ProvisioningParametersDTO{
 			Region: ptr.String("europe-west4-a"),
+			Name:   "dummy",
 		},
 	}
 
@@ -195,11 +206,16 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Namespace: "kyma-system",
 		},
 	}
-	ibf := input.NewInputBuilderFactory(optComponentsSvc, kymaComponentList, input.Config{}, kymaVersion)
+	componentsProvider := &inputAutomock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
+	defer componentsProvider.AssertExpectations(t)
 
-	creator, found := ibf.ForPlan(broker.GcpPlanID)
-	if !found {
-		t.Errorf("input creator for %q plan does not exist", broker.GcpPlanID)
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{}, kymaVersion)
+	assert.NoError(t, err)
+
+	creator, err := ibf.ForPlan(broker.GcpPlanID, "")
+	if err != nil {
+		t.Errorf("cannot create input creator for %q plan", broker.GcpPlanID)
 	}
 
 	return creator

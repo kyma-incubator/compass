@@ -24,7 +24,10 @@ const (
 	kymaVersion                   = "1.5"
 	clusterEssentialsComponent    = "cluster-essentials"
 	coreComponent                 = "core"
+	rafterComponent               = "rafter"
 	applicationConnectorComponent = "application-connector"
+
+	rafterSourceURL = "github.com/kyma-project/kyma.git//resources/rafter"
 
 	gardenerProject = "gardener-project"
 )
@@ -94,7 +97,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				KubernetesVersion: "version",
-				NodeCount:         3,
 				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
@@ -125,12 +127,11 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "gcp-verylon",
+			Name:                   "verylon",
 			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
 			KubernetesVersion:      "version",
-			NodeCount:              3,
 			VolumeSizeGB:           1024,
 			DiskType:               "ssd",
 			Provider:               "GCP",
@@ -162,7 +163,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				KubernetesVersion: "version",
-				NodeCount:         3,
 				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
@@ -192,12 +192,11 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "azu-verylon",
+			Name:                   "verylon",
 			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
 			KubernetesVersion:      "version",
-			NodeCount:              3,
 			VolumeSizeGB:           1024,
 			DiskType:               "ssd",
 			Provider:               "Azure",
@@ -234,7 +233,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				KubernetesVersion: "version",
-				NodeCount:         3,
 				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
@@ -265,12 +263,11 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
-			Name:                   "aws-verylon",
+			Name:                   "verylon",
 			ProjectName:            gardenerProject,
 			MachineType:            "n1-standard-1",
 			Region:                 "region",
 			KubernetesVersion:      "version",
-			NodeCount:              3,
 			VolumeSizeGB:           1024,
 			DiskType:               "ssd",
 			Provider:               "AWS",
@@ -329,7 +326,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		t.Run(testCase.description, func(t *testing.T) {
 			//given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
-			uuidGeneratorMock.On("New").Return("id").Times(5)
+			uuidGeneratorMock.On("New").Return("id").Times(6)
 			uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hypens")
 
 			inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject)
@@ -421,73 +418,6 @@ func newInputConverterTester(uuidGenerator uuid.UUIDGenerator, releaseRepo relea
 	}
 }
 
-func TestConverter_CreateGardenerClusterName(t *testing.T) {
-
-	providerInputs := []struct {
-		provider     string
-		expectedName string
-		description  string
-	}{
-		{
-			provider:     "gcp",
-			expectedName: "gcp-id",
-			description:  "regular GCP provider name",
-		},
-		{
-			provider:     "aws",
-			expectedName: "aws-id",
-			description:  "regular AWS provider name",
-		},
-		{
-			provider:     "azure",
-			expectedName: "azu-id",
-			description:  "regular Azure provider name",
-		},
-		{
-			provider:     "GCP",
-			expectedName: "gcp-id",
-			description:  "capitalized GCP provider name",
-		},
-		{
-			provider:     "AWS",
-			expectedName: "aws-id",
-			description:  "capitalized AWS provider name",
-		},
-		{
-			provider:     "AZURE",
-			expectedName: "azu-id",
-			description:  "capitalized Azure provider name",
-		},
-		{
-			provider:     "-",
-			expectedName: "c--id",
-			description:  "wrong provider name that contains only hyphen: \"-\"",
-		},
-		{
-			provider:     "!#$@^%&*gcp",
-			expectedName: "gcp-id",
-			description:  "wrong provider name with non-alphanumeric characters",
-		},
-		{
-			provider:     "912740131aws---",
-			expectedName: "aws-id",
-			description:  "wrong provider name with numbers",
-		},
-	}
-
-	for _, testCase := range providerInputs {
-		t.Run(testCase.description, func(t *testing.T) {
-			uuidGeneratorMock := &mocks.UUIDGenerator{}
-			uuidGeneratorMock.On("New").Return("id")
-
-			inputConverter := newInputConverterTester(uuidGeneratorMock, nil)
-			generatedName := inputConverter.createGardenerClusterName(testCase.provider)
-
-			assert.Equal(t, testCase.expectedName, generatedName)
-		})
-	}
-}
-
 func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 	return &gqlschema.KymaConfigInput{
 		Version: kymaVersion,
@@ -503,6 +433,11 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntryInput("test.config.key2", "value2", util.BoolPtr(false)),
 				},
+			},
+			{
+				Component: rafterComponent,
+				Namespace: kymaSystemNamespace,
+				SourceURL: util.StringPtr(rafterSourceURL),
 			},
 			{
 				Component: applicationConnectorComponent,

@@ -5,6 +5,10 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
+const (
+	DefaultAzureRegion = "westeurope"
+)
+
 type AzureInput struct{}
 
 func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -14,7 +18,7 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			DiskType:          "Standard_LRS",
 			VolumeSizeGb:      50,
 			MachineType:       "Standard_D8_v3",
-			Region:            "westeurope",
+			Region:            DefaultAzureRegion,
 			Provider:          "azure",
 			WorkerCidr:        "10.250.0.0/19",
 			AutoScalerMin:     3,

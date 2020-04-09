@@ -392,7 +392,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:ea808d89112be5076fa384bcbbe497a6320ef22e98d98715fc0a0f208b56b2da"
+  digest = "1:1b82049d7fd8cd3f1c9e2899148b0d6e52cb37bad5ec953ee874d5f019d96e03"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -405,15 +405,15 @@
     "tests/provisioner-tests/test/testkit/graphql",
   ]
   pruneopts = "UT"
-  revision = "ad250cc742673ef5b628cc806841182bafe9750a"
+  revision = "b43e05d8331a01c557eb7be4822dd17d24faf97f"
 
 [[projects]]
-  digest = "1:bde204c6c8dd5169cd05ed5aa9a1e027bc8d2cdd172c5e80b971cb4e14b55e3c"
+  digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
   name = "github.com/kyma-project/kyma"
   packages = ["components/kyma-operator/pkg/apis/installer/v1alpha1"]
   pruneopts = "UT"
-  revision = "119010d0810e5e1e23b78e1058f2b0fbea293ae9"
-  version = "1.9.0"
+  revision = "cc5a238a6c239e3f2ee7accd2e819bc8dd0e8aaa"
+  version = "1.11.0"
 
 [[projects]]
   digest = "1:9ff22c26414baf7deaf74f2a788fe7b97666048bcbe346c52cfe823442abbdfb"
@@ -796,12 +796,12 @@
   version = "v0.9.1"
 
 [[projects]]
-  digest = "1:b75b3deb2bce8bc079e16bb2aecfe01eb80098f5650f9e93e5643ca8b7b73737"
+  digest = "1:55b110c99c5fdc4f14930747326acce56b52cfce60b24b1c03ef686ac0e46bb1"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "UT"
-  revision = "1f64d6156d11335c3f22d9330b0ad14fc1e789ce"
-  version = "v2.2.7"
+  revision = "53403b58ad1b561927d19068c655246f2db79d48"
+  version = "v2.2.8"
 
 [[projects]]
   digest = "1:57858c910b7c29c64f742c34df7bc6ce76ea72e561276c80c0eda16980443736"

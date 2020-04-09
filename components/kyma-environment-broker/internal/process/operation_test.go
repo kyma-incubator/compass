@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -13,11 +12,11 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 )
 
-func Test_RetryOperationOnce(t *testing.T) {
+func Test_Provision_RetryOperationOnce(t *testing.T) {
 	// given
 	memory := storage.NewMemoryStorage()
 	operations := memory.Operations()
-	opManager := NewOperationManager(operations)
+	opManager := NewProvisionOperationManager(operations)
 	op := internal.ProvisioningOperation{}
 	op.UpdatedAt = time.Now()
 	retryInterval := time.Hour
@@ -45,11 +44,11 @@ func Test_RetryOperationOnce(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func Test_RetryOperation(t *testing.T) {
+func Test_Provision_RetryOperation(t *testing.T) {
 	// given
 	memory := storage.NewMemoryStorage()
 	operations := memory.Operations()
-	opManager := NewOperationManager(operations)
+	opManager := NewProvisionOperationManager(operations)
 	op := internal.ProvisioningOperation{}
 	op.UpdatedAt = time.Now()
 	retryInterval := time.Hour
@@ -76,8 +75,4 @@ func Test_RetryOperation(t *testing.T) {
 	// when - second call => retry
 	assert.True(t, when > 0)
 	assert.Nil(t, err)
-}
-
-func fixLogger() logrus.FieldLogger {
-	return logrus.StandardLogger()
 }

@@ -51,12 +51,14 @@ type ComponentConfiguration struct {
 	Component     string         `json:"component"`
 	Namespace     string         `json:"namespace"`
 	Configuration []*ConfigEntry `json:"configuration"`
+	SourceURL     *string        `json:"sourceURL"`
 }
 
 type ComponentConfigurationInput struct {
 	Component     string              `json:"component"`
 	Namespace     string              `json:"namespace"`
 	Configuration []*ConfigEntryInput `json:"configuration"`
+	SourceURL     *string             `json:"sourceURL"`
 }
 
 type ConfigEntry struct {
@@ -116,7 +118,6 @@ type GCPProviderConfigInput struct {
 type GardenerConfig struct {
 	Name                   *string                `json:"name"`
 	KubernetesVersion      *string                `json:"kubernetesVersion"`
-	NodeCount              *int                   `json:"nodeCount"`
 	VolumeSizeGb           *int                   `json:"volumeSizeGB"`
 	MachineType            *string                `json:"machineType"`
 	Region                 *string                `json:"region"`
@@ -136,7 +137,6 @@ func (GardenerConfig) IsClusterConfig() {}
 
 type GardenerConfigInput struct {
 	KubernetesVersion      string                 `json:"kubernetesVersion"`
-	NodeCount              int                    `json:"nodeCount"`
 	VolumeSizeGb           int                    `json:"volumeSizeGB"`
 	MachineType            string                 `json:"machineType"`
 	Region                 string                 `json:"region"`

@@ -26,7 +26,7 @@ const (
 	EnvPipelineBuild  = "PIPELINE_BUILD"
 )
 
-func makeConnectionString(hostname string, port string) string {
+func makeConnectionString(hostname string, port string) Config {
 	host := "localhost"
 	if os.Getenv(EnvPipelineBuild) != "" {
 		host = hostname
@@ -40,8 +40,12 @@ func makeConnectionString(hostname string, port string) string {
 		Port:     port,
 		Name:     DbName,
 		SSLMode:  "disable",
+
+		MaxOpenConns:    2,
+		MaxIdleConns:    1,
+		ConnMaxLifetime: time.Minute,
 	}
-	return cfg.ConnectionURL()
+	return cfg
 }
 
 func CloseDatabase(t *testing.T, connection *dbr.Connection) {
@@ -51,10 +55,10 @@ func CloseDatabase(t *testing.T, connection *dbr.Connection) {
 	}
 }
 
-func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (func(), string, error) {
+func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (func(), Config, error) {
 	_, err := isDockerTestNetworkPresent(ctx)
 	if err != nil {
-		return nil, "", err
+		return nil, Config{}, err
 	}
 
 	req := testcontainers.ContainerRequest{
@@ -80,7 +84,7 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 
 	if err != nil {
 		t.Logf("Failed to create contianer: %s", err.Error())
-		return nil, "", err
+		return nil, Config{}, err
 	}
 
 	port, err := postgresContainer.MappedPort(ctx, DbPort)
@@ -90,7 +94,7 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 		if errTerminate != nil {
 			t.Logf("Failed to terminate container %s after failing of getting mapped port: %s", postgresContainer.GetContainerID(), err.Error())
 		}
-		return nil, "", err
+		return nil, Config{}, err
 	}
 
 	cleanupFunc := func() {
@@ -99,9 +103,9 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 		time.Sleep(2 * time.Second)
 	}
 
-	connString := makeConnectionString(hostname, port.Port())
+	dbCfg := makeConnectionString(hostname, port.Port())
 
-	return cleanupFunc, connString, nil
+	return cleanupFunc, dbCfg, nil
 }
 
 func InitTestDBTables(t *testing.T, connectionURL string) error {
@@ -216,6 +220,14 @@ func fixTables() map[string]string {
 			data json NOT NULL,
 			created_at TIMESTAMPTZ NOT NULL,
 			updated_at TIMESTAMPTZ NOT NULL
-			)`, postsql.OperationTableName)}
+			)`, postsql.OperationTableName),
+		postsql.LMSTenantTableName: fmt.Sprintf(
+			`CREATE TABLE IF NOT EXISTS %s (
+			id varchar(255) PRIMARY KEY,
+			name varchar(255) NOT NULL,
+			region varchar(12) NOT NULL,
+			created_at TIMESTAMPTZ NOT NULL,
+            unique (name, region)
+			)`, postsql.LMSTenantTableName)}
 
 }

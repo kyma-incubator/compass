@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/automock"
@@ -53,7 +55,16 @@ func TestInitialisationStep_Run(t *testing.T) {
 	directorClient := &automock.DirectorClient{}
 	directorClient.On("GetConsoleURL", statusGlobalAccountID, statusRuntimeID).Return(dashboardURL, nil)
 
-	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient, nil, "")
+	idh := &idHolder{}
+	mockOauthServer := newMockAvsOauthServer()
+	defer mockOauthServer.Close()
+	mockAvsServer := newMockAvsServer(t, idh, false)
+	defer mockAvsServer.Close()
+	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
+	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
+	externalEvalCreator := NewExternalEvalCreator(avsConfig, avsDel, false)
+
+	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient, nil, externalEvalCreator)
 
 	// when
 	operation, repeat, err := step.Run(operation, log)
@@ -66,6 +77,11 @@ func TestInitialisationStep_Run(t *testing.T) {
 	updatedInstance, err := memoryStorage.Instances().GetByID(statusInstanceID)
 	assert.NoError(t, err)
 	assert.Equal(t, dashboardURL, updatedInstance.DashboardURL)
+
+	assert.Equal(t, idh.id, operation.AVSEvaluationExternalId)
+	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(operation.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, inDB.AVSEvaluationExternalId, idh.id)
 }
 
 func fixOperationRuntimeStatus(t *testing.T) internal.ProvisioningOperation {

@@ -4,6 +4,7 @@ import (
 	dbr "github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 )
 
 //go:generate mockery -name=Factory
@@ -16,17 +17,19 @@ type Factory interface {
 //go:generate mockery -name=ReadSession
 type ReadSession interface {
 	GetInstanceByID(instanceID string) (internal.Instance, dberr.Error)
-	GetOperationByID(opID string) (OperationDTO, dberr.Error)
-	GetOperationsInProgressByType(operationType OperationType) ([]OperationDTO, dberr.Error)
-	GetOperationByInstanceID(inID string) (OperationDTO, dberr.Error)
+	GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.Error)
+	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
+	GetOperationByTypeAndInstanceID(inID string, opType dbmodel.OperationType) (dbmodel.OperationDTO, dberr.Error)
+	GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, dberr.Error)
 }
 
 //go:generate mockery -name=WriteSession
 type WriteSession interface {
 	InsertInstance(instance internal.Instance) dberr.Error
-	InsertOperation(dto OperationDTO) dberr.Error
+	InsertOperation(dto dbmodel.OperationDTO) dberr.Error
 	UpdateInstance(instance internal.Instance) dberr.Error
-	UpdateOperation(instance OperationDTO) dberr.Error
+	UpdateOperation(instance dbmodel.OperationDTO) dberr.Error
+	InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error
 	DeleteInstance(instanceID string) dberr.Error
 }
 

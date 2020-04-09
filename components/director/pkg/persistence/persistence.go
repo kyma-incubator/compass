@@ -36,11 +36,16 @@ func FromCtx(ctx context.Context) (PersistenceOp, error) {
 type Transactioner interface {
 	Begin() (PersistenceTx, error)
 	RollbackUnlessCommited(tx PersistenceTx)
+	PingContext(ctx context.Context) error
 }
 
 type db struct {
 	sqlDB  *sqlx.DB
 	logger *logrus.Logger
+}
+
+func (db *db) PingContext(ctx context.Context) error {
+	return db.sqlDB.PingContext(ctx)
 }
 
 func (db *db) Begin() (PersistenceTx, error) {
@@ -74,29 +79,38 @@ type PersistenceOp interface {
 }
 
 // Configure returns the instance of the database
-func Configure(logger *logrus.Logger, connString string) (Transactioner, func() error, error) {
-	db, closeFunc, err := waitForPersistance(logger, connString, RetryCount)
+func Configure(logger *logrus.Logger, conf DatabaseConfig) (Transactioner, func() error, error) {
+	db, closeFunc, err := waitForPersistance(logger, conf, RetryCount)
 
 	return db, closeFunc, err
 }
 
-func waitForPersistance(logger *logrus.Logger, connString string, retryCount int) (Transactioner, func() error, error) {
+func waitForPersistance(logger *logrus.Logger, conf DatabaseConfig, retryCount int) (Transactioner, func() error, error) {
 	var sqlxDB *sqlx.DB
 	var err error
-	for ; retryCount > 0; retryCount-- {
+	for i := 0; i < retryCount; i++ {
+		if i > 0 {
+			time.Sleep(5 * time.Second)
+		}
 		logger.Info("Trying to connect to DB...")
-		sqlxDB, err = sqlx.Open("postgres", connString)
+
+		sqlxDB, err = sqlx.Open("postgres", conf.GetConnString())
 		if err != nil {
 			return nil, nil, err
 		}
-
-		err = sqlxDB.Ping()
-		if err == nil {
-			break
+		ctx, cancelFunc := context.WithTimeout(context.Background(), time.Second)
+		err = sqlxDB.PingContext(ctx)
+		cancelFunc()
+		if err != nil {
+			logger.Infof("Got error on pinging DB: %v", err)
+			continue
 		}
+		logger.Infof("Configuring MaxOpenConnections: [%d] and MaxIdleConnections: [%d]", conf.MaxOpenConnections, conf.MaxIdleConnections)
+		sqlxDB.SetMaxOpenConns(conf.MaxOpenConnections)
+		sqlxDB.SetMaxIdleConns(conf.MaxIdleConnections)
+		return &db{sqlDB: sqlxDB, logger: logger}, sqlxDB.Close, nil
 
-		time.Sleep(5 * time.Second)
 	}
 
-	return &db{sqlDB: sqlxDB, logger: logger}, sqlxDB.Close, err
+	return nil, nil, err
 }

@@ -137,7 +137,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		//given
 		clusterName := "Something"
 		project := "Project"
-		nodes := 3
 		disk := "standard"
 		machine := "machine"
 		region := "region"
@@ -171,7 +170,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				ClusterConfig: model.GardenerConfig{
 					Name:                   clusterName,
 					ProjectName:            project,
-					NodeCount:              nodes,
 					DiskType:               disk,
 					MachineType:            machine,
 					Region:                 region,
@@ -211,7 +209,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
 				ClusterConfig: gqlschema.GardenerConfig{
 					Name:              &clusterName,
-					NodeCount:         &nodes,
 					DiskType:          &disk,
 					MachineType:       &machine,
 					Region:            &region,
@@ -258,6 +255,12 @@ func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
 				},
+			},
+			{
+				Component:     rafterComponent,
+				Namespace:     kymaSystemNamespace,
+				SourceURL:     util.StringPtr(rafterSourceURL),
+				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
 			},
 			{
 				Component: applicationConnectorComponent,
@@ -307,11 +310,12 @@ func fixGlobalConfig() model.Configuration {
 func fixKymaComponents() []model.KymaComponentConfig {
 	return []model.KymaComponentConfig{
 		{
-			ID:            "id",
-			KymaConfigID:  "id",
-			Component:     clusterEssentialsComponent,
-			Namespace:     kymaSystemNamespace,
-			Configuration: model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+			ID:             "id",
+			KymaConfigID:   "id",
+			Component:      clusterEssentialsComponent,
+			Namespace:      kymaSystemNamespace,
+			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+			ComponentOrder: 1,
 		},
 		{
 			ID:           "id",
@@ -324,6 +328,16 @@ func fixKymaComponents() []model.KymaComponentConfig {
 					model.NewConfigEntry("test.config.key2", "value2", false),
 				},
 			},
+			ComponentOrder: 2,
+		},
+		{
+			ID:             "id",
+			KymaConfigID:   "id",
+			Component:      rafterComponent,
+			Namespace:      kymaSystemNamespace,
+			SourceURL:      rafterSourceURL,
+			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+			ComponentOrder: 3,
 		},
 		{
 			ID:           "id",
@@ -336,6 +350,7 @@ func fixKymaComponents() []model.KymaComponentConfig {
 					model.NewConfigEntry("test.secret.key", "secretValue", true),
 				},
 			},
+			ComponentOrder: 4,
 		},
 	}
 }

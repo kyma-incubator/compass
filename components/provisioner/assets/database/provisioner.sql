@@ -24,7 +24,6 @@ CREATE TABLE gardener_config
     name varchar(256) NOT NULL UNIQUE,
     project_name varchar(256) NOT NULL,
     kubernetes_version varchar(256) NOT NULL,
-    node_Count integer NOT NULL,
     volume_size_gb varchar(256) NOT NULL,
     machine_type varchar(256) NOT NULL,
     region varchar(256) NOT NULL,
@@ -115,7 +114,9 @@ CREATE TABLE kyma_component_config
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     component varchar(256) NOT NULL,
     namespace varchar(256) NOT NULL,
+    source_url varchar(256),
     configuration jsonb,
+    component_order integer,
     kyma_config_id uuid NOT NULL,
     foreign key (kyma_config_id) REFERENCES kyma_config (id) ON DELETE CASCADE
 );

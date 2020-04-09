@@ -2,7 +2,7 @@ package storage
 
 import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 )
 
 type Instances interface {
@@ -13,10 +13,28 @@ type Instances interface {
 }
 
 type Operations interface {
+	Provisioning
+	Deprovisioning
+
+	GetOperationByID(operationID string) (*internal.Operation, error)
+	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]internal.Operation, error)
+}
+
+type Provisioning interface {
 	InsertProvisioningOperation(operation internal.ProvisioningOperation) error
 	GetProvisioningOperationByID(operationID string) (*internal.ProvisioningOperation, error)
 	GetProvisioningOperationByInstanceID(instanceID string) (*internal.ProvisioningOperation, error)
 	UpdateProvisioningOperation(operation internal.ProvisioningOperation) (*internal.ProvisioningOperation, error)
-	GetOperation(operationID string) (*internal.Operation, error)
-	GetOperationsInProgressByType(operationType dbsession.OperationType) ([]internal.Operation, error)
+}
+
+type Deprovisioning interface {
+	InsertDeprovisioningOperation(operation internal.DeprovisioningOperation) error
+	GetDeprovisioningOperationByID(operationID string) (*internal.DeprovisioningOperation, error)
+	GetDeprovisioningOperationByInstanceID(instanceID string) (*internal.DeprovisioningOperation, error)
+	UpdateDeprovisioningOperation(operation internal.DeprovisioningOperation) (*internal.DeprovisioningOperation, error)
+}
+
+type LMSTenants interface {
+	FindTenantByName(name, region string) (internal.LMSTenant, bool, error)
+	InsertTenant(tenant internal.LMSTenant) error
 }

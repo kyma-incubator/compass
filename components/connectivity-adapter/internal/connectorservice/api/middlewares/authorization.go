@@ -5,9 +5,10 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 )
 
@@ -22,7 +23,7 @@ func (c authorizationHeadersMiddleware) GetAuthorizationHeaders(handler http.Han
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		headers, err := extractHeaders(r)
 		if err != nil {
-			reqerror.WriteError(w, err, apperrors.CodeForbidden)
+			res.WriteError(w, err, apperrors.CodeForbidden)
 
 			return
 		}

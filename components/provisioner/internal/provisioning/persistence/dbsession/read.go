@@ -3,6 +3,7 @@ package dbsession
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -76,7 +77,7 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 			"cluster.id", "cluster.kubeconfig", "cluster.tenant",
 			"cluster.credentials_secret_name", "cluster.creation_timestamp", "cluster.deleted",
 			"name", "project_name", "kubernetes_version",
-			"node_count", "volume_size_gb", "disk_type", "machine_type", "provider", "seed",
+			"volume_size_gb", "disk_type", "machine_type", "provider", "seed",
 			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
 			"max_surge", "max_unavailable", "provider_specific_config").
 		From("gardener_config").
@@ -108,24 +109,87 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 	return cluster, nil
 }
 
-func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
-	var kymaConfig []struct {
-		ID                  string
-		KymaConfigID        string
-		GlobalConfiguration []byte
-		ReleaseID           string
-		Version             string
-		TillerYAML          string
-		InstallerYAML       string
-		Component           string
-		Namespace           string
-		Configuration       []byte
-		ClusterID           string
+type kymaComponentConfigDTO struct {
+	ID                  string
+	KymaConfigID        string
+	GlobalConfiguration []byte
+	ReleaseID           string
+	Version             string
+	TillerYAML          string
+	InstallerYAML       string
+	Component           string
+	Namespace           string
+	SourceURL           string
+	Configuration       []byte
+	ComponentOrder      int
+	ClusterID           string
+}
+
+type kymaConfigDTO []kymaComponentConfigDTO
+
+func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
+	kymaModulesOrdered := make(map[int][]model.KymaComponentConfig, 0)
+
+	for _, componentCfg := range c {
+		var configuration model.Configuration
+		err := json.Unmarshal(componentCfg.Configuration, &configuration)
+		if err != nil {
+			return model.KymaConfig{}, dberrors.Internal("Failed to unmarshal configuration for %s component: %s", componentCfg.Component, err.Error())
+		}
+
+		kymaComponentConfig := model.KymaComponentConfig{
+			ID:             componentCfg.ID,
+			Component:      model.KymaComponent(componentCfg.Component),
+			Namespace:      componentCfg.Namespace,
+			SourceURL:      componentCfg.SourceURL,
+			Configuration:  configuration,
+			KymaConfigID:   componentCfg.KymaConfigID,
+			ComponentOrder: componentCfg.ComponentOrder,
+		}
+
+		// In case order is 0 for all components map stores slice (it is the case for Runtimes created before migration)
+		kymaModulesOrdered[componentCfg.ComponentOrder] = append(kymaModulesOrdered[componentCfg.ComponentOrder], kymaComponentConfig)
 	}
+
+	keys := make([]int, 0, len(kymaModulesOrdered))
+	for k, _ := range kymaModulesOrdered {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+
+	orderedComponents := make([]model.KymaComponentConfig, 0, len(c))
+	for _, k := range keys {
+		orderedComponents = append(orderedComponents, kymaModulesOrdered[k]...)
+	}
+
+	var globalConfiguration model.Configuration
+	err := json.Unmarshal(c[0].GlobalConfiguration, &globalConfiguration)
+	if err != nil {
+		return model.KymaConfig{}, dberrors.Internal("Failed to unmarshal global configuration: %s", err.Error())
+	}
+
+	return model.KymaConfig{
+		ID: c[0].KymaConfigID,
+		Release: model.Release{
+			Id:            c[0].ReleaseID,
+			Version:       c[0].Version,
+			TillerYAML:    c[0].TillerYAML,
+			InstallerYAML: c[0].InstallerYAML,
+		},
+		Components:          orderedComponents,
+		GlobalConfiguration: globalConfiguration,
+		ClusterID:           runtimeID,
+	}, nil
+}
+
+func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
+	var kymaConfig kymaConfigDTO
 
 	rowsCount, err := r.session.
 		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.global_configuration",
-			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.namespace", "kyma_component_config.configuration",
+			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.namespace",
+			"kyma_component_config.source_url", "kyma_component_config.configuration",
+			"kyma_component_config.component_order",
 			"cluster_id",
 			"kyma_release.version", "kyma_release.tiller_yaml", "kyma_release.installer_yaml").
 		From("cluster").
@@ -143,43 +207,7 @@ func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 		return model.KymaConfig{}, dberrors.NotFound("Cannot find Kyma Config for runtimeID: %s", runtimeID)
 	}
 
-	kymaModules := make([]model.KymaComponentConfig, 0)
-
-	for _, componentCfg := range kymaConfig {
-		var configuration model.Configuration
-		err := json.Unmarshal(componentCfg.Configuration, &configuration)
-		if err != nil {
-			return model.KymaConfig{}, dberrors.Internal("Failed to unmarshal configuration for %s component: %s", componentCfg.Component, err.Error())
-		}
-
-		kymaComponentConfig := model.KymaComponentConfig{
-			ID:            componentCfg.ID,
-			Component:     model.KymaComponent(componentCfg.Component),
-			Namespace:     componentCfg.Namespace,
-			Configuration: configuration,
-			KymaConfigID:  componentCfg.KymaConfigID,
-		}
-		kymaModules = append(kymaModules, kymaComponentConfig)
-	}
-
-	var globalConfiguration model.Configuration
-	err = json.Unmarshal(kymaConfig[0].GlobalConfiguration, &globalConfiguration)
-	if err != nil {
-		return model.KymaConfig{}, dberrors.Internal("Failed to unmarshal global configuration: %s", err.Error())
-	}
-
-	return model.KymaConfig{
-		ID: kymaConfig[0].KymaConfigID,
-		Release: model.Release{
-			Id:            kymaConfig[0].ReleaseID,
-			Version:       kymaConfig[0].Version,
-			TillerYAML:    kymaConfig[0].TillerYAML,
-			InstallerYAML: kymaConfig[0].InstallerYAML,
-		},
-		Components:          kymaModules,
-		GlobalConfiguration: globalConfiguration,
-		ClusterID:           runtimeID,
-	}, nil
+	return kymaConfig.parseToKymaConfig(runtimeID)
 }
 
 type gardenerConfigRead struct {
@@ -202,7 +230,7 @@ func (r readSession) getProviderConfig(runtimeID string) (model.ProviderConfigur
 
 	err := r.session.
 		Select("gardener_config.id", "cluster_id", "gardener_config.name", "project_name", "kubernetes_version",
-			"node_count", "volume_size_gb", "disk_type", "machine_type", "provider", "seed",
+			"volume_size_gb", "disk_type", "machine_type", "provider", "seed",
 			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
 			"max_surge", "max_unavailable", "provider_specific_config").
 		From("cluster").

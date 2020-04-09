@@ -88,7 +88,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     
      > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
                                                                           
-   ```graphql
+     ```graphql
       mutation {
         provisionRuntime(
           config: {
@@ -129,6 +129,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                       secret: {true|false} # Specifies if the property is confidential
                     }
                   ]
+                  sourceURL: "{CUSTOM_COMPONENT_SOURCE_URL}"
                 }
               ]
               configuration: [
@@ -158,7 +159,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
             }
           }
         }
-   ``` 
+      ``` 
     
   </details>
 
@@ -179,7 +180,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
   
      > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
                                                                           
-   ```graphql
+      ```graphql
       mutation {
         provisionRuntime(
           config: {
@@ -220,6 +221,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                       secret: {true|false} # Specifies if the property is confidential
                     }
                   ]
+                  sourceURL: "{CUSTOM_COMPONENT_SOURCE_URL}"
                 }
               ]
               configuration: [
@@ -249,7 +251,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
           }
         }
       }
-   ```
+      ```
     
   </details>
   
@@ -270,7 +272,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
   
      > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
                                                                           
-   ```graphql
+      ```graphql
       mutation {
         provisionRuntime(
           config: {
@@ -318,6 +320,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                       secret: {true|false} # Specifies if the property is confidential
                     }
                   ]
+                  sourceURL: "{CUSTOM_COMPONENT_SOURCE_URL}"
                 }
               ]
               configuration: [
@@ -347,7 +350,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
           }
         }
       }
-   ```
+      ```
   </details>
     
 </div>

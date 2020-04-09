@@ -9,20 +9,19 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
 const (
 	authorizationRuleName = "RootManageSharedAccessKey"
 
-	kafkaPort = 9093
+	kafkaPort = "9093"
 
 	k8sSecretNamespace                = "knative-eventing"
 	componentNameKnativeEventing      = "knative-eventing"
@@ -31,10 +30,10 @@ const (
 )
 
 // ensure the interface is implemented
-var _ process.Step = (*ProvisionAzureEventHubStep)(nil)
+var _ Step = (*ProvisionAzureEventHubStep)(nil)
 
 type ProvisionAzureEventHubStep struct {
-	operationManager    *process.OperationManager
+	operationManager    *process.ProvisionOperationManager
 	hyperscalerProvider azure.HyperscalerProvider
 	accountProvider     hyperscaler.AccountProvider
 	context             context.Context
@@ -42,7 +41,7 @@ type ProvisionAzureEventHubStep struct {
 
 func NewProvisionAzureEventHubStep(os storage.Operations, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
 	return &ProvisionAzureEventHubStep{
-		operationManager:    process.NewOperationManager(os),
+		operationManager:    process.NewProvisionOperationManager(os),
 		accountProvider:     accountProvider,
 		context:             ctx,
 		hyperscalerProvider: hyperscalerProvider,
@@ -75,7 +74,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
 		return p.operationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
-	azureCfg, err := azure.GetConfigfromHAPCredentialsAndProvisioningParams(credentials, pp)
+	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, pp)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure config: %v", err)
@@ -90,10 +89,17 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		return p.operationManager.OperationFailed(operation, errorMessage)
 	}
 
+	// prepare azure tags
+	tags := azure.Tags{
+		azure.TagSubAccountID: &pp.ErsContext.SubAccountID,
+		azure.TagInstanceID:   &operation.InstanceID,
+		azure.TagOperationID:  &operation.ID,
+	}
+
 	// create Resource Group
 	groupName := pp.Parameters.Name
 	// TODO(nachtmaar): use different resource group name https://github.com/kyma-incubator/compass/issues/967
-	resourceGroup, err := namespaceClient.CreateResourceGroup(p.context, azureCfg, groupName)
+	resourceGroup, err := namespaceClient.CreateResourceGroup(p.context, azureCfg, groupName, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
@@ -103,7 +109,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	// create EventHubs Namespace
 	eventHubsNamespace := pp.Parameters.Name
-	eventHubNamespace, err := namespaceClient.CreateNamespace(p.context, azureCfg, groupName, eventHubsNamespace)
+	eventHubNamespace, err := namespaceClient.CreateNamespace(p.context, azureCfg, groupName, eventHubsNamespace, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
@@ -121,16 +127,15 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	if accessKeys.PrimaryConnectionString == nil {
 		// if GetEventhubAccessKeys() does not fail then a non-nil accessKey is returned
 		// then retry the operation once
-		errorMessage := fmt.Sprintf("PrimaryConnectionString is nil")
+		errorMessage := "PrimaryConnectionString is nil"
 		return p.operationManager.RetryOperationOnce(operation, errorMessage, time.Second*15, log)
 	}
 	kafkaEndpoint := extractEndpoint(accessKeys)
-	kafkaEndpoint = appendPort(kafkaEndpoint, kafkaPort)
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
 	// set installation overrides
 	operation.InputCreator.SetOverrides(componentNameKnativeEventing, getKnativeEventingOverrides())
-	operation.InputCreator.SetOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
+	operation.InputCreator.SetOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, kafkaPort, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
 
 	return operation, 0, nil
 }
@@ -140,10 +145,6 @@ func extractEndpoint(accessKeys eventhub.AccessKeys) string {
 	endpoint = strings.TrimPrefix(endpoint, "Endpoint=sb://")
 	endpoint = strings.TrimSuffix(endpoint, "/")
 	return endpoint
-}
-
-func appendPort(endpoint string, port int) string {
-	return fmt.Sprintf("%s:%d", endpoint, port)
 }
 
 func getKnativeEventingOverrides() []*gqlschema.ConfigEntryInput {
@@ -159,11 +160,16 @@ func getKnativeEventingOverrides() []*gqlschema.ConfigEntryInput {
 	}
 }
 
-func getKafkaChannelOverrides(broker, namespace, username, password, kafkaProvider string) []*gqlschema.ConfigEntryInput {
+func getKafkaChannelOverrides(brokerHostname, brokerPort, namespace, username, password, kafkaProvider string) []*gqlschema.ConfigEntryInput {
 	return []*gqlschema.ConfigEntryInput{
 		{
-			Key:    "kafka.brokers",
-			Value:  broker,
+			Key:    "kafka.brokers.hostname",
+			Value:  brokerHostname,
+			Secret: ptr.Bool(true),
+		},
+		{
+			Key:    "kafka.brokers.port",
+			Value:  brokerPort,
 			Secret: ptr.Bool(true),
 		},
 		{

@@ -64,16 +64,21 @@ func TestService_Create(t *testing.T) {
 	}
 
 	defaultLabels := map[string]interface{}{
-		model.ScenariosKey:      model.ScenariosDefaultValue,
-		"integration-system-id": intSysID,
-		"label":                 "value",
-		"name":                  "foo.bar-not",
+		model.ScenariosKey:    model.ScenariosDefaultValue,
+		"integrationSystemID": intSysID,
+		"label":               "value",
+		"name":                "foo.bar-not",
 	}
 	defaultLabelsWithoutIntSys := map[string]interface{}{
-		model.ScenariosKey:      model.ScenariosDefaultValue,
-		"integration-system-id": "",
-		"name":                  "test",
+		model.ScenariosKey:    model.ScenariosDefaultValue,
+		"integrationSystemID": "",
+		"name":                "test",
 	}
+	labelsWithoutIntSys := map[string]interface{}{
+		"integrationSystemID": "",
+		"name":                "test",
+	}
+	var nilLabels map[string]interface{}
 
 	id := "foo"
 
@@ -150,6 +155,14 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
+				repo.On("AddDefaultScenarioIfEnabled", &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(0).(*map[string]interface{})
+					require.True(t, ok)
+					*arg = map[string]interface{}{
+						"label":            "value",
+						model.ScenariosKey: model.ScenariosDefaultValue,
+					}
+				}).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -168,6 +181,63 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       modelInput,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Success when no labels provided and default scenario assignment disabled",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				return repo
+			},
+			APIRepoFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			EventAPIRepoFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			DocumentRepoFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
+				repo.On("AddDefaultScenarioIfEnabled", &nilLabels).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithoutIntSys).Return(nil).Once()
+				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
+				return svc
+			},
+			PackageServiceFn: func() *automock.PackageService {
+				svc := &automock.PackageService{}
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			Input:       model.ApplicationRegisterInput{Name: "test", Labels: nilLabels},
 			ExpectedErr: nil,
 		},
 		{
@@ -206,6 +276,13 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
+				repo.On("AddDefaultScenarioIfEnabled", &nilLabels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(0).(*map[string]interface{})
+					require.True(t, ok)
+					*arg = map[string]interface{}{
+						model.ScenariosKey: model.ScenariosDefaultValue,
+					}
+				}).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -223,7 +300,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Input:       model.ApplicationRegisterInput{Name: "test"},
+			Input:       model.ApplicationRegisterInput{Name: "test", Labels: nilLabels},
 			ExpectedErr: nil,
 		},
 		{
@@ -262,6 +339,7 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
+				repo.On("AddDefaultScenarioIfEnabled", &defaultLabelsWithoutIntSys).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -536,6 +614,14 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
+				repo.On("AddDefaultScenarioIfEnabled", &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(0).(*map[string]interface{})
+					require.True(t, ok)
+					*arg = map[string]interface{}{
+						"label":            "value",
+						model.ScenariosKey: model.ScenariosDefaultValue,
+					}
+				}).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -612,14 +698,16 @@ func TestService_Update(t *testing.T) {
 
 	id := "foo"
 	tnt := "tenant"
+	conditionTimestamp := time.Now()
+	timestampGenFunc := func() time.Time { return conditionTimestamp }
 
 	appName := "initialn"
 	updatedDescription := "updatedd"
 	updatedURL := "updatedu"
-	updateInput := fixModelApplicationUpdateInput(appName, updatedDescription, updatedURL)
-	applicationModelBefore := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, "initiald", "initialu")
-	applicationModelAfter := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, updatedDescription, updatedURL)
-	intSysLabel := fixLabelInput("integration-system-id", intSysID, id, model.ApplicationLabelableObject)
+	updateInput := fixModelApplicationUpdateInput(appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected)
+	applicationModelBefore := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, "initiald", "initialu", model.ApplicationStatusConditionConnected, conditionTimestamp)
+	applicationModelAfter := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
+	intSysLabel := fixLabelInput("integrationSystemID", intSysID, id, model.ApplicationLabelableObject)
 	nameLabel := fixLabelInput("name", appName, id, model.ApplicationLabelableObject)
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
@@ -811,6 +899,7 @@ func TestService_Update(t *testing.T) {
 			intSysRepo := testCase.IntSysRepoFn()
 			lblUpsrtSvc := testCase.LabelUpsertSvcFn()
 			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, nil)
+			svc.SetTimestampGen(timestampGenFunc)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -1761,20 +1850,6 @@ func TestService_DeleteLabel(t *testing.T) {
 			InputApplicationID: applicationID,
 			InputKey:           labelKey,
 			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when trying to delete scenarios label",
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
-			InputApplicationID: applicationID,
-			InputKey:           model.ScenariosKey,
-			ExpectedErrMessage: "can not be deleted from application",
 		},
 	}
 

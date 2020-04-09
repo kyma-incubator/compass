@@ -3,6 +3,9 @@ package config
 import (
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connector/internal/healthz"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
@@ -26,6 +29,7 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 	externalRouter := mux.NewRouter()
 	externalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema))
+	externalRouter.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
 
 	externalRouter.Use(authContextMiddleware)
 

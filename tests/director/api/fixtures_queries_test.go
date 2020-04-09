@@ -148,7 +148,7 @@ func unregisterRuntime(t *testing.T, id string) {
 }
 
 func unregisterRuntimeWithinTenant(t *testing.T, id string, tenantID string) {
-	delReq := fixUnregisterRuntime(id)
+	delReq := fixUnregisterRuntimeRequest(id)
 
 	err := tc.RunOperationWithCustomTenant(context.Background(), tenantID, delReq, nil)
 	require.NoError(t, err)
@@ -187,6 +187,20 @@ func createLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, key st
 	require.NoError(t, err)
 
 	return &output
+}
+
+func createScenariosLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, tenantID string, scenarios []string) *graphql.LabelDefinition {
+	jsonSchema := map[string]interface{}{
+		"items": map[string]interface{}{
+			"enum": scenarios,
+			"type": "string",
+		},
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+	}
+
+	return createLabelDefinitionWithinTenant(t, ctx, "scenarios", jsonSchema, tenantID)
 }
 
 func deleteLabelDefinition(t *testing.T, ctx context.Context, labelDefinitionKey string, deleteRelatedResources bool) {
@@ -423,4 +437,44 @@ func fixPackageInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *
 	inputParams := marshalJSON(t, inputParamsData)
 
 	return authCtx, inputParams
+}
+
+func createAutomaticScenarioAssignmentFromInputWithinTenant(t *testing.T, ctx context.Context, input graphql.AutomaticScenarioAssignmentSetInput, tenantID string) graphql.AutomaticScenarioAssignment {
+	inStr, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(input)
+	require.NoError(t, err)
+
+	assignment := graphql.AutomaticScenarioAssignment{}
+	req := fixCreateAutomaticScenarioAssignmentRequest(inStr)
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignment)
+	require.NoError(t, err)
+	return assignment
+}
+
+func createAutomaticScenarioAssignmentInTenant(t *testing.T, ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput, tenantID string) *graphql.AutomaticScenarioAssignment {
+	assignmentInput, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(in)
+	require.NoError(t, err)
+
+	createRequest := fixCreateAutomaticScenarioAssignmentRequest(assignmentInput)
+
+	assignment := graphql.AutomaticScenarioAssignment{}
+
+	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, tenantID, createRequest, &assignment))
+	require.NotEmpty(t, assignment.ScenarioName)
+	return &assignment
+}
+
+func listAutomaticScenarioAssignmentsWithinTenant(t *testing.T, ctx context.Context, tenantID string) graphql.AutomaticScenarioAssignmentPage {
+	assignmentsPage := graphql.AutomaticScenarioAssignmentPage{}
+	req := fixAutomaticScenarioAssignmentsRequest()
+	err := tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignmentsPage)
+	require.NoError(t, err)
+	return assignmentsPage
+}
+
+func deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t *testing.T, ctx context.Context, tenantID, scenarioName string) graphql.AutomaticScenarioAssignment {
+	assignment := graphql.AutomaticScenarioAssignment{}
+	req := fixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenarioName)
+	err := tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignment)
+	require.NoError(t, err)
+	return assignment
 }

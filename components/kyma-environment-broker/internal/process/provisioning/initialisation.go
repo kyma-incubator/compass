@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
+	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
@@ -30,38 +30,42 @@ type DirectorClient interface {
 }
 
 type InitialisationStep struct {
-	operationManager  *process.OperationManager
-	instanceStorage   storage.Instances
-	provisionerClient provisioner.Client
-	directorClient    DirectorClient
-	directorURL       string
-	inputBuilder      input.CreatorForPlan
+	operationManager    *process.ProvisionOperationManager
+	instanceStorage     storage.Instances
+	provisionerClient   provisioner.Client
+	directorClient      DirectorClient
+	inputBuilder        input.CreatorForPlan
+	externalEvalCreator *ExternalEvalCreator
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan, dURL string) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan, avsExternalEvalCreator *ExternalEvalCreator) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:  process.NewOperationManager(os),
-		instanceStorage:   is,
-		provisionerClient: pc,
-		directorClient:    dc,
-		directorURL:       dURL,
-		inputBuilder:      b,
+		operationManager:    process.NewProvisionOperationManager(os),
+		instanceStorage:     is,
+		provisionerClient:   pc,
+		directorClient:      dc,
+		inputBuilder:        b,
+		externalEvalCreator: avsExternalEvalCreator,
 	}
 }
 
 func (s *InitialisationStep) Name() string {
-	return "Initialization"
+	return "Provision_Initialization"
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	_, err := s.instanceStorage.GetByID(operation.InstanceID)
+	inst, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
-		log.Info("instance exist, check instance status")
+		if inst.RuntimeID == "" {
+			log.Info("runtimeID not exist, initialize runtime input request")
+			return s.initializeRuntimeInputRequest(operation, log)
+		}
+		log.Info("runtimeID exist, check instance status")
 		return s.checkRuntimeStatus(operation, log)
 	case dberr.IsNotFound(err):
-		log.Info("instance not exist, initialize runtime input request")
-		return s.initializeRuntimeInputRequest(operation, log)
+		log.Info("instance not exist")
+		return s.operationManager.OperationFailed(operation, "instance was not created")
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
 		return operation, 1 * time.Second, nil
@@ -75,37 +79,27 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 
-	log.Infof("create input creator for %q plan ID", pp.PlanID)
-	creator, found := s.inputBuilder.ForPlan(pp.PlanID)
-	if !found {
-		log.Error("input creator does not exist")
-		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
+	var kymaVersion string
+	if pp.Parameters.KymaVersion == "" {
+		log.Info("input builder setting up to work with default Kyma version")
+	} else {
+		kymaVersion = pp.Parameters.KymaVersion
+		log.Infof("setting up input builder to work with %s Kyma version", kymaVersion)
 	}
 
-	log.Info("set overrides for 'core' and 'compass-runtime-agent' components")
-	creator.SetOverrides("core", []*gqlschema.ConfigEntryInput{
-		{
-			Key:   "console.managementPlane.url",
-			Value: s.directorURL,
-		},
-	})
-	creator.SetOverrides("compass-runtime-agent", []*gqlschema.ConfigEntryInput{
-		{
-			Key:   "managementPlane.url",
-			Value: s.directorURL,
-		},
-	})
-
-	// Can be remove when the compass will be enabled by default in Kyma. (after 1.12)
-	log.Info("set overrides to enable Packages support in SKR")
-	creator.AppendGlobalOverrides([]*gqlschema.ConfigEntryInput{
-		{
-			Key: "global.enableAPIPackages", Value: "true",
-		},
-	})
-
-	operation.InputCreator = creator
-	return operation, 0, nil
+	log.Infof("create input creator for %q plan ID", pp.PlanID)
+	creator, err := s.inputBuilder.ForPlan(pp.PlanID, kymaVersion)
+	switch {
+	case err == nil:
+		operation.InputCreator = creator
+		return operation, 0, nil
+	case kebError.IsTemporaryError(err):
+		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", pp.PlanID, kymaVersion, err)
+		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+	default:
+		log.Errorf("cannot create input creator for plan %s: %s", pp.PlanID, err)
+		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
+	}
 }
 
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
@@ -121,7 +115,12 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 
 	_, err = url.ParseRequestURI(instance.DashboardURL)
 	if err == nil {
-		return s.operationManager.OperationSucceeded(operation, "URL dashboard already exist")
+		operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL)
+		if err != nil || repeat != 0 {
+			return operation, repeat, nil
+		} else {
+			return s.operationManager.OperationSucceeded(operation, "URL dashboard already exist")
+		}
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
@@ -141,7 +140,12 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 		if err != nil || repeat != 0 {
 			return operation, repeat, err
 		}
-		return s.operationManager.OperationSucceeded(operation, msg)
+		operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL)
+		if err != nil || repeat != 0 {
+			return operation, repeat, nil
+		} else {
+			return s.operationManager.OperationSucceeded(operation, msg)
+		}
 	case gqlschema.OperationStateInProgress:
 		return operation, 2 * time.Minute, nil
 	case gqlschema.OperationStatePending:
@@ -155,7 +159,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 
 func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance) (time.Duration, error) {
 	dashboardURL, err := s.directorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
-	if director.IsTemporaryError(err) {
+	if kebError.IsTemporaryError(err) {
 		return 3 * time.Minute, nil
 	}
 	if err != nil {
