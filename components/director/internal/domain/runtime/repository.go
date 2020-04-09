@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -123,7 +124,7 @@ func (r RuntimeCollection) Len() int {
 	return len(r)
 }
 
-func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
+func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, searchPhrase *string, pageSize int, cursor string) (*model.RuntimePage, error) {
 	var runtimesCollection RuntimeCollection
 	tenantID, err := uuid.Parse(tenant)
 	if err != nil {
@@ -136,6 +137,12 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	var additionalConditions []string
 	if filterSubquery != "" {
 		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, filterSubquery))
+	}
+
+	if searchPhrase != nil {
+		x := strings.Replace(*searchPhrase, "_", "\\_", -1)
+		y := strings.Replace(x, "%", "\\%", -1)
+		additionalConditions = append(additionalConditions, fmt.Sprintf(`"name" LIKE '%%%s%%'`, y))
 	}
 
 	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "name", &runtimesCollection, additionalConditions...)

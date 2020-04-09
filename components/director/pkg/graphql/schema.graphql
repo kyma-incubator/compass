@@ -993,14 +993,15 @@ type Query {
 	"""
 	applicationTemplate(id: ID!): ApplicationTemplate @hasScopes(path: "graphql.query.applicationTemplate")
 	"""
-	Maximum `first` parameter value is 100
+	Maximum `first` parameter value is 100.
+	`searchPhrase` allows to look for a phrase in runtime `name` field.
 	
 	**Examples**
 	- [query runtimes with label filter](examples/query-runtimes/query-runtimes-with-label-filter.graphql)
 	- [query runtimes with pagination](examples/query-runtimes/query-runtimes-with-pagination.graphql)
 	- [query runtimes](examples/query-runtimes/query-runtimes.graphql)
 	"""
-	runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
+	runtimes(filter: [LabelFilter!], searchPhrase: String, first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
 	"""
 	**Examples**
 	- [query runtime](examples/query-runtime/query-runtime.graphql)

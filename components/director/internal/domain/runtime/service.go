@@ -18,7 +18,7 @@ type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
-	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
+	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, searchPhrase *string, pageSize int, cursor string) (*model.RuntimePage, error)
 	Create(ctx context.Context, item *model.Runtime) error
 	Update(ctx context.Context, item *model.Runtime) error
 	Delete(ctx context.Context, tenant, id string) error
@@ -62,7 +62,7 @@ func NewService(repo RuntimeRepository, labelRepo LabelRepository, scenariosServ
 	return &service{repo: repo, labelRepo: labelRepo, scenariosService: scenariosService, labelUpsertService: labelUpsertService, uidService: uidService}
 }
 
-func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
+func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, searchPhrase *string, pageSize int, cursor string) (*model.RuntimePage, error) {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -72,7 +72,7 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 		return nil, errors.New("page size must be between 1 and 100")
 	}
 
-	return s.repo.List(ctx, rtmTenant, filter, pageSize, cursor)
+	return s.repo.List(ctx, rtmTenant, filter, searchPhrase, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {

@@ -684,7 +684,7 @@ func TestService_List(t *testing.T) {
 			svc := runtime.NewService(repo, nil, nil, nil, nil)
 
 			// when
-			rtm, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
+			rtm, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, nil, testCase.InputCursor)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

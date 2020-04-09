@@ -36,7 +36,7 @@ type RuntimeService interface {
 	Update(ctx context.Context, id string, in model.RuntimeInput) error
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 	Delete(ctx context.Context, id string) error
-	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
+	List(ctx context.Context, filter []*labelfilter.LabelFilter, searchPhrase *string, pageSize int, cursor string) (*model.RuntimePage, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error)
@@ -83,7 +83,7 @@ func NewResolver(transact persistence.Transactioner, svc RuntimeService, sysAuth
 }
 
 // TODO: Proper error handling
-func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
+func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, searchPhrase *string, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
 	labelFilter := labelfilter.MultipleFromGraphQL(filter)
 
 	var cursor string
@@ -103,7 +103,7 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 		return nil, errors.New("missing required parameter 'first'")
 	}
 
-	runtimesPage, err := r.svc.List(ctx, labelFilter, *first, cursor)
+	runtimesPage, err := r.svc.List(ctx, labelFilter, searchPhrase, *first, cursor)
 	if err != nil {
 		return nil, err
 	}

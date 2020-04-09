@@ -234,8 +234,8 @@ func (r *queryResolver) ApplicationTemplate(ctx context.Context, id string) (*gr
 func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	return r.app.ApplicationsForRuntime(ctx, runtimeID, first, after)
 }
-func (r *queryResolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
-	return r.runtime.Runtimes(ctx, filter, first, after)
+func (r *queryResolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, searchPhrase *string, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
+	return r.runtime.Runtimes(ctx, filter, searchPhrase, first, after)
 }
 func (r *queryResolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.Runtime(ctx, id)

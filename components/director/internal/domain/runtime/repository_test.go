@@ -286,7 +286,7 @@ func TestPgRepository_List(t *testing.T) {
 				WillReturnRows(countRow)
 
 			//THEN
-			modelRuntimePage, err := pgRepository.List(ctx, tenantID, nil, testCase.InputPageSize, testCase.InputCursor)
+			modelRuntimePage, err := pgRepository.List(ctx, tenantID, nil, testCase.InputPageSize, nil, testCase.InputCursor)
 
 			//THEN
 			require.NoError(t, err)
@@ -309,7 +309,7 @@ func TestPgRepository_List(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		pgRepository := runtime.NewRepository()
 		//THEN
-		_, err := pgRepository.List(ctx, tenantID, nil, 2, convertIntToBase64String(-3))
+		_, err := pgRepository.List(ctx, tenantID, nil, 2, nil, convertIntToBase64String(-3))
 
 		//THEN
 		require.EqualError(t, err, "while decoding page cursor: cursor is not correct")
@@ -362,7 +362,7 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 	pgRepository := runtime.NewRepository()
 
 	// when
-	modelRuntimePage, err := pgRepository.List(ctx, tenantID, filter, rowSize, "")
+	modelRuntimePage, err := pgRepository.List(ctx, tenantID, filter, rowSize, nil, "")
 
 	//then
 	assert.NoError(t, err)

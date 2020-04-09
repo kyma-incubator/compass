@@ -412,7 +412,7 @@ type ComplexityRoot struct {
 		LabelDefinition                         func(childComplexity int, key string) int
 		LabelDefinitions                        func(childComplexity int) int
 		Runtime                                 func(childComplexity int, id string) int
-		Runtimes                                func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
+		Runtimes                                func(childComplexity int, filter []*LabelFilter, searchPhrase *string, first *int, after *PageCursor) int
 		Tenants                                 func(childComplexity int) int
 		Viewer                                  func(childComplexity int) int
 	}
@@ -597,7 +597,7 @@ type QueryResolver interface {
 	ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *PageCursor) (*ApplicationPage, error)
 	ApplicationTemplates(ctx context.Context, first *int, after *PageCursor) (*ApplicationTemplatePage, error)
 	ApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
-	Runtimes(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*RuntimePage, error)
+	Runtimes(ctx context.Context, filter []*LabelFilter, searchPhrase *string, first *int, after *PageCursor) (*RuntimePage, error)
 	Runtime(ctx context.Context, id string) (*Runtime, error)
 	LabelDefinitions(ctx context.Context) ([]*LabelDefinition, error)
 	LabelDefinition(ctx context.Context, key string) (*LabelDefinition, error)
@@ -2759,7 +2759,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Runtimes(childComplexity, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*PageCursor)), true
+		return e.complexity.Query.Runtimes(childComplexity, args["filter"].([]*LabelFilter), args["searchPhrase"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
 
 	case "Query.tenants":
 		if e.complexity.Query.Tenants == nil {
@@ -4054,14 +4054,15 @@ type Query {
 	"""
 	applicationTemplate(id: ID!): ApplicationTemplate @hasScopes(path: "graphql.query.applicationTemplate")
 	"""
-	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
+	Maximum ` + "`" + `first` + "`" + ` parameter value is 100.
+	` + "`" + `searchPhrase` + "`" + ` allows to look for a phrase in runtime ` + "`" + `name` + "`" + ` field.
 	
 	**Examples**
 	- [query runtimes with label filter](examples/query-runtimes/query-runtimes-with-label-filter.graphql)
 	- [query runtimes with pagination](examples/query-runtimes/query-runtimes-with-pagination.graphql)
 	- [query runtimes](examples/query-runtimes/query-runtimes.graphql)
 	"""
-	runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
+	runtimes(filter: [LabelFilter!], searchPhrase: String, first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
 	"""
 	**Examples**
 	- [query runtime](examples/query-runtime/query-runtime.graphql)
@@ -6377,22 +6378,30 @@ func (ec *executionContext) field_Query_runtimes_args(ctx context.Context, rawAr
 		}
 	}
 	args["filter"] = arg0
-	var arg1 *int
+	var arg1 *string
+	if tmp, ok := rawArgs["searchPhrase"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["searchPhrase"] = arg1
+	var arg2 *int
 	if tmp, ok := rawArgs["first"]; ok {
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg1
-	var arg2 *PageCursor
+	args["first"] = arg2
+	var arg3 *PageCursor
 	if tmp, ok := rawArgs["after"]; ok {
-		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
+		arg3, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["after"] = arg2
+	args["after"] = arg3
 	return args, nil
 }
 
@@ -16544,7 +16553,7 @@ func (ec *executionContext) _Query_runtimes(ctx context.Context, field graphql.C
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Runtimes(rctx, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*PageCursor))
+			return ec.resolvers.Query().Runtimes(rctx, args["filter"].([]*LabelFilter), args["searchPhrase"].(*string), args["first"].(*int), args["after"].(*PageCursor))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.query.runtimes")
