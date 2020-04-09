@@ -27,6 +27,16 @@ func registerApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClien
 	return app, err
 }
 
+func updateApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string, in graphql.ApplicationUpdateInput) (graphql.ApplicationExt, error) {
+	appInputGQL, err := tc.Graphqlizer.ApplicationUpdateInputToGQL(in)
+	require.NoError(t, err)
+
+	createRequest := fixUpdateApplicationRequest(id, appInputGQL)
+	app := graphql.ApplicationExt{}
+	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, createRequest, &app)
+	return app, err
+}
+
 func requestClientCredentialsForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.SystemAuth {
 	req := fixRequestClientCredentialsForApplication(id)
 	systemAuth := graphql.SystemAuth{}

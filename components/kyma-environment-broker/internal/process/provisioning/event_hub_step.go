@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/sirupsen/logrus"
 
@@ -90,11 +91,12 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		return p.operationManager.OperationFailed(operation, errorMessage)
 	}
 
-	// prepare tags
-	tags := make(map[string]*string, 3) // TODO(marcobebway) increase initial capacity to 4 if the runtime name is provided
-	tags["SubAccountID"] = &pp.ErsContext.SubAccountID
-	tags["InstanceID"] = &operation.InstanceID
-	tags["OperationID"] = &operation.ProvisionerOperationID
+	// prepare azure tags
+	tags := azure.Tags{
+		azure.TagSubAccountID: &pp.ErsContext.SubAccountID,
+		azure.TagInstanceID:   &operation.InstanceID,
+		azure.TagOperationID:  &operation.ID,
+	}
 
 	// create Resource Group
 	groupName := pp.Parameters.Name
