@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
@@ -396,6 +397,61 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 	})
 }
 
+func TestResolver_RollBackUpgradeOperation(t *testing.T) {
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
+
+	runtimeStatus := gqlschema.RuntimeStatus{}
+
+	t.Run("Should start upgrade and return operation id", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+
+		provisioningService.On("RollBackLastUpgrade", runtimeID).Return(&runtimeStatus, nil)
+		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+
+		resolver := NewResolver(provisioningService, validator)
+
+		//when
+		status, err := resolver.RollBackUpgradeOperation(ctx, runtimeID)
+
+		//then
+		require.NoError(t, err)
+		require.NotNil(t, status)
+	})
+
+	t.Run("Should return error when failed to roll back upgrade", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+
+		provisioningService.On("RollBackLastUpgrade", runtimeID).Return(nil, fmt.Errorf("error"))
+		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+
+		resolver := NewResolver(provisioningService, validator)
+
+		//when
+		_, err := resolver.RollBackUpgradeOperation(ctx, runtimeID)
+
+		//then
+		require.Error(t, err)
+	})
+
+	t.Run("Should return error when failed to validate tenant", func(t *testing.T) {
+		//given
+		validator := &validatorMocks.Validator{}
+		validator.On("ValidateTenant", runtimeID, tenant).Return(fmt.Errorf("error"))
+
+		resolver := NewResolver(nil, validator)
+
+		//when
+		_, err := resolver.RollBackUpgradeOperation(ctx, runtimeID)
+
+		//then
+		require.Error(t, err)
+	})
+}
+
 func TestResolver_RuntimeStatus(t *testing.T) {
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
@@ -489,7 +545,7 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		}
 
 		provisioningService.On("RuntimeOperationStatus", operationID).Return(operationStatus, nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		validator.On("ValidateTenantForOperation", operationID, tenant).Return(nil)
 
 		//when
 		status, err := provisioner.RuntimeOperationStatus(ctx, operationID)
@@ -517,7 +573,7 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		}
 
 		provisioningService.On("RuntimeOperationStatus", operationID).Return(operationStatus, nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(errors.New("oh no"))
+		validator.On("ValidateTenantForOperation", operationID, tenant).Return(errors.New("oh no"))
 		//when
 		status, err := provisioner.RuntimeOperationStatus(ctx, operationID)
 
@@ -530,9 +586,8 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
+		validator.On("ValidateTenantForOperation", operationID, tenant).Return(nil)
 		provisioner := NewResolver(provisioningService, validator)
-
-		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
 
 		provisioningService.On("RuntimeOperationStatus", operationID).Return(nil, errors.New("Some error"))
 

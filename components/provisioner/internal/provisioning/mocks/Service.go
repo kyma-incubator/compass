@@ -77,6 +77,29 @@ func (_m *Service) ReconnectRuntimeAgent(id string) (string, error) {
 	return r0, r1
 }
 
+// RollBackLastUpgrade provides a mock function with given fields: runtimeID
+func (_m *Service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatus, error) {
+	ret := _m.Called(runtimeID)
+
+	var r0 *gqlschema.RuntimeStatus
+	if rf, ok := ret.Get(0).(func(string) *gqlschema.RuntimeStatus); ok {
+		r0 = rf(runtimeID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*gqlschema.RuntimeStatus)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(runtimeID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RuntimeOperationStatus provides a mock function with given fields: id
 func (_m *Service) RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error) {
 	ret := _m.Called(id)

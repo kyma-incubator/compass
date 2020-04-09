@@ -264,6 +264,31 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			// wait for queue to process operation
 			time.Sleep(waitPeriod)
 
+			// assert db content
+			readSession := dbsFactory.NewReadSession()
+			runtimeUpgrade, err := readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
+			require.NoError(t, err)
+			assert.Equal(t, model.UpgradeSucceeded, runtimeUpgrade.State)
+			assert.NotEmpty(t, runtimeUpgrade.PostUpgradeKymaConfigId)
+			runtimeFromDb, err := readSession.GetCluster(config.runtimeID)
+			require.NoError(t, err)
+			assert.Equal(t, runtimeFromDb.KymaConfig.ID, runtimeUpgrade.PostUpgradeKymaConfigId)
+
+			// when
+			// Roll Back last upgrade
+			_, err = resolver.RollBackUpgradeOperation(ctx, config.runtimeID)
+			require.NoError(t, err)
+
+			// then
+			// assert db content
+			runtimeUpgrade, err = readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
+			require.NoError(t, err)
+			assert.Equal(t, model.UpgradeRolledBack, runtimeUpgrade.State)
+
+			runtimeFromDb, err = readSession.GetCluster(config.runtimeID)
+			require.NoError(t, err)
+			assert.Equal(t, runtimeFromDb.KymaConfig.ID, runtimeUpgrade.PreUpgradeKymaConfigId)
+
 			//when
 			deprovisionRuntimeID, err := resolver.DeprovisionRuntime(ctx, config.runtimeID)
 			require.NoError(t, err)
@@ -291,18 +316,11 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			// then
 			// assert database content
-			readSession := dbsFactory.NewReadSession()
-			runtimeFromDb, err := readSession.GetCluster(config.runtimeID)
+			runtimeFromDb, err = readSession.GetCluster(config.runtimeID)
 			require.NoError(t, err)
 			assert.Equal(t, tenant, runtimeFromDb.Tenant)
 			assert.Equal(t, subAccountId, runtimeFromDb.SubAccountId)
 			assert.Equal(t, true, runtimeFromDb.Deleted)
-
-			runtimeUpgrade, err := readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
-			require.NoError(t, err)
-			assert.Equal(t, model.UpgradeSucceeded, runtimeUpgrade.State)
-			assert.NotEmpty(t, runtimeUpgrade.PostUpgradeKymaConfigId)
-			assert.NotEmpty(t, runtimeUpgrade.PreUpgradeKymaConfigId)
 		})
 	}
 

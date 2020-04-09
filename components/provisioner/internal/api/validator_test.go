@@ -229,3 +229,54 @@ func TestValidator_ValidateTenant(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
+func TestValidator_ValidateTenantForOperation(t *testing.T) {
+	tenant := "tenant"
+	operationId := "123-123-123"
+
+	t.Run("Should return nil when tenant matches tenant provided for Runtime", func(t *testing.T) {
+		//given
+		readSession := &dbMocks.ReadSession{}
+		validator := NewValidator(readSession)
+
+		expectedTenant := "tenant"
+
+		readSession.On("GetTenantForOperation", operationId).Return(expectedTenant, nil)
+
+		//when
+		err := validator.ValidateTenantForOperation(operationId, tenant)
+
+		//then
+		require.NoError(t, err)
+	})
+
+	t.Run("Should return error when tenant does not match tenant provided for Runtime", func(t *testing.T) {
+		//given
+		readSession := &dbMocks.ReadSession{}
+		validator := NewValidator(readSession)
+
+		expectedTenant := "otherTenant"
+
+		readSession.On("GetTenantForOperation", operationId).Return(expectedTenant, nil)
+
+		//when
+		err := validator.ValidateTenantForOperation(operationId, tenant)
+
+		//then
+		require.Error(t, err)
+	})
+
+	t.Run("Should return error when persistence service returns error", func(t *testing.T) {
+		//given
+		readSession := &dbMocks.ReadSession{}
+		validator := NewValidator(readSession)
+
+		readSession.On("GetTenantForOperation", operationId).Return("", dberrors.Internal("Some db error"))
+
+		//when
+		err := validator.ValidateTenantForOperation(operationId, tenant)
+
+		//then
+		require.Error(t, err)
+	})
+}

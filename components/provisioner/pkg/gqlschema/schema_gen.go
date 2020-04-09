@@ -110,10 +110,11 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		DeprovisionRuntime    func(childComplexity int, id string) int
-		ProvisionRuntime      func(childComplexity int, config ProvisionRuntimeInput) int
-		ReconnectRuntimeAgent func(childComplexity int, id string) int
-		UpgradeRuntime        func(childComplexity int, id string, input UpgradeRuntimeInput) int
+		DeprovisionRuntime       func(childComplexity int, id string) int
+		ProvisionRuntime         func(childComplexity int, config ProvisionRuntimeInput) int
+		ReconnectRuntimeAgent    func(childComplexity int, id string) int
+		RollBackUpgradeOperation func(childComplexity int, id string) int
+		UpgradeRuntime           func(childComplexity int, id string, input UpgradeRuntimeInput) int
 	}
 
 	OperationStatus struct {
@@ -151,6 +152,7 @@ type MutationResolver interface {
 	ProvisionRuntime(ctx context.Context, config ProvisionRuntimeInput) (*OperationStatus, error)
 	UpgradeRuntime(ctx context.Context, id string, input UpgradeRuntimeInput) (*OperationStatus, error)
 	DeprovisionRuntime(ctx context.Context, id string) (string, error)
+	RollBackUpgradeOperation(ctx context.Context, id string) (*RuntimeStatus, error)
 	ReconnectRuntimeAgent(ctx context.Context, id string) (string, error)
 }
 type QueryResolver interface {
@@ -488,6 +490,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ReconnectRuntimeAgent(childComplexity, args["id"].(string)), true
+
+	case "Mutation.rollBackUpgradeOperation":
+		if e.complexity.Mutation.RollBackUpgradeOperation == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_rollBackUpgradeOperation_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RollBackUpgradeOperation(childComplexity, args["id"].(string)), true
 
 	case "Mutation.upgradeRuntime":
 		if e.complexity.Mutation.UpgradeRuntime == nil {
@@ -901,6 +915,11 @@ type Mutation {
     upgradeRuntime(id: String!, input: UpgradeRuntimeInput!): OperationStatus
     deprovisionRuntime(id: String!): String!
 
+    # rollbackUpgradeOperation rolls back last upgrade operation for the Runtime but does not affect cluster in any way
+    # can be used in case upgrade failed and the cluster was restored from the backup to align data stored in Provisioner database
+    # with actual state of the cluster
+    rollBackUpgradeOperation(id: String!): RuntimeStatus
+
     # Compass Runtime Agent Connection Management
     reconnectRuntimeAgent(id: String!): String!
 }
@@ -947,6 +966,20 @@ func (ec *executionContext) field_Mutation_provisionRuntime_args(ctx context.Con
 }
 
 func (ec *executionContext) field_Mutation_reconnectRuntimeAgent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_rollBackUpgradeOperation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -2556,6 +2589,47 @@ func (ec *executionContext) _Mutation_deprovisionRuntime(ctx context.Context, fi
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_rollBackUpgradeOperation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_rollBackUpgradeOperation_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RollBackUpgradeOperation(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*RuntimeStatus)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalORuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_reconnectRuntimeAgent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5201,6 +5275,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "rollBackUpgradeOperation":
+			out.Values[i] = ec._Mutation_rollBackUpgradeOperation(ctx, field)
 		case "reconnectRuntimeAgent":
 			out.Values[i] = ec._Mutation_reconnectRuntimeAgent(ctx, field)
 			if out.Values[i] == graphql.Null {

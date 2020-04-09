@@ -15,6 +15,7 @@ type Validator interface {
 	ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) error
 	ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) error
 	ValidateTenant(runtimeID, tenant string) error
+	ValidateTenantForOperation(operationID, tenant string) error
 }
 
 type validator struct {
@@ -69,7 +70,18 @@ func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) er
 
 func (v *validator) ValidateTenant(runtimeID, tenant string) error {
 	dbTenant, err := v.readSession.GetTenant(runtimeID)
+	if err != nil {
+		return err
+	}
 
+	if tenant != dbTenant {
+		return errors.New("provided tenant does not match tenant used to provision cluster")
+	}
+	return nil
+}
+
+func (v *validator) ValidateTenantForOperation(operationID, tenant string) error {
+	dbTenant, err := v.readSession.GetTenantForOperation(operationID)
 	if err != nil {
 		return err
 	}

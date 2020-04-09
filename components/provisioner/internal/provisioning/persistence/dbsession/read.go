@@ -33,6 +33,26 @@ func (r readSession) GetTenant(runtimeID string) (string, dberrors.Error) {
 	return tenant, nil
 }
 
+func (r readSession) GetTenantForOperation(operationID string) (string, dberrors.Error) {
+	var tenant string
+
+	err := r.session.
+		Select("cluster.tenant").
+		From("operation").
+		Join("cluster", "operation.cluster_id=cluster.id").
+		Where(dbr.Eq("operation.id", operationID)).
+		LoadOne(&tenant)
+
+	if err != nil {
+		if err != dbr.ErrNotFound {
+			return "", dberrors.NotFound("Cannot find Tenant for operationID:'%s", operationID)
+		}
+
+		return "", dberrors.Internal("Failed to get Tenant: %s", err)
+	}
+	return tenant, nil
+}
+
 func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error) {
 	var cluster model.Cluster
 
