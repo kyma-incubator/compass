@@ -80,3 +80,9 @@ lms:
   environment: "dev"
   samlTenant: "TBD"
   disabled: false
+
+e2e:
+  azure:
+    configName: "e2e-runtime-config-azure"
+  gcp:
+    configName: "e2e-runtime-config-gcp"
