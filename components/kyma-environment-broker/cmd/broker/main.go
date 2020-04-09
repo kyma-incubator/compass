@@ -228,12 +228,12 @@ func main() {
 		step   deprovisioning.Step
 	}{
 		{
-			weight: 10,
-			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient),
-		},
-		{
 			weight: 1,
 			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+		},
+		{
+			weight: 10,
+			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient),
 		},
 	}
 	for _, step := range deprovisioningSteps {
