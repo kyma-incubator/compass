@@ -30,22 +30,16 @@ func (ars *AvsEvaluationRemovalStep) Name() string {
 }
 
 func (ars *AvsEvaluationRemovalStep) Run(deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
-	if deProvisioningOperation.AVSExternalEvaluationDeleted && deProvisioningOperation.AVSInternalEvaluationDeleted {
+	if deProvisioningOperation.Avs.AVSExternalEvaluationDeleted && deProvisioningOperation.Avs.AVSInternalEvaluationDeleted {
 		logger.Infof("Both internal and external evaluations have been deleted")
 		return deProvisioningOperation, 0, nil
 	}
 
-	provisioningOperation, err := ars.operationsStorage.GetProvisioningOperationByInstanceID(deProvisioningOperation.InstanceID)
-	if err != nil {
-		logger.Errorf("error while getting provisioning deProvisioningOperation from storage")
-		return deProvisioningOperation, time.Second * 10, nil
-	}
-
-	deProvisioningOperation, duration, err := ars.delegator.DeleteAvsEvaluation(deProvisioningOperation, provisioningOperation, logger, ars.internalEvalAssistant)
+	deProvisioningOperation, duration, _ := ars.delegator.DeleteAvsEvaluation(deProvisioningOperation, logger, ars.internalEvalAssistant)
 	if duration != 0 {
 		return deProvisioningOperation, duration, nil
 	}
 
-	return ars.delegator.DeleteAvsEvaluation(deProvisioningOperation, provisioningOperation, logger, ars.externalEvalAssistant)
+	return ars.delegator.DeleteAvsEvaluation(deProvisioningOperation, logger, ars.externalEvalAssistant)
 
 }

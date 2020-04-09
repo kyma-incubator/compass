@@ -34,9 +34,9 @@ func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Deleg
 }
 
 func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
-	logger.Infof("starting the step avs internal id [%d] and avs external id [%d]", operation.AvsEvaluationInternalId, operation.AVSEvaluationExternalId)
+	logger.Infof("starting the step avs internal id [%d] and avs external id [%d]", operation.Avs.AvsEvaluationInternalId, operation.Avs.AVSEvaluationExternalId)
 
-	if evalAssistant.IsAlreadyCreated(operation) {
+	if evalAssistant.IsAlreadyCreated(operation.Avs) {
 		logger.Infof("step has already been finished previously")
 		return operation, 0, nil
 	}
@@ -53,11 +53,11 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 		return operation, 30 * time.Second, nil
 	}
 
-	evalAssistant.SetEvalId(&operation, evalResp.Id)
+	evalAssistant.SetEvalId(&operation.Avs, evalResp.Id)
 
 	updatedOperation, d := del.operationManager.UpdateOperation(operation)
 
-	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.AvsEvaluationInternalId)
+	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId)
 
 	return updatedOperation, d, nil
 }
@@ -117,16 +117,16 @@ func responseBody(resp *http.Response) string {
 	return string(bodyBytes)
 }
 
-func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.DeprovisioningOperation, provisioningOperation *internal.ProvisioningOperation, logger logrus.FieldLogger, assistant EvalAssistant) (internal.DeprovisioningOperation, time.Duration, error) {
-	if assistant.IsAlreadyDeleted(deProvisioningOperation) {
+func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger, assistant EvalAssistant) (internal.DeprovisioningOperation, time.Duration, error) {
+	if assistant.IsAlreadyDeleted(deProvisioningOperation.Avs) {
 		logger.Infof("Evaluations have been deleted previously")
 	}
 
-	if err := del.tryDeleting(assistant, deProvisioningOperation, provisioningOperation, logger); err != nil {
+	if err := del.tryDeleting(assistant, deProvisioningOperation.Avs, logger); err != nil {
 		return deProvisioningOperation, time.Second * 10, nil
 	}
 
-	assistant.markDeleted(&deProvisioningOperation)
+	assistant.markDeleted(&deProvisioningOperation.Avs)
 
 	updatedDeProvisioningOp, err := del.operationsStorage.UpdateDeprovisioningOperation(deProvisioningOperation)
 	if err != nil {
@@ -135,8 +135,8 @@ func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.Depro
 	return *updatedDeProvisioningOp, 0, nil
 }
 
-func (del *Delegator) tryDeleting(assistant EvalAssistant, deProvisioningOperation internal.DeprovisioningOperation, provisioningOperation *internal.ProvisioningOperation, logger logrus.FieldLogger) error {
-	err := del.deleteRequest(logger, assistant.GetEvaluationId(provisioningOperation))
+func (del *Delegator) tryDeleting(assistant EvalAssistant, lifecycleData internal.AvsLifecycleData, logger logrus.FieldLogger) error {
+	err := del.deleteRequest(logger, assistant.GetEvaluationId(lifecycleData))
 	if err != nil {
 		logger.Errorf("error while deleting evaluation %v", err)
 	}

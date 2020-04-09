@@ -26,20 +26,16 @@ func TestAvsEvaluationsRemovalStep_Run(t *testing.T) {
 	memoryStorage := storage.NewMemoryStorage()
 
 	deProvisioningOperation := fixDeprovisioningOperation()
+	deProvisioningOperation.Avs.AvsEvaluationInternalId = internalEvalId
+	deProvisioningOperation.Avs.AVSEvaluationExternalId = externalEvalId
 	err := memoryStorage.Operations().InsertDeprovisioningOperation(deProvisioningOperation)
 	assert.NoError(t, err)
-	assert.False(t, deProvisioningOperation.AVSInternalEvaluationDeleted)
-	assert.False(t, deProvisioningOperation.AVSExternalEvaluationDeleted)
-
-	provisioningOperation := fixProvisioningOperation()
-	provisioningOperation.AvsEvaluationInternalId = internalEvalId
-	provisioningOperation.AVSEvaluationExternalId = externalEvalId
-	err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
-	assert.NoError(t, err)
+	assert.False(t, deProvisioningOperation.Avs.AVSInternalEvaluationDeleted)
+	assert.False(t, deProvisioningOperation.Avs.AVSExternalEvaluationDeleted)
 
 	mockOauthServer := newMockAvsOauthServer()
 	defer mockOauthServer.Close()
-	mockAvsServer := newMockAvsServer(t, true)
+	mockAvsServer := newMockAvsServer(t)
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
 	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
@@ -58,10 +54,10 @@ func TestAvsEvaluationsRemovalStep_Run(t *testing.T) {
 	assert.Contains(t, idsHolder, internalEvalId)
 	assert.Contains(t, idsHolder, externalEvalId)
 
-	inDB, err := memoryStorage.Operations().GetDeprovisioningOperationByID(provisioningOperation.ID)
+	inDB, err := memoryStorage.Operations().GetDeprovisioningOperationByID(deProvisioningOperation.ID)
 	assert.NoError(t, err)
-	assert.True(t, inDB.AVSInternalEvaluationDeleted)
-	assert.True(t, inDB.AVSExternalEvaluationDeleted)
+	assert.True(t, inDB.Avs.AVSInternalEvaluationDeleted)
+	assert.True(t, inDB.Avs.AVSExternalEvaluationDeleted)
 }
 
 func newMockAvsOauthServer() *httptest.Server {
@@ -72,7 +68,7 @@ func newMockAvsOauthServer() *httptest.Server {
 		}))
 }
 
-func newMockAvsServer(t *testing.T, isInternal bool) *httptest.Server {
+func newMockAvsServer(t *testing.T) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, r.Method, http.MethodDelete)
 		uri := r.URL.RequestURI()

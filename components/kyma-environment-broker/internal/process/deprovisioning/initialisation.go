@@ -54,6 +54,8 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 		return operation, time.Minute, nil
 	}
 
+	operation.Avs = op.Avs
+
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:

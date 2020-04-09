@@ -37,8 +37,8 @@ func (iec *InternalEvalAssistant) AppendOverrides(inputCreator internal.Provisio
 	})
 }
 
-func (iec *InternalEvalAssistant) IsAlreadyCreated(operation internal.ProvisioningOperation) bool {
-	return operation.AvsEvaluationInternalId != 0
+func (iec *InternalEvalAssistant) IsAlreadyCreated(lifecycleData internal.AvsLifecycleData) bool {
+	return lifecycleData.AvsEvaluationInternalId != 0
 }
 
 func (iec *InternalEvalAssistant) ProvideSuffix() string {
@@ -53,17 +53,17 @@ func (iec *InternalEvalAssistant) ProvideCheckType() string {
 	return ""
 }
 
-func (iec *InternalEvalAssistant) SetEvalId(operation *internal.ProvisioningOperation, evalId int64) {
-	operation.AvsEvaluationInternalId = evalId
+func (iec *InternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycleData, evalId int64) {
+	lifecycleData.AvsEvaluationInternalId = evalId
 }
 
-func (iec *InternalEvalAssistant) IsAlreadyDeleted(deProvisioningOperation internal.DeprovisioningOperation) bool {
-	return deProvisioningOperation.AVSInternalEvaluationDeleted
+func (iec *InternalEvalAssistant) IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool {
+	return lifecycleData.AVSInternalEvaluationDeleted
 }
-func (iec *InternalEvalAssistant) GetEvaluationId(provisioningOperation *internal.ProvisioningOperation) int64 {
-	return provisioningOperation.AvsEvaluationInternalId
+func (iec *InternalEvalAssistant) GetEvaluationId(lifecycleData internal.AvsLifecycleData) int64 {
+	return lifecycleData.AvsEvaluationInternalId
 }
 
-func (iec *InternalEvalAssistant) markDeleted(deProvisioningOperation *internal.DeprovisioningOperation) {
-	deProvisioningOperation.AVSInternalEvaluationDeleted = true
+func (iec *InternalEvalAssistant) markDeleted(lifecycleData *internal.AvsLifecycleData) {
+	lifecycleData.AVSInternalEvaluationDeleted = true
 }

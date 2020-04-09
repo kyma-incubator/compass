@@ -20,8 +20,8 @@ func (eea *ExternalEvalAssistant) AppendOverrides(inputCreator internal.Provisio
 	//do nothing
 }
 
-func (eea *ExternalEvalAssistant) IsAlreadyCreated(operation internal.ProvisioningOperation) bool {
-	return operation.AVSEvaluationExternalId != 0
+func (eea *ExternalEvalAssistant) IsAlreadyCreated(lifecycleData internal.AvsLifecycleData) bool {
+	return lifecycleData.AVSEvaluationExternalId != 0
 }
 
 func (eea *ExternalEvalAssistant) ProvideSuffix() string {
@@ -32,21 +32,21 @@ func (eea *ExternalEvalAssistant) ProvideTesterAccessId() int64 {
 	return eea.avsConfig.ExternalTesterAccessId
 }
 
-func (eea *ExternalEvalAssistant) SetEvalId(operation *internal.ProvisioningOperation, evalId int64) {
-	operation.AVSEvaluationExternalId = evalId
+func (eea *ExternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycleData, evalId int64) {
+	lifecycleData.AVSEvaluationExternalId = evalId
 }
 
 func (eea *ExternalEvalAssistant) ProvideCheckType() string {
 	return externalEvalCheckType
 }
 
-func (eea *ExternalEvalAssistant) IsAlreadyDeleted(deProvisioningOperation internal.DeprovisioningOperation) bool {
-	return deProvisioningOperation.AVSExternalEvaluationDeleted
+func (eea *ExternalEvalAssistant) IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool {
+	return lifecycleData.AVSExternalEvaluationDeleted
 }
-func (eea *ExternalEvalAssistant) GetEvaluationId(provisioningOperation *internal.ProvisioningOperation) int64 {
-	return provisioningOperation.AVSEvaluationExternalId
+func (eea *ExternalEvalAssistant) GetEvaluationId(lifecycleData internal.AvsLifecycleData) int64 {
+	return lifecycleData.AVSEvaluationExternalId
 }
 
-func (eea *ExternalEvalAssistant) markDeleted(deProvisioningOperation *internal.DeprovisioningOperation) {
-	deProvisioningOperation.AVSExternalEvaluationDeleted = true
+func (eea *ExternalEvalAssistant) markDeleted(lifecycleData *internal.AvsLifecycleData) {
+	lifecycleData.AVSExternalEvaluationDeleted = true
 }

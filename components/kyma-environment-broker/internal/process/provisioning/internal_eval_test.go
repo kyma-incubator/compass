@@ -44,11 +44,11 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	//then
 	assert.NoError(t, err)
 	assert.Equal(t, 0*time.Second, repeat)
-	assert.Equal(t, idh.id, provisioningOperation.AvsEvaluationInternalId)
+	assert.Equal(t, idh.id, provisioningOperation.Avs.AvsEvaluationInternalId)
 
 	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(provisioningOperation.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, inDB.AvsEvaluationInternalId, idh.id)
+	assert.Equal(t, inDB.Avs.AvsEvaluationInternalId, idh.id)
 }
 
 func newMockAvsOauthServer() *httptest.Server {

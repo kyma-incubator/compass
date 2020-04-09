@@ -79,10 +79,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, dashboardURL, updatedInstance.DashboardURL)
 
-	assert.Equal(t, idh.id, operation.AVSEvaluationExternalId)
+	assert.Equal(t, idh.id, operation.Avs.AVSEvaluationExternalId)
 	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(operation.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, inDB.AVSEvaluationExternalId, idh.id)
+	assert.Equal(t, inDB.Avs.AVSEvaluationExternalId, idh.id)
 }
 
 func fixOperationRuntimeStatus(t *testing.T) internal.ProvisioningOperation {

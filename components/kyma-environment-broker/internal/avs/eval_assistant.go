@@ -7,9 +7,9 @@ import (
 type EvalAssistant interface {
 	CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error)
 	AppendOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64)
-	IsAlreadyCreated(operation internal.ProvisioningOperation) bool
-	SetEvalId(operation *internal.ProvisioningOperation, evalId int64)
-	IsAlreadyDeleted(deProvisioningOperation internal.DeprovisioningOperation) bool
-	GetEvaluationId(provisioningOperation *internal.ProvisioningOperation) int64
-	markDeleted(deProvisioningOperation *internal.DeprovisioningOperation)
+	IsAlreadyCreated(lifecycleData internal.AvsLifecycleData) bool
+	SetEvalId(lifecycleData *internal.AvsLifecycleData, evalId int64)
+	IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool
+	GetEvaluationId(lifecycleData internal.AvsLifecycleData) int64
+	markDeleted(lifecycleData *internal.AvsLifecycleData)
 }
