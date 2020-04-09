@@ -235,8 +235,9 @@ func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_Success(t *testin
 	actualScenarios, err := engineSvc.MergeScenariosFromInputAndAssignmentsFromInput(fixCtxWithTenant(), inputLabels)
 
 	// then
+
 	require.NoError(t, err)
-	assert.Equal(t, expectedScenarios, actualScenarios)
+	assert.ElementsMatch(t, expectedScenarios, actualScenarios)
 
 	mockRepo.AssertExpectations(t)
 }
