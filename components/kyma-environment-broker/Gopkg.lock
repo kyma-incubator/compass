@@ -544,6 +544,22 @@
   version = "v1.2.0"
 
 [[projects]]
+  digest = "1:e19e030356c9a7a95a05584afdab42f7845f5a3e78a467b9c74af479556300fc"
+  name = "github.com/sebdah/goldie"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "010f04b0191e18a446e81ae35047fb0545aace70"
+  version = "v2.2.0"
+
+[[projects]]
+  digest = "1:d0d418e1c02e6fc00259ef09d0d4f5135fc6aedac356ff0a11f4e5ef0c447270"
+  name = "github.com/sergi/go-diff"
+  packages = ["diffmatchpatch"]
+  pruneopts = "UT"
+  revision = "58c5cb1602ee9676b5d3590d782bedde80706fcc"
+  version = "v1.1.0"
+
+[[projects]]
   digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
@@ -1087,6 +1103,7 @@
     "github.com/pivotal-cf/brokerapi/v7/handlers",
     "github.com/pivotal-cf/brokerapi/v7/middlewares",
     "github.com/pkg/errors",
+    "github.com/sebdah/goldie",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",

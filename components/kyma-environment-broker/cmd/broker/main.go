@@ -6,13 +6,14 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/appinfo"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/health"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
@@ -48,6 +49,12 @@ type Config struct {
 	// which are in progress on starting application. Set to true if you are
 	// running in a separate testing deployment but with the production DB.
 	DisableProcessOperationsInProgress bool `envconfig:"default=false"`
+
+	// DevelopmentMode if set to true then errors are returned in http
+	// responses, otherwise errors are only logged and generic message
+	// is returned to client.
+	// Currently works only with /info endpoints.
+	DevelopmentMode bool `envconfig:"default=false"`
 
 	Host       string `envconfig:"optional"`
 	Port       string `envconfig:"default=8080"`
@@ -102,7 +109,7 @@ func main() {
 	fatalOnError(err)
 
 	// create director client on the base of graphQL client and OAuth client
-	httpClient := http_client.NewHTTPClient(30, cfg.Director.SkipCertVerification)
+	httpClient := httputil.NewClient(30, cfg.Director.SkipCertVerification)
 	graphQLClient := gcli.NewClient(cfg.Director.URL, gcli.WithHTTPClient(httpClient))
 	oauthClient := oauth.NewOauthClient(httpClient, cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
 	fatalOnError(oauthClient.WaitForCredentials())
@@ -256,6 +263,10 @@ func main() {
 		broker.NewLastBindingOperation(logs),
 	}
 
+	// create info endpoints
+	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
+	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), respWriter)
+
 	// create broker credentials
 	brokerCredentials := broker.BrokerCredentials{
 		Username: cfg.Auth.Username,
@@ -271,6 +282,7 @@ func main() {
 	sm := http.NewServeMux()
 	sm.Handle("/", brokerBasicAPI)
 	sm.Handle("/oauth/", http.StripPrefix("/oauth", brokerAPI))
+	sm.Handle("/info/runtimes", runtimesInfoHandler)
 
 	r := handlers.LoggingHandler(os.Stdout, sm)
 

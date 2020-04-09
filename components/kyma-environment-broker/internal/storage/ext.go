@@ -3,9 +3,11 @@ package storage
 import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/predicate"
 )
 
 type Instances interface {
+	FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error)
 	GetByID(instanceID string) (*internal.Instance, error)
 	Insert(instance internal.Instance) error
 	Update(instance internal.Instance) error

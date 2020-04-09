@@ -23,7 +23,7 @@ type ResolveCredentialsStep struct {
 
 func getHyperscalerTypeForPlanID(planID string) (hyperscaler.HyperscalerType, error) {
 	switch planID {
-	case broker.GcpPlanID:
+	case broker.GCPPlanID:
 		return hyperscaler.GCP, nil
 	case broker.AzurePlanID:
 		return hyperscaler.Azure, nil

@@ -400,9 +400,9 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{}, kymaVersion)
 	assert.NoError(t, err)
 
-	creator, err := ibf.ForPlan(broker.GcpPlanID, "")
+	creator, err := ibf.ForPlan(broker.GCPPlanID, "")
 	if err != nil {
-		t.Errorf("cannot create input creator for %q plan", broker.GcpPlanID)
+		t.Errorf("cannot create input creator for %q plan", broker.GCPPlanID)
 	}
 
 	return creator
