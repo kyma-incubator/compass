@@ -37,8 +37,11 @@ func InitInternalComponents(cfg Config, k8sClientset kubernetes.Interface) Compo
 	certificateService := certificates.NewCertificateService(
 		secretsRepository,
 		certificateUtility,
-		namespacedname.Parse(cfg.CASecretName),
-		namespacedname.Parse(cfg.RootCACertificateSecretName),
+		namespacedname.Parse(cfg.CASecret.Name),
+		namespacedname.Parse(cfg.RootCASecret.Name),
+		cfg.CASecret.CertificateKey,
+		cfg.CASecret.KeyKey,
+		cfg.RootCASecret.CertificateKey,
 	)
 	csrSubjectConsts := certificates.CSRSubjectConsts{
 		Country:            cfg.CSRSubject.Country,
