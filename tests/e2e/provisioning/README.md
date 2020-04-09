@@ -32,7 +32,7 @@ The provisioning end-to-end test contains a broker client implementation which m
     
     f. Ensure that the DashboardURL redirects you to the UUA login page. It means that the Kyma Runtime is accessible.
 
-2. Cleaning up
+2. Cleanup
 
     The cleanup logic is executed at the end of the e2e test or if the provisioning phase failed. It consists of the following steps:
     
