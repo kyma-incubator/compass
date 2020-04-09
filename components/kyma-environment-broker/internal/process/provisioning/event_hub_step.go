@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/sirupsen/logrus"
 
@@ -35,13 +34,13 @@ const (
 var _ Step = (*ProvisionAzureEventHubStep)(nil)
 
 type ProvisionAzureEventHubStep struct {
-	operationManager    *process.ProvisionOperationManager
+	operationManager *process.ProvisionOperationManager
 	processazure.EventHub
 }
 
 func NewProvisionAzureEventHubStep(os storage.Operations, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
 	return &ProvisionAzureEventHubStep{
-		operationManager:    process.NewProvisionOperationManager(os),
+		operationManager: process.NewProvisionOperationManager(os),
 		EventHub: processazure.EventHub{
 			HyperscalerProvider: hyperscalerProvider,
 			AccountProvider:     accountProvider,

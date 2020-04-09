@@ -62,7 +62,6 @@ type Operation struct {
 	Description            string
 }
 
-
 type OperationInterface interface {
 	GetParameters() (ProvisioningParameters, error)
 }

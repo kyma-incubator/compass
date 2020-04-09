@@ -85,4 +85,3 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 
 	return s.OperationManager.OperationSucceeded(operation, "deprovisioning of event_hub_step succeeded")
 }
-
