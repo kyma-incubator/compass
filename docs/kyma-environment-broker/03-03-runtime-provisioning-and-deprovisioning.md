@@ -14,7 +14,7 @@ Each provisioning step is responsible for a separate part of preparing Runtime p
 
 Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialisation](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/deprovisioning/initialisation.go#L46) step.
 
-Any deprovisioning step should't block the runtime deprovisioning indefinitely. You can use `RetryOperationWithoutFail` function from the `DeprovisionOperationManager` to improve stability of your deprovisioning step and to let the processing machine to ignore your step. We suggest to set at most 5min timeout for retries in your step.
+Any deprovisioning step shouldn't block the entire deprovisioning operation. Use the `RetryOperationWithoutFail` function from the `DeprovisionOperationManager` struct to skip your step in case of retry timeout. Set at most 5min timeout for retries in your step.
 
 ## Add provisioning or deprovisioning step
 
