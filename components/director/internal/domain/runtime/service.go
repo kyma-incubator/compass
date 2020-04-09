@@ -160,13 +160,6 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		return "", errors.Wrapf(err, "while ensuring Label Definition with key %s exists", model.ScenariosKey)
 	}
 
-	if in.Labels == nil {
-		if _, ok := in.Labels[model.ScenariosKey]; !ok {
-			in.Labels = map[string]interface{}{model.ScenariosKey: model.ScenariosDefaultValue}
-		}
-	}
-	//TODO check with new creation of default scenario label
-
 	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputAndAssignmentsFromInput(ctx, in.Labels)
 	if err != nil {
 		return "", errors.Wrap(err, "while merging scenarios from input and assignments")
@@ -174,8 +167,9 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 
 	if len(scenarios) > 0 {
 		in.Labels[model.ScenariosKey] = scenarios
+	} else {
+		s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
 	}
-	s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels) //TODO CHECK
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
 	if err != nil {

@@ -68,7 +68,7 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", &modelInput.Labels).Once()
+				//repo.On("AddDefaultScenarioIfEnabled", &modelInput.Labels).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -90,7 +90,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Success when default scenario assignment disabled",
+			Name: "Success when labels are empty",
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
@@ -112,38 +112,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Input: model.RuntimeInput{
-				Name:        modelInput.Name,
-				Description: modelInput.Description,
-				Labels:      nilLabels,
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "Success when labels are empty",
-			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
-				return repo
-			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, id, modelInput.Labels).Return(nil).Once()
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, labels).Return([]interface{}{"DEFAULT"}, nil)
+				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, nilLabels).Return([]interface{}{}, nil)
 				return svc
 			},
 			Input:       modelInputWithoutLabels,
