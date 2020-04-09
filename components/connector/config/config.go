@@ -28,7 +28,7 @@ type Config struct {
 	}
 	RootCASecret struct {
 		Name           string `envconfig:"optional"`
-		CertificateKey string `envconfig:"default=cacert"`
+		CertificateKey string `envconfig:"optional"`
 	}
 
 	CertificateDataHeader   string `envconfig:"default=Certificate-Data"`

@@ -86,7 +86,7 @@ func (svc *certificateService) encodeCertificates(rawCaCertificate, rawClientCer
 	caCrtBytes := svc.certUtil.AddCertificateHeaderAndFooter(rawCaCertificate)
 	signedCrtBytes := svc.certUtil.AddCertificateHeaderAndFooter(rawClientCertificate)
 
-	if svc.rootCACertificateSecretName.Name != "" {
+	if svc.rootCACertificateSecretName.Name != "" && svc.rootCACertificateSecretKey != "" {
 		rootCABytes, err := svc.loadRootCACert()
 		if err != nil {
 			return EncodedCertificateChain{}, err

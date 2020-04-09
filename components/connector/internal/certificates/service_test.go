@@ -41,14 +41,14 @@ var (
 	caKeyEncoded = []byte("caKeyEncoded")
 
 	certsSecretData = map[string][]byte{
-		"ca.crt": caCrtEncoded,
-		"ca.key": caKeyEncoded,
+		caCertificateSecretKey: caCrtEncoded,
+		caKeySecretKey:         caKeyEncoded,
 	}
 
 	rootCaEncoded = []byte("rootCAEncoded")
 
 	rootCASecretData = map[string][]byte{
-		"cacert": rootCaEncoded,
+		rootCACertificateSecretKey: rootCaEncoded,
 	}
 
 	rootCACrt = &x509.Certificate{}

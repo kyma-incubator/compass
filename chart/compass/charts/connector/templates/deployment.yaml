@@ -58,9 +58,9 @@ spec:
             {{ if .Values.deployment.args.attachRootCAToChain }}
             - name: APP_ROOT_CA_CERTIFICATE_SECRET_NAME
               value: "{{ .Values.global.connector.secrets.rootCA.namespace }}/{{ .Values.global.connector.secrets.rootCA.name }}"
-            {{ end }}
             - name: APP_ROOT_CA_SECRET_CERTIFICATE_KEY
               value: "{{ .Values.global.connector.secrets.rootCA.certificateKey }}"
+            {{ end }}
             - name: APP_CERTIFICATE_DATA_HEADER
               value: "{{ .Values.global.connector.certificateDataHeader }}"
             - name: APP_REVOCATION_CONFIG_MAP_NAME
