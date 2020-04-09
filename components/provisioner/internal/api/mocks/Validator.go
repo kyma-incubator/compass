@@ -40,6 +40,20 @@ func (_m *Validator) ValidateTenant(runtimeID string, tenant string) error {
 	return r0
 }
 
+// ValidateTenantForOperation provides a mock function with given fields: operationID, tenant
+func (_m *Validator) ValidateTenantForOperation(operationID string, tenant string) error {
+	ret := _m.Called(operationID, tenant)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string) error); ok {
+		r0 = rf(operationID, tenant)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ValidateUpgradeInput provides a mock function with given fields: input
 func (_m *Validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) error {
 	ret := _m.Called(input)

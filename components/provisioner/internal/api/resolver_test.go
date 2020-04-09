@@ -489,7 +489,7 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		}
 
 		provisioningService.On("RuntimeOperationStatus", operationID).Return(operationStatus, nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		validator.On("ValidateTenantForOperation", operationID, tenant).Return(nil)
 
 		//when
 		status, err := provisioner.RuntimeOperationStatus(ctx, operationID)
@@ -517,7 +517,7 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		}
 
 		provisioningService.On("RuntimeOperationStatus", operationID).Return(operationStatus, nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(errors.New("oh no"))
+		validator.On("ValidateTenantForOperation", operationID, tenant).Return(errors.New("oh no"))
 		//when
 		status, err := provisioner.RuntimeOperationStatus(ctx, operationID)
 
@@ -530,9 +530,8 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
+		validator.On("ValidateTenantForOperation", operationID, tenant).Return(nil)
 		provisioner := NewResolver(provisioningService, validator)
-
-		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
 
 		provisioningService.On("RuntimeOperationStatus", operationID).Return(nil, errors.New("Some error"))
 

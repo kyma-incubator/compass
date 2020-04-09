@@ -652,6 +652,106 @@ func TestService_UpgradeRuntime(t *testing.T) {
 	}
 }
 
+func TestService_RollBackLastUpgrade(t *testing.T) {
+	releaseRepo := &releaseMocks.Repository{}
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, gardenerProject)
+	graphQLConverter := NewGraphQLConverter()
+	uuidGenerator := uuid.NewUUIDGenerator()
+
+	lastOperation := model.Operation{ID: operationID, State: model.Succeeded, Type: model.Upgrade}
+
+	oldKymaConfigId := "old-kyma-config-id"
+
+	runtimeUpgrade := model.RuntimeUpgrade{
+		State:                   model.UpgradeSucceeded,
+		OperationId:             operationID,
+		PreUpgradeKymaConfigId:  oldKymaConfigId,
+		PostUpgradeKymaConfigId: "new-id",
+	}
+
+	cluster := model.Cluster{
+		ID: runtimeID,
+		KymaConfig: model.KymaConfig{
+			ID: oldKymaConfigId,
+		},
+	}
+
+	t.Run("Should start runtime provisioning of Gardener cluster and return operation ID", func(t *testing.T) {
+		//given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
+		readSessionMock := &sessionMocks.ReadSession{}
+
+		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
+		readSessionMock.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		readSessionMock.On("GetRuntimeUpgrade", operationID).Return(runtimeUpgrade, nil)
+		readSessionMock.On("GetCluster", runtimeID).Return(cluster, nil)
+		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
+		writeSessionWithinTransactionMock.On("SetActiveKymaConfig", runtimeID, oldKymaConfigId).Return(nil)
+		writeSessionWithinTransactionMock.On("UpdateUpgradeState", operationID, model.UpgradeRolledBack).Return(nil)
+		writeSessionWithinTransactionMock.On("Commit").Return(nil)
+		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
+
+		service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil)
+
+		//when
+		runtimeStatus, err := service.RollBackLastUpgrade(runtimeID)
+		require.NoError(t, err)
+
+		//then
+		assert.NotEmpty(t, runtimeStatus)
+		sessionFactoryMock.AssertExpectations(t)
+		writeSessionWithinTransactionMock.AssertExpectations(t)
+		readSessionMock.AssertExpectations(t)
+	})
+
+	for _, testCase := range []struct {
+		description string
+		mockFunc    func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession)
+	}{
+		{
+			description: "should fail to roll back upgrade when failed to commit transaction",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetRuntimeUpgrade", operationID).Return(runtimeUpgrade, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+				writeSession.On("SetActiveKymaConfig", runtimeID, oldKymaConfigId).Return(nil)
+				writeSession.On("UpdateUpgradeState", operationID, model.UpgradeRolledBack).Return(nil)
+				writeSession.On("Commit").Return(dberrors.Internal("error"))
+				writeSession.On("RollbackUnlessCommitted").Return()
+			},
+		},
+		{
+			description: "should fail to roll back upgrade when failed to get last operation",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("error"))
+			},
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			//given
+			sessionFactoryMock := &sessionMocks.Factory{}
+			writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
+			readSessionMock := &sessionMocks.ReadSession{}
+
+			testCase.mockFunc(sessionFactoryMock, writeSessionWithinTransactionMock, readSessionMock)
+
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil)
+
+			//when
+			_, err := service.RollBackLastUpgrade(runtimeID)
+			require.Error(t, err)
+
+			//then
+			sessionFactoryMock.AssertExpectations(t)
+			writeSessionWithinTransactionMock.AssertExpectations(t)
+			readSessionMock.AssertExpectations(t)
+		})
+	}
+}
+
 func getOperationMatcher(expected model.Operation) func(model.Operation) bool {
 	return func(op model.Operation) bool {
 		return op.Type == expected.Type && op.ClusterID == expected.ClusterID &&

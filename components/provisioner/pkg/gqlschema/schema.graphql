@@ -221,6 +221,11 @@ type Mutation {
     upgradeRuntime(id: String!, input: UpgradeRuntimeInput!): OperationStatus
     deprovisionRuntime(id: String!): String!
 
+    # rollbackUpgradeOperation rolls back last upgrade operation for the Runtime but does not affect cluster in any way
+    # can be used in case upgrade failed and the cluster was restored from the backup to align data stored in Provisioner database
+    # with actual state of the cluster
+    rollBackUpgradeOperation(id: String!): RuntimeStatus
+
     # Compass Runtime Agent Connection Management
     reconnectRuntimeAgent(id: String!): String!
 }

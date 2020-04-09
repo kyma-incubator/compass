@@ -29,6 +29,7 @@ type Service interface {
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error)
+	RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatus, error)
 }
 
 //go:generate mockery -name=Provisioner
@@ -223,6 +224,48 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 	}
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
+}
+
+func (r *service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatus, error) {
+
+	readSession := r.dbSessionFactory.NewReadSession()
+
+	lastOp, err := readSession.GetLastOperation(runtimeID)
+	if err != nil {
+		return nil, fmt.Errorf("error rolling back last upgrade: %s", err.Error())
+	}
+
+	if lastOp.Type != model.Upgrade || lastOp.State == model.InProgress {
+		return nil, fmt.Errorf("error: upgrade can be rolled back only if it is the last operation that is already finished")
+	}
+
+	runtimeUpgrade, err := readSession.GetRuntimeUpgrade(lastOp.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error rolling back last upgrade: %s", err.Error())
+	}
+
+	txSession, err := r.dbSessionFactory.NewSessionWithinTransaction()
+	if err != nil {
+		return nil, fmt.Errorf("error rolling back last upgrade: %s", err.Error())
+	}
+	defer txSession.RollbackUnlessCommitted()
+
+	err = txSession.SetActiveKymaConfig(runtimeID, runtimeUpgrade.PreUpgradeKymaConfigId)
+	if err != nil {
+		return nil, fmt.Errorf("error rolling back last upgrade: %s", err.Error())
+	}
+
+	err = txSession.UpdateUpgradeState(lastOp.ID, model.UpgradeRolledBack)
+	if err != nil {
+		return nil, fmt.Errorf("error rolling back last upgrade: %s", err.Error())
+	}
+
+	err = txSession.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("error rolling back last upgrade: %s", err.Error())
+	}
+
+	return r.RuntimeStatus(runtimeID)
 }
 
 func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error) {

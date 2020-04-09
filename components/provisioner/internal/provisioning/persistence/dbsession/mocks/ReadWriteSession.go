@@ -171,6 +171,29 @@ func (_m *ReadWriteSession) GetTenant(runtimeID string) (string, dberrors.Error)
 	return r0, r1
 }
 
+// GetTenantForOperation provides a mock function with given fields: operationID
+func (_m *ReadWriteSession) GetTenantForOperation(operationID string) (string, dberrors.Error) {
+	ret := _m.Called(operationID)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(operationID)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 dberrors.Error
+	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+		r1 = rf(operationID)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(dberrors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
 // InsertCluster provides a mock function with given fields: cluster
 func (_m *ReadWriteSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	ret := _m.Called(cluster)
