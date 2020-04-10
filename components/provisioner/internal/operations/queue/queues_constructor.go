@@ -12,14 +12,13 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 )
 
-// TODO: pass timeouts
-
 func CreateInstallationQueue(
+	installationTimeout time.Duration,
 	factory dbsession.Factory,
 	installationClient installation.Service,
 	configurator runtime.Configurator) OperationQueue {
 	configureAgentStep := stages.NewConnectAgentStage(configurator, model.FinishedStage, 10*time.Minute)
-	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), 50*time.Minute) // TODO: take form config
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), installationTimeout)
 	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
 
 	installSteps := map[model.OperationStage]operations.Stage{
@@ -34,11 +33,12 @@ func CreateInstallationQueue(
 }
 
 func CreateUpgradeQueue(
+	upgradeTimeout time.Duration,
 	factory dbsession.Factory,
 	installationClient installation.Service) OperationQueue {
 
 	updatingUpgradeStep := stages.NewUpdateUpgradeStateStep(factory.NewWriteSession(), model.FinishedStage, 5*time.Minute)
-	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, updatingUpgradeStep.Name(), 50*time.Minute) // TODO: take form config
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, updatingUpgradeStep.Name(), upgradeTimeout)
 	upgradeStep := stages.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
 
 	upgradeSteps := map[model.OperationStage]operations.Stage{

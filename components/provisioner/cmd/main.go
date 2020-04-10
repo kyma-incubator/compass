@@ -146,8 +146,8 @@ func main() {
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(clientbuilder.NewConfigMapClientBuilder(), directorClient)
 
-	installationQueue := queue.CreateInstallationQueue(dbsFactory, installationService, runtimeConfigurator)
-	upgradeQueue := queue.CreateUpgradeQueue(dbsFactory, installationService)
+	installationQueue := queue.CreateInstallationQueue(cfg.Installation.Timeout, dbsFactory, installationService, runtimeConfigurator)
+	upgradeQueue := queue.CreateUpgradeQueue(cfg.Installation.Timeout, dbsFactory, installationService)
 
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {

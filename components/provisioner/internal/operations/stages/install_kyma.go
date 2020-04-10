@@ -36,7 +36,6 @@ func (s *InstallKymaStep) TimeLimit() time.Duration {
 }
 
 func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
-
 	if cluster.Kubeconfig == nil {
 		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
@@ -46,8 +45,7 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
 
-	// TODO: check if installation is started
-	installationState, err := s.installationClient.CheckInstallationState(k8sConfig) // TODO: modify signature of this method
+	installationState, err := s.installationClient.CheckInstallationState(k8sConfig)
 	if err != nil {
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
@@ -70,7 +68,6 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		cluster.KymaConfig.GlobalConfiguration,
 		cluster.KymaConfig.Components)
 	if err != nil {
-		// TODO: if it runs apply then recoverable error (else not)
 		return operations.StageResult{}, fmt.Errorf("error: failed to start installation: %s", err.Error())
 	}
 

@@ -172,9 +172,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	installationQueue := queue.CreateInstallationQueue(dbsFactory, installationServiceMock, runtimeConfigurator)
+	installationQueue := queue.CreateInstallationQueue(5*time.Minute, dbsFactory, installationServiceMock, runtimeConfigurator)
 	installationQueue.Run(queueCtx.Done())
-	upgradeQueue := queue.CreateUpgradeQueue(dbsFactory, installationServiceMock)
+	upgradeQueue := queue.CreateUpgradeQueue(5*time.Minute, dbsFactory, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
 	controler, err := gardener.NewShootController(mgr, shootInterface, secretsInterface, dbsFactory, directorServiceMock, installationQueue)

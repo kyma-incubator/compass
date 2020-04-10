@@ -63,7 +63,7 @@ func (r *ProvisioningOperator) ProceedToInstallation(log *logrus.Entry, shoot ga
 		return dberr
 	}
 
-	// TODO: consider passing first step as param
+	// Set Operation stage to Starting Installation so that is properly handled by the queue
 	dberr = session.TransitionOperation(operationId, "Starting installation", model.StartingInstallation, time.Now())
 	if dberr != nil {
 		log.Errorf("Error transitioning operation stage: %s", dberr.Error())

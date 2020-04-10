@@ -69,7 +69,7 @@ func (e *StagesExecutor) Execute(operationID string) ProcessingResult {
 			if errors.As(err, &nonRecoverable) {
 				log.Errorf("unrecoverable error occurred while processing operation: %s", err.Error())
 				e.handleOperationFailure(operation, cluster, log)
-				e.updateOperationStatus(log, operation.ID, nonRecoverable.Error(), model.Failed, time.Now()) // TODO: what should be the massega?
+				e.updateOperationStatus(log, operation.ID, nonRecoverable.Error(), model.Failed, time.Now())
 				return ProcessingResult{Requeue: false}
 			}
 
@@ -94,7 +94,7 @@ func (e *StagesExecutor) processInstallation(operation model.Operation, cluster 
 
 	for operation.Stage != model.FinishedStage {
 		log := logger.WithField("Stage", step.Name())
-		log.Infof("Starting step")
+		log.Infof("Starting processing")
 
 		if e.timeoutReached(operation, step.TimeLimit()) {
 			log.Errorf("Timeout reached for operation")
@@ -103,25 +103,19 @@ func (e *StagesExecutor) processInstallation(operation model.Operation, cluster 
 
 		result, err := step.Run(cluster, operation, log)
 		if err != nil {
-			log.Errorf("Stage failed: %s", err.Error())
+			log.Errorf("error while processing operation, stage failed: %s", err.Error())
 			return false, 0, err
 		}
 
 		if result.Stage == model.FinishedStage {
-			log.Infof("Finished processing operation. Setting operation to succeeded")
-			err := e.dbSession.TransitionOperation(operation.ID, "Provisioning steps finished", model.FinishedStage, time.Now())
-			if err != nil {
-				panic(err) // TODO handle
-			}
+			log.Infof("Finished processing operation")
+			e.updateOperationStage(log, operation.ID, "Provisioning steps finished", model.FinishedStage, time.Now())
 			break
 		}
 
 		if result.Stage != step.Name() {
 			transitionTime := time.Now()
-			err = e.dbSession.TransitionOperation(operation.ID, "Operation in progress", result.Stage, transitionTime) // TODO: Align message
-			if err != nil {
-				panic(err) // TODO handle
-			}
+			e.updateOperationStage(log, operation.ID, fmt.Sprintf("Operation in progress. Stage %s", result.Stage), result.Stage, transitionTime)
 			step = e.stages[result.Stage]
 			operation.Stage = result.Stage
 			operation.LastTransition = &transitionTime
@@ -133,10 +127,9 @@ func (e *StagesExecutor) processInstallation(operation model.Operation, cluster 
 		}
 	}
 
-	// TODO: are we gaurenteed that it finished? Consider doing it in if statement above
-	// TODO: update with retries
-
+	logger.Infof("Setting operation to succeeded")
 	e.updateOperationStatus(logger, operation.ID, "Operation succeeded", model.Succeeded, time.Now())
+
 	return false, 0, nil
 }
 
@@ -167,5 +160,14 @@ func (e *StagesExecutor) updateOperationStatus(log logrus.FieldLogger, id, messa
 	}, retry.Attempts(5))
 	if err != nil {
 		log.Errorf("Failed to set operation status to %s: %s", state, err.Error())
+	}
+}
+
+func (e *StagesExecutor) updateOperationStage(log logrus.FieldLogger, id, message string, stage model.OperationStage, t time.Time) {
+	err := retry.Do(func() error {
+		return e.dbSession.TransitionOperation(id, message, stage, t)
+	}, retry.Attempts(5))
+	if err != nil {
+		log.Errorf("Failed to modify operation stage to %s: %s", stage, err.Error())
 	}
 }
