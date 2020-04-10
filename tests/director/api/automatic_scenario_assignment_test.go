@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
@@ -321,11 +320,11 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 	defaultValue := "DEFAULT"
 	scenario := "test"
 
-	scenarios := []string{defaultValue, scenario}
-	scenariosOnlyDefault := []string{defaultValue}
+	scenarios := []interface{}{defaultValue, scenario}
+	scenariosOnlyDefault := []interface{}{defaultValue}
 
 	tenantID := testTenants.GetIDByName(t, "TestWholeScenario")
-	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, scenarios)
+	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{scenarios[0].(string), scenarios[1].(string)})
 	selector := graphql.LabelSelectorInput{Key: "testkey", Value: "testvalue"}
 	assignment := graphql.AutomaticScenarioAssignmentSetInput{ScenarioName: scenario, Selector: &selector}
 
@@ -335,7 +334,8 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 		Name:   "test-name",
 		Labels: &graphql.Labels{selector.Key: selector.Value},
 	}
-	rtm := createRuntimeFromInputWithinTenant(t, ctx, &rtmInput, tenantID)
+
+	rtm := registerRuntimeFromInputWithinTenant(t, ctx, &rtmInput, tenantID)
 	defer unregisterRuntimeWithinTenant(t, rtm.ID, tenantID)
 
 	t.Run("Scenario is set when label matches selector", func(t *testing.T) {
@@ -378,17 +378,6 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 
 }
 
-func assertScenarios(t *testing.T, actual graphql.Labels, expected []string) {
-	val, ok := actual["scenarios"]
-	require.True(t, ok)
-	if val == nil {
-		require.Len(t, expected, 0)
-	} else {
-		scenarios, ok := val.([]interface{})
-		require.True(t, ok, "label value:%+v", val)
-		assert.ElementsMatch(t, scenarios, expected, "expected: %+v, actual:%+v", expected, scenarios)
-
-	}
 func fixAutomaticScenarioAssigmentInput(automaticScenario, selecterKey, selectorValue string) graphql.AutomaticScenarioAssignmentSetInput {
 	return graphql.AutomaticScenarioAssignmentSetInput{
 		ScenarioName: automaticScenario,
