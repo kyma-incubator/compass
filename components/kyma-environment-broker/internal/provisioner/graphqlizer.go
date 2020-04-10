@@ -141,11 +141,6 @@ func (g *Graphqlizer) UpgradeClusterConfigToGraphQL(in gqlschema.UpgradeClusterI
 }
 
 func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string, error) {
-	for _, c := range in.Components {
-		for _, cfg := range c.Configuration {
-			cfg.Value = strconv.Quote(cfg.Value)
-		}
-	}
 	return g.genericToGraphQL(in, `{
 		version: "{{ .Version }}",
       	{{- with .Components }}
@@ -162,7 +157,7 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
 			  {{- range . }}
               {
                 key: "{{ .Key }}",
-                value: {{ .Value }},
+                value: {{ .Value | strQuote }},
 				{{- if .Secret }}
                 secret: true,
 				{{- end }}
@@ -201,6 +196,7 @@ func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["GCPProviderConfigInputToGraphQL"] = g.GCPProviderConfigInputToGraphQL
 	fm["AWSProviderConfigInputToGraphQL"] = g.AWSProviderConfigInputToGraphQL
 	fm["LabelsToGQL"] = g.LabelsToGQL
+	fm["strQuote"] = strconv.Quote
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {

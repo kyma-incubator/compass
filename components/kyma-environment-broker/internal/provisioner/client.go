@@ -2,7 +2,6 @@ package provisioner
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -10,7 +9,6 @@ import (
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	"net/http/httputil"
 )
 
 // accountIDKey is a header key name for request send by graphQL client
@@ -37,17 +35,7 @@ type client struct {
 }
 
 func NewProvisionerClient(endpoint string, queryDumping bool) Client {
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	httpclient := httputil.NewClientConn()
-
-	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))
+	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(http.DefaultClient))
 	if queryDumping {
 		graphQlClient.Log = func(s string) {
 			fmt.Println(s)
@@ -128,7 +116,7 @@ func (c *client) ReconnectRuntimeAgent(accountID, runtimeID string) (string, err
 type GCPRuntimeStatus struct {
 	LastOperationStatus     *schema.OperationStatus         `json:"lastOperationStatus"`
 	RuntimeConnectionStatus *schema.RuntimeConnectionStatus `json:"runtimeConnectionStatus"`
-	RuntimeConfiguration    struct {
+	RuntimeConfiguration struct {
 		ClusterConfig         *schema.GCPConfig  `json:"clusterConfig"`
 		KymaConfig            *schema.KymaConfig `json:"kymaConfig"`
 		Kubeconfig            *string            `json:"kubeconfig"`
@@ -172,7 +160,7 @@ func (c *client) executeRequest(req *gcli.Request, respDestination interface{}) 
 	}
 
 	wrapper := &graphQLResponseWrapper{Result: respDestination}
-	err := c.graphQLClient.Run(context.Background(), req, wrapper)
+	err := c.graphQLClient.Run(context.TODO(), req, wrapper)
 	if err != nil {
 		return errors.Wrap(err, "Failed to execute request")
 	}

@@ -1,15 +1,13 @@
 package httputil
 
 import (
-	"crypto/tls"
 	"net/http"
 	"time"
 )
 
 func NewClient(timeoutSec time.Duration, skipCertVeryfication bool) *http.Client {
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: skipCertVeryfication},
-	}
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig.InsecureSkipVerify = skipCertVeryfication
 
 	return &http.Client{
 		Transport: transport,
