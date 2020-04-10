@@ -100,7 +100,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 func matchExpectedScenarios(t *testing.T, expected *model.Label) func(label *model.Label) bool {
 	return func(actual *model.Label) bool {
-		actualArray, ok := actual.Value.([]interface{})
+		actualArray, ok := actual.Value.([]string)
 		require.True(t, ok)
 
 		expectedArray, ok := expected.Value.([]interface{})
