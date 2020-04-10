@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,11 +47,11 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 		ScenarioName: testScenarioC,
 		Selector:     &testSelectorB,
 	}
-	createAutomaticScenarioAssignmentFromInputWithinTenant(t, ctx, inputAssignment1, tenantID)
+	createAutomaticScenarioAssignmentInTenant(t, ctx, inputAssignment1, tenantID)
 	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, testScenarioA)
-	createAutomaticScenarioAssignmentFromInputWithinTenant(t, ctx, inputAssignment2, tenantID)
+	createAutomaticScenarioAssignmentInTenant(t, ctx, inputAssignment2, tenantID)
 	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, testScenarioB)
-	createAutomaticScenarioAssignmentFromInputWithinTenant(t, ctx, inputAssignment3, tenantID)
+	createAutomaticScenarioAssignmentInTenant(t, ctx, inputAssignment3, tenantID)
 	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, testScenarioC)
 
 	// prepare queries
@@ -82,7 +83,66 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 	assertAutomaticScenarioAssignments(t,
 		[]graphql.AutomaticScenarioAssignmentSetInput{inputAssignment1, inputAssignment2},
 		actualAssignmentsForSelector)
+}
 
+func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	tenantID := testTenants.GetIDByName(t, "TestCreateAutomaticScenarioAssignment")
+	prodScenario := "PRODUCTION"
+	manualScenario := "MANUAL"
+	defaultScenario := "DEFAULT"
+	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{prodScenario, manualScenario, defaultScenario})
+
+	rtms := make([]*graphql.RuntimeExt, 3)
+	for i := 0; i < 3; i++ {
+		rmtInput := fixRuntimeInput(fmt.Sprintf("runtime%d", i))
+
+		rtm := registerRuntimeFromInputWithinTenant(t, ctx, &rmtInput, tenantID)
+		rtms[i] = rtm
+		defer unregisterRuntimeWithinTenant(t, rtm.ID, tenantID)
+	}
+
+	selectorKey := "KEY"
+	selectorValue := "VALUE"
+
+	setRuntimeLabelWithinTenant(t, ctx, tenantID, rtms[0].ID, selectorKey, selectorValue)
+	setRuntimeLabelWithinTenant(t, ctx, tenantID, rtms[1].ID, selectorKey, selectorValue)
+
+	t.Run("Check automatic scenario assigment", func(t *testing.T) {
+		//GIVEN
+		expectedScenarios := map[string][]interface{}{
+			rtms[0].ID: {defaultScenario, prodScenario},
+			rtms[1].ID: {defaultScenario, prodScenario},
+			rtms[2].ID: {defaultScenario},
+		}
+
+		//WHEN
+		asaInput := fixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
+		createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
+		defer deleteAutomaticScenarioAssigmentForSelector(t, ctx, tenantID, *asaInput.Selector)
+
+		//THEN
+		runtimes := listRuntimes(t, ctx, tenantID)
+		require.Len(t, runtimes.Data, 3)
+		assertRuntimeScenarios(t, runtimes, expectedScenarios)
+	})
+}
+
+func assertRuntimeScenarios(t *testing.T, runtimes graphql.RuntimePageExt, expectedScenarios map[string][]interface{}) {
+	for _, rtm := range runtimes.Data {
+		expectedScenarios, found := expectedScenarios[rtm.ID]
+		require.True(t, found)
+		assertScenarios(t, rtm.Labels, expectedScenarios)
+	}
+}
+
+func assertScenarios(t *testing.T, actual graphql.Labels, expected []interface{}) {
+	val, ok := actual["scenarios"]
+	require.True(t, ok)
+	scenarios, ok := val.([]interface{})
+	require.True(t, ok)
+	assert.ElementsMatch(t, scenarios, expected)
 }
 
 func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
@@ -188,5 +248,16 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 	assertAutomaticScenarioAssignment(t, anotherAssignment, *actualAssignments.Data[0])
 
 	saveExample(t, req.Query(), "delete automatic scenario assignments for selector")
+
+}
+
+func fixAutomaticScenarioAssigmentInput(automaticScenario, selecterKey, selectorValue string) graphql.AutomaticScenarioAssignmentSetInput {
+	return graphql.AutomaticScenarioAssignmentSetInput{
+		ScenarioName: automaticScenario,
+		Selector: &graphql.LabelSelectorInput{
+			Key:   selecterKey,
+			Value: selectorValue,
+		},
+	}
 
 }

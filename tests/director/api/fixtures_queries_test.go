@@ -104,10 +104,10 @@ func registerRuntime(t *testing.T, ctx context.Context, placeholder string) *gra
 }
 
 func registerRuntimeFromInput(t *testing.T, ctx context.Context, input *graphql.RuntimeInput) *graphql.RuntimeExt {
-	return createRuntimeFromInputWithinTenant(t, ctx, input, testTenants.GetDefaultTenantID())
+	return registerRuntimeFromInputWithinTenant(t, ctx, input, testTenants.GetDefaultTenantID())
 }
 
-func createRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, input *graphql.RuntimeInput, tenant string) *graphql.RuntimeExt {
+func registerRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, input *graphql.RuntimeInput, tenant string) *graphql.RuntimeExt {
 	inputGQL, err := tc.graphqlizer.RuntimeInputToGQL(*input)
 	require.NoError(t, err)
 
@@ -133,11 +133,23 @@ func getRuntimeWithinTenant(t *testing.T, ctx context.Context, runtimeID string,
 	return &runtime
 }
 
+func listRuntimes(t *testing.T, ctx context.Context, tenant string) graphql.RuntimePageExt {
+	runtimesPage := graphql.RuntimePageExt{}
+	queryReq := fixRuntimesRequest()
+	err := tc.RunOperationWithCustomTenant(ctx, tenant, queryReq, &runtimesPage)
+	require.NoError(t, err)
+	return runtimesPage
+}
+
 func setRuntimeLabel(t *testing.T, ctx context.Context, runtimeID string, labelKey string, labelValue interface{}) *graphql.Label {
+	return setRuntimeLabelWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), runtimeID, labelKey, labelValue)
+}
+
+func setRuntimeLabelWithinTenant(t *testing.T, ctx context.Context, tenantID, runtimeID string, labelKey string, labelValue interface{}) *graphql.Label {
 	setLabelRequest := fixSetRuntimeLabelRequest(runtimeID, labelKey, labelValue)
 	label := graphql.Label{}
 
-	err := tc.RunOperation(ctx, setLabelRequest, &label)
+	err := tc.RunOperationWithCustomTenant(ctx, tenantID, setLabelRequest, &label)
 	require.NoError(t, err)
 
 	return &label
@@ -439,17 +451,6 @@ func fixPackageInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *
 	return authCtx, inputParams
 }
 
-func createAutomaticScenarioAssignmentFromInputWithinTenant(t *testing.T, ctx context.Context, input graphql.AutomaticScenarioAssignmentSetInput, tenantID string) graphql.AutomaticScenarioAssignment {
-	inStr, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(input)
-	require.NoError(t, err)
-
-	assignment := graphql.AutomaticScenarioAssignment{}
-	req := fixCreateAutomaticScenarioAssignmentRequest(inStr)
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignment)
-	require.NoError(t, err)
-	return assignment
-}
-
 func createAutomaticScenarioAssignmentInTenant(t *testing.T, ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput, tenantID string) *graphql.AutomaticScenarioAssignment {
 	assignmentInput, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(in)
 	require.NoError(t, err)
@@ -475,6 +476,16 @@ func deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t *testing.T, ctx 
 	assignment := graphql.AutomaticScenarioAssignment{}
 	req := fixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenarioName)
 	err := tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignment)
+	require.NoError(t, err)
+	return assignment
+}
+func deleteAutomaticScenarioAssigmentForSelector(t *testing.T, ctx context.Context, tenantID string, selector graphql.LabelSelectorInput) []graphql.AutomaticScenarioAssignment {
+	paylaod, err := tc.graphqlizer.LabelSelectorInputToGQL(selector)
+	require.NoError(t, err)
+	req := fixDeleteAutomaticScenarioAssignmentsForSelectorRequest(paylaod)
+
+	assignment := []graphql.AutomaticScenarioAssignment{}
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignment)
 	require.NoError(t, err)
 	return assignment
 }

@@ -30,8 +30,8 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 POSTGRES_CONTAINER="test-postgres"
 POSTGRES_VERSION="11"
 
-DB_USER="usr"
-DB_PWD="pwd"
+DB_USER="postgres"
+DB_PWD="pgsql@12345"
 DB_NAME="compass"
 DB_PORT="5432"
 
@@ -72,9 +72,9 @@ set -e
 
 echo -e "${GREEN}Populate DB${NC}"
 
-PGPASSWORD=pwd psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql) ${DB_NAME}
+PGPASSWORD=pgsql@12345 psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql) ${DB_NAME}
 
-PGPASSWORD=pwd psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql) ${DB_NAME}
+PGPASSWORD=pgsql@12345 psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql) ${DB_NAME}
 
 
 if [[  ${SKIP_APP_START} ]]; then

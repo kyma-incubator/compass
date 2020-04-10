@@ -2,6 +2,7 @@
 
 package automock
 
+import context "context"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -10,13 +11,13 @@ type AssignmentEngine struct {
 	mock.Mock
 }
 
-// EnsureScenarioAssigned provides a mock function with given fields: in
-func (_m *AssignmentEngine) EnsureScenarioAssigned(in model.AutomaticScenarioAssignment) error {
-	ret := _m.Called(in)
+// EnsureScenarioAssigned provides a mock function with given fields: ctx, in
+func (_m *AssignmentEngine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+	ret := _m.Called(ctx, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(model.AutomaticScenarioAssignment) error); ok {
-		r0 = rf(in)
+	if rf, ok := ret.Get(0).(func(context.Context, model.AutomaticScenarioAssignment) error); ok {
+		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Error(0)
 	}
