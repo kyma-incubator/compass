@@ -320,11 +320,10 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 	defaultValue := "DEFAULT"
 	scenario := "test"
 
-	allScenarios := []interface{}{defaultValue, scenario}
 	scenariosOnlyDefault := []interface{}{defaultValue}
 	scenarios := []interface{}{scenario, defaultValue}
 	tenantID := testTenants.GetIDByName(t, "TestWholeScenario")
-	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{allScenarios[0].(string), allScenarios[1].(string)})
+	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{scenarios[0].(string), scenarios[1].(string)})
 	selector := graphql.LabelSelectorInput{Key: "testkey", Value: "testvalue"}
 	assignment := graphql.AutomaticScenarioAssignmentSetInput{ScenarioName: scenario, Selector: &selector}
 
