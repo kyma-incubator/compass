@@ -292,6 +292,58 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 
 }
 
+func TestInstallationService_TriggerUpgrade(t *testing.T) {
+	kymaVersion := "1.7.0"
+	kymaRelease := model.Release{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
+
+	globalConfig := fixGlobalConfig()
+	componentsConfig := fixComponentsConfig()
+
+	expectedInstallation := installation.Installation{
+		TillerYaml:    tillerYAML,
+		InstallerYaml: installerYAML,
+		Configuration: fixInstallationConfig(),
+	}
+
+	k8sConfig, err := k8s.ParseToK8sConfig([]byte(kubeconfig))
+	require.NoError(t, err)
+
+	t.Run("should trigger upgrade", func(t *testing.T) {
+		installationHandlerConstructor := newMockInstallerHandler(t, expectedInstallation, nil, nil)
+		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
+
+		// when
+		err := installationSvc.TriggerUpgrade(k8sConfig, kymaRelease, globalConfig, componentsConfig)
+
+		// then
+		require.NoError(t, err)
+	})
+
+	t.Run("should return error when failed to prepare upgrade", func(t *testing.T) {
+		installationHandlerConstructor := newErrorInstallerHandler(t, errors.New("failed to prepare upgrade"), nil)
+
+		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
+
+		// when
+		err := installationSvc.TriggerUpgrade(k8sConfig, kymaRelease, globalConfig, componentsConfig)
+
+		// then
+		require.Error(t, err)
+	})
+
+	t.Run("should return error when failed to start upgrade", func(t *testing.T) {
+		installationHandlerConstructor := newErrorInstallerHandler(t, nil, errors.New("failed to start upgrade"))
+
+		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
+
+		// when
+		err := installationSvc.TriggerUpgrade(k8sConfig, kymaRelease, globalConfig, componentsConfig)
+
+		// then
+		require.Error(t, err)
+	})
+}
+
 type installerMock struct {
 	t                    *testing.T
 	expectedInstallation installation.Installation
@@ -341,15 +393,15 @@ func newErrorInstallerHandler(t *testing.T, prepareErr, startErr error) Installa
 	}
 }
 
-func (i errorInstallerMock) PrepareInstallation(installation installation.Installation) error {
+func (i errorInstallerMock) PrepareInstallation(_ installation.Installation) error {
 	return i.prepareError
 }
 
-func (i errorInstallerMock) StartInstallation(context context.Context) (<-chan installation.InstallationState, <-chan error, error) {
+func (i errorInstallerMock) StartInstallation(_ context.Context) (<-chan installation.InstallationState, <-chan error, error) {
 	return nil, nil, i.startInstallationError
 }
 
-func (i errorInstallerMock) PrepareUpgrade(installation installation.Installation) error {
+func (i errorInstallerMock) PrepareUpgrade(_ installation.Installation) error {
 	return i.prepareError
 }
 

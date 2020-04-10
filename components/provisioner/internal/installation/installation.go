@@ -22,6 +22,9 @@ import (
 
 const (
 	tillerWaitTime = 5 * time.Minute
+
+	installAction = "installation"
+	upgradeAction = "upgrade"
 )
 
 type InstallationHandler func(*rest.Config, ...installation.InstallationOption) (installation.Installer, error)
@@ -55,36 +58,19 @@ func (s *installationService) TriggerInstallation(kubeconfig *rest.Config, relea
 	if err != nil {
 		return fmt.Errorf("failed to trigger installation: %s", err.Error())
 	}
-
-	installationConfig := installation.Installation{
-		TillerYaml:    release.TillerYAML,
-		InstallerYaml: release.InstallerYAML,
-		Configuration: NewInstallationConfiguration(globalConfig, componentsConfig),
-	}
-
-	err = kymaInstaller.PrepareInstallation(installationConfig)
-	if err != nil {
-		return pkgErrors.Wrap(err, "Failed to prepare installation")
-	}
-
-	installationCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// We are not waiting for events, just triggering installation
-	_, _, err = kymaInstaller.StartInstallation(installationCtx)
-	if err != nil {
-		return pkgErrors.Wrap(err, "Failed to start Kyma installation")
-	}
-
-	return nil
+	return s.triggerAction(release, globalConfig, componentsConfig, kymaInstaller.PrepareInstallation, kymaInstaller.StartInstallation, installAction)
 }
 
-// TODO: consider refactoring this function
 func (s *installationService) TriggerUpgrade(kubeconfig *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
 	kymaInstaller, err := s.createKymaInstaller(kubeconfig, componentsConfig)
 	if err != nil {
-		return fmt.Errorf("failed to trigger installation: %s", err.Error())
+		return fmt.Errorf("failed to trigger upgrade: %s", err.Error())
 	}
+	return s.triggerAction(release, globalConfig, componentsConfig, kymaInstaller.PrepareUpgrade, kymaInstaller.StartInstallation, upgradeAction)
+}
+
+func (s *installationService) triggerAction(release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig,
+	prepareFunction func(installation.Installation) error, installFunction func(context.Context) (<-chan installation.InstallationState, <-chan error, error), actionName string) error {
 
 	installationConfig := installation.Installation{
 		TillerYaml:    release.TillerYAML,
@@ -92,18 +78,18 @@ func (s *installationService) TriggerUpgrade(kubeconfig *rest.Config, release mo
 		Configuration: NewInstallationConfiguration(globalConfig, componentsConfig),
 	}
 
-	err = kymaInstaller.PrepareUpgrade(installationConfig)
+	err := prepareFunction(installationConfig)
 	if err != nil {
-		return pkgErrors.Wrap(err, "Failed to prepare upgrade")
+		return pkgErrors.Wrap(err, fmt.Sprintf("Failed to prepare %s", actionName))
 	}
 
 	installationCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// We are not waiting for events, just triggering installation
-	_, _, err = kymaInstaller.StartInstallation(installationCtx)
+	_, _, err = installFunction(installationCtx)
 	if err != nil {
-		return pkgErrors.Wrap(err, "Failed to start Kyma installation")
+		return pkgErrors.Wrap(err, fmt.Sprintf("Failed to start Kyma %s", actionName))
 	}
 
 	return nil
