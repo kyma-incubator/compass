@@ -126,7 +126,7 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 		labelRepo.On("Upsert", ctx, mock.MatchedBy(matchExpectedScenarios(t, &expectedScenarioLabel))).
 			Return(nil).Once()
 
-		eng := scenarioassignment.NewEngine(labelRepo)
+		eng := scenarioassignment.NewEngine(labelRepo, nil)
 
 		//WHEN
 		err := eng.RemoveAssignedScenario(ctx, in)
@@ -157,7 +157,7 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 		labelRepo.On("Upsert", ctx, mock.MatchedBy(matchExpectedScenarios(t, &expectedScenarioLabel))).
 			Return(testErr)
 
-		eng := scenarioassignment.NewEngine(labelRepo)
+		eng := scenarioassignment.NewEngine(labelRepo, nil)
 
 		//WHEN
 		err := eng.RemoveAssignedScenario(ctx, in)
@@ -175,7 +175,7 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
 			Return([]model.Label{}, testErr).Once()
 
-		eng := scenarioassignment.NewEngine(labelRepo)
+		eng := scenarioassignment.NewEngine(labelRepo, nil)
 
 		//WHEN
 		err := eng.RemoveAssignedScenario(ctx, in)
@@ -212,7 +212,7 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
 			Return(labels, nil).Once()
 		labelRepo.On("Upsert", ctx, mock.MatchedBy(matchExpectedScenarios(t, &model.Label{Value: expctedScenario1}))).Return(nil).Once()
-		eng := scenarioassignment.NewEngine(labelRepo)
+		eng := scenarioassignment.NewEngine(labelRepo, nil)
 		//WHEN
 		err := eng.RemoveAssignedScenarios(ctx, in)
 
@@ -228,7 +228,7 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
 			Return(labels, testErr).Once()
-		eng := scenarioassignment.NewEngine(labelRepo)
+		eng := scenarioassignment.NewEngine(labelRepo, nil)
 		//WHEN
 		err := eng.RemoveAssignedScenarios(ctx, in)
 
