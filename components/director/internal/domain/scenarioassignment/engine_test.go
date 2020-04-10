@@ -39,7 +39,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 		labelRepo.On("Upsert", ctx, mock.MatchedBy(matchExpectedScenarios(t, &expectedScenarioLabel))).
 			Return(nil).Once()
 
-		eng := scenarioassignment.NewEngine(labelRepo)
+		eng := scenarioassignment.NewEngine(labelRepo, nil)
 
 		//WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
@@ -69,7 +69,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 		labelRepo.On("Upsert", ctx, mock.MatchedBy(matchExpectedScenarios(t, &expectedScenarioLabel))).
 			Return(testErr)
 
-		eng := scenarioassignment.NewEngine(labelRepo)
+		eng := scenarioassignment.NewEngine(labelRepo, nil)
 
 		//WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
@@ -87,7 +87,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
 			Return([]model.Label{}, testErr).Once()
 
-		eng := scenarioassignment.NewEngine(labelRepo)
+		eng := scenarioassignment.NewEngine(labelRepo, nil)
 
 		//WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
@@ -152,7 +152,7 @@ func TestEngine_GetScenariosForSelectorLabels_Success(t *testing.T) {
 	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(assignments, nil)
 	defer mock.AssertExpectationsForObjects(t, mockRepo)
 
-	engineSvc := scenarioassignment.NewEngine(mockRepo)
+	engineSvc := scenarioassignment.NewEngine(nil, mockRepo)
 
 	// when
 	actualScenarios, err := engineSvc.GetScenariosForSelectorLabels(fixCtxWithTenant(), selectorLabels)
@@ -181,7 +181,7 @@ func TestEngine_GetScenariosForSelectorLabels_ShouldFailOnGettingForSelector(t *
 	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(nil, testErr)
 	defer mock.AssertExpectationsForObjects(t, mockRepo)
 
-	engineSvc := scenarioassignment.NewEngine(mockRepo)
+	engineSvc := scenarioassignment.NewEngine(nil, mockRepo)
 
 	// when
 	_, err := engineSvc.GetScenariosForSelectorLabels(fixCtxWithTenant(), selectorLabels)
@@ -193,7 +193,7 @@ func TestEngine_GetScenariosForSelectorLabels_ShouldFailOnGettingForSelector(t *
 
 func TestEngine_GetScenariosForSelectorLabels_ShouldFailOnLoadingTenant(t *testing.T) {
 	// given
-	svc := scenarioassignment.NewEngine(nil)
+	svc := scenarioassignment.NewEngine(nil, nil)
 	// when
 	_, err := svc.GetScenariosForSelectorLabels(context.TODO(), nil)
 	// then
@@ -229,7 +229,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.T
 
 	mockRepo := &automock.Repository{}
 	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(assignments, nil)
-	engineSvc := scenarioassignment.NewEngine(mockRepo)
+	engineSvc := scenarioassignment.NewEngine(nil, mockRepo)
 
 	// when
 	actualScenarios, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels)
@@ -273,14 +273,14 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_SuccessIfScenariosLa
 
 	mockRepo := &automock.Repository{}
 	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(assignments, nil)
-	engineSvc := scenarioassignment.NewEngine(mockRepo)
+	engineSvc := scenarioassignment.NewEngine(nil, mockRepo)
 
 	// when
 	actualScenarios, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels)
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, expectedScenarios, actualScenarios)
+	assert.ElementsMatch(t, expectedScenarios, actualScenarios)
 
 	mockRepo.AssertExpectations(t)
 }
@@ -302,7 +302,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfListFo
 
 	mockRepo := &automock.Repository{}
 	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(nil, testErr)
-	engineSvc := scenarioassignment.NewEngine(mockRepo)
+	engineSvc := scenarioassignment.NewEngine(nil, mockRepo)
 
 	// when
 	_, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels)
@@ -342,7 +342,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfScenar
 
 	mockRepo := &automock.Repository{}
 	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(assignments, nil)
-	engineSvc := scenarioassignment.NewEngine(mockRepo)
+	engineSvc := scenarioassignment.NewEngine(nil, mockRepo)
 
 	// when
 	_, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels)
@@ -361,7 +361,7 @@ func TestEngine_MergeScenarios_Success(t *testing.T) {
 
 	expectedScenarios := []interface{}{"CUSTOM"}
 
-	engineSvc := scenarioassignment.NewEngine(nil)
+	engineSvc := scenarioassignment.NewEngine(nil, nil)
 
 	// when
 	actualScenarios := engineSvc.MergeScenarios(oldScenariosLabel, previousScenariosFromAssignments, newScenariosFromAssignments)

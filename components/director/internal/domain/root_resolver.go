@@ -123,7 +123,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(scenarioAssignmentRepo)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelRepo, scenarioAssignmentRepo)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc, scenarioAssignmentEngine)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
