@@ -46,11 +46,11 @@ func TestService_Create(t *testing.T) {
 		mockRepo := &automock.Repository{}
 		mockRepo.On("Create", ctx, fixModel()).Return(nil)
 		mockScenarioDefSvc := mockScenarioDefServiceThatReturns([]string{scenarioName})
-		mockEngineSvc := &automock.AssignmentEngine{}
-		mockEngineSvc.On("EnsureScenarioAssigned", ctx, fixModel()).Return(fixError()).Once()
-		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc, mockEngineSvc)
+		mockEngine := &automock.AssignmentEngine{}
+		mockEngine.On("EnsureScenarioAssigned", ctx, fixModel()).Return(fixError()).Once()
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc, mockEngine)
 
-		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc, mockEngineSvc)
+		sut := scenarioassignment.NewService(mockRepo, mockScenarioDefSvc, mockEngine)
 
 		// WHEN
 		_, err := sut.Create(fixCtxWithTenant(), fixModel())
@@ -356,11 +356,11 @@ func TestService_DeleteManyForSameSelector(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
 		mockRepo.On("DeleteForSelector", ctx, tenantID, selector).Return(nil).Once()
-		mockEngineSvc := &automock.AssignmentEngine{}
-		mockEngineSvc.On("RemoveAssignedScenarios", models).Return(nil).Once()
-		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngineSvc)
+		mockEngine := &automock.AssignmentEngine{}
+		mockEngine.On("RemoveAssignedScenarios", models).Return(nil).Once()
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngine)
 
-		sut := scenarioassignment.NewService(mockRepo, nil, mockEngineSvc)
+		sut := scenarioassignment.NewService(mockRepo, nil, mockEngine)
 		// WHEN
 		err := sut.DeleteManyForSameSelector(ctx, models)
 		// THEN
@@ -369,11 +369,11 @@ func TestService_DeleteManyForSameSelector(t *testing.T) {
 
 	t.Run("return error when unassigning scenarios from runtimes fails", func(t *testing.T) {
 		// GIVEN
-		mockEngineSvc := &automock.AssignmentEngine{}
-		mockEngineSvc.On("RemoveAssignedScenarios", models).Return(fixError()).Once()
-		defer mock.AssertExpectationsForObjects(t, mockEngineSvc)
+		mockEngine := &automock.AssignmentEngine{}
+		mockEngine.On("RemoveAssignedScenarios", models).Return(fixError()).Once()
+		defer mock.AssertExpectationsForObjects(t, mockEngine)
 
-		sut := scenarioassignment.NewService(nil, nil, mockEngineSvc)
+		sut := scenarioassignment.NewService(nil, nil, mockEngine)
 		// WHEN
 		err := sut.DeleteManyForSameSelector(ctx, models)
 		// THEN
@@ -383,10 +383,10 @@ func TestService_DeleteManyForSameSelector(t *testing.T) {
 
 	t.Run("return error when input slice is empty", func(t *testing.T) {
 		// GIVEN
-		mockEngineSvc := &automock.AssignmentEngine{}
-		defer mock.AssertExpectationsForObjects(t, mockEngineSvc)
+		mockEngine := &automock.AssignmentEngine{}
+		defer mock.AssertExpectationsForObjects(t, mockEngine)
 
-		sut := scenarioassignment.NewService(nil, nil, mockEngineSvc)
+		sut := scenarioassignment.NewService(nil, nil, mockEngine)
 		// WHEN
 		err := sut.DeleteManyForSameSelector(ctx, []*model.AutomaticScenarioAssignment{})
 		// THEN
@@ -413,10 +413,10 @@ func TestService_DeleteManyForSameSelector(t *testing.T) {
 			},
 		}
 
-		mockEngineSvc := &automock.AssignmentEngine{}
-		defer mock.AssertExpectationsForObjects(t, mockEngineSvc)
+		mockEngine := &automock.AssignmentEngine{}
+		defer mock.AssertExpectationsForObjects(t, mockEngine)
 
-		sut := scenarioassignment.NewService(nil, nil, mockEngineSvc)
+		sut := scenarioassignment.NewService(nil, nil, mockEngine)
 		// WHEN
 		err := sut.DeleteManyForSameSelector(ctx, modelsWithDifferentSelectors)
 		// THEN
@@ -426,12 +426,12 @@ func TestService_DeleteManyForSameSelector(t *testing.T) {
 
 	t.Run("returns error on error from repository", func(t *testing.T) {
 		mockRepo := &automock.Repository{}
-		mockEngineSvc := &automock.AssignmentEngine{}
-		mockEngineSvc.On("RemoveAssignedScenarios", models).Return(nil).Once()
-		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngineSvc)
+		mockEngine := &automock.AssignmentEngine{}
+		mockEngine.On("RemoveAssignedScenarios", models).Return(nil).Once()
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngine)
 
 		mockRepo.On("DeleteForSelector", ctx, tenantID, selector).Return(fixError()).Once()
-		sut := scenarioassignment.NewService(mockRepo, nil, mockEngineSvc)
+		sut := scenarioassignment.NewService(mockRepo, nil, mockEngine)
 		// WHEN
 		err := sut.DeleteManyForSameSelector(ctx, models)
 		// THEN
@@ -450,11 +450,11 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
 		mockRepo.On("DeleteForScenarioName", fixCtxWithTenant(), tenantID, scenarioName).Return(nil)
-		mockEngineSvc := &automock.AssignmentEngine{}
-		mockEngineSvc.On("RemoveAssignedScenario", fixModel()).Return(nil).Once()
-		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngineSvc)
+		mockEngine := &automock.AssignmentEngine{}
+		mockEngine.On("RemoveAssignedScenario", fixModel()).Return(nil).Once()
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngine)
 
-		svc := scenarioassignment.NewService(mockRepo, nil, mockEngineSvc)
+		svc := scenarioassignment.NewService(mockRepo, nil, mockEngine)
 
 		// WHEN
 		err := svc.Delete(fixCtxWithTenant(), fixModel())
@@ -466,11 +466,11 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 	t.Run("return error when unassigning scenarios from runtimes fails", func(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
-		mockEngineSvc := &automock.AssignmentEngine{}
-		mockEngineSvc.On("RemoveAssignedScenario", fixModel()).Return(fixError()).Once()
-		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngineSvc)
+		mockEngine := &automock.AssignmentEngine{}
+		mockEngine.On("RemoveAssignedScenario", fixModel()).Return(fixError()).Once()
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngine)
 
-		svc := scenarioassignment.NewService(mockRepo, nil, mockEngineSvc)
+		svc := scenarioassignment.NewService(mockRepo, nil, mockEngine)
 
 		// WHEN
 		err := svc.Delete(fixCtxWithTenant(), fixModel())
@@ -497,11 +497,11 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
 		mockRepo.On("DeleteForScenarioName", fixCtxWithTenant(), tenantID, scenarioName).Return(fixError())
-		mockEngineSvc := &automock.AssignmentEngine{}
-		mockEngineSvc.On("RemoveAssignedScenario", fixModel()).Return(nil).Once()
-		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngineSvc)
+		mockEngine := &automock.AssignmentEngine{}
+		mockEngine.On("RemoveAssignedScenario", fixModel()).Return(nil).Once()
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngine)
 
-		svc := scenarioassignment.NewService(mockRepo, nil, mockEngineSvc)
+		svc := scenarioassignment.NewService(mockRepo, nil, mockEngine)
 
 		// WHEN
 		err := svc.Delete(fixCtxWithTenant(), fixModel())

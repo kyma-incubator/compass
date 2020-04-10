@@ -3,8 +3,12 @@ package label_test
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
@@ -851,5 +855,94 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		err := repo.DeleteByKey(ctx, tenant, key)
 		// THEN
 		require.NoError(t, err)
+	})
+}
+
+func TestRepository_GetRuntimeScenariosWhereRuntimesLabelsMatchSelector(t *testing.T) {
+	query := regexp.QuoteMeta(`SELECT * FROM LABELS AS L WHERE l."key"='scenarios' AND l.tenant_id=$3 AND l.runtime_id in 
+					(
+				SELECT LA.runtime_id FROM LABELS AS LA WHERE LA."key"=$1 AND value::text=quote_ident($2) AND LA.tenant_id=$3 AND LA.runtime_ID IS NOT NULL
+			);`)
+	tnt := "tenant"
+	selectorKey := "KEY"
+	selectorValue := "VALUE"
+	labelValue, err := json.Marshal([]string{selectorValue})
+	require.NoError(t, err)
+	rtmID := "651038e0-e4b6-4036-a32f-f6e9846003f4"
+	testErr := errors.New("test error")
+	t.Run("Success", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
+			AddRow("id", tnt, selectorKey, labelValue, nil, rtmID).
+			AddRow("id", tnt, selectorKey, labelValue, nil, rtmID)
+
+		dbMock.ExpectQuery(query).
+			WithArgs(selectorKey, selectorValue, tnt).WillReturnRows(mockedRows)
+		conv := label.NewConverter()
+		labelRepo := label.NewRepository(conv)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		//WHEN
+		_, err = labelRepo.GetRuntimeScenariosWhereLabelsMatchSelector(ctx, tnt, selectorKey, selectorValue)
+
+		//THEN
+		require.NoError(t, err)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error, while fetch scenarios from database", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		dbMock.ExpectQuery(query).WithArgs(selectorKey, selectorValue, tnt).WillReturnError(testErr)
+		repo := label.NewRepository(nil)
+		//WHEN
+		_, err = repo.GetRuntimeScenariosWhereLabelsMatchSelector(ctx, tnt, selectorKey, selectorValue)
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error, while converting entity to model", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
+			AddRow("id", tnt, selectorKey, labelValue, nil, rtmID).
+			AddRow("id", tnt, selectorKey, labelValue, nil, rtmID)
+
+		dbMock.ExpectQuery(query).WithArgs(selectorKey, selectorValue, tnt).WillReturnRows(mockedRows)
+		conv := &automock.Converter{}
+		conv.On("FromEntity", label.Entity{
+			ID:        "id",
+			TenantID:  tnt,
+			Key:       selectorKey,
+			RuntimeID: repo.NewNullableString(&rtmID),
+			Value:     string(labelValue),
+		}).Return(model.Label{}, nil).Once()
+		conv.On("FromEntity", mock.Anything).Return(model.Label{}, testErr).Once()
+		labelRepo := label.NewRepository(conv)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		//WHEN
+		_, err = labelRepo.GetRuntimeScenariosWhereLabelsMatchSelector(ctx, tnt, selectorKey, selectorValue)
+
+		//THEN
+		require.Error(t, err)
+		dbMock.AssertExpectations(t)
+		conv.AssertExpectations(t)
+	})
+
+	t.Run("Error , no persistence in context", func(t *testing.T) {
+		//GIVEN
+		labelRepo := label.NewRepository(nil)
+		//WHEN
+		_, err := labelRepo.GetRuntimeScenariosWhereLabelsMatchSelector(context.TODO(), "", "", "")
+
+		//THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "while fetching persistence from context: unable to fetch database from context")
 	})
 }

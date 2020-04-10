@@ -174,6 +174,35 @@ func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string)
 	return nil
 }
 
+func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching persistence from context")
+	}
+
+	query := `SELECT * FROM LABELS AS L WHERE l."key"='scenarios' AND l.tenant_id=$3 AND l.runtime_id in 
+					(
+				SELECT LA.runtime_id FROM LABELS AS LA WHERE LA."key"=$1 AND value::text=quote_ident($2) AND LA.tenant_id=$3 AND LA.runtime_ID IS NOT NULL
+			);`
+
+	var lables []Entity
+	err = persist.Select(&lables, query, selectorKey, selectorValue, tenantID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching runtimes scenarios associated with given selector")
+	}
+
+	var labelModels []model.Label
+	for _, label := range lables {
+
+		labelModel, err := r.conv.FromEntity(label)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting label entity to model")
+		}
+		labelModels = append(labelModels, labelModel)
+	}
+	return labelModels, nil
+}
+
 func labelableObjectField(objectType model.LabelableObject) string {
 	switch objectType {
 	case model.ApplicationLabelableObject:

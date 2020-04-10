@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -90,43 +91,52 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	tenantID := testTenants.GetIDByName(t, "TestCreateAutomaticScenarioAssignment")
 	prodScenario := "PRODUCTION"
 	devScenario := "DEVELOPMENT"
-	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{prodScenario, devScenario, "DEFAULT"})
+	manualScenario := "MANUAL"
+	defaultScenario := "DEFAULT"
+	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{prodScenario, devScenario, manualScenario, defaultScenario})
 
-	rmtInput := fixRuntimeInput("runtime1")
-	rtm1 := registerRuntimeFromInputWithinTenant(t, ctx, &rmtInput, tenantID)
-	defer unregisterRuntimeWithinTenant(t, rtm1.ID, tenantID)
+	rtms := make([]*graphql.RuntimeExt, 3)
+	for i := 0; i < 3; i++ {
+		rmtInput := fixRuntimeInput(fmt.Sprintf("runtime%d", i))
 
-	rmtInput = fixRuntimeInput("runtime2")
-	rtm2 := registerRuntimeFromInputWithinTenant(t, ctx, &rmtInput, tenantID)
-	defer unregisterRuntimeWithinTenant(t, rtm2.ID, tenantID)
-
-	rmtInput = fixRuntimeInput("runtime3")
-	rtm3 := registerRuntimeFromInputWithinTenant(t, ctx, &rmtInput, tenantID)
-	defer unregisterRuntimeWithinTenant(t, rtm3.ID, tenantID)
+		rtm := registerRuntimeFromInputWithinTenant(t, ctx, &rmtInput, tenantID)
+		rtms[i] = rtm
+		defer unregisterRuntimeWithinTenant(t, rtm.ID, tenantID)
+	}
 
 	selectorKey := "KEY"
 	selectorValue := "VALUE"
-	setRuntimeLabelWithinTenant(t, ctx, tenantID, rtm1.ID, selectorKey, selectorValue)
-	setRuntimeLabelWithinTenant(t, ctx, tenantID, rtm2.ID, selectorKey, selectorValue)
 
-	//WHEN
-	asaInput := fixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
-	createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
-	asaInput.ScenarioName = devScenario
-	createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
+	setRuntimeLabelWithinTenant(t, ctx, tenantID, rtms[0].ID, selectorKey, selectorValue)
+	setRuntimeLabelWithinTenant(t, ctx, tenantID, rtms[1].ID, selectorKey, selectorValue)
 
-	//THEN
-	runtimesPage := graphql.RuntimePageExt{}
-	queryReq := fixRuntimesRequest()
-	err := tc.RunOperationWithCustomTenant(ctx, tenantID, queryReq, &runtimesPage)
-	require.NoError(t, err)
-	require.Len(t, runtimesPage.Data, 3)
-	for _, rtm := range runtimesPage.Data {
-		if rtm.ID != rtm3.ID {
-			assertScenarios(t, rtm.Labels, []interface{}{prodScenario, devScenario})
-		} else {
-			assertScenarios(t, rtm.Labels, []interface{}{"DEFAULT"})
+	t.Run("Check automatic scenario assigment", func(t *testing.T) {
+		//GIVEN
+		expectedScenarios := map[string][]interface{}{
+			rtms[0].ID: {defaultScenario, prodScenario, devScenario},
+			rtms[1].ID: {defaultScenario, prodScenario, devScenario},
+			rtms[2].ID: {defaultScenario},
 		}
+
+		//WHEN
+		asaInput := fixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
+		createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
+		asaInput.ScenarioName = devScenario
+		defer deleteAutomaticScenarioAssigmentForSelector(t, ctx, tenantID, *asaInput.Selector)
+		createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
+
+		//THEN
+		runtimes := listRuntimes(t, ctx, tenantID)
+		require.Len(t, runtimes.Data, 3)
+		assertRuntimeScenarios(t, runtimes, expectedScenarios)
+	})
+}
+
+func assertRuntimeScenarios(t *testing.T, runtimes graphql.RuntimePageExt, expectedScenarios map[string][]interface{}) {
+	for _, rtm := range runtimes.Data {
+		expectedScenarios, found := expectedScenarios[rtm.ID]
+		require.True(t, found)
+		assertScenarios(t, rtm.Labels, expectedScenarios)
 	}
 }
 

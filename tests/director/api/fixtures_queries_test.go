@@ -133,6 +133,14 @@ func getRuntimeWithinTenant(t *testing.T, ctx context.Context, runtimeID string,
 	return &runtime
 }
 
+func listRuntimes(t *testing.T, ctx context.Context, tenant string) graphql.RuntimePageExt {
+	runtimesPage := graphql.RuntimePageExt{}
+	queryReq := fixRuntimesRequest()
+	err := tc.RunOperationWithCustomTenant(ctx, tenant, queryReq, &runtimesPage)
+	require.NoError(t, err)
+	return runtimesPage
+}
+
 func setRuntimeLabel(t *testing.T, ctx context.Context, runtimeID string, labelKey string, labelValue interface{}) *graphql.Label {
 	return setRuntimeLabelWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), runtimeID, labelKey, labelValue)
 }
@@ -468,6 +476,16 @@ func deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t *testing.T, ctx 
 	assignment := graphql.AutomaticScenarioAssignment{}
 	req := fixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenarioName)
 	err := tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignment)
+	require.NoError(t, err)
+	return assignment
+}
+func deleteAutomaticScenarioAssigmentForSelector(t *testing.T, ctx context.Context, tenantID string, selector graphql.LabelSelectorInput) []graphql.AutomaticScenarioAssignment {
+	paylaod, err := tc.graphqlizer.LabelSelectorInputToGQL(selector)
+	require.NoError(t, err)
+	req := fixDeleteAutomaticScenarioAssignmentsForSelectorRequest(paylaod)
+
+	assignment := []graphql.AutomaticScenarioAssignment{}
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &assignment)
 	require.NoError(t, err)
 	return assignment
 }
