@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/avast/retry-go"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/avast/retry-go"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
