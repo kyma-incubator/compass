@@ -116,7 +116,7 @@ func (c *client) ReconnectRuntimeAgent(accountID, runtimeID string) (string, err
 type GCPRuntimeStatus struct {
 	LastOperationStatus     *schema.OperationStatus         `json:"lastOperationStatus"`
 	RuntimeConnectionStatus *schema.RuntimeConnectionStatus `json:"runtimeConnectionStatus"`
-	RuntimeConfiguration struct {
+	RuntimeConfiguration    struct {
 		ClusterConfig         *schema.GCPConfig  `json:"clusterConfig"`
 		KymaConfig            *schema.KymaConfig `json:"kymaConfig"`
 		Kubeconfig            *string            `json:"kubeconfig"`
