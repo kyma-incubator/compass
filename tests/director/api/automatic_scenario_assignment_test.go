@@ -129,6 +129,7 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		}
 	}
 }
+
 func assertScenarios(t *testing.T, actual graphql.Labels, expected []interface{}) {
 	val, ok := actual["scenarios"]
 	require.True(t, ok)
