@@ -409,6 +409,10 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 	}
 
 	if len(finalScenarios) == 0 {
+		err := s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 
