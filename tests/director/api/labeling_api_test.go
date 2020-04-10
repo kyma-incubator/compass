@@ -813,3 +813,20 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `must be one of the following: "DEFAULT", "Christmas", "New Year"`)
 }
+
+func TestGetScenariosLabelDefinitionCreatesOneIfNotExists(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	tenantID := testTenants.GetIDByName(t, "TestGetScenariosLabelDefinitionCreatesOneIfNotExists")
+	getLabelDefinitionRequest := fixLabelDefinitionRequest(scenariosLabel)
+	labelDefinition := graphql.LabelDefinition{}
+
+	// WHEN
+	err := tc.RunOperationWithCustomTenant(ctx, tenantID, getLabelDefinitionRequest, &labelDefinition)
+
+	// THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, labelDefinition)
+	assert.Equal(t, scenariosLabel, labelDefinition.Key)
+	assert.NotEmpty(t, labelDefinition.Schema)
+}

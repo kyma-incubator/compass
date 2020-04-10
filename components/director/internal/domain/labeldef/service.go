@@ -35,6 +35,11 @@ type LabelRepository interface {
 	DeleteByKey(ctx context.Context, tenant string, key string) error
 }
 
+//go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
+type ScenariosService interface {
+	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
+}
+
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
 type UIDService interface {
 	Generate() string
@@ -44,15 +49,17 @@ type service struct {
 	repo                     Repository
 	labelRepo                LabelRepository
 	scenarioAssignmentLister ScenarioAssignmentLister
+	scenariosService         ScenariosService
 	uidService               UIDService
 }
 
-func NewService(repo Repository, labelRepo LabelRepository, uidService UIDService, scenarioAssignmentLister ScenarioAssignmentLister) *service {
+func NewService(repo Repository, labelRepo LabelRepository, scenarioAssignmentLister ScenarioAssignmentLister, scenariosService ScenariosService, uidService UIDService) *service {
 	return &service{
 		repo:                     repo,
 		labelRepo:                labelRepo,
-		uidService:               uidService,
 		scenarioAssignmentLister: scenarioAssignmentLister,
+		scenariosService:         scenariosService,
+		uidService:               uidService,
 	}
 }
 
@@ -68,6 +75,14 @@ func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.
 }
 
 func (s *service) Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
+	// TODO: Once proper tenant initialization, with creating scenarios LD, is introduced this hack should be removed
+	if key == model.ScenariosKey {
+		err := s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, tenant)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	def, err := s.repo.GetByKey(ctx, tenant, key)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching Label Definition")

@@ -39,12 +39,12 @@ func NewServices(cfg Config, optComponentsSvc OptionalComponentNamesProvider, lo
 func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, error) {
 	var availableServicePlans []domain.ServicePlan
 
-	for _, plan := range plans {
+	for _, plan := range Plans {
 		// filter out not enabled plans
-		if _, exists := b.enabledPlanIDs[plan.planDefinition.ID]; !exists {
+		if _, exists := b.enabledPlanIDs[plan.PlanDefinition.ID]; !exists {
 			continue
 		}
-		p := plan.planDefinition
+		p := plan.PlanDefinition
 		err := json.Unmarshal(plan.provisioningRawSchema, &p.Schemas.Instance.Create.Parameters)
 		b.addComponentsToSchema(&p.Schemas.Instance.Create.Parameters)
 		if err != nil {
@@ -56,8 +56,8 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 
 	return []domain.Service{
 		{
-			ID:          kymaServiceID,
-			Name:        "kymaruntime",
+			ID:          KymaServiceID,
+			Name:        KymaServiceName,
 			Description: "[EXPERIMENTAL] Service Class for Kyma Runtime",
 			Bindable:    true,
 			Plans:       availableServicePlans,

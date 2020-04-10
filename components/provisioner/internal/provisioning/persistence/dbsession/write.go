@@ -180,7 +180,7 @@ func (ws writeSession) UpdateOperationState(operationID string, message string, 
 func (ws writeSession) TransitionOperation(operationID string, message string, stage model.OperationStage, transitionTime time.Time) dberrors.Error {
 	res, err := ws.update("operation").
 		Where(dbr.Eq("id", operationID)).
-		Set("stage", stage). // TODO: align with final naming
+		Set("stage", stage).
 		Set("message", message).
 		Set("last_transition", transitionTime).
 		Exec()

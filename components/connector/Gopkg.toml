@@ -32,6 +32,10 @@ required = [
   version = "kubernetes-1.15.2"
 
 [[override]]
+  name = "gopkg.in/yaml.v2"
+  version = "v2.2.8"
+
+[[override]]
   name = "k8s.io/kubernetes"
   version = "kubernetes-1.15.2"
 

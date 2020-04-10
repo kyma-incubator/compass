@@ -391,7 +391,7 @@ func fixAlwaysPassJSONValidator() broker.PlansSchemaValidator {
 	validatorMock.On("ValidateString", mock.Anything).Return(jsonschema.ValidationResult{Valid: true}, nil)
 
 	fixValidator := broker.PlansSchemaValidator{
-		broker.GcpPlanID:   validatorMock,
+		broker.GCPPlanID:   validatorMock,
 		broker.AzurePlanID: validatorMock,
 	}
 

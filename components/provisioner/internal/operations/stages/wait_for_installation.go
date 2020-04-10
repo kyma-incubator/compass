@@ -41,13 +41,12 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, _ model.Operation, 
 		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
 
-	// TODO: cleanup kubeconfig stuff
 	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
 		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
 
-	installationState, err := s.installationClient.CheckInstallationState(k8sConfig) // TODO: modify signature of this method
+	installationState, err := s.installationClient.CheckInstallationState(k8sConfig)
 	if err != nil {
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
@@ -64,7 +63,6 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, _ model.Operation, 
 	}
 
 	if installationState.State == installationSDK.NoInstallationState {
-		// TODO: not recoverable?
 		return operations.StageResult{}, fmt.Errorf("installation not yet started")
 	}
 

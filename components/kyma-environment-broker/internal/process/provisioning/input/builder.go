@@ -59,7 +59,7 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, component
 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
-	case broker.GcpPlanID, broker.AzurePlanID:
+	case broker.GCPPlanID, broker.AzurePlanID:
 		return true
 	default:
 		return false
@@ -73,7 +73,7 @@ func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.Prov
 
 	var provider HyperscalerInputProvider
 	switch planID {
-	case broker.GcpPlanID:
+	case broker.GCPPlanID:
 		provider = &cloudProvider.GcpInput{}
 	case broker.AzurePlanID:
 		provider = &cloudProvider.AzureInput{}

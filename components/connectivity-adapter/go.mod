@@ -27,3 +27,5 @@ require (
 	k8s.io/apimachinery v0.17.3 // indirect
 	k8s.io/client-go v11.0.0+incompatible // indirect
 )
+
+replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8

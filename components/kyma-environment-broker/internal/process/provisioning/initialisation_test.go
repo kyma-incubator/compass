@@ -99,7 +99,7 @@ func fixOperationRuntimeStatus(t *testing.T) internal.ProvisioningOperation {
 
 func fixProvisioningParametersRuntimeStatus(t *testing.T) string {
 	parameters := internal.ProvisioningParameters{
-		PlanID:    broker.GcpPlanID,
+		PlanID:    broker.GCPPlanID,
 		ServiceID: "",
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: statusGlobalAccountID,

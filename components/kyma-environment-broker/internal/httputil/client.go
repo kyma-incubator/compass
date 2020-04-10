@@ -1,4 +1,4 @@
-package http_client
+package httputil
 
 import (
 	"crypto/tls"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func NewHTTPClient(timeoutSec time.Duration, skipCertVeryfication bool) *http.Client {
+func NewClient(timeoutSec time.Duration, skipCertVeryfication bool) *http.Client {
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: skipCertVeryfication},
 	}
