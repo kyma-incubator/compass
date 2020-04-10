@@ -372,7 +372,7 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 
 	t.Run("Scenario is unset when automatic scenario assignment is deleted", func(t *testing.T) {
 		deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, scenario)
-		rtmWithoutScenarios := getRuntime(t, ctx, rtm.ID)
+		rtmWithoutScenarios := getRuntimeWithinTenant(t, ctx, rtm.ID, tenantID)
 		assertScenarios(t, rtmWithoutScenarios.Labels, scenariosOnlyDefault)
 	})
 
