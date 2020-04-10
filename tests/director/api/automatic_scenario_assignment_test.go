@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
@@ -312,6 +311,57 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 	assertAutomaticScenarioAssignment(t, anotherAssignment, *actualAssignments.Data[0])
 
 	saveExample(t, req.Query(), "delete automatic scenario assignments for selector")
+
+}
+
+func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
+	//GIVEN
+	ctx := context.Background()
+	defaultValue := "DEFAULT"
+	scenario := "test"
+
+	scenariosOnlyDefault := []interface{}{defaultValue}
+	scenarios := []interface{}{scenario, defaultValue}
+	tenantID := testTenants.GetIDByName(t, "TestWholeScenario")
+	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{scenarios[0].(string), scenarios[1].(string)})
+
+	selector := graphql.LabelSelectorInput{Key: "testkey", Value: "testvalue"}
+	assignment := graphql.AutomaticScenarioAssignmentSetInput{ScenarioName: scenario, Selector: &selector}
+
+	createAutomaticScenarioAssignmentInTenant(t, ctx, assignment, tenantID)
+
+	rtmInput := graphql.RuntimeInput{
+		Name:   "test-name",
+		Labels: &graphql.Labels{selector.Key: selector.Value, "scenarios": []string{defaultValue}},
+	}
+
+	rtm := registerRuntimeFromInputWithinTenant(t, ctx, &rtmInput, tenantID)
+	defer unregisterRuntimeWithinTenant(t, rtm.ID, tenantID)
+
+	t.Run("Scenario is set when label matches selector", func(t *testing.T) {
+		rtmWithScenarios := getRuntimeWithinTenant(t, ctx, rtm.ID, tenantID)
+		assertScenarios(t, rtmWithScenarios.Labels, scenarios)
+	})
+
+	selector2 := graphql.LabelSelectorInput{Key: "newtestkey", Value: "newtestvalue"}
+
+	t.Run("Scenario is unset when label on runtime changes", func(t *testing.T) {
+		setRuntimeLabelWithinTenant(t, ctx, tenantID, rtm.ID, selector.Key, selector2.Value)
+		rtmWithScenarios := getRuntimeWithinTenant(t, ctx, rtm.ID, tenantID)
+		assertScenarios(t, rtmWithScenarios.Labels, scenariosOnlyDefault)
+	})
+
+	t.Run("Scenario is set back when label on runtime matches selector", func(t *testing.T) {
+		setRuntimeLabelWithinTenant(t, ctx, tenantID, rtm.ID, selector.Key, selector.Value)
+		rtmWithScenarios := getRuntimeWithinTenant(t, ctx, rtm.ID, tenantID)
+		assertScenarios(t, rtmWithScenarios.Labels, scenarios)
+	})
+
+	t.Run("Scenario is unset when automatic scenario assignment is deleted", func(t *testing.T) {
+		deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, scenario)
+		rtmWithoutScenarios := getRuntimeWithinTenant(t, ctx, rtm.ID, tenantID)
+		assertScenarios(t, rtmWithoutScenarios.Labels, scenariosOnlyDefault)
+	})
 
 }
 

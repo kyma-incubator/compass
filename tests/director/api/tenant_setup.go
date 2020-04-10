@@ -109,6 +109,13 @@ func (mgr *TestTenantsManager) InitializeDB(transact persistence.Transactioner) 
 			ProviderName:   testProvider,
 			Status:         Active,
 		},
+		"TestWholeScenario": {
+			ID:             "65a63692-c00a-4a7d-8376-8615ee37f45c",
+			Name:           "TestWholeScenario",
+			ExternalTenant: "65a63692-c00a-4a7d-8376-8615ee37f45c",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
 	}
 
 	tx, err := transact.Begin()
