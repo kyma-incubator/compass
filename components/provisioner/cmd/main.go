@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/avast/retry-go"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -191,9 +193,6 @@ func main() {
 	// Run upgrade queue
 	upgradeQueue.Run(ctx.Done())
 
-	err = enqueueOperationsInProgress(dbsFactory, installationQueue, upgradeQueue)
-	exitOnError(err, "Failed to enqueue in progress operations")
-
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
 	}
@@ -211,18 +210,39 @@ func main() {
 
 	log.Infof("API listening on %s...", cfg.Address)
 
-	if err := http.ListenAndServe(cfg.Address, router); err != nil {
-		panic(err)
-	}
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+
+		if err := http.ListenAndServe(cfg.Address, router); err != nil {
+			log.Errorf("Error starting server: %s", err.Error())
+		}
+	}()
+
+	err = enqueueOperationsInProgress(dbsFactory, installationQueue, upgradeQueue)
+	exitOnError(err, "Failed to enqueue in progress operations")
+
+	wg.Wait()
 }
 
 func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue, upgradeQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
-	inProgressOps, err := readSession.ListInProgressOperations()
-	if err != nil {
-		return err
-	}
+	var inProgressOps []model.Operation
+	var err error
+
+	// Due to Schema Migrator running post upgrade the pod will be in crash loop back off and Helm deployment will not finish
+	// therefor we need to wait for schema to be initialized in case of blank installation
+	err = retry.Do(func() error {
+		inProgressOps, err = readSession.ListInProgressOperations()
+		if err != nil {
+			log.Warnf("failed to list in progress operation")
+			return err
+		}
+		return nil
+	}, retry.Attempts(30), retry.DelayType(retry.FixedDelay), retry.Delay(5*time.Second))
 
 	for _, op := range inProgressOps {
 		if op.Type == model.Provision && op.Stage != model.ShootProvisioning {
