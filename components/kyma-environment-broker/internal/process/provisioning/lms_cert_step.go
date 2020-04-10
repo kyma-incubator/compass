@@ -9,6 +9,8 @@ import (
 
 	"fmt"
 
+	"encoding/base64"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -18,8 +20,8 @@ import (
 )
 
 const (
-	pollingInterval          = 5 * time.Second
-	certPollingTimeout       = 45 * time.Second
+	pollingInterval          = 15 * time.Second
+	certPollingTimeout       = 4 * time.Minute
 	tenantReadyRetryInterval = 30 * time.Second
 	lmsTimeout               = 30 * time.Minute
 )
@@ -33,7 +35,6 @@ type LmsClient interface {
 }
 
 type lmsCertStep struct {
-	//operationManager    *process.OperationManager
 	provider            LmsClient
 	repo                storage.Operations
 	normalizationRegexp *regexp.Regexp
@@ -42,8 +43,7 @@ type lmsCertStep struct {
 func NewLmsCertificatesStep(certProvider LmsClient, os storage.Operations) *lmsCertStep {
 
 	return &lmsCertStep{
-		provider: certProvider,
-		//operationManager:    process.NewOperationManager(os),
+		provider:            certProvider,
 		repo:                os,
 		normalizationRegexp: regexp.MustCompile("[^a-zA-Z0-9]+"),
 	}
@@ -158,13 +158,17 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 	}
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
-		{Key: "fluent-bit.conf.Service.Flush", Value: "30"},
-		{Key: "fluent-bit.conf.Output.Elasticsearch.enabled", Value: "true"},
-		{Key: "fluent-bit.backend.es.host", Value: tenantInfo.DNS},
-		{Key: "fluent-bit.backend.es.port", Value: "443"},
-		{Key: "fluent-bit.backend.es.tls_ca", Value: caCert},
-		{Key: "fluent-bit.backend.es.tls_crt", Value: signedCert},
-		{Key: "fluent-bit.backend.es.tls_key", Value: string(pKey)},
+		{Key: "fluent-bit.conf.Output.forward.enabled", Value: "true"},
+		{Key: "fluent-bit.backend.forward.host", Value: fmt.Sprintf("forward.%s", tenantInfo.DNS)},
+		{Key: "fluent-bit.backend.forward.port", Value: "8443"},
+		{Key: "fluent-bit.backend.forward.tls.enabled", Value: "true"},
+		{Key: "fluent-bit.backend.forward.tls.verify", Value: "On"},
+
+		// certs and private key must be encoded by base64
+		{Key: "fluent-bit.backend.forward.tls.ca", Value: base64.StdEncoding.EncodeToString([]byte(caCert))},
+		{Key: "fluent-bit.backend.forward.tls.cert", Value: base64.StdEncoding.EncodeToString([]byte(signedCert))},
+		{Key: "fluent-bit.backend.forward.tls.key", Value: base64.StdEncoding.EncodeToString(pKey)},
+
 		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
 [FILTER]
         Name record_modifier
