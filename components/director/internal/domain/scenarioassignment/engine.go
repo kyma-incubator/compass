@@ -119,7 +119,7 @@ func (e engine) GetScenariosForSelectorLabels(ctx context.Context, inputLabels m
 	return scenarios, nil
 }
 
-func (e engine) MergeScenariosFromInputAndAssignmentsFromInput(ctx context.Context, inputLabels map[string]interface{}) ([]interface{}, error) {
+func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}) ([]interface{}, error) {
 	scenariosSet := make(map[string]struct{})
 
 	possibleSelectorLabels := e.convertMapStringInterfaceToMapStringString(inputLabels)
@@ -155,17 +155,17 @@ func (e engine) MergeScenariosFromInputAndAssignmentsFromInput(ctx context.Conte
 	return scenarios, nil
 }
 
-func (e engine) ComputeScenarios(oldScenariosLabel, previousScenariosFromAssignments, newScenariosFromAssignments []interface{}) []interface{} {
+func (e engine) MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd []interface{}) []interface{} {
 	scenariosSet := map[interface{}]struct{}{}
-	for _, scenario := range oldScenariosLabel {
+	for _, scenario := range baseScenarios {
 		scenariosSet[scenario] = struct{}{}
 	}
 
-	for _, scenario := range previousScenariosFromAssignments {
+	for _, scenario := range scenariosToDelete {
 		delete(scenariosSet, scenario)
 	}
 
-	for _, scenario := range newScenariosFromAssignments {
+	for _, scenario := range scenariosToAdd {
 		scenariosSet[scenario] = struct{}{}
 	}
 
@@ -188,20 +188,4 @@ func (e engine) convertMapStringInterfaceToMapStringString(inputLabels map[strin
 	}
 
 	return convertedLabels
-}
-
-func (e engine) convertInterfaceSliceToStringSlice(in []interface{}) []string {
-	out := []string{}
-	for _, val := range in {
-		out = append(out, fmt.Sprint(val))
-	}
-	return out
-}
-
-func (e engine) convertStringSliceToInterfaceSlice(in []string) []interface{} {
-	out := []interface{}{}
-	for _, val := range in {
-		out = append(out, val)
-	}
-	return out
 }

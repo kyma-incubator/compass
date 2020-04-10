@@ -13,8 +13,8 @@ type ScenarioAssignmentEngine struct {
 	mock.Mock
 }
 
-// ComputeScenarios provides a mock function with given fields: oldScenariosLabel, previousScenarios, newScenarios
-func (_m *ScenarioAssignmentEngine) ComputeScenarios(oldScenariosLabel []interface{}, previousScenarios []interface{}, newScenarios []interface{}) []interface{} {
+// MergeScenarios provides a mock function with given fields: oldScenariosLabel, previousScenarios, newScenarios
+func (_m *ScenarioAssignmentEngine) MergeScenarios(oldScenariosLabel []interface{}, previousScenarios []interface{}, newScenarios []interface{}) []interface{} {
 	ret := _m.Called(oldScenariosLabel, previousScenarios, newScenarios)
 
 	var r0 []interface{}
@@ -52,8 +52,8 @@ func (_m *ScenarioAssignmentEngine) GetScenariosForSelectorLabels(ctx context.Co
 	return r0, r1
 }
 
-// MergeScenariosFromInputAndAssignmentsFromInput provides a mock function with given fields: ctx, inputLabels
-func (_m *ScenarioAssignmentEngine) MergeScenariosFromInputAndAssignmentsFromInput(ctx context.Context, inputLabels map[string]interface{}) ([]interface{}, error) {
+// MergeScenariosFromInputLabelsAndAssignments provides a mock function with given fields: ctx, inputLabels
+func (_m *ScenarioAssignmentEngine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}) ([]interface{}, error) {
 	ret := _m.Called(ctx, inputLabels)
 
 	var r0 []interface{}

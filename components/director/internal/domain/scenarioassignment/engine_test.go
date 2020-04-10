@@ -200,7 +200,7 @@ func TestEngine_GetScenariosForSelectorLabels_ShouldFailOnLoadingTenant(t *testi
 	assert.EqualError(t, err, "cannot read tenant from context")
 }
 
-func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_Success(t *testing.T) {
+func TestEngine_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.T) {
 	// given
 	labelKey := "key"
 	labelValue := "val"
@@ -232,7 +232,7 @@ func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_Success(t *testin
 	engineSvc := scenarioassignment.NewEngine(mockRepo)
 
 	// when
-	actualScenarios, err := engineSvc.MergeScenariosFromInputAndAssignmentsFromInput(fixCtxWithTenant(), inputLabels)
+	actualScenarios, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels)
 
 	// then
 
@@ -242,7 +242,7 @@ func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_Success(t *testin
 	mockRepo.AssertExpectations(t)
 }
 
-func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_SuccessIfScenariosLabelIsInInput(t *testing.T) {
+func TestEngine_MergeScenariosFromInputLabelsAndAssignments_SuccessIfScenariosLabelIsInInput(t *testing.T) {
 	// given
 	labelKey := "key"
 	labelValue := "val"
@@ -276,7 +276,7 @@ func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_SuccessIfScenario
 	engineSvc := scenarioassignment.NewEngine(mockRepo)
 
 	// when
-	actualScenarios, err := engineSvc.MergeScenariosFromInputAndAssignmentsFromInput(fixCtxWithTenant(), inputLabels)
+	actualScenarios, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels)
 
 	// then
 	require.NoError(t, err)
@@ -285,7 +285,7 @@ func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_SuccessIfScenario
 	mockRepo.AssertExpectations(t)
 }
 
-func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_ReturnsErrorIfListForSelectorFailed(t *testing.T) {
+func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfListForSelectorFailed(t *testing.T) {
 	// given
 	testErr := errors.New("testErr")
 	labelKey := "key"
@@ -305,7 +305,7 @@ func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_ReturnsErrorIfLis
 	engineSvc := scenarioassignment.NewEngine(mockRepo)
 
 	// when
-	_, err := engineSvc.MergeScenariosFromInputAndAssignmentsFromInput(fixCtxWithTenant(), inputLabels)
+	_, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels)
 
 	// then
 	require.Error(t, err)
@@ -313,7 +313,7 @@ func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_ReturnsErrorIfLis
 	mockRepo.AssertExpectations(t)
 }
 
-func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_ReturnsErrorIfScenariosFromInputWereNotInterfaceSlice(t *testing.T) {
+func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfScenariosFromInputWereNotInterfaceSlice(t *testing.T) {
 	// given
 	labelKey := "key"
 	labelValue := "val"
@@ -345,7 +345,7 @@ func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_ReturnsErrorIfSce
 	engineSvc := scenarioassignment.NewEngine(mockRepo)
 
 	// when
-	_, err := engineSvc.MergeScenariosFromInputAndAssignmentsFromInput(fixCtxWithTenant(), inputLabels)
+	_, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels)
 
 	// then
 	require.Error(t, err)
@@ -353,7 +353,7 @@ func TestEngine_MergeScenariosFromInputAndAssignmentsFromInput_ReturnsErrorIfSce
 	mockRepo.AssertExpectations(t)
 }
 
-func TestEngine_ComputeScenarios_Success(t *testing.T) {
+func TestEngine_MergeScenarios_Success(t *testing.T) {
 	// given
 	oldScenariosLabel := []interface{}{"DEFAULT", "CUSTOM"}
 	previousScenariosFromAssignments := []interface{}{"DEFAULT"}
@@ -364,7 +364,7 @@ func TestEngine_ComputeScenarios_Success(t *testing.T) {
 	engineSvc := scenarioassignment.NewEngine(nil)
 
 	// when
-	actualScenarios := engineSvc.ComputeScenarios(oldScenariosLabel, previousScenariosFromAssignments, newScenariosFromAssignments)
+	actualScenarios := engineSvc.MergeScenarios(oldScenariosLabel, previousScenariosFromAssignments, newScenariosFromAssignments)
 
 	// then
 	assert.Equal(t, expectedScenarios, actualScenarios)

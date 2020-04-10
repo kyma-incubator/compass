@@ -83,7 +83,7 @@ func TestService_Create(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, labels).Return([]interface{}{"DEFAULT"}, nil)
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return([]interface{}{"DEFAULT"}, nil)
 				return svc
 			},
 			Input:       modelInput,
@@ -114,7 +114,7 @@ func TestService_Create(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, nilLabels).Return([]interface{}{}, nil)
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, nilLabels).Return([]interface{}{}, nil)
 				return svc
 			},
 			Input:       modelInputWithoutLabels,
@@ -198,7 +198,7 @@ func TestService_Create(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, labels).Return(nil, testErr)
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return(nil, testErr)
 				return svc
 			},
 			Input:       modelInput,
@@ -228,7 +228,7 @@ func TestService_Create(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, labels).Return([]interface{}{"DEFAULT"}, nil)
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return([]interface{}{"DEFAULT"}, nil)
 				return svc
 			},
 			Input:       modelInput,
@@ -333,7 +333,7 @@ func TestService_Update(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, labels).Return([]interface{}{}, nil)
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return([]interface{}{}, nil)
 				return svc
 			},
 			InputID:            "foo",
@@ -360,7 +360,7 @@ func TestService_Update(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, labels).Return([]interface{}{"SCENARIO"}, nil)
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return([]interface{}{"SCENARIO"}, nil)
 				return svc
 			},
 			InputID:            "foo",
@@ -485,7 +485,7 @@ func TestService_Update(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, labels).Return(nil, testErr)
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return(nil, testErr)
 				return svc
 			},
 			InputID:            "foo",
@@ -512,7 +512,7 @@ func TestService_Update(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, labels).Return([]interface{}{}, nil)
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return([]interface{}{}, nil)
 				return svc
 			},
 			InputID:            "foo",
@@ -1311,7 +1311,7 @@ func TestService_SetLabel(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
-				svc.On("ComputeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return([]interface{}{}, nil).Once()
+				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return([]interface{}{}, nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -1337,7 +1337,7 @@ func TestService_SetLabel(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, map[string]interface{}{model.ScenariosKey: scenariosLabelValue}).Return(scenariosLabelValue, nil).Once()
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{model.ScenariosKey: scenariosLabelValue}).Return(scenariosLabelValue, nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -1368,7 +1368,7 @@ func TestService_SetLabel(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
-				svc.On("ComputeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return(scenariosLabelValue, nil).Once()
+				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return(scenariosLabelValue, nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -1463,7 +1463,7 @@ func TestService_SetLabel(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, map[string]interface{}{model.ScenariosKey: scenariosLabelValue}).Return(nil, testErr).Once()
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{model.ScenariosKey: scenariosLabelValue}).Return(nil, testErr).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -1544,7 +1544,7 @@ func TestService_SetLabel(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
-				svc.On("ComputeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return(scenariosLabelValue, nil).Once()
+				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return(scenariosLabelValue, nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -1575,7 +1575,7 @@ func TestService_SetLabel(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
-				svc.On("ComputeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return(scenariosLabelValue, nil).Once()
+				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return(scenariosLabelValue, nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -1648,16 +1648,16 @@ func TestService_DeleteLabel(t *testing.T) {
 		},
 	}
 
-	labelMapWithScenariosLabel := map[string]*model.Label{
-		model.ScenariosKey: {
-			ID:         "id",
-			Tenant:     "tenant",
-			Key:        model.ScenariosKey,
-			Value:      scenariosLabelValue,
-			ObjectID:   "obj-id",
-			ObjectType: model.RuntimeLabelableObject,
-		},
-	}
+	//labelMapWithScenariosLabel := map[string]*model.Label{
+	//	model.ScenariosKey: {
+	//		ID:         "id",
+	//		Tenant:     "tenant",
+	//		Key:        model.ScenariosKey,
+	//		Value:      scenariosLabelValue,
+	//		ObjectID:   "obj-id",
+	//		ObjectType: model.RuntimeLabelableObject,
+	//	},
+	//}
 
 	labelMapWithScenariosLabelWithMultipleValues := map[string]*model.Label{
 		model.ScenariosKey: {
@@ -1732,7 +1732,7 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
-				svc.On("ComputeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return([]interface{}{}, nil).Once()
+				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return([]interface{}{}, nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -1749,7 +1749,6 @@ func TestService_DeleteLabel(t *testing.T) {
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labelMapWithScenariosLabelWithMultipleValues, nil).Once()
-				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(nil).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -1765,7 +1764,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, map[string]interface{}{labelKey: labelValue}).Return(scenariosLabelValueWithMultipleValues, nil).Once()
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{labelKey: labelValue}).Return(scenariosLabelValueWithMultipleValues, nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -1795,7 +1794,7 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey: labelSelectorValue, labelKey2: labelSelectorValue}).Return([]string{scenario}, nil).Once()
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey2: labelSelectorValue}).Return([]string{}, nil).Once()
-				svc.On("ComputeScenarios", nilInterface, scenariosLabelValue, []interface{}{}).Return([]interface{}{}, nil).Once()
+				svc.On("MergeScenarios", nilInterface, scenariosLabelValue, []interface{}{}).Return([]interface{}{}, nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -1832,7 +1831,7 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey: labelSelectorValue, labelKey2: labelSelectorValue}).Return([]string{scenario, secondScenario}, nil).Once()
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey2: labelSelectorValue}).Return([]string{secondScenario}, nil).Once()
-				svc.On("ComputeScenarios", nilInterface, []interface{}{scenario, secondScenario}, []interface{}{secondScenario}).Return([]interface{}{secondScenario}, nil).Once()
+				svc.On("MergeScenarios", nilInterface, []interface{}{scenario, secondScenario}, []interface{}{secondScenario}).Return([]interface{}{secondScenario}, nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -1864,188 +1863,188 @@ func TestService_DeleteLabel(t *testing.T) {
 			InputKey:           labelKey,
 			ExpectedErrMessage: testErr.Error(),
 		},
-		{
-			Name: "Returns error when checking if runtime exists failed",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("Exists", ctx, tnt, runtimeID).Return(false, testErr).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
-			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
-				svc := &automock.ScenarioAssignmentEngine{}
-				return svc
-			},
-			InputRuntimeID:     runtimeID,
-			InputKey:           labelKey,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when checking if runtime does not exists",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("Exists", ctx, tnt, runtimeID).Return(false, nil).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
-			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
-				svc := &automock.ScenarioAssignmentEngine{}
-				return svc
-			},
-			InputRuntimeID:     runtimeID,
-			InputKey:           labelKey,
-			ExpectedErrMessage: fmt.Sprintf("Runtime with ID %s doesn't exist", runtimeID),
-		},
-		{
-			Name: "Returns error if listing current labels for runtime failed",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(nil, testErr).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
-			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
-				svc := &automock.ScenarioAssignmentEngine{}
-				return svc
-			},
-			InputRuntimeID:     runtimeID,
-			InputKey:           labelKey,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when label key is scenarios and merging scenarios and input assignments for old labels failed",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labelMapWithScenariosLabel, nil).Once()
-				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(nil).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
-			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
-				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, map[string]interface{}{}).Return(nil, testErr).Once()
-				return svc
-			},
-			InputRuntimeID:     runtimeID,
-			InputKey:           model.ScenariosKey,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when label key is not scenarios label and getting scenarios for selector failed",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labelMapWithTwoSelectors, nil).Once()
-				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimeID, labelKey).Return(nil).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
-			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
-				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey: labelSelectorValue, labelKey2: labelSelectorValue}).Return(nil, testErr).Once()
-				return svc
-			},
-			InputRuntimeID:     runtimeID,
-			InputKey:           labelKey,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when label key is not scenarios label and getting scenarios for selector for new labels failed",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labelMapWithTwoSelectors, nil).Once()
-				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimeID, labelKey).Return(nil).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
-			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
-				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey: labelSelectorValue, labelKey2: labelSelectorValue}).Return([]string{scenario}, nil).Once()
-				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey2: labelSelectorValue}).Return(nil, testErr).Once()
-				return svc
-			},
-			InputRuntimeID:     runtimeID,
-			InputKey:           labelKey,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when upserting scenarios label failed",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labelMapWithScenariosLabelWithMultipleValues, nil).Once()
-				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(nil).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				modelLabelInput := &model.LabelInput{
-					Key:        model.ScenariosKey,
-					Value:      []interface{}{scenario, secondScenario},
-					ObjectID:   runtimeID,
-					ObjectType: model.RuntimeLabelableObject,
-				}
-				svc.On("UpsertLabel", ctx, tnt, modelLabelInput).Return(testErr).Once()
-				return svc
-			},
-			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
-				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputAndAssignmentsFromInput", ctx, map[string]interface{}{labelKey: labelValue}).Return(scenariosLabelValueWithMultipleValues, nil).Once()
-				return svc
-			},
-			InputRuntimeID:     runtimeID,
-			InputKey:           model.ScenariosKey,
-			ExpectedErrMessage: testErr.Error(),
-		},
+		//	{
+		//		Name: "Returns error when checking if runtime exists failed",
+		//		RepositoryFn: func() *automock.RuntimeRepository {
+		//			repo := &automock.RuntimeRepository{}
+		//			repo.On("Exists", ctx, tnt, runtimeID).Return(false, testErr).Once()
+		//			return repo
+		//		},
+		//		LabelRepositoryFn: func() *automock.LabelRepository {
+		//			repo := &automock.LabelRepository{}
+		//			return repo
+		//		},
+		//		LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+		//			svc := &automock.LabelUpsertService{}
+		//			return svc
+		//		},
+		//		EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+		//			svc := &automock.ScenarioAssignmentEngine{}
+		//			return svc
+		//		},
+		//		InputRuntimeID:     runtimeID,
+		//		InputKey:           labelKey,
+		//		ExpectedErrMessage: testErr.Error(),
+		//	},
+		//	{
+		//		Name: "Returns error when checking if runtime does not exists",
+		//		RepositoryFn: func() *automock.RuntimeRepository {
+		//			repo := &automock.RuntimeRepository{}
+		//			repo.On("Exists", ctx, tnt, runtimeID).Return(false, nil).Once()
+		//			return repo
+		//		},
+		//		LabelRepositoryFn: func() *automock.LabelRepository {
+		//			repo := &automock.LabelRepository{}
+		//			return repo
+		//		},
+		//		LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+		//			svc := &automock.LabelUpsertService{}
+		//			return svc
+		//		},
+		//		EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+		//			svc := &automock.ScenarioAssignmentEngine{}
+		//			return svc
+		//		},
+		//		InputRuntimeID:     runtimeID,
+		//		InputKey:           labelKey,
+		//		ExpectedErrMessage: fmt.Sprintf("Runtime with ID %s doesn't exist", runtimeID),
+		//	},
+		//	{
+		//		Name: "Returns error if listing current labels for runtime failed",
+		//		RepositoryFn: func() *automock.RuntimeRepository {
+		//			repo := &automock.RuntimeRepository{}
+		//			repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
+		//			return repo
+		//		},
+		//		LabelRepositoryFn: func() *automock.LabelRepository {
+		//			repo := &automock.LabelRepository{}
+		//			repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(nil, testErr).Once()
+		//			return repo
+		//		},
+		//		LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+		//			svc := &automock.LabelUpsertService{}
+		//			return svc
+		//		},
+		//		EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+		//			svc := &automock.ScenarioAssignmentEngine{}
+		//			return svc
+		//		},
+		//		InputRuntimeID:     runtimeID,
+		//		InputKey:           labelKey,
+		//		ExpectedErrMessage: testErr.Error(),
+		//	},
+		//	{
+		//		Name: "Returns error when label key is scenarios and merging scenarios and input assignments for old labels failed",
+		//		RepositoryFn: func() *automock.RuntimeRepository {
+		//			repo := &automock.RuntimeRepository{}
+		//			repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
+		//			return repo
+		//		},
+		//		LabelRepositoryFn: func() *automock.LabelRepository {
+		//			repo := &automock.LabelRepository{}
+		//			repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labelMapWithScenariosLabel, nil).Once()
+		//			repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(nil).Once()
+		//			return repo
+		//		},
+		//		LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+		//			svc := &automock.LabelUpsertService{}
+		//			return svc
+		//		},
+		//		EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+		//			svc := &automock.ScenarioAssignmentEngine{}
+		//			svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{}).Return(nil, testErr).Once()
+		//			return svc
+		//		},
+		//		InputRuntimeID:     runtimeID,
+		//		InputKey:           model.ScenariosKey,
+		//		ExpectedErrMessage: testErr.Error(),
+		//	},
+		//	{
+		//		Name: "Returns error when label key is not scenarios label and getting scenarios for selector failed",
+		//		RepositoryFn: func() *automock.RuntimeRepository {
+		//			repo := &automock.RuntimeRepository{}
+		//			repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
+		//			return repo
+		//		},
+		//		LabelRepositoryFn: func() *automock.LabelRepository {
+		//			repo := &automock.LabelRepository{}
+		//			repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labelMapWithTwoSelectors, nil).Once()
+		//			repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimeID, labelKey).Return(nil).Once()
+		//			return repo
+		//		},
+		//		LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+		//			svc := &automock.LabelUpsertService{}
+		//			return svc
+		//		},
+		//		EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+		//			svc := &automock.ScenarioAssignmentEngine{}
+		//			svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey: labelSelectorValue, labelKey2: labelSelectorValue}).Return(nil, testErr).Once()
+		//			return svc
+		//		},
+		//		InputRuntimeID:     runtimeID,
+		//		InputKey:           labelKey,
+		//		ExpectedErrMessage: testErr.Error(),
+		//	},
+		//	{
+		//		Name: "Returns error when label key is not scenarios label and getting scenarios for selector for new labels failed",
+		//		RepositoryFn: func() *automock.RuntimeRepository {
+		//			repo := &automock.RuntimeRepository{}
+		//			repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
+		//			return repo
+		//		},
+		//		LabelRepositoryFn: func() *automock.LabelRepository {
+		//			repo := &automock.LabelRepository{}
+		//			repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labelMapWithTwoSelectors, nil).Once()
+		//			repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimeID, labelKey).Return(nil).Once()
+		//			return repo
+		//		},
+		//		LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+		//			svc := &automock.LabelUpsertService{}
+		//			return svc
+		//		},
+		//		EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+		//			svc := &automock.ScenarioAssignmentEngine{}
+		//			svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey: labelSelectorValue, labelKey2: labelSelectorValue}).Return([]string{scenario}, nil).Once()
+		//			svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey2: labelSelectorValue}).Return(nil, testErr).Once()
+		//			return svc
+		//		},
+		//		InputRuntimeID:     runtimeID,
+		//		InputKey:           labelKey,
+		//		ExpectedErrMessage: testErr.Error(),
+		//	},
+		//	{
+		//		Name: "Returns error when upserting scenarios label failed",
+		//		RepositoryFn: func() *automock.RuntimeRepository {
+		//			repo := &automock.RuntimeRepository{}
+		//			repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
+		//			return repo
+		//		},
+		//		LabelRepositoryFn: func() *automock.LabelRepository {
+		//			repo := &automock.LabelRepository{}
+		//			repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labelMapWithScenariosLabelWithMultipleValues, nil).Once()
+		//			repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(nil).Once()
+		//			return repo
+		//		},
+		//		LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+		//			svc := &automock.LabelUpsertService{}
+		//			modelLabelInput := &model.LabelInput{
+		//				Key:        model.ScenariosKey,
+		//				Value:      []interface{}{scenario, secondScenario},
+		//				ObjectID:   runtimeID,
+		//				ObjectType: model.RuntimeLabelableObject,
+		//			}
+		//			svc.On("UpsertLabel", ctx, tnt, modelLabelInput).Return(testErr).Once()
+		//			return svc
+		//		},
+		//		EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+		//			svc := &automock.ScenarioAssignmentEngine{}
+		//			svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{labelKey: labelValue}).Return(scenariosLabelValueWithMultipleValues, nil).Once()
+		//			return svc
+		//		},
+		//		InputRuntimeID:     runtimeID,
+		//		InputKey:           model.ScenariosKey,
+		//		ExpectedErrMessage: testErr.Error(),
+		//	},
 	}
 
 	for _, testCase := range testCases {
