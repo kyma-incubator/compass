@@ -3,9 +3,9 @@ package provisioner
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"reflect"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/httputil"
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -35,7 +35,7 @@ type client struct {
 }
 
 func NewProvisionerClient(endpoint string, queryDumping bool) Client {
-	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(http.DefaultClient))
+	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httputil.NewClient(30, false)))
 	if queryDumping {
 		graphQlClient.Log = func(s string) {
 			fmt.Println(s)
