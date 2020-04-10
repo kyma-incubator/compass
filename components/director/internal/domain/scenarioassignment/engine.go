@@ -2,11 +2,13 @@ package scenarioassignment
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/pkg/errors"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
@@ -17,11 +19,15 @@ type LabelRepository interface {
 }
 
 type engine struct {
-	labelRepo LabelRepository
+	labelRepo              LabelRepository
+	scenarioAssignmentRepo Repository
 }
 
-func NewEngine(labelRepo LabelRepository) *engine {
-	return &engine{labelRepo: labelRepo}
+func NewEngine(labelRepo LabelRepository, scenarioAssignmentRepo Repository) *engine {
+	return &engine{
+		labelRepo:              labelRepo,
+		scenarioAssignmentRepo: scenarioAssignmentRepo,
+	}
 }
 
 func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
@@ -78,4 +84,108 @@ func (engine) RemoveAssignedScenarios(in []*model.AutomaticScenarioAssignment) e
 
 	// remove scenarios from runtimes, which have label matching selector
 	return nil
+}
+
+func (e engine) GetScenariosForSelectorLabels(ctx context.Context, inputLabels map[string]string) ([]string, error) {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	scenariosSet := make(map[string]struct{})
+
+	for k, v := range inputLabels {
+		selector := model.LabelSelector{
+			Key:   k,
+			Value: v,
+		}
+
+		scenarioAssignments, err := e.scenarioAssignmentRepo.ListForSelector(ctx, selector, tenantID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting Automatic Scenario Assignments for selector [key: %s, val: %s]", k, v)
+		}
+
+		for _, sa := range scenarioAssignments {
+			scenariosSet[sa.ScenarioName] = struct{}{}
+		}
+
+	}
+
+	scenarios := make([]string, 0)
+	for k := range scenariosSet {
+		scenarios = append(scenarios, k)
+	}
+
+	return scenarios, nil
+}
+
+func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}) ([]interface{}, error) {
+	scenariosSet := make(map[string]struct{})
+
+	possibleSelectorLabels := e.convertMapStringInterfaceToMapStringString(inputLabels)
+
+	scenariosFromAssignments, err := e.GetScenariosForSelectorLabels(ctx, possibleSelectorLabels)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting scenarios for selector labels")
+	}
+
+	for _, scenario := range scenariosFromAssignments {
+		scenariosSet[scenario] = struct{}{}
+	}
+
+	scenariosFromInput, isScenarioLabelInInput := inputLabels[model.ScenariosKey]
+
+	if isScenarioLabelInInput {
+		scenariosFromInputInterfaceSlice, ok := scenariosFromInput.([]interface{})
+		if !ok {
+			return nil, errors.New("while converting scenarios label to an interface slice")
+		}
+
+		for _, scenario := range scenariosFromInputInterfaceSlice {
+			scenariosSet[fmt.Sprint(scenario)] = struct{}{}
+		}
+
+	}
+
+	scenarios := make([]interface{}, 0)
+	for k := range scenariosSet {
+		scenarios = append(scenarios, k)
+	}
+
+	return scenarios, nil
+}
+
+func (e engine) MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd []interface{}) []interface{} {
+	scenariosSet := map[interface{}]struct{}{}
+	for _, scenario := range baseScenarios {
+		scenariosSet[scenario] = struct{}{}
+	}
+
+	for _, scenario := range scenariosToDelete {
+		delete(scenariosSet, scenario)
+	}
+
+	for _, scenario := range scenariosToAdd {
+		scenariosSet[scenario] = struct{}{}
+	}
+
+	scenarios := make([]interface{}, 0)
+	for k := range scenariosSet {
+		scenarios = append(scenarios, k)
+	}
+
+	return scenarios
+}
+
+func (e engine) convertMapStringInterfaceToMapStringString(inputLabels map[string]interface{}) map[string]string {
+	convertedLabels := make(map[string]string)
+
+	for k, v := range inputLabels {
+		val, ok := v.(string)
+		if ok {
+			convertedLabels[k] = val
+		}
+	}
+
+	return convertedLabels
 }

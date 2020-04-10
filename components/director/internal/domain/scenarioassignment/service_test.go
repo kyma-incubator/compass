@@ -187,7 +187,7 @@ func TestService_GetByScenarioName(t *testing.T) {
 	})
 }
 
-func TestService_GetForSelector(t *testing.T) {
+func TestService_ListForSelector(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// GIVEN
 		selector := fixLabelSelector()
