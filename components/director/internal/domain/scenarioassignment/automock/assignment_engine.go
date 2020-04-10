@@ -28,13 +28,13 @@ func (_m *AssignmentEngine) EnsureScenarioAssigned(ctx context.Context, in model
 	return r0
 }
 
-// RemoveAssignedScenario provides a mock function with given fields: in
-func (_m *AssignmentEngine) RemoveAssignedScenario(in model.AutomaticScenarioAssignment) error {
-	ret := _m.Called(in)
+// RemoveAssignedScenario provides a mock function with given fields: ctx, in
+func (_m *AssignmentEngine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+	ret := _m.Called(ctx, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(model.AutomaticScenarioAssignment) error); ok {
-		r0 = rf(in)
+	if rf, ok := ret.Get(0).(func(context.Context, model.AutomaticScenarioAssignment) error); ok {
+		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -42,13 +42,13 @@ func (_m *AssignmentEngine) RemoveAssignedScenario(in model.AutomaticScenarioAss
 	return r0
 }
 
-// RemoveAssignedScenarios provides a mock function with given fields: in
-func (_m *AssignmentEngine) RemoveAssignedScenarios(in []*model.AutomaticScenarioAssignment) error {
-	ret := _m.Called(in)
+// RemoveAssignedScenarios provides a mock function with given fields: ctx, in
+func (_m *AssignmentEngine) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
+	ret := _m.Called(ctx, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func([]*model.AutomaticScenarioAssignment) error); ok {
-		r0 = rf(in)
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.AutomaticScenarioAssignment) error); ok {
+		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Error(0)
 	}

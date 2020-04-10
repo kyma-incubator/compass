@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -91,6 +92,145 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		//WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+		labelRepo.AssertExpectations(t)
+	})
+}
+
+func TestEngine_RemoveAssignedScenario(t *testing.T) {
+	selectorKey := "KEY"
+	selectorValue := "VALUE"
+	selectorScenario := "SELECTOR_SCENARIO"
+	in := fixAutomaticScenarioAssigment(selectorScenario, selectorKey, selectorValue)
+	testErr := errors.New("test err")
+
+	t.Run("Success", func(t *testing.T) {
+		scenarios := []interface{}{"OTHER", "SCENARIO"}
+		scenarioLabel := model.Label{
+			Key:      model.ScenariosKey,
+			Value:    append(scenarios, selectorScenario),
+			ObjectID: "runtime_id",
+		}
+		expectedScenarioLabel := scenarioLabel
+		expectedScenarioLabel.Value = scenarios
+
+		ctx := context.TODO()
+
+		labels := []model.Label{scenarioLabel}
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+			Return(labels, nil).Once()
+		labelRepo.On("Upsert", ctx, mock.MatchedBy(matchExpectedScenarios(t, &expectedScenarioLabel))).
+			Return(nil).Once()
+
+		eng := scenarioassignment.NewEngine(labelRepo, nil)
+
+		//WHEN
+		err := eng.RemoveAssignedScenario(ctx, in)
+
+		//THEN
+		require.NoError(t, err)
+		mock.AssertExpectationsForObjects(t, labelRepo)
+		labelRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed when Label Upsert failed ", func(t *testing.T) {
+		scenarios := []interface{}{"OTHER", "SCENARIO"}
+		scenarioLabel := model.Label{
+			Key:      model.ScenariosKey,
+			Value:    append(scenarios, selectorScenario),
+			ObjectID: "runtime_id",
+		}
+
+		expectedScenarioLabel := scenarioLabel
+		expectedScenarioLabel.Value = scenarios
+
+		ctx := context.TODO()
+
+		labels := []model.Label{scenarioLabel, {Key: selectorKey}}
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+			Return(labels, nil).Once()
+		labelRepo.On("Upsert", ctx, mock.MatchedBy(matchExpectedScenarios(t, &expectedScenarioLabel))).
+			Return(testErr)
+
+		eng := scenarioassignment.NewEngine(labelRepo, nil)
+
+		//WHEN
+		err := eng.RemoveAssignedScenario(ctx, in)
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+		labelRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed when GetRuntimeScenariosWhereRuntimesLabelsMatchSelector returns error", func(t *testing.T) {
+		ctx := context.TODO()
+
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+			Return([]model.Label{}, testErr).Once()
+
+		eng := scenarioassignment.NewEngine(labelRepo, nil)
+
+		//WHEN
+		err := eng.RemoveAssignedScenario(ctx, in)
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+		labelRepo.AssertExpectations(t)
+	})
+}
+
+func TestEngine_RemoveAssignedScenarios(t *testing.T) {
+	selectorKey, selectorValue := "KEY", "VALUE"
+	expctedScenario1 := []interface{}{"SCENARIO2"}
+	in := []*model.AutomaticScenarioAssignment{
+		{
+			ScenarioName: "SCENARIO1",
+			Tenant:       tenantID,
+			Selector: model.LabelSelector{
+				Key:   selectorKey,
+				Value: selectorValue,
+			}}}
+
+	labels := []model.Label{{
+		Value:    []interface{}{"SCENARIO1", "SCENARIO2"},
+		Key:      model.ScenariosKey,
+		ObjectID: "651038e0-e4b6-4036-a32f-f6e9846003f4",
+	}}
+
+	t.Run("Success", func(t *testing.T) {
+		//GIVEN
+		ctx := context.TODO()
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+			Return(labels, nil).Once()
+		labelRepo.On("Upsert", ctx, mock.MatchedBy(matchExpectedScenarios(t, &model.Label{Value: expctedScenario1}))).Return(nil).Once()
+		eng := scenarioassignment.NewEngine(labelRepo, nil)
+		//WHEN
+		err := eng.RemoveAssignedScenarios(ctx, in)
+
+		//THEN
+		require.NoError(t, err)
+		labelRepo.AssertExpectations(t)
+	})
+
+	t.Run("Error, while removing scenario", func(t *testing.T) {
+		//GIVEN
+		testErr := errors.New("test error")
+		ctx := context.TODO()
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+			Return(labels, testErr).Once()
+		eng := scenarioassignment.NewEngine(labelRepo, nil)
+		//WHEN
+		err := eng.RemoveAssignedScenarios(ctx, in)
 
 		//THEN
 		require.Error(t, err)

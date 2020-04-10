@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
+func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	tenantID := testTenants.GetIDByName(t, "ASA1")
@@ -90,9 +90,10 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	ctx := context.TODO()
 	tenantID := testTenants.GetIDByName(t, "TestCreateAutomaticScenarioAssignment")
 	prodScenario := "PRODUCTION"
+	devScenario := "DEVELOPMENT"
 	manualScenario := "MANUAL"
 	defaultScenario := "DEFAULT"
-	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{prodScenario, manualScenario, defaultScenario})
+	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{prodScenario, manualScenario, devScenario, defaultScenario})
 
 	rtms := make([]*graphql.RuntimeExt, 3)
 	for i := 0; i < 3; i++ {
@@ -127,6 +128,69 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		require.Len(t, runtimes.Data, 3)
 		assertRuntimeScenarios(t, runtimes, expectedScenarios)
 	})
+
+	t.Run("Delete Automatic Scenario Assigment for scenario", func(t *testing.T) {
+		//GIVEN
+		scenarios := map[string][]interface{}{
+			rtms[0].ID: {defaultScenario, prodScenario},
+			rtms[1].ID: {defaultScenario, prodScenario},
+			rtms[2].ID: {defaultScenario},
+		}
+
+		//WHEN
+		asaInput := fixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
+		createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
+		runtimes := listRuntimes(t, ctx, tenantID)
+		assertRuntimeScenarios(t, runtimes, scenarios)
+
+		expectedScenarios := map[string][]interface{}{
+			rtms[0].ID: {defaultScenario},
+			rtms[1].ID: {defaultScenario},
+			rtms[2].ID: {defaultScenario},
+		}
+
+		//WHEN
+		deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, prodScenario)
+
+		//THEN
+		runtimes = listRuntimes(t, ctx, tenantID)
+		require.Len(t, runtimes.Data, 3)
+		assertRuntimeScenarios(t, runtimes, expectedScenarios)
+	})
+
+	t.Run("Delete Automatic Scenario Assigment by selector, check also if manually added scenarios survived", func(t *testing.T) {
+		//GIVEN
+		scenarios := map[string][]interface{}{
+			rtms[0].ID: {defaultScenario, prodScenario, devScenario},
+			rtms[1].ID: {defaultScenario, prodScenario, devScenario},
+			rtms[2].ID: {defaultScenario},
+		}
+
+		//WHEN
+		asaInput := fixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
+		createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
+		asaInput.ScenarioName = devScenario
+		createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
+		runtimes := listRuntimes(t, ctx, tenantID)
+		assertRuntimeScenarios(t, runtimes, scenarios)
+
+		expectedScenarios := map[string][]interface{}{
+			rtms[0].ID: {manualScenario},
+			rtms[1].ID: {manualScenario},
+			rtms[2].ID: {defaultScenario},
+		}
+
+		//WHEN
+		setRuntimeLabelWithinTenant(t, ctx, tenantID, rtms[0].ID, "scenarios", []interface{}{prodScenario, devScenario, manualScenario})
+		setRuntimeLabelWithinTenant(t, ctx, tenantID, rtms[1].ID, "scenarios", []interface{}{prodScenario, devScenario, manualScenario})
+		deleteAutomaticScenarioAssigmentForSelector(t, ctx, tenantID, graphql.LabelSelectorInput{Key: selectorKey, Value: selectorValue})
+
+		//THEN
+		runtimes = listRuntimes(t, ctx, tenantID)
+		require.Len(t, runtimes.Data, 3)
+		assertRuntimeScenarios(t, runtimes, expectedScenarios)
+	})
+
 }
 
 func assertRuntimeScenarios(t *testing.T, runtimes graphql.RuntimePageExt, expectedScenarios map[string][]interface{}) {
