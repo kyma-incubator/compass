@@ -1057,7 +1057,7 @@ func TestService_GetLabel(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when runtime doesn't exist",
+			Name: "Returns error when exists function for runtime failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("Exists", ctx, tnt, runtimeID).Return(false, testErr).Once()
@@ -1071,6 +1071,22 @@ func TestService_GetLabel(t *testing.T) {
 			InputRuntimeID:     runtimeID,
 			InputLabel:         label,
 			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when runtime doesn't exist",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Exists", ctx, tnt, runtimeID).Return(false, nil).Once()
+
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			InputRuntimeID:     runtimeID,
+			InputLabel:         label,
+			ExpectedErrMessage: fmt.Sprintf("Runtime with ID %s doesn't exist", runtimeID),
 		},
 	}
 
@@ -1180,7 +1196,7 @@ func TestService_ListLabel(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when application doesn't exist",
+			Name: "Returns error when runtime exists function failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("Exists", ctx, tnt, runtimeID).Return(false, testErr).Once()
@@ -1194,6 +1210,22 @@ func TestService_ListLabel(t *testing.T) {
 			InputRuntimeID:     runtimeID,
 			InputLabel:         label,
 			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when runtime does not exists",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Exists", ctx, tnt, runtimeID).Return(false, nil).Once()
+
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			InputRuntimeID:     runtimeID,
+			InputLabel:         label,
+			ExpectedErrMessage: fmt.Sprintf("Runtime with ID %s doesn't exist", runtimeID),
 		},
 	}
 
@@ -1262,6 +1294,17 @@ func TestService_SetLabel(t *testing.T) {
 			Tenant:     "tenant",
 			Key:        model.ScenariosKey,
 			Value:      scenariosLabelValue,
+			ObjectID:   "obj-id",
+			ObjectType: model.RuntimeLabelableObject,
+		},
+	}
+
+	labelMapWithInvalidScenariosLabel := map[string]*model.Label{
+		model.ScenariosKey: {
+			ID:         "id",
+			Tenant:     "tenant",
+			Key:        model.ScenariosKey,
+			Value:      []int{},
 			ObjectID:   "obj-id",
 			ObjectType: model.RuntimeLabelableObject,
 		},
@@ -1582,6 +1625,30 @@ func TestService_SetLabel(t *testing.T) {
 			InputRuntimeID:     runtimeID,
 			InputLabel:         &modelLabelInput,
 			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when scenarios label value is not []interface{}",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labelMapWithInvalidScenariosLabel, nil).Once()
+				return repo
+			},
+			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+				svc := &automock.ScenarioAssignmentEngine{}
+				return svc
+			},
+			InputRuntimeID:     runtimeID,
+			InputLabel:         &modelLabelInput,
+			ExpectedErrMessage: "value for scenarios label must be []interface{}",
 		},
 	}
 
