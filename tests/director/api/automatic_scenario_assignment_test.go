@@ -331,12 +331,14 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 
 	createAutomaticScenarioAssignmentInTenant(t, ctx, assignment, tenantID)
 
-	rtmInput := graphql.RuntimeInput{Name: "test-name"}
+	rtmInput := graphql.RuntimeInput{
+		Name:   "test-name",
+		Labels: &graphql.Labels{selector.Key: selector.Value},
+	}
 	rtm := createRuntimeFromInputWithinTenant(t, ctx, &rtmInput, tenantID)
 	defer unregisterRuntimeWithinTenant(t, rtm.ID, tenantID)
 
 	t.Run("Scenario is set when label matches selector", func(t *testing.T) {
-		setRuntimeLabelWithinTenant(t, ctx, tenantID, rtm.ID, selector.Key, selector.Value)
 		rtmWithScenarios := getRuntimeWithinTenant(t, ctx, rtm.ID, tenantID)
 		assertScenarios(t, rtmWithScenarios.Labels, scenarios)
 	})
