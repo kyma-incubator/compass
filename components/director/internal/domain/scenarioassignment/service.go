@@ -19,7 +19,6 @@ type Repository interface {
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 	DeleteForSelector(ctx context.Context, tenantID string, selector model.LabelSelector) error
 	DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error
-	EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
 //go:generate mockery -name=ScenariosDefService -output=automock -outpkg=automock -case=underscore

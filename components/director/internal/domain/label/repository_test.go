@@ -861,7 +861,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 func TestRepository_GetRuntimeScenariosWhereRuntimesLabelsMatchSelector(t *testing.T) {
 	query := regexp.QuoteMeta(`SELECT * FROM LABELS AS L WHERE l."key"='scenarios' AND l.tenant_id=$3 AND l.runtime_id in 
 					(
-				SELECT LA.runtime_id FROM LABELS AS LA WHERE LA."key"=$1 AND value::text=quote_ident($2) AND LA.tenant_id=$3 AND LA.runtime_ID IS NOT NULL
+				SELECT LA.runtime_id FROM LABELS AS LA WHERE LA."key"=$1 AND value ?| array[$2] AND LA.tenant_id=$3 AND LA.runtime_ID IS NOT NULL
 			);`)
 	tnt := "tenant"
 	selectorKey := "KEY"

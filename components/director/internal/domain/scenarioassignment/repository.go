@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
 	"github.com/pkg/errors"
 
 	"github.com/lib/pq"
@@ -136,17 +134,4 @@ func (r *repository) DeleteForScenarioName(ctx context.Context, tenantID string,
 	}
 
 	return r.deleter.DeleteOne(ctx, tenantID, conditions)
-}
-
-func (r *repository) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return errors.Wrap(err, "while getting persitance from context")
-	}
-
-	_, err = persist.Exec(updateQuery, in.Selector.Key, in.Selector.Value, in.Tenant)
-	if err != nil {
-		return errors.Wrap(err, "while updating scenarios")
-	}
-	return nil
 }

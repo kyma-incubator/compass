@@ -29,7 +29,7 @@ func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticS
 	if err != nil {
 		return errors.Wrap(err, "while getting runtimes scenarios which match given selector")
 	}
-	return e.mergeScenarios(ctx, labels, in.ScenarioName, e.uniqueScenarios)
+	return e.upsertMergedScenarios(ctx, labels, in.ScenarioName, e.uniqueScenarios)
 }
 
 func (e *engine) uniqueScenarios(scenarios []interface{}, newScenario string) ([]string, error) {
@@ -46,7 +46,7 @@ func (e *engine) uniqueScenarios(scenarios []interface{}, newScenario string) ([
 
 	return str.MapToSlice(set), nil
 }
-func (e *engine) mergeScenarios(ctx context.Context, labels []model.Label, scenarioName string, mergeFn func(scenarios []interface{}, diffScenario string) ([]string, error)) error {
+func (e *engine) upsertMergedScenarios(ctx context.Context, labels []model.Label, scenarioName string, mergeFn func(scenarios []interface{}, diffScenario string) ([]string, error)) error {
 	for _, label := range labels {
 		scenarios, ok := label.Value.([]interface{})
 		if !ok {
