@@ -90,10 +90,9 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	ctx := context.TODO()
 	tenantID := testTenants.GetIDByName(t, "TestCreateAutomaticScenarioAssignment")
 	prodScenario := "PRODUCTION"
-	devScenario := "DEVELOPMENT"
 	manualScenario := "MANUAL"
 	defaultScenario := "DEFAULT"
-	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{prodScenario, devScenario, manualScenario, defaultScenario})
+	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{prodScenario, manualScenario, defaultScenario})
 
 	rtms := make([]*graphql.RuntimeExt, 3)
 	for i := 0; i < 3; i++ {
@@ -113,17 +112,15 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	t.Run("Check automatic scenario assigment", func(t *testing.T) {
 		//GIVEN
 		expectedScenarios := map[string][]interface{}{
-			rtms[0].ID: {defaultScenario, prodScenario, devScenario},
-			rtms[1].ID: {defaultScenario, prodScenario, devScenario},
+			rtms[0].ID: {defaultScenario, prodScenario},
+			rtms[1].ID: {defaultScenario, prodScenario},
 			rtms[2].ID: {defaultScenario},
 		}
 
 		//WHEN
 		asaInput := fixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
 		createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
-		asaInput.ScenarioName = devScenario
 		defer deleteAutomaticScenarioAssigmentForSelector(t, ctx, tenantID, *asaInput.Selector)
-		createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
 
 		//THEN
 		runtimes := listRuntimes(t, ctx, tenantID)

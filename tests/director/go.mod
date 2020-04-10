@@ -23,6 +23,6 @@ require (
 	k8s.io/apimachinery v0.17.3 // indirect
 )
 
-replace github.com/kyma-incubator/compass/components/director v0.0.0-20200403141306-1c5459e649a7 => github.com/dbadura/compass/components/director v0.0.0-20200408093739-ba24aa135163
+replace github.com/kyma-incubator/compass/components/director v0.0.0-20200403141306-1c5459e649a7 => github.com/dbadura/compass/components/director v0.0.0-20200410092718-b2875874518f
 
 replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
