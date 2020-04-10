@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -39,8 +40,11 @@ type Instance struct {
 	InstanceID      string
 	RuntimeID       string
 	GlobalAccountID string
+	SubAccountID    string
 	ServiceID       string
+	ServiceName     string
 	ServicePlanID   string
+	ServicePlanName string
 
 	DashboardURL           string
 	ProvisioningParameters string
@@ -60,6 +64,14 @@ type Operation struct {
 	ProvisionerOperationID string
 	State                  domain.LastOperationState
 	Description            string
+}
+
+type InstanceWithOperation struct {
+	Instance
+
+	Type        sql.NullString
+	State       sql.NullString
+	Description sql.NullString
 }
 
 // ProvisioningOperation holds all information about provisioning operation

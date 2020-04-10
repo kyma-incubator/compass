@@ -51,4 +51,6 @@ replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66
 
 replace github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 
+replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
+
 replace github.com/kyma-incubator/hydroform/install => github.com/Maladie/hydroform/install v0.0.0-20200407121418-58964765de18

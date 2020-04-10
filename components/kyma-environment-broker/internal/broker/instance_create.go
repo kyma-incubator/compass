@@ -108,8 +108,11 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	err = b.instanceStorage.Insert(internal.Instance{
 		InstanceID:             instanceID,
 		GlobalAccountID:        ersContext.GlobalAccountID,
+		SubAccountID:           ersContext.SubAccountID,
 		ServiceID:              provisioningParameters.ServiceID,
+		ServiceName:            KymaServiceName,
 		ServicePlanID:          provisioningParameters.PlanID,
+		ServicePlanName:        Plans[provisioningParameters.PlanID].PlanDefinition.Name,
 		ProvisioningParameters: operation.ProvisioningParameters,
 	})
 	if err != nil {
@@ -130,7 +133,7 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	var ersContext internal.ERSContext
 	var parameters internal.ProvisioningParametersDTO
 
-	if details.ServiceID != kymaServiceID {
+	if details.ServiceID != KymaServiceID {
 		return ersContext, parameters, errors.New("service_id not recognized")
 	}
 	if _, exists := b.enabledPlanIDs[details.PlanID]; !exists {

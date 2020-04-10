@@ -6,18 +6,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
-
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/sirupsen/logrus"
-
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
 const (
@@ -91,10 +89,17 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		return p.operationManager.OperationFailed(operation, errorMessage)
 	}
 
+	// prepare azure tags
+	tags := azure.Tags{
+		azure.TagSubAccountID: &pp.ErsContext.SubAccountID,
+		azure.TagInstanceID:   &operation.InstanceID,
+		azure.TagOperationID:  &operation.ID,
+	}
+
 	// create Resource Group
 	groupName := pp.Parameters.Name
 	// TODO(nachtmaar): use different resource group name https://github.com/kyma-incubator/compass/issues/967
-	resourceGroup, err := namespaceClient.CreateResourceGroup(p.context, azureCfg, groupName)
+	resourceGroup, err := namespaceClient.CreateResourceGroup(p.context, azureCfg, groupName, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
@@ -104,7 +109,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	// create EventHubs Namespace
 	eventHubsNamespace := pp.Parameters.Name
-	eventHubNamespace, err := namespaceClient.CreateNamespace(p.context, azureCfg, groupName, eventHubsNamespace)
+	eventHubNamespace, err := namespaceClient.CreateNamespace(p.context, azureCfg, groupName, eventHubsNamespace, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)

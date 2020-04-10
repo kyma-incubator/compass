@@ -14,6 +14,7 @@ Each provisioning step is responsible for a separate part of preparing Runtime p
 
 Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialisation](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/deprovisioning/initialisation.go#L46) step.
 
+Any deprovisioning step shouldn't block the entire deprovisioning operation. Use the `RetryOperationWithoutFail` function from the `DeprovisionOperationManager` struct to skip your step in case of retry timeout. Set at most 5min timeout for retries in your step.
 
 ## Add provisioning or deprovisioning step
 
@@ -197,20 +198,6 @@ You can configure Runtime provisioning and deprovisioning processes by providing
     - `Name()` method returns the name of the step that is used in logs.
     - `Run()` method implements the functionality of the step. The method receives operations as an argument to which it can add appropriate overrides or save other used variables.
     
-
-    ```go
-    operation.InputCreator.SetOverrides(COMPONENT_NAME, []*gqlschema.ConfigEntryInput{
-        {
-            Key:   "path.to.key",
-            Value: SOME_VALUE,
-        },
-        {
-            Key:    "path.to.secret",
-            Value:  SOME_VALUE,
-            Secret: ptr.Bool(true),
-        },
-    })
-    ```
 
     If your functionality contains long-term processes, you can store data in the storage.
     To do this, add this field to the deprovisioning operation in which you want to save data:

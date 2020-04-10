@@ -26,8 +26,11 @@ func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
 		Pair("instance_id", instance.InstanceID).
 		Pair("runtime_id", instance.RuntimeID).
 		Pair("global_account_id", instance.GlobalAccountID).
+		Pair("sub_account_id", instance.SubAccountID).
 		Pair("service_id", instance.ServiceID).
+		Pair("service_name", instance.ServiceName).
 		Pair("service_plan_id", instance.ServicePlanID).
+		Pair("service_plan_name", instance.ServicePlanName).
 		Pair("dashboard_url", instance.DashboardURL).
 		Pair("provisioning_parameters", instance.ProvisioningParameters).
 		// in postgres database it will be equal to "0001-01-01 00:00:00+00"
