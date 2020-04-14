@@ -41,12 +41,12 @@ func (ars *AvsEvaluationRemovalStep) Run(deProvisioningOperation internal.Deprov
 
 	deProvisioningOperation, err := ars.delegator.DeleteAvsEvaluation(deProvisioningOperation, logger, ars.internalEvalAssistant)
 	if err != nil {
-		return ars.deProvisioningManager.RetryOperation(deProvisioningOperation, err.Error(), 10*time.Second, 10*time.Minute, logger)
+		return ars.deProvisioningManager.RetryOperationWithoutFail(deProvisioningOperation, err.Error(), 10*time.Second, 10*time.Minute, logger)
 	}
 
 	deProvisioningOperation, err = ars.delegator.DeleteAvsEvaluation(deProvisioningOperation, logger, ars.externalEvalAssistant)
 	if err != nil {
-		return ars.deProvisioningManager.RetryOperation(deProvisioningOperation, err.Error(), 10*time.Second, 10*time.Minute, logger)
+		return ars.deProvisioningManager.RetryOperationWithoutFail(deProvisioningOperation, err.Error(), 10*time.Second, 10*time.Minute, logger)
 	}
 	return deProvisioningOperation, 0, nil
 
