@@ -112,11 +112,11 @@ type fakeHyperscalerProvider struct {
 	err    error
 }
 
-func (ac *fakeHyperscalerProvider) GetClient(config *azure.Config) (azure.AzureInterface, error) {
+func (ac *fakeHyperscalerProvider) GetClient(config *azure.Config, logger logrus.FieldLogger) (azure.AzureInterface, error) {
 	return ac.client, ac.err
 }
 
-func NewFakeHyperscalerProvider(client azure.AzureInterface) azure.HyperscalerProvider {
+func NewFakeHyperscalerProvider(client azure.AzureInterface	) azure.HyperscalerProvider {
 	return &fakeHyperscalerProvider{
 		client: client,
 		err:    nil,

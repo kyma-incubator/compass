@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gobuffalo/envy"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
@@ -19,7 +20,7 @@ func TestDeleteResourceGroup(t *testing.T) {
 	azureProvider := NewAzureProvider()
 	azureConfig, err := GetConfigFromEnvironment()
 	require.NoError(t, err)
-	azureClient, err := azureProvider.GetClient(azureConfig)
+	azureClient, err := azureProvider.GetClient(azureConfig, logrus.New())
 	require.NoError(t, err)
 
 	// when

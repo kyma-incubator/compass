@@ -71,7 +71,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	}
 
 	// create hyperscaler client
-	namespaceClient, err := s.HyperscalerProvider.GetClient(azureCfg)
+	namespaceClient, err := s.HyperscalerProvider.GetClient(azureCfg, log)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
