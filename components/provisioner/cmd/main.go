@@ -82,7 +82,7 @@ type config struct {
 	DownloadPreReleases     bool `envconfig:"default=true"`
 	SupportOnDemandReleases bool `envconfig:"default=false"`
 
-	EnqueueInProgressOperations bool `envconfig:"true"`
+	EnqueueInProgressOperations bool `envconfig:"default=true"`
 
 	LogLevel string `envconfig:"default=info"`
 }
