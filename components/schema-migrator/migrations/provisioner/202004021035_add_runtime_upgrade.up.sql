@@ -14,9 +14,18 @@ FROM (SELECT id, cluster_id
       FROM  kyma_config) AS subquery
 WHERE cluster.id=subquery.cluster_id;
 
+UPDATE operation
+SET stage='ShootProvisioning'
+WHERE operation.state='IN_PROGRESS' OR operation.state='FAILED';
+
+UPDATE operation
+SET stage='Finished'
+WHERE operation.state='SUCCEEDED';
+
 END TRANSACTION;
 
 ALTER TABLE cluster ALTER COLUMN active_kyma_config_id SET NOT NULL;
+ALTER TABLE cluster ALTER COLUMN stage SET NOT NULL;
 
 CREATE TYPE runtime_upgrade_state AS ENUM (
     'IN_PROGRESS',

@@ -79,8 +79,9 @@ type config struct {
 
 	Provisioner string `envconfig:"default=gardener"`
 
-	DownloadPreReleases     bool `envconfig:"default=true"`
-	SupportOnDemandReleases bool `envconfig:"default=false"`
+	LatestDownloadedReleases int  `envconfig:"default=5"`
+	DownloadPreReleases      bool `envconfig:"default=true"`
+	SupportOnDemandReleases  bool `envconfig:"default=false"`
 
 	EnqueueInProgressOperations bool `envconfig:"default=true"`
 
@@ -94,7 +95,7 @@ func (c *config) String() string {
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, GardenerAuditLogsTenant: %s, "+
 		"Provisioner: %s, "+
-		"DownloadPreReleases: %v, SupportOnDemandReleases: %v, "+
+		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, SupportOnDemandReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
 		c.Address, c.APIEndpoint, c.CredentialsNamespace,
@@ -103,7 +104,7 @@ func (c *config) String() string {
 		c.Database.Name, c.Database.SSLMode,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenant,
 		c.Provisioner,
-		c.DownloadPreReleases, c.SupportOnDemandReleases,
+		c.LatestDownloadedReleases, c.DownloadPreReleases, c.SupportOnDemandReleases,
 		c.EnqueueInProgressOperations,
 		c.LogLevel)
 }
@@ -189,7 +190,7 @@ func main() {
 	resolver := api.NewResolver(provisioningSVC, validator)
 
 	logger := log.WithField("Component", "Artifact Downloader")
-	downloader := release.NewArtifactsDownloader(releaseRepository, 5, cfg.DownloadPreReleases, httpClient, logger)
+	downloader := release.NewArtifactsDownloader(releaseRepository, cfg.LatestDownloadedReleases, cfg.DownloadPreReleases, httpClient, logger)
 
 	// Run release downloader
 	ctx, cancel := context.WithCancel(context.Background())
@@ -253,6 +254,9 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue,
 		}
 		return nil
 	}, retry.Attempts(30), retry.DelayType(retry.FixedDelay), retry.Delay(5*time.Second))
+	if err != nil {
+		return fmt.Errorf("error enqueuing in progress operations: %s", err.Error())
+	}
 
 	for _, op := range inProgressOps {
 		if op.Type == model.Provision && op.Stage != model.ShootProvisioning {
