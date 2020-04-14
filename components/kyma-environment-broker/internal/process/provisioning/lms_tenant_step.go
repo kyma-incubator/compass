@@ -52,6 +52,7 @@ func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, log
 		errorMessage := fmt.Sprintf("Unable to request for LMS tenant ID: %s", err.Error())
 		return s.operationManager.RetryOperation(operation, errorMessage, 30*time.Second, 2*time.Minute, logger)
 	}
+	logger.Infof("Obtained tenantID %s", lmsTenantID)
 
 	operation.Lms.TenantID = lmsTenantID
 	if operation.Lms.RequestedAt.IsZero() {

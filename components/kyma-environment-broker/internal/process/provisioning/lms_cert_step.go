@@ -57,16 +57,17 @@ func (s *lmsCertStep) Name() string {
 // 1. check if the tenant is ready
 // 2. request certificates
 // 3. poll CA and signed certificates
-func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if operation.Lms.Failed {
-		logger.Info("LMS has failed, skipping")
+		log.Info("LMS has failed, skipping")
 		return operation, 0, nil
 	}
 
 	if operation.Lms.TenantID == "" {
-		logger.Error("Create LMS Tenant step must be run before")
+		log.Error("Create LMS Tenant step must be run before")
 		return operation, 0, errors.New("the step needs to be run after 'Create LMS tenant' step")
 	}
+	logger := log.WithField("tenantID", operation.Lms.TenantID)
 
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
@@ -79,7 +80,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 	if err != nil {
 		logger.Errorf("Unable to get LMS Tenant status: %s", err.Error())
 		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
-			logger.Error("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
+			logger.Errorf("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
 			return s.failLmsAndUpdate(operation)
 		}
 		return operation, tenantReadyRetryInterval, nil

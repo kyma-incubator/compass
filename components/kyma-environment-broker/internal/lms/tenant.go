@@ -50,11 +50,13 @@ func (c *manager) ProvideLMSTenantID(globalAccountID, region string) (string, er
 	}
 
 	if !exists {
-		output, err := c.lmsClient.CreateTenant(CreateTenantInput{
+		input := CreateTenantInput{
 			Name:            name,
 			Region:          region,
 			GlobalAccountID: globalAccountID,
-		})
+		}
+		c.log.Infof("Creating tenant: %+v")
+		output, err := c.lmsClient.CreateTenant(input)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating tenant in lms")
 		}
