@@ -61,7 +61,6 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
 
-	// TODO: it needs to run apply instead of create
 	err = s.installationClient.TriggerInstallation(
 		k8sConfig,
 		cluster.KymaConfig.Release,

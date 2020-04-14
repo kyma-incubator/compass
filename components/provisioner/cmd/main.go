@@ -55,7 +55,6 @@ type config struct {
 	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
 	OauthCredentialsSecretName   string `envconfig:"default=compass-provisioner-credentials"`
-	DownloadPreReleases          bool   `envconfig:"default=true"`
 
 	Database struct {
 		User     string `envconfig:"default=postgres"`
@@ -78,26 +77,34 @@ type config struct {
 		AuditLogsTenant          string `envconfig:"optional"`
 	}
 
-	Provisioner             string `envconfig:"default=gardener"`
-	SupportOnDemandReleases bool   `envconfig:"default=false"`
+	Provisioner string `envconfig:"default=gardener"`
+
+	DownloadPreReleases     bool `envconfig:"default=true"`
+	SupportOnDemandReleases bool `envconfig:"default=false"`
+
+	EnqueueInProgressOperations bool `envconfig:"true"`
 
 	LogLevel string `envconfig:"default=info"`
 }
 
 func (c *config) String() string {
 	return fmt.Sprintf("Address: %s, APIEndpoint: %s, CredentialsNamespace: %s, "+
-		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s, DownloadPreReleases: %v, "+
+		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, GardenerAuditLogsTenant: %s, "+
-		"Provisioner: %s, SupportOnDemandReleases: %v, "+
+		"Provisioner: %s, "+
+		"DownloadPreReleases: %v, SupportOnDemandReleases: %v, "+
+		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
 		c.Address, c.APIEndpoint, c.CredentialsNamespace,
-		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName, c.DownloadPreReleases,
+		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenant,
-		c.Provisioner, c.SupportOnDemandReleases,
+		c.Provisioner,
+		c.DownloadPreReleases, c.SupportOnDemandReleases,
+		c.EnqueueInProgressOperations,
 		c.LogLevel)
 }
 
@@ -222,8 +229,10 @@ func main() {
 		}
 	}()
 
-	err = enqueueOperationsInProgress(dbsFactory, installationQueue, upgradeQueue)
-	exitOnError(err, "Failed to enqueue in progress operations")
+	if cfg.EnqueueInProgressOperations {
+		err = enqueueOperationsInProgress(dbsFactory, installationQueue, upgradeQueue)
+		exitOnError(err, "Failed to enqueue in progress operations")
+	}
 
 	wg.Wait()
 }

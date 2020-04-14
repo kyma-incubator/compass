@@ -13,8 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// TODO: consider extracting Name and TimeLimit to some common struct for all steps
-
 type UpgradeKymaStep struct {
 	installationClient installation.Service
 	nextStep           model.OperationStage

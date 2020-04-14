@@ -58,7 +58,7 @@ func (s *installationService) TriggerInstallation(kubeconfig *rest.Config, relea
 	if err != nil {
 		return fmt.Errorf("failed to trigger installation: %s", err.Error())
 	}
-	return s.triggerAction(release, globalConfig, componentsConfig, kymaInstaller.PrepareInstallation, kymaInstaller.StartInstallation, installAction)
+	return s.triggerAction(release, globalConfig, componentsConfig, kymaInstaller, kymaInstaller.PrepareInstallation, installAction)
 }
 
 func (s *installationService) TriggerUpgrade(kubeconfig *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
@@ -66,11 +66,16 @@ func (s *installationService) TriggerUpgrade(kubeconfig *rest.Config, release mo
 	if err != nil {
 		return fmt.Errorf("failed to trigger upgrade: %s", err.Error())
 	}
-	return s.triggerAction(release, globalConfig, componentsConfig, kymaInstaller.PrepareUpgrade, kymaInstaller.StartInstallation, upgradeAction)
+	return s.triggerAction(release, globalConfig, componentsConfig, kymaInstaller, kymaInstaller.PrepareUpgrade, upgradeAction)
 }
 
-func (s *installationService) triggerAction(release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig,
-	prepareFunction func(installation.Installation) error, installFunction func(context.Context) (<-chan installation.InstallationState, <-chan error, error), actionName string) error {
+func (s *installationService) triggerAction(
+	release model.Release,
+	globalConfig model.Configuration,
+	componentsConfig []model.KymaComponentConfig,
+	installer installation.Installer,
+	prepareFunction func(installation.Installation) error,
+	actionName string) error {
 
 	installationConfig := installation.Installation{
 		TillerYaml:    release.TillerYAML,
@@ -87,7 +92,7 @@ func (s *installationService) triggerAction(release model.Release, globalConfig 
 	defer cancel()
 
 	// We are not waiting for events, just triggering installation
-	_, _, err = installFunction(installationCtx)
+	_, _, err = installer.StartInstallation(installationCtx)
 	if err != nil {
 		return pkgErrors.Wrap(err, fmt.Sprintf("Failed to start Kyma %s", actionName))
 	}

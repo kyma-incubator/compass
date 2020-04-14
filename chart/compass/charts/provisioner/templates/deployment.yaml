@@ -102,6 +102,8 @@ spec:
               value: "{{ .Values.kymaRelease.preReleases.enabled }}"
             - name: APP_LOG_LEVEL
               value: "{{ .Values.logs.level }}"
+            - name: APP_ENQUEUE_IN_PROGRESS_OPERATIONS
+              value: "true"
           volumeMounts:
             - mountPath: /gardener/kubeconfig
               name: gardener-kubeconfig
