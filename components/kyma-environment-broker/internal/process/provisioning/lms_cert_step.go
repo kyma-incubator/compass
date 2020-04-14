@@ -71,7 +71,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, log logrus.F
 
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
-		logger.Errorf("Unable to get provisioning parameters", err.Error())
+		logger.Errorf("Unable to get provisioning parameters: %s", err.Error())
 		return operation, 0, errors.New("unable to get provisioning parameters")
 	}
 
@@ -98,7 +98,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, log logrus.F
 	if err != nil {
 		logger.Errorf("Unable to get LMS Tenant info: %s", err.Error())
 		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
-			logger.Error("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
+			logger.Errorf("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
 			return s.failLmsAndUpdate(operation)
 		}
 		return operation, tenantReadyRetryInterval, nil
