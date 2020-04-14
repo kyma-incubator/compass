@@ -2,7 +2,7 @@
 
 ## Upgrade Runtime
 
-Runtime Provisioner allows to upgrade Kyma Runtime using the GraphQL API. To upgrade a Runtime to version 1.11.0 with the standard Runtime components use the following mutation:
+Runtime Provisioner allows you to upgrade Kyma Runtime using the GraphQL API. To upgrade a Runtime to version 1.11.0 with the standard Runtime components, use the following mutation:
 
 ```graphql
 mutation {
@@ -133,7 +133,7 @@ Similarly to provisioning, the upgrade operation is asynchronous and returns the
 
 ## Roll back the latest upgrade
 
-The Runtime Provisioner API allows to roll back the Kyma configuration to the one from before the latest upgrade. This mutation does not affect the cluster itself in any way, it only affects the database. In the case a cluster is rolled back manually, for example restored from a backup, rollback on the database must be performed to keep the data in sync. To roll back an upgrade, the upgrade must be the last operation performed by the Runtime Provisioner on the given Runtime. In other words, you cannot perform a rollback if other operations have been performed on the Runtime after the upgrade. 
+The Runtime Provisioner API allows you to roll back the Kyma configuration to the one from before the latest upgrade. This mutation does not affect the cluster itself in any way, it only affects the database. In the case a cluster is rolled back manually, for example restored from a backup, a rollback on the database must be performed to keep the data in sync. To roll back an upgrade, the upgrade must be the last operation performed by the Runtime Provisioner on the given Runtime. In other words, you cannot perform a rollback if other operations have been performed on the Runtime after the upgrade. 
 
 To roll back the Kyma configuration, use the following mutation:
 
