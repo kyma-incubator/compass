@@ -26,7 +26,7 @@ func TestConnectAgentStep_Run(t *testing.T) {
 		configurator := &mocks.Configurator{}
 		configurator.On("ConfigureRuntime", cluster, "kubeconfig").Return(nil)
 
-		stage := NewConnectAgentStage(configurator, nextStageName, time.Minute)
+		stage := NewConnectAgentStep(configurator, nextStageName, time.Minute)
 
 		// when
 		result, err := stage.Run(cluster, model.Operation{}, &logrus.Entry{})
@@ -42,7 +42,7 @@ func TestConnectAgentStep_Run(t *testing.T) {
 		configurator := &mocks.Configurator{}
 		configurator.On("ConfigureRuntime", cluster, "kubeconfig").Return(fmt.Errorf("error"))
 
-		stage := NewConnectAgentStage(configurator, nextStageName, time.Minute)
+		stage := NewConnectAgentStep(configurator, nextStageName, time.Minute)
 
 		// when
 		_, err := stage.Run(cluster, model.Operation{}, &logrus.Entry{})

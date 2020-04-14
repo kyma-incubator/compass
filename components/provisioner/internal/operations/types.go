@@ -12,8 +12,8 @@ type ProcessingResult struct {
 	Delay   time.Duration
 }
 
-type Stage interface {
-	Name() model.OperationStage
+type Step interface {
+	Stage() model.OperationStage
 	Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (StageResult, error)
 	TimeLimit() time.Duration
 }

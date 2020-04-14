@@ -10,29 +10,29 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type ConnectAgentStage struct {
+type ConnectAgentStep struct {
 	runtimeConfigurator runtime.Configurator
-	nextStep            model.OperationStage
+	nextStage           model.OperationStage
 	timeLimit           time.Duration
 }
 
-func NewConnectAgentStage(configurator runtime.Configurator, nextStep model.OperationStage, timeLimit time.Duration) *ConnectAgentStage {
-	return &ConnectAgentStage{
+func NewConnectAgentStep(configurator runtime.Configurator, nextStage model.OperationStage, timeLimit time.Duration) *ConnectAgentStep {
+	return &ConnectAgentStep{
 		runtimeConfigurator: configurator,
-		nextStep:            nextStep,
+		nextStage:           nextStage,
 		timeLimit:           timeLimit,
 	}
 }
 
-func (s *ConnectAgentStage) Name() model.OperationStage {
+func (s *ConnectAgentStep) Stage() model.OperationStage {
 	return model.ConnectRuntimeAgent
 }
 
-func (s *ConnectAgentStage) TimeLimit() time.Duration {
+func (s *ConnectAgentStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *ConnectAgentStage) Run(cluster model.Cluster, _ model.Operation, _ logrus.FieldLogger) (operations.StageResult, error) {
+func (s *ConnectAgentStep) Run(cluster model.Cluster, _ model.Operation, _ logrus.FieldLogger) (operations.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
 		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
@@ -43,5 +43,5 @@ func (s *ConnectAgentStage) Run(cluster model.Cluster, _ model.Operation, _ logr
 		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
 
-	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+	return operations.StageResult{Stage: s.nextStage, Delay: 0}, nil
 }

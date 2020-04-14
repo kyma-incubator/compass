@@ -27,7 +27,7 @@ func NewInstallKymaStep(installationClient installation.Service, nextStep model.
 	}
 }
 
-func (s *InstallKymaStep) Name() model.OperationStage {
+func (s *InstallKymaStep) Stage() model.OperationStage {
 	return model.StartingInstallation
 }
 

@@ -47,7 +47,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 
 		mockStage := NewMockStep(model.WaitingForInstallation, model.FinishedStage, 10*time.Second, 10*time.Second)
 
-		installationStages := map[model.OperationStage]Stage{
+		installationStages := map[model.OperationStage]Step{
 			model.WaitingForInstallation: mockStage,
 		}
 
@@ -69,7 +69,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 
 		mockStage := NewErrorStep(model.ShootProvisioning, fmt.Errorf("error"), time.Second*10)
 
-		installationStages := map[model.OperationStage]Stage{
+		installationStages := map[model.OperationStage]Step{
 			model.WaitingForInstallation: mockStage,
 		}
 
@@ -93,7 +93,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 
 		mockStage := NewErrorStep(model.ShootProvisioning, NewNonRecoverableError(fmt.Errorf("error")), 10*time.Second)
 
-		installationStages := map[model.OperationStage]Stage{
+		installationStages := map[model.OperationStage]Step{
 			model.WaitingForInstallation: mockStage,
 		}
 
@@ -121,7 +121,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 
 		mockStage := NewMockStep(model.WaitingForInstallation, model.ConnectRuntimeAgent, 0, 0*time.Second)
 
-		installationStages := map[model.OperationStage]Stage{
+		installationStages := map[model.OperationStage]Step{
 			model.WaitingForInstallation: mockStage,
 		}
 
@@ -165,7 +165,7 @@ func NewErrorStep(name model.OperationStage, err error, timeLimit time.Duration)
 	}
 }
 
-func (m mockStep) Name() model.OperationStage {
+func (m mockStep) Stage() model.OperationStage {
 	return m.name
 }
 

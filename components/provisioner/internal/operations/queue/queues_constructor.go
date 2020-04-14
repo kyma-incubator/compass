@@ -17,11 +17,11 @@ func CreateInstallationQueue(
 	factory dbsession.Factory,
 	installationClient installation.Service,
 	configurator runtime.Configurator) OperationQueue {
-	configureAgentStep := stages.NewConnectAgentStage(configurator, model.FinishedStage, 10*time.Minute)
-	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), installationTimeout)
-	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
+	configureAgentStep := stages.NewConnectAgentStep(configurator, model.FinishedStage, 10*time.Minute)
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Stage(), installationTimeout)
+	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Stage(), 10*time.Minute)
 
-	installSteps := map[model.OperationStage]operations.Stage{
+	installSteps := map[model.OperationStage]operations.Step{
 		model.ConnectRuntimeAgent:    configureAgentStep,
 		model.WaitingForInstallation: waitForInstallStep,
 		model.StartingInstallation:   installStep,
@@ -38,10 +38,10 @@ func CreateUpgradeQueue(
 	installationClient installation.Service) OperationQueue {
 
 	updatingUpgradeStep := stages.NewUpdateUpgradeStateStep(factory.NewWriteSession(), model.FinishedStage, 5*time.Minute)
-	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, updatingUpgradeStep.Name(), upgradeTimeout)
-	upgradeStep := stages.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, updatingUpgradeStep.Stage(), upgradeTimeout)
+	upgradeStep := stages.NewUpgradeKymaStep(installationClient, waitForInstallStep.Stage(), 10*time.Minute)
 
-	upgradeSteps := map[model.OperationStage]operations.Stage{
+	upgradeSteps := map[model.OperationStage]operations.Step{
 		model.UpdatingUpgradeState:   updatingUpgradeStep,
 		model.WaitingForInstallation: waitForInstallStep,
 		model.StartingUpgrade:        upgradeStep,

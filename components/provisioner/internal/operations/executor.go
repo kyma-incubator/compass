@@ -18,27 +18,27 @@ const (
 func NewStepsExecutor(
 	session dbsession.ReadWriteSession,
 	operation model.OperationType,
-	stages map[model.OperationStage]Stage,
-	failureHandler FailureHandler) *StagesExecutor {
-	return &StagesExecutor{
+	stagesSteps map[model.OperationStage]Step,
+	failureHandler FailureHandler) *StepsExecutor {
+	return &StepsExecutor{
 		dbSession:      session,
-		stages:         stages,
+		stagesSteps:    stagesSteps,
 		operation:      operation,
 		failureHandler: failureHandler,
 		log:            logrus.WithFields(logrus.Fields{"Component": "StepsExecutor", "OperationType": operation}),
 	}
 }
 
-type StagesExecutor struct {
+type StepsExecutor struct {
 	dbSession      dbsession.ReadWriteSession
-	stages         map[model.OperationStage]Stage
+	stagesSteps    map[model.OperationStage]Step
 	operation      model.OperationType
 	failureHandler FailureHandler
 
 	log logrus.FieldLogger
 }
 
-func (e *StagesExecutor) Execute(operationID string) ProcessingResult {
+func (e *StepsExecutor) Execute(operationID string) ProcessingResult {
 
 	log := e.log.WithField("OperationId", operationID)
 
@@ -85,15 +85,15 @@ func (e *StagesExecutor) Execute(operationID string) ProcessingResult {
 	}
 }
 
-func (e *StagesExecutor) processInstallation(operation model.Operation, cluster model.Cluster, logger logrus.FieldLogger) (bool, time.Duration, error) {
+func (e *StepsExecutor) processInstallation(operation model.Operation, cluster model.Cluster, logger logrus.FieldLogger) (bool, time.Duration, error) {
 
-	step, found := e.stages[operation.Stage]
+	step, found := e.stagesSteps[operation.Stage]
 	if !found {
 		return false, 0, NewNonRecoverableError(fmt.Errorf("error: step %s not found in installation steps", operation.Stage))
 	}
 
 	for operation.Stage != model.FinishedStage {
-		log := logger.WithField("Stage", step.Name())
+		log := logger.WithField("Stage", step.Stage())
 		log.Infof("Starting processing")
 
 		if e.timeoutReached(operation, step.TimeLimit()) {
@@ -113,13 +113,13 @@ func (e *StagesExecutor) processInstallation(operation model.Operation, cluster 
 			break
 		}
 
-		if result.Stage != step.Name() {
+		if result.Stage != step.Stage() {
 			transitionTime := time.Now()
 			e.updateOperationStage(log, operation.ID, fmt.Sprintf("Operation in progress. Stage %s", result.Stage), result.Stage, transitionTime)
-			step = e.stages[result.Stage]
+			step = e.stagesSteps[result.Stage]
 			operation.Stage = result.Stage
 			operation.LastTransition = &transitionTime
-			log.Infof("Stage finished")
+			log.Infof("Stage completed")
 		}
 
 		if result.Delay > 0 {
@@ -133,7 +133,7 @@ func (e *StagesExecutor) processInstallation(operation model.Operation, cluster 
 	return false, 0, nil
 }
 
-func (e *StagesExecutor) timeoutReached(operation model.Operation, timeout time.Duration) bool {
+func (e *StepsExecutor) timeoutReached(operation model.Operation, timeout time.Duration) bool {
 
 	lastTimestamp := operation.StartTimestamp
 	if operation.LastTransition != nil {
@@ -145,7 +145,7 @@ func (e *StagesExecutor) timeoutReached(operation model.Operation, timeout time.
 	return timePassed > timeout
 }
 
-func (e *StagesExecutor) handleOperationFailure(operation model.Operation, cluster model.Cluster, log logrus.FieldLogger) {
+func (e *StepsExecutor) handleOperationFailure(operation model.Operation, cluster model.Cluster, log logrus.FieldLogger) {
 	err := retry.Do(func() error {
 		return e.failureHandler.HandleFailure(operation, cluster)
 	}, retry.Attempts(5))
@@ -154,7 +154,7 @@ func (e *StagesExecutor) handleOperationFailure(operation model.Operation, clust
 	}
 }
 
-func (e *StagesExecutor) updateOperationStatus(log logrus.FieldLogger, id, message string, state model.OperationState, t time.Time) {
+func (e *StepsExecutor) updateOperationStatus(log logrus.FieldLogger, id, message string, state model.OperationState, t time.Time) {
 	err := retry.Do(func() error {
 		return e.dbSession.UpdateOperationState(id, message, state, t)
 	}, retry.Attempts(5))
@@ -163,7 +163,7 @@ func (e *StagesExecutor) updateOperationStatus(log logrus.FieldLogger, id, messa
 	}
 }
 
-func (e *StagesExecutor) updateOperationStage(log logrus.FieldLogger, id, message string, stage model.OperationStage, t time.Time) {
+func (e *StepsExecutor) updateOperationStage(log logrus.FieldLogger, id, message string, stage model.OperationStage, t time.Time) {
 	err := retry.Do(func() error {
 		return e.dbSession.TransitionOperation(id, message, stage, t)
 	}, retry.Attempts(5))
