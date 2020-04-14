@@ -22,6 +22,7 @@ const (
 	UnknownProvisioningState ProvisioningState = ""
 	Provisioned              ProvisioningState = "provisioned"
 	Provisioning             ProvisioningState = "provisioning"
+	Initial                  ProvisioningState = "initial"
 	Deprovisioning           ProvisioningState = "deprovisioning"
 	ProvisioningFailed       ProvisioningState = "failed"
 )

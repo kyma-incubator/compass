@@ -98,6 +98,8 @@ enum PackageInstanceAuthStatusCondition {
 
 enum RuntimeStatusCondition {
 	INITIAL
+	PROVISIONING
+	INSTALLING
 	CONNECTED
 	FAILED
 }

@@ -65,9 +65,11 @@ func newDirectorClient(config config) (director.DirectorClient, error) {
 	return director.NewDirectorClient(gqlClient, oauthClient), nil
 }
 
-func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient.Config, gardenerClientSet *gardener_apis.CoreV1beta1Client,
-	dbsFactory dbsession.Factory, direcotrClietnt director.DirectorClient, installationSvc installation.Service,
+func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient.Config,
+	gardenerClientSet *gardener_apis.CoreV1beta1Client,
+	dbsFactory dbsession.Factory, directorClient director.DirectorClient, installationSvc installation.Service,
 	queue queue.OperationQueue) (*gardener.ShootController, error) {
+
 	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
 	if err != nil {
 		return nil, err
@@ -84,7 +86,7 @@ func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient
 		return nil, fmt.Errorf("unable to create shoot controller manager: %w", err)
 	}
 
-	return gardener.NewShootController(mgr, shootClient, secretsInterface, dbsFactory, direcotrClietnt, installationSvc, queue)
+	return gardener.NewShootController(mgr, shootClient, secretsInterface, dbsFactory, directorClient, installationSvc, queue)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
