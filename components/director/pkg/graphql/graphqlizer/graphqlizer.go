@@ -232,9 +232,6 @@ func (g *Graphqlizer) APIDefinitionInputToGQL(in graphql.APIDefinitionInput) (st
 		{{- if .Version }}
 		version: {{- VersionInputToGQL .Version }},
 		{{- end}}
-		{{- if .DefaultAuth }}
-		defaultAuth: {{- AuthInputToGQL .DefaultAuth}},
-		{{- end}}
 	}`)
 }
 

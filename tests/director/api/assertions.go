@@ -20,9 +20,6 @@ func assertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 	assert.Equal(t, in.HealthCheckURL, actualApp.HealthCheckURL)
 	assert.Equal(t, in.ProviderName, actualApp.ProviderName)
 	assertWebhooks(t, in.Webhooks, actualApp.Webhooks)
-	assertDocuments(t, in.Documents, actualApp.Documents.Data)
-	assertAPI(t, in.APIDefinitions, actualApp.APIDefinitions.Data)
-	assertEventsAPI(t, in.EventDefinitions, actualApp.EventDefinitions.Data)
 	assertPackages(t, in.Packages, actualApp.Packages.Data)
 }
 
@@ -171,7 +168,6 @@ func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql
 			assert.Equal(t, inApi.Description, actApi.Description)
 			assert.Equal(t, inApi.TargetURL, actApi.TargetURL)
 			assert.Equal(t, inApi.Group, actApi.Group)
-			assertAuth(t, inApi.DefaultAuth, actApi.DefaultAuth)
 			assertVersion(t, inApi.Version, actApi.Version)
 			if inApi.Spec != nil {
 				require.NotNil(t, actApi.Spec)
