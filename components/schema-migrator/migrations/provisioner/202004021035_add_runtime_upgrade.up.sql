@@ -25,7 +25,7 @@ WHERE operation.state='SUCCEEDED';
 END TRANSACTION;
 
 ALTER TABLE cluster ALTER COLUMN active_kyma_config_id SET NOT NULL;
-ALTER TABLE cluster ALTER COLUMN stage SET NOT NULL;
+ALTER TABLE operation ALTER COLUMN stage SET NOT NULL;
 
 CREATE TYPE runtime_upgrade_state AS ENUM (
     'IN_PROGRESS',
