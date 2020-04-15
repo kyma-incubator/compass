@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"fmt"
+	v1alpha12 "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
+	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,6 +17,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
+	compass_connection_fake "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/fake"
 	"k8s.io/client-go/kubernetes/fake"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -172,7 +175,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	installationQueue := queue.CreateInstallationQueue(5*time.Minute, dbsFactory, installationServiceMock, runtimeConfigurator)
+	installationQueue := queue.CreateInstallationQueue(5*time.Minute, dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor)
 	installationQueue.Run(queueCtx.Done())
 	upgradeQueue := queue.CreateUpgradeQueue(5*time.Minute, dbsFactory, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
@@ -533,4 +536,15 @@ func setupSecretsClient(t *testing.T, config *rest.Config) v1core.SecretInterfac
 	require.NoError(t, err)
 
 	return coreClient.Secrets(namespace)
+}
+
+func fakeCompassConnectionClientConstructor(k8sConfig *rest.Config) (v1alpha1.CompassConnectionInterface, error) {
+	fakeClient := compass_connection_fake.NewSimpleClientset(&v1alpha12.CompassConnection{
+		ObjectMeta: metav1.ObjectMeta{Name: "compass-connection"},
+		Status: v1alpha12.CompassConnectionStatus{
+			State: v1alpha12.Synchronized,
+		},
+	})
+
+	return fakeClient.CompassV1alpha1().CompassConnections(), nil
 }

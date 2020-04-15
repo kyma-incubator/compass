@@ -16,12 +16,16 @@ func CreateInstallationQueue(
 	installationTimeout time.Duration,
 	factory dbsession.Factory,
 	installationClient installation.Service,
-	configurator runtime.Configurator) OperationQueue {
-	configureAgentStep := stages.NewConnectAgentStep(configurator, model.FinishedStage, 10*time.Minute)
+	configurator runtime.Configurator,
+	ccClientConstructor stages.CompassConnectionClientConstructor) OperationQueue {
+
+	waitForAgentToConnectStep := stages.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, 10*time.Minute)
+	configureAgentStep := stages.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Stage(), 10*time.Minute)
 	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Stage(), installationTimeout)
 	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Stage(), 10*time.Minute)
 
 	installSteps := map[model.OperationStage]operations.Step{
+		model.WaitForAgentToConnect:  waitForAgentToConnectStep,
 		model.ConnectRuntimeAgent:    configureAgentStep,
 		model.WaitingForInstallation: waitForInstallStep,
 		model.StartingInstallation:   installStep,

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages"
 	"net/http"
 	"strings"
 	"sync"
@@ -157,7 +158,7 @@ func main() {
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(clientbuilder.NewConfigMapClientBuilder(), directorClient)
 
-	installationQueue := queue.CreateInstallationQueue(cfg.Installation.Timeout, dbsFactory, installationService, runtimeConfigurator)
+	installationQueue := queue.CreateInstallationQueue(cfg.Installation.Timeout, dbsFactory, installationService, runtimeConfigurator, stages.NewCompassConnectionClient)
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.Installation.Timeout, dbsFactory, installationService)
 
 	var provisioner provisioning.Provisioner
