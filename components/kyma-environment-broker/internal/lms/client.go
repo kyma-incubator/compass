@@ -328,7 +328,7 @@ func (c *client) RequestCertificate(tenantID string, subject pkix.Name) (string,
 		Csr    string `json:"csr"`
 	}
 	// todo: remove certId and get it from LMS after the LMS API is changed
-	certID := random.New(random.NewSource(time.Now().UnixNano())).Intn(100000)
+	certID := random.New(random.NewSource(time.Now().UnixNano())).Int()
 	payload.CertId = certID
 	payload.Csr = string(csr)
 
