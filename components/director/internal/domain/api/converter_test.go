@@ -22,7 +22,7 @@ import (
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
 	placeholder := "test"
-	modelAPIDefinition := fixFullAPIDefinitionModelWithAPIRtmAuth(placeholder)
+	modelAPIDefinition := fixFullAPIDefinitionModel(placeholder)
 	gqlAPIDefinition := fixFullGQLAPIDefinition(placeholder)
 	emptyModelAPIDefinition := &model.APIDefinition{}
 	emptyGraphQLAPIDefinition := &graphql.APIDefinition{}
@@ -37,12 +37,10 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    modelAPIDefinition,
+			Input:    &modelAPIDefinition,
 			Expected: gqlAPIDefinition,
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("ToGraphQL", modelAPIDefinition.DefaultAuth).Return(gqlAPIDefinition.DefaultAuth).Once()
-
 				return conv
 			},
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
@@ -61,7 +59,6 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Expected: emptyGraphQLAPIDefinition,
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("ToGraphQL", emptyModelAPIDefinition.DefaultAuth).Return(nil).Once()
 				return conv
 			},
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
@@ -112,15 +109,15 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.APIDefinition{
-		fixAPIDefinitionModel("foo", str.Ptr("1"), nil, "Foo", "Lorem ipsum"),
-		fixAPIDefinitionModel("bar", str.Ptr("1"), nil, "Bar", "Dolor sit amet"),
+		fixAPIDefinitionModel("foo", str.Ptr("1"), "Foo", "Lorem ipsum"),
+		fixAPIDefinitionModel("bar", str.Ptr("1"), "Bar", "Dolor sit amet"),
 		{},
 		nil,
 	}
 
 	expected := []*graphql.APIDefinition{
-		fixGQLAPIDefinition("foo", str.Ptr("1"), nil, "Foo", "Lorem ipsum"),
-		fixGQLAPIDefinition("bar", str.Ptr("1"), nil, "Bar", "Dolor sit amet"),
+		fixGQLAPIDefinition("foo", str.Ptr("1"), "Foo", "Lorem ipsum"),
+		fixGQLAPIDefinition("bar", str.Ptr("1"), "Bar", "Dolor sit amet"),
 		{},
 	}
 
@@ -132,7 +129,6 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		if api == nil {
 			continue
 		}
-		authConverter.On("ToGraphQL", api.DefaultAuth).Return(expected[i].DefaultAuth).Once()
 		versionConverter.On("ToGraphQL", api.Version).Return(expected[i].Version).Once()
 	}
 
@@ -151,7 +147,6 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	gqlAPIDefinitionInput := fixGQLAPIDefinitionInput("foo", "Lorem ipsum", "group")
 	modelAPIDefinitionInput := fixModelAPIDefinitionInput("foo", "Lorem ipsum", "group")
 	emptyGQLAPIDefinition := &graphql.APIDefinitionInput{}
-	emptyModelAPIDefinition := &model.APIDefinitionInput{}
 	testCases := []struct {
 		Name                  string
 		Input                 *graphql.APIDefinitionInput
@@ -166,7 +161,6 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			Expected: modelAPIDefinitionInput,
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", gqlAPIDefinitionInput.DefaultAuth).Return(modelAPIDefinitionInput.DefaultAuth).Once()
 				return conv
 			},
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
@@ -186,7 +180,6 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			Expected: &model.APIDefinitionInput{},
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", emptyGQLAPIDefinition.DefaultAuth).Return(emptyModelAPIDefinition.DefaultAuth).Once()
 				return conv
 			},
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
@@ -258,9 +251,6 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			Expected: modelAPIDefinitionInputs,
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				for i, apiDef := range gqlAPIDefinitionInputs {
-					conv.On("InputFromGraphQL", apiDef.DefaultAuth).Return(modelAPIDefinitionInputs[i].DefaultAuth).Once()
-				}
 
 				return conv
 			},
@@ -333,10 +323,6 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 
 func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 	// GIVEN
-	mockAuthConv := &automock.AuthConverter{}
-	defer mockAuthConv.AssertExpectations(t)
-	mockAuthConv.On("InputFromGraphQL", mock.Anything).Return(nil)
-	mockAuthConv.On("ToGraphQL", mock.Anything).Return(nil)
 
 	mockFrConv := &automock.FetchRequestConverter{}
 	defer mockFrConv.AssertExpectations(t)
@@ -347,13 +333,13 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 	mockVersionConv.On("InputFromGraphQL", mock.Anything).Return(nil)
 	mockVersionConv.On("ToGraphQL", mock.Anything).Return(nil)
 
-	converter := api.NewConverter(mockAuthConv, mockFrConv, mockVersionConv)
+	converter := api.NewConverter(nil, mockFrConv, mockVersionConv)
 	// WHEN & THEN
 	convertedInputModel := converter.InputFromGraphQL(&graphql.APIDefinitionInput{Spec: &graphql.APISpecInput{}})
 	require.NotNil(t, convertedInputModel)
 	require.NotNil(t, convertedInputModel.Spec)
 	require.Nil(t, convertedInputModel.Spec.Data)
-	convertedAPIDef := convertedInputModel.ToAPIDefinition("id", str.Ptr("app_id"), tenantID)
+	convertedAPIDef := convertedInputModel.ToAPIDefinitionWithinPackage("id", str.Ptr("app_id"), tenantID)
 	require.NotNil(t, convertedAPIDef)
 	convertedGraphqlAPIDef := converter.ToGraphQL(convertedAPIDef)
 	require.NotNil(t, convertedGraphqlAPIDef)
@@ -363,26 +349,24 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		//GIVEN
-		apiModel := fixFullAPIDefinitionModelWithAPIRtmAuth("foo")
+		apiModel := fixFullAPIDefinitionModel("foo")
 		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
-		entity, err := conv.ToEntity(*apiModel)
+		entity := conv.ToEntity(apiModel)
 		//THEN
-		require.NoError(t, err)
 		assert.Equal(t, fixFullEntityAPIDefinition(apiDefID, "foo"), entity)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		apiModel := fixAPIDefinitionModel("id", str.Ptr("app_id"), str.Ptr("pkg_id"), "name", "target_url")
+		apiModel := fixAPIDefinitionModel("id", str.Ptr("pkg_id"), "name", "target_url")
 		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
-		entity, err := conv.ToEntity(*apiModel)
+		entity := conv.ToEntity(*apiModel)
 		//THEN
-		require.NoError(t, err)
 		assert.Equal(t, fixEntityAPIDefinition("id", str.Ptr("app_id"), str.Ptr("pkg_id"), "name", "target_url"), entity)
 	})
 }
@@ -394,9 +378,8 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
-		apiModel, err := conv.FromEntity(entity)
+		apiModel := conv.FromEntity(entity)
 		//THEN
-		require.NoError(t, err)
 		assert.Equal(t, fixFullAPIDefinitionModel("placeholder"), apiModel)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
@@ -405,10 +388,9 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
-		apiModel, err := conv.FromEntity(entity)
+		apiModel := conv.FromEntity(entity)
 		//THEN
-		require.NoError(t, err)
-		expectedModel := fixAPIDefinitionModel("id", str.Ptr("app_id"), str.Ptr("pkg_id"), "name", "target_url")
+		expectedModel := fixAPIDefinitionModel("id", str.Ptr("pkg_id"), "name", "target_url")
 		require.NotNil(t, expectedModel)
 		assert.Equal(t, *expectedModel, apiModel)
 	})

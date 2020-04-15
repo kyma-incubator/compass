@@ -135,7 +135,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
 	packageSvc := mp_package.NewService(packageRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc)
-	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
+	appSvc := application.NewService(applicationRepo, webhookRepo, runtimeRepo, labelRepo, fetchRequestRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
 	packageInstanceAuthSvc := packageinstanceauth.NewService(packageInstanceAuthRepo, uidSvc)
 
@@ -181,9 +181,7 @@ func (r *RootResolver) Application() graphql.ApplicationResolver {
 func (r *RootResolver) Runtime() graphql.RuntimeResolver {
 	return &runtimeResolver{r}
 }
-func (r *RootResolver) APIDefinition() graphql.APIDefinitionResolver {
-	return &apiDefinitionResolver{r}
-}
+
 func (r *RootResolver) APISpec() graphql.APISpecResolver {
 	return &apiSpecResolver{r}
 }
@@ -306,9 +304,7 @@ func (r *mutationResolver) UpdateWebhook(ctx context.Context, webhookID string, 
 func (r *mutationResolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphql.Webhook, error) {
 	return r.webhook.DeleteApplicationWebhook(ctx, webhookID)
 }
-func (r *mutationResolver) AddAPIDefinition(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
-	return r.api.AddAPIDefinition(ctx, applicationID, in)
-}
+
 func (r *mutationResolver) UpdateAPIDefinition(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	return r.api.UpdateAPIDefinition(ctx, id, in)
 }
@@ -323,9 +319,6 @@ func (r *mutationResolver) SetAPIAuth(ctx context.Context, apiID string, runtime
 }
 func (r *mutationResolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*graphql.APIRuntimeAuth, error) {
 	return r.api.DeleteAPIAuth(ctx, apiID, runtimeID)
-}
-func (r *mutationResolver) AddEventDefinition(ctx context.Context, applicationID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
-	return r.eventAPI.AddEventDefinition(ctx, applicationID, in)
 }
 func (r *mutationResolver) UpdateEventDefinition(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	return r.eventAPI.UpdateEventDefinition(ctx, id, in)
@@ -344,9 +337,6 @@ func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in grap
 }
 func (r *mutationResolver) UnregisterRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.DeleteRuntime(ctx, id)
-}
-func (r *mutationResolver) AddDocument(ctx context.Context, applicationID string, in graphql.DocumentInput) (*graphql.Document, error) {
-	return r.doc.AddDocument(ctx, applicationID, in)
 }
 func (r *mutationResolver) DeleteDocument(ctx context.Context, id string) (*graphql.Document, error) {
 	return r.doc.DeleteDocument(ctx, id)
@@ -474,14 +464,8 @@ func (r *applicationResolver) Labels(ctx context.Context, obj *graphql.Applicati
 func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.Webhook, error) {
 	return r.app.Webhooks(ctx, obj)
 }
-func (r *applicationResolver) APIDefinitions(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
-	return r.app.ApiDefinitions(ctx, obj, group, first, after)
-}
 func (r *applicationResolver) EventDefinitions(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
 	return r.app.EventDefinitions(ctx, obj, group, first, after)
-}
-func (r *applicationResolver) APIDefinition(ctx context.Context, obj *graphql.Application, id string) (*graphql.APIDefinition, error) {
-	return r.app.APIDefinition(ctx, id, obj)
 }
 func (r *applicationResolver) EventDefinition(ctx context.Context, obj *graphql.Application, id string) (*graphql.EventDefinition, error) {
 	return r.app.EventDefinition(ctx, id, obj)

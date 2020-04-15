@@ -155,7 +155,6 @@ input APIDefinitionInput {
 	group: String
 	spec: APISpecInput
 	version: VersionInput
-	defaultAuth: AuthInput @deprecated(reason: "Use package.defaultAuth")
 }
 
 """
@@ -203,9 +202,6 @@ input ApplicationRegisterInput {
 	**Validation:** valid URL, max=256
 	"""
 	healthCheckURL: String
-	apiDefinitions: [APIDefinitionInput!] @deprecated(reason: "Use package.packages.apiDefinitions")
-	eventDefinitions: [EventDefinitionInput!] @deprecated(reason: "Use package.packages.eventDefinitions")
-	documents: [DocumentInput!] @deprecated(reason: "Use package.packages.documents")
 	packages: [PackageCreateInput!]
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
@@ -552,7 +548,6 @@ input WebhookInput {
 
 type APIDefinition {
 	id: ID!
-	applicationID: ID @deprecated(reason: "Use ID field from parent object")
 	name: String!
 	description: String
 	spec: APISpec
@@ -561,18 +556,6 @@ type APIDefinition {
 	group allows you to find the same API but in different version
 	"""
 	group: String
-	"""
-	"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
-	"""
-	auth(runtimeID: ID!): APIRuntimeAuth @deprecated(reason: "Use package.auth")
-	"""
-	Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
-	"""
-	auths: [APIRuntimeAuth!] @deprecated(reason: "Use package.auths")
-	"""
-	If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
-	"""
-	defaultAuth: Auth @deprecated(reason: "Use package.defaultAuth")
 	version: Version
 }
 
@@ -610,18 +593,6 @@ type Application {
 	status: ApplicationStatus!
 	webhooks: [Webhook!]
 	healthCheckURL: String
-	"""
-	group allows to find different versions of the same API`
-	Maximum `first` parameter value is 100
-	"""
-	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage @deprecated(reason: "Use `packages.apiDefinitions` field")
-	"""
-	group allows to find different versions of the same event Definitions
-	"""
-	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage @deprecated(reason: "Use `packages.eventDefinitions` field")
-	apiDefinition(id: ID!): APIDefinition @deprecated(reason: "Use `package.apiDefinition` field")
-	eventDefinition(id: ID!): EventDefinition @deprecated(reason: "Use `package.eventDefinition` field")
-	documents(first: Int = 100, after: PageCursor): DocumentPage @deprecated(reason: "Use `package.documents` field")
 	packages(first: Int = 100, after: PageCursor): PackagePage
 	package(id: ID!): Package
 	auths: [SystemAuth!]
@@ -694,7 +665,6 @@ type CredentialRequestAuth {
 
 type Document {
 	id: ID!
-	applicationID: ID @deprecated(reason: "Use ID field from parent object")
 	title: String!
 	displayName: String!
 	description: String!
@@ -715,7 +685,6 @@ type DocumentPage implements Pageable {
 
 type EventDefinition {
 	id: ID!
-	applicationID: ID @deprecated(reason: "Use ID field from parent object")
 	name: String!
 	description: String
 	"""
@@ -952,7 +921,7 @@ type Viewer {
 
 type Webhook {
 	id: ID!
-	applicationID: ID! @deprecated(reason: "Use ID field from parent object")
+	applicationID: ID!
 	type: ApplicationWebhookType!
 	url: String!
 	auth: Auth
@@ -1132,10 +1101,7 @@ type Mutation {
 	- [delete application webhook](examples/delete-webhook/delete-application-webhook.graphql)
 	"""
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
-	addAPIDefinition(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinition")
 	"""
-	Temporary name before doing breaking change. Eventually the `addAPIDefinition` mutation will be changed and there will be just one mutation: `addAPIDefinitionToPackage`.
-	
 	**Examples**
 	- [add api definition to package](examples/add-api-definition-to-package/add-api-definition-to-package.graphql)
 	"""
@@ -1164,10 +1130,7 @@ type Mutation {
 	"""
 	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth") @deprecated(reason: "Use setPackageInstanceAuthForPackage")
 	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth") @deprecated(reason: "Use deletePackageInstanceAuthForPackage")
-	addEventDefinition(applicationID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
 	"""
-	Temporary name before doing breaking change. Eventually the `addEventDefinition` mutation will be changed and there will be just one mutation: `addEventDefinitionToPackage`.
-	
 	**Examples**
 	- [add event definition to package](examples/add-event-definition-to-package/add-event-definition-to-package.graphql)
 	"""
@@ -1183,10 +1146,7 @@ type Mutation {
 	"""
 	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
 	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
-	addDocument(applicationID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
 	"""
-	Temporary name before doing breaking change
-	
 	**Examples**
 	- [add document to package](examples/add-document-to-package/add-document-to-package.graphql)
 	"""

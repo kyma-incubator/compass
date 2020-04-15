@@ -108,17 +108,14 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			},
 			APIConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleInputFromGraphQL", allPropsInput.APIDefinitions).Return(allPropsExpected.APIDefinitions)
 				return conv
 			},
 			EventAPIConverterFn: func() *automock.EventAPIConverter {
 				conv := &automock.EventAPIConverter{}
-				conv.On("MultipleInputFromGraphQL", allPropsInput.EventDefinitions).Return(allPropsExpected.EventDefinitions)
 				return conv
 			},
 			DocumentConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
-				conv.On("MultipleInputFromGraphQL", allPropsInput.Documents).Return(allPropsExpected.Documents)
 				return conv
 			},
 			PackageConverterFn: func() *automock.PackageConverter {

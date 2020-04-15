@@ -44,12 +44,9 @@ type ApplicationConverter interface {
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
-	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
-	Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
-	GetForApplication(ctx context.Context, id string, applicationID string) (*model.APIDefinition, error)
 }
 
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
@@ -492,47 +489,6 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 	}, nil
 }
 
-func (r *Resolver) ApiDefinitions(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommited(tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	var cursor string
-	if after != nil {
-		cursor = string(*after)
-	}
-
-	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
-	}
-
-	apisPage, err := r.apiSvc.List(ctx, obj.ID, *first, cursor)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	gqlApis := r.apiConverter.MultipleToGraphQL(apisPage.Data)
-	totalCount := len(gqlApis)
-
-	return &graphql.APIDefinitionPage{
-		Data:       gqlApis,
-		TotalCount: totalCount,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(apisPage.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(apisPage.PageInfo.EndCursor),
-			HasNextPage: apisPage.PageInfo.HasNextPage,
-		},
-	}, nil
-}
 func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -572,31 +528,6 @@ func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Applicatio
 			HasNextPage: eventAPIPage.PageInfo.HasNextPage,
 		},
 	}, nil
-}
-
-func (r *Resolver) APIDefinition(ctx context.Context, id string, application *graphql.Application) (*graphql.APIDefinition, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommited(tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	api, err := r.apiSvc.GetForApplication(ctx, id, application.ID)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.apiConverter.ToGraphQL(api), nil
 }
 
 func (r *Resolver) EventDefinition(ctx context.Context, id string, application *graphql.Application) (*graphql.EventDefinition, error) {

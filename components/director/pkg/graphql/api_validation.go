@@ -15,7 +15,6 @@ func (i APIDefinitionInput) Validate() error {
 		validation.Field(&i.Group, validation.RuneLength(0, groupLengthLimit)),
 		validation.Field(&i.Spec, validation.NilOrNotEmpty),
 		validation.Field(&i.Version, validation.NilOrNotEmpty),
-		validation.Field(&i.DefaultAuth, validation.NilOrNotEmpty),
 	)
 }
 

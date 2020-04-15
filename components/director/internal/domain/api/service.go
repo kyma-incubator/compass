@@ -15,16 +15,13 @@ import (
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
 type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
-	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.APIDefinition, error)
 	GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
-	ListForApplication(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	ListForPackage(ctx context.Context, tenantID, packageID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	CreateMany(ctx context.Context, item []*model.APIDefinition) error
 	Create(ctx context.Context, item *model.APIDefinition) error
 	Update(ctx context.Context, item *model.APIDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
-	DeleteAllByApplicationID(ctx context.Context, tenantID string, id string) error
 }
 
 //go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
@@ -54,19 +51,6 @@ func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uid
 	}
 }
 
-func (s *service) List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if pageSize < 1 || pageSize > 100 {
-		return nil, errors.New("page size must be between 1 and 100")
-	}
-
-	return s.repo.ListForApplication(ctx, tnt, applicationID, pageSize, cursor)
-}
-
 func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -94,20 +78,6 @@ func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, err
 	return api, nil
 }
 
-func (s *service) GetForApplication(ctx context.Context, id string, applicationID string) (*model.APIDefinition, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	apiDefinition, err := s.repo.GetForApplication(ctx, tnt, id, applicationID)
-	if err != nil {
-		return nil, errors.Wrap(err, "while getting API definition")
-	}
-
-	return apiDefinition, nil
-}
-
 func (s *service) GetForPackage(ctx context.Context, id string, packageID string) (*model.APIDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -120,30 +90,6 @@ func (s *service) GetForPackage(ctx context.Context, id string, packageID string
 	}
 
 	return apiDefinition, nil
-}
-
-func (s *service) Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	id := s.uidService.Generate()
-
-	api := in.ToAPIDefinition(id, &applicationID, tnt)
-	err = s.repo.Create(ctx, api)
-	if err != nil {
-		return "", err
-	}
-
-	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		_, err = s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
-		if err != nil {
-			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
-		}
-	}
-
-	return id, nil
 }
 
 func (s *service) CreateInPackage(ctx context.Context, packageID string, in model.APIDefinitionInput) (string, error) {
@@ -192,7 +138,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		}
 	}
 
-	api = in.ToAPIDefinition(id, api.ApplicationID, tnt)
+	api = in.ToAPIDefinitionWithinPackage(id, api.PackageID, tnt)
 
 	err = s.repo.Update(ctx, api)
 	if err != nil {

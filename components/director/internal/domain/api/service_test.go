@@ -28,12 +28,11 @@ func TestService_Get(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	appID := str.Ptr("bar")
 	packageID := "foobar"
 	name := "foo"
 	desc := "bar"
 
-	apiDefinition := fixAPIDefinitionModel(id, appID, &packageID, name, desc)
+	apiDefinition := fixAPIDefinitionModel(id, &packageID, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID)
@@ -100,97 +99,16 @@ func TestService_Get(t *testing.T) {
 	})
 }
 
-func TestService_GetForApplication(t *testing.T) {
-	// given
-	testErr := errors.New("Test error")
-
-	id := "foo"
-	appID := "bar"
-	pkgID := "foobar"
-	name := "foo"
-	desc := "bar"
-
-	apiDefinition := fixAPIDefinitionModel(id, &appID, &pkgID, name, desc)
-
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
-
-	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.APIRepository
-		Input              model.APIDefinitionInput
-		InputID            string
-		ApplicationID      string
-		ExpectedDocument   *model.APIDefinition
-		ExpectedErrMessage string
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("GetForApplication", ctx, tenantID, id, appID).Return(apiDefinition, nil).Once()
-				return repo
-			},
-			InputID:            id,
-			ApplicationID:      appID,
-			ExpectedDocument:   apiDefinition,
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "Returns error when APIDefinition retrieval failed",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("GetForApplication", ctx, tenantID, id, appID).Return(nil, testErr).Once()
-				return repo
-			},
-			InputID:            id,
-			ApplicationID:      appID,
-			ExpectedDocument:   nil,
-			ExpectedErrMessage: testErr.Error(),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
-			svc := api.NewService(repo, nil, nil)
-
-			// when
-			document, err := svc.GetForApplication(ctx, testCase.InputID, testCase.ApplicationID)
-
-			// then
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedDocument, document)
-			} else {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-			}
-
-			repo.AssertExpectations(t)
-		})
-	}
-	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
-		// WHEN
-		_, err := svc.GetForApplication(context.TODO(), "", "")
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot read tenant from context")
-	})
-}
-
 func TestService_GetForPackage(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	appID := "bar"
 	pkgID := "foobar"
 	name := "foo"
 	desc := "bar"
 
-	apiDefinition := fixAPIDefinitionModel(id, &appID, &pkgID, name, desc)
+	apiDefinition := fixAPIDefinitionModel(id, &pkgID, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID)
@@ -260,132 +178,19 @@ func TestService_GetForPackage(t *testing.T) {
 	})
 }
 
-func TestService_List(t *testing.T) {
-	// given
-	testErr := errors.New("Test error")
-
-	id := "foo"
-	applicationID := "bar"
-	pkgID := "foobar"
-	name := "foo"
-	desc := "bar"
-
-	apiDefinitions := []*model.APIDefinition{
-		fixAPIDefinitionModel(id, &applicationID, &pkgID, name, desc),
-		fixAPIDefinitionModel(id, &applicationID, &pkgID, name, desc),
-		fixAPIDefinitionModel(id, &applicationID, &pkgID, name, desc),
-	}
-	apiDefinitionPage := &model.APIDefinitionPage{
-		Data:       apiDefinitions,
-		TotalCount: len(apiDefinitions),
-		PageInfo: &pagination.Page{
-			HasNextPage: false,
-			EndCursor:   "end",
-			StartCursor: "start",
-		},
-	}
-
-	after := "test"
-
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
-
-	testCases := []struct {
-		Name               string
-		PageSize           int
-		RepositoryFn       func() *automock.APIRepository
-		ExpectedResult     *model.APIDefinitionPage
-		ExpectedErrMessage string
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("ListForApplication", ctx, tenantID, applicationID, 2, after).Return(apiDefinitionPage, nil).Once()
-				return repo
-			},
-			PageSize:           2,
-			ExpectedResult:     apiDefinitionPage,
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "Return error when page size is less than 1",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				return repo
-			},
-			PageSize:           0,
-			ExpectedResult:     apiDefinitionPage,
-			ExpectedErrMessage: "page size must be between 1 and 100",
-		},
-		{
-			Name: "Return error when page size is bigger than 100",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				return repo
-			},
-			PageSize:           101,
-			ExpectedResult:     apiDefinitionPage,
-			ExpectedErrMessage: "page size must be between 1 and 100",
-		},
-		{
-			Name: "Returns error when APIDefinition listing failed",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("ListForApplication", ctx, tenantID, applicationID, 2, after).Return(nil, testErr).Once()
-				return repo
-			},
-			PageSize:           2,
-			ExpectedResult:     nil,
-			ExpectedErrMessage: testErr.Error(),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
-
-			svc := api.NewService(repo, nil, nil)
-
-			// when
-			docs, err := svc.List(ctx, applicationID, testCase.PageSize, after)
-
-			// then
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedResult, docs)
-			} else {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-			}
-
-			repo.AssertExpectations(t)
-		})
-	}
-	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
-		// WHEN
-		_, err := svc.List(context.TODO(), "", 5, "")
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot read tenant from context")
-	})
-}
-
 func TestService_ListForPackage(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	applicationID := "bar"
 	pkgID := "foobar"
 	name := "foo"
 	desc := "bar"
 
 	apiDefinitions := []*model.APIDefinition{
-		fixAPIDefinitionModel(id, &applicationID, &pkgID, name, desc),
-		fixAPIDefinitionModel(id, &applicationID, &pkgID, name, desc),
-		fixAPIDefinitionModel(id, &applicationID, &pkgID, name, desc),
+		fixAPIDefinitionModel(id, &pkgID, name, desc),
+		fixAPIDefinitionModel(id, &pkgID, name, desc),
+		fixAPIDefinitionModel(id, &pkgID, name, desc),
 	}
 	apiDefinitionPage := &model.APIDefinitionPage{
 		Data:       apiDefinitions,
@@ -478,150 +283,6 @@ func TestService_ListForPackage(t *testing.T) {
 		svc := api.NewService(nil, nil, nil)
 		// WHEN
 		_, err := svc.ListForPackage(context.TODO(), "", 5, "")
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot read tenant from context")
-	})
-}
-
-func TestService_Create(t *testing.T) {
-	// given
-	testErr := errors.New("Test error")
-
-	id := "foo"
-	applicationID := str.Ptr("appid")
-	name := "Foo"
-	targetUrl := "https://test-url.com"
-
-	timestamp := time.Now()
-	frID := "fr-id"
-	frURL := "foo.bar"
-
-	modelInput := model.APIDefinitionInput{
-		Name:      name,
-		TargetURL: targetUrl,
-		Spec: &model.APISpecInput{
-			FetchRequest: &model.FetchRequestInput{
-				URL: frURL,
-			},
-		},
-		Version: &model.VersionInput{},
-	}
-
-	modelAPIDefinition := &model.APIDefinition{
-		ID:            id,
-		ApplicationID: applicationID,
-		Tenant:        tenantID,
-		Name:          name,
-		TargetURL:     targetUrl,
-		Spec:          &model.APISpec{},
-		Version:       &model.Version{},
-	}
-
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
-
-	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.APIRepository
-		FetchRequestRepoFn func() *automock.FetchRequestRepository
-		UIDServiceFn       func() *automock.UIDService
-		Input              model.APIDefinitionInput
-		ExpectedErr        error
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id).Once()
-				svc.On("Generate").Return(frID).Once()
-				return svc
-			},
-			Input:       modelInput,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "Error - API Creation",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, modelAPIDefinition).Return(testErr).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id).Once()
-				return svc
-			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
-		},
-		{
-			Name: "Error - Fetch Request Creation",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(testErr).Once()
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id).Once()
-				svc.On("Generate").Return(frID).Once()
-				return svc
-			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
-			// given
-			repo := testCase.RepositoryFn()
-			fetchRequestRepo := testCase.FetchRequestRepoFn()
-			uidService := testCase.UIDServiceFn()
-
-			svc := api.NewService(repo, fetchRequestRepo, uidService)
-			svc.SetTimestampGen(func() time.Time { return timestamp })
-
-			// when
-			result, err := svc.Create(ctx, *applicationID, testCase.Input)
-
-			// then
-			if testCase.ExpectedErr != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
-			} else {
-				assert.IsType(t, "string", result)
-			}
-
-			repo.AssertExpectations(t)
-			fetchRequestRepo.AssertExpectations(t)
-			uidService.AssertExpectations(t)
-		})
-	}
-	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
-		// WHEN
-		_, err := svc.Create(context.TODO(), "", model.APIDefinitionInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -789,8 +450,7 @@ func TestService_Update(t *testing.T) {
 				URL: frURL,
 			},
 		},
-		DefaultAuth: &model.AuthInput{},
-		Version:     &model.VersionInput{},
+		Version: &model.VersionInput{},
 	}
 
 	inputAPIDefinitionModel := mock.MatchedBy(func(api *model.APIDefinition) bool {
@@ -798,12 +458,10 @@ func TestService_Update(t *testing.T) {
 	})
 
 	apiDefinitionModel := &model.APIDefinition{
-		Name:          "Bar",
-		ApplicationID: str.Ptr("id"),
-		TargetURL:     "https://test-url-updated.com",
-		Spec:          &model.APISpec{},
-		DefaultAuth:   &model.Auth{},
-		Version:       &model.Version{},
+		Name:      "Bar",
+		TargetURL: "https://test-url-updated.com",
+		Spec:      &model.APISpec{},
+		Version:   &model.Version{},
 	}
 
 	ctx := context.TODO()

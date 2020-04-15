@@ -108,9 +108,6 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 		StatusCondition:     c.statusConditionToModel(in.StatusCondition),
 		ProviderName:        in.ProviderName,
 		Webhooks:            c.webhook.MultipleInputFromGraphQL(in.Webhooks),
-		Documents:           c.document.MultipleInputFromGraphQL(in.Documents),
-		EventDefinitions:    c.eventAPI.MultipleInputFromGraphQL(in.EventDefinitions),
-		APIDefinitions:      c.api.MultipleInputFromGraphQL(in.APIDefinitions),
 		Packages:            c.pkg.MultipleCreateInputFromGraphQL(in.Packages),
 	}
 }

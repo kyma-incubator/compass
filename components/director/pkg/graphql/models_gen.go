@@ -32,10 +32,9 @@ type APIDefinitionInput struct {
 	// **Validation:** valid URL, max=256
 	TargetURL string `json:"targetURL"`
 	// **Validation:** max=36
-	Group       *string       `json:"group"`
-	Spec        *APISpecInput `json:"spec"`
-	Version     *VersionInput `json:"version"`
-	DefaultAuth *AuthInput    `json:"defaultAuth"`
+	Group   *string       `json:"group"`
+	Spec    *APISpecInput `json:"spec"`
+	Version *VersionInput `json:"version"`
 }
 
 type APIDefinitionPage struct {
@@ -93,9 +92,6 @@ type ApplicationRegisterInput struct {
 	Webhooks []*WebhookInput `json:"webhooks"`
 	// **Validation:** valid URL, max=256
 	HealthCheckURL      *string                     `json:"healthCheckURL"`
-	APIDefinitions      []*APIDefinitionInput       `json:"apiDefinitions"`
-	EventDefinitions    []*EventDefinitionInput     `json:"eventDefinitions"`
-	Documents           []*DocumentInput            `json:"documents"`
 	Packages            []*PackageCreateInput       `json:"packages"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`

@@ -12,7 +12,6 @@ import (
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
-	Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error)
 	CreateInPackage(ctx context.Context, packageID string, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
@@ -92,7 +91,7 @@ func NewResolver(transact persistence.Transactioner, svc APIService, appSvc Appl
 	}
 }
 
-func (r *Resolver) AddAPIDefinition(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -103,16 +102,16 @@ func (r *Resolver) AddAPIDefinition(ctx context.Context, applicationID string, i
 
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
-	found, err := r.appSvc.Exist(ctx, applicationID)
+	found, err := r.pkgSvc.Exist(ctx, packageID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while checking existence of Application")
+		return nil, errors.Wrapf(err, "while checking existence of package")
 	}
 
 	if !found {
-		return nil, errors.New("Cannot add API to not existing Application")
+		return nil, errors.New("Cannot add API to not existing package")
 	}
 
-	id, err := r.svc.Create(ctx, applicationID, *convertedIn)
+	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +130,7 @@ func (r *Resolver) AddAPIDefinition(ctx context.Context, applicationID string, i
 
 	return gqlAPI, nil
 }
+
 func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -359,44 +359,4 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*gra
 
 	frGQL := r.frConverter.ToGraphQL(fr)
 	return frGQL, nil
-}
-
-func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommited(tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	convertedIn := r.converter.InputFromGraphQL(&in)
-
-	found, err := r.pkgSvc.Exist(ctx, packageID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while checking existence of package")
-	}
-
-	if !found {
-		return nil, errors.New("Cannot add API to not existing package")
-	}
-
-	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
-	if err != nil {
-		return nil, err
-	}
-
-	api, err := r.svc.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	gqlAPI := r.converter.ToGraphQL(api)
-
-	return gqlAPI, nil
 }

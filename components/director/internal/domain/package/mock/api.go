@@ -121,19 +121,17 @@ components:
           type: string
 `)
 	return &graphql.APIDefinition{
-		ID:            id,
-		ApplicationID: str.Ptr("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-		PackageID:     str.Ptr("pppppppp-pppp-pppp-pppp-pppppppppppp"),
-		Name:          "foo",
-		Description:   &desc,
+		ID:          id,
+		PackageID:   str.Ptr("pppppppp-pppp-pppp-pppp-pppppppppppp"),
+		Name:        "foo",
+		Description: &desc,
 		Spec: &graphql.APISpec{
 			Data:   &data,
 			Format: graphql.SpecFormatYaml,
 			Type:   graphql.APISpecTypeOpenAPI,
 		},
-		TargetURL:   "http://example.com",
-		Group:       nil,
-		DefaultAuth: nil,
-		Version:     nil,
+		TargetURL: "http://example.com",
+		Group:     nil,
+		Version:   nil,
 	}
 }

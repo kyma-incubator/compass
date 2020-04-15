@@ -7,21 +7,16 @@ import (
 )
 
 type APIDefinition struct {
-	ID            string
-	ApplicationID *string
-	PackageID     *string
-	Tenant        string
-	Name          string
-	Description   *string
-	Spec          *APISpec
-	TargetURL     string
+	ID          string
+	PackageID   *string
+	Tenant      string
+	Name        string
+	Description *string
+	Spec        *APISpec
+	TargetURL   string
 	//  group allows you to find the same API but in different version
-	Group *string
-	// Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
-	Auths []*APIRuntimeAuth
-	// If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
-	DefaultAuth *Auth
-	Version     *Version
+	Group   *string
+	Version *Version
 }
 
 type APISpec struct {
@@ -47,7 +42,6 @@ type APIDefinitionInput struct {
 	Group       *string
 	Spec        *APISpecInput
 	Version     *VersionInput
-	DefaultAuth *AuthInput
 }
 
 type APISpecInput struct {
@@ -65,27 +59,6 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
-func (a *APIDefinitionInput) ToAPIDefinition(id string, appID *string, tenant string) *APIDefinition {
-	if a == nil {
-		return nil
-	}
-
-	return &APIDefinition{
-		ID:            id,
-		ApplicationID: appID,
-		Tenant:        tenant,
-		Name:          a.Name,
-		Description:   a.Description,
-		Spec:          a.Spec.ToAPISpec(),
-		TargetURL:     a.TargetURL,
-		Group:         a.Group,
-		Auths:         nil,
-		DefaultAuth:   a.DefaultAuth.ToAuth(),
-		Version:       a.Version.ToVersion(),
-	}
-}
-
-//TODO After switching to new packages API this method will replace ToAPIDefinition
 func (a *APIDefinitionInput) ToAPIDefinitionWithinPackage(id string, packageID *string, tenant string) *APIDefinition {
 	if a == nil {
 		return nil
@@ -100,8 +73,6 @@ func (a *APIDefinitionInput) ToAPIDefinitionWithinPackage(id string, packageID *
 		Spec:        a.Spec.ToAPISpec(),
 		TargetURL:   a.TargetURL,
 		Group:       a.Group,
-		Auths:       nil,
-		DefaultAuth: a.DefaultAuth.ToAuth(),
 		Version:     a.Version.ToVersion(),
 	}
 }

@@ -36,24 +36,6 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		{{- if .HealthCheckURL }}
 		healthCheckURL: "{{ .HealthCheckURL }}",
 		{{- end }}
-		{{- if .APIDefinitions }}
-		apiDefinitions: [
-			{{- range $i, $e := .APIDefinitions }}
-				{{- if $i}}, {{- end}} {{ APIDefinitionInputToGQL $e }}
-			{{- end }}],
-		{{- end }}
-		{{- if .EventDefinitions }}
-		eventDefinitions: [
-			{{- range $i, $e := .EventDefinitions }}
-				{{- if $i}}, {{- end}} {{ EventDefinitionInputToGQL $e }}
-			{{- end }}],
-		{{- end }}
-		{{- if .Documents }} 
-		documents: [
-			{{- range $i, $e := .Documents }} 
-				{{- if $i}}, {{- end}} {{- DocumentInputToGQL $e }}
-			{{- end }} ],
-		{{- end }}
 		{{- if .Packages }} 
 		packages: [
 			{{- range $i, $e := .Packages }} 

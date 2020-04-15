@@ -18,33 +18,17 @@ import (
 
 const (
 	apiDefID  = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
-	appID     = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	tenantID  = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 	packageID = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 )
 
-func fixAPIDefinitionModel(id string, appId, pkgID *string, name, targetURL string) *model.APIDefinition {
+func fixAPIDefinitionModel(id string, pkgID *string, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
-		ID:            id,
-		ApplicationID: appId,
-		PackageID:     pkgID,
-		Name:          name,
-		TargetURL:     targetURL,
+		ID:        id,
+		PackageID: pkgID,
+		Name:      name,
+		TargetURL: targetURL,
 	}
-}
-
-func fixFullAPIDefinitionModelWithAPIRtmAuth(placeholder string) *model.APIDefinition {
-	apiModel := fixFullAPIDefinitionModel(placeholder)
-
-	apiRtmAuth := model.APIRuntimeAuth{
-		ID:        str.Ptr("foo"),
-		TenantID:  "tnt",
-		RuntimeID: "1",
-		APIDefID:  "2",
-		Value:     apiModel.DefaultAuth,
-	}
-	apiModel.Auths = []*model.APIRuntimeAuth{&apiRtmAuth, &apiRtmAuth}
-	return &apiModel
 }
 
 func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
@@ -64,32 +48,25 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 		ForRemoval:      &forRemoval,
 	}
 
-	auth := model.Auth{
-		AdditionalHeaders: map[string][]string{"testHeader": {"hval1", "hval2"}},
-	}
-
 	return model.APIDefinition{
-		ID:            apiDefID,
-		ApplicationID: str.Ptr(appID),
-		Tenant:        tenantID,
-		PackageID:     str.Ptr(packageID),
-		Name:          placeholder,
-		Description:   str.Ptr("desc_" + placeholder),
-		Spec:          spec,
-		TargetURL:     fmt.Sprintf("https://%s.com", placeholder),
-		Group:         str.Ptr("group_" + placeholder),
-		DefaultAuth:   &auth,
-		Version:       v,
+		ID:          apiDefID,
+		Tenant:      tenantID,
+		PackageID:   str.Ptr(packageID),
+		Name:        placeholder,
+		Description: str.Ptr("desc_" + placeholder),
+		Spec:        spec,
+		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
+		Group:       str.Ptr("group_" + placeholder),
+		Version:     v,
 	}
 }
 
-func fixGQLAPIDefinition(id string, appId, pkgId *string, name, targetURL string) *graphql.APIDefinition {
+func fixGQLAPIDefinition(id string, pkgId *string, name, targetURL string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
-		ID:            id,
-		ApplicationID: appId,
-		PackageID:     pkgId,
-		Name:          name,
-		TargetURL:     targetURL,
+		ID:        id,
+		PackageID: pkgId,
+		Name:      name,
+		TargetURL: targetURL,
 	}
 }
 
@@ -114,23 +91,15 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 		ForRemoval:      &forRemoval,
 	}
 
-	headers := graphql.HttpHeaders{"testHeader": {"hval1", "hval2"}}
-
-	auth := graphql.Auth{
-		AdditionalHeaders: &headers,
-	}
-
 	return &graphql.APIDefinition{
-		ID:            apiDefID,
-		ApplicationID: str.Ptr(appID),
-		PackageID:     str.Ptr(packageID),
-		Name:          placeholder,
-		Description:   str.Ptr("desc_" + placeholder),
-		Spec:          spec,
-		TargetURL:     fmt.Sprintf("https://%s.com", placeholder),
-		Group:         str.Ptr("group_" + placeholder),
-		DefaultAuth:   &auth,
-		Version:       v,
+		ID:          apiDefID,
+		PackageID:   str.Ptr(packageID),
+		Name:        placeholder,
+		Description: str.Ptr("desc_" + placeholder),
+		Spec:        spec,
+		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
+		Group:       str.Ptr("group_" + placeholder),
+		Version:     v,
 	}
 }
 
@@ -155,14 +124,6 @@ func fixModelAPIDefinitionInput(name, description string, group string) *model.A
 		ForRemoval:      &forRemoval,
 	}
 
-	basicCredentialDataInput := model.BasicCredentialDataInput{
-		Username: "test",
-		Password: "pwd",
-	}
-	authInput := model.AuthInput{
-		Credential: &model.CredentialDataInput{Basic: &basicCredentialDataInput},
-	}
-
 	return &model.APIDefinitionInput{
 		Name:        name,
 		Description: &description,
@@ -170,7 +131,6 @@ func fixModelAPIDefinitionInput(name, description string, group string) *model.A
 		Group:       &group,
 		Spec:        spec,
 		Version:     v,
-		DefaultAuth: &authInput,
 	}
 }
 
@@ -195,16 +155,6 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 		ForRemoval:      &forRemoval,
 	}
 
-	basicCredentialDataInput := graphql.BasicCredentialDataInput{
-		Username: "test",
-		Password: "pwd",
-	}
-
-	credentialDataInput := graphql.CredentialDataInput{Basic: &basicCredentialDataInput}
-	defaultAuth := graphql.AuthInput{
-		Credential: &credentialDataInput,
-	}
-
 	return &graphql.APIDefinitionInput{
 		Name:        name,
 		Description: &description,
@@ -212,7 +162,6 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 		Group:       &group,
 		Spec:        spec,
 		Version:     v,
-		DefaultAuth: &defaultAuth,
 	}
 }
 
@@ -298,7 +247,6 @@ func fixGQLAPIRtmAuth(id string, auth *graphql.Auth) *graphql.APIRuntimeAuth {
 func fixEntityAPIDefinition(id string, appId, pkgID *string, name, targetUrl string) api.Entity {
 	return api.Entity{
 		ID:        id,
-		AppID:     repo.NewNullableString(appId),
 		PkgID:     repo.NewNullableString(pkgID),
 		Name:      name,
 		TargetURL: targetUrl,
@@ -311,7 +259,6 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	return api.Entity{
 		ID:          apiDefID,
 		TenantID:    tenantID,
-		AppID:       repo.NewNullableString(str.Ptr(appID)),
 		PkgID:       repo.NewNullableString(str.Ptr(packageID)),
 		Name:        placeholder,
 		Description: repo.NewValidNullableString("desc_" + placeholder),
@@ -322,7 +269,6 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 			SpecFormat: repo.NewValidNullableString(string(model.SpecFormatYaml)),
 			SpecType:   repo.NewValidNullableString(string(model.APISpecTypeOpenAPI)),
 		},
-		DefaultAuth: repo.NewValidNullableString(fixDefaultAuth()),
 		Version: version.Version{
 			VersionValue:           repo.NewNullableString(str.Ptr("v1.1")),
 			VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
@@ -333,21 +279,21 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 }
 
 func fixAPIDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "target_url", "spec_data",
-		"spec_format", "spec_type", "default_auth", "version_value", "version_deprecated",
+	return []string{"id", "tenant_id", "package_id", "name", "description", "group_name", "target_url", "spec_data",
+		"spec_format", "spec_type", "version_value", "version_deprecated",
 		"version_deprecated_since", "version_for_removal"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
-	return []driver.Value{id, tenantID, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
+	return []driver.Value{id, tenantID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
 		fmt.Sprintf("https://%s.com", placeholder), "spec_data_" + placeholder, "YAML", "OPEN_API",
-		fixDefaultAuth(), "v1.1", false, "v1.0", false}
+		"v1.1", false, "v1.0", false}
 }
 
-func fixAPICreateArgs(id, defAuth string, api *model.APIDefinition) []driver.Value {
-	return []driver.Value{id, tenantID, appID, packageID, api.Name, api.Description, api.Group,
+func fixAPICreateArgs(id string, api *model.APIDefinition) []driver.Value {
+	return []driver.Value{id, tenantID, packageID, api.Name, api.Description, api.Group,
 		api.TargetURL, api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type),
-		defAuth, api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
+		api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
 		api.Version.ForRemoval}
 }
 

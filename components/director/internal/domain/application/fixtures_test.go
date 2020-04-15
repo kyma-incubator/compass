@@ -155,18 +155,6 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
 		},
-		APIDefinitions: []*model.APIDefinitionInput{
-			{Name: "api1", TargetURL: "foo.bar"},
-			{Name: "api2", TargetURL: "foo.bar2"},
-		},
-		EventDefinitions: []*model.EventDefinitionInput{
-			{Name: "event1", Description: &desc},
-			{Name: "event2", Description: &desc},
-		},
-		Documents: []*model.DocumentInput{
-			{DisplayName: "doc1", Kind: &kind},
-			{DisplayName: "doc2", Kind: &kind},
-		},
 		Packages: []*model.PackageCreateInput{
 			{
 				Name: "foo",
@@ -213,18 +201,6 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 		Webhooks: []*graphql.WebhookInput{
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
-		},
-		APIDefinitions: []*graphql.APIDefinitionInput{
-			{Name: "api1", TargetURL: "foo.bar"},
-			{Name: "api2", TargetURL: "foo.bar2"},
-		},
-		EventDefinitions: []*graphql.EventDefinitionInput{
-			{Name: "event1", Description: &desc},
-			{Name: "event2", Description: &desc},
-		},
-		Documents: []*graphql.DocumentInput{
-			{DisplayName: "doc1", Kind: &kind},
-			{DisplayName: "doc2", Kind: &kind},
 		},
 		Packages: []*graphql.PackageCreateInput{
 			{
@@ -328,49 +304,6 @@ func fixGQLWebhook(id string) *graphql.Webhook {
 	}
 }
 
-func fixAPIDefinitionPage(apiDefinitions []*model.APIDefinition) *model.APIDefinitionPage {
-	return &model.APIDefinitionPage{
-		Data: apiDefinitions,
-		PageInfo: &pagination.Page{
-			StartCursor: "start",
-			EndCursor:   "end",
-			HasNextPage: false,
-		},
-		TotalCount: len(apiDefinitions),
-	}
-}
-
-func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.APIDefinitionPage {
-	return &graphql.APIDefinitionPage{
-		Data: apiDefinitions,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: "start",
-			EndCursor:   "end",
-			HasNextPage: false,
-		},
-		TotalCount: len(apiDefinitions),
-	}
-}
-
-func fixModelAPIDefinition(id string, appId *string, name, description string, group string) *model.APIDefinition {
-	return &model.APIDefinition{
-		ID:            id,
-		ApplicationID: appId,
-		Name:          name,
-		Description:   &description,
-		Group:         &group,
-	}
-}
-
-func fixGQLAPIDefinition(id string, appId *string, name, description string, group string) *graphql.APIDefinition {
-	return &graphql.APIDefinition{
-		ID:            id,
-		ApplicationID: appId,
-		Name:          name,
-		Description:   &description,
-		Group:         &group,
-	}
-}
 func fixEventAPIDefinitionPage(eventAPIDefinitions []*model.EventDefinition) *model.EventDefinitionPage {
 	return &model.EventDefinitionPage{
 		Data: eventAPIDefinitions,
