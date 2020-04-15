@@ -9,6 +9,15 @@ func (qp queryProvider) createRuntimeMutation(runtimeInput string) string {
 	result: registerRuntime(in: %s) { id } }`, runtimeInput)
 }
 
+func (qp queryProvider) updateRuntimeMutation(runtimeID, runtimeInput string) string {
+	return fmt.Sprintf(`
+		mutation {
+			result: updateRuntime(id: "%s" in: %s) {
+				id
+			}
+		}`, runtimeID, runtimeInput)
+}
+
 func (qp queryProvider) deleteRuntimeMutation(runtimeID string) string {
 	return fmt.Sprintf(`mutation {
 	result: unregisterRuntime(id: "%s") {

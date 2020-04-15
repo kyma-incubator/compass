@@ -197,9 +197,10 @@ type RuntimeConnectionStatus struct {
 }
 
 type RuntimeInput struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
-	Labels      *Labels `json:"labels"`
+	Name            string                  `json:"name"`
+	Description     *string                 `json:"description"`
+	Labels          *Labels                 `json:"labels"`
+	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
 }
 
 type RuntimeStatus struct {
@@ -342,5 +343,52 @@ func (e *RuntimeAgentConnectionStatus) UnmarshalGQL(v interface{}) error {
 }
 
 func (e RuntimeAgentConnectionStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type RuntimeStatusCondition string
+
+const (
+	RuntimeStatusConditionInitial      RuntimeStatusCondition = "INITIAL"
+	RuntimeStatusConditionProvisioning RuntimeStatusCondition = "PROVISIONING"
+	RuntimeStatusConditionInstalling   RuntimeStatusCondition = "INSTALLING"
+	RuntimeStatusConditionConnected    RuntimeStatusCondition = "CONNECTED"
+	RuntimeStatusConditionFailed       RuntimeStatusCondition = "FAILED"
+)
+
+var AllRuntimeStatusCondition = []RuntimeStatusCondition{
+	RuntimeStatusConditionInitial,
+	RuntimeStatusConditionProvisioning,
+	RuntimeStatusConditionInstalling,
+	RuntimeStatusConditionConnected,
+	RuntimeStatusConditionFailed,
+}
+
+func (e RuntimeStatusCondition) IsValid() bool {
+	switch e {
+	case RuntimeStatusConditionInitial, RuntimeStatusConditionProvisioning, RuntimeStatusConditionInstalling, RuntimeStatusConditionConnected, RuntimeStatusConditionFailed:
+		return true
+	}
+	return false
+}
+
+func (e RuntimeStatusCondition) String() string {
+	return string(e)
+}
+
+func (e *RuntimeStatusCondition) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = RuntimeStatusCondition(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid RuntimeStatusCondition", str)
+	}
+	return nil
+}
+
+func (e RuntimeStatusCondition) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

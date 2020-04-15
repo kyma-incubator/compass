@@ -111,6 +111,14 @@ enum OperationState {
     Failed
 }
 
+enum RuntimeStatusCondition {
+    INITIAL
+    PROVISIONING
+    INSTALLING
+    CONNECTED
+    FAILED
+}
+
 enum RuntimeAgentConnectionStatus {
     Pending
     Connected
@@ -125,6 +133,7 @@ input RuntimeInput {
     name: String!           # Name of the Runtime
     description: String     # Runtime description
     labels: Labels
+    statusCondition: RuntimeStatusCondition
 }
 
 input ProvisionRuntimeInput {

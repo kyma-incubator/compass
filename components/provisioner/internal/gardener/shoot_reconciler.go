@@ -132,7 +132,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	switch provisioningStep {
 	case Initial:
-		return r.provisioningOperator.Initial(log, shoot, operationId)
+		return r.provisioningOperator.Initial(log, shoot, operationId, runtimeId)
 	case Provisioning:
 		return r.provisioningOperator.ProvisioningInProgress(log, shoot, operationId)
 	case Provisioned:

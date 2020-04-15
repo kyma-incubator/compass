@@ -70,6 +70,8 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		return operations.StageResult{}, fmt.Errorf("error: failed to start installation: %s", err.Error())
 	}
 
+	// TODO: There should be an update to the Director with the INSTALLING status
+
 	logger.Warnf("Installation started, proceeding to next step...")
 	return operations.StageResult{Stage: s.nextStep, Delay: 30 * time.Second}, nil
 }
