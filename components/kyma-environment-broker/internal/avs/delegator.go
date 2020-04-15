@@ -51,8 +51,9 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 
 	evalResp, err := del.postRequest(evaluationObject, logger)
 	if err != nil {
-		logger.Errorf("post to avs failed with error %v", err)
-		return operation, 30 * time.Second, nil
+		errMsg := fmt.Sprintf("post to avs failed with error %v", err)
+		retryConfig := evalAssistant.provideRetryConfig()
+		return del.operationManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
 	}
 
 	evalAssistant.SetEvalId(&operation.Avs, evalResp.Id)

@@ -1,6 +1,8 @@
 package avs
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 )
 
@@ -12,4 +14,10 @@ type EvalAssistant interface {
 	IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool
 	GetEvaluationId(lifecycleData internal.AvsLifecycleData) int64
 	markDeleted(lifecycleData *internal.AvsLifecycleData)
+	provideRetryConfig() *RetryConfig
+}
+
+type RetryConfig struct {
+	retryInterval time.Duration
+	maxTime       time.Duration
 }

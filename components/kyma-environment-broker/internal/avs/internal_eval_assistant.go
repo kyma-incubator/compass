@@ -2,6 +2,7 @@ package avs
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -13,11 +14,15 @@ const (
 )
 
 type InternalEvalAssistant struct {
-	avsConfig Config
+	avsConfig   Config
+	retryConfig *RetryConfig
 }
 
 func NewInternalEvalAssistant(avsConfig Config) *InternalEvalAssistant {
-	return &InternalEvalAssistant{avsConfig: avsConfig}
+	return &InternalEvalAssistant{
+		avsConfig:   avsConfig,
+		retryConfig: &RetryConfig{maxTime: 10 * time.Minute, retryInterval: 1 * time.Minute},
+	}
 }
 
 func (iec *InternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error) {
@@ -66,4 +71,8 @@ func (iec *InternalEvalAssistant) GetEvaluationId(lifecycleData internal.AvsLife
 
 func (iec *InternalEvalAssistant) markDeleted(lifecycleData *internal.AvsLifecycleData) {
 	lifecycleData.AVSInternalEvaluationDeleted = true
+}
+
+func (iec *InternalEvalAssistant) provideRetryConfig() *RetryConfig {
+	return iec.retryConfig
 }
