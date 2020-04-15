@@ -13,7 +13,7 @@ import (
 
 //go:generate mockery -name=TenantStorageService -output=automock -outpkg=automock -case=underscore
 type TenantStorageService interface {
-	Create(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
+	CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
 
@@ -70,7 +70,7 @@ func (s Service) SyncTenants() error {
 	ctx := context.Background()
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	err = s.tenantStorageService.Create(ctx, tenantsToCreate)
+	err = s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate)
 	if err != nil {
 		return errors.Wrap(err, "while storing new tenants")
 	}
