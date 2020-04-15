@@ -60,9 +60,6 @@ type APIConverter interface {
 //go:generate mockery -name=EventDefinitionService -output=automock -outpkg=automock -case=underscore
 type EventDefinitionService interface {
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
-	GetForApplication(ctx context.Context, id string, applicationID string) (*model.EventDefinition, error)
-	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
-	Create(ctx context.Context, applicationID string, in model.EventDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.EventDefinitionInput) error
 	Delete(ctx context.Context, id string) error
 }
@@ -487,72 +484,6 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 		Key:   key,
 		Value: label.Value,
 	}, nil
-}
-
-func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommited(tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	var cursor string
-	if after != nil {
-		cursor = string(*after)
-	}
-
-	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
-	}
-
-	eventAPIPage, err := r.eventDefSvc.List(ctx, obj.ID, *first, cursor)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	gqlApis := r.eventApiConverter.MultipleToGraphQL(eventAPIPage.Data)
-	totalCount := len(gqlApis)
-
-	return &graphql.EventDefinitionPage{
-		Data:       gqlApis,
-		TotalCount: totalCount,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(eventAPIPage.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(eventAPIPage.PageInfo.EndCursor),
-			HasNextPage: eventAPIPage.PageInfo.HasNextPage,
-		},
-	}, nil
-}
-
-func (r *Resolver) EventDefinition(ctx context.Context, id string, application *graphql.Application) (*graphql.EventDefinition, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommited(tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	eventAPI, err := r.eventDefSvc.GetForApplication(ctx, id, application.ID)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.eventApiConverter.ToGraphQL(eventAPI), nil
 }
 
 // TODO: Proper error handling

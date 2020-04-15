@@ -464,12 +464,6 @@ func (r *applicationResolver) Labels(ctx context.Context, obj *graphql.Applicati
 func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.Webhook, error) {
 	return r.app.Webhooks(ctx, obj)
 }
-func (r *applicationResolver) EventDefinitions(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
-	return r.app.EventDefinitions(ctx, obj, group, first, after)
-}
-func (r *applicationResolver) EventDefinition(ctx context.Context, obj *graphql.Application, id string) (*graphql.EventDefinition, error) {
-	return r.app.EventDefinition(ctx, id, obj)
-}
 func (r *applicationResolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	return r.app.Documents(ctx, obj, first, after)
 }

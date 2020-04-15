@@ -5,15 +5,14 @@ import (
 )
 
 type EventDefinition struct {
-	ID            string
-	Tenant        string
-	ApplicationID *string
-	PackageID     *string
-	Name          string
-	Description   *string
-	Group         *string
-	Spec          *EventSpec
-	Version       *Version
+	ID          string
+	Tenant      string
+	PackageID   *string
+	Name        string
+	Description *string
+	Group       *string
+	Spec        *EventSpec
+	Version     *Version
 }
 
 type EventSpecType string
@@ -51,24 +50,6 @@ type EventSpecInput struct {
 	FetchRequest  *FetchRequestInput
 }
 
-func (e *EventDefinitionInput) ToEventDefinition(id string, appID *string, tenant string) *EventDefinition {
-	if e == nil {
-		return nil
-	}
-
-	return &EventDefinition{
-		ID:            id,
-		ApplicationID: appID,
-		Tenant:        tenant,
-		Name:          e.Name,
-		Description:   e.Description,
-		Group:         e.Group,
-		Spec:          e.Spec.ToEventSpec(),
-		Version:       e.Version.ToVersion(),
-	}
-}
-
-//TODO After switching to the new packages api this method will replace ToEventDefinition
 func (e *EventDefinitionInput) ToEventDefinitionWithinPackage(id string, pkgID *string, tenant string) *EventDefinition {
 	if e == nil {
 		return nil

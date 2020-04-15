@@ -105,7 +105,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EventAPIDefinitionConverter{}
 		convMock.On("FromEntity", eventAPIDefEntity).Return(model.EventDefinition{ID: eventAPIID,
-			Tenant: tenantID, ApplicationID: str.Ptr(appID), PackageID: str.Ptr(packageID)}, nil).Once()
+			Tenant: tenantID, PackageID: str.Ptr(packageID)}, nil).Once()
 		pgRepository := eventdef.NewRepository(convMock)
 		// WHEN
 		modelEventAPIDef, err := pgRepository.GetForApplication(ctx, tenantID, eventAPIID, appID)
@@ -113,7 +113,6 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, eventAPIID, modelEventAPIDef.ID)
 		assert.Equal(t, tenantID, modelEventAPIDef.Tenant)
-		assert.Equal(t, str.Ptr(appID), modelEventAPIDef.ApplicationID)
 		assert.Equal(t, str.Ptr(packageID), modelEventAPIDef.PackageID)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
@@ -197,7 +196,7 @@ func TestPgRepository_GetForPackage(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EventAPIDefinitionConverter{}
 		convMock.On("FromEntity", eventAPIDefEntity).Return(model.EventDefinition{ID: eventAPIID,
-			Tenant: tenantID, ApplicationID: str.Ptr(appID), PackageID: str.Ptr(packageID)}, nil).Once()
+			Tenant: tenantID, PackageID: str.Ptr(packageID)}, nil).Once()
 		pgRepository := eventdef.NewRepository(convMock)
 		// WHEN
 		modelEventAPIDef, err := pgRepository.GetForPackage(ctx, tenantID, eventAPIID, packageID)
@@ -205,7 +204,6 @@ func TestPgRepository_GetForPackage(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, eventAPIID, modelEventAPIDef.ID)
 		assert.Equal(t, tenantID, modelEventAPIDef.Tenant)
-		assert.Equal(t, str.Ptr(appID), modelEventAPIDef.ApplicationID)
 		assert.Equal(t, str.Ptr(packageID), modelEventAPIDef.PackageID)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
