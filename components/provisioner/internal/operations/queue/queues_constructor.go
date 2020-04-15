@@ -22,7 +22,7 @@ func CreateInstallationQueue(
 	waitForAgentToConnectStep := stages.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, 10*time.Minute)
 	configureAgentStep := stages.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Stage(), 10*time.Minute)
 	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Stage(), installationTimeout)
-	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Stage(), 10*time.Minute)
+	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Stage(), 20*time.Minute)
 
 	installSteps := map[model.OperationStage]operations.Step{
 		model.WaitForAgentToConnect:  waitForAgentToConnectStep,

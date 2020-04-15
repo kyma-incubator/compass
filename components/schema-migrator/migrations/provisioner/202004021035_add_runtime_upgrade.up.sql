@@ -15,7 +15,7 @@ FROM (SELECT id, cluster_id
 WHERE cluster.id=subquery.cluster_id;
 
 UPDATE operation
-SET stage='ShootProvisioning'
+SET stage='StartingInstallation'
 WHERE operation.state='IN_PROGRESS' OR operation.state='FAILED';
 
 UPDATE operation
