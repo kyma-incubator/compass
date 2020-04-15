@@ -3787,7 +3787,6 @@ type Query {
 	applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applications")
 	"""
 	**Examples**
-	- [query api runtime auths](examples/query-application/query-api-runtime-auths.graphql)
 	- [query application](examples/query-application/query-application.graphql)
 	"""
 	application(id: ID!): Application @hasScopes(path: "graphql.query.application")
@@ -3955,15 +3954,7 @@ type Mutation {
 	- [add api definition to package](examples/add-api-definition-to-package/add-api-definition-to-package.graphql)
 	"""
 	addAPIDefinitionToPackage(packageID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToPackage")
-	"""
-	**Examples**
-	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
-	"""
 	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition")
-	"""
-	**Examples**
-	- [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
-	"""
 	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition")
 	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
 	requestOneTimeTokenForRuntime(id: ID!): OneTimeTokenForRuntime! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
@@ -3984,15 +3975,7 @@ type Mutation {
 	- [add event definition to package](examples/add-event-definition-to-package/add-event-definition-to-package.graphql)
 	"""
 	addEventDefinitionToPackage(packageID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToPackage")
-	"""
-	**Examples**
-	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
-	"""
 	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition")
-	"""
-	**Examples**
-	- [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)
-	"""
 	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
 	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
 	"""
@@ -4000,10 +3983,6 @@ type Mutation {
 	- [add document to package](examples/add-document-to-package/add-document-to-package.graphql)
 	"""
 	addDocumentToPackage(packageID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocumentToPackage")
-	"""
-	**Examples**
-	- [delete document](examples/delete-document/delete-document.graphql)
-	"""
 	deleteDocument(id: ID!): Document! @hasScopes(path: "graphql.mutation.deleteDocument")
 	"""
 	**Examples**
