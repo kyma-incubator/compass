@@ -95,7 +95,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... namespace cannot get created
 					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientCreationError()),
-					&accountProvider,
+					accountProvider,
 					context.Background(),
 				)
 			},
@@ -109,7 +109,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... namespace cannot get listed
 					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientListError()),
-					&accountProvider,
+					accountProvider,
 					context.Background(),
 				)
 			},
@@ -123,7 +123,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... PrimaryConnectionString is nil
 					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceAccessKeysNil()),
-					&accountProvider,
+					accountProvider,
 					context.Background(),
 				)
 			},
@@ -137,7 +137,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... client cannot be created
 					azuretesting.NewFakeHyperscalerProviderError(),
-					&accountProvider,
+					accountProvider,
 					context.Background(),
 				)
 			},
@@ -151,7 +151,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... resource group cannot be created
 					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceResourceGroupError()),
-					&accountProvider,
+					accountProvider,
 					context.Background(),
 				)
 			},
@@ -319,7 +319,7 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	return creator
 }
 
-func fixAccountProvider() hyperscalerautomock.AccountProvider {
+func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 	accountProvider := hyperscalerautomock.AccountProvider{}
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
 		HyperscalerType: hyperscaler.Azure,
@@ -330,21 +330,21 @@ func fixAccountProvider() hyperscalerautomock.AccountProvider {
 			"tenantID":       []byte("tenantID"),
 		},
 	}, nil)
-	return accountProvider
+	return &accountProvider
 }
 
-func fixAccountProviderGardenerCredentialsError() hyperscalerautomock.AccountProvider {
+func fixAccountProviderGardenerCredentialsError() *hyperscalerautomock.AccountProvider {
 	accountProvider := hyperscalerautomock.AccountProvider{}
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
 		HyperscalerType: hyperscaler.Azure,
 		CredentialData:  map[string][]byte{},
 	}, fmt.Errorf("ups ... gardener credentials could not be retrieved"))
-	return accountProvider
+	return &accountProvider
 }
 
 func fixEventHubStep(memoryStorageOp storage.Operations, hyperscalerProvider azure.HyperscalerProvider,
-	accountProvider hyperscalerautomock.AccountProvider) *ProvisionAzureEventHubStep {
-	return NewProvisionAzureEventHubStep(memoryStorageOp, hyperscalerProvider, &accountProvider, context.Background())
+	accountProvider *hyperscalerautomock.AccountProvider) *ProvisionAzureEventHubStep {
+	return NewProvisionAzureEventHubStep(memoryStorageOp, hyperscalerProvider, accountProvider, context.Background())
 }
 
 func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
