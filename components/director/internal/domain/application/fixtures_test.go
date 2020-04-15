@@ -330,26 +330,24 @@ func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *
 
 func fixModelEventAPIDefinition(id string, appId, packageID *string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
-		ID:            id,
-		ApplicationID: appId,
-		PackageID:     packageID,
-		Name:          name,
-		Description:   &description,
-		Group:         &group,
+		ID:          id,
+		PackageID:   packageID,
+		Name:        name,
+		Description: &description,
+		Group:       &group,
 	}
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
 	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		ApplicationID: str.Ptr("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), PackageID: str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"), Name: placeholder}
+		PackageID: str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"), Name: placeholder}
 }
 func fixGQLEventDefinition(id string, appId, packageID *string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
-		ID:            id,
-		ApplicationID: appId,
-		PackageID:     packageID,
-		Name:          name,
-		Description:   &description,
-		Group:         &group,
+		ID:          id,
+		PackageID:   packageID,
+		Name:        name,
+		Description: &description,
+		Group:       &group,
 	}
 }
 

@@ -217,12 +217,11 @@ components:
         kafka:
           clientId: my-app-id`)
 	return &graphql.EventDefinition{
-		ID:            id,
-		ApplicationID: str.Ptr("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-		PackageID:     str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"),
-		Name:          "Bar",
-		Description:   &desc,
-		Group:         nil,
+		ID:          id,
+		PackageID:   str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"),
+		Name:        "Bar",
+		Description: &desc,
+		Group:       nil,
 		Spec: &graphql.EventSpec{
 			Data:   &data,
 			Type:   graphql.EventSpecTypeAsyncAPI,
