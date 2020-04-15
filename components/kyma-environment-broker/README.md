@@ -4,8 +4,18 @@
 
 Kyma Environment Broker (KEB) is a component that allows you to provision Kyma as a Runtime on clusters provided by third-party providers. It uses Provisioner's API to install Kyma on a given cluster.
 
-For more information, read the [documentation](../../docs/kyma-environment-broker).
+For more information, read the [documentation](../../docs/kyma-environment-broker) where you can find information on:
 
+- [Architecture](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/02-01-architecture.md)
+- [Service description](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/03-01-service-description.md)
+- [Runtime components](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/03-02-runtime-components.md)
+- [Runtime provisioning and deprovisioning](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/03-03-runtime-provisioning-and-deprovisioning.md)
+- [Hyperscaler account pool](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/03-04-hyperscaler-account-pool.md)
+- [Authorization](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/03-05-authorization.md)
+- [Runtime overrides](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/03-06-runtime-overrides.md)
+- [Provisioning Kyma environment](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/08-01-provisioning-kyma-environment.md)
+- [Deprovisioning Kyma environment](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/08-02-deprovisioning-kyma-environment.md)
+- [Operation status](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/08-03-operation-status.md)
 
 ## Configuration
 
