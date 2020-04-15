@@ -95,15 +95,20 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	// TODO: check pointer
 	deprovisioningState := *resourceGroup.Properties.ProvisioningState
 	if deprovisioningState != azureFutureOperationDeleting {
-
 		future, err := namespaceClient.DeleteResourceGroup(s.EventHub.Context, tags)
 		if err != nil {
 			errorMessage := fmt.Sprintf("Unable to delete Azure resource group: %v", err)
 			return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Hour, log)
 		}
 		if future.Status() != azureFutureOperationSucceeded {
-			log.Infof("rescheduling step to check deletion of resource group completed")
-			return s.OperationManager.RetryOperation(operation, "waiting for deprovisioning of azure resource group", time.Minute, time.Hour, log)
+			//TODO(montaro) Optimization, retry after the polling delay provided by Azure
+			if retryAfter, retryAfterHeaderExist := future.GetPollingDelay(); retryAfterHeaderExist {
+				log.Infof("rescheduling step to check deletion of resource group completed")
+				return s.OperationManager.RetryOperation(operation, "waiting for deprovisioning of azure resource group", retryAfter, time.Hour, log)
+			} else {
+				log.Infof("rescheduling step to check deletion of resource group completed")
+				return s.OperationManager.RetryOperation(operation, "waiting for deprovisioning of azure resource group", time.Minute, time.Hour, log)
+			}
 		}
 	}
 	return s.OperationManager.RetryOperation(operation, "waiting for deprovisioning of azure resource group", time.Minute, time.Hour, log)
