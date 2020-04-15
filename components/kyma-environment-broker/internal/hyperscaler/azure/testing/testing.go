@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
@@ -83,3 +85,28 @@ func NewFakeNamespaceClientHappyPath() *FakeNamespaceClient {
 	return &FakeNamespaceClient{}
 }
 
+// ensure the fake client is implementing the interface
+var _ azure.HyperscalerProvider = (*fakeHyperscalerProvider)(nil)
+
+type fakeHyperscalerProvider struct {
+	client azure.AzureInterface
+	err    error
+}
+
+func (ac *fakeHyperscalerProvider) GetClient(config *azure.Config, logger logrus.FieldLogger) (azure.AzureInterface, error) {
+	return ac.client, ac.err
+}
+
+func NewFakeHyperscalerProvider(client azure.AzureInterface) azure.HyperscalerProvider {
+	return &fakeHyperscalerProvider{
+		client: client,
+		err:    nil,
+	}
+}
+
+func NewFakeHyperscalerProviderError() azure.HyperscalerProvider {
+	return &fakeHyperscalerProvider{
+		client: nil,
+		err:    fmt.Errorf("ups ... hyperscaler provider could not provide a hyperscaler client"),
+	}
+}

@@ -36,39 +36,13 @@ func fixLogger() logrus.FieldLogger {
 	return logrus.StandardLogger()
 }
 
-// ensure the fake client is implementing the interface
-var _ azure.HyperscalerProvider = (*fakeHyperscalerProvider)(nil)
-
-type fakeHyperscalerProvider struct {
-	client azure.AzureInterface
-	err    error
-}
-
-func (ac *fakeHyperscalerProvider) GetClient(config *azure.Config, logger logrus.FieldLogger) (azure.AzureInterface, error) {
-	return ac.client, ac.err
-}
-
-func NewFakeHyperscalerProvider(client azure.AzureInterface) azure.HyperscalerProvider {
-	return &fakeHyperscalerProvider{
-		client: client,
-		err:    nil,
-	}
-}
-
-func NewFakeHyperscalerProviderError() azure.HyperscalerProvider {
-	return &fakeHyperscalerProvider{
-		client: nil,
-		err:    fmt.Errorf("ups ... hyperscaler provider could not provide a hyperscaler client"),
-	}
-}
-
 func Test_HappyPath(t *testing.T) {
 	// given
 	tags := fixTags()
 	memoryStorage := storage.NewMemoryStorage()
 	accountProvider := fixAccountProvider()
 	namespaceClient := azuretesting.NewFakeNamespaceClientHappyPath()
-	step := fixEventHubStep(memoryStorage.Operations(), NewFakeHyperscalerProvider(namespaceClient), accountProvider)
+	step := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClient), accountProvider)
 	op := fixProvisioningOperation(t)
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
 	err := memoryStorage.Operations().InsertProvisioningOperation(op)
@@ -100,7 +74,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			giveOperation: fixInvalidProvisioningOperation,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
-				return *fixEventHubStep(storage.Operations(), NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
+				return *fixEventHubStep(storage.Operations(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
 			},
 			wantRepeatOperation: false,
 		},
@@ -109,7 +83,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			giveOperation: fixProvisioningOperation,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
 				accountProvider := fixAccountProviderGardenerCredentialsError()
-				return *fixEventHubStep(storage.Operations(), NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
+				return *fixEventHubStep(storage.Operations(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
 			},
 			wantRepeatOperation: true,
 		},
@@ -120,7 +94,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				accountProvider := fixAccountProvider()
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... namespace cannot get created
-					NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientCreationError()),
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientCreationError()),
 					&accountProvider,
 					context.Background(),
 				)
@@ -134,7 +108,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				accountProvider := fixAccountProvider()
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... namespace cannot get listed
-					NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientListError()),
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientListError()),
 					&accountProvider,
 					context.Background(),
 				)
@@ -148,7 +122,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				accountProvider := fixAccountProvider()
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... PrimaryConnectionString is nil
-					NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceAccessKeysNil()),
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceAccessKeysNil()),
 					&accountProvider,
 					context.Background(),
 				)
@@ -162,7 +136,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				accountProvider := fixAccountProvider()
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... client cannot be created
-					NewFakeHyperscalerProviderError(),
+					azuretesting.NewFakeHyperscalerProviderError(),
 					&accountProvider,
 					context.Background(),
 				)
@@ -176,7 +150,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				accountProvider := fixAccountProvider()
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... resource group cannot be created
-					NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceResourceGroupError()),
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceResourceGroupError()),
 					&accountProvider,
 					context.Background(),
 				)
