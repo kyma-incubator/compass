@@ -80,9 +80,14 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	// prepare azure tags
 	tags := azure.Tags{azure.TagInstanceID: &operation.InstanceID}
 
-	if err := namespaceClient.DeleteResourceGroup(s.EventHub.Context, tags); err != nil {
+	future, err := namespaceClient.DeleteResourceGroup(s.EventHub.Context, tags)
+	if err != nil {
 		errorMessage := fmt.Sprintf("Unable to delete Azure resource group: %v", err)
 		return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
+	}
+	if future.Status() != "todo" {
+		log.Infof("rescheduling step to check deletion of resource group completed")
+		return s.OperationManager.RetryOperation(operation, "waiting for deprovisioning of azure resource group", time.Minute, time.Hour, log)
 	}
 
 	return s.OperationManager.OperationSucceeded(operation, "deprovisioning of event_hub_step succeeded")

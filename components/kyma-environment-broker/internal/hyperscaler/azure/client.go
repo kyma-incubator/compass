@@ -14,7 +14,7 @@ type AzureInterface interface {
 	GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
 	CreateResourceGroup(ctx context.Context, config *Config, name string, tags Tags) (resources.Group, error)
 	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags Tags) (*eventhub.EHNamespace, error)
-	DeleteResourceGroup(ctx context.Context, tags Tags) error
+	DeleteResourceGroup(ctx context.Context, tags Tags) (resources.GroupsDeleteFuture, error)
 }
 
 var _ AzureInterface = (*AzureClient)(nil)
@@ -52,14 +52,28 @@ func (nc *AzureClient) CreateNamespace(ctx context.Context, azureCfg *Config, gr
 	return &ehNamespace, err
 }
 
-// TODO(nachtmaar): can we have map[string]string here instead and do we nillness checking before ?
-func (nc *AzureClient) DeleteResourceGroup(ctx context.Context, tags Tags) error {
-	resourceGroup, err := nc.getResourceGroup(ctx, *tags[TagInstanceID])
-	if err != nil {
-		return err
+func (nc *AzureClient) DeleteResourceGroup(ctx context.Context, tags Tags) (resources.GroupsDeleteFuture, error) {
+	if tags[TagInstanceID] == nil {
+		return resources.GroupsDeleteFuture{}, fmt.Errorf("serviceInstance is nil")
 	}
-	logrus.Infof("found resource group with name: %s\n", *resourceGroup.Name)
-	return nc.deleteAndWaitResourceGroup(ctx, *resourceGroup.Name)
+
+	// get name of resource group
+	instanceID := *tags[TagInstanceID]
+	resourceGroup, err := nc.getResourceGroup(ctx, instanceID)
+	if err != nil {
+		return resources.GroupsDeleteFuture{}, err
+	}
+
+	// trigger async deletion of the resource group
+	if resourceGroup.Name == nil {
+		return resources.GroupsDeleteFuture{}, fmt.Errorf("resource group name is nil")
+	}
+	nc.logger.Infof("deleting resource group: %s", *resourceGroup.Name)
+	future, err := nc.resourcegroupClient.Delete(ctx, *resourceGroup.Name)
+	if err != nil {
+		return resources.GroupsDeleteFuture{}, err
+	}
+	return future, err
 }
 
 func (nc *AzureClient) getResourceGroup(ctx context.Context, serviceInstanceID string) (resources.Group, error) {
@@ -79,21 +93,6 @@ func (nc *AzureClient) getResourceGroup(ctx context.Context, serviceInstanceID s
 		return resourceGroup, nil
 	}
 	return resources.Group{}, fmt.Errorf("no resource group found for service instance id: %s", serviceInstanceID)
-}
-
-// TODO(nachtmaar): can we have a shared method to wait for azure futures ?
-func (nc *AzureClient) deleteAndWaitResourceGroup(ctx context.Context, resourceGroupName string) error {
-
-	nc.logger.Infof("deleting resource group: %s", resourceGroupName)
-	future, err := nc.resourcegroupClient.Delete(ctx, resourceGroupName)
-	if err != nil {
-		return err
-	}
-
-	// TODO: instead of blocking just re-enqueue the task
-	nc.logger.Infof("waiting for deletion of resource group: %s", resourceGroupName)
-	err = future.WaitForCompletionRef(ctx, nc.resourcegroupClient.Client)
-	return err
 }
 
 func (nc *AzureClient) createAndWaitNamespace(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {

@@ -72,9 +72,9 @@ func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *az
 	}, nc.persistEventhubsNamespaceError
 }
 
-func (nc *FakeNamespaceClient) DeleteResourceGroup(ctx context.Context, tags azure.Tags) error {
+func (nc *FakeNamespaceClient) DeleteResourceGroup(ctx context.Context, tags azure.Tags) (resources.GroupsDeleteFuture, error) {
 	//TODO(montaro) double check me
-	return nil
+	return resources.GroupsDeleteFuture{}, nil
 }
 
 func NewFakeNamespaceClientCreationError() azure.AzureInterface {
@@ -116,7 +116,7 @@ func (ac *fakeHyperscalerProvider) GetClient(config *azure.Config, logger logrus
 	return ac.client, ac.err
 }
 
-func NewFakeHyperscalerProvider(client azure.AzureInterface	) azure.HyperscalerProvider {
+func NewFakeHyperscalerProvider(client azure.AzureInterface) azure.HyperscalerProvider {
 	return &fakeHyperscalerProvider{
 		client: client,
 		err:    nil,

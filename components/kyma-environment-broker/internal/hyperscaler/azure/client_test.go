@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/gobuffalo/envy"
 	"github.com/sirupsen/logrus"
@@ -24,9 +25,15 @@ func TestDeleteResourceGroup(t *testing.T) {
 	require.NoError(t, err)
 
 	// when
-	err = azureClient.DeleteResourceGroup(context.Background(), tags)
+	future, err := azureClient.DeleteResourceGroup(context.Background(), tags)
 	require.NoError(t, err)
-
+	for {
+		_, err = future.Result(azureClient.(*AzureClient).resourcegroupClient)
+		t.Log(err)
+		fmt.Printf(".")
+		time.Sleep(time.Second)
+		t.Logf("waiting for deletion of resource group, status: %s", future.Status())
+	}
 	// then
 	// TODO:
 }
