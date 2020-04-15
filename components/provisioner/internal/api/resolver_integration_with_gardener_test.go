@@ -3,12 +3,13 @@ package api
 import (
 	"context"
 	"fmt"
-	v1alpha12 "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
-	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	v1alpha12 "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
+	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 

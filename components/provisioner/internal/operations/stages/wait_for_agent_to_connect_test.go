@@ -1,6 +1,9 @@
 package stages
 
 import (
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	v1alpha12 "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
@@ -10,8 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
-	"testing"
-	"time"
 )
 
 func TestWaitForAgentToConnect(t *testing.T) {
