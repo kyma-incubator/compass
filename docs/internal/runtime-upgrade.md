@@ -1,8 +1,10 @@
 # Runtime upgrade with the Runtime Provisioner
 
+This document describes the Runtime upgrade and rollback procedures for Kyma.
+
 ## Upgrade Runtime
 
-Runtime Provisioner allows you to upgrade Kyma Runtime using the GraphQL API. To upgrade a Runtime to version 1.11.0 with the standard Runtime components, use the following mutation:
+The Runtime Provisioner allows you to upgrade your Kyma Runtime using the GraphQL API. To upgrade the Runtime to the 1.11.0 version with the standard Runtime components, use the following mutation:
 
 ```graphql
 mutation {
