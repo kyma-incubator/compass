@@ -48,7 +48,7 @@ type HydroformProvisioner struct {
 	logger              *logrus.Entry
 }
 
-func (h *HydroformProvisioner) ProvisionCluster(clusterConfig model.Cluster, operationId string) error {
+func (h *HydroformProvisioner) ProvisionCluster(clusterConfig model.Cluster, operationId string, _ string) error {
 	_, err := h.Provision(clusterConfig, operationId)
 	return err
 }

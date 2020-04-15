@@ -65,10 +65,10 @@ type config struct {
 	}
 
 	Gardener struct {
-		Project                  string `envconfig:"default=gardenerProject"`
-		KubeconfigPath           string `envconfig:"default=./dev/kubeconfig.yaml"`
-		AuditLogsPolicyConfigMap string `envconfig:"optional"`
-		AuditLogsTenant          string `envconfig:"optional"`
+		Project                   string `envconfig:"default=gardenerProject"`
+		KubeconfigPath            string `envconfig:"default=./dev/kubeconfig.yaml"`
+		AuditLogsPolicyConfigMap  string `envconfig:"optional"`
+		AuditLogsTenantConfigPath string `envconfig:"optional"`
 	}
 
 	Provisioner             string `envconfig:"default=gardener"`
@@ -82,14 +82,14 @@ func (c *config) String() string {
 		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s, DownloadPreReleases: %v, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
-		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, GardenerAuditLogsTenant: %s, "+
+		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
 		"Provisioner: %s, SupportOnDemandReleases: %v, "+
 		"LogLevel: %s",
 		c.Address, c.APIEndpoint, c.CredentialsNamespace,
 		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName, c.DownloadPreReleases,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
-		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenant,
+		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
 		c.Provisioner, c.SupportOnDemandReleases,
 		c.LogLevel)
 }
@@ -144,7 +144,7 @@ func main() {
 		hydroformSvc := hydroform.NewHydroformService(client.NewHydroformClient(), cfg.Gardener.KubeconfigPath)
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
-		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.AuditLogsTenant)
+		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.AuditLogsTenantConfigPath)
 		shootController, err := newShootController(cfg, gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, installationService, directorClient, runtimeConfigurator)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {

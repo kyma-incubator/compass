@@ -31,7 +31,7 @@ type Service interface {
 
 //go:generate mockery -name=Provisioner
 type Provisioner interface {
-	ProvisionCluster(cluster model.Cluster, operationId string) error
+	ProvisionCluster(cluster model.Cluster, operationId string, region string) error
 	DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error)
 }
 
@@ -90,7 +90,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 		return nil, err
 	}
 
-	err = r.provisioner.ProvisionCluster(cluster, operation.ID)
+	err = r.provisioner.ProvisionCluster(cluster, operation.ID, getRegionIfSet(config))
 	if err != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
 		return nil, fmt.Errorf("Failed to start provisioning: %s", err.Error())
@@ -247,4 +247,12 @@ func (r *service) setOperationStarted(dbSession dbsession.WriteSession, runtimeI
 	}
 
 	return operation, nil
+}
+
+//TODO consider replacing this function with something better
+func getRegionIfSet(config gqlschema.ProvisionRuntimeInput) string {
+	if config.ClusterConfig.GardenerConfig != nil {
+		return config.ClusterConfig.GardenerConfig.Region
+	}
+	return ""
 }
