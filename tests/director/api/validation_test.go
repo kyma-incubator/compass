@@ -184,12 +184,14 @@ func TestAddDocument_Validation(t *testing.T) {
 	ctx := context.TODO()
 	app := registerApplication(t, ctx, "app-name")
 	defer unregisterApplication(t, app.ID)
+	pkg := createPackage(t, ctx, app.ID, "pkg")
+	defer deletePackage(t, ctx, pkg.ID)
 
 	doc := fixDocumentInput()
 	doc.DisplayName = strings.Repeat("a", 129)
 	docInputGQL, err := tc.graphqlizer.DocumentInputToGQL(&doc)
 	require.NoError(t, err)
-	createRequest := fixAddDocumentRequest(app.ID, docInputGQL)
+	createRequest := fixAddDocumentToPackageRequest(pkg.ID, docInputGQL)
 
 	//WHEN
 	err = tc.RunOperation(ctx, createRequest, nil)
@@ -242,11 +244,13 @@ func TestAddAPI_Validation(t *testing.T) {
 	ctx := context.TODO()
 	app := registerApplication(t, ctx, "name")
 	defer unregisterApplication(t, app.ID)
+	pkg := createPackage(t, ctx, app.ID, "pkg")
+	defer deletePackage(t, ctx, pkg.ID)
 
 	api := graphql.APIDefinitionInput{Name: "name", TargetURL: "https://kyma project.io"}
 	apiGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(api)
 	require.NoError(t, err)
-	addAPIRequest := fixAddAPIRequest(app.ID, apiGQL)
+	addAPIRequest := fixAddAPIToPackageRequest(pkg.ID, apiGQL)
 
 	//WHEN
 	err = tc.RunOperation(ctx, addAPIRequest, nil)
@@ -261,9 +265,11 @@ func TestUpdateAPI_Validation(t *testing.T) {
 	ctx := context.TODO()
 	app := registerApplication(t, ctx, "name")
 	defer unregisterApplication(t, app.ID)
+	pkg := createPackage(t, ctx, app.ID, "pkg")
+	defer deletePackage(t, ctx, pkg.ID)
 
 	api := graphql.APIDefinitionInput{Name: "name", TargetURL: "https://kyma-project.io"}
-	addAPI(t, ctx, app.ID, api)
+	addAPIToPackageWithInput(t, ctx, pkg.ID, api)
 
 	api.TargetURL = "invalid URL"
 	apiGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(api)
@@ -283,13 +289,15 @@ func TestAddEventAPI_Validation(t *testing.T) {
 	ctx := context.TODO()
 	app := registerApplication(t, ctx, "name")
 	defer unregisterApplication(t, app.ID)
+	pkg := createPackage(t, ctx, app.ID, "pkg")
+	defer deletePackage(t, ctx, pkg.ID)
 
 	eventAPI := fixEventAPIDefinitionInput()
 	longDesc := strings.Repeat("a", 2001)
 	eventAPI.Description = &longDesc
 	evenApiGQL, err := tc.graphqlizer.EventDefinitionInputToGQL(eventAPI)
 	require.NoError(t, err)
-	addEventAPIRequest := fixAddEventAPIRequest(app.ID, evenApiGQL)
+	addEventAPIRequest := fixAddEventAPIToPackageRequest(pkg.ID, evenApiGQL)
 
 	//WHEN
 	err = tc.RunOperation(ctx, addEventAPIRequest, nil)
@@ -303,9 +311,11 @@ func TestUpdateEventAPI_Validation(t *testing.T) {
 	ctx := context.TODO()
 	app := registerApplication(t, ctx, "name")
 	defer unregisterApplication(t, app.ID)
+	pkg := createPackage(t, ctx, app.ID, "pkg")
+	defer deletePackage(t, ctx, pkg.ID)
 
 	eventAPIUpdate := fixEventAPIDefinitionInput()
-	eventAPI := addEventDefinition(t, ctx, app.ID, eventAPIUpdate)
+	eventAPI := addEventToPackageWithInput(t, ctx, pkg.ID, eventAPIUpdate)
 
 	longDesc := strings.Repeat("a", 2001)
 	eventAPIUpdate.Description = &longDesc
