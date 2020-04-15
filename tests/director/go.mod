@@ -25,4 +25,4 @@ require (
 
 replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
 
-replace github.com/kyma-incubator/compass/components/director => github.com/kjaksik/compass/components/director v0.0.0-20200415095534-11aaea26a098
+replace github.com/kyma-incubator/compass/components/director => github.com/kjaksik/compass/components/director v0.0.0-20200415110719-b2bb8c35ee33
