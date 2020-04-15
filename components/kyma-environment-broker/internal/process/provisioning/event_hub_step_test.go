@@ -65,6 +65,10 @@ func (nc *FakeNamespaceClient) CreateResourceGroup(ctx context.Context, config *
 	}, nc.resourceGroupError
 }
 
+func (nc *FakeNamespaceClient) GetResourceGroup(ctx context.Context, tags azure.Tags) (resources.Group, error) {
+	return resources.Group{}, nil
+}
+
 func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *azure.Config, groupName, namespace string, tags azure.Tags) (*eventhub.EHNamespace, error) {
 	nc.tags = tags
 	return &eventhub.EHNamespace{

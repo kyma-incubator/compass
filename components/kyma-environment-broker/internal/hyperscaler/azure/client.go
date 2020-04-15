@@ -14,6 +14,7 @@ type AzureInterface interface {
 	GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
 	CreateResourceGroup(ctx context.Context, config *Config, name string, tags Tags) (resources.Group, error)
 	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags Tags) (*eventhub.EHNamespace, error)
+	GetResourceGroup(ctx context.Context, tags Tags) (resources.Group, error)
 	DeleteResourceGroup(ctx context.Context, tags Tags) (resources.GroupsDeleteFuture, error)
 }
 
@@ -24,6 +25,14 @@ type AzureClient struct {
 	eventhubNamespaceClient eventhub.NamespacesClient
 	resourcegroupClient     resources.GroupsClient
 	logger                  logrus.FieldLogger
+}
+
+type ResourceGroupDoesNotExist struct {
+	s string
+}
+
+func (e ResourceGroupDoesNotExist) Error() string {
+	return e.s
 }
 
 func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourcegroupClient resources.GroupsClient, logger logrus.FieldLogger) *AzureClient {
@@ -53,13 +62,8 @@ func (nc *AzureClient) CreateNamespace(ctx context.Context, azureCfg *Config, gr
 }
 
 func (nc *AzureClient) DeleteResourceGroup(ctx context.Context, tags Tags) (resources.GroupsDeleteFuture, error) {
-	if tags[TagInstanceID] == nil {
-		return resources.GroupsDeleteFuture{}, fmt.Errorf("serviceInstance is nil")
-	}
-
 	// get name of resource group
-	instanceID := *tags[TagInstanceID]
-	resourceGroup, err := nc.getResourceGroup(ctx, instanceID)
+	resourceGroup, err := nc.GetResourceGroup(ctx, tags)
 	if err != nil {
 		return resources.GroupsDeleteFuture{}, err
 	}
@@ -76,8 +80,14 @@ func (nc *AzureClient) DeleteResourceGroup(ctx context.Context, tags Tags) (reso
 	return future, err
 }
 
-func (nc *AzureClient) getResourceGroup(ctx context.Context, serviceInstanceID string) (resources.Group, error) {
+func (nc *AzureClient) GetResourceGroup(ctx context.Context, tags Tags) (resources.Group, error) {
+	if tags[TagInstanceID] == nil {
+		return resources.Group{}, fmt.Errorf("serviceInstance is nil")
+	}
+
+	serviceInstanceID := *tags[TagInstanceID]
 	filter := fmt.Sprintf("tagName eq 'InstanceID' and tagValue eq '%s'", serviceInstanceID)
+
 	// we only expect one ResourceGroup, so not using pagination here should be fine
 	resourceGroupIterator, err := nc.resourcegroupClient.ListComplete(ctx, filter, nil)
 	if err != nil {
@@ -92,7 +102,7 @@ func (nc *AzureClient) getResourceGroup(ctx context.Context, serviceInstanceID s
 		}
 		return resourceGroup, nil
 	}
-	return resources.Group{}, fmt.Errorf("no resource group found for service instance id: %s", serviceInstanceID)
+	return resources.Group{}, ResourceGroupDoesNotExist{s: fmt.Sprintf("no resource group found for service instance id: %s", serviceInstanceID)}
 }
 
 func (nc *AzureClient) createAndWaitNamespace(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
