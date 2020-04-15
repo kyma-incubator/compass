@@ -47,8 +47,6 @@ func (v *validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) er
 		return fmt.Errorf("validation error while starting Runtime upgrade: %s", err.Error())
 	}
 
-	// TODO: align with others if we should validate versions
-
 	return nil
 }
 
