@@ -281,7 +281,6 @@ type ComplexityRoot struct {
 		DeleteApplicationLabel                        func(childComplexity int, applicationID string, key string) int
 		DeleteApplicationTemplate                     func(childComplexity int, id string) int
 		DeleteAutomaticScenarioAssignmentForScenario  func(childComplexity int, scenarioName string) int
-		DeleteAutomaticScenarioAssignmentForSelector  func(childComplexity int, selector LabelSelectorInput) int
 		DeleteAutomaticScenarioAssignmentsForSelector func(childComplexity int, selector LabelSelectorInput) int
 		DeleteDefaultEventingForApplication           func(childComplexity int, appID string) int
 		DeleteDocument                                func(childComplexity int, id string) int
@@ -309,7 +308,6 @@ type ComplexityRoot struct {
 		RequestPackageInstanceAuthDeletion            func(childComplexity int, authID string) int
 		SetAPIAuth                                    func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
 		SetApplicationLabel                           func(childComplexity int, applicationID string, key string, value interface{}) int
-		SetAutomaticScenarioAssignment                func(childComplexity int, in AutomaticScenarioAssignmentSetInput) int
 		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
 		SetPackageInstanceAuth                        func(childComplexity int, authID string, in PackageInstanceAuthSetInput) int
 		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
@@ -403,7 +401,6 @@ type ComplexityRoot struct {
 		Applications                            func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		ApplicationsForRuntime                  func(childComplexity int, runtimeID string, first *int, after *PageCursor) int
 		AutomaticScenarioAssignmentForScenario  func(childComplexity int, scenarioName string) int
-		AutomaticScenarioAssignmentForSelector  func(childComplexity int, selector LabelSelectorInput) int
 		AutomaticScenarioAssignments            func(childComplexity int, first *int, after *PageCursor) int
 		AutomaticScenarioAssignmentsForSelector func(childComplexity int, selector LabelSelectorInput) int
 		HealthChecks                            func(childComplexity int, types []HealthCheckType, origin *string, first *int, after *PageCursor) int
@@ -566,10 +563,8 @@ type MutationResolver interface {
 	AddPackage(ctx context.Context, applicationID string, in PackageCreateInput) (*Package, error)
 	UpdatePackage(ctx context.Context, id string, in PackageUpdateInput) (*Package, error)
 	DeletePackage(ctx context.Context, id string) (*Package, error)
-	SetAutomaticScenarioAssignment(ctx context.Context, in AutomaticScenarioAssignmentSetInput) (*AutomaticScenarioAssignment, error)
 	CreateAutomaticScenarioAssignment(ctx context.Context, in AutomaticScenarioAssignmentSetInput) (*AutomaticScenarioAssignment, error)
 	DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
-	DeleteAutomaticScenarioAssignmentForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
 	DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
 }
 type OneTimeTokenForApplicationResolver interface {
@@ -607,7 +602,6 @@ type QueryResolver interface {
 	Viewer(ctx context.Context) (*Viewer, error)
 	Tenants(ctx context.Context) ([]*Tenant, error)
 	AutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
-	AutomaticScenarioAssignmentForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
 	AutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
 	AutomaticScenarioAssignments(ctx context.Context, first *int, after *PageCursor) (*AutomaticScenarioAssignmentPage, error)
 }
@@ -1717,18 +1711,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteAutomaticScenarioAssignmentForScenario(childComplexity, args["scenarioName"].(string)), true
 
-	case "Mutation.deleteAutomaticScenarioAssignmentForSelector":
-		if e.complexity.Mutation.DeleteAutomaticScenarioAssignmentForSelector == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteAutomaticScenarioAssignmentForSelector_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteAutomaticScenarioAssignmentForSelector(childComplexity, args["selector"].(LabelSelectorInput)), true
-
 	case "Mutation.deleteAutomaticScenarioAssignmentsForSelector":
 		if e.complexity.Mutation.DeleteAutomaticScenarioAssignmentsForSelector == nil {
 			break
@@ -2052,18 +2034,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SetApplicationLabel(childComplexity, args["applicationID"].(string), args["key"].(string), args["value"].(interface{})), true
-
-	case "Mutation.setAutomaticScenarioAssignment":
-		if e.complexity.Mutation.SetAutomaticScenarioAssignment == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_setAutomaticScenarioAssignment_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SetAutomaticScenarioAssignment(childComplexity, args["in"].(AutomaticScenarioAssignmentSetInput)), true
 
 	case "Mutation.setDefaultEventingForApplication":
 		if e.complexity.Mutation.SetDefaultEventingForApplication == nil {
@@ -2645,18 +2615,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.AutomaticScenarioAssignmentForScenario(childComplexity, args["scenarioName"].(string)), true
-
-	case "Query.automaticScenarioAssignmentForSelector":
-		if e.complexity.Query.AutomaticScenarioAssignmentForSelector == nil {
-			break
-		}
-
-		args, err := ec.field_Query_automaticScenarioAssignmentForSelector_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.AutomaticScenarioAssignmentForSelector(childComplexity, args["selector"].(LabelSelectorInput)), true
 
 	case "Query.automaticScenarioAssignments":
 		if e.complexity.Query.AutomaticScenarioAssignments == nil {
@@ -4097,7 +4055,6 @@ type Query {
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)
 	"""
 	automaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.query.automaticScenarioAssignmentForScenario")
-	automaticScenarioAssignmentForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentForSelector") @deprecated(reason: "Use automaticScenarioAssignmentsForSelector")
 	"""
 	**Examples**
 	- [query automatic scenario assignments for selector](examples/query-automatic-scenario-assignments-for-selector/query-automatic-scenario-assignments-for-selector.graphql)
@@ -4340,7 +4297,6 @@ type Mutation {
 	- [delete package](examples/delete-package/delete-package.graphql)
 	"""
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
-	setAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.setAutomaticScenarioAssignment") @deprecated(reason: "Use createAutomaticScenarioAssignment")
 	"""
 	**Examples**
 	- [create automatic scenario assignment](examples/create-automatic-scenario-assignment/create-automatic-scenario-assignment.graphql)
@@ -4351,7 +4307,6 @@ type Mutation {
 	- [delete automatic scenario assignment for scenario](examples/delete-automatic-scenario-assignment-for-scenario/delete-automatic-scenario-assignment-for-scenario.graphql)
 	"""
 	deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForScenario")
-	deleteAutomaticScenarioAssignmentForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForSelector") @deprecated(reason: "Use deleteAutomaticScenarioAssignmentsForSelector")
 	"""
 	**Examples**
 	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
@@ -4978,20 +4933,6 @@ func (ec *executionContext) field_Mutation_deleteAutomaticScenarioAssignmentForS
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deleteAutomaticScenarioAssignmentForSelector_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 LabelSelectorInput
-	if tmp, ok := rawArgs["selector"]; ok {
-		arg0, err = ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["selector"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_deleteAutomaticScenarioAssignmentsForSelector_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -5495,20 +5436,6 @@ func (ec *executionContext) field_Mutation_setApplicationLabel_args(ctx context.
 		}
 	}
 	args["value"] = arg2
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_setAutomaticScenarioAssignment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 AutomaticScenarioAssignmentSetInput
-	if tmp, ok := rawArgs["in"]; ok {
-		arg0, err = ec.unmarshalNAutomaticScenarioAssignmentSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignmentSetInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["in"] = arg0
 	return args, nil
 }
 
@@ -6211,20 +6138,6 @@ func (ec *executionContext) field_Query_automaticScenarioAssignmentForScenario_a
 		}
 	}
 	args["scenarioName"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_automaticScenarioAssignmentForSelector_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 LabelSelectorInput
-	if tmp, ok := rawArgs["selector"]; ok {
-		arg0, err = ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["selector"] = arg0
 	return args, nil
 }
 
@@ -14347,67 +14260,6 @@ func (ec *executionContext) _Mutation_deletePackage(ctx context.Context, field g
 	return ec.marshalNPackage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_setAutomaticScenarioAssignment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_setAutomaticScenarioAssignment_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SetAutomaticScenarioAssignment(rctx, args["in"].(AutomaticScenarioAssignmentSetInput))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.setAutomaticScenarioAssignment")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if data, ok := tmp.(*AutomaticScenarioAssignment); ok {
-			return data, nil
-		} else if tmp == nil {
-			return nil, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.AutomaticScenarioAssignment`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*AutomaticScenarioAssignment)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Mutation_createAutomaticScenarioAssignment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -14528,68 +14380,6 @@ func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentForScenar
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentForSelector(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteAutomaticScenarioAssignmentForSelector_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteAutomaticScenarioAssignmentForSelector(rctx, args["selector"].(LabelSelectorInput))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteAutomaticScenarioAssignmentForSelector")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if data, ok := tmp.([]*AutomaticScenarioAssignment); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.AutomaticScenarioAssignment`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*AutomaticScenarioAssignment)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -17118,68 +16908,6 @@ func (ec *executionContext) _Query_automaticScenarioAssignmentForScenario(ctx co
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_automaticScenarioAssignmentForSelector(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_automaticScenarioAssignmentForSelector_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().AutomaticScenarioAssignmentForSelector(rctx, args["selector"].(LabelSelectorInput))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.query.automaticScenarioAssignmentForSelector")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if data, ok := tmp.([]*AutomaticScenarioAssignment); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.AutomaticScenarioAssignment`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*AutomaticScenarioAssignment)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_automaticScenarioAssignmentsForSelector(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -22357,17 +22085,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "setAutomaticScenarioAssignment":
-			out.Values[i] = ec._Mutation_setAutomaticScenarioAssignment(ctx, field)
 		case "createAutomaticScenarioAssignment":
 			out.Values[i] = ec._Mutation_createAutomaticScenarioAssignment(ctx, field)
 		case "deleteAutomaticScenarioAssignmentForScenario":
 			out.Values[i] = ec._Mutation_deleteAutomaticScenarioAssignmentForScenario(ctx, field)
-		case "deleteAutomaticScenarioAssignmentForSelector":
-			out.Values[i] = ec._Mutation_deleteAutomaticScenarioAssignmentForSelector(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "deleteAutomaticScenarioAssignmentsForSelector":
 			out.Values[i] = ec._Mutation_deleteAutomaticScenarioAssignmentsForSelector(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -23051,20 +22772,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_automaticScenarioAssignmentForScenario(ctx, field)
-				return res
-			})
-		case "automaticScenarioAssignmentForSelector":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_automaticScenarioAssignmentForSelector(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "automaticScenarioAssignmentsForSelector":
