@@ -12,15 +12,15 @@ Each provisioning step is responsible for a separate part of preparing Runtime p
 The provisioning process contains the following steps:
 | Name                                   | Domain                   | Description                                                                                                                                     | Owner            |
 |----------------------------------------|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
-| Initialisation                         | Provisioning             | Starts the provisioning process and asks the Director for dashboard_url if the provisioning in Gardener is done.                                | @jasiu001        |
-| Resolve_Target_Secret                  | Hyperscaler Account Pool | Resolves the name of gardener secret with Hypescaler account credentials to be used during cluster provisioning.                                | @koala7659       |
-| AVS_Configuration_Step                 | AvS                      | AVS Step sets up external and internal monitoring of SKR for the SREs via the Availability Service in SCP.                                      | @abbi-guarav     |
-| Create_LMS_Tenant                      | LMS                      | Requests a tenant in the LMS system or provide tenant ID if it was created before.                                                              | @piotrmiskiewicz |
-| Provision Azure Event Hubs             | Event Hub                | Creates an Azure event-hub namespace which is a managed kakfa cluster for a kyma-runtime.                                                       | @anishj0shi      |
+| Initialisation                         | Provisioning             | Starts the provisioning process and asks the Director for the Dashboard URL if the provisioning in Gardener is finished.                                | @jasiu001        |
+| Resolve_Target_Secret                  | Hyperscaler Account Pool | Provides the name of a Gardener Secret that contains  Hypescaler account credentials used during cluster provisioning.                                | @koala7659       |
+| AVS_Configuration_Step                 | AvS                      | Sets up external and internal monitoring of Kyma Runtime.                                      | @abbi-guarav     |
+| Create_LMS_Tenant                      | LMS                      | Requests a tenant in the LMS system or provides a tenant ID if it was created before.                                                              | @piotrmiskiewicz |
+| Provision Azure Event Hubs             | Event Hub                | Creates the Azure Event Hub Namespace which is a managed Kafka cluster for a Kyma Runtime.                                                       | @anishj0shi      |
 | Overrides_From_Secrets_And_Config_Step | Kyma overrides           | Configures default overrides for Kyma.                                                                                                          | @jasiu001        |
 | ServiceManagerOverrides                | Service Manager          | Configures overrides with Service Manager credentials.                                                                                          | @mszostok        |
-| Request_LMS_Certificates               | LMS                      | Checks if LMS tenant is ready and request certificates. The step configures SKR fluentbit. Requires the Create_LMS_Tenant step executed before. The step does not fail Provisioning Operation. | @piotrmiskiewicz |
-| Create_Runtime                         | Provisioning             | Triggers provisioning in the Provisioner.                                                                                                       | @jasiu001        |
+| Request_LMS_Certificates               | LMS                      | Checks if the LMS tenant is ready and requests certificates. The step configures Fluent Bit in a Kyma Runtime. It requires the Create_LMS_Tenant step to be completed before. The step does not fail the provisioning operation. | @piotrmiskiewicz |
+| Create_Runtime                         | Provisioning             | Triggers provisioning of a Runtime in the Runtime Provisioner.                                                                                                       | @jasiu001        |
 
 ## Deprovisioning
 
@@ -31,9 +31,9 @@ Any deprovisioning step shouldn't block the entire deprovisioning operation. Use
 The deprovisioning process contains the following steps:
 | Name                         | Domain         | Status      | Description                                                                            | Owner     |
 |------------------------------|----------------|-------------|----------------------------------------------------------------------------------------|-----------|
-| Deprovision_Initialization   | Deprovisioning | Done        | Initialize DeprovisioningOperation instance with data read from ProvisioningOperation. | @jasiu001 |
-| Deprovision Azure Event Hubs | Event Hub      | In progress | Deletes an Azure event-hub namespace.                                                  | @montaro  |
-| Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning in the Provisioner.                                            | @jasiu001 |
+| Deprovision_Initialization   | Deprovisioning | Done        | Initialize the `DeprovisioningOperation` instance with data fetched from the `ProvisioningOperation`. | @jasiu001 |
+| Deprovision Azure Event Hubs | Event Hub      | In progress | Deletes the Azure Event Hub Namespace.                                                  | @montaro  |
+| Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning of a Runtime in the Runtime Provisioner.                                            | @jasiu001 |
 
 
 ## Add provisioning or deprovisioning step
