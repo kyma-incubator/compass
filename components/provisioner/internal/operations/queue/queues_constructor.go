@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
@@ -24,12 +25,13 @@ func CreateInstallationQueue(
 	factory dbsession.Factory,
 	installationClient installation.Service,
 	configurator runtime.Configurator,
-	ccClientConstructor stages.CompassConnectionClientConstructor) OperationQueue {
+	ccClientConstructor stages.CompassConnectionClientConstructor,
+	directorClient director.DirectorClient) OperationQueue {
 
 	waitForAgentToConnectStep := stages.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, timeouts.AgentConnection)
 	configureAgentStep := stages.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
 	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation)
-	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 20*time.Minute)
+	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 20*time.Minute, directorClient)
 
 	installSteps := map[model.OperationStage]operations.Step{
 		model.WaitForAgentToConnect:  waitForAgentToConnectStep,

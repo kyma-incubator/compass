@@ -26,9 +26,8 @@ func (r *ProvisioningOperator) Initial(
 		return ctrl.Result{}, err
 	}
 
-
 	labels := gqlschema.Labels{
-		"gardenerClusterName":   shoot.ObjectMeta.Name,
+		"gardenerClusterName": shoot.ObjectMeta.Name,
 	}
 	if shoot.Spec.DNS.Domain != nil {
 		labels["gardenerClusterDomain"] = *shoot.Spec.DNS.Domain
@@ -36,7 +35,7 @@ func (r *ProvisioningOperator) Initial(
 	statusCondition := gqlschema.RuntimeStatusConditionProvisioning
 	runtimeInput := &gqlschema.RuntimeInput{
 		// TODO: Add name and description. Will the directorClient.GetRuntime(runtimeId) call be necessary?
-		Labels: &labels,
+		Labels:          &labels,
 		StatusCondition: &statusCondition,
 	}
 	session := r.dbsFactory.NewReadSession()
@@ -45,7 +44,6 @@ func (r *ProvisioningOperator) Initial(
 		log.Errorf("Error getting Gardener cluster by name: %s", err.Error())
 		return ctrl.Result{}, err
 	}
-
 	err = r.directorClient.UpdateRuntime(runtimeId, runtimeInput, tenant)
 	if err != nil {
 		log.Errorf("Error updating Runtime in Director: %s", err.Error())
@@ -127,6 +125,22 @@ func (r *ProvisioningOperator) ProceedToInstallation(log *logrus.Entry, shoot ga
 	}
 
 	// TODO: gardenerClusterDomain label should be updated in Director if it wasn't yet
+	if shoot.Spec.DNS.Domain == nil {
+		log.Errorf("Shoot DNS domain is nil. Failed to ")
+		return nil
+	}
+	labels := gqlschema.Labels{
+		"gardenerClusterDomain": *shoot.Spec.DNS.Domain,
+	}
+	runtimeInput := &gqlschema.RuntimeInput{
+		// TODO: Add name, description, previous labels and status. Will the directorClient.GetRuntime(runtimeId) call be necessary?
+		Labels: &labels,
+	}
+	err = r.directorClient.UpdateRuntime(cluster.ID, runtimeInput, cluster.Tenant)
+	if err != nil {
+		log.Errorf("Error updating Runtime in Director: %s", err.Error())
+		return err
+	}
 
 	return nil
 }

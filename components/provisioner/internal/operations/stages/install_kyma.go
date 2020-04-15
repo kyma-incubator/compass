@@ -3,6 +3,8 @@ package stages
 import (
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
@@ -15,15 +17,22 @@ import (
 
 type InstallKymaStep struct {
 	installationClient installation.Service
+	directorClient     director.DirectorClient
 	nextStep           model.OperationStage
 	timeLimit          time.Duration
 }
 
-func NewInstallKymaStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration) *InstallKymaStep {
+func NewInstallKymaStep(
+	installationClient installation.Service,
+	nextStep model.OperationStage,
+	timeLimit time.Duration,
+	directorClient director.DirectorClient) *InstallKymaStep {
+
 	return &InstallKymaStep{
 		installationClient: installationClient,
 		nextStep:           nextStep,
 		timeLimit:          timeLimit,
+		directorClient:     directorClient,
 	}
 }
 
@@ -70,7 +79,15 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		return operations.StageResult{}, fmt.Errorf("error: failed to start installation: %s", err.Error())
 	}
 
-	// TODO: There should be an update to the Director with the INSTALLING status
+	statusCondition := gqlschema.RuntimeStatusConditionInstalling
+	runtimeInput := &gqlschema.RuntimeInput{
+		// TODO: Add name, description and labels. Will the directorClient.GetRuntime(runtimeId) call be necessary?
+		StatusCondition: &statusCondition,
+	}
+	err = s.directorClient.UpdateRuntime(cluster.ID, runtimeInput, cluster.Tenant)
+	if err != nil {
+		logger.Errorf("Failed to update Director with Runtime status INSTALLING: %s", err.Error())
+	}
 
 	logger.Warnf("Installation started, proceeding to next step...")
 	return operations.StageResult{Stage: s.nextStep, Delay: 30 * time.Second}, nil

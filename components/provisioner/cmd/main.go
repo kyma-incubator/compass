@@ -160,7 +160,7 @@ func main() {
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(clientbuilder.NewConfigMapClientBuilder(), directorClient)
 
-	installationQueue := queue.CreateInstallationQueue(cfg.ProvisioningTimeout, dbsFactory, installationService, runtimeConfigurator, stages.NewCompassConnectionClient)
+	installationQueue := queue.CreateInstallationQueue(cfg.ProvisioningTimeout, dbsFactory, installationService, runtimeConfigurator, stages.NewCompassConnectionClient, directorClient)
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, installationService)
 
 	var provisioner provisioning.Provisioner
