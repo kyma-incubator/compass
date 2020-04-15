@@ -28,11 +28,15 @@ type AzureClient struct {
 }
 
 type ResourceGroupDoesNotExist struct {
-	s string
+	S string
+}
+
+func NewResourceGroupDoesNotExist(errorMessage string) ResourceGroupDoesNotExist {
+	return ResourceGroupDoesNotExist{errorMessage}
 }
 
 func (e ResourceGroupDoesNotExist) Error() string {
-	return e.s
+	return e.S
 }
 
 func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourcegroupClient resources.GroupsClient, logger logrus.FieldLogger) *AzureClient {
@@ -102,7 +106,7 @@ func (nc *AzureClient) GetResourceGroup(ctx context.Context, tags Tags) (resourc
 		}
 		return resourceGroup, nil
 	}
-	return resources.Group{}, ResourceGroupDoesNotExist{s: fmt.Sprintf("no resource group found for service instance id: %s", serviceInstanceID)}
+	return resources.Group{}, NewResourceGroupDoesNotExist(fmt.Sprintf("no resource group found for service instance id: %s", serviceInstanceID))
 }
 
 func (nc *AzureClient) createAndWaitNamespace(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {

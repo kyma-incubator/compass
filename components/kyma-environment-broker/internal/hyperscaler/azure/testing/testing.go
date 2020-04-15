@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Azure/go-autorest/autorest"
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
@@ -24,6 +25,8 @@ type FakeNamespaceClient struct {
 	AccessKeysError                error
 	AccessKeys                     *eventhub.AccessKeys
 	Tags                           azure.Tags
+	GetResourceGroupError          error
+	GetResourceGroupReturnValue    resources.Group
 }
 
 func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
@@ -43,7 +46,7 @@ func (nc *FakeNamespaceClient) CreateResourceGroup(ctx context.Context, config *
 }
 
 func (nc *FakeNamespaceClient) GetResourceGroup(ctx context.Context, tags azure.Tags) (resources.Group, error) {
-	return resources.Group{}, nil
+	return nc.GetResourceGroupReturnValue, nc.GetResourceGroupError
 }
 
 func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *azure.Config, groupName, namespace string, tags azure.Tags) (*eventhub.EHNamespace, error) {
@@ -83,6 +86,22 @@ func NewFakeNamespaceAccessKeysNil() azure.AzureInterface {
 
 func NewFakeNamespaceClientHappyPath() *FakeNamespaceClient {
 	return &FakeNamespaceClient{}
+}
+
+func NewFakeNamespaceClientResourceGroupDoesNotExist() *FakeNamespaceClient {
+	return &FakeNamespaceClient{
+		GetResourceGroupError: azure.NewResourceGroupDoesNotExist("ups .. resource group already exists"),
+	}
+}
+
+func NewFakeNamespaceClientResourceGroupExists() *FakeNamespaceClient {
+	return &FakeNamespaceClient{
+		GetResourceGroupReturnValue: resources.Group{
+			Response:   autorest.Response{},
+			Name:       ptr.String("montaro"),
+			Properties: &resources.GroupProperties{ProvisioningState: ptr.String("Succeeded")},
+		},
+	}
 }
 
 // ensure the fake client is implementing the interface
