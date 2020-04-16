@@ -1,6 +1,7 @@
 package stages
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -21,13 +22,46 @@ func TestWaitForAgentToConnect(t *testing.T) {
 		Kubeconfig: util.StringPtr(kubeconfig),
 	}
 
+	for _, testCase := range []struct {
+		state v1alpha12.ConnectionState
+	}{
+		{
+			state: v1alpha12.Synchronized,
+		},
+		{
+			state: v1alpha12.SynchronizationFailed,
+		},
+		{
+			state: v1alpha12.MetadataUpdateFailed,
+		},
+	} {
+		t.Run(fmt.Sprintf("should proceed to next step when Compass connection in state: %s", testCase.state), func(t *testing.T) {
+			// given
+			clientProvider := NewMockClientProvider(&v1alpha12.CompassConnection{
+				ObjectMeta: v1.ObjectMeta{Name: defaultCompassConnectionName},
+				Status: v1alpha12.CompassConnectionStatus{
+					State: testCase.state,
+				},
+			})
+
+			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute)
+
+			// when
+			result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
+
+			// then
+			require.NoError(t, err)
+			require.Equal(t, nextStageName, result.Stage)
+			require.Equal(t, time.Duration(0), result.Delay)
+		})
+	}
+
 	t.Run("should proceed to next step when Agent connects", func(t *testing.T) {
 		// given
-
 		clientProvider := NewMockClientProvider(&v1alpha12.CompassConnection{
 			ObjectMeta: v1.ObjectMeta{Name: defaultCompassConnectionName},
 			Status: v1alpha12.CompassConnectionStatus{
-				State: v1alpha12.Synchronized,
+				State: v1alpha12.MetadataUpdateFailed,
 			},
 		})
 

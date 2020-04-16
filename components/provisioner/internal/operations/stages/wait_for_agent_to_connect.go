@@ -84,6 +84,15 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 	}
 
 	if compassConnCR.Status.State != v1alpha1.Synchronized {
+		if compassConnCR.Status.State == v1alpha1.SynchronizationFailed {
+			logger.Warnf("Runtime Agent Connected but resource synchronization failed state: %s", compassConnCR.Status.State)
+			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+		}
+		if compassConnCR.Status.State == v1alpha1.MetadataUpdateFailed {
+			logger.Warnf("Runtime Agent Connected but metadata update failed: %s", compassConnCR.Status.State)
+			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+		}
+
 		logger.Infof("Compass Connection not yet in Synchronized state, current state: %s", compassConnCR.Status.State)
 		return operations.StageResult{Stage: s.Stage(), Delay: 2 * time.Second}, nil
 	}
