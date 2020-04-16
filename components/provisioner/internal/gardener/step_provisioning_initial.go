@@ -17,21 +17,12 @@ func (r *ProvisioningOperator) ProvisioningInitial(
 		return ctrl.Result{}, nil
 	}
 
-	log.Infof("Updating Shoot...")
-	err := r.updateShoot(shoot, func(shootToUpdate *gardener_types.Shoot) {
-		annotate(shootToUpdate, provisioningAnnotation, Provisioning.String())
-	})
-	if err != nil {
-		log.Errorf("Error updating Shoot with retries: %s", err.Error())
-		return ctrl.Result{}, err
-	}
-
 	log.Infof("Updating in Director...")
 	session := r.dbsFactory.NewReadSession()
-	tenant, err := session.GetTenant(runtimeId)
-	if err != nil {
-		log.Errorf("Error getting Gardener cluster by name: %s", err.Error())
-		return ctrl.Result{}, err
+	tenant, dberr := session.GetTenant(runtimeId)
+	if dberr != nil {
+		log.Errorf("Error getting Gardener cluster by name: %s", dberr.Error())
+		return ctrl.Result{}, dberr
 	}
 	runtime, err := r.directorClient.GetRuntime(runtimeId, tenant)
 	if err != nil {
@@ -49,9 +40,17 @@ func (r *ProvisioningOperator) ProvisioningInitial(
 		Labels:          &labels,
 		StatusCondition: &statusCondition,
 	}
-	err = r.directorClient.UpdateRuntime(runtimeId, runtimeInput, tenant)
-	if err != nil {
+	if err := r.directorClient.UpdateRuntime(runtimeId, runtimeInput, tenant); err != nil {
 		log.Errorf("Error updating Runtime in Director: %s", err.Error())
+		return ctrl.Result{}, err
+	}
+
+	log.Infof("Updating Shoot...")
+	err = r.updateShoot(shoot, func(shootToUpdate *gardener_types.Shoot) {
+		annotate(shootToUpdate, provisioningAnnotation, Provisioning.String())
+	})
+	if err != nil {
+		log.Errorf("Error updating Shoot with retries: %s", err.Error())
 		return ctrl.Result{}, err
 	}
 

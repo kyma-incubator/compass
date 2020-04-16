@@ -17,7 +17,6 @@ import (
 
 type InstallKymaStep struct {
 	installationClient installation.Service
-	directorClient     director.DirectorClient
 	nextStep           model.OperationStage
 	timeLimit          time.Duration
 }
@@ -25,14 +24,12 @@ type InstallKymaStep struct {
 func NewInstallKymaStep(
 	installationClient installation.Service,
 	nextStep model.OperationStage,
-	timeLimit time.Duration,
-	directorClient director.DirectorClient) *InstallKymaStep {
+	timeLimit time.Duration) *InstallKymaStep {
 
 	return &InstallKymaStep{
 		installationClient: installationClient,
 		nextStep:           nextStep,
 		timeLimit:          timeLimit,
-		directorClient:     directorClient,
 	}
 }
 
@@ -77,16 +74,6 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		cluster.KymaConfig.Components)
 	if err != nil {
 		return operations.StageResult{}, fmt.Errorf("error: failed to start installation: %s", err.Error())
-	}
-
-	statusCondition := gqlschema.RuntimeStatusConditionInstalling
-	runtimeInput := &gqlschema.RuntimeInput{
-		// TODO: Add name, description and labels. Will the directorClient.GetRuntime(runtimeId) call be necessary?
-		StatusCondition: &statusCondition,
-	}
-	err = s.directorClient.UpdateRuntime(cluster.ID, runtimeInput, cluster.Tenant)
-	if err != nil {
-		logger.Errorf("Failed to update Director with Runtime status INSTALLING: %s", err.Error())
 	}
 
 	logger.Warnf("Installation started, proceeding to next step...")

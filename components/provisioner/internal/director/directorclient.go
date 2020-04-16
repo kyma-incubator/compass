@@ -26,6 +26,7 @@ type DirectorClient interface {
 	GetRuntime(id, tenant string) (graphql.Runtime, error)
 	UpdateRuntime(id string, config *gqlschema.RuntimeInput, tenant string) error
 	DeleteRuntime(id, tenant string) error
+	SetRuntimeStatusCondition(id string, statusCondition gqlschema.RuntimeStatusCondition, tenant string) error
 	GetConnectionToken(id, tenant string) (graphql.OneTimeTokenForRuntimeExt, error)
 }
 
@@ -159,6 +160,25 @@ func (cc *directorClient) DeleteRuntime(id, tenant string) error {
 
 	log.Infof("Successfully unregistered Runtime %s in Director for tenant %s", id, tenant)
 
+	return nil
+}
+
+func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition gqlschema.RuntimeStatusCondition, tenant string) error {
+	runtime, err := cc.GetRuntime(id, tenant)
+	if err != nil {
+		log.Errorf("Failed to get Runtime by ID: %s", err.Error())
+		return errors.Wrap(err, "failed to get runtime by ID")
+	}
+	runtimeInput := &gqlschema.RuntimeInput{
+		Name:            runtime.Name,
+		Description:     runtime.Description,
+		StatusCondition: &statusCondition,
+	}
+	err = cc.UpdateRuntime(id, runtimeInput, tenant)
+	if err != nil {
+		log.Errorf("Failed to update Runtime in Director: %s", err.Error())
+		return errors.Wrap(err, "failed to update runtime in Director")
+	}
 	return nil
 }
 

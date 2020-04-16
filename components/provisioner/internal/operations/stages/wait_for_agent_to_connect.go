@@ -106,14 +106,8 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 		return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Second}, nil
 	}
 
-	statusCondition := gqlschema.RuntimeStatusConditionConnected
-	runtimeInput := &gqlschema.RuntimeInput{
-		// TODO: Add name and description. Will the directorClient.GetRuntime(runtimeId) call be necessary?
-		StatusCondition: &statusCondition,
-	}
-	err = s.directorClient.UpdateRuntime(cluster.ID, runtimeInput, cluster.Tenant)
-	if err != nil {
-		logger.Errorf("Failed to update Director with Runtime status CONNECTED: %s", err.Error())
+	if err := s.directorClient.SetRuntimeStatusCondition(cluster.ID, gqlschema.RuntimeStatusConditionConnected, cluster.Tenant); err != nil {
+		logger.Errorf("Failed to set runtime %s status condition: %s", gqlschema.RuntimeStatusConditionConnected.String(), err.Error())
 		return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Second}, nil
 	}
 

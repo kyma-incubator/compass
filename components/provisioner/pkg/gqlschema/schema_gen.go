@@ -808,7 +808,6 @@ enum OperationState {
 enum RuntimeStatusCondition {
     INITIAL
     PROVISIONING
-    INSTALLING
     CONNECTED
     FAILED
 }

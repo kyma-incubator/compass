@@ -351,7 +351,6 @@ type RuntimeStatusCondition string
 const (
 	RuntimeStatusConditionInitial      RuntimeStatusCondition = "INITIAL"
 	RuntimeStatusConditionProvisioning RuntimeStatusCondition = "PROVISIONING"
-	RuntimeStatusConditionInstalling   RuntimeStatusCondition = "INSTALLING"
 	RuntimeStatusConditionConnected    RuntimeStatusCondition = "CONNECTED"
 	RuntimeStatusConditionFailed       RuntimeStatusCondition = "FAILED"
 )
@@ -359,14 +358,13 @@ const (
 var AllRuntimeStatusCondition = []RuntimeStatusCondition{
 	RuntimeStatusConditionInitial,
 	RuntimeStatusConditionProvisioning,
-	RuntimeStatusConditionInstalling,
 	RuntimeStatusConditionConnected,
 	RuntimeStatusConditionFailed,
 }
 
 func (e RuntimeStatusCondition) IsValid() bool {
 	switch e {
-	case RuntimeStatusConditionInitial, RuntimeStatusConditionProvisioning, RuntimeStatusConditionInstalling, RuntimeStatusConditionConnected, RuntimeStatusConditionFailed:
+	case RuntimeStatusConditionInitial, RuntimeStatusConditionProvisioning, RuntimeStatusConditionConnected, RuntimeStatusConditionFailed:
 		return true
 	}
 	return false
