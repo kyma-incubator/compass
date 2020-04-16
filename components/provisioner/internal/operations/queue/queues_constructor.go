@@ -40,7 +40,13 @@ func CreateInstallationQueue(
 		model.StartingInstallation:   installStep,
 	}
 
-	installationExecutor := operations.NewExecutor(factory.NewReadWriteSession(), model.Provision, installSteps, failure.NewNoopFailureHandler())
+	installationExecutor := operations.NewExecutor(
+		factory.NewReadWriteSession(),
+		model.Provision,
+		installSteps,
+		failure.NewNoopFailureHandler(),
+		directorClient,
+	)
 
 	return NewQueue(installationExecutor)
 }
@@ -48,6 +54,7 @@ func CreateInstallationQueue(
 func CreateUpgradeQueue(
 	timeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
+	directorClient director.DirectorClient,
 	installationClient installation.Service) OperationQueue {
 
 	updatingUpgradeStep := stages.NewUpdateUpgradeStateStep(factory.NewWriteSession(), model.FinishedStage, 5*time.Minute)
@@ -64,6 +71,7 @@ func CreateUpgradeQueue(
 		model.Upgrade,
 		upgradeSteps,
 		failure.NewUpgradeFailureHandler(factory.NewWriteSession()),
+		directorClient,
 	)
 
 	return NewQueue(upgradeExecutor)

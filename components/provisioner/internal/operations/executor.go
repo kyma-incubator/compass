@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,13 +21,16 @@ func NewExecutor(
 	session dbsession.ReadWriteSession,
 	operation model.OperationType,
 	stages map[model.OperationStage]Step,
-	failureHandler FailureHandler) *Executor {
+	failureHandler FailureHandler,
+	directorClient director.DirectorClient) *Executor {
+
 	return &Executor{
 		dbSession:      session,
 		stages:         stages,
 		operation:      operation,
 		failureHandler: failureHandler,
 		log:            logrus.WithFields(logrus.Fields{"Component": "Executor", "OperationType": operation}),
+		directorClient: directorClient,
 	}
 }
 
@@ -34,6 +39,7 @@ type Executor struct {
 	stages         map[model.OperationStage]Step
 	operation      model.OperationType
 	failureHandler FailureHandler
+	directorClient director.DirectorClient
 
 	log logrus.FieldLogger
 }
@@ -70,7 +76,11 @@ func (e *Executor) Execute(operationID string) ProcessingResult {
 				log.Errorf("unrecoverable error occurred while processing operation: %s", err.Error())
 				e.handleOperationFailure(operation, cluster, log)
 				e.updateOperationStatus(log, operation.ID, nonRecoverable.Error(), model.Failed, time.Now())
-				// TODO: update Director with status FAILED
+
+				if err := e.directorClient.SetRuntimeStatusCondition(cluster.ID, gqlschema.RuntimeStatusConditionFailed, cluster.Tenant); err != nil {
+					log.Errorf("failed to set runtime %s status condition: %s", gqlschema.RuntimeStatusConditionFailed.String(), err.Error())
+					return ProcessingResult{Requeue: true, Delay: defaultDelay}
+				}
 				return ProcessingResult{Requeue: false}
 			}
 
