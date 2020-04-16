@@ -26,7 +26,7 @@ func createRuntimeQuery(in string) string {
 
 func setEventBaseURLQuery(runtimeID string, url string) string {
 	return fmt.Sprintf(`mutation {
-  	result: setRuntimeLabel(runtimeID: "%s", key: "runtime/event_service_url", value: "%s") {
+  	result: setRuntimeLabel(runtimeID: "%s", key: "runtime_eventServiceUrl", value: "%s") {
     key
     value
   }

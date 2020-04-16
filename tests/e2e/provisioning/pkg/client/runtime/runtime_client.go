@@ -73,7 +73,25 @@ func (c *Client) EnsureUAAInstanceRemoved() error {
 	return nil
 }
 
-func (c *Client) fetchRuntimeConfig() (*runtimeStatusResponse, error) {
+func (c *Client) newRuntimeClient() (client.Client, error) {
+	config, err := c.FetchRuntimeConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching runtime config")
+	}
+	tmpFile, err := c.writeConfigToFile(*config)
+	if err != nil {
+		return nil, errors.Wrap(err, "while writing runtime config")
+	}
+	defer c.removeFile(tmpFile)
+
+	cli, err := newClient(tmpFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "while setting client config")
+	}
+	return cli, nil
+}
+
+func (c *Client) FetchRuntimeConfig() (*string, error) {
 	runtimeID, err := c.directorClient.GetRuntimeID(c.tenantID, c.instanceID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting runtime id from director for instance ID %s", c.instanceID)
@@ -99,43 +117,30 @@ func (c *Client) fetchRuntimeConfig() (*runtimeStatusResponse, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting runtime config")
 	}
-	return res, nil
+	if res.Result.RuntimeConfiguration != nil {
+		return res.Result.RuntimeConfiguration.Kubeconfig, nil
+	}
+	return nil, errors.New("kubeconfig shouldn't be nil")
 }
 
-func (c *Client) newRuntimeClient() (client.Client, error) {
-	response, err := c.fetchRuntimeConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "while fetching runtime config")
-	}
-
-	runtimeConfig := *response.Result.RuntimeConfiguration.Kubeconfig
-	content := []byte(runtimeConfig)
+func (c *Client) writeConfigToFile(config string) (string, error) {
+	content := []byte(config)
 	runtimeConfigTmpFile, err := ioutil.TempFile("", "runtime.*.yaml")
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating runtime config temp file")
+		return "", errors.Wrap(err, "while creating runtime config temp file")
 	}
-	defer func() {
-		err = os.Remove(runtimeConfigTmpFile.Name())
-		if err != nil {
-			c.log.Fatal(err)
-		}
-	}()
 
 	if _, err := runtimeConfigTmpFile.Write(content); err != nil {
-		return nil, errors.Wrap(err, "while writing runtime config temp file")
+		return "", errors.Wrap(err, "while writing runtime config temp file")
 	}
 	if err := runtimeConfigTmpFile.Close(); err != nil {
-		return nil, errors.Wrap(err, "while closing runtime config temp file")
+		return "", errors.Wrap(err, "while closing runtime config temp file")
 	}
 
-	cli, err := c.newClient(runtimeConfigTmpFile.Name())
-	if err != nil {
-		return nil, errors.Wrap(err, "while setting client config")
-	}
-	return cli, nil
+	return runtimeConfigTmpFile.Name(), nil
 }
 
-func (c *Client) newClient(configPath string) (client.Client, error) {
+func newClient(configPath string) (client.Client, error) {
 	err := v1beta1.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, errors.Wrap(err, "while adding schema")
@@ -167,6 +172,13 @@ func (c *Client) ensureInstanceRemoved(cli client.Client) error {
 		}
 		return false, nil
 	})
+}
+
+func (c *Client) removeFile(fileName string) {
+	err := os.Remove(fileName)
+	if err != nil {
+		c.log.Fatal(err)
+	}
 }
 
 func (c *Client) warnOnError(err error) {

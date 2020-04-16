@@ -42,14 +42,16 @@ const (
 	kymaVersion                   = "1.8"
 	kymaSystemNamespace           = "kyma-system"
 	kymaIntegrationNamespace      = "kyma-integration"
+	compassSystemNamespace        = "compass-system"
 	clusterEssentialsComponent    = "cluster-essentials"
+	rafterComponent               = "rafter"
 	coreComponent                 = "core"
 	applicationConnectorComponent = "application-connector"
+	runtimeAgentComponent         = "compass-runtime-agent"
 
-	gardenerProject        = "gardener-project"
-	runtimeAgentComponent  = "compass-runtime-agent"
-	compassSystemNamespace = "compass-system"
-	tenant                 = "tenant"
+	gardenerProject = "gardener-project"
+	tenant          = "tenant"
+	rafterSourceURL = "github.com/kyma-project/kyma.git//resources/rafter"
 )
 
 func waitForOperationCompleted(provisioningService provisioning.Service, operationID string, seconds uint) error {
@@ -84,7 +86,6 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 	clusterConfigForGardenerWithGCP := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion: "version",
-			NodeCount:         3,
 			VolumeSizeGb:      1024,
 			MachineType:       "n1-standard-1",
 			Region:            "region",
@@ -108,7 +109,6 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 	clusterConfigForGardenerWithAzure := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion: "version",
-			NodeCount:         3,
 			VolumeSizeGb:      1024,
 			MachineType:       "n1-standard-1",
 			Region:            "region",
@@ -132,7 +132,6 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 	clusterConfigForGardenerWithAWS := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion: "version",
-			NodeCount:         3,
 			VolumeSizeGb:      1024,
 			MachineType:       "n1-standard-1",
 			Region:            "region",
@@ -373,6 +372,11 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 				Namespace: kymaSystemNamespace,
 			},
 			{
+				Component: rafterComponent,
+				Namespace: kymaSystemNamespace,
+				SourceURL: util.StringPtr(rafterSourceURL),
+			},
+			{
 				Component: coreComponent,
 				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
@@ -422,6 +426,12 @@ func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 				Component:     clusterEssentialsComponent,
 				Namespace:     kymaSystemNamespace,
 				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
+			},
+			{
+				Component:     rafterComponent,
+				Namespace:     kymaSystemNamespace,
+				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
+				SourceURL:     util.StringPtr(rafterSourceURL),
 			},
 			{
 				Component: coreComponent,

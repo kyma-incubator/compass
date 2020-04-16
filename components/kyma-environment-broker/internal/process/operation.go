@@ -13,16 +13,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-type OperationManager struct {
-	storage storage.Operations
+type ProvisionOperationManager struct {
+	storage storage.Provisioning
 }
 
-func NewOperationManager(storage storage.Operations) *OperationManager {
-	return &OperationManager{storage: storage}
+func NewProvisionOperationManager(storage storage.Operations) *ProvisionOperationManager {
+	return &ProvisionOperationManager{storage: storage}
 }
 
 // OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error
-func (om *OperationManager) OperationSucceeded(operation internal.ProvisioningOperation, description string) (internal.ProvisioningOperation, time.Duration, error) {
+func (om *ProvisionOperationManager) OperationSucceeded(operation internal.ProvisioningOperation, description string) (internal.ProvisioningOperation, time.Duration, error) {
 	updatedOperation, repeat := om.update(operation, domain.Succeeded, description)
 	// repeat in case of storage error
 	if repeat != 0 {
@@ -33,7 +33,7 @@ func (om *OperationManager) OperationSucceeded(operation internal.ProvisioningOp
 }
 
 // OperationFailed marks the operation as failed and only repeats it if there is a storage error
-func (om *OperationManager) OperationFailed(operation internal.ProvisioningOperation, description string) (internal.ProvisioningOperation, time.Duration, error) {
+func (om *ProvisionOperationManager) OperationFailed(operation internal.ProvisioningOperation, description string) (internal.ProvisioningOperation, time.Duration, error) {
 	updatedOperation, repeat := om.update(operation, domain.Failed, description)
 	// repeat in case of storage error
 	if repeat != 0 {
@@ -43,22 +43,22 @@ func (om *OperationManager) OperationFailed(operation internal.ProvisioningOpera
 	return updatedOperation, 0, errors.New(description)
 }
 
-func (om *OperationManager) UpdateOperation(operation internal.ProvisioningOperation) (internal.ProvisioningOperation, time.Duration) {
+// UpdateOperation updates a given operation
+func (om *ProvisionOperationManager) UpdateOperation(operation internal.ProvisioningOperation) (internal.ProvisioningOperation, time.Duration) {
 	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
 	if err != nil {
 		return operation, 1 * time.Minute
 	}
-
 	return *updatedOperation, 0
 }
 
 // RetryOperationOnce retries the operation once and fails the operation when call second time
-func (om *OperationManager) RetryOperationOnce(operation internal.ProvisioningOperation, errorMessage string, wait time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (om *ProvisionOperationManager) RetryOperationOnce(operation internal.ProvisioningOperation, errorMessage string, wait time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	return om.RetryOperation(operation, errorMessage, wait, wait+1, log)
 }
 
 // RetryOperation retries an operation for at maxTime in retryInterval steps and fails the operation if retrying failed
-func (om *OperationManager) RetryOperation(operation internal.ProvisioningOperation, errorMessage string, retryInterval time.Duration, maxTime time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (om *ProvisionOperationManager) RetryOperation(operation internal.ProvisioningOperation, errorMessage string, retryInterval time.Duration, maxTime time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	since := time.Since(operation.UpdatedAt)
 
 	log.Infof("Retrying for %s in %s steps", maxTime.String(), retryInterval.String())
@@ -69,15 +69,9 @@ func (om *OperationManager) RetryOperation(operation internal.ProvisioningOperat
 	return om.OperationFailed(operation, errorMessage)
 }
 
-func (om *OperationManager) update(operation internal.ProvisioningOperation, state domain.LastOperationState, description string) (internal.ProvisioningOperation, time.Duration) {
+func (om *ProvisionOperationManager) update(operation internal.ProvisioningOperation, state domain.LastOperationState, description string) (internal.ProvisioningOperation, time.Duration) {
 	operation.State = state
 	operation.Description = fmt.Sprintf("%s : %s", operation.Description, description)
 
-	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
-	// repeat if there is a problem with the storage
-	if err != nil {
-		return operation, 1 * time.Minute
-	}
-
-	return *updatedOperation, 0
+	return om.UpdateOperation(operation)
 }

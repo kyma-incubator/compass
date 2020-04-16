@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -73,7 +74,7 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	serviceDetails, err := h.decodeAndValidateInput(request)
 	if err != nil {
 		h.logger.Error(err)
-		reqerror.WriteAppError(writer, err)
+		res.WriteAppError(writer, err)
 		return
 	}
 
@@ -81,7 +82,7 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while converting service input")
 		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
@@ -96,7 +97,7 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while creating Service")
 		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
@@ -104,11 +105,11 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		ID: serviceID,
 	}
 
-	err = json.NewEncoder(writer).Encode(&successResponse)
+	err = res.WriteJSONResponse(writer, &successResponse)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while encoding response")
 		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 }
@@ -124,7 +125,7 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 	reqContext, err := h.reqContextProvider.ForRequest(request)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while requesting Request Context")
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
@@ -137,7 +138,7 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	reqContext, err := h.reqContextProvider.ForRequest(request)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while requesting Request Context")
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
@@ -146,7 +147,7 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while fetching Services")
 		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
@@ -160,7 +161,7 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 		if err != nil {
 			wrappedErr := errors.Wrap(err, "while converting graphql to detailed service")
 			h.logger.Error(wrappedErr)
-			reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+			res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 			return
 		}
 
@@ -168,17 +169,17 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 		if err != nil {
 			wrappedErr := errors.Wrap(err, "while converting detailed service to service")
 			h.logger.Error(wrappedErr)
-			reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+			res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 			return
 		}
 
 		services = append(services, service)
 	}
-	err = json.NewEncoder(writer).Encode(&services)
+	err = res.WriteJSONResponse(writer, &services)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while encoding response")
 		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 }
@@ -191,7 +192,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	serviceDetails, err := h.decodeAndValidateInput(request)
 	if err != nil {
 		h.logger.Error(err)
-		reqerror.WriteAppError(writer, err)
+		res.WriteAppError(writer, err)
 		return
 	}
 
@@ -199,7 +200,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while converting service input")
 		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
@@ -219,7 +220,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		}
 		wrappedErr := errors.Wrap(err, "while fetching service")
 		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
@@ -229,7 +230,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while updating Service")
 		h.logger.WithField("ID", id).Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
@@ -237,7 +238,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while deleting related objects for Service")
 		h.logger.WithField("ID", id).Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
@@ -245,7 +246,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while creating related objects for Service")
 		h.logger.WithField("ID", id).Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
@@ -271,7 +272,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 		}
 
 		h.logger.WithField("ID", id).Error(errors.Wrap(err, "while deleting service"))
-		reqerror.WriteError(writer, err, apperrors.CodeInternal)
+		res.WriteError(writer, err, apperrors.CodeInternal)
 		return
 	}
 
@@ -318,11 +319,11 @@ func (h *Handler) loadRequestContext(request *http.Request) (RequestContext, err
 
 func (h *Handler) writeErrorNotFound(writer http.ResponseWriter, id string) {
 	message := fmt.Sprintf("entity with ID %s not found", id)
-	reqerror.WriteErrorMessage(writer, message, apperrors.CodeNotFound)
+	res.WriteErrorMessage(writer, message, apperrors.CodeNotFound)
 }
 
 func (h *Handler) writeErrorInternal(writer http.ResponseWriter, err error) {
-	reqerror.WriteError(writer, err, apperrors.CodeInternal)
+	res.WriteError(writer, err, apperrors.CodeInternal)
 }
 
 func (h *Handler) getServiceID(request *http.Request) string {
@@ -414,7 +415,7 @@ func (h *Handler) getAndWriteServiceByID(writer http.ResponseWriter, serviceID s
 		}
 		wrappedErr := errors.Wrap(err, "while fetching service")
 		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
@@ -422,15 +423,15 @@ func (h *Handler) getAndWriteServiceByID(writer http.ResponseWriter, serviceID s
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while converting service")
 		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
-	err = json.NewEncoder(writer).Encode(&service)
+	err = res.WriteJSONResponse(writer, &service)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while encoding response")
 		h.logger.Error(wrappedErr)
-		reqerror.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 }

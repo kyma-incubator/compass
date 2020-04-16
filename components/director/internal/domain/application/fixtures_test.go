@@ -58,12 +58,13 @@ func fixModelApplication(id, tenant, name, description string) *model.Applicatio
 	}
 }
 
-func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, url string) *model.Application {
+func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, url string, conditionStatus model.ApplicationStatusCondition, conditionTimestamp time.Time) *model.Application {
 	return &model.Application{
 		ID:     id,
 		Tenant: tenant,
 		Status: &model.ApplicationStatus{
-			Condition: model.ApplicationStatusConditionInitial,
+			Condition: conditionStatus,
+			Timestamp: conditionTimestamp,
 		},
 		IntegrationSystemID: &intSysID,
 		Name:                name,
@@ -186,12 +187,13 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 	}
 }
 
-func fixModelApplicationUpdateInput(name, description, url string) model.ApplicationUpdateInput {
+func fixModelApplicationUpdateInput(name, description, url string, statusCondition model.ApplicationStatusCondition) model.ApplicationUpdateInput {
 	return model.ApplicationUpdateInput{
 		Description:         &description,
 		HealthCheckURL:      &url,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
+		StatusCondition:     &statusCondition,
 	}
 }
 
@@ -244,12 +246,13 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 	}
 }
 
-func fixGQLApplicationUpdateInput(name, description, url string) graphql.ApplicationUpdateInput {
+func fixGQLApplicationUpdateInput(name, description, url string, statusCondition graphql.ApplicationStatusCondition) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
 		Description:         &description,
 		HealthCheckURL:      &url,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
+		StatusCondition:     &statusCondition,
 	}
 }
 

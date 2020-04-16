@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -41,7 +43,7 @@ func TestHandler_Create(t *testing.T) {
 		handler.Create(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusBadRequest)
+		assertErrorResponse(t, resp, expectedError, http.StatusBadRequest)
 
 	})
 
@@ -60,7 +62,7 @@ func TestHandler_Create(t *testing.T) {
 		handler.Create(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusBadRequest)
+		assertErrorResponse(t, resp, expectedError, http.StatusBadRequest)
 
 		mockValid.AssertExpectations(t)
 	})
@@ -83,7 +85,7 @@ func TestHandler_Create(t *testing.T) {
 		handler.Create(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 
 		mockValid.AssertExpectations(t)
 		mockConverter.AssertExpectations(t)
@@ -110,7 +112,7 @@ func TestHandler_Create(t *testing.T) {
 		handler.Create(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 
 		mockValid.AssertExpectations(t)
 		mockConverter.AssertExpectations(t)
@@ -144,7 +146,7 @@ func TestHandler_Create(t *testing.T) {
 		resp := w.Result()
 		assert.Equal(t, resp.StatusCode, http.StatusInternalServerError)
 
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 
 		mockValid.AssertExpectations(t)
 		mockConverter.AssertExpectations(t)
@@ -177,7 +179,7 @@ func TestHandler_Create(t *testing.T) {
 		handler.Create(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusOK)
+		assertErrorResponse(t, resp, expectedError, http.StatusOK)
 
 		mockValid.AssertExpectations(t)
 		mockConverter.AssertExpectations(t)
@@ -205,7 +207,7 @@ func TestHandler_Get(t *testing.T) {
 		handler.Get(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 		mockContextProvider.AssertExpectations(t)
 	})
 
@@ -227,7 +229,7 @@ func TestHandler_Get(t *testing.T) {
 		handler.Get(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusNotFound)
+		assertErrorResponse(t, resp, expectedError, http.StatusNotFound)
 
 		mockClient.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
@@ -252,7 +254,7 @@ func TestHandler_Get(t *testing.T) {
 		handler.Get(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 		mockClient.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
@@ -277,7 +279,7 @@ func TestHandler_Get(t *testing.T) {
 		handler.Get(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 		mockClient.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
@@ -304,7 +306,7 @@ func TestHandler_Get(t *testing.T) {
 		handler.Get(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusOK)
+		assertErrorResponse(t, resp, expectedError, http.StatusOK)
 		mockClient.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
@@ -328,10 +330,10 @@ func TestHandler_List(t *testing.T) {
 		mockContextProvider.On("ForRequest", mock.Anything).Return(service.RequestContext{AppID: "test"}, testErr)
 
 		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
-		handler.Get(w, req)
+		handler.List(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 		mockContextProvider.AssertExpectations(t)
 	})
 
@@ -353,7 +355,7 @@ func TestHandler_List(t *testing.T) {
 		handler.List(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 
 		mockClient.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
@@ -386,7 +388,7 @@ func TestHandler_List(t *testing.T) {
 		handler.List(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 
 		mockClient.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
@@ -409,6 +411,7 @@ func TestHandler_List(t *testing.T) {
 
 		resp := w.Result()
 		assert.Equal(t, resp.StatusCode, http.StatusOK)
+		assertContentTypeHeader(t, resp)
 		mockClient.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
@@ -431,7 +434,7 @@ func TestHandler_Update(t *testing.T) {
 		handler.Update(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusBadRequest)
+		assertErrorResponse(t, resp, expectedError, http.StatusBadRequest)
 	})
 
 	t.Run("Error when validating input", func(t *testing.T) {
@@ -449,7 +452,7 @@ func TestHandler_Update(t *testing.T) {
 		handler.Update(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusBadRequest)
+		assertErrorResponse(t, resp, expectedError, http.StatusBadRequest)
 		mockValid.AssertExpectations(t)
 	})
 
@@ -471,7 +474,7 @@ func TestHandler_Update(t *testing.T) {
 		handler.Update(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 		mockValid.AssertExpectations(t)
 		mockConverter.AssertExpectations(t)
 	})
@@ -497,7 +500,7 @@ func TestHandler_Update(t *testing.T) {
 		handler.Update(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 		mockValid.AssertExpectations(t)
 		mockConverter.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
@@ -527,7 +530,7 @@ func TestHandler_Update(t *testing.T) {
 		handler.Update(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusNotFound)
+		assertErrorResponse(t, resp, expectedError, http.StatusNotFound)
 		mockValid.AssertExpectations(t)
 		mockConverter.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
@@ -558,7 +561,7 @@ func TestHandler_Update(t *testing.T) {
 		handler.Update(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 		mockValid.AssertExpectations(t)
 		mockConverter.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
@@ -591,7 +594,7 @@ func TestHandler_Update(t *testing.T) {
 		handler.Update(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 		mockValid.AssertExpectations(t)
 		mockConverter.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
@@ -601,7 +604,6 @@ func TestHandler_Update(t *testing.T) {
 }
 
 func TestHandler_Delete(t *testing.T) {
-
 	target := "http://example.com/foo"
 	testErr := errors.New("test")
 	testServiceDetails := fixServiceDetails()
@@ -621,7 +623,7 @@ func TestHandler_Delete(t *testing.T) {
 		handler.Delete(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 		mockContextProvider.AssertExpectations(t)
 	})
 
@@ -643,7 +645,7 @@ func TestHandler_Delete(t *testing.T) {
 		handler.Delete(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusNotFound)
+		assertErrorResponse(t, resp, expectedError, http.StatusNotFound)
 		mockContextProvider.AssertExpectations(t)
 		mockClient.AssertExpectations(t)
 	})
@@ -666,7 +668,7 @@ func TestHandler_Delete(t *testing.T) {
 		handler.Delete(w, req)
 
 		resp := w.Result()
-		assertResponse(t, resp, expectedError, http.StatusInternalServerError)
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 		mockContextProvider.AssertExpectations(t)
 		mockClient.AssertExpectations(t)
 	})
@@ -706,7 +708,10 @@ func getErrorMessage(t *testing.T, data []byte) string {
 	return body.Error
 }
 
-func assertResponse(t *testing.T, resp *http.Response, expectedError string, expectedCode int) {
+func assertErrorResponse(t *testing.T, resp *http.Response, expectedError string, expectedCode int) {
+	require.NotNil(t, resp)
+	assertContentTypeHeader(t, resp)
+
 	respBody, err := ioutil.ReadAll(resp.Body)
 	actualError := getErrorMessage(t, respBody)
 	require.NoError(t, err)
@@ -715,4 +720,9 @@ func assertResponse(t *testing.T, resp *http.Response, expectedError string, exp
 
 	require.Equal(t, expectedError, actualError)
 
+}
+
+func assertContentTypeHeader(t *testing.T, resp *http.Response) {
+	require.NotNil(t, resp)
+	assert.Equal(t, res.HeaderContentTypeValue, resp.Header.Get(res.HeaderContentTypeKey))
 }

@@ -233,7 +233,7 @@ func TestPgRepository_List(t *testing.T) {
 	limit := 2
 	offset := 3
 
-	pageableQuery := `^SELECT (.+) FROM public.runtimes WHERE tenant_id=\$1 ORDER BY id LIMIT %d OFFSET %d$`
+	pageableQuery := `^SELECT (.+) FROM public.runtimes WHERE tenant_id=\$1 ORDER BY name LIMIT %d OFFSET %d$`
 	countQuery := regexp.QuoteMeta(`SELECT COUNT(*) FROM public.runtimes WHERE tenant_id=$1`)
 
 	testCases := []struct {
@@ -339,7 +339,7 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 							AND "tenant_id" = '%s' 
 							AND "key" = 'foo'\)`, tenantID)
 	sqlQuery := fmt.Sprintf(`^SELECT (.+) FROM public.runtimes 
-								WHERE tenant_id=\$1 %s ORDER BY id LIMIT %d OFFSET 0`, filterQuery, rowSize)
+								WHERE tenant_id=\$1 %s ORDER BY name LIMIT %d OFFSET 0`, filterQuery, rowSize)
 
 	sqlMock.ExpectQuery(sqlQuery).
 		WithArgs(tenantID).

@@ -11,7 +11,6 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
-// CREATE
 func fixRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -20,6 +19,15 @@ func fixRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
 				}
 			}`,
 			applicationInGQL, tc.gqlFieldsProvider.ForApplication()))
+}
+
+func fixUnregisterApplicationRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			unregisterApplication(id: "%s") {
+				id
+			}
+		}`, id))
 }
 
 func fixCreateApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.Request {
@@ -71,6 +79,15 @@ func fixAddDocumentRequest(appID, documentInputInGQL string) *gcli.Request {
 		}`, appID, documentInputInGQL, tc.gqlFieldsProvider.ForDocument()))
 }
 
+func fixDeleteDocumentRequest(docID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteDocument(id: "%s") {
+					id
+				}
+			}`, docID))
+}
+
 func fixAddDocumentToPackageRequest(packageID, documentInputInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -88,6 +105,15 @@ func fixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
 				}
 			}`,
 			applicationID, webhookInGQL, tc.gqlFieldsProvider.ForWebhooks()))
+}
+
+func fixDeleteWebhookRequest(webhookID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteWebhook(webhookID: "%s") {
+				%s
+			}
+		}`, webhookID, tc.gqlFieldsProvider.ForWebhooks()))
 }
 
 func fixAddAPIRequest(appID, APIInputGQL string) *gcli.Request {
@@ -110,14 +136,23 @@ func fixAddAPIToPackageRequest(pkgID, APIInputGQL string) *gcli.Request {
 		`, pkgID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
 }
 
-func fixUpdateAPIRequest(appID, APIInputGQL string) *gcli.Request {
+func fixUpdateAPIRequest(apiID, APIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 		result: updateAPIDefinition(id: "%s", in: %s) {
 				%s
 			}
 		}
-		`, appID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+		`, apiID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+}
+
+func fixDeleteAPIRequest(apiID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: deleteAPIDefinition(id: "%s") {
+				id
+			}
+		}`, apiID))
 }
 
 func fixAddEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
@@ -140,17 +175,25 @@ func fixAddEventAPIToPackageRequest(pkgID, eventAPIInputGQL string) *gcli.Reques
 		`, pkgID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
-func fixUpdateEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
+func fixUpdateEventAPIRequest(eventAPIID, eventAPIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 		result: updateEventDefinition(id: "%s", in: %s) {
 				%s
 			}
 		}
-		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
+		`, eventAPIID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
-//UPDATE
+func fixDeleteEventAPIRequest(eventAPIID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteEventDefinition(id: "%s") {
+				id
+			}
+		}`, eventAPIID))
+}
+
 func fixUpdateRuntimeRequest(id, updateInputInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -252,7 +295,6 @@ func fixRequestClientCredentialsForIntegrationSystem(id string) *gcli.Request {
 				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
-// SET
 func fixSetApplicationLabelRequest(appID, labelKey string, labelValue interface{}) *gcli.Request {
 	jsonValue, err := json.Marshal(labelValue)
 	if err != nil {
@@ -281,8 +323,7 @@ func fixSetRuntimeLabelRequest(runtimeID, labelKey string, labelValue interface{
 				result: setRuntimeLabel(runtimeID: "%s", key: "%s", value: %s) {
 						%s
 					}
-				}`,
-			runtimeID, labelKey, value, tc.gqlFieldsProvider.ForLabel()))
+				}`, runtimeID, labelKey, value, tc.gqlFieldsProvider.ForLabel()))
 }
 
 func fixSetAPIAuthRequest(apiID string, rtmID string, authInStr string) *gcli.Request {
@@ -294,17 +335,13 @@ func fixSetAPIAuthRequest(apiID string, rtmID string, authInStr string) *gcli.Re
 			}`, apiID, rtmID, authInStr, tc.gqlFieldsProvider.ForAPIRuntimeAuth()))
 }
 
-// QUERY
 func fixApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
 	return gcli.NewRequest(
-		fmt.Sprintf(
-			`query {
+		fmt.Sprintf(`query {
   			result: applicationsForRuntime(runtimeID: "%s", first:%d, after:"") { 
 					%s 
 				}
-			}`,
-			runtimeID, 4, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication()),
-		))
+			}`, runtimeID, 4, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
 }
 
 func fixRuntimeRequestWithPaginationRequest(after int, cursor string) *gcli.Request {
@@ -319,10 +356,10 @@ func fixRuntimeRequestWithPaginationRequest(after int, cursor string) *gcli.Requ
 func fixAPIRuntimeAuthRequest(applicationID string, runtimeID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
-							result: application(id: "%s") {
-								%s
-							}
-						}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
+			result: application(id: "%s") {
+				%s
+			}
+		}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
 			"APIDefinition.auth": fmt.Sprintf(`auth(runtimeID: "%s") {%s}`, runtimeID, tc.gqlFieldsProvider.ForAPIRuntimeAuth()),
 		})))
 }
@@ -335,7 +372,7 @@ func fixRuntimeRequest(runtimeID string) *gcli.Request {
 				}}`, runtimeID, tc.gqlFieldsProvider.ForRuntime()))
 }
 
-func fixUnregisterRuntime(id string) *gcli.Request {
+func fixUnregisterRuntimeRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{unregisterRuntime(id: "%s") {
 				id
@@ -381,7 +418,17 @@ func fixLabelDefinitionsRequest() *gcli.Request {
 			}`))
 }
 
-func fixApplicationsRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
+func fixApplicationsRequest() *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: applications {
+						%s
+					}
+				}`,
+			tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
+}
+
+func fixApplicationsFilteredPageableRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 				result: applications(filter: %s, first: %d, after: "%s") {
@@ -391,10 +438,10 @@ func fixApplicationsRequest(labelFilterInGQL string, first int, after string) *g
 			labelFilterInGQL, first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
 }
 
-func fixApplicationsRequestPageable(first int, after string) *gcli.Request {
+func fixApplicationsPageableRequest(first int, after string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
-				result: applications(, first: %d, after: "%s") {
+				result: applications(first: %d, after: "%s") {
 						%s
 					}
 				}`,
@@ -411,7 +458,17 @@ func fixApplicationTemplates(first int, after string) *gcli.Request {
 			first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplicationTemplate())))
 }
 
-func fixRuntimesRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
+func fixRuntimesRequest() *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: runtimes {
+						%s
+					}
+				}`,
+			tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
+}
+
+func fixRuntimesFilteredPageableRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 				result: runtimes(filter: %s, first: %d, after: "%s") {
@@ -699,6 +756,28 @@ func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
 		})))
 }
 
+func fixAPIDefinitionRequest(applicationID string, apiID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+				%s
+				}
+			}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
+			"Application.apiDefinition": fmt.Sprintf(`apiDefinition(id: "%s") {%s}`, apiID, tc.gqlFieldsProvider.ForAPIDefinition()),
+		})))
+}
+
+func fixEventDefinitionRequest(applicationID string, eventDefID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+				%s
+				}
+			}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
+			"Application.eventDefinition": fmt.Sprintf(`eventDefinition(id: "%s") {%s}`, eventDefID, tc.gqlFieldsProvider.ForEventDefinition()),
+		})))
+}
+
 func fixPackageWithInstanceAuthRequest(applicationID string, packageID string, instanceAuthID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -724,4 +803,73 @@ func fixPackagesRequest(applicationID string) *gcli.Request {
 				%s
 				}
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication()))
+}
+
+func fixDeleteDefaultEventingForApplication(appID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: deleteDefaultEventingForApplication(appID: "%s") {
+						%s
+					}
+				}`,
+			appID, tc.gqlFieldsProvider.ForEventingConfiguration()))
+}
+
+func fixCreateAutomaticScenarioAssignmentRequest(automaticScenarioAssignmentInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: createAutomaticScenarioAssignment(in: %s) {
+						%s
+					}
+				}`,
+			automaticScenarioAssignmentInput, tc.gqlFieldsProvider.ForAutomaticScenarioAssignment()))
+}
+
+func fixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenario string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+            result: deleteAutomaticScenarioAssignmentForScenario(scenarioName: "%s") {
+                  %s
+               }
+            }`,
+			scenario, tc.gqlFieldsProvider.ForAutomaticScenarioAssignment()))
+}
+
+func fixDeleteAutomaticScenarioAssignmentsForSelectorRequest(labelSelectorInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+            result: deleteAutomaticScenarioAssignmentsForSelector(selector: %s) {
+                  %s
+               }
+            }`,
+			labelSelectorInput, tc.gqlFieldsProvider.ForAutomaticScenarioAssignment()))
+}
+func fixAutomaticScenarioAssignmentsRequest() *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: automaticScenarioAssignments {
+						%s
+					}
+				}`,
+			tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForAutomaticScenarioAssignment())))
+}
+
+func fixAutomaticScenarioAssignmentsForSelectorRequest(labelSelectorInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: automaticScenarioAssignmentsForSelector(selector: %s) {
+						%s
+					}
+				}`,
+			labelSelectorInput, tc.gqlFieldsProvider.ForAutomaticScenarioAssignment()))
+}
+
+func fixAutomaticScenarioAssignmentForScenarioRequest(scenarioName string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: automaticScenarioAssignmentForScenario(scenarioName: "%s") {
+						%s
+					}
+				}`,
+			scenarioName, tc.gqlFieldsProvider.ForAutomaticScenarioAssignment()))
 }

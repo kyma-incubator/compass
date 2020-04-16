@@ -17,7 +17,7 @@ require (
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200123101435-9cd00b2924b8
 	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
 	github.com/kyma-incubator/hydroform/install v0.0.0-20200302090055-3f3b00d9799c
-	github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0
+	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442
 	github.com/lib/pq v1.2.0
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.2.0 // indirect
@@ -26,7 +26,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0
-	github.com/terraform-providers/terraform-provider-openstack v1.20.0 // indirect
 	github.com/testcontainers/testcontainers-go v0.3.1
 	github.com/vektah/gqlparser v1.2.0
 	github.com/vrischmann/envconfig v1.2.0
@@ -46,3 +45,9 @@ replace github.com/census-instrumentation/opencensus-proto v0.1.0-0.201812141439
 replace k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.15.8-beta.1
 
 replace github.com/Azure/go-autorest v11.5.0+incompatible => github.com/Azure/go-autorest v13.3.2+incompatible
+
+replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
+
+replace github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
+
+replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8

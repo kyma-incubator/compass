@@ -6,6 +6,8 @@ import (
 
 	"fmt"
 
+	"strconv"
+
 	"github.com/Masterminds/sprig"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -76,13 +78,11 @@ func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		kubernetesVersion: "{{.KubernetesVersion}}",
-		nodeCount: 1,
 		volumeSizeGB: {{.VolumeSizeGb }},
 		machineType: "{{.MachineType}}",
 		region: "{{.Region}}",
 		provider: "{{ .Provider }}",
 		diskType: "{{.DiskType}}",
-		seed: "az-eu3",
 		targetSecret: "{{ .TargetSecret }}",
 		workerCidr: "{{ .WorkerCidr }}",
         autoScalerMin: {{ .AutoScalerMin }},
@@ -149,12 +149,15 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
           {
             component: "{{ .Component }}",
             namespace: "{{ .Namespace }}",
+            {{- if .SourceURL }}
+            sourceURL: "{{ .SourceURL }}",
+            {{- end }}
       	    {{- with .Configuration }}
             configuration: [
 			  {{- range . }}
               {
                 key: "{{ .Key }}",
-                value: "{{ .Value }}",
+                value: {{ .Value | strQuote }},
 				{{- if .Secret }}
                 secret: true,
 				{{- end }}
@@ -193,6 +196,7 @@ func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["GCPProviderConfigInputToGraphQL"] = g.GCPProviderConfigInputToGraphQL
 	fm["AWSProviderConfigInputToGraphQL"] = g.AWSProviderConfigInputToGraphQL
 	fm["LabelsToGQL"] = g.LabelsToGQL
+	fm["strQuote"] = strconv.Quote
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {

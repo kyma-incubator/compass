@@ -72,7 +72,7 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 		t.Run(tN, func(t *testing.T) {
 			// given
 			inputCreatorMock := &automock.ProvisionInputCreator{}
-			inputCreatorMock.On("SetOverrides", "service-manager-proxy", tC.expCredentialsValues).
+			inputCreatorMock.On("AppendOverrides", "service-manager-proxy", tC.expCredentialsValues).
 				Return(nil).Once()
 
 			operation := internal.ProvisioningOperation{

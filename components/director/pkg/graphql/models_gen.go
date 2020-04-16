@@ -25,9 +25,13 @@ type Pageable interface {
 }
 
 type APIDefinitionInput struct {
-	Name        string        `json:"name"`
-	Description *string       `json:"description"`
-	TargetURL   string        `json:"targetURL"`
+	// **Validation:** ASCII printable characters, max=100
+	Name string `json:"name"`
+	// **Validation:** max=2000
+	Description *string `json:"description"`
+	// **Validation:** valid URL, max=256
+	TargetURL string `json:"targetURL"`
+	// **Validation:** max=36
 	Group       *string       `json:"group"`
 	Spec        *APISpecInput `json:"spec"`
 	Version     *VersionInput `json:"version"`
@@ -48,6 +52,9 @@ type APIRuntimeAuth struct {
 	Auth      *Auth  `json:"auth"`
 }
 
+// **Validation:**
+// - for ODATA type, accepted formats are XML and JSON, for OPEN_API accepted formats are YAML and JSON
+// - data or fetchRequest required
 type APISpecInput struct {
 	Data         *CLOB              `json:"data"`
 	Type         APISpecType        `json:"type"`
@@ -59,7 +66,9 @@ type ApplicationEventingConfiguration struct {
 	DefaultURL string `json:"defaultURL"`
 }
 
+// **Validation:** provided placeholders' names are unique
 type ApplicationFromTemplateInput struct {
+	// **Validation:** ASCII printable characters, max=100
 	TemplateName string                `json:"templateName"`
 	Values       []*TemplateValueInput `json:"values"`
 }
@@ -73,17 +82,23 @@ type ApplicationPage struct {
 func (ApplicationPage) IsPageable() {}
 
 type ApplicationRegisterInput struct {
-	Name                string                  `json:"name"`
-	ProviderName        *string                 `json:"providerName"`
-	Description         *string                 `json:"description"`
-	Labels              *Labels                 `json:"labels"`
-	Webhooks            []*WebhookInput         `json:"webhooks"`
-	HealthCheckURL      *string                 `json:"healthCheckURL"`
-	APIDefinitions      []*APIDefinitionInput   `json:"apiDefinitions"`
-	EventDefinitions    []*EventDefinitionInput `json:"eventDefinitions"`
-	Documents           []*DocumentInput        `json:"documents"`
-	Packages            []*PackageCreateInput   `json:"packages"`
-	IntegrationSystemID *string                 `json:"integrationSystemID"`
+	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	Name string `json:"name"`
+	// **Validation:** max=256
+	ProviderName *string `json:"providerName"`
+	// **Validation:** max=2000
+	Description *string `json:"description"`
+	// **Validation:** label key is alphanumeric with underscore
+	Labels   *Labels         `json:"labels"`
+	Webhooks []*WebhookInput `json:"webhooks"`
+	// **Validation:** valid URL, max=256
+	HealthCheckURL      *string                     `json:"healthCheckURL"`
+	APIDefinitions      []*APIDefinitionInput       `json:"apiDefinitions"`
+	EventDefinitions    []*EventDefinitionInput     `json:"eventDefinitions"`
+	Documents           []*DocumentInput            `json:"documents"`
+	Packages            []*PackageCreateInput       `json:"packages"`
+	IntegrationSystemID *string                     `json:"integrationSystemID"`
+	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
 }
 
 type ApplicationStatus struct {
@@ -100,8 +115,11 @@ type ApplicationTemplate struct {
 	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
 }
 
+// **Validation:** provided placeholders' names are unique and used in applicationInput
 type ApplicationTemplateInput struct {
-	Name             string                         `json:"name"`
+	// **Validation:** ASCII printable characters, max=100
+	Name string `json:"name"`
+	// **Validation:** max=2000
 	Description      *string                        `json:"description"`
 	ApplicationInput *ApplicationRegisterInput      `json:"applicationInput"`
 	Placeholders     []*PlaceholderDefinitionInput  `json:"placeholders"`
@@ -117,10 +135,14 @@ type ApplicationTemplatePage struct {
 func (ApplicationTemplatePage) IsPageable() {}
 
 type ApplicationUpdateInput struct {
-	ProviderName        *string `json:"providerName"`
-	Description         *string `json:"description"`
-	HealthCheckURL      *string `json:"healthCheckURL"`
-	IntegrationSystemID *string `json:"integrationSystemID"`
+	// **Validation:** max=256
+	ProviderName *string `json:"providerName"`
+	// **Validation:** max=2000
+	Description *string `json:"description"`
+	// **Validation:** valid URL, max=256
+	HealthCheckURL      *string                     `json:"healthCheckURL"`
+	IntegrationSystemID *string                     `json:"integrationSystemID"`
+	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
 }
 
 type Auth struct {
@@ -131,10 +153,31 @@ type Auth struct {
 }
 
 type AuthInput struct {
-	Credential            *CredentialDataInput        `json:"credential"`
-	AdditionalHeaders     *HttpHeaders                `json:"additionalHeaders"`
+	Credential *CredentialDataInput `json:"credential"`
+	// **Validation:** if provided, headers name and value required
+	AdditionalHeaders *HttpHeaders `json:"additionalHeaders"`
+	// **Validation:** if provided, query parameters name and value required
 	AdditionalQueryParams *QueryParams                `json:"additionalQueryParams"`
 	RequestAuth           *CredentialRequestAuthInput `json:"requestAuth"`
+}
+
+type AutomaticScenarioAssignment struct {
+	ScenarioName string `json:"scenarioName"`
+	Selector     *Label `json:"selector"`
+}
+
+type AutomaticScenarioAssignmentPage struct {
+	Data       []*AutomaticScenarioAssignment `json:"data"`
+	PageInfo   *PageInfo                      `json:"pageInfo"`
+	TotalCount int                            `json:"totalCount"`
+}
+
+func (AutomaticScenarioAssignmentPage) IsPageable() {}
+
+type AutomaticScenarioAssignmentSetInput struct {
+	ScenarioName string `json:"scenarioName"`
+	// Runtimes and Applications which contain labels with equal key and value are matched
+	Selector *LabelSelectorInput `json:"selector"`
 }
 
 type BasicCredentialData struct {
@@ -157,12 +200,16 @@ type CSRFTokenCredentialRequestAuth struct {
 }
 
 type CSRFTokenCredentialRequestAuthInput struct {
-	TokenEndpointURL      string               `json:"tokenEndpointURL"`
-	Credential            *CredentialDataInput `json:"credential"`
-	AdditionalHeaders     *HttpHeaders         `json:"additionalHeaders"`
-	AdditionalQueryParams *QueryParams         `json:"additionalQueryParams"`
+	// **Validation:** valid URL
+	TokenEndpointURL string               `json:"tokenEndpointURL"`
+	Credential       *CredentialDataInput `json:"credential"`
+	// **Validation:** if provided, headers name and value required
+	AdditionalHeaders *HttpHeaders `json:"additionalHeaders"`
+	// **Validation:** if provided, query parameters name and value required
+	AdditionalQueryParams *QueryParams `json:"additionalQueryParams"`
 }
 
+// **Validation:** basic or oauth field required
 type CredentialDataInput struct {
 	Basic *BasicCredentialDataInput `json:"basic"`
 	Oauth *OAuthCredentialDataInput `json:"oauth"`
@@ -173,14 +220,19 @@ type CredentialRequestAuth struct {
 }
 
 type CredentialRequestAuthInput struct {
+	// **Validation:** required
 	Csrf *CSRFTokenCredentialRequestAuthInput `json:"csrf"`
 }
 
 type DocumentInput struct {
-	Title        string             `json:"title"`
-	DisplayName  string             `json:"displayName"`
-	Description  string             `json:"description"`
-	Format       DocumentFormat     `json:"format"`
+	// **Validation:** max=128
+	Title string `json:"title"`
+	// **Validation:** max=128
+	DisplayName string `json:"displayName"`
+	// **Validation:** max=2000
+	Description string         `json:"description"`
+	Format      DocumentFormat `json:"format"`
+	// **Validation:** max=256
 	Kind         *string            `json:"kind"`
 	Data         *CLOB              `json:"data"`
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
@@ -195,11 +247,14 @@ type DocumentPage struct {
 func (DocumentPage) IsPageable() {}
 
 type EventDefinitionInput struct {
-	Name        string          `json:"name"`
+	// **Validation:** ASCII printable characters, max=100
+	Name string `json:"name"`
+	// **Validation:** max=2000
 	Description *string         `json:"description"`
 	Spec        *EventSpecInput `json:"spec"`
-	Group       *string         `json:"group"`
-	Version     *VersionInput   `json:"version"`
+	// **Validation:** max=36
+	Group   *string       `json:"group"`
+	Version *VersionInput `json:"version"`
 }
 
 type EventDefinitionPage struct {
@@ -210,6 +265,9 @@ type EventDefinitionPage struct {
 
 func (EventDefinitionPage) IsPageable() {}
 
+// **Validation:**
+// - data or fetchRequest required
+// - for ASYNC_API type, accepted formats are YAML and JSON
 type EventSpecInput struct {
 	Data         *CLOB              `json:"data"`
 	Type         EventSpecType      `json:"type"`
@@ -227,10 +285,12 @@ type FetchRequest struct {
 }
 
 type FetchRequestInput struct {
-	URL    string     `json:"url"`
-	Auth   *AuthInput `json:"auth"`
-	Mode   *FetchMode `json:"mode"`
-	Filter *string    `json:"filter"`
+	// **Validation:** valid URL, max=256
+	URL  string     `json:"url"`
+	Auth *AuthInput `json:"auth"`
+	Mode *FetchMode `json:"mode"`
+	// **Validation:** max=256
+	Filter *string `json:"filter"`
 }
 
 type FetchRequestStatus struct {
@@ -255,7 +315,9 @@ type HealthCheckPage struct {
 func (HealthCheckPage) IsPageable() {}
 
 type IntegrationSystemInput struct {
-	Name        string  `json:"name"`
+	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	Name string `json:"name"`
+	// **Validation:** max=2000
 	Description *string `json:"description"`
 }
 
@@ -278,6 +340,7 @@ type LabelDefinition struct {
 }
 
 type LabelDefinitionInput struct {
+	// **Validation:** max=256, alphanumeric chartacters and underscore
 	Key    string      `json:"key"`
 	Schema *JSONSchema `json:"schema"`
 }
@@ -291,8 +354,14 @@ type LabelFilter struct {
 }
 
 type LabelInput struct {
+	// **Validation:** max=256, alphanumeric chartacters and underscore
 	Key   string      `json:"key"`
 	Value interface{} `json:"value"`
+}
+
+type LabelSelectorInput struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type OAuthCredentialData struct {
@@ -307,11 +376,14 @@ func (OAuthCredentialData) IsCredentialData() {}
 type OAuthCredentialDataInput struct {
 	ClientID     string `json:"clientId"`
 	ClientSecret string `json:"clientSecret"`
-	URL          string `json:"url"`
+	// **Validation:** valid URL
+	URL string `json:"url"`
 }
 
 type PackageCreateInput struct {
-	Name                           string                  `json:"name"`
+	// **Validation:** ASCII printable characters, max=100
+	Name string `json:"name"`
+	// **Validation:** max=2000
 	Description                    *string                 `json:"description"`
 	InstanceAuthRequestInputSchema *JSONSchema             `json:"instanceAuthRequestInputSchema"`
 	DefaultInstanceAuth            *AuthInput              `json:"defaultInstanceAuth"`
@@ -335,14 +407,14 @@ type PackageInstanceAuth struct {
 type PackageInstanceAuthRequestInput struct {
 	// Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
 	Context *JSON `json:"context"`
-	// JSON validated against package.instanceAuthRequestInputSchema
+	// **Validation:** JSON validated against package.instanceAuthRequestInputSchema
 	InputParams *JSON `json:"inputParams"`
 }
 
 type PackageInstanceAuthSetInput struct {
-	// If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
+	// **Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
 	Auth *AuthInput `json:"auth"`
-	// Optional if the auth is provided.
+	// **Validation:** Optional if the auth is provided.
 	// If the status condition is "FAILED", auth must be empty.
 	Status *PackageInstanceAuthStatusInput `json:"status"`
 }
@@ -362,13 +434,16 @@ type PackageInstanceAuthStatus struct {
 
 type PackageInstanceAuthStatusInput struct {
 	Condition PackageInstanceAuthSetStatusConditionInput `json:"condition"`
-	Message   string                                     `json:"message"`
+	// **Validation:** required, if condition is FAILED
+	Message string `json:"message"`
 	// Example reasons:
 	// - PendingNotification
 	// - NotificationSent
 	// - CredentialsProvided
 	// - CredentialsNotProvided
 	// - PendingDeletion
+	//
+	//    **Validation**: required, if condition is FAILED
 	Reason string `json:"reason"`
 }
 
@@ -381,7 +456,9 @@ type PackagePage struct {
 func (PackagePage) IsPageable() {}
 
 type PackageUpdateInput struct {
-	Name                           string      `json:"name"`
+	// **Validation:** ASCII printable characters, max=100
+	Name string `json:"name"`
+	// **Validation:** max=2000
 	Description                    *string     `json:"description"`
 	InstanceAuthRequestInputSchema *JSONSchema `json:"instanceAuthRequestInputSchema"`
 	// While updating defaultInstanceAuth, existing PackageInstanceAuths are NOT updated.
@@ -400,7 +477,9 @@ type PlaceholderDefinition struct {
 }
 
 type PlaceholderDefinitionInput struct {
-	Name        string  `json:"name"`
+	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	Name string `json:"name"`
+	// **Validation:**  max=2000
 	Description *string `json:"description"`
 }
 
@@ -409,9 +488,13 @@ type RuntimeEventingConfiguration struct {
 }
 
 type RuntimeInput struct {
-	Name        string  `json:"name"`
+	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	Name string `json:"name"`
+	// **Validation:**  max=2000
 	Description *string `json:"description"`
-	Labels      *Labels `json:"labels"`
+	// **Validation:** key: required, alphanumeric with underscore
+	Labels          *Labels                 `json:"labels"`
+	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
 }
 
 type RuntimeMetadata struct {
@@ -437,6 +520,7 @@ type SystemAuth struct {
 }
 
 type TemplateValueInput struct {
+	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	Placeholder string `json:"placeholder"`
 	Value       string `json:"value"`
 }
@@ -458,8 +542,10 @@ type Version struct {
 }
 
 type VersionInput struct {
-	Value           string  `json:"value"`
-	Deprecated      *bool   `json:"deprecated"`
+	// **Validation:** max=256
+	Value      string `json:"value"`
+	Deprecated *bool  `json:"deprecated"`
+	// **Validation:** max=256
 	DeprecatedSince *string `json:"deprecatedSince"`
 	ForRemoval      *bool   `json:"forRemoval"`
 }
@@ -479,8 +565,9 @@ type Webhook struct {
 
 type WebhookInput struct {
 	Type ApplicationWebhookType `json:"type"`
-	URL  string                 `json:"url"`
-	Auth *AuthInput             `json:"auth"`
+	// **Validation:** valid URL, max=256
+	URL  string     `json:"url"`
+	Auth *AuthInput `json:"auth"`
 }
 
 type APISpecType string
@@ -527,22 +614,20 @@ func (e APISpecType) MarshalGQL(w io.Writer) {
 type ApplicationStatusCondition string
 
 const (
-	ApplicationStatusConditionInitial ApplicationStatusCondition = "INITIAL"
-	ApplicationStatusConditionUnknown ApplicationStatusCondition = "UNKNOWN"
-	ApplicationStatusConditionReady   ApplicationStatusCondition = "READY"
-	ApplicationStatusConditionFailed  ApplicationStatusCondition = "FAILED"
+	ApplicationStatusConditionInitial   ApplicationStatusCondition = "INITIAL"
+	ApplicationStatusConditionConnected ApplicationStatusCondition = "CONNECTED"
+	ApplicationStatusConditionFailed    ApplicationStatusCondition = "FAILED"
 )
 
 var AllApplicationStatusCondition = []ApplicationStatusCondition{
 	ApplicationStatusConditionInitial,
-	ApplicationStatusConditionUnknown,
-	ApplicationStatusConditionReady,
+	ApplicationStatusConditionConnected,
 	ApplicationStatusConditionFailed,
 }
 
 func (e ApplicationStatusCondition) IsValid() bool {
 	switch e {
-	case ApplicationStatusConditionInitial, ApplicationStatusConditionUnknown, ApplicationStatusConditionReady, ApplicationStatusConditionFailed:
+	case ApplicationStatusConditionInitial, ApplicationStatusConditionConnected, ApplicationStatusConditionFailed:
 		return true
 	}
 	return false
@@ -984,20 +1069,20 @@ func (e PackageInstanceAuthStatusCondition) MarshalGQL(w io.Writer) {
 type RuntimeStatusCondition string
 
 const (
-	RuntimeStatusConditionInitial RuntimeStatusCondition = "INITIAL"
-	RuntimeStatusConditionReady   RuntimeStatusCondition = "READY"
-	RuntimeStatusConditionFailed  RuntimeStatusCondition = "FAILED"
+	RuntimeStatusConditionInitial   RuntimeStatusCondition = "INITIAL"
+	RuntimeStatusConditionConnected RuntimeStatusCondition = "CONNECTED"
+	RuntimeStatusConditionFailed    RuntimeStatusCondition = "FAILED"
 )
 
 var AllRuntimeStatusCondition = []RuntimeStatusCondition{
 	RuntimeStatusConditionInitial,
-	RuntimeStatusConditionReady,
+	RuntimeStatusConditionConnected,
 	RuntimeStatusConditionFailed,
 }
 
 func (e RuntimeStatusCondition) IsValid() bool {
 	switch e {
-	case RuntimeStatusConditionInitial, RuntimeStatusConditionReady, RuntimeStatusConditionFailed:
+	case RuntimeStatusConditionInitial, RuntimeStatusConditionConnected, RuntimeStatusConditionFailed:
 		return true
 	}
 	return false

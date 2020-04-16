@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
 
@@ -17,62 +16,34 @@ import (
 	"github.com/pkg/errors"
 )
 
-const LogFormatDate = "2006-01-02T15:04:05.999Z"
-
-//go:generate mockery -name=UUIDService -output=automock -outpkg=automock -case=underscore
-type UUIDService interface {
-	Generate() string
-}
-
-//go:generate mockery -name=TimeService -output=automock -outpkg=automock -case=underscore
-type TimeService interface {
-	Now() time.Time
-}
-
-type AuditlogConfig struct {
-	User                 string `envconfig:"APP_AUDITLOG_USER"`
-	Password             string `envconfig:"APP_AUDITLOG_PASSWORD"`
-	AuditLogURL          string `envconfig:"APP_AUDITLOG_URL"`
-	Tenant               string `envconfig:"APP_AUDITLOG_TENANT"`
-	AuditlogConfigPath   string `envconfig:"APP_AUDITLOG_CONFIG_PATH,default=/audit-log/v2/configuration-changes"`
-	AuditlogSecurityPath string `envconfig:"APP_AUDITLOG_SECURITY_PATH,default=/audit-log/v2/security-events"`
+//go:generate mockery -name=HttpClient -output=automock -outpkg=automock -case=underscore
+type HttpClient interface {
+	Do(request *http.Request) (*http.Response, error)
 }
 
 type Client struct {
-	cfg              AuditlogConfig
-	uuidSvc          UUIDService
-	timeSvc          TimeService
-	http             http.Client
+	httpClient       HttpClient
 	configChangeURL  string
 	securityEventURL string
 }
 
-func NewClient(cfg AuditlogConfig, uuidSvc UUIDService, tsvc TimeService) (*Client, error) {
-	client := http.Client{
-		Timeout: time.Second * 5,
-	}
-	configChangeURL, err := createURL(cfg.AuditLogURL, cfg.AuditlogConfigPath)
+func NewClient(cfg Config, httpClient HttpClient) (*Client, error) {
+	configChangeURL, err := createURL(cfg.URL, cfg.ConfigPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating auditlog config change url")
 	}
 
-	securityEventURL, err := createURL(cfg.AuditLogURL, cfg.AuditlogSecurityPath)
+	securityEventURL, err := createURL(cfg.URL, cfg.SecurityPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating auditlog security event url")
-
 	}
 
 	return &Client{configChangeURL: configChangeURL.String(),
 		securityEventURL: securityEventURL.String(),
-		http:             client,
-		uuidSvc:          uuidSvc,
-		cfg:              cfg,
-		timeSvc:          tsvc}, nil
+		httpClient:       httpClient}, nil
 }
 
-//TODO: use basic auth, Currently JWT token is broken
 func (c *Client) LogConfigurationChange(change model.ConfigurationChange) error {
-	c.fillMessage(&change.AuditlogMetadata)
 	payload, err := json.Marshal(&change)
 	if err != nil {
 		return errors.Wrap(err, "while marshaling auditlog payload")
@@ -87,7 +58,6 @@ func (c *Client) LogConfigurationChange(change model.ConfigurationChange) error 
 }
 
 func (c *Client) LogSecurityEvent(event model.SecurityEvent) error {
-	c.fillMessage(&event.AuditlogMetadata)
 	payload, err := json.Marshal(&event)
 	if err != nil {
 		return errors.Wrap(err, "while marshaling auditlog payload")
@@ -102,8 +72,7 @@ func (c *Client) LogSecurityEvent(event model.SecurityEvent) error {
 }
 
 func (c *Client) sendAuditLog(req *http.Request) error {
-	req.SetBasicAuth(c.cfg.User, c.cfg.Password)
-	response, err := c.http.Do(req)
+	response, err := c.httpClient.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "while sending auditlog to: %s", req.URL.String())
 	}
@@ -119,15 +88,6 @@ func (c *Client) sendAuditLog(req *http.Request) error {
 		return errors.Errorf("Write to auditlog failed with status code: %d", response.StatusCode)
 	}
 	return nil
-}
-
-func (c *Client) fillMessage(message *model.AuditlogMetadata) {
-	t := c.timeSvc.Now()
-	logTime := t.Format(LogFormatDate)
-	message.Time = logTime
-
-	message.Tenant = c.cfg.Tenant
-	message.UUID = c.uuidSvc.Generate()
 }
 
 func createURL(auditlogURL, urlPath string) (url.URL, error) {

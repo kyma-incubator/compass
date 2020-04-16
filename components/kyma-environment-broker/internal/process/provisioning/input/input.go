@@ -32,7 +32,7 @@ func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningPar
 	return r
 }
 
-// SetOverrides sets the overrides for the given component and discard the previous ones.
+// AppendOverrides sets the overrides for the given component and discard the previous ones.
 //
 // Deprecated: use AppendOverrides
 func (r *RuntimeInput) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {

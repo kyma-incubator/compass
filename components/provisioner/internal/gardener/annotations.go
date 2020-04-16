@@ -87,6 +87,15 @@ func getOperationId(shoot gardener_types.Shoot) string {
 	return operationId
 }
 
+func getRuntimeId(shoot gardener_types.Shoot) string {
+	runtimeId, found := shoot.Annotations[runtimeIdAnnotation]
+	if !found {
+		return ""
+	}
+
+	return runtimeId
+}
+
 func getProvisioningState(shoot gardener_types.Shoot) ProvisioningState {
 	provisioningState, found := shoot.Annotations[provisioningAnnotation]
 	if !found {

@@ -8,7 +8,7 @@ metadata:
 data:
   config.js: |
     window.clusterConfig = {
-      microfrontendContentUrl : 'https://{{ .Values.mf.host }}.{{ .Values.global.ingress.domainName }}',
+      compassModuleUrl : 'https://{{ .Values.mf.host }}.{{ .Values.global.ingress.domainName }}',
       compassApiUrl: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}/director/graphql',
       domain: '{{ .Values.global.ingress.domainName }}',
       auth: {

@@ -31,11 +31,13 @@ query { runtimeStatus(id: "{RUNTIME_ID}") {
       kymaConfig {
         version  components {
           component
-          namespace configuration {
+          namespace 
+          configuration {
             key
             value
             secret
           }
+          sourceURL
         }
         configuration {
           key value secret

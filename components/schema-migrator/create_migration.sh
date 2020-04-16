@@ -14,6 +14,7 @@ done
 
 DATE="$(date +%Y%m%d%H%M)"
 MIGRATIONS_DIR="${DIR}/migrations"
+TRANSACTION_STR=$'BEGIN;\nCOMMIT;'
 
-touch "${MIGRATIONS_DIR}/${COMPONENT}/${DATE}_${NAME}.up.sql"
-touch "${MIGRATIONS_DIR}/${COMPONENT}/${DATE}_${NAME}.down.sql"
+echo "$TRANSACTION_STR" > "${MIGRATIONS_DIR}/${COMPONENT}/${DATE}_${NAME}.up.sql"
+echo "$TRANSACTION_STR" > "${MIGRATIONS_DIR}/${COMPONENT}/${DATE}_${NAME}.down.sql"

@@ -1,10 +1,16 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/gateway/internal/time"
+	timeservices "github.com/kyma-incubator/compass/components/gateway/internal/time"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
+
 	"github.com/kyma-incubator/compass/components/gateway/internal/uuid"
 
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog"
@@ -17,10 +23,10 @@ import (
 )
 
 type config struct {
-	Address string `envconfig:"default=127.0.0.1:3001"`
+	Address string `envconfig:"default=127.0.0.1:3000"`
 
-	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3000"`
-	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3000"`
+	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3001"`
+	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3002"`
 	AuditlogEnabled bool   `envconfig:"default=false"`
 }
 
@@ -42,9 +48,10 @@ func main() {
 	done := make(chan bool)
 	var auditlogSvc AuditogService
 	if cfg.AuditlogEnabled {
-		auditlogSvc = initAuditLogsSvc(done)
+		auditlogSvc, err = initAuditLogs(done)
+		exitOnError(err, "Error while initializing auditlog service")
 	} else {
-		auditlogSvc = &auditlog.DummyAuditlog{}
+		auditlogSvc = &auditlog.NoOpService{}
 	}
 
 	defaultTr := http.Transport{}
@@ -94,25 +101,73 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initAuditLogsSvc(done chan bool) AuditogService {
+func initAuditLogs(done chan bool) (AuditogService, error) {
 	log.Println("Auditlog enabled")
-	auditlogCfg := auditlog.AuditlogConfig{}
-	err := envconfig.InitWithPrefix(&auditlogCfg, "APP")
-	exitOnError(err, "Error while loading auditlog cfg")
+	cfg := auditlog.Config{}
+	err := envconfig.InitWithPrefix(&cfg, "APP")
+	if err != nil {
+		return nil, errors.Wrap(err, "Error while loading auditlog cfg")
+	}
 
 	uuidSvc := uuid.NewService()
-	timeSvc := &time.TimeService{}
+	timeSvc := &timeservices.TimeService{}
 
-	auditlogClient, err := auditlog.NewClient(auditlogCfg, uuidSvc, timeSvc)
-	exitOnError(err, "Error while creating auditlog client from cfg")
+	var httpClient auditlog.HttpClient
+	var msgFactory auditlog.AuditlogMessageFactory
 
-	auditlogMsgChannel := make(chan auditlog.AuditlogMessage)
+	switch cfg.AuthMode {
+	case auditlog.Basic:
+		{
+			var basicCfg auditlog.BasicAuthConfig
+			err := envconfig.InitWithPrefix(&basicCfg, "APP")
+			if err != nil {
+				return nil, errors.Wrap(err, "while loading auditlog basic auth configuration")
+			}
 
-	logger := auditlog.NewService(auditlogClient)
-	worker := auditlog.NewWorker(logger, auditlogMsgChannel, done)
+			msgFactory = auditlog.NewMessageFactory("proxy", basicCfg.Tenant, uuidSvc, timeSvc)
+			httpClient = auditlog.NewBasicAuthClient(basicCfg)
+		}
+	case auditlog.OAuth:
+		{
+			var oauthCfg auditlog.OAuthConfig
+			err := envconfig.InitWithPrefix(&oauthCfg, "APP")
+			if err != nil {
+				return nil, errors.Wrap(err, "while loading auditlog OAuth configuration")
+			}
+
+			cfg := fillJWTCredentials(oauthCfg)
+			httpClient = cfg.Client(context.Background())
+			msgFactory = auditlog.NewMessageFactory(oauthCfg.User, oauthCfg.Tenant, uuidSvc, timeSvc)
+		}
+	default:
+		return nil, errors.New(fmt.Sprintf("Invalid Auditlog Auth mode: %s", cfg.AuthMode))
+	}
+
+	auditlogClient, err := auditlog.NewClient(cfg, httpClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error while creating auditlog client from cfg")
+	}
+
+	auditlogSvc := auditlog.NewService(auditlogClient, msgFactory)
+	msgChannel := make(chan auditlog.Message, cfg.MsgChannelSize)
+	initWorker(auditlogSvc, done, msgChannel)
+
+	log.Printf("Auditlog configured successfully, auth mode:%s\n", cfg.AuthMode)
+	return auditlog.NewSink(msgChannel, cfg.MsgChannelTimeout), nil
+}
+
+func fillJWTCredentials(cfg auditlog.OAuthConfig) clientcredentials.Config {
+	return clientcredentials.Config{
+		ClientID:     cfg.ClientID,
+		ClientSecret: cfg.ClientSecret,
+		TokenURL:     cfg.OAuthURL,
+		AuthStyle:    oauth2.AuthStyleAutoDetect,
+	}
+}
+
+func initWorker(auditlogSvc auditlog.AuditlogService, done chan bool, msgChannel chan auditlog.Message) {
+	worker := auditlog.NewWorker(auditlogSvc, msgChannel, done)
 	go func() {
 		worker.Start()
 	}()
-
-	return auditlog.NewAuditlogSink(auditlogMsgChannel)
 }

@@ -161,6 +161,11 @@ func TestLabelDefinitionInput_Validate_Key(t *testing.T) {
 			Value:         inputvalidationtest.String257Long,
 			ExpectedValid: false,
 		},
+		{
+			Name:          "Invalid - Unsupported characters in key",
+			Value:         "not/valid",
+			ExpectedValid: false,
+		},
 	}
 
 	for _, testCase := range testCases {

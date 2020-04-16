@@ -39,7 +39,6 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("project_name", config.ProjectName).
 		Pair("name", config.Name).
 		Pair("kubernetes_version", config.KubernetesVersion).
-		Pair("node_count", config.NodeCount).
 		Pair("volume_size_gb", config.VolumeSizeGB).
 		Pair("machine_type", config.MachineType).
 		Pair("region", config.Region).
@@ -113,8 +112,10 @@ func (ws writeSession) insertKymaComponentConfig(kymaConfigModule model.KymaComp
 		Pair("id", kymaConfigModule.ID).
 		Pair("component", kymaConfigModule.Component).
 		Pair("namespace", kymaConfigModule.Namespace).
+		Pair("source_url", kymaConfigModule.SourceURL).
 		Pair("kyma_config_id", kymaConfigModule.KymaConfigID).
 		Pair("configuration", jsonConfig).
+		Pair("component_order", kymaConfigModule.ComponentOrder).
 		Exec()
 
 	if err != nil {

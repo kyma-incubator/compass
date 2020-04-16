@@ -5,12 +5,13 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/reqerror"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -34,7 +35,7 @@ func NewCertificatesHandler(client connector.Client, logger *log.Logger) certifi
 func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
-		reqerror.WriteErrorMessage(w, "Failed to read authorization context.", apperrors.CodeForbidden)
+		res.WriteErrorMessage(w, "Failed to read authorization context.", apperrors.CodeForbidden)
 
 		return
 	}
@@ -98,7 +99,7 @@ func respond(w http.ResponseWriter, statusCode int) {
 
 func respondWithError(w http.ResponseWriter, contextLogger *log.Entry, err error, appErroCode int) {
 	contextLogger.Error(err.Error())
-	reqerror.WriteError(w, err, appErroCode)
+	res.WriteError(w, err, appErroCode)
 }
 
 func contextLogger(logger *log.Logger, application string) *log.Entry {

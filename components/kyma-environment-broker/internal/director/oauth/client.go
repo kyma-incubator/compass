@@ -127,7 +127,7 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 		return Token{}, errors.New("while fetching token: access token from oauth client is empty")
 	}
 
-	log.Errorf("Successfully unmarshal response oauth token for accessing Director")
+	log.Info("Successfully unmarshal response oauth token for accessing Director")
 	tokenResponse.Expiration += time.Now().Unix()
 
 	return tokenResponse, nil

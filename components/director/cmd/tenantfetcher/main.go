@@ -26,8 +26,7 @@ func main() {
 
 	configureLogger()
 
-	connString := persistence.GetConnString(cfg.Database)
-	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), connString)
+	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {

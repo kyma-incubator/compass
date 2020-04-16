@@ -1,0 +1,17 @@
+[
+  {
+    "globalAccountId": "GlobalAccountID field. IDX: 1",
+    "runtimeId": "RuntimeID field. IDX: 1",
+    "serviceClassId": "ServiceID field. IDX: 1",
+    "serviceClassName": "kymaruntime",
+    "serviceInstanceId": "InstanceID field. IDX: 1",
+    "servicePlanId": "ca6e5357-707f-4565-bbbd-b3ab732597c6",
+    "servicePlanName": "gcp",
+    "status": {
+      "createdAt": "2020-04-21T00:00:24.000000042Z",
+      "deletedAt": "2020-04-21T01:00:23.000000042Z",
+      "updatedAt": "2020-04-21T00:01:23.000000042Z"
+    },
+    "subaccountId": "SubAccountID field. IDX: 1"
+  }
+]

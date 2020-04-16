@@ -542,25 +542,6 @@ func TestDeleteLabelDefinition(t *testing.T) {
 	})
 }
 
-func TestDeleteScenariosLabel(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-	t.Log("Create application")
-	app := registerApplication(t, ctx, "app")
-	defer unregisterApplication(t, app.ID)
-
-	t.Log("Try to delete scenarios label on application")
-	labelKey := "scenarios"
-	deleteApplicationLabelRequest := fixDeleteApplicationLabelRequest(app.ID, labelKey)
-
-	// WHEN
-	err := tc.RunOperation(ctx, deleteApplicationLabelRequest, nil)
-
-	//THEN
-	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: scenarios label can not be deleted from application")
-}
-
 func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -648,7 +629,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	labelFilterGQL, err := tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	applicationRequest := fixApplicationsRequest(labelFilterGQL, 5, "")
+	applicationRequest := fixApplicationsFilteredPageableRequest(labelFilterGQL, 5, "")
 	applicationPage := graphql.ApplicationPageExt{}
 	err = tc.RunOperation(ctx, applicationRequest, &applicationPage)
 	require.NoError(t, err)
@@ -670,7 +651,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	labelFilterGQL, err = tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	applicationRequest = fixApplicationsRequest(labelFilterGQL, 5, "")
+	applicationRequest = fixApplicationsFilteredPageableRequest(labelFilterGQL, 5, "")
 	applicationPage = graphql.ApplicationPageExt{}
 	err = tc.RunOperation(ctx, applicationRequest, &applicationPage)
 	require.NoError(t, err)
@@ -727,7 +708,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelFilterGQL, err := tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	runtimesRequest := fixRuntimesRequest(labelFilterGQL, 5, "")
+	runtimesRequest := fixRuntimesFilteredPageableRequest(labelFilterGQL, 5, "")
 	runtimePage := graphql.RuntimePageExt{}
 	err = tc.RunOperation(ctx, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
@@ -749,7 +730,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelFilterGQL, err = tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	runtimesRequest = fixRuntimesRequest(labelFilterGQL, 5, "")
+	runtimesRequest = fixRuntimesFilteredPageableRequest(labelFilterGQL, 5, "")
 	runtimePage = graphql.RuntimePageExt{}
 	err = tc.RunOperation(ctx, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
@@ -831,4 +812,21 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//THEN
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `must be one of the following: "DEFAULT", "Christmas", "New Year"`)
+}
+
+func TestGetScenariosLabelDefinitionCreatesOneIfNotExists(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	tenantID := testTenants.GetIDByName(t, "TestGetScenariosLabelDefinitionCreatesOneIfNotExists")
+	getLabelDefinitionRequest := fixLabelDefinitionRequest(scenariosLabel)
+	labelDefinition := graphql.LabelDefinition{}
+
+	// WHEN
+	err := tc.RunOperationWithCustomTenant(ctx, tenantID, getLabelDefinitionRequest, &labelDefinition)
+
+	// THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, labelDefinition)
+	assert.Equal(t, scenariosLabel, labelDefinition.Key)
+	assert.NotEmpty(t, labelDefinition.Schema)
 }

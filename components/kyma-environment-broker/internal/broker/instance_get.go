@@ -28,7 +28,7 @@ func NewGetInstance(instancesStorage storage.Instances, log logrus.FieldLogger) 
 //   GET /v2/service_instances/{instance_id}
 func (b *GetInstanceEndpoint) GetInstance(ctx context.Context, instanceID string) (domain.GetInstanceDetailsSpec, error) {
 	logger := b.log.WithField("instanceID", instanceID)
-	b.log.Infof("GetInstance instanceID:", instanceID)
+	b.log.Infof("GetInstance instanceID: %s", instanceID)
 
 	inst, err := b.instancesStorage.GetByID(instanceID)
 	if err != nil {

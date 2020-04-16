@@ -19,6 +19,11 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 				Namespace: "bello",
 			},
 			{
+				Component: "custom-component",
+				Namespace: "bello",
+				SourceURL: ptr.String("github.com/kyma-incubator/custom-component"),
+			},
+			{
 				Component: "hakuna",
 				Namespace: "matata",
 				Configuration: []*gqlschema.ConfigEntryInput{
@@ -29,7 +34,7 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 					},
 					{
 						Key:   "testing-public-key",
-						Value: "testing-public-value",
+						Value: "testing-public-value\nmultiline",
 					},
 				},
 			},
@@ -54,6 +59,11 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
             namespace: "bello", 
           }
           {
+            component: "custom-component",
+            namespace: "bello",
+            sourceURL: "github.com/kyma-incubator/custom-component", 
+          }
+          {
             component: "hakuna",
             namespace: "matata",
             configuration: [
@@ -64,7 +74,7 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
               }
               {
                 key: "testing-public-key",
-                value: "testing-public-value",
+                value: "testing-public-value\nmultiline",
               } 
             ] 
           } 

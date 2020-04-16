@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	intSysKey = "integration-system-id"
+	intSysKey = "integrationSystemID"
 	nameKey   = "name"
 )
 
@@ -92,6 +92,7 @@ type LabelUpsertService interface {
 //go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
+	AddDefaultScenarioIfEnabled(labels *map[string]interface{})
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -245,7 +246,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	}
 
 	id := s.uidService.Generate()
-	app := in.ToApplication(s.timestampGen(), model.ApplicationStatusConditionInitial, id, appTenant)
+	app := in.ToApplication(s.timestampGen(), id, appTenant)
 
 	err = s.appRepo.Create(ctx, app)
 	if err != nil {
@@ -256,14 +257,11 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	if err != nil {
 		return "", err
 	}
+	s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
 
-	if _, ok := in.Labels[model.ScenariosKey]; !ok {
-		if in.Labels == nil {
-			in.Labels = map[string]interface{}{}
-		}
-		in.Labels[model.ScenariosKey] = model.ScenariosDefaultValue
+	if in.Labels == nil {
+		in.Labels = map[string]interface{}{}
 	}
-
 	in.Labels[intSysKey] = ""
 	if in.IntegrationSystemID != nil {
 		in.Labels[intSysKey] = *in.IntegrationSystemID
@@ -306,7 +304,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		return errors.Wrap(err, "while getting Application")
 	}
 
-	app.SetFromUpdateInput(in)
+	app.SetFromUpdateInput(in, s.timestampGen())
 
 	err = s.appRepo.Update(ctx, app)
 	if err != nil {
@@ -415,10 +413,6 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	if key == model.ScenariosKey {
-		return fmt.Errorf("%s label can not be deleted from application", model.ScenariosKey)
 	}
 
 	appExists, err := s.appRepo.Exists(ctx, appTenant, applicationID)

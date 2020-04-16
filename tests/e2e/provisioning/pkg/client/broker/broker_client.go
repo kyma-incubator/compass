@@ -128,7 +128,7 @@ func (c *Client) DeprovisionRuntime() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "while waiting for successful deprovision call")
 	}
-	c.log.Infof("Successfully send deprovision request")
+	c.log.Infof("Successfully send deprovision request, got operation ID %s", response.Operation)
 	return response.Operation, nil
 }
 

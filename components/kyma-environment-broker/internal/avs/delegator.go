@@ -4,45 +4,40 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	evaluationIdKey = "avs_bridge.config.evaluations.cluster.id"
-	avsBridgeAPIKey = "avs_bridge.config.availabilityService.apiKey"
-)
-
 type Delegator struct {
-	operationManager *process.OperationManager
+	operationManager *process.ProvisionOperationManager
 	avsConfig        Config
 	clientHolder     *clientHolder
 }
 
 func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Delegator {
 	return &Delegator{
-		operationManager: process.NewOperationManager(operationsStorage),
+		operationManager: process.NewProvisionOperationManager(operationsStorage),
 		avsConfig:        avsConfig,
 		clientHolder:     newClientHolder(avsConfig),
 	}
 }
 
-func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.ProvisioningOperation, modelSupplier func(provisioningOperation internal.ProvisioningOperation) (*BasicEvaluationCreateRequest, error)) (internal.ProvisioningOperation, time.Duration, error) {
-	logger.Infof("starting the step")
+func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
+	logger.Infof("starting the step avs internal id [%d] and avs external id [%d]", operation.AvsEvaluationInternalId, operation.AVSEvaluationExternalId)
 
-	if operation.AvsEvaluationInternalId != 0 {
-		msg := fmt.Sprintf("step has already been finished previously")
-		return del.operationManager.OperationSucceeded(operation, msg)
+	if evalAssistant.CheckIfAlreadyDone(operation) {
+		logger.Infof("step has already been finished previously")
+		return operation, 0, nil
 	}
 
-	evaluationObject, err := modelSupplier(operation)
+	evaluationObject, err := evalAssistant.CreateBasicEvaluationRequest(operation, url)
 	if err != nil {
 		logger.Errorf("step failed with error %v", err)
 		return operation, 5 * time.Second, nil
@@ -54,20 +49,11 @@ func (del *Delegator) DoRun(logger logrus.FieldLogger, operation internal.Provis
 		return operation, 30 * time.Second, nil
 	}
 
-	operation.AvsEvaluationInternalId = evalResp.Id
+	evalAssistant.SetEvalId(&operation, evalResp.Id)
 
 	updatedOperation, d := del.operationManager.UpdateOperation(operation)
 
-	updatedOperation.InputCreator.SetOverrides("avs-bridge", []*gqlschema.ConfigEntryInput{
-		{
-			Key:   evaluationIdKey,
-			Value: strconv.FormatInt(updatedOperation.AvsEvaluationInternalId, 10),
-		},
-		{
-			Key:   avsBridgeAPIKey,
-			Value: del.avsConfig.ApiKey,
-		},
-	})
+	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.AvsEvaluationInternalId)
 
 	return updatedOperation, d, nil
 }
@@ -90,13 +76,16 @@ func (del *Delegator) postRequest(evaluationRequest *BasicEvaluationCreateReques
 		return nil, err
 	}
 
+	logger.Infof("Sending json body %s", string(objAsBytes))
+
 	resp, err := httpClient.Do(request)
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		msg := fmt.Sprintf("Got unexpected status %del while creating internal evaluation", resp.StatusCode)
+		msg := fmt.Sprintf("Got unexpected status %d and response %s while creating internal evaluation", resp.StatusCode, responseBody(resp))
 		logger.Error(msg)
 		return nil, fmt.Errorf(msg)
 	}
@@ -114,4 +103,12 @@ func deserialize(resp *http.Response, err error) (*BasicEvaluationCreateResponse
 	var responseObject BasicEvaluationCreateResponse
 	err = dec.Decode(&responseObject)
 	return &responseObject, err
+}
+
+func responseBody(resp *http.Response) string {
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+	return string(bodyBytes)
 }

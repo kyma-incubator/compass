@@ -27,7 +27,6 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion:      "1.15.4",
-			NodeCount:              3,
 			VolumeSizeGb:           30,
 			MachineType:            "n1-standard-4",
 			Region:                 "europe",
@@ -378,7 +377,7 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 }
 
 func TestResolver_RuntimeOperationStatus(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
 
 	t.Run("Should return operation status", func(t *testing.T) {
@@ -399,6 +398,7 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		}
 
 		provisioningService.On("RuntimeOperationStatus", operationID).Return(operationStatus, nil)
+		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
 		//when
 		status, err := provisioner.RuntimeOperationStatus(ctx, operationID)
@@ -406,6 +406,33 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		//then
 		require.NoError(t, err)
 		assert.Equal(t, operationStatus, status)
+	})
+
+	t.Run("Should return error when tenant validation fails", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+		provisioner := NewResolver(provisioningService, validator)
+
+		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
+		message := "some message"
+
+		operationStatus := &gqlschema.OperationStatus{
+			ID:        &operationID,
+			Operation: gqlschema.OperationTypeProvision,
+			State:     gqlschema.OperationStateInProgress,
+			RuntimeID: &runtimeID,
+			Message:   &message,
+		}
+
+		provisioningService.On("RuntimeOperationStatus", operationID).Return(operationStatus, nil)
+		validator.On("ValidateTenant", runtimeID, tenant).Return(errors.New("oh no"))
+		//when
+		status, err := provisioner.RuntimeOperationStatus(ctx, operationID)
+
+		//then
+		require.Error(t, err)
+		require.Empty(t, status)
 	})
 
 	t.Run("Should return error when Runtime Operation fails", func(t *testing.T) {

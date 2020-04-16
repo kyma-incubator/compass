@@ -74,14 +74,7 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
 	log.Infof("Requested deprovisioning of Runtime %s.", id)
 
-	tenant, err := getTenant(ctx)
-
-	if err != nil {
-		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
-		return "", err
-	}
-
-	err = r.validator.ValidateTenant(id, tenant)
+	tenant, err := r.getAndValidateTenant(ctx, id)
 
 	if err != nil {
 		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
@@ -109,14 +102,7 @@ func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string
 func (r *Resolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
 	log.Infof("Requested to get status for Runtime %s.", runtimeID)
 
-	tenant, err := getTenant(ctx)
-
-	if err != nil {
-		log.Errorf("Failed to get status for Runtime %s: %s", runtimeID, err)
-		return nil, err
-	}
-
-	err = r.validator.ValidateTenant(runtimeID, tenant)
+	_, err := r.getAndValidateTenant(ctx, runtimeID)
 
 	if err != nil {
 		log.Errorf("Failed to get status for Runtime %s: %s", runtimeID, err)
@@ -141,9 +127,32 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 		log.Errorf("Failed to get Runtime operation status: %s Operation ID: %s", err, operationID)
 		return nil, err
 	}
+
+	_, err = r.getAndValidateTenant(ctx, *status.RuntimeID)
+
+	if err != nil {
+		log.Errorf("Failed to get Runtime operation status: %s Operation ID: %s, Runtime: %s", err, operationID, *status.RuntimeID)
+		return nil, err
+	}
+
 	log.Infof("Getting Runtime operation status for Operation %s succeeded.", operationID)
 
 	return status, nil
+}
+
+func (r *Resolver) getAndValidateTenant(ctx context.Context, runtimeID string) (string, error) {
+	tenant, err := getTenant(ctx)
+
+	if err != nil {
+		return "", err
+	}
+
+	err = r.validator.ValidateTenant(runtimeID, tenant)
+
+	if err != nil {
+		return "", err
+	}
+	return tenant, nil
 }
 
 func getTenant(ctx context.Context) (string, error) {

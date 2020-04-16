@@ -16,6 +16,7 @@ const (
 	schemaName         = "public"
 	InstancesTableName = "instances"
 	OperationTableName = "operations"
+	LMSTenantTableName = "lms_tenants"
 	connectionRetries  = 10
 )
 

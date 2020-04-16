@@ -14,7 +14,14 @@ import (
 
 const tableName string = `public.business_tenant_mappings`
 
-var tableColumns = []string{"id", "external_name", "external_tenant", "provider_name", "status"}
+var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, providerNameColumn, statusColumn}
+var (
+	idColumn             = "id"
+	externalNameColumn   = "external_name"
+	externalTenantColumn = "external_tenant"
+	providerNameColumn   = "provider_name"
+	statusColumn         = "status"
+)
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
@@ -39,7 +46,7 @@ func NewRepository(conv Converter) *pgRepository {
 		existQuerierGlobal: repo.NewExistQuerierGlobal(tableName),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(tableName, tableColumns),
 		listerGlobal:       repo.NewListerGlobal(tableName, tableColumns),
-		updaterGlobal:      repo.NewUpdaterGlobal(tableName, []string{"external_name", "external_tenant", "provider_name", "status"}, []string{"id"}),
+		updaterGlobal:      repo.NewUpdaterGlobal(tableName, []string{externalNameColumn, externalTenantColumn, providerNameColumn, statusColumn}, []string{idColumn}),
 		deleterGlobal:      repo.NewDeleterGlobal(tableName),
 		conv:               conv,
 	}
@@ -52,8 +59,8 @@ func (r *pgRepository) Create(ctx context.Context, item model.BusinessTenantMapp
 func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	var entity Entity
 	conditions := repo.Conditions{
-		repo.NewEqualCondition("id", id),
-		repo.NewNotEqualCondition("status", string(Inactive))}
+		repo.NewEqualCondition(idColumn, id),
+		repo.NewNotEqualCondition(statusColumn, string(Inactive))}
 	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
@@ -64,8 +71,8 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenan
 func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
 	var entity Entity
 	conditions := repo.Conditions{
-		repo.NewEqualCondition("external_tenant", externalTenant),
-		repo.NewNotEqualCondition("status", string(Inactive))}
+		repo.NewEqualCondition(externalTenantColumn, externalTenant),
+		repo.NewNotEqualCondition(statusColumn, string(Inactive))}
 	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
@@ -73,17 +80,17 @@ func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenant s
 }
 
 func (r *pgRepository) Exists(ctx context.Context, id string) (bool, error) {
-	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
 func (r *pgRepository) ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error) {
-	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("external_tenant", externalTenant)})
+	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition(externalTenantColumn, externalTenant)})
 }
 
 func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection EntityCollection
 
-	condition := fmt.Sprintf("status = %s", pq.QuoteLiteral(string(Active)))
+	condition := fmt.Sprintf("%s = %s", statusColumn, pq.QuoteLiteral(string(Active)))
 	err := r.listerGlobal.ListGlobal(ctx, &entityCollection, condition)
 	if err != nil {
 		return nil, err
@@ -106,4 +113,12 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 	entity := r.conv.ToEntity(model)
 
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
+}
+
+func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenant string) error {
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(externalTenantColumn, externalTenant),
+	}
+
+	return r.deleterGlobal.DeleteManyGlobal(ctx, conditions)
 }

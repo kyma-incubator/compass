@@ -28,6 +28,8 @@ const (
 
 	kymaSystemNamespace      = "kyma-system"
 	kymaIntegrationNamespace = "kyma-integration"
+
+	rafterSourceURL = "github.com/kyma-project/kyma.git//resources/rafter"
 )
 
 const (
@@ -263,10 +265,11 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 		modificationFunc(installationCR)
 
 		// then
-		require.Equal(t, 3, len(installationCR.Spec.Components))
-		assertComponent(t, "cluster-essentials", kymaSystemNamespace, installationCR.Spec.Components[0])
-		assertComponent(t, "core", kymaSystemNamespace, installationCR.Spec.Components[1])
-		assertComponent(t, "application-connector", kymaIntegrationNamespace, installationCR.Spec.Components[2])
+		require.Equal(t, 4, len(installationCR.Spec.Components))
+		assertComponent(t, "cluster-essentials", kymaSystemNamespace, nil, installationCR.Spec.Components[0])
+		assertComponent(t, "core", kymaSystemNamespace, nil, installationCR.Spec.Components[1])
+		assertComponent(t, "rafter", kymaSystemNamespace, &v1alpha1.ComponentSource{URL: rafterSourceURL}, installationCR.Spec.Components[2])
+		assertComponent(t, "application-connector", kymaIntegrationNamespace, nil, installationCR.Spec.Components[3])
 	})
 
 	t.Run("should have no components if configuration is empty", func(t *testing.T) {
@@ -336,9 +339,10 @@ func (i errorInstallerMock) StartInstallation(context context.Context) (<-chan i
 	return nil, nil, i.startInstallationError
 }
 
-func assertComponent(t *testing.T, expectedName, expectedNamespace string, component v1alpha1.KymaComponent) {
+func assertComponent(t *testing.T, expectedName, expectedNamespace string, expectedSource *v1alpha1.ComponentSource, component v1alpha1.KymaComponent) {
 	assert.Equal(t, expectedName, component.Name)
 	assert.Equal(t, expectedNamespace, component.Namespace)
+	assert.Equal(t, expectedSource, component.Source)
 }
 
 func fixInstallationConfig() installation.Configuration {
@@ -359,6 +363,10 @@ func fixInstallationConfig() installation.Configuration {
 					fixInstallationConfigEntry("test.config.key", "value", false),
 					fixInstallationConfigEntry("test.config.key2", "value2", false),
 				},
+			},
+			{
+				Component:     "rafter",
+				Configuration: make([]installation.ConfigEntry, 0),
 			},
 			{
 				Component: "application-connector",
@@ -391,6 +399,14 @@ func fixComponentsConfig() []model.KymaComponentConfig {
 					model.NewConfigEntry("test.config.key2", "value2", false),
 				},
 			},
+		},
+		{
+			ID:            "id",
+			KymaConfigID:  "id",
+			Component:     "rafter",
+			Namespace:     kymaSystemNamespace,
+			SourceURL:     rafterSourceURL,
+			Configuration: model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
 		},
 		{
 			ID:           "id",

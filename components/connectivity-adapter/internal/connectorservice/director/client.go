@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/retry"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/machinebox/graphql"
 )
@@ -65,13 +66,10 @@ type ApplicationResponse struct {
 }
 
 func (c *client) execute(client *graphql.Client, query string, res interface{}) error {
-
 	req := graphql.NewRequest(query)
 
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
-	err := client.Run(ctx, req, res)
-
-	return err
+	return retry.GQLRun(client.Run, ctx, req, res)
 }

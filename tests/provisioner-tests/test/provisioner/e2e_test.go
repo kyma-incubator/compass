@@ -161,7 +161,6 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.KubernetesVersion, clusterConfig.KubernetesVersion)
 	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.VolumeSizeGb, clusterConfig.VolumeSizeGb)
 	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.MachineType, clusterConfig.MachineType)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.NodeCount, clusterConfig.NodeCount)
 	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.DiskType, clusterConfig.DiskType)
 	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Provider, clusterConfig.Provider)
 	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.WorkerCidr, clusterConfig.WorkerCidr)
