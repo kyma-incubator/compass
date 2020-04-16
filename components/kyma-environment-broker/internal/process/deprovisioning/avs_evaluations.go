@@ -34,6 +34,7 @@ func (ars *AvsEvaluationRemovalStep) Name() string {
 }
 
 func (ars *AvsEvaluationRemovalStep) Run(deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	logger.Infof("Avs lifecycle %+v", deProvisioningOperation.Avs)
 	if deProvisioningOperation.Avs.AVSExternalEvaluationDeleted && deProvisioningOperation.Avs.AVSInternalEvaluationDeleted {
 		logger.Infof("Both internal and external evaluations have been deleted")
 		return deProvisioningOperation, 0, nil
