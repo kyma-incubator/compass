@@ -15,10 +15,10 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 )
 
-// ensure the fake client is implementing the interface
+// ensure the fake Client is implementing the interface
 var _ azure.AzureInterface = (*FakeNamespaceClient)(nil)
 
-/// A fake client for Azure EventHubs Namespace handling
+/// A fake Client for Azure EventHubs Namespace handling
 type FakeNamespaceClient struct {
 	PersistEventhubsNamespaceError error
 	ResourceGroupError             error
@@ -116,28 +116,28 @@ func NewFakeNamespaceClientResourceGroupExists() *FakeNamespaceClient {
 	}
 }
 
-// ensure the fake client is implementing the interface
-var _ azure.HyperscalerProvider = (*fakeHyperscalerProvider)(nil)
+// ensure the fake Client is implementing the interface
+var _ azure.HyperscalerProvider = (*FakeHyperscalerProvider)(nil)
 
-type fakeHyperscalerProvider struct {
-	client azure.AzureInterface
-	err    error
+type FakeHyperscalerProvider struct {
+	Client azure.AzureInterface
+	Err    error
 }
 
-func (ac *fakeHyperscalerProvider) GetClient(config *azure.Config, logger logrus.FieldLogger) (azure.AzureInterface, error) {
-	return ac.client, ac.err
+func (ac *FakeHyperscalerProvider) GetClient(config *azure.Config, logger logrus.FieldLogger) (azure.AzureInterface, error) {
+	return ac.Client, ac.Err
 }
 
 func NewFakeHyperscalerProvider(client azure.AzureInterface) azure.HyperscalerProvider {
-	return &fakeHyperscalerProvider{
-		client: client,
-		err:    nil,
+	return &FakeHyperscalerProvider{
+		Client: client,
+		Err:    nil,
 	}
 }
 
 func NewFakeHyperscalerProviderError() azure.HyperscalerProvider {
-	return &fakeHyperscalerProvider{
-		client: nil,
-		err:    fmt.Errorf("ups ... hyperscaler provider could not provide a hyperscaler client"),
+	return &FakeHyperscalerProvider{
+		Client: nil,
+		Err:    fmt.Errorf("ups ... hyperscaler provider could not provide a hyperscaler Client"),
 	}
 }

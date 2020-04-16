@@ -24,108 +24,141 @@ const (
 	fixSubAccountID = "test-sub-account-id"
 )
 
-// TODO: table test ?
-// Idea:
-// 1. a ResourceGroup exists before we call the deproviosioning step
-// 2. resourceGroup is in deletion state during retry wait time before we call the deproviosioning step again
-// 3. expectation is that no new deprovisioning is triggered
-// 4. after calling step again - expectation is that the deprovisioning succeeded now
-func Test_DeprovisionSucceeded_ResourceGroupInDeletionMode(t *testing.T) {
-	// given
-	memoryStorage := storage.NewMemoryStorage()
-	accountProvider := fixAccountProvider()
-	namespaceClientResourceGroupExists := azuretesting.NewFakeNamespaceClientResourceGroupExists()
-	namespaceClientResourceGroupInDeletionMode := azuretesting.NewFakeNamespaceClientResourceGroupInDeletionMode()
-	namespaceClientResourceGroupDoesNotExist := azuretesting.NewFakeNamespaceClientResourceGroupDoesNotExist()
+type wantStateFunction = func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error, azureClient azuretesting.FakeNamespaceClient)
 
-	stepResourceGroupExists := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupExists), accountProvider)
-	stepResourceGroupInDeletionMode := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupInDeletionMode), accountProvider)
-	stepResourceGroupDoesNotExist := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupDoesNotExist), accountProvider)
-	op := fixDeprovisioningOperationWithParameters()
-	// this is required to avoid storage retries (without this statement there will be an error => retry)
-	err := memoryStorage.Operations().InsertDeprovisioningOperation(op)
-	require.NoError(t, err)
+func Test_StepsProvisionSucceeded(t *testing.T) {
+	tests := []struct {
+		name                string
+		giveOperation       func() internal.DeprovisioningOperation
+		giveSteps           func(t *testing.T, memoryStorageOp storage.Operations, accountProvider *hyperscalerautomock.AccountProvider) []DeprovisionAzureEventHubStep
+		wantRepeatOperation bool
+		wantStates          func(t *testing.T) []wantStateFunction
+	}{
+		{
+			// 1. a ResourceGroup exists before we call the deproviosioning step
+			// 2. resourceGroup is in deletion state during retry wait time before we call the deproviosioning step again
+			// 3. expectation is that no new deprovisioning is triggered
+			// 4. after calling step again - expectation is that the deprovisioning succeeded now
+			name:          "ResourceGroupInDeletionMode",
+			giveOperation: fixDeprovisioningOperationWithParameters,
+			giveSteps: func(t *testing.T, memoryStorageOp storage.Operations, accountProvider *hyperscalerautomock.AccountProvider) []DeprovisionAzureEventHubStep {
+				namespaceClientResourceGroupExists := azuretesting.NewFakeNamespaceClientResourceGroupExists()
+				namespaceClientResourceGroupInDeletionMode := azuretesting.NewFakeNamespaceClientResourceGroupInDeletionMode()
+				namespaceClientResourceGroupDoesNotExist := azuretesting.NewFakeNamespaceClientResourceGroupDoesNotExist()
 
-	// when
-	op.UpdatedAt = time.Now()
-	op, _, err = stepResourceGroupExists.Run(op, fixLogger())
-	require.NoError(t, err)
+				stepResourceGroupExists := fixEventHubStep(memoryStorageOp, azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupExists), accountProvider)
+				stepResourceGroupInDeletionMode := fixEventHubStep(memoryStorageOp, azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupInDeletionMode), accountProvider)
+				stepResourceGroupDoesNotExist := fixEventHubStep(memoryStorageOp, azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupDoesNotExist), accountProvider)
 
-	// then
-	// retry is triggered to wait for deletion
-	ensureOperationIsRepeated(t, err, time.Minute, op)
+				return []DeprovisionAzureEventHubStep{
+					stepResourceGroupExists,
+					stepResourceGroupInDeletionMode,
+					stepResourceGroupDoesNotExist,
+				}
+			},
+			wantStates: func(t *testing.T) []wantStateFunction {
+				return []wantStateFunction{
+					func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error, azureClient azuretesting.FakeNamespaceClient) {
+						ensureOperationIsRepeated(t, operation, when, err)
+					},
+					func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error, azureClient azuretesting.FakeNamespaceClient) {
+						assert.False(t, azureClient.DeleteResourceGroupCalled)
+						ensureOperationIsRepeated(t, operation, when, err)
+					},
+					func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error, azureClient azuretesting.FakeNamespaceClient) {
+						ensureOperationSuccessful(t, operation, when, err)
+					},
+				}
+			},
+		},
+		{
+			// Idea:
+			// 1. a ResourceGroup exists before we call the deproviosioning step
+			// 2. resourceGroup got deleted during retry wait time before we call the deproviosioning step again
+			// 3. expectation is that the deprovisioning succeeded now
+			name:          "ResourceGroupExists",
+			giveOperation: fixDeprovisioningOperationWithParameters,
+			giveSteps: func(t *testing.T, memoryStorageOp storage.Operations, accountProvider *hyperscalerautomock.AccountProvider) []DeprovisionAzureEventHubStep {
 
-	// when
-	op, when, err := stepResourceGroupInDeletionMode.Run(op, fixLogger())
-	require.NoError(t, err)
+				namespaceClientResourceGroupExists := azuretesting.NewFakeNamespaceClientResourceGroupExists()
+				namespaceClientResourceGroupDoesNotExist := azuretesting.NewFakeNamespaceClientResourceGroupDoesNotExist()
 
-	// then
-	// do not try to delete again
-	assert.False(t, namespaceClientResourceGroupInDeletionMode.DeleteResourceGroupCalled)
-	ensureOperationIsRepeated(t, err, when, op)
+				stepResourceGroupExists := fixEventHubStep(memoryStorageOp, azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupExists), accountProvider)
+				stepResourceGroupDoesNotExist := fixEventHubStep(memoryStorageOp, azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupDoesNotExist), accountProvider)
+				return []DeprovisionAzureEventHubStep{
+					stepResourceGroupExists,
+					stepResourceGroupDoesNotExist,
+				}
+			},
+			wantStates: func(t *testing.T) []wantStateFunction {
+				return []wantStateFunction{
+					func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error, azureClient azuretesting.FakeNamespaceClient) {
+						ensureOperationIsRepeated(t, operation, when, err)
+					},
+					func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error, azureClient azuretesting.FakeNamespaceClient) {
+						ensureOperationSuccessful(t, operation, when, err)
+					},
+				}
+			},
+		},
+		{
 
-	// when
-	op, when, err = stepResourceGroupDoesNotExist.Run(op, fixLogger())
-	require.NoError(t, err)
+			// Idea:
+			// 1. a ResourceGroup does not exist before we call the deproviosioning step
+			// 2. expectation is that the deprovisioning succeeded
+			name: "ResourceGroupDoesNotExist",
+			giveSteps: func(t *testing.T, memoryStorageOp storage.Operations, accountProvider *hyperscalerautomock.AccountProvider) []DeprovisionAzureEventHubStep {
+				namespaceClient := azuretesting.NewFakeNamespaceClientResourceGroupDoesNotExist()
+				step := fixEventHubStep(memoryStorageOp, azuretesting.NewFakeHyperscalerProvider(namespaceClient), accountProvider)
 
-	// then
-	ensureOperationSuccessful(t, when, op)
-}
+				return []DeprovisionAzureEventHubStep{
+					step,
+				}
+			},
+			wantStates: func(t *testing.T) []wantStateFunction {
+				return []wantStateFunction{
+					func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error, azureClient azuretesting.FakeNamespaceClient) {
+						ensureOperationSuccessful(t, operation, when, err)
+					},
+				}
+			},
+		},
+	}
 
-// TODO: table test ?
-// Idea:
-// 1. a ResourceGroup exists before we call the deproviosioning step
-// 2. resourceGroup got deleted during retry wait time before we call the deproviosioning step again
-// 3. expectation is that the deprovisioning succeeded now
-func Test_DeprovisionSucceeded_ResourceGroupExists(t *testing.T) {
-	// given
-	memoryStorage := storage.NewMemoryStorage()
-	accountProvider := fixAccountProvider()
-	namespaceClientResourceGroupExists := azuretesting.NewFakeNamespaceClientResourceGroupExists()
-	namespaceClientResourceGroupDoesNotExist := azuretesting.NewFakeNamespaceClientResourceGroupDoesNotExist()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// given
+			memoryStorage := storage.NewMemoryStorage()
+			accountProvider := fixAccountProvider()
 
-	stepResourceGroupExists := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupExists), accountProvider)
-	stepResourceGroupDoesNotExist := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupDoesNotExist), accountProvider)
-	op := fixDeprovisioningOperationWithParameters()
-	// this is required to avoid storage retries (without this statement there will be an error => retry)
-	err := memoryStorage.Operations().InsertDeprovisioningOperation(op)
-	require.NoError(t, err)
+			op := fixDeprovisioningOperationWithParameters()
+			// this is required to avoid storage retries (without this statement there will be an error => retry)
+			err := memoryStorage.Operations().InsertDeprovisioningOperation(op)
+			require.NoError(t, err)
+			steps := tt.giveSteps(t, memoryStorage.Operations(), accountProvider)
+			wantStates := tt.wantStates(t)
+			for idx, step := range steps {
+				// when
+				op.UpdatedAt = time.Now()
+				op, when, err := step.Run(op, fixLogger())
+				require.NoError(t, err)
 
-	// when
-	op.UpdatedAt = time.Now()
-	op, _, err = stepResourceGroupExists.Run(op, fixLogger())
-	require.NoError(t, err)
+				fakeHyperscalerProvider, ok := step.HyperscalerProvider.(*azuretesting.FakeHyperscalerProvider)
+				if !ok {
+					require.True(t, ok)
+				}
+				fakeAzureClient, ok := fakeHyperscalerProvider.Client.(*azuretesting.FakeNamespaceClient)
+				if !ok {
+					require.True(t, ok)
+				}
 
-	// then
-	// retry is triggered to wait for deletion
-	ensureOperationIsRepeated(t, err, time.Minute, op)
+				// then
+				wantStates[idx](t, op, when, err, *fakeAzureClient)
+			}
 
-	// when
-	op, when, err := stepResourceGroupDoesNotExist.Run(op, fixLogger())
-	require.NoError(t, err)
+		})
+	}
 
-	// then
-	ensureOperationSuccessful(t, when, op)
-}
-
-func Test_DeprovisionSucceeded_ResourceGroupDoesNotExist(t *testing.T) {
-	// given
-	memoryStorage := storage.NewMemoryStorage()
-	accountProvider := fixAccountProvider()
-	namespaceClient := azuretesting.NewFakeNamespaceClientResourceGroupDoesNotExist()
-	step := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClient), accountProvider)
-	op := fixDeprovisioningOperationWithParameters()
-	// this is required to avoid storage retries (without this statement there will be an error => retry)
-	err := memoryStorage.Operations().InsertDeprovisioningOperation(op)
-	require.NoError(t, err)
-
-	// when
-	op.UpdatedAt = time.Now()
-	op, when, err := step.Run(op, fixLogger())
-	require.NoError(t, err)
-
-	// then
-	ensureOperationSuccessful(t, when, op)
 }
 
 func fixTags() azure.Tags {
@@ -186,7 +219,7 @@ func fixDeprovisioningOperationWithParameters() internal.DeprovisioningOperation
 // manager.go: if processedOperation.State != domain.InProgress { return 0, nil } => repeat
 // queue.go: if err == nil && when != 0 => repeat
 
-func ensureOperationIsRepeated(t *testing.T, err error, when time.Duration, op internal.DeprovisioningOperation) {
+func ensureOperationIsRepeated(t *testing.T, op internal.DeprovisioningOperation, when time.Duration, err error) {
 	t.Helper()
 	assert.Nil(t, err)
 	assert.True(t, when != 0)
@@ -198,7 +231,7 @@ func ensureOperationIsNotRepeated(t *testing.T, err error) {
 	assert.NotNil(t, err)
 }
 
-func ensureOperationSuccessful(t *testing.T, when time.Duration, op internal.DeprovisioningOperation) {
+func ensureOperationSuccessful(t *testing.T, op internal.DeprovisioningOperation, when time.Duration, err error) {
 	t.Helper()
 	assert.Equal(t, when, time.Duration(0))
 	assert.Equal(t, op.Operation.State, domain.Succeeded)
