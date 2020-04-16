@@ -29,10 +29,11 @@ func (r *ProvisioningOperator) Initial(
 	labels := gqlschema.Labels{
 		"gardenerClusterName": shoot.ObjectMeta.Name,
 	}
-	if shoot.Spec.DNS.Domain != nil {
+	if shoot.Spec.DNS != nil && shoot.Spec.DNS.Domain != nil {
 		labels["gardenerClusterDomain"] = *shoot.Spec.DNS.Domain
 	}
 	statusCondition := gqlschema.RuntimeStatusConditionProvisioning
+	//runtime, err := r.directorClient.GetRuntime(runtimeId)
 	runtimeInput := &gqlschema.RuntimeInput{
 		// TODO: Add name and description. Will the directorClient.GetRuntime(runtimeId) call be necessary?
 		Labels:          &labels,
@@ -125,15 +126,16 @@ func (r *ProvisioningOperator) ProceedToInstallation(log *logrus.Entry, shoot ga
 	}
 
 	// TODO: gardenerClusterDomain label should be updated in Director if it wasn't yet
-	if shoot.Spec.DNS.Domain == nil {
-		log.Errorf("Shoot DNS domain is nil. Failed to ")
+	// TODO: Should we check if it is already?
+	if shoot.Spec.DNS == nil || shoot.Spec.DNS.Domain == nil {
+		log.Errorf("Shoot DNS domain is nil. Failed to update Director")
 		return nil
 	}
 	labels := gqlschema.Labels{
 		"gardenerClusterDomain": *shoot.Spec.DNS.Domain,
 	}
 	runtimeInput := &gqlschema.RuntimeInput{
-		// TODO: Add name, description, previous labels and status. Will the directorClient.GetRuntime(runtimeId) call be necessary?
+		// TODO: Add name, description, and status. Will the directorClient.GetRuntime(runtimeId) call be necessary?
 		Labels: &labels,
 	}
 	err = r.directorClient.UpdateRuntime(cluster.ID, runtimeInput, cluster.Tenant)

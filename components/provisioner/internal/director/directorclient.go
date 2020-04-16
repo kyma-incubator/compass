@@ -26,6 +26,7 @@ type DirectorClient interface {
 	UpdateRuntime(id string, config *gqlschema.RuntimeInput, tenant string) error
 	DeleteRuntime(id, tenant string) error
 	GetConnectionToken(id, tenant string) (graphql.OneTimeTokenForRuntimeExt, error)
+	//GetRuntime(id, tenant string) (graphql.Runtime, error)
 }
 
 type directorClient struct {

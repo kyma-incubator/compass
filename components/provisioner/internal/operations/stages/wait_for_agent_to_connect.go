@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,13 +35,20 @@ func NewCompassConnectionClient(k8sConfig *rest.Config) (compass_conn_clientset.
 
 type WaitForAgentToConnectStep struct {
 	newCompassConnectionClient CompassConnectionClientConstructor
+	directorClient             director.DirectorClient
 	nextStep                   model.OperationStage
 	timeLimit                  time.Duration
 }
 
-func NewWaitForAgentToConnectStep(ccClientProvider CompassConnectionClientConstructor, nextStep model.OperationStage, timeLimit time.Duration) *WaitForAgentToConnectStep {
+func NewWaitForAgentToConnectStep(
+	ccClientProvider CompassConnectionClientConstructor,
+	nextStep model.OperationStage,
+	timeLimit time.Duration,
+	directorClient director.DirectorClient) *WaitForAgentToConnectStep {
+
 	return &WaitForAgentToConnectStep{
 		newCompassConnectionClient: ccClientProvider,
+		directorClient:             directorClient,
 		nextStep:                   nextStep,
 		timeLimit:                  timeLimit,
 	}
@@ -56,16 +65,19 @@ func (s *WaitForAgentToConnectStep) TimeLimit() time.Duration {
 func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
+		// TODO: Update Director with FAILED state
 		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
 
 	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
+		// TODO: Update Director with FAILED state
 		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
 
 	compassConnClient, err := s.newCompassConnectionClient(k8sConfig)
 	if err != nil {
+		// TODO: Update Director with FAILED state
 		return operations.StageResult{}, fmt.Errorf("error: failed to create Compass Connection client: %s", err.Error())
 	}
 
@@ -76,10 +88,12 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 			return operations.StageResult{Stage: s.Name(), Delay: 5 * time.Second}, nil
 		}
 
+		// TODO: Update Director with FAILED state
 		return operations.StageResult{}, fmt.Errorf("error getting Compass Connection CR on the Runtime: %s", err.Error())
 	}
 
 	if compassConnCR.Status.State == v1alpha1.ConnectionFailed {
+		// TODO: Update Director with FAILED state
 		return operations.StageResult{}, fmt.Errorf("error: Compass Connection is in Failed state")
 	}
 
@@ -94,6 +108,17 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 		}
 
 		logger.Infof("Compass Connection not yet in Synchronized state, current state: %s", compassConnCR.Status.State)
+		return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Second}, nil
+	}
+
+	statusCondition := gqlschema.RuntimeStatusConditionConnected
+	runtimeInput := &gqlschema.RuntimeInput{
+		// TODO: Add name and description. Will the directorClient.GetRuntime(runtimeId) call be necessary?
+		StatusCondition: &statusCondition,
+	}
+	err = s.directorClient.UpdateRuntime(cluster.ID, runtimeInput, cluster.Tenant)
+	if err != nil {
+		logger.Errorf("Failed to update Director with Runtime status CONNECTED: %s", err.Error())
 		return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Second}, nil
 	}
 

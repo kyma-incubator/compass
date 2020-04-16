@@ -24,6 +24,8 @@ func (r *ProvisioningOperator) ProceedToFailedStep(log *logrus.Entry, shoot gard
 		return fmt.Errorf("error: failed to update shoot, after installation timeout")
 	}
 
+	// TODO: update Director with FAILED status
+
 	// TODO: we can delete Shoot if timeout occurred - maybe switched with some flag (probably not desired for debugging)
 
 	return nil
