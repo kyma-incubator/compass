@@ -7,52 +7,9 @@ import (
 	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
-
-func (r *ProvisioningOperator) Initial(
-	log *logrus.Entry,
-	shoot gardener_types.Shoot,
-	operationId, runtimeId string) (ctrl.Result, error) {
-
-	log.Infof("Updating Shoot...")
-	err := r.updateShoot(shoot, func(shootToUpdate *gardener_types.Shoot) {
-		annotate(shootToUpdate, provisioningAnnotation, Provisioning.String())
-	})
-	if err != nil {
-		log.Errorf("Error updating Shoot with retries: %s", err.Error())
-		return ctrl.Result{}, err
-	}
-
-	labels := gqlschema.Labels{
-		"gardenerClusterName": shoot.ObjectMeta.Name,
-	}
-	if shoot.Spec.DNS != nil && shoot.Spec.DNS.Domain != nil {
-		labels["gardenerClusterDomain"] = *shoot.Spec.DNS.Domain
-	}
-	statusCondition := gqlschema.RuntimeStatusConditionProvisioning
-	//runtime, err := r.directorClient.GetRuntime(runtimeId)
-	runtimeInput := &gqlschema.RuntimeInput{
-		// TODO: Add name and description. Will the directorClient.GetRuntime(runtimeId) call be necessary?
-		Labels:          &labels,
-		StatusCondition: &statusCondition,
-	}
-	session := r.dbsFactory.NewReadSession()
-	tenant, err := session.GetTenant(runtimeId)
-	if err != nil {
-		log.Errorf("Error getting Gardener cluster by name: %s", err.Error())
-		return ctrl.Result{}, err
-	}
-	err = r.directorClient.UpdateRuntime(runtimeId, runtimeInput, tenant)
-	if err != nil {
-		log.Errorf("Error updating Runtime in Director: %s", err.Error())
-		return ctrl.Result{}, err
-	}
-
-	return r.ProvisioningInProgress(log, shoot, operationId)
-}
 
 func (r *ProvisioningOperator) ProvisioningInProgress(log *logrus.Entry, shoot gardener_types.Shoot, operationId string) (ctrl.Result, error) {
 	lastOperation := shoot.Status.LastOperation
@@ -122,25 +79,6 @@ func (r *ProvisioningOperator) ProceedToInstallation(log *logrus.Entry, shoot ga
 	})
 	if err != nil {
 		log.Errorf("Error updating Shoot with retries: %s", err.Error())
-		return err
-	}
-
-	// TODO: gardenerClusterDomain label should be updated in Director if it wasn't yet
-	// TODO: Should we check if it is already?
-	if shoot.Spec.DNS == nil || shoot.Spec.DNS.Domain == nil {
-		log.Errorf("Shoot DNS domain is nil. Failed to update Director")
-		return nil
-	}
-	labels := gqlschema.Labels{
-		"gardenerClusterDomain": *shoot.Spec.DNS.Domain,
-	}
-	runtimeInput := &gqlschema.RuntimeInput{
-		// TODO: Add name, description, and status. Will the directorClient.GetRuntime(runtimeId) call be necessary?
-		Labels: &labels,
-	}
-	err = r.directorClient.UpdateRuntime(cluster.ID, runtimeInput, cluster.Tenant)
-	if err != nil {
-		log.Errorf("Error updating Runtime in Director: %s", err.Error())
 		return err
 	}
 

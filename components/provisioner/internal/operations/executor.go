@@ -70,6 +70,7 @@ func (e *Executor) Execute(operationID string) ProcessingResult {
 				log.Errorf("unrecoverable error occurred while processing operation: %s", err.Error())
 				e.handleOperationFailure(operation, cluster, log)
 				e.updateOperationStatus(log, operation.ID, nonRecoverable.Error(), model.Failed, time.Now())
+				// TODO: update Director with status FAILED
 				return ProcessingResult{Requeue: false}
 			}
 

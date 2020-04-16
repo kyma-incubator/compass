@@ -23,10 +23,10 @@ const (
 //go:generate mockery -name=DirectorClient
 type DirectorClient interface {
 	CreateRuntime(config *gqlschema.RuntimeInput, tenant string) (string, error)
+	GetRuntime(id, tenant string) (graphql.Runtime, error)
 	UpdateRuntime(id string, config *gqlschema.RuntimeInput, tenant string) error
 	DeleteRuntime(id, tenant string) error
 	GetConnectionToken(id, tenant string) (graphql.OneTimeTokenForRuntimeExt, error)
-	//GetRuntime(id, tenant string) (graphql.Runtime, error)
 }
 
 type directorClient struct {
@@ -88,6 +88,27 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput, tenant s
 	log.Infof("Successfully registered Runtime %s in Director for tenant %s", config.Name, tenant)
 
 	return response.Result.ID, nil
+}
+
+func (cc *directorClient) GetRuntime(id, tenant string) (graphql.Runtime, error) {
+	log.Infof("Getting Runtime on Director service")
+
+	runtimeQuery := cc.queryProvider.getRuntimeMutation(id)
+
+	var response GetRuntimeResponse
+	err := cc.executeDirectorGraphQLCall(runtimeQuery, tenant, &response)
+	if err != nil {
+		return graphql.Runtime{}, errors.Wrap(err, fmt.Sprintf("Failed to get runtime %s from Director", id))
+	}
+	if response.Result == nil {
+		return graphql.Runtime{}, errors.Errorf("Failed to get runtime %s get Director: received nil response.", id)
+	}
+	if response.Result.ID != id {
+		return graphql.Runtime{}, errors.Errorf("Failed to get correctly runtime %s in Director: Received wrong Runtime in the response", id)
+	}
+
+	log.Infof("Successfully got Runtime %s from Director for tenant %s", id, tenant)
+	return *response.Result, nil
 }
 
 func (cc *directorClient) UpdateRuntime(id string, config *gqlschema.RuntimeInput, tenant string) error {

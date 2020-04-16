@@ -76,7 +76,6 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		cluster.KymaConfig.GlobalConfiguration,
 		cluster.KymaConfig.Components)
 	if err != nil {
-		// TODO: Should everywhere where error occurred be a director call with FAILED status?
 		return operations.StageResult{}, fmt.Errorf("error: failed to start installation: %s", err.Error())
 	}
 

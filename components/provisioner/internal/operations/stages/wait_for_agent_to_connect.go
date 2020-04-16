@@ -65,19 +65,16 @@ func (s *WaitForAgentToConnectStep) TimeLimit() time.Duration {
 func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
-		// TODO: Update Director with FAILED state
 		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
 	}
 
 	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
-		// TODO: Update Director with FAILED state
 		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
 
 	compassConnClient, err := s.newCompassConnectionClient(k8sConfig)
 	if err != nil {
-		// TODO: Update Director with FAILED state
 		return operations.StageResult{}, fmt.Errorf("error: failed to create Compass Connection client: %s", err.Error())
 	}
 
@@ -88,12 +85,10 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 			return operations.StageResult{Stage: s.Name(), Delay: 5 * time.Second}, nil
 		}
 
-		// TODO: Update Director with FAILED state
 		return operations.StageResult{}, fmt.Errorf("error getting Compass Connection CR on the Runtime: %s", err.Error())
 	}
 
 	if compassConnCR.Status.State == v1alpha1.ConnectionFailed {
-		// TODO: Update Director with FAILED state
 		return operations.StageResult{}, fmt.Errorf("error: Compass Connection is in Failed state")
 	}
 
