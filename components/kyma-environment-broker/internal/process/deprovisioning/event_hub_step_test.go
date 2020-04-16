@@ -24,8 +24,52 @@ const (
 	fixSubAccountID = "test-sub-account-id"
 )
 
-func TestMe(t *testing.T) {
-	t.Error("implement me")
+// TODO: table test ?
+// Idea:
+// 1. a ResourceGroup exists before we call the deproviosioning step
+// 2. resourceGroup is in deletion state during retry wait time before we call the deproviosioning step again
+// 3. expectation is that no new deprovisioning is triggered
+// 4. after calling step again - expectation is that the deprovisioning succeeded now
+func Test_DeprovisionSucceeded_ResourceGroupInDeletionMode(t *testing.T) {
+	// given
+	memoryStorage := storage.NewMemoryStorage()
+	accountProvider := fixAccountProvider()
+	namespaceClientResourceGroupExists := azuretesting.NewFakeNamespaceClientResourceGroupExists()
+	namespaceClientResourceGroupInDeletionMode := azuretesting.NewFakeNamespaceClientResourceGroupInDeletionMode()
+	namespaceClientResourceGroupDoesNotExist := azuretesting.NewFakeNamespaceClientResourceGroupDoesNotExist()
+
+	stepResourceGroupExists := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupExists), accountProvider)
+	stepResourceGroupInDeletionMode := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupInDeletionMode), accountProvider)
+	stepResourceGroupDoesNotExist := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupDoesNotExist), accountProvider)
+	op := fixDeprovisioningOperationWithParameters()
+	// this is required to avoid storage retries (without this statement there will be an error => retry)
+	err := memoryStorage.Operations().InsertDeprovisioningOperation(op)
+	require.NoError(t, err)
+
+	// when
+	op.UpdatedAt = time.Now()
+	op, _, err = stepResourceGroupExists.Run(op, fixLogger())
+	require.NoError(t, err)
+
+	// then
+	// retry is triggered to wait for deletion
+	ensureOperationIsRepeated(t, err, time.Minute, op)
+
+	// when
+	op, when, err := stepResourceGroupInDeletionMode.Run(op, fixLogger())
+	require.NoError(t, err)
+
+	// then
+	// do not try to delete again
+	assert.False(t, namespaceClientResourceGroupInDeletionMode.DeleteResourceGroupCalled)
+	ensureOperationIsRepeated(t, err, when, op)
+
+	// when
+	op, when, err = stepResourceGroupDoesNotExist.Run(op, fixLogger())
+	require.NoError(t, err)
+
+	// then
+	ensureOperationSuccessful(t, when, op)
 }
 
 // TODO: table test ?
@@ -54,8 +98,7 @@ func Test_DeprovisionSucceeded_ResourceGroupExists(t *testing.T) {
 
 	// then
 	// retry is triggered to wait for deletion
-	assert.NotEqual(t, op.Operation.State, domain.Succeeded)
-	ensureOperationIsRepeated(t, err, time.Minute)
+	ensureOperationIsRepeated(t, err, time.Minute, op)
 
 	// when
 	op, when, err := stepResourceGroupDoesNotExist.Run(op, fixLogger())
@@ -143,10 +186,11 @@ func fixDeprovisioningOperationWithParameters() internal.DeprovisioningOperation
 // manager.go: if processedOperation.State != domain.InProgress { return 0, nil } => repeat
 // queue.go: if err == nil && when != 0 => repeat
 
-func ensureOperationIsRepeated(t *testing.T, err error, when time.Duration) {
+func ensureOperationIsRepeated(t *testing.T, err error, when time.Duration, op internal.DeprovisioningOperation) {
 	t.Helper()
 	assert.Nil(t, err)
 	assert.True(t, when != 0)
+	assert.NotEqual(t, op.Operation.State, domain.Succeeded)
 }
 
 func ensureOperationIsNotRepeated(t *testing.T, err error) {

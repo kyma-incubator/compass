@@ -15,10 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 )
 
-const (
-	azureFutureOperationSucceeded string = "Succeeded"
-	azureFutureOperationDeleting  string = "Deleting"
-)
 
 type DeprovisionAzureEventHubStep struct {
 	OperationManager *process.DeprovisionOperationManager
@@ -94,13 +90,13 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	// delete the resource group if it still exists and deletion has not been triggered yet
 	// TODO: check pointer
 	deprovisioningState := *resourceGroup.Properties.ProvisioningState
-	if deprovisioningState != azureFutureOperationDeleting {
+	if deprovisioningState != azure.AzureFutureOperationDeleting {
 		future, err := namespaceClient.DeleteResourceGroup(s.EventHub.Context, tags)
 		if err != nil {
 			errorMessage := fmt.Sprintf("Unable to delete Azure resource group: %v", err)
 			return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Hour, log)
 		}
-		if future.Status() != azureFutureOperationSucceeded {
+		if future.Status() != azure.AzureFutureOperationSucceeded {
 			//TODO(montaro) Optimization, retry after the polling delay provided by Azure
 			if retryAfter, retryAfterHeaderExist := future.GetPollingDelay(); retryAfterHeaderExist {
 				log.Infof("rescheduling step to check deletion of resource group completed")

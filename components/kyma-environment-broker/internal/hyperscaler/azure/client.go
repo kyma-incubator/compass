@@ -10,6 +10,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	AzureFutureOperationSucceeded string = "Succeeded"
+	AzureFutureOperationDeleting  string = "Deleting"
+)
+
 type AzureInterface interface {
 	GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
 	CreateResourceGroup(ctx context.Context, config *Config, name string, tags Tags) (resources.Group, error)

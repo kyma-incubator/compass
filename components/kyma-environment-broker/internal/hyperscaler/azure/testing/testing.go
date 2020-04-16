@@ -27,6 +27,7 @@ type FakeNamespaceClient struct {
 	Tags                           azure.Tags
 	GetResourceGroupError          error
 	GetResourceGroupReturnValue    resources.Group
+	DeleteResourceGroupCalled      bool
 }
 
 func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
@@ -58,6 +59,7 @@ func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *az
 
 func (nc *FakeNamespaceClient) DeleteResourceGroup(ctx context.Context, tags azure.Tags) (resources.GroupsDeleteFuture, error) {
 	//TODO(montaro) double check me
+	nc.DeleteResourceGroupCalled = true
 	return resources.GroupsDeleteFuture{}, nil
 }
 
@@ -94,12 +96,22 @@ func NewFakeNamespaceClientResourceGroupDoesNotExist() *FakeNamespaceClient {
 	}
 }
 
+func NewFakeNamespaceClientResourceGroupInDeletionMode() *FakeNamespaceClient {
+	return &FakeNamespaceClient{
+		GetResourceGroupReturnValue: resources.Group{
+			Response:   autorest.Response{},
+			Name:       ptr.String("montaro"),
+			Properties: &resources.GroupProperties{ProvisioningState: ptr.String(azure.AzureFutureOperationDeleting)},
+		},
+	}
+}
+
 func NewFakeNamespaceClientResourceGroupExists() *FakeNamespaceClient {
 	return &FakeNamespaceClient{
 		GetResourceGroupReturnValue: resources.Group{
 			Response:   autorest.Response{},
 			Name:       ptr.String("montaro"),
-			Properties: &resources.GroupProperties{ProvisioningState: ptr.String("Succeeded")},
+			Properties: &resources.GroupProperties{ProvisioningState: ptr.String(azure.AzureFutureOperationSucceeded)},
 		},
 	}
 }
