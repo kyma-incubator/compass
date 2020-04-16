@@ -88,27 +88,21 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 	})
 
 	t.Run("Failed when Label update on upsert failed ", func(t *testing.T) {
-		rtmID := "runtime_id"
 		scenarioLabel := model.Label{
 			Key:      model.ScenariosKey,
 			Value:    scenarios,
-			ObjectID: rtmID,
-		}
-		expectedUpdatedLabel := &model.LabelInput{
-			Key:      model.ScenariosKey,
-			Value:    append(scenarios, selectorScenario),
-			ObjectID: rtmID,
+			ObjectID: rtmIDWithScenario,
 		}
 
 		ctx := context.TODO()
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetRuntimesIDsWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
-			Return([]string{rtmID}, nil).Once()
-		labelRepo.On("GetScenarioLabelsForRuntimes", ctx, tenantID, []string{rtmID}).
+			Return([]string{rtmIDWithScenario}, nil).Once()
+		labelRepo.On("GetScenarioLabelsForRuntimes", ctx, tenantID, []string{rtmIDWithScenario}).
 			Return([]model.Label{scenarioLabel}, nil)
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertLabel", ctx, tenantID, expectedUpdatedLabel).Return(testErr).Once()
+		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).Return(testErr).Once()
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
 
@@ -369,7 +363,8 @@ func matchExpectedScenarios(t *testing.T, expected map[string]interface{}) func(
 
 		expectedArray, ok := expected[actual.ObjectID]
 		require.True(t, ok)
-		return assert.ElementsMatch(t, expectedArray, actualArray)
+		require.ElementsMatch(t, expectedArray, actualArray)
+		return true
 	}
 }
 
