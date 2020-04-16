@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jmoiron/sqlx"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -172,6 +174,59 @@ func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string)
 	}
 
 	return nil
+}
+
+func (r *repository) GetRuntimesIDsWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]string, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching persistence from context")
+	}
+	query := `SELECT LA.runtime_id FROM LABELS AS LA WHERE LA."key"=$1 AND value ?| array[$2] AND LA.tenant_id=$3 AND LA.runtime_ID IS NOT NULL;`
+
+	var matchedRtmsIDs []string
+	err = persist.Select(&matchedRtmsIDs, query, selectorKey, selectorValue, tenantID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching runtimes id which match selector")
+	}
+	return matchedRtmsIDs, nil
+}
+
+func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching persistence from context")
+	}
+
+	if len(runtimesIDs) == 0 {
+		return nil, errors.New("Cannot execute query without runtimesIDs")
+	}
+
+	query := `SELECT * FROM LABELS AS L WHERE L."key"='scenarios' AND L.runtime_id in (?)`
+	var lables []Entity
+	query, args, err := sqlx.In(query, runtimesIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating query")
+	}
+
+	query += " AND L.tenant_id=?;"
+
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+	args = append(args, tenantID)
+	err = persist.Select(&lables, query, args...)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching runtimes scenarios")
+	}
+
+	var labelModels []model.Label
+	for _, label := range lables {
+
+		labelModel, err := r.conv.FromEntity(label)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting label entity to model")
+		}
+		labelModels = append(labelModels, labelModel)
+	}
+	return labelModels, nil
 }
 
 func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error) {

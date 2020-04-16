@@ -946,3 +946,131 @@ func TestRepository_GetRuntimeScenariosWhereRuntimesLabelsMatchSelector(t *testi
 		assert.EqualError(t, err, "while fetching persistence from context: unable to fetch database from context")
 	})
 }
+
+func TestRepository_GetRuntimesIDsWhereLabelsMatchSelector(t *testing.T) {
+	tenantID := "3c9e9c37-8623-44e2-98c8-5040a94bac63"
+	selectorKey := "KEY"
+	selectorValue := "VALUE"
+	query := regexp.QuoteMeta(`SELECT LA.runtime_id FROM LABELS AS LA WHERE LA."key"=$1 AND value ?| array[$2] AND LA.tenant_id=$3 AND LA.runtime_ID IS NOT NULL;`)
+	t.Run("Success", func(t *testing.T) {
+		//GIVEN
+		rtm1ID := "fd1a54dc-828e-4097-a4cb-40e7e46eb28a"
+		rtm2ID := "6c3311a7-339c-4283-955b-ca90eaf5f7b5"
+		db, dbMock := testdb.MockDatabase(t)
+		mockedRows := sqlmock.NewRows([]string{"runtime_id"}).
+			AddRow(rtm1ID).
+			AddRow(rtm2ID)
+
+		dbMock.ExpectQuery(query).WithArgs(selectorKey, selectorValue, tenantID).WillReturnRows(mockedRows)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		conv := label.NewConverter()
+		labelRepo := label.NewRepository(conv)
+		//WHEN
+		rtmIDs, err := labelRepo.GetRuntimesIDsWhereLabelsMatchSelector(ctx, tenantID, selectorKey, selectorValue)
+
+		//THEN
+		require.NoError(t, err)
+		dbMock.AssertExpectations(t)
+		assert.ElementsMatch(t, rtmIDs, []string{rtm1ID, rtm2ID})
+	})
+
+	t.Run("Query return error", func(t *testing.T) {
+		//GIVEN
+		testErr := errors.New("test err")
+		db, dbMock := testdb.MockDatabase(t)
+		dbMock.ExpectQuery(query).WithArgs(selectorKey, selectorValue, tenantID).WillReturnError(testErr)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		conv := label.NewConverter()
+		labelRepo := label.NewRepository(conv)
+		//WHEN
+		_, err := labelRepo.GetRuntimesIDsWhereLabelsMatchSelector(ctx, tenantID, selectorKey, selectorValue)
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+	})
+}
+
+func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
+	tenantID := "3c9e9c37-8623-44e2-98c8-5040a94bac63"
+	rtm1ID := "fd1a54dc-828e-4097-a4cb-40e7e46eb28a"
+	rtm2ID := "6c3311a7-339c-4283-955b-ca90eaf5f7b5"
+	rtmIDs := []string{rtm1ID, rtm2ID}
+	testErr := errors.New("test error")
+
+	query := regexp.QuoteMeta(`SELECT * FROM LABELS AS L WHERE L."key"='scenarios' AND L.runtime_id in ($1, $2) AND L.tenant_id=$3;`)
+	t.Run("Success", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
+			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm1ID).
+			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm2ID)
+
+		dbMock.ExpectQuery(query).WithArgs(rtm1ID, rtm2ID, tenantID).WillReturnRows(mockedRows)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		conv := label.NewConverter()
+		labelRepo := label.NewRepository(conv)
+		//WHEN
+		labels, err := labelRepo.GetScenarioLabelsForRuntimes(ctx, tenantID, rtmIDs)
+
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, labels, 2)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Converter returns error", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
+			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm1ID).
+			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm2ID)
+
+		dbMock.ExpectQuery(query).WithArgs(rtm1ID, rtm2ID, tenantID).WillReturnRows(mockedRows)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		conv := &automock.Converter{}
+		conv.On("FromEntity", mock.Anything).Return(model.Label{}, testErr)
+		labelRepo := label.NewRepository(conv)
+		//WHEN
+		_, err := labelRepo.GetScenarioLabelsForRuntimes(ctx, tenantID, rtmIDs)
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+		dbMock.AssertExpectations(t)
+		conv.AssertExpectations(t)
+	})
+
+	t.Run("Database returns error", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		dbMock.ExpectQuery(query).WithArgs(rtm1ID, rtm2ID, tenantID).WillReturnError(testErr)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		conv := label.NewConverter()
+		labelRepo := label.NewRepository(conv)
+		//WHEN
+		_, err := labelRepo.GetScenarioLabelsForRuntimes(ctx, tenantID, rtmIDs)
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Database returns error, when runtimesIDs size is 0", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		conv := label.NewConverter()
+		labelRepo := label.NewRepository(conv)
+		//WHEN
+		_, err := labelRepo.GetScenarioLabelsForRuntimes(ctx, tenantID, []string{})
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot execute query without runtimesIDs")
+		dbMock.AssertExpectations(t)
+	})
+}
