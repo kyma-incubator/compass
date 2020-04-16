@@ -2,7 +2,6 @@ package packageinstanceauth_test
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -271,9 +270,9 @@ func TestRepository_ListByPackageID(t *testing.T) {
 			fixEntityPackageInstanceAuth(t, "bar", testPackageID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
 		}
 
-		query := fmt.Sprintf(`SELECT id, tenant_id, package_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason FROM public.package_instance_auths WHERE tenant_id=$1 AND package_id = '%s'`, testPackageID)
+		query := `SELECT id, tenant_id, package_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason FROM public.package_instance_auths WHERE tenant_id = $1 AND package_id = $2`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(testTenant).
+			WithArgs(testTenant, testPackageID).
 			WillReturnRows(fixSQLRows([]sqlRow{
 				fixSQLRowFromEntity(*piaEntities[0]),
 				fixSQLRowFromEntity(*piaEntities[1]),
@@ -307,9 +306,9 @@ func TestRepository_ListByPackageID(t *testing.T) {
 			fixEntityPackageInstanceAuth(t, "bar", testPackageID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
 		}
 
-		query := fmt.Sprintf(`SELECT id, tenant_id, package_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason FROM public.package_instance_auths WHERE tenant_id=$1 AND package_id = '%s'`, testPackageID)
+		query := `SELECT id, tenant_id, package_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason FROM public.package_instance_auths WHERE tenant_id = $1 AND package_id = $2`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(testTenant).
+			WithArgs(testTenant, testPackageID).
 			WillReturnRows(fixSQLRows([]sqlRow{
 				fixSQLRowFromEntity(*piaEntities[0]),
 				fixSQLRowFromEntity(*piaEntities[1]),
@@ -334,9 +333,9 @@ func TestRepository_ListByPackageID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := fmt.Sprintf(`SELECT id, tenant_id, package_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason FROM public.package_instance_auths WHERE tenant_id=$1 AND package_id = '%s'`, testPackageID)
+		query := `SELECT id, tenant_id, package_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason FROM public.package_instance_auths WHERE tenant_id = $1 AND package_id = $2`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(testTenant).
+			WithArgs(testTenant, testPackageID).
 			WillReturnError(testError)
 
 		pgRepository := packageinstanceauth.NewRepository(nil)

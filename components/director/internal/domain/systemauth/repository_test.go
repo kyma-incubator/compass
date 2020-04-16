@@ -315,9 +315,9 @@ func TestRepository_ListForObject(t *testing.T) {
 			fixEntity("bar", model.RuntimeReference, objID, true),
 		}
 
-		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id=$1 AND runtime_id = 'bar'`
+		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id = $1 AND runtime_id = $2`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(testTenant).
+			WithArgs(testTenant, objID).
 			WillReturnRows(fixSQLRows([]sqlRow{
 				{
 					id:       modelSysAuths[0].ID,
@@ -363,9 +363,9 @@ func TestRepository_ListForObject(t *testing.T) {
 			fixEntity("bar", model.ApplicationReference, objID, true),
 		}
 
-		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id=$1 AND app_id = 'bar'`
+		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id = $1 AND app_id = $2`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(testTenant).
+			WithArgs(testTenant, objID).
 			WillReturnRows(fixSQLRows([]sqlRow{
 				{
 					id:       modelSysAuths[0].ID,
@@ -411,9 +411,9 @@ func TestRepository_ListForObject(t *testing.T) {
 			fixEntity("bar", model.IntegrationSystemReference, objID, true),
 		}
 
-		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE integration_system_id = 'bar'`
+		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE integration_system_id = $1`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs().
+			WithArgs(objID).
 			WillReturnRows(fixSQLRows([]sqlRow{
 				{
 					id:       modelSysAuths[0].ID,
@@ -463,9 +463,9 @@ func TestRepository_ListForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE integration_system_id = 'bar'`
+		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE integration_system_id = $1`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs().
+			WithArgs(objID).
 			WillReturnError(testErr)
 
 		pgRepository := systemauth.NewRepository(nil)
@@ -493,9 +493,9 @@ func TestRepository_ListForObject(t *testing.T) {
 			fixEntity("bar", model.IntegrationSystemReference, objID, true),
 		}
 
-		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE integration_system_id = 'bar'`
+		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE integration_system_id = $1`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs().
+			WithArgs(objID).
 			WillReturnRows(fixSQLRows([]sqlRow{
 				{
 					id:       modelSysAuths[0].ID,

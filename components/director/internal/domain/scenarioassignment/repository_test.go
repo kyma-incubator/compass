@@ -137,8 +137,8 @@ func TestRepository_ListForSelector(t *testing.T) {
 			{scenario: scenarioName, tenantId: tenantID, selectorKey: "key", selectorValue: "value"},
 			{scenario: "scenario-B", tenantId: tenantID, selectorKey: "key", selectorValue: "value"},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE tenant_id=$1 AND selector_key = 'key' AND selector_value = 'value'`)).
-			WithArgs(tenantID).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE tenant_id = $1 AND selector_key = $2 AND selector_value = $3`)).
+			WithArgs(tenantID, "key", "value").
 			WillReturnRows(rowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -192,11 +192,11 @@ func TestRepository_List(t *testing.T) {
 	mod2 := fixModelWithScenarioName(scenarioName2)
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.automatic_scenario_assignments
-		WHERE tenant_id=\$1
+		WHERE tenant_id = \$1
 		ORDER BY scenario LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
 
 	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM public.automatic_scenario_assignments
-		WHERE tenant_id=$1`)
+		WHERE tenant_id = $1`)
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("Success", func(t *testing.T) {

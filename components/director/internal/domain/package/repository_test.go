@@ -404,11 +404,11 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	secondPkgEntity := fixEntityPackage(secondPkgID, "foo", "bar")
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.packages
-		WHERE tenant_id=\$1 AND app_id = '%s'
-		ORDER BY id LIMIT %d OFFSET %d`, appID, ExpectedLimit, ExpectedOffset)
+		WHERE tenant_id = \$1 AND app_id = \$2
+		ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
 
-	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM public.packages
-		WHERE tenant_id=$1 AND app_id = '%s'`, appID)
+	rawCountQuery := `SELECT COUNT(*) FROM public.packages
+		WHERE tenant_id = $1 AND app_id = $2`
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("success", func(t *testing.T) {
@@ -418,11 +418,11 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 			AddRow(fixPackageRow(secondPkgID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, appID).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, appID).
 			WillReturnRows(testdb.RowCount(2))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -450,7 +450,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		testError := errors.New("test error")
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, appID).
 			WillReturnError(testError)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
@@ -470,11 +470,11 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 			AddRow(fixPackageRow(firstPkgID, "foo")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, appID).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, appID).
 			WillReturnRows(testdb.RowCount(1))
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 

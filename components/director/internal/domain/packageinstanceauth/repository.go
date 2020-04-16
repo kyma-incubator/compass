@@ -2,9 +2,6 @@ package packageinstanceauth
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/lib/pq"
 
 	"github.com/pkg/errors"
 
@@ -101,7 +98,11 @@ func (r *repository) GetForPackage(ctx context.Context, tenant string, id string
 func (r *repository) ListByPackageID(ctx context.Context, tenantID string, packageID string) ([]*model.PackageInstanceAuth, error) {
 	var entities Collection
 
-	err := r.lister.List(ctx, tenantID, &entities, fmt.Sprintf("package_id = %s", pq.QuoteLiteral(packageID)))
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("package_id", packageID),
+	}
+
+	err := r.lister.List(ctx, tenantID, &entities, conditions...)
 
 	if err != nil {
 		return nil, err

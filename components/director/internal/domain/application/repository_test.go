@@ -284,8 +284,8 @@ func TestPgRepository_List(t *testing.T) {
 	inputCursor := ""
 	totalCount := 2
 
-	pageableQuery := `^SELECT (.+) FROM public\.applications WHERE tenant_id=\$1 ORDER BY id LIMIT %d OFFSET %d$`
-	countQuery := `SELECT COUNT\(\*\) FROM public\.applications WHERE tenant_id=\$1`
+	pageableQuery := `^SELECT (.+) FROM public\.applications WHERE tenant_id = \$1 ORDER BY id LIMIT %d OFFSET %d$`
+	countQuery := `SELECT COUNT\(\*\) FROM public\.applications WHERE tenant_id = \$1`
 
 	t.Run("Success", func(t *testing.T) {
 		// given
@@ -369,12 +369,12 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 						AND "key" = 'scenarios' AND "value" ?| array['Elixir']`, tenantID, tenantID, tenantID)
 	applicationScenarioQuery := regexp.QuoteMeta(scenariosQuery)
 
-	pagableQuery := fmt.Sprintf(`SELECT (.+) FROM public\.applications WHERE tenant_id=\$1 AND "id" IN \(%s\) ORDER BY id LIMIT %d OFFSET %d`,
+	pagableQuery := fmt.Sprintf(`SELECT (.+) FROM public\.applications WHERE tenant_id = \$1 AND id IN \(%s\) ORDER BY id LIMIT %d OFFSET %d`,
 		applicationScenarioQuery,
 		pageSize,
 		0)
 
-	countQuery := fmt.Sprintf(`SELECT COUNT\(\*\) FROM public\.applications WHERE tenant_id=\$1 AND "id" IN \(%s\)$`, applicationScenarioQuery)
+	countQuery := fmt.Sprintf(`SELECT COUNT\(\*\) FROM public\.applications WHERE tenant_id = \$1 AND id IN \(%s\)$`, applicationScenarioQuery)
 
 	conv := application.NewConverter(nil, nil)
 	intSysID := repo.NewValidNullableString("iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii")

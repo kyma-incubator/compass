@@ -76,12 +76,13 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
-	var additionalConditions []string
+
+	var conditions repo.Conditions
 	if filterSubquery != "" {
-		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, filterSubquery))
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery))
 	}
 
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &appsCollection, additionalConditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &appsCollection, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -113,12 +114,13 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating scenarios filter query")
 	}
-	var additionalConditions []string
+
+	var conditions repo.Conditions
 	if scenariosSubquery != "" {
-		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, scenariosSubquery))
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery))
 	}
 
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant.String(), pageSize, cursor, "id", &appsCollection, additionalConditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant.String(), pageSize, cursor, "id", &appsCollection, conditions...)
 
 	if err != nil {
 		return nil, err

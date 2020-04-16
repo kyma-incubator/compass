@@ -79,7 +79,7 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success when IN condition", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 AND first_name IN ('a', 'b')")
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 AND first_name IN (SELECT name from names)")
 		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -88,7 +88,7 @@ func TestGetSingle(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant).WillReturnRows(rows)
 		// WHEN
 		dest := User{}
-		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewInCondition("first_name", "'a', 'b'")}, repo.NoOrderBy, &dest)
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewInConditionForSubQuery("first_name", "SELECT name from names")}, repo.NoOrderBy, &dest)
 		// THEN
 		require.NoError(t, err)
 	})

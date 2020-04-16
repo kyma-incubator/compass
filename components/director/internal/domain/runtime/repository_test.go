@@ -233,8 +233,8 @@ func TestPgRepository_List(t *testing.T) {
 	limit := 2
 	offset := 3
 
-	pageableQuery := `^SELECT (.+) FROM public.runtimes WHERE tenant_id=\$1 ORDER BY name LIMIT %d OFFSET %d$`
-	countQuery := regexp.QuoteMeta(`SELECT COUNT(*) FROM public.runtimes WHERE tenant_id=$1`)
+	pageableQuery := `^SELECT (.+) FROM public.runtimes WHERE tenant_id = \$1 ORDER BY name LIMIT %d OFFSET %d$`
+	countQuery := regexp.QuoteMeta(`SELECT COUNT(*) FROM public.runtimes WHERE tenant_id = $1`)
 
 	testCases := []struct {
 		Name           string
@@ -333,13 +333,13 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 		AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, timestamp).
 		AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, timestamp)
 
-	filterQuery := fmt.Sprintf(`  AND "id" IN 
+	filterQuery := fmt.Sprintf(`  AND id IN 
 						\(SELECT "runtime_id" FROM public.labels 
 							WHERE "runtime_id" IS NOT NULL 
 							AND "tenant_id" = '%s' 
 							AND "key" = 'foo'\)`, tenantID)
 	sqlQuery := fmt.Sprintf(`^SELECT (.+) FROM public.runtimes 
-								WHERE tenant_id=\$1 %s ORDER BY name LIMIT %d OFFSET 0`, filterQuery, rowSize)
+								WHERE tenant_id = \$1 %s ORDER BY name LIMIT %d OFFSET 0`, filterQuery, rowSize)
 
 	sqlMock.ExpectQuery(sqlQuery).
 		WithArgs(tenantID).
@@ -347,7 +347,7 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 
 	countRows := sqlMock.NewRows([]string{"count"}).AddRow(rowSize)
 
-	countQuery := fmt.Sprintf(`^SELECT COUNT\(\*\) FROM public.runtimes WHERE tenant_id=\$1 %s`, filterQuery)
+	countQuery := fmt.Sprintf(`^SELECT COUNT\(\*\) FROM public.runtimes WHERE tenant_id = \$1 %s`, filterQuery)
 	sqlMock.ExpectQuery(countQuery).
 		WithArgs(tenantID).
 		WillReturnRows(countRows)

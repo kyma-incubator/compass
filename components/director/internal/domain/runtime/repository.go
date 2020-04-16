@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -77,7 +76,7 @@ func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string,
 		return nil, errors.Wrap(err, "while building filter query")
 	}
 	if filterSubquery != "" {
-		additionalConditions = append(additionalConditions, repo.NewInCondition("id", filterSubquery))
+		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery))
 	}
 
 	var runtimeEnt Runtime
@@ -101,7 +100,7 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 
 	var additionalConditions repo.Conditions
 	if filterSubquery != "" {
-		additionalConditions = append(additionalConditions, repo.NewInCondition("id", filterSubquery))
+		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery))
 	}
 
 	var runtimeEnt Runtime
@@ -133,12 +132,13 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
-	var additionalConditions []string
+
+	var conditions repo.Conditions
 	if filterSubquery != "" {
-		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, filterSubquery))
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery))
 	}
 
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "name", &runtimesCollection, additionalConditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "name", &runtimesCollection, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -193,7 +193,7 @@ func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, f
 		return nil, errors.Wrap(err, "while building filter query")
 	}
 	if filterSubquery != "" {
-		additionalConditions = append(additionalConditions, repo.NewInCondition("id", filterSubquery))
+		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery))
 	}
 
 	orderByParams := repo.OrderByParams{repo.NewAscOrderBy("creation_timestamp")}

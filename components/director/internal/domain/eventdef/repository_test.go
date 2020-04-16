@@ -192,11 +192,11 @@ func TestPgRepository_ListForApplication(t *testing.T) {
 	secondEventAPIDefEntity := fixFullEventDef(secondEventAPIDefID, "placeholder")
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."event_api_definitions" 
-		WHERE tenant_id=\$1 AND app_id = '%s' 
-		ORDER BY id LIMIT %d OFFSET %d`, appID, ExpectedLimit, ExpectedOffset)
+		WHERE tenant_id = \$1 AND app_id = \$2 
+		ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
 
-	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM "public"."event_api_definitions" 
-		WHERE tenant_id=$1 AND app_id = '%s'`, appID)
+	rawCountQuery := `SELECT COUNT(*) FROM "public"."event_api_definitions" 
+		WHERE tenant_id = $1 AND app_id = $2`
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("success", func(t *testing.T) {
@@ -206,11 +206,11 @@ func TestPgRepository_ListForApplication(t *testing.T) {
 			AddRow(fixEventDefinitionRow(secondEventAPIDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, appID).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, appID).
 			WillReturnRows(testdb.RowCount(2))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -237,11 +237,11 @@ func TestPgRepository_ListForApplication(t *testing.T) {
 			AddRow(fixEventDefinitionRow(firstEventAPIDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, appID).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, appID).
 			WillReturnRows(testdb.RowCount(1))
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
@@ -260,7 +260,7 @@ func TestPgRepository_ListForApplication(t *testing.T) {
 	t.Run("returns error when list operation failed", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, appID).
 			WillReturnError(testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -290,11 +290,11 @@ func TestPgRepository_ListForPackage(t *testing.T) {
 	secondEventAPIDefEntity := fixFullEventDef(secondEventAPIDefID, "placeholder")
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."event_api_definitions" 
-		WHERE tenant_id=\$1 AND package_id = '%s' 
-		ORDER BY id LIMIT %d OFFSET %d`, packageID, ExpectedLimit, ExpectedOffset)
+		WHERE tenant_id = \$1 AND package_id = \$2 
+		ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
 
-	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM "public"."event_api_definitions" 
-		WHERE tenant_id=$1 AND package_id = '%s'`, packageID)
+	rawCountQuery := `SELECT COUNT(*) FROM "public"."event_api_definitions" 
+		WHERE tenant_id = $1 AND package_id = $2`
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("success", func(t *testing.T) {
@@ -304,11 +304,11 @@ func TestPgRepository_ListForPackage(t *testing.T) {
 			AddRow(fixEventDefinitionRow(secondEventAPIDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, packageID).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, packageID).
 			WillReturnRows(testdb.RowCount(2))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -335,11 +335,11 @@ func TestPgRepository_ListForPackage(t *testing.T) {
 			AddRow(fixEventDefinitionRow(firstEventAPIDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, packageID).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, packageID).
 			WillReturnRows(testdb.RowCount(1))
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
@@ -358,7 +358,7 @@ func TestPgRepository_ListForPackage(t *testing.T) {
 	t.Run("returns error when list operation failed", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, packageID).
 			WillReturnError(testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
