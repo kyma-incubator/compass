@@ -54,5 +54,5 @@ func (r *ProvisioningOperator) ProvisioningInitial(
 		return ctrl.Result{}, err
 	}
 
-	return r.ProvisioningInProgress(log, shoot, operationId)
+	return r.ProvisioningInProgress(log, shoot, operationId, runtimeId)
 }

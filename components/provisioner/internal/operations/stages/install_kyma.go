@@ -3,8 +3,6 @@ package stages
 import (
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
@@ -21,11 +19,7 @@ type InstallKymaStep struct {
 	timeLimit          time.Duration
 }
 
-func NewInstallKymaStep(
-	installationClient installation.Service,
-	nextStep model.OperationStage,
-	timeLimit time.Duration) *InstallKymaStep {
-
+func NewInstallKymaStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration) *InstallKymaStep {
 	return &InstallKymaStep{
 		installationClient: installationClient,
 		nextStep:           nextStep,
