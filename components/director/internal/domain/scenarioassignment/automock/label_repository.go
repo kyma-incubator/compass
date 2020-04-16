@@ -11,6 +11,20 @@ type LabelRepository struct {
 	mock.Mock
 }
 
+// Delete provides a mock function with given fields: ctx, tenant, objectType, objectID, key
+func (_m *LabelRepository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
+	ret := _m.Called(ctx, tenant, objectType, objectID, key)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
+		r0 = rf(ctx, tenant, objectType, objectID, key)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetRuntimeScenariosWhereLabelsMatchSelector provides a mock function with given fields: ctx, tenantID, selectorKey, selectorValue
 func (_m *LabelRepository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID string, selectorKey string, selectorValue string) ([]model.Label, error) {
 	ret := _m.Called(ctx, tenantID, selectorKey, selectorValue)

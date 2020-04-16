@@ -26,18 +26,9 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 	rtmIDWithScenario := "rtm1_scenario"
 	rtmIDWithoutScenario := "rtm1_no_scenario"
 
-	expectedUpdatedLabel := &model.LabelInput{
-		Key:        model.ScenariosKey,
-		Value:      append(scenarios, selectorScenario),
-		ObjectID:   rtmIDWithScenario,
-		ObjectType: model.RuntimeLabelableObject,
-	}
-
-	expectedNewLabel := &model.LabelInput{
-		Key:        model.ScenariosKey,
-		Value:      []interface{}{selectorScenario},
-		ObjectID:   rtmIDWithoutScenario,
-		ObjectType: model.RuntimeLabelableObject,
+	expectedScenarios := map[string]interface{}{
+		rtmIDWithScenario:    append(scenarios, selectorScenario),
+		rtmIDWithoutScenario: []interface{}{selectorScenario},
 	}
 	runtimesIDs := []string{rtmIDWithoutScenario, rtmIDWithScenario}
 	scenarioLabel := model.Label{
@@ -57,8 +48,8 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 			Return([]model.Label{scenarioLabel}, nil)
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertLabel", ctx, tenantID, expectedUpdatedLabel).Return(nil).Once()
-		upsertSvc.On("UpsertLabel", ctx, tenantID, expectedNewLabel).Return(nil).Once()
+		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).Return(nil).Once()
+		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).Return(nil).Once()
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
 
@@ -81,8 +72,8 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 			Return([]model.Label{scenarioLabel}, nil)
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertLabel", ctx, tenantID, expectedUpdatedLabel).Return(nil).Once()
-		upsertSvc.On("UpsertLabel", ctx, tenantID, expectedNewLabel).Return(testErr).Once()
+		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).Return(nil).Once()
+		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).Return(testErr).Once()
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
 
@@ -186,6 +177,7 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 	selectorKey := "KEY"
 	selectorValue := "VALUE"
 	selectorScenario := "SELECTOR_SCENARIO"
+	rtmID := "8c4de4d8-dcfa-47a9-95c9-3c8b1f5b907c"
 	in := fixAutomaticScenarioAssigment(selectorScenario, selectorKey, selectorValue)
 	testErr := errors.New("test err")
 
@@ -194,10 +186,12 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 		scenarioLabel := model.Label{
 			Key:      model.ScenariosKey,
 			Value:    append(scenarios, selectorScenario),
-			ObjectID: "runtime_id",
+			ObjectID: rtmID,
 		}
-		expectedScenarioLabel := scenarioLabel
-		expectedScenarioLabel.Value = scenarios
+
+		expectedScenarios := map[string]interface{}{
+			rtmID: scenarios,
+		}
 
 		ctx := context.TODO()
 
@@ -207,7 +201,41 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 			Return(labels, nil).Once()
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, &expectedScenarioLabel))).
+		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).
+			Return(nil).Once()
+
+		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
+
+		//WHEN
+		err := eng.RemoveAssignedScenario(ctx, in)
+
+		//THEN
+		require.NoError(t, err)
+		mock.AssertExpectationsForObjects(t, labelRepo)
+		labelRepo.AssertExpectations(t)
+	})
+
+	t.Run("Success, empty scenarios label deleted", func(t *testing.T) {
+
+		scenarioLabel := model.Label{
+			Key:      model.ScenariosKey,
+			Value:    []interface{}{selectorScenario},
+			ObjectID: rtmID,
+		}
+		expectedScenarios := map[string]interface{}{
+			rtmID: []interface{}{},
+		}
+
+		ctx := context.TODO()
+
+		labels := []model.Label{scenarioLabel}
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+			Return(labels, nil).Once()
+		labelRepo.On("Delete", ctx, tenantID, model.RuntimeLabelableObject, rtmID, model.ScenariosKey).Return(nil)
+
+		upsertSvc := &automock.LabelUpsertService{}
+		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).
 			Return(nil).Once()
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
@@ -226,11 +254,11 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 		scenarioLabel := model.Label{
 			Key:      model.ScenariosKey,
 			Value:    append(scenarios, selectorScenario),
-			ObjectID: "runtime_id",
+			ObjectID: rtmID,
 		}
-
-		expectedScenarioLabel := scenarioLabel
-		expectedScenarioLabel.Value = scenarios
+		expectedScenarios := map[string]interface{}{
+			rtmID: scenarios,
+		}
 
 		ctx := context.TODO()
 
@@ -240,7 +268,7 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 			Return(labels, nil).Once()
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, &expectedScenarioLabel))).
+		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).
 			Return(testErr).Once()
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
@@ -275,7 +303,7 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 
 func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 	selectorKey, selectorValue := "KEY", "VALUE"
-	expctedScenario1 := []interface{}{"SCENARIO2"}
+	expctedScenario := []interface{}{"SCENARIO2"}
 	in := []*model.AutomaticScenarioAssignment{
 		{
 			ScenarioName: "SCENARIO1",
@@ -284,22 +312,26 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 				Key:   selectorKey,
 				Value: selectorValue,
 			}}}
-
+	rtmID := "651038e0-e4b6-4036-a32f-f6e9846003f4"
 	labels := []model.Label{{
 		Value:    []interface{}{"SCENARIO1", "SCENARIO2"},
 		Key:      model.ScenariosKey,
-		ObjectID: "651038e0-e4b6-4036-a32f-f6e9846003f4",
+		ObjectID: rtmID,
 	}}
 
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
+		expectedScenarios := map[string]interface{}{
+			rtmID: expctedScenario,
+		}
+
 		ctx := context.TODO()
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
 			Return(labels, nil).Once()
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, &model.Label{Value: expctedScenario1}))).
+		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).
 			Return(nil).Once()
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
@@ -330,12 +362,12 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 	})
 }
 
-func matchExpectedScenarios(t *testing.T, expected *model.Label) func(label *model.LabelInput) bool {
+func matchExpectedScenarios(t *testing.T, expected map[string]interface{}) func(label *model.LabelInput) bool {
 	return func(actual *model.LabelInput) bool {
 		actualArray, ok := actual.Value.([]interface{})
 		require.True(t, ok)
 
-		expectedArray, ok := expected.Value.([]interface{})
+		expectedArray, ok := expected[actual.ObjectID]
 		require.True(t, ok)
 		return assert.ElementsMatch(t, expectedArray, actualArray)
 	}

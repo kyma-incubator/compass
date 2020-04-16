@@ -15,6 +15,7 @@ type LabelRepository interface {
 	GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error)
 	GetRuntimesIDsWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]string, error)
 	GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error)
+	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 }
 
 //go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
@@ -113,23 +114,30 @@ func (e *engine) upsertMergedScenarios(ctx context.Context, labels []model.Label
 			return errors.Errorf("scenarios value is invalid type: %t", label.Value)
 		}
 
-		output, err := mergeFn(scenarios, scenarioName)
+		newScenarios, err := mergeFn(scenarios, scenarioName)
 		if err != nil {
 			return errors.Wrap(err, "while merging scenarios")
 		}
-		labelInput := model.LabelInput{
-			Key:        label.Key,
-			Value:      output,
-			ObjectID:   label.ObjectID,
-			ObjectType: label.ObjectType,
-		}
-
-		err = e.labelService.UpsertLabel(ctx, tenantID, &labelInput)
+		err = e.updateScenarioLabel(ctx, tenantID, label, newScenarios)
 		if err != nil {
-			return errors.Wrapf(err, "while updating runtime label: %s", label.ObjectID)
+			return errors.Wrap(err, "while updating scenraios labels")
 		}
 	}
 	return nil
+}
+
+func (e *engine) updateScenarioLabel(ctx context.Context, tenantID string, label model.Label, scenarios []interface{}) error {
+	if len(scenarios) == 0 {
+		return e.labelRepo.Delete(ctx, tenantID, model.RuntimeLabelableObject, label.ObjectID, model.ScenariosKey)
+	} else {
+		labelInput := model.LabelInput{
+			Key:        label.Key,
+			Value:      scenarios,
+			ObjectID:   label.ObjectID,
+			ObjectType: label.ObjectType,
+		}
+		return e.labelService.UpsertLabel(ctx, tenantID, &labelInput)
+	}
 }
 
 func (e *engine) uniqueScenarios(scenarios []interface{}, newScenario string) ([]interface{}, error) {
