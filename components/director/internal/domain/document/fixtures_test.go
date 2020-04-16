@@ -20,25 +20,23 @@ var (
 	docCLOB        = graphql.CLOB(docData)
 )
 
-func fixModelDocument(id, applicationID, packageID string) *model.Document {
+func fixModelDocument(id, packageID string) *model.Document {
 	return &model.Document{
-		ID:            id,
-		ApplicationID: &applicationID,
-		PackageID:     &packageID,
-		Tenant:        docTenant,
-		Title:         docTitle,
-		DisplayName:   docDisplayName,
-		Description:   docDescription,
-		Format:        model.DocumentFormatMarkdown,
-		Kind:          &docKind,
-		Data:          &docData,
+		ID:          id,
+		PackageID:   &packageID,
+		Tenant:      docTenant,
+		Title:       docTitle,
+		DisplayName: docDisplayName,
+		Description: docDescription,
+		Format:      model.DocumentFormatMarkdown,
+		Kind:        &docKind,
+		Data:        &docData,
 	}
 }
 
-func fixEntityDocument(id, applicationID, packageID string) *document.Entity {
+func fixEntityDocument(id, packageID string) *document.Entity {
 	return &document.Entity{
 		ID:          id,
-		AppID:       repo.NewNullableString(&applicationID),
 		PkgID:       repo.NewNullableString(&packageID),
 		TenantID:    docTenant,
 		Title:       docTitle,
@@ -50,17 +48,16 @@ func fixEntityDocument(id, applicationID, packageID string) *document.Entity {
 	}
 }
 
-func fixGQLDocument(id, applicationID, packageID string) *graphql.Document {
+func fixGQLDocument(id, packageID string) *graphql.Document {
 	return &graphql.Document{
-		ID:            id,
-		ApplicationID: &applicationID,
-		PackageID:     &packageID,
-		Title:         docTitle,
-		DisplayName:   docDisplayName,
-		Description:   docDescription,
-		Format:        graphql.DocumentFormatMarkdown,
-		Kind:          &docKind,
-		Data:          &docCLOB,
+		ID:          id,
+		PackageID:   &packageID,
+		Title:       docTitle,
+		DisplayName: docDisplayName,
+		Description: docDescription,
+		Format:      graphql.DocumentFormatMarkdown,
+		Kind:        &docKind,
+		Data:        &docCLOB,
 	}
 }
 

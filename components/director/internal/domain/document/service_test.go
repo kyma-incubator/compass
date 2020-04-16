@@ -23,7 +23,7 @@ func TestService_Get(t *testing.T) {
 
 	id := "foo"
 
-	documentModel := fixModelDocument("1", id, id)
+	documentModel := fixModelDocument("1", id)
 	tnt := documentModel.Tenant
 
 	ctx := context.TODO()
@@ -88,11 +88,10 @@ func TestService_GetForPackage(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 	id := "foo"
-	appID := appID()
 	pkgID := pkgID()
 	tenantID := "bar"
 	packageID := "test"
-	doc := fixModelDocument(id, appID, pkgID)
+	doc := fixModelDocument(id, pkgID)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID)
@@ -162,96 +161,15 @@ func TestService_GetForPackage(t *testing.T) {
 	})
 }
 
-func TestService_List(t *testing.T) {
-	// given
-	testErr := errors.New("Test error")
-
-	applicationID := "foo"
-	packageID := "bar"
-	modelDocuments := []*model.Document{
-		fixModelDocument(applicationID, "foo", packageID),
-		fixModelDocument(applicationID, "bar", packageID),
-		fixModelDocument("baz", "bar", packageID),
-	}
-	documentPage := &model.DocumentPage{
-		Data:       modelDocuments,
-		TotalCount: len(modelDocuments),
-		PageInfo: &pagination.Page{
-			HasNextPage: false,
-			EndCursor:   "end",
-			StartCursor: "start",
-		},
-	}
-
-	tnt := modelDocuments[0].Tenant
-
-	first := 2
-	after := "test"
-
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, modelDocuments[0].Tenant)
-
-	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.DocumentRepository
-		ExpectedResult     *model.DocumentPage
-		ExpectedErrMessage string
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("ListForApplication", ctx, tnt, applicationID, first, after).Return(documentPage, nil).Once()
-				return repo
-			},
-			ExpectedResult:     documentPage,
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "Returns error when document listing failed",
-			RepositoryFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("ListForApplication", ctx, tnt, applicationID, first, after).Return(nil, testErr).Once()
-				return repo
-			},
-			ExpectedResult:     nil,
-			ExpectedErrMessage: testErr.Error(),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
-
-			svc := document.NewService(repo, nil, nil)
-
-			// when
-			docs, err := svc.List(ctx, applicationID, first, after)
-
-			// then
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedResult, docs)
-			} else {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-			}
-
-			repo.AssertExpectations(t)
-		})
-	}
-}
-
 func TestService_ListForPackage(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	applicationID := "foo"
 	packageID := "bar"
 	modelDocuments := []*model.Document{
-		fixModelDocument(applicationID, "foo", packageID),
-		fixModelDocument(applicationID, "bar", packageID),
-		fixModelDocument("baz", "bar", packageID),
+		fixModelDocument("foo", packageID),
+		fixModelDocument("bar", packageID),
+		fixModelDocument("baz", packageID),
 	}
 	documentPage := &model.DocumentPage{
 		Data:       modelDocuments,
@@ -321,128 +239,6 @@ func TestService_ListForPackage(t *testing.T) {
 		})
 	}
 }
-
-func TestService_Create(t *testing.T) {
-	// given
-	testErr := errors.New("Test error")
-
-	tnt := "tenant"
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
-
-	id := "foo"
-	applicationID := "foo"
-	frURL := "foo.bar"
-	frID := "fr-id"
-	timestamp := time.Now()
-	modelInput := fixModelDocumentInputWithFetchRequest(frURL)
-	modelDoc := modelInput.ToDocument(id, tnt, &applicationID)
-
-	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.DocumentRepository
-		FetchRequestRepoFn func() *automock.FetchRequestRepository
-		UIDServiceFn       func() *automock.UIDService
-		Input              model.DocumentInput
-		ExpectedErr        error
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, modelDoc).Return(nil).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id).Once()
-				svc.On("Generate").Return(frID).Once()
-				return svc
-			},
-			Input:       *modelInput,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "Returns error when document creation failed",
-			RepositoryFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, modelDoc).Return(testErr).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id).Once()
-				return svc
-			},
-			Input:       *modelInput,
-			ExpectedErr: testErr,
-		},
-		{
-			Name: "Error - Fetch Request Creation",
-			RepositoryFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, modelDoc).Return(nil).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(testErr).Once()
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id).Once()
-				svc.On("Generate").Return(frID).Once()
-				return svc
-			},
-			Input:       *modelInput,
-			ExpectedErr: testErr,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
-			idSvc := testCase.UIDServiceFn()
-			fetchRequestRepo := testCase.FetchRequestRepoFn()
-			svc := document.NewService(repo, fetchRequestRepo, idSvc)
-			svc.SetTimestampGen(func() time.Time { return timestamp })
-
-			// when
-			result, err := svc.Create(ctx, applicationID, testCase.Input)
-
-			// then
-			assert.IsType(t, "string", result)
-			if testCase.ExpectedErr == nil {
-				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
-			}
-
-			repo.AssertExpectations(t)
-			idSvc.AssertExpectations(t)
-			fetchRequestRepo.AssertExpectations(t)
-		})
-	}
-
-	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := document.NewService(nil, nil, nil)
-		// when
-		_, err := svc.Create(context.TODO(), "Dd", model.DocumentInput{})
-		assert.Equal(t, tenant.NoTenantError, err)
-	})
-}
-
 func TestService_CreateToPackage(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
@@ -567,10 +363,9 @@ func TestService_Delete(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	applicationID := "foo"
 	id := "bar"
 	packageID := "foobar"
-	documentModel := fixModelDocument(applicationID, id, packageID)
+	documentModel := fixModelDocument(id, packageID)
 
 	tnt := documentModel.Tenant
 

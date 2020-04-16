@@ -241,13 +241,12 @@ var (
 
 func fixModelDocument(applicationID, packageID, id string) *model.Document {
 	return &model.Document{
-		ApplicationID: &applicationID,
-		PackageID:     &packageID,
-		ID:            id,
-		Title:         docTitle,
-		Format:        model.DocumentFormatMarkdown,
-		Kind:          &docKind,
-		Data:          &docData,
+		PackageID: &packageID,
+		ID:        id,
+		Title:     docTitle,
+		Format:    model.DocumentFormatMarkdown,
+		Kind:      &docKind,
+		Data:      &docData,
 	}
 }
 

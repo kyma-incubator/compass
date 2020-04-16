@@ -36,7 +36,6 @@ type EventAPIRepository interface {
 //go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
 type DocumentRepository interface {
 	Create(ctx context.Context, item *model.Document) error
-	DeleteAllByApplicationID(ctx context.Context, tenant string, applicationID string) error
 }
 
 //go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore

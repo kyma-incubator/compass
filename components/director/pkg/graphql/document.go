@@ -1,13 +1,12 @@
 package graphql
 
 type Document struct {
-	ID            string         `json:"id"`
-	ApplicationID *string        `json:"applicationID"`
-	PackageID     *string        `json:"packageID"`
-	Title         string         `json:"title"`
-	DisplayName   string         `json:"displayName"`
-	Description   string         `json:"description"`
-	Format        DocumentFormat `json:"format"`
+	ID          string         `json:"id"`
+	PackageID   *string        `json:"packageID"`
+	Title       string         `json:"title"`
+	DisplayName string         `json:"displayName"`
+	Description string         `json:"description"`
+	Format      DocumentFormat `json:"format"`
 	// for example Service Class, API etc
 	Kind *string `json:"kind"`
 	Data *CLOB   `json:"data"`

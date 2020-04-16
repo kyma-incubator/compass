@@ -31,14 +31,13 @@ Kyma comes equipped with these out-of-the-box functionalities:
 - Asset management and storing tool ([Rafter](/components/rafter/#overview-overview), MinIO)
 `)
 	return &graphql.Document{
-		ID:            id,
-		ApplicationID: str.Ptr("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-		PackageID:     str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"),
-		Title:         "Document Title",
-		DisplayName:   "Document Display Name",
-		Description:   desc,
-		Format:        graphql.DocumentFormatMarkdown,
-		Kind:          &kind,
-		Data:          &data,
+		ID:          id,
+		PackageID:   str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"),
+		Title:       "Document Title",
+		DisplayName: "Document Display Name",
+		Description: desc,
+		Format:      graphql.DocumentFormatMarkdown,
+		Kind:        &kind,
+		Data:        &data,
 	}
 }

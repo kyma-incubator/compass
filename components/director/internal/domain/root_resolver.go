@@ -88,7 +88,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	intSysConverter := integrationsystem.NewConverter()
 	tenantConverter := tenant.NewConverter()
 	packageConverter := mp_package.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
-	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter, packageConverter)
+	appConverter := application.NewConverter(webhookConverter, packageConverter)
 	appTemplateConverter := apptemplate.NewConverter(appConverter)
 	packageInstanceAuthConv := packageinstanceauth.NewConverter(authConverter)
 	assignmentConv := scenarioassignment.NewConverter()
@@ -140,7 +140,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	packageInstanceAuthSvc := packageinstanceauth.NewService(packageInstanceAuthRepo, uidSvc)
 
 	return &RootResolver{
-		app:                 application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc, packageSvc, packageConverter),
+		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, packageSvc, packageConverter),
 		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:                 api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, packageSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
 		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, appSvc, packageSvc, eventAPIConverter, frConverter),
@@ -463,9 +463,6 @@ func (r *applicationResolver) Labels(ctx context.Context, obj *graphql.Applicati
 }
 func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.Webhook, error) {
 	return r.app.Webhooks(ctx, obj)
-}
-func (r *applicationResolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
-	return r.app.Documents(ctx, obj, first, after)
 }
 func (r *applicationResolver) EventingConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventingConfiguration, error) {
 	return r.app.EventingConfiguration(ctx, obj)

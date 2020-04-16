@@ -26,8 +26,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixModelDocument("1", "bar", "foo"),
-			Expected: fixGQLDocument("1", "bar", "foo"),
+			Input:    fixModelDocument("1", "foo"),
+			Expected: fixGQLDocument("1", "foo"),
 		},
 		{
 			Name:     "Empty",
@@ -59,14 +59,14 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.Document{
-		fixModelDocument("1", "foo", "foo"),
-		fixModelDocument("2", "bar", "bar"),
+		fixModelDocument("1", "foo"),
+		fixModelDocument("2", "bar"),
 		{},
 		nil,
 	}
 	expected := []*graphql.Document{
-		fixGQLDocument("1", "foo", "foo"),
-		fixGQLDocument("2", "bar", "bar"),
+		fixGQLDocument("1", "foo"),
+		fixGQLDocument("2", "bar"),
 		{},
 	}
 	frConv := &automock.FetchRequestConverter{}
@@ -153,14 +153,13 @@ func TestToEntity(t *testing.T) {
 	sut := document.NewConverter(nil)
 
 	modelWithRequiredFields := model.Document{
-		ID:            "givenID",
-		Tenant:        "givenTenant",
-		ApplicationID: str.Ptr("givenApplicationID"),
-		PackageID:     str.Ptr("givenPackageID"),
-		Title:         "givenTitle",
-		Description:   "givenDescription",
-		DisplayName:   "givenDisplayName",
-		Format:        "givenFormat",
+		ID:          "givenID",
+		Tenant:      "givenTenant",
+		PackageID:   str.Ptr("givenPackageID"),
+		Title:       "givenTitle",
+		Description: "givenDescription",
+		DisplayName: "givenDisplayName",
+		Format:      "givenFormat",
 	}
 
 	t.Run("only required fields", func(t *testing.T) {
@@ -172,7 +171,6 @@ func TestToEntity(t *testing.T) {
 		assert.Equal(t, document.Entity{
 			ID:          "givenID",
 			TenantID:    "givenTenant",
-			AppID:       repo.NewNullableString(str.Ptr("givenApplicationID")),
 			PkgID:       repo.NewNullableString(str.Ptr("givenPackageID")),
 			Title:       "givenTitle",
 			Description: "givenDescription",
@@ -200,7 +198,6 @@ func TestFromEntity(t *testing.T) {
 	entityWithRequiredFields := document.Entity{
 		ID:          "givenID",
 		TenantID:    "givenTenant",
-		AppID:       repo.NewNullableString(str.Ptr("givenApplicationID")),
 		PkgID:       repo.NewNullableString(str.Ptr("givenPackageID")),
 		Title:       "givenTitle",
 		DisplayName: "givenDisplayName",
@@ -215,14 +212,13 @@ func TestFromEntity(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, model.Document{
-			ID:            "givenID",
-			Tenant:        "givenTenant",
-			ApplicationID: str.Ptr("givenApplicationID"),
-			PackageID:     str.Ptr("givenPackageID"),
-			Title:         "givenTitle",
-			DisplayName:   "givenDisplayName",
-			Description:   "givenDescription",
-			Format:        model.DocumentFormatMarkdown,
+			ID:          "givenID",
+			Tenant:      "givenTenant",
+			PackageID:   str.Ptr("givenPackageID"),
+			Title:       "givenTitle",
+			DisplayName: "givenDisplayName",
+			Description: "givenDescription",
+			Format:      model.DocumentFormatMarkdown,
 		}, actualModel)
 
 	})

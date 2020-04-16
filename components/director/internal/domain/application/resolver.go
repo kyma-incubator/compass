@@ -42,45 +42,10 @@ type ApplicationConverter interface {
 	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
 }
 
-//go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
-type APIService interface {
-	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
-	Delete(ctx context.Context, id string) error
-	Get(ctx context.Context, id string) (*model.APIDefinition, error)
-}
-
-//go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
-type APIConverter interface {
-	ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition
-	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
-	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput
-	InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APIDefinitionInput
-}
-
-//go:generate mockery -name=EventDefinitionService -output=automock -outpkg=automock -case=underscore
-type EventDefinitionService interface {
-	Get(ctx context.Context, id string) (*model.EventDefinition, error)
-	Update(ctx context.Context, id string, in model.EventDefinitionInput) error
-	Delete(ctx context.Context, id string) error
-}
-
-//go:generate mockery -name=EventAPIConverter -output=automock -outpkg=automock -case=underscore
-type EventAPIConverter interface {
-	ToGraphQL(in *model.EventDefinition) *graphql.EventDefinition
-	MultipleToGraphQL(in []*model.EventDefinition) []*graphql.EventDefinition
-	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventDefinitionInput
-	InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventDefinitionInput
-}
-
 //go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
 type EventingService interface {
 	CleanupAfterUnregisteringApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
 	GetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error)
-}
-
-//go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
-type DocumentService interface {
-	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error)
 }
 
 //go:generate mockery -name=WebhookService -output=automock -outpkg=automock -case=underscore
@@ -95,12 +60,6 @@ type WebhookService interface {
 //go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
-}
-
-//go:generate mockery -name=DocumentConverter -output=automock -outpkg=automock -case=underscore
-type DocumentConverter interface {
-	MultipleToGraphQL(in []*model.Document) []*graphql.Document
-	MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*model.DocumentInput
 }
 
 //go:generate mockery -name=WebhookConverter -output=automock -outpkg=automock -case=underscore
@@ -147,58 +106,40 @@ type Resolver struct {
 	appSvc       ApplicationService
 	appConverter ApplicationConverter
 
-	apiSvc      APIService
-	eventDefSvc EventDefinitionService
-	webhookSvc  WebhookService
-	documentSvc DocumentService
-	oAuth20Svc  OAuth20Service
-	sysAuthSvc  SystemAuthService
-	pkgSvc      PackageService
+	webhookSvc WebhookService
+	oAuth20Svc OAuth20Service
+	sysAuthSvc SystemAuthService
+	pkgSvc     PackageService
 
-	documentConverter DocumentConverter
-	webhookConverter  WebhookConverter
-	apiConverter      APIConverter
-	eventApiConverter EventAPIConverter
-	sysAuthConv       SystemAuthConverter
-	eventingSvc       EventingService
-	pkgConv           PackageConverter
+	webhookConverter WebhookConverter
+	sysAuthConv      SystemAuthConverter
+	eventingSvc      EventingService
+	pkgConv          PackageConverter
 }
 
 func NewResolver(transact persistence.Transactioner,
 	svc ApplicationService,
-	apiSvc APIService,
-	eventDefSrv EventDefinitionService,
-	documentSvc DocumentService,
 	webhookSvc WebhookService,
 	oAuth20Svc OAuth20Service,
 	sysAuthSvc SystemAuthService,
 	appConverter ApplicationConverter,
-	documentConverter DocumentConverter,
 	webhookConverter WebhookConverter,
-	apiConverter APIConverter,
-	eventAPIConverter EventAPIConverter,
 	sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService,
 	pkgSvc PackageService,
 	pkgConverter PackageConverter) *Resolver {
 	return &Resolver{
-		transact:          transact,
-		appSvc:            svc,
-		apiSvc:            apiSvc,
-		eventDefSvc:       eventDefSrv,
-		documentSvc:       documentSvc,
-		webhookSvc:        webhookSvc,
-		oAuth20Svc:        oAuth20Svc,
-		sysAuthSvc:        sysAuthSvc,
-		appConverter:      appConverter,
-		documentConverter: documentConverter,
-		webhookConverter:  webhookConverter,
-		apiConverter:      apiConverter,
-		eventApiConverter: eventAPIConverter,
-		sysAuthConv:       sysAuthConv,
-		eventingSvc:       eventingSvc,
-		pkgSvc:            pkgSvc,
-		pkgConv:           pkgConverter,
+		transact:         transact,
+		appSvc:           svc,
+		webhookSvc:       webhookSvc,
+		oAuth20Svc:       oAuth20Svc,
+		sysAuthSvc:       sysAuthSvc,
+		appConverter:     appConverter,
+		webhookConverter: webhookConverter,
+		sysAuthConv:      sysAuthConv,
+		eventingSvc:      eventingSvc,
+		pkgSvc:           pkgSvc,
+		pkgConv:          pkgConverter,
 	}
 }
 
@@ -483,49 +424,6 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 	return &graphql.Label{
 		Key:   key,
 		Value: label.Value,
-	}, nil
-}
-
-// TODO: Proper error handling
-func (r *Resolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommited(tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	var cursor string
-	if after != nil {
-		cursor = string(*after)
-	}
-
-	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
-	}
-
-	documentsPage, err := r.documentSvc.List(ctx, obj.ID, *first, cursor)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	gqlDocuments := r.documentConverter.MultipleToGraphQL(documentsPage.Data)
-	totalCount := len(gqlDocuments)
-
-	return &graphql.DocumentPage{
-		Data:       gqlDocuments,
-		TotalCount: totalCount,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(documentsPage.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(documentsPage.PageInfo.EndCursor),
-			HasNextPage: documentsPage.PageInfo.HasNextPage,
-		},
 	}, nil
 }
 
