@@ -565,14 +565,6 @@ type APIDefinitionPage implements Pageable {
 	totalCount: Int!
 }
 
-"""
-Deprecated
-"""
-type APIRuntimeAuth {
-	runtimeID: ID!
-	auth: Auth
-}
-
 type APISpec {
 	"""
 	when fetch request specified, data will be automatically populated
@@ -1116,11 +1108,6 @@ type Mutation {
 	deleteSystemAuthForRuntime(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForRuntime")
 	deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForApplication")
 	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForIntegrationSystem")
-	"""
-	Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
-	"""
-	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth") @deprecated(reason: "Use setPackageInstanceAuthForPackage")
-	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth") @deprecated(reason: "Use deletePackageInstanceAuthForPackage")
 	"""
 	**Examples**
 	- [add event definition to package](examples/add-event-definition-to-package/add-event-definition-to-package.graphql)

@@ -30,10 +30,6 @@ type APIDefinitionPageExt struct {
 type APIDefinitionExt struct {
 	APIDefinition
 	Spec *APISpecExt `json:"spec"`
-	// "If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
-	Auth *APIRuntimeAuth `json:"auth"`
-	// Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
-	Auths []*APIRuntimeAuth `json:"auths"`
 }
 
 type APISpecExt struct {

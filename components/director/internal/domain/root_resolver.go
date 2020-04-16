@@ -27,7 +27,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
@@ -73,13 +72,12 @@ type RootResolver struct {
 
 func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, pairingAdaptersMapping map[string]string, featuresConfig features.Config) *RootResolver {
 	authConverter := auth.NewConverter()
-	apiRtmAuthConverter := apiruntimeauth.NewConverter(authConverter)
 	runtimeConverter := runtime.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
 	docConverter := document.NewConverter(frConverter)
 	webhookConverter := webhook.NewConverter(authConverter)
-	apiConverter := api.NewConverter(authConverter, frConverter, versionConverter)
+	apiConverter := api.NewConverter(frConverter, versionConverter)
 	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
@@ -104,7 +102,6 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
-	apiRtmAuthRepo := apiruntimeauth.NewRepository(apiRtmAuthConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 	tenantRepo := tenant.NewRepository(tenantConverter)
@@ -115,7 +112,6 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL)
 
 	uidSvc := uid.NewService()
-	apiRtmAuthSvc := apiruntimeauth.NewService(apiRtmAuthRepo, uidSvc)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
@@ -142,7 +138,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	return &RootResolver{
 		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, packageSvc, packageConverter),
 		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
-		api:                 api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, packageSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
+		api:                 api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, packageSvc, apiConverter, frConverter),
 		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, appSvc, packageSvc, eventAPIConverter, frConverter),
 		eventing:            eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                 document.NewResolver(transact, docSvc, appSvc, packageSvc, frConverter),
@@ -314,12 +310,7 @@ func (r *mutationResolver) DeleteAPIDefinition(ctx context.Context, id string) (
 func (r *mutationResolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.APISpec, error) {
 	return r.api.RefetchAPISpec(ctx, apiID)
 }
-func (r *mutationResolver) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in graphql.AuthInput) (*graphql.APIRuntimeAuth, error) {
-	return r.api.SetAPIAuth(ctx, apiID, runtimeID, in)
-}
-func (r *mutationResolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*graphql.APIRuntimeAuth, error) {
-	return r.api.DeleteAPIAuth(ctx, apiID, runtimeID)
-}
+
 func (r *mutationResolver) UpdateEventDefinition(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	return r.eventAPI.UpdateEventDefinition(ctx, id, in)
 }
@@ -488,17 +479,6 @@ func (r *runtimeResolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*g
 
 func (r *runtimeResolver) EventingConfiguration(ctx context.Context, obj *graphql.Runtime) (*graphql.RuntimeEventingConfiguration, error) {
 	return r.runtime.EventingConfiguration(ctx, obj)
-}
-
-type apiDefinitionResolver struct {
-	*RootResolver
-}
-
-func (r *apiDefinitionResolver) Auth(ctx context.Context, obj *graphql.APIDefinition, runtimeID string) (*graphql.APIRuntimeAuth, error) {
-	return r.api.Auth(ctx, obj, runtimeID)
-}
-func (r *apiDefinitionResolver) Auths(ctx context.Context, obj *graphql.APIDefinition) ([]*graphql.APIRuntimeAuth, error) {
-	return r.api.Auths(ctx, obj)
 }
 
 type apiSpecResolver struct{ *RootResolver }

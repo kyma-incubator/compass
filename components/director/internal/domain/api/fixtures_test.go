@@ -237,12 +237,6 @@ func fixModelAPIRtmAuth(id string, auth *model.Auth) *model.APIRuntimeAuth {
 	}
 }
 
-func fixGQLAPIRtmAuth(id string, auth *graphql.Auth) *graphql.APIRuntimeAuth {
-	return &graphql.APIRuntimeAuth{
-		RuntimeID: id,
-		Auth:      auth,
-	}
-}
 
 func fixEntityAPIDefinition(id string, appId, pkgID *string, name, targetUrl string) api.Entity {
 	return api.Entity{

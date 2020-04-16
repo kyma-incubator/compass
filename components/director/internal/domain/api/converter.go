@@ -10,12 +10,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
-type AuthConverter interface {
-	ToGraphQL(in *model.Auth) *graphql.Auth
-	InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput
-}
-
 //go:generate mockery -name=VersionConverter -output=automock -outpkg=automock -case=underscore
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
@@ -25,13 +19,12 @@ type VersionConverter interface {
 }
 
 type converter struct {
-	auth    AuthConverter
 	fr      FetchRequestConverter
 	version VersionConverter
 }
 
-func NewConverter(auth AuthConverter, fr FetchRequestConverter, version VersionConverter) *converter {
-	return &converter{auth: auth, fr: fr, version: version}
+func NewConverter( fr FetchRequestConverter, version VersionConverter) *converter {
+	return &converter{ fr: fr, version: version}
 }
 
 func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {

@@ -245,7 +245,6 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 		return id, errors.Wrapf(err, "while creating multiple labels for Application")
 	}
 
-	// TODO: Deprecated; Remove after breaking change in API
 	err = s.createRelatedResources(ctx, in, app.Tenant, app.ID)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating related Application resources")

@@ -45,12 +45,6 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
-// Deprecated
-type APIRuntimeAuth struct {
-	RuntimeID string `json:"runtimeID"`
-	Auth      *Auth  `json:"auth"`
-}
-
 // **Validation:**
 // - for ODATA type, accepted formats are XML and JSON, for OPEN_API accepted formats are YAML and JSON
 // - data or fetchRequest required
