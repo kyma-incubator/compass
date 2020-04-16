@@ -23,8 +23,8 @@ type converter struct {
 	version VersionConverter
 }
 
-func NewConverter( fr FetchRequestConverter, version VersionConverter) *converter {
-	return &converter{ fr: fr, version: version}
+func NewConverter(fr FetchRequestConverter, version VersionConverter) *converter {
+	return &converter{fr: fr, version: version}
 }
 
 func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {

@@ -237,7 +237,6 @@ func fixModelAPIRtmAuth(id string, auth *model.Auth) *model.APIRuntimeAuth {
 	}
 }
 
-
 func fixEntityAPIDefinition(id string, appId, pkgID *string, name, targetUrl string) api.Entity {
 	return api.Entity{
 		ID:        id,

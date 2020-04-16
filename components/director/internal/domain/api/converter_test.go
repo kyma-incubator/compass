@@ -121,7 +121,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 
 	// when
-	converter := api.NewConverter( frConverter, versionConverter)
+	converter := api.NewConverter(frConverter, versionConverter)
 	res := converter.MultipleToGraphQL(input)
 
 	// then
@@ -189,7 +189,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			versionConverter := testCase.VersionConverter()
 
 			// when
-			converter := api.NewConverter( frConverter, versionConverter)
+			converter := api.NewConverter(frConverter, versionConverter)
 			res := converter.InputFromGraphQL(testCase.Input)
 
 			// then
@@ -269,7 +269,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			versionConverter := testCase.VersionConverter()
 
 			// when
-			converter := api.NewConverter( frConverter, versionConverter)
+			converter := api.NewConverter(frConverter, versionConverter)
 			res := converter.MultipleInputFromGraphQL(testCase.Input)
 
 			// then
@@ -292,7 +292,7 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 	mockVersionConv.On("InputFromGraphQL", mock.Anything).Return(nil)
 	mockVersionConv.On("ToGraphQL", mock.Anything).Return(nil)
 
-	converter := api.NewConverter( mockFrConv, mockVersionConv)
+	converter := api.NewConverter(mockFrConv, mockVersionConv)
 	// WHEN & THEN
 	convertedInputModel := converter.InputFromGraphQL(&graphql.APIDefinitionInput{Spec: &graphql.APISpecInput{}})
 	require.NotNil(t, convertedInputModel)
@@ -311,7 +311,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		apiModel := fixFullAPIDefinitionModel("foo")
 		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
-		conv := api.NewConverter( nil, versionConv)
+		conv := api.NewConverter(nil, versionConv)
 		//WHEN
 		entity := conv.ToEntity(apiModel)
 		//THEN
@@ -345,7 +345,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		//GIVEN
 		entity := fixEntityAPIDefinition("id", str.Ptr("app_id"), str.Ptr("pkg_id"), "name", "target_url")
 		versionConv := version.NewConverter()
-		conv := api.NewConverter( nil, versionConv)
+		conv := api.NewConverter(nil, versionConv)
 		//WHEN
 		apiModel := conv.FromEntity(entity)
 		//THEN

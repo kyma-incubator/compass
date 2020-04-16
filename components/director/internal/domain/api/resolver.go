@@ -50,24 +50,24 @@ type PackageService interface {
 }
 
 type Resolver struct {
-	transact      persistence.Transactioner
-	svc           APIService
-	appSvc        ApplicationService
-	pkgSvc        PackageService
-	rtmSvc        RuntimeService
-	converter     APIConverter
-	frConverter   FetchRequestConverter
+	transact    persistence.Transactioner
+	svc         APIService
+	appSvc      ApplicationService
+	pkgSvc      PackageService
+	rtmSvc      RuntimeService
+	converter   APIConverter
+	frConverter FetchRequestConverter
 }
 
 func NewResolver(transact persistence.Transactioner, svc APIService, appSvc ApplicationService, rtmSvc RuntimeService, pkgSvc PackageService, converter APIConverter, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
-		transact:      transact,
-		svc:           svc,
-		appSvc:        appSvc,
-		rtmSvc:        rtmSvc,
-		pkgSvc:        pkgSvc,
-		converter:     converter,
-		frConverter:   frConverter,
+		transact:    transact,
+		svc:         svc,
+		appSvc:      appSvc,
+		rtmSvc:      rtmSvc,
+		pkgSvc:      pkgSvc,
+		converter:   converter,
+		frConverter: frConverter,
 	}
 }
 

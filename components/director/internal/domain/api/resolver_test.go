@@ -200,7 +200,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			converter := testCase.ConverterFn()
 			pkgSvc := testCase.PkgServiceFn()
 
-			resolver := api.NewResolver(transact, svc, nil, nil,  pkgSvc, converter, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, pkgSvc, converter, nil)
 
 			// when
 			result, err := resolver.AddAPIDefinitionToPackage(context.TODO(), *packageID, *gqlAPIInput)
@@ -723,7 +723,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil,   converter)
+			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, converter)
 
 			// when
 			result, err := resolver.FetchRequest(context.TODO(), &graphql.APISpec{DefinitionID: id})
