@@ -29,9 +29,13 @@ const (
 	WaitingForInstallation OperationStage = "WaitingForInstallation"
 	ConnectRuntimeAgent    OperationStage = "ConnectRuntimeAgent"
 	WaitForAgentToConnect  OperationStage = "WaitForAgentToConnect"
-	StartingUpgrade        OperationStage = "StartingUpgrade"
-	UpdatingUpgradeState   OperationStage = "UpdatingUpgradeState"
-	FinishedStage          OperationStage = "Finished"
+
+	StartingUpgrade      OperationStage = "StartingUpgrade"
+	UpdatingUpgradeState OperationStage = "UpdatingUpgradeState"
+
+	FinishedStage OperationStage = "Finished"
+
+	DeprovisioningStage OperationStage = "Deprovisioning"
 )
 
 type Cluster struct {

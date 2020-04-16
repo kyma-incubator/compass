@@ -62,13 +62,13 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	if err != nil {
 		if errors.IsNotFound(err) {
 			message := fmt.Sprintf("Cluster %s does not exist. Nothing to deprovision.", cluster.ID)
-			return newDeprovisionOperation(operationId, cluster.ID, message, model.Succeeded, time.Now()), nil
+			return newDeprovisionOperation(operationId, cluster.ID, message, model.Succeeded, model.FinishedStage, time.Now()), nil
 		}
 	}
 
 	if shoot.DeletionTimestamp != nil {
 		message := fmt.Sprintf("Cluster %s already %s scheduled for deletion.", gardenerCfg.Name, cluster.ID)
-		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, shoot.DeletionTimestamp.Time), nil
+		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeprovisioningStage, shoot.DeletionTimestamp.Time), nil
 	}
 
 	deletionTime := time.Now()
@@ -83,19 +83,20 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	}
 
 	message := fmt.Sprintf("Deprovisioning started")
-	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, deletionTime), nil
+	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeprovisioningStage, deletionTime), nil
 }
 
 func (g *GardenerProvisioner) shouldEnableAuditLogs() bool {
 	return g.auditLogsConfigMapName != "" && g.auditLogTenant != ""
 }
 
-func newDeprovisionOperation(id, runtimeId, message string, state model.OperationState, startTime time.Time) model.Operation {
+func newDeprovisionOperation(id, runtimeId, message string, state model.OperationState, stage model.OperationStage, startTime time.Time) model.Operation {
 	return model.Operation{
 		ID:             id,
 		Type:           model.Deprovision,
 		StartTimestamp: startTime,
 		State:          state,
+		Stage:          stage,
 		Message:        message,
 		ClusterID:      runtimeId,
 	}

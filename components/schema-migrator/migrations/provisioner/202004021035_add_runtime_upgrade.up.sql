@@ -16,7 +16,11 @@ WHERE cluster.id=subquery.cluster_id;
 
 UPDATE operation
 SET stage='StartingInstallation'
-WHERE operation.state='IN_PROGRESS' OR operation.state='FAILED';
+WHERE (operation.state='IN_PROGRESS' OR operation.state='FAILED') AND operation.type='PROVISION';
+
+UPDATE operation
+SET stage='Deprovisioning'
+WHERE (operation.state='IN_PROGRESS' OR operation.state='FAILED') AND operation.type='DEPROVISION';
 
 UPDATE operation
 SET stage='Finished'
