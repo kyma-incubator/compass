@@ -2,9 +2,11 @@ package deprovisioning
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -13,16 +15,19 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	processazure "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 )
 
 type DeprovisionAzureEventHubStep struct {
 	OperationManager *process.DeprovisionOperationManager
+	instanceStorage  storage.Instances
 	processazure.EventHub
 }
 
-func NewDeprovisionAzureEventHubStep(os storage.Operations, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider, ctx context.Context) DeprovisionAzureEventHubStep {
+func NewDeprovisionAzureEventHubStep(os storage.Operations, is storage.Instances, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider, ctx context.Context) DeprovisionAzureEventHubStep {
 	return DeprovisionAzureEventHubStep{
 		OperationManager: process.NewDeprovisionOperationManager(os),
+		instanceStorage:  is,
 		EventHub: processazure.EventHub{
 			HyperscalerProvider: hyperscalerProvider,
 			AccountProvider:     accountProvider,
@@ -37,14 +42,36 @@ func (s DeprovisionAzureEventHubStep) Name() string {
 	return "Deprovision Azure Event Hubs"
 }
 
+// TODO(nachtmaar): move to better place
+func GetParameters(provisioningParameters string) (internal.ProvisioningParameters, error) {
+	var pp internal.ProvisioningParameters
+
+	err := json.Unmarshal([]byte(provisioningParameters), &pp)
+	if err != nil {
+		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+	}
+
+	return pp, nil
+}
+
 func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	// TODO(nachtmaar): have shared code between provisioning/deprovisioning
 	hypType := hyperscaler.Azure
 
-	//parse provisioning parameters
-	fmt.Printf("deprovisiong operation :%+v", operation)
-	fmt.Printf("deprovisiong parameters :%s", operation.DeprovisioningParameters)
-	pp, err := operation.GetParameters()
+	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
+	switch {
+	case err == nil:
+	case dberr.IsNotFound(err):
+		return s.OperationManager.OperationSucceeded(operation, "instance already deprovisioned")
+	default:
+		log.Errorf("unable to get instance from storage: %s", err)
+		return operation, 1 * time.Second, nil
+	}
+
+	// parse provisioning parameters
+	fmt.Printf("instance provisiong parameters :%s\n", instance.ProvisioningParameters)
+	pp, err := GetParameters(instance.ProvisioningParameters)
+	// pp, err := operation.GetParameters()
 	if err != nil {
 		// if the parameters are incorrect, there is no reason to retry the operation
 		// a new request has to be issued by the user
