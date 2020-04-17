@@ -13,7 +13,7 @@ func (r *ProvisioningOperator) ProvisioningInitial(
 	operationId, runtimeId string) (ctrl.Result, error) {
 
 	if shoot.Spec.DNS == nil || shoot.Spec.DNS.Domain == nil {
-		log.Warn("DNS Domain is not set yet for runtime ID: %s", runtimeId)
+		log.Warnf("DNS Domain is not set yet for runtime ID: %s", runtimeId)
 		return ctrl.Result{}, nil
 	}
 

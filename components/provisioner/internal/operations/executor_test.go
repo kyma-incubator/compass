@@ -5,9 +5,11 @@ import (
 	"testing"
 	"time"
 
+	directorMocks "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/failure"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -51,7 +53,10 @@ func TestStagesExecutor_Execute(t *testing.T) {
 			model.WaitingForInstallation: mockStage,
 		}
 
-		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler())
+		directorClient := &directorMocks.DirectorClient{}
+		directorClient.On("SetRuntimeStatusCondition", clusterId, gqlschema.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(nil)
+
+		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler(), directorClient)
 
 		// when
 		result := executor.Execute(operationId)
@@ -73,7 +78,10 @@ func TestStagesExecutor_Execute(t *testing.T) {
 			model.WaitingForInstallation: mockStage,
 		}
 
-		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler())
+		directorClient := &directorMocks.DirectorClient{}
+		directorClient.On("SetRuntimeStatusCondition", clusterId, gqlschema.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(nil)
+
+		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler(), directorClient)
 
 		// when
 		result := executor.Execute(operationId)
@@ -97,8 +105,12 @@ func TestStagesExecutor_Execute(t *testing.T) {
 			model.WaitingForInstallation: mockStage,
 		}
 
+		directorClient := &directorMocks.DirectorClient{}
+		directorClient.On("SetRuntimeStatusCondition", clusterId, gqlschema.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(nil)
+
 		failureHandler := MockFailureHandler{}
-		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler)
+
+		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler, directorClient)
 
 		// when
 		result := executor.Execute(operationId)
@@ -125,8 +137,12 @@ func TestStagesExecutor_Execute(t *testing.T) {
 			model.WaitingForInstallation: mockStage,
 		}
 
+		directorClient := &directorMocks.DirectorClient{}
+		directorClient.On("SetRuntimeStatusCondition", clusterId, gqlschema.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(nil)
+
 		failureHandler := MockFailureHandler{}
-		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler)
+
+		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler, directorClient)
 
 		// when
 		result := executor.Execute(operationId)

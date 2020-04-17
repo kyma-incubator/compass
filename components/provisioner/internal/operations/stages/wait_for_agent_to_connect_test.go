@@ -5,12 +5,15 @@ import (
 	"testing"
 	"time"
 
+	directorMocks "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	v1alpha12 "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
 	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/fake"
 	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -44,7 +47,10 @@ func TestWaitForAgentToConnect(t *testing.T) {
 				},
 			})
 
-			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute)
+			directorClient := &directorMocks.DirectorClient{}
+			directorClient.On("SetRuntimeStatusCondition", mock.AnythingOfType("string"), gqlschema.RuntimeStatusConditionConnected, mock.AnythingOfType("string")).Return(nil)
+
+			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
 
 			// when
 			result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
@@ -65,7 +71,10 @@ func TestWaitForAgentToConnect(t *testing.T) {
 			},
 		})
 
-		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute)
+		directorClient := &directorMocks.DirectorClient{}
+		directorClient.On("SetRuntimeStatusCondition", mock.AnythingOfType("string"), gqlschema.RuntimeStatusConditionConnected, mock.AnythingOfType("string")).Return(nil)
+
+		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
 
 		// when
 		result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
@@ -85,7 +94,10 @@ func TestWaitForAgentToConnect(t *testing.T) {
 			},
 		})
 
-		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute)
+		directorClient := &directorMocks.DirectorClient{}
+		directorClient.On("SetRuntimeStatusCondition", mock.AnythingOfType("string"), gqlschema.RuntimeStatusConditionConnected, mock.AnythingOfType("string")).Return(nil)
+
+		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
 
 		// when
 		result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
@@ -99,8 +111,10 @@ func TestWaitForAgentToConnect(t *testing.T) {
 	t.Run("should rerun step if Compass connection not found", func(t *testing.T) {
 		// given
 		clientProvider := NewMockClientProvider(&v1alpha12.CompassConnection{})
+		directorClient := &directorMocks.DirectorClient{}
+		directorClient.On("SetRuntimeStatusCondition", mock.AnythingOfType("string"), gqlschema.RuntimeStatusConditionConnected, mock.AnythingOfType("string")).Return(nil)
 
-		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute)
+		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
 
 		// when
 		result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
@@ -120,7 +134,10 @@ func TestWaitForAgentToConnect(t *testing.T) {
 			},
 		})
 
-		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute)
+		directorClient := &directorMocks.DirectorClient{}
+		directorClient.On("SetRuntimeStatusCondition", mock.AnythingOfType("string"), gqlschema.RuntimeStatusConditionConnected, mock.AnythingOfType("string")).Return(nil)
+
+		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
 
 		// when
 		_, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
