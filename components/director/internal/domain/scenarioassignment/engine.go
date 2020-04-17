@@ -71,6 +71,112 @@ func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticS
 	return e.createScenarios(ctx, rtmWithoutScenarios, in.Tenant, in.ScenarioName)
 }
 
+func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+	labels, err := e.labelRepo.GetRuntimeScenariosWhereLabelsMatchSelector(ctx, in.Tenant, in.Selector.Key, in.Selector.Value)
+	if err != nil {
+		return errors.Wrap(err, "while getting runtimes scenarios which match given selector")
+	}
+	return e.upsertMergedScenarios(ctx, labels, in.Tenant, in.ScenarioName, e.removeScenario)
+}
+
+func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
+	for _, asa := range in {
+		err := e.RemoveAssignedScenario(ctx, *asa)
+		if err != nil {
+			return errors.Wrapf(err, "while deleting automatic scenario assigment: %s", asa.ScenarioName)
+		}
+	}
+	return nil
+}
+
+func (e engine) GetScenariosForSelectorLabels(ctx context.Context, inputLabels map[string]string) ([]string, error) {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	scenariosSet := make(map[string]struct{})
+
+	for k, v := range inputLabels {
+		selector := model.LabelSelector{
+			Key:   k,
+			Value: v,
+		}
+
+		scenarioAssignments, err := e.scenarioAssignmentRepo.ListForSelector(ctx, selector, tenantID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting Automatic Scenario Assignments for selector [key: %s, val: %s]", k, v)
+		}
+
+		for _, sa := range scenarioAssignments {
+			scenariosSet[sa.ScenarioName] = struct{}{}
+		}
+
+	}
+
+	scenarios := make([]string, 0)
+	for k := range scenariosSet {
+		scenarios = append(scenarios, k)
+	}
+	return scenarios, nil
+}
+
+func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}) ([]interface{}, error) {
+	scenariosSet := make(map[string]struct{})
+
+	possibleSelectorLabels := e.convertMapStringInterfaceToMapStringString(inputLabels)
+
+	scenariosFromAssignments, err := e.GetScenariosForSelectorLabels(ctx, possibleSelectorLabels)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting scenarios for selector labels")
+	}
+
+	for _, scenario := range scenariosFromAssignments {
+		scenariosSet[scenario] = struct{}{}
+	}
+
+	scenariosFromInput, isScenarioLabelInInput := inputLabels[model.ScenariosKey]
+
+	if isScenarioLabelInInput {
+		scenariosFromInputInterfaceSlice, ok := scenariosFromInput.([]interface{})
+		if !ok {
+			return nil, errors.New("while converting scenarios label to an interface slice")
+		}
+
+		for _, scenario := range scenariosFromInputInterfaceSlice {
+			scenariosSet[fmt.Sprint(scenario)] = struct{}{}
+		}
+
+	}
+
+	scenarios := make([]interface{}, 0)
+	for k := range scenariosSet {
+		scenarios = append(scenarios, k)
+	}
+	return scenarios, nil
+}
+
+func (e engine) MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd []interface{}) []interface{} {
+	scenariosSet := map[interface{}]struct{}{}
+	for _, scenario := range baseScenarios {
+		scenariosSet[scenario] = struct{}{}
+	}
+
+	for _, scenario := range scenariosToDelete {
+		delete(scenariosSet, scenario)
+	}
+
+	for _, scenario := range scenariosToAdd {
+		scenariosSet[scenario] = struct{}{}
+	}
+
+	scenarios := make([]interface{}, 0)
+	for k := range scenariosSet {
+		scenarios = append(scenarios, k)
+	}
+	return scenarios
+}
+
 func (e *engine) createScenarios(ctx context.Context, rtmIDs map[string]interface{}, tenantID, scenario string) error {
 	for rtmID, _ := range rtmIDs {
 		label := &model.LabelInput{
@@ -85,24 +191,6 @@ func (e *engine) createScenarios(ctx context.Context, rtmIDs map[string]interfac
 			return errors.Wrap(err, "while inserting new scenarios for runtime")
 		}
 
-	}
-	return nil
-}
-
-func (e engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	labels, err := e.labelRepo.GetRuntimeScenariosWhereLabelsMatchSelector(ctx, in.Tenant, in.Selector.Key, in.Selector.Value)
-	if err != nil {
-		return errors.Wrap(err, "while getting runtimes scenarios which match given selector")
-	}
-	return e.upsertMergedScenarios(ctx, labels, in.Tenant, in.ScenarioName, e.removeScenario)
-}
-
-func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
-	for _, asa := range in {
-		err := e.RemoveAssignedScenario(ctx, *asa)
-		if err != nil {
-			return errors.Wrapf(err, "while deleting automatic scenario assigment: %s", asa.ScenarioName)
-		}
 	}
 	return nil
 }
@@ -173,97 +261,6 @@ func (e *engine) removeScenario(scenarios []interface{}, toRemove string) ([]int
 		}
 	}
 	return newScenarios, nil
-}
-
-func (e engine) GetScenariosForSelectorLabels(ctx context.Context, inputLabels map[string]string) ([]string, error) {
-	tenantID, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	scenariosSet := make(map[string]struct{})
-
-	for k, v := range inputLabels {
-		selector := model.LabelSelector{
-			Key:   k,
-			Value: v,
-		}
-
-		scenarioAssignments, err := e.scenarioAssignmentRepo.ListForSelector(ctx, selector, tenantID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while getting Automatic Scenario Assignments for selector [key: %s, val: %s]", k, v)
-		}
-
-		for _, sa := range scenarioAssignments {
-			scenariosSet[sa.ScenarioName] = struct{}{}
-		}
-
-	}
-
-	scenarios := make([]string, 0)
-	for k := range scenariosSet {
-		scenarios = append(scenarios, k)
-	}
-
-	return scenarios, nil
-}
-
-func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}) ([]interface{}, error) {
-	scenariosSet := make(map[string]struct{})
-
-	possibleSelectorLabels := e.convertMapStringInterfaceToMapStringString(inputLabels)
-
-	scenariosFromAssignments, err := e.GetScenariosForSelectorLabels(ctx, possibleSelectorLabels)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting scenarios for selector labels")
-	}
-
-	for _, scenario := range scenariosFromAssignments {
-		scenariosSet[scenario] = struct{}{}
-	}
-
-	scenariosFromInput, isScenarioLabelInInput := inputLabels[model.ScenariosKey]
-
-	if isScenarioLabelInInput {
-		scenariosFromInputInterfaceSlice, ok := scenariosFromInput.([]interface{})
-		if !ok {
-			return nil, errors.New("while converting scenarios label to an interface slice")
-		}
-
-		for _, scenario := range scenariosFromInputInterfaceSlice {
-			scenariosSet[fmt.Sprint(scenario)] = struct{}{}
-		}
-
-	}
-
-	scenarios := make([]interface{}, 0)
-	for k := range scenariosSet {
-		scenarios = append(scenarios, k)
-	}
-
-	return scenarios, nil
-}
-
-func (e engine) MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd []interface{}) []interface{} {
-	scenariosSet := map[interface{}]struct{}{}
-	for _, scenario := range baseScenarios {
-		scenariosSet[scenario] = struct{}{}
-	}
-
-	for _, scenario := range scenariosToDelete {
-		delete(scenariosSet, scenario)
-	}
-
-	for _, scenario := range scenariosToAdd {
-		scenariosSet[scenario] = struct{}{}
-	}
-
-	scenarios := make([]interface{}, 0)
-	for k := range scenariosSet {
-		scenarios = append(scenarios, k)
-	}
-
-	return scenarios
 }
 
 func (e engine) convertMapStringInterfaceToMapStringString(inputLabels map[string]interface{}) map[string]string {

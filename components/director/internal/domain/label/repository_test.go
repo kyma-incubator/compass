@@ -993,6 +993,16 @@ func TestRepository_GetRuntimesIDsWhereLabelsMatchSelector(t *testing.T) {
 		assert.Contains(t, err.Error(), testErr.Error())
 		dbMock.AssertExpectations(t)
 	})
+
+	t.Run("Return error when no persistance in context", func(t *testing.T) {
+		labelRepo := label.NewRepository(nil)
+		//WHEN
+		_, err := labelRepo.GetRuntimesIDsByKeyAndValue(context.TODO(), tenantID, selectorKey, selectorValue)
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "while fetching persistence from context")
+	})
 }
 
 func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
@@ -1076,7 +1086,7 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 		dbMock.AssertExpectations(t)
 	})
 
-	t.Run("Return error when no persitance in context", func(t *testing.T) {
+	t.Run("Return error when no persistance in context", func(t *testing.T) {
 		labelRepo := label.NewRepository(nil)
 		//WHEN
 		_, err := labelRepo.GetScenarioLabelsForRuntimes(context.TODO(), tenantID, []string{})
