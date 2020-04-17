@@ -13,7 +13,7 @@ import (
 //go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
 type LabelRepository interface {
 	GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error)
-	GetRuntimesIDsWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]string, error)
+	GetRuntimesIDsByKeyAndValue(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]string, error)
 	GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 }
@@ -38,7 +38,7 @@ func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scena
 }
 
 func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	runtimesIDs, err := e.labelRepo.GetRuntimesIDsWhereLabelsMatchSelector(ctx, in.Tenant, in.Selector.Key, in.Selector.Value)
+	runtimesIDs, err := e.labelRepo.GetRuntimesIDsByKeyAndValue(ctx, in.Tenant, in.Selector.Key, in.Selector.Value)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching runtimes id which match given selector:%+v", in)
 	}

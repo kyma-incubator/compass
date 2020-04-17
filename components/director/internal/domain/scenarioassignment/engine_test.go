@@ -41,7 +41,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		ctx := context.TODO()
 		labelRepo := &automock.LabelRepository{}
-		labelRepo.On("GetRuntimesIDsWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+		labelRepo.On("GetRuntimesIDsByKeyAndValue", ctx, tenantID, selectorKey, selectorValue).
 			Return(runtimesIDs, nil)
 
 		labelRepo.On("GetScenarioLabelsForRuntimes", ctx, tenantID, runtimesIDs).
@@ -66,7 +66,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 	t.Run("Failed when insert new Label on upsert failed ", func(t *testing.T) {
 		ctx := context.TODO()
 		labelRepo := &automock.LabelRepository{}
-		labelRepo.On("GetRuntimesIDsWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+		labelRepo.On("GetRuntimesIDsByKeyAndValue", ctx, tenantID, selectorKey, selectorValue).
 			Return(runtimesIDs, nil).Once()
 		labelRepo.On("GetScenarioLabelsForRuntimes", ctx, tenantID, runtimesIDs).
 			Return([]model.Label{scenarioLabel}, nil)
@@ -96,7 +96,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		ctx := context.TODO()
 		labelRepo := &automock.LabelRepository{}
-		labelRepo.On("GetRuntimesIDsWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+		labelRepo.On("GetRuntimesIDsByKeyAndValue", ctx, tenantID, selectorKey, selectorValue).
 			Return([]string{rtmIDWithScenario}, nil).Once()
 		labelRepo.On("GetScenarioLabelsForRuntimes", ctx, tenantID, []string{rtmIDWithScenario}).
 			Return([]model.Label{scenarioLabel}, nil)
@@ -119,7 +119,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 	t.Run("Failed when GetScenarioLabelsForRuntimes returns error", func(t *testing.T) {
 		ctx := context.TODO()
 		labelRepo := &automock.LabelRepository{}
-		labelRepo.On("GetRuntimesIDsWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+		labelRepo.On("GetRuntimesIDsByKeyAndValue", ctx, tenantID, selectorKey, selectorValue).
 			Return(runtimesIDs, nil).Once()
 		labelRepo.On("GetScenarioLabelsForRuntimes", ctx, tenantID, runtimesIDs).Return(nil, testErr)
 
@@ -134,10 +134,10 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 		labelRepo.AssertExpectations(t)
 	})
 
-	t.Run("Failed when GetRuntimesIDsWhereLabelsMatchSelector returns error", func(t *testing.T) {
+	t.Run("Failed when GetRuntimesIDsByKeyAndValue returns error", func(t *testing.T) {
 		ctx := context.TODO()
 		labelRepo := &automock.LabelRepository{}
-		labelRepo.On("GetRuntimesIDsWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+		labelRepo.On("GetRuntimesIDsByKeyAndValue", ctx, tenantID, selectorKey, selectorValue).
 			Return(runtimesIDs, testErr).Once()
 
 		eng := scenarioassignment.NewEngine(nil, labelRepo, nil)
@@ -154,7 +154,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 	t.Run("Success, no runtimes found", func(t *testing.T) {
 		ctx := context.TODO()
 		labelRepo := &automock.LabelRepository{}
-		labelRepo.On("GetRuntimesIDsWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+		labelRepo.On("GetRuntimesIDsByKeyAndValue", ctx, tenantID, selectorKey, selectorValue).
 			Return([]string{}, nil).Once()
 
 		eng := scenarioassignment.NewEngine(nil, labelRepo, nil)

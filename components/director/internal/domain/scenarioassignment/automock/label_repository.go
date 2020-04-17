@@ -48,8 +48,8 @@ func (_m *LabelRepository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx conte
 	return r0, r1
 }
 
-// GetRuntimesIDsWhereLabelsMatchSelector provides a mock function with given fields: ctx, tenantID, selectorKey, selectorValue
-func (_m *LabelRepository) GetRuntimesIDsWhereLabelsMatchSelector(ctx context.Context, tenantID string, selectorKey string, selectorValue string) ([]string, error) {
+// GetRuntimesIDsByKeyAndValue provides a mock function with given fields: ctx, tenantID, selectorKey, selectorValue
+func (_m *LabelRepository) GetRuntimesIDsByKeyAndValue(ctx context.Context, tenantID string, selectorKey string, selectorValue string) ([]string, error) {
 	ret := _m.Called(ctx, tenantID, selectorKey, selectorValue)
 
 	var r0 []string

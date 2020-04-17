@@ -968,7 +968,7 @@ func TestRepository_GetRuntimesIDsWhereLabelsMatchSelector(t *testing.T) {
 		conv := label.NewConverter()
 		labelRepo := label.NewRepository(conv)
 		//WHEN
-		rtmIDs, err := labelRepo.GetRuntimesIDsWhereLabelsMatchSelector(ctx, tenantID, selectorKey, selectorValue)
+		rtmIDs, err := labelRepo.GetRuntimesIDsByKeyAndValue(ctx, tenantID, selectorKey, selectorValue)
 
 		//THEN
 		require.NoError(t, err)
@@ -986,7 +986,7 @@ func TestRepository_GetRuntimesIDsWhereLabelsMatchSelector(t *testing.T) {
 		conv := label.NewConverter()
 		labelRepo := label.NewRepository(conv)
 		//WHEN
-		_, err := labelRepo.GetRuntimesIDsWhereLabelsMatchSelector(ctx, tenantID, selectorKey, selectorValue)
+		_, err := labelRepo.GetRuntimesIDsByKeyAndValue(ctx, tenantID, selectorKey, selectorValue)
 
 		//THEN
 		require.Error(t, err)
@@ -1074,5 +1074,15 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "Cannot execute query without runtimesIDs")
 		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Return error when no persitance in context", func(t *testing.T) {
+		labelRepo := label.NewRepository(nil)
+		//WHEN
+		_, err := labelRepo.GetScenarioLabelsForRuntimes(context.TODO(), tenantID, []string{})
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "while fetching persistence from context")
 	})
 }

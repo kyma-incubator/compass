@@ -176,7 +176,7 @@ func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string)
 	return nil
 }
 
-func (r *repository) GetRuntimesIDsWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]string, error) {
+func (r *repository) GetRuntimesIDsByKeyAndValue(ctx context.Context, tenantID, key, value string) ([]string, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching persistence from context")
@@ -184,7 +184,7 @@ func (r *repository) GetRuntimesIDsWhereLabelsMatchSelector(ctx context.Context,
 	query := `SELECT LA.runtime_id FROM LABELS AS LA WHERE LA."key"=$1 AND value ?| array[$2] AND LA.tenant_id=$3 AND LA.runtime_ID IS NOT NULL;`
 
 	var matchedRtmsIDs []string
-	err = persist.Select(&matchedRtmsIDs, query, selectorKey, selectorValue, tenantID)
+	err = persist.Select(&matchedRtmsIDs, query, key, value, tenantID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching runtimes id which match selector")
 	}
@@ -202,7 +202,7 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 	}
 
 	query := `SELECT * FROM LABELS AS L WHERE L."key"='scenarios' AND L.runtime_id in (?)`
-	var lables []Entity
+	var labels []Entity
 	query, args, err := sqlx.In(query, runtimesIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating query")
@@ -212,13 +212,13 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 
 	query = sqlx.Rebind(sqlx.DOLLAR, query)
 	args = append(args, tenantID)
-	err = persist.Select(&lables, query, args...)
+	err = persist.Select(&labels, query, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching runtimes scenarios")
 	}
 
 	var labelModels []model.Label
-	for _, label := range lables {
+	for _, label := range labels {
 
 		labelModel, err := r.conv.FromEntity(label)
 		if err != nil {
