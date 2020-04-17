@@ -93,14 +93,14 @@ type ProvisioningOperation struct {
 	// following fields are not stored in the storage
 	InputCreator ProvisionInputCreator `json:"-"`
 
-	Avs AvsLifecycleData
+	Avs AvsLifecycleData `json:"avs"`
 }
 
 // DeprovisioningOperation holds all information about de-provisioning operation
 type DeprovisioningOperation struct {
 	Operation `json:"-"`
 
-	Avs AvsLifecycleData
+	Avs AvsLifecycleData `json:"avs"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
