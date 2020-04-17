@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -64,7 +65,7 @@ func newDirectorClient(config config) (director.DirectorClient, error) {
 }
 
 func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient.Config, gardenerClientSet *gardener_apis.CoreV1beta1Client,
-	dbsFactory dbsession.Factory, direcotrClietnt director.DirectorClient,
+	dbsFactory dbsession.Factory, direcotrClietnt director.DirectorClient, installationSvc installation.Service,
 	queue queue.OperationQueue) (*gardener.ShootController, error) {
 	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
 	if err != nil {
@@ -82,7 +83,7 @@ func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient
 		return nil, fmt.Errorf("unable to create shoot controller manager: %w", err)
 	}
 
-	return gardener.NewShootController(mgr, shootClient, secretsInterface, dbsFactory, direcotrClietnt, queue)
+	return gardener.NewShootController(mgr, shootClient, secretsInterface, dbsFactory, direcotrClietnt, installationSvc, queue)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {

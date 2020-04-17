@@ -3,6 +3,7 @@ package gardener
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
@@ -37,6 +38,7 @@ func NewReconciler(
 	secretsClient v1core.SecretInterface,
 	shootClient v1beta1.ShootInterface,
 	directorClient director.DirectorClient,
+	installationSvc installation.Service,
 	installQueue queue.OperationQueue) *Reconciler {
 	return &Reconciler{
 		client:     mgr.GetClient(),
@@ -49,6 +51,7 @@ func NewReconciler(
 			secretsClient:     secretsClient,
 			shootClient:       shootClient,
 			directorClient:    directorClient,
+			installationSvc:   installationSvc,
 			installationQueue: installQueue,
 		},
 	}
@@ -64,10 +67,11 @@ type Reconciler struct {
 }
 
 type ProvisioningOperator struct {
-	secretsClient  v1core.SecretInterface
-	shootClient    v1beta1.ShootInterface
-	dbsFactory     dbsession.Factory
-	directorClient director.DirectorClient
+	secretsClient   v1core.SecretInterface
+	shootClient     v1beta1.ShootInterface
+	dbsFactory      dbsession.Factory
+	directorClient  director.DirectorClient
+	installationSvc installation.Service
 
 	installationQueue queue.OperationQueue
 }

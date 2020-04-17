@@ -2,6 +2,7 @@ package gardener
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 
@@ -27,6 +28,7 @@ func NewShootController(
 	secretsClient v1core.SecretInterface,
 	dbsFactory dbsession.Factory,
 	directorClient director.DirectorClient,
+	installationSvc installation.Service,
 	installQueue queue.OperationQueue) (*ShootController, error) {
 
 	err := gardener_types.AddToScheme(mgr.GetScheme())
@@ -36,7 +38,7 @@ func NewShootController(
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&gardener_types.Shoot{}).
-		Complete(NewReconciler(mgr, dbsFactory, secretsClient, shootClient, directorClient, installQueue))
+		Complete(NewReconciler(mgr, dbsFactory, secretsClient, shootClient, directorClient, installationSvc, installQueue))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create controller: %w", err)
 	}
