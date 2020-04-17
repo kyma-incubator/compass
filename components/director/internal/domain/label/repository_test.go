@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -1012,14 +1013,14 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 	rtmIDs := []string{rtm1ID, rtm2ID}
 	testErr := errors.New("test error")
 
-	query := regexp.QuoteMeta(`SELECT * FROM LABELS AS L WHERE L."key"='scenarios' AND L.runtime_id in ($1, $2) AND L.tenant_id=$3;`)
+	query := regexp.QuoteMeta(fmt.Sprintf(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE tenant_id=$1 AND key = '%s' AND runtime_id IN ('%s', '%s')`, model.ScenariosKey, rtm1ID, rtm2ID))
 	t.Run("Success", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
 			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm1ID).
 			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm2ID)
 
-		dbMock.ExpectQuery(query).WithArgs(rtm1ID, rtm2ID, tenantID).WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(query).WithArgs(tenantID).WillReturnRows(mockedRows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
 		conv := label.NewConverter()
@@ -1039,7 +1040,7 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm1ID).
 			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm2ID)
 
-		dbMock.ExpectQuery(query).WithArgs(rtm1ID, rtm2ID, tenantID).WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(query).WithArgs(tenantID).WillReturnRows(mockedRows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
 		conv := &automock.Converter{}
@@ -1057,7 +1058,7 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 
 	t.Run("Database returns error", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
-		dbMock.ExpectQuery(query).WithArgs(rtm1ID, rtm2ID, tenantID).WillReturnError(testErr)
+		dbMock.ExpectQuery(query).WithArgs(tenantID).WillReturnError(testErr)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
 		conv := label.NewConverter()
@@ -1084,15 +1085,5 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "Cannot execute query without runtimesIDs")
 		dbMock.AssertExpectations(t)
-	})
-
-	t.Run("Return error when no persistance in context", func(t *testing.T) {
-		labelRepo := label.NewRepository(nil)
-		//WHEN
-		_, err := labelRepo.GetScenarioLabelsForRuntimes(context.TODO(), tenantID, []string{})
-
-		//THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "while fetching persistence from context")
 	})
 }

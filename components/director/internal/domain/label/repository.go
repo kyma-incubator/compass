@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -17,9 +17,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-const tableName string = "public.labels"
+const (
+	tableName    string = "public.labels"
+	tenantColumn string = "tenant_id"
+)
 
-var tableColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "key", "value"}
+var tableColumns = []string{"id", tenantColumn, "app_id", "runtime_id", "key", "value"}
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
@@ -29,13 +32,14 @@ type Converter interface {
 
 type repository struct {
 	upserter repo.Upserter
-
-	conv Converter
+	lister   repo.Lister
+	conv     Converter
 }
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		upserter: repo.NewUpserter(tableName, tableColumns, []string{"tenant_id", "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
+		upserter: repo.NewUpserter(tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
+		lister:   repo.NewLister(tableName, tenantColumn, tableColumns),
 		conv:     conv,
 	}
 }
@@ -192,27 +196,24 @@ func (r *repository) GetRuntimesIDsByKeyAndValue(ctx context.Context, tenantID, 
 }
 
 func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error) {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "while fetching persistence from context")
-	}
-
 	if len(runtimesIDs) == 0 {
 		return nil, errors.New("Cannot execute query without runtimesIDs")
 	}
 
-	query := `SELECT * FROM LABELS AS L WHERE L."key"='scenarios' AND L.runtime_id in (?)`
-	var labels []Entity
-	query, args, err := sqlx.In(query, runtimesIDs)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating query")
+	stringBuilder := strings.Builder{}
+	for idx, id := range runtimesIDs {
+		stringBuilder.WriteString(pq.QuoteLiteral(id))
+		if idx < len(runtimesIDs)-1 {
+			stringBuilder.WriteString(", ")
+		}
 	}
 
-	query += " AND L.tenant_id=?;"
+	//TODO: those condition will be refactored in https://github.com/kyma-incubator/compass/pull/1187
+	rtmInCondition := repo.NewInCondition("runtime_id", stringBuilder.String())
+	keyCond := fmt.Sprintf("key = %s", pq.QuoteLiteral(model.ScenariosKey))
 
-	query = sqlx.Rebind(sqlx.DOLLAR, query)
-	args = append(args, tenantID)
-	err = persist.Select(&labels, query, args...)
+	var labels Collection
+	err := r.lister.List(ctx, tenantID, &labels, keyCond, rtmInCondition.GetQueryPart(1))
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching runtimes scenarios")
 	}

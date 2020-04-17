@@ -46,29 +46,13 @@ func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticS
 	if len(runtimesIDs) == 0 {
 		return nil
 	}
-
 	labels, err := e.labelRepo.GetScenarioLabelsForRuntimes(ctx, in.Tenant, runtimesIDs)
 	if err != nil {
 		return errors.Wrap(err, "while fetching scenarios labels for matched runtimes")
 	}
-	err = e.upsertMergedScenarios(ctx, labels, in.Tenant, in.ScenarioName, e.uniqueScenarios)
-	if err != nil {
-		return errors.Wrap(err, "while upserting merged scenarios to runtimes")
-	}
 
-	rtmWithoutScenarios := make(map[string]interface{})
-	for _, matchedID := range runtimesIDs {
-		rtmWithoutScenarios[matchedID] = new(interface{})
-	}
-
-	for _, scenarioLabel := range labels {
-		_, ok := rtmWithoutScenarios[scenarioLabel.ObjectID]
-		if ok {
-			delete(rtmWithoutScenarios, scenarioLabel.ObjectID)
-		}
-	}
-
-	return e.createScenarios(ctx, rtmWithoutScenarios, in.Tenant, in.ScenarioName)
+	labels = e.createScenariosLabelsForRuntimesWithouthScenarios(in.Tenant, runtimesIDs, labels)
+	return e.upsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.uniqueScenarios)
 }
 
 func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
@@ -76,7 +60,7 @@ func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticS
 	if err != nil {
 		return errors.Wrap(err, "while getting runtimes scenarios which match given selector")
 	}
-	return e.upsertMergedScenarios(ctx, labels, in.Tenant, in.ScenarioName, e.removeScenario)
+	return e.upsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.removeScenario)
 }
 
 func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
@@ -177,36 +161,43 @@ func (e engine) MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd 
 	return scenarios
 }
 
-func (e *engine) createScenarios(ctx context.Context, rtmIDs map[string]interface{}, tenantID, scenario string) error {
-	for rtmID, _ := range rtmIDs {
-		label := &model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []interface{}{scenario},
-			ObjectID:   rtmID,
-			ObjectType: model.RuntimeLabelableObject,
-		}
-
-		err := e.labelService.UpsertLabel(ctx, tenantID, label)
-		if err != nil {
-			return errors.Wrap(err, "while inserting new scenarios for runtime")
-		}
-
+func (e *engine) createScenariosLabelsForRuntimesWithouthScenarios(tenantID string, runtimesIDs []string, labels []model.Label) []model.Label {
+	rtmWithScenario := make(map[string]struct{})
+	for _, label := range labels {
+		rtmWithScenario[label.ObjectID] = struct{}{}
 	}
-	return nil
+
+	for _, rtmID := range runtimesIDs {
+		_, ok := rtmWithScenario[rtmID]
+		if !ok {
+			labels = append(labels, e.createNewEmptyScenarioLabel(tenantID, rtmID))
+		}
+	}
+
+	return labels
 }
 
-func (e *engine) upsertMergedScenarios(ctx context.Context, labels []model.Label, tenantID, scenarioName string, mergeFn func(scenarios []interface{}, diffScenario string) ([]interface{}, error)) error {
+func (e *engine) createNewEmptyScenarioLabel(tenantID string, rtmID string) model.Label {
+	return model.Label{Tenant: tenantID,
+		Key:        model.ScenariosKey,
+		Value:      []interface{}{},
+		ObjectID:   rtmID,
+		ObjectType: model.RuntimeLabelableObject,
+	}
+}
+
+func (e *engine) upsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenario string, mergeFn func(scenarios []interface{}, diffScenario string) ([]interface{}, error)) error {
 	for _, label := range labels {
 		scenarios, ok := label.Value.([]interface{})
 		if !ok {
 			return errors.Errorf("scenarios value is invalid type: %t", label.Value)
 		}
 
-		newScenarios, err := mergeFn(scenarios, scenarioName)
+		newScenarios, err := mergeFn(scenarios, newScenario)
 		if err != nil {
 			return errors.Wrap(err, "while merging scenarios")
 		}
-		err = e.updateScenarioLabel(ctx, tenantID, label, newScenarios)
+		err = e.updateScenario(ctx, tenantID, label, newScenarios)
 		if err != nil {
 			return errors.Wrap(err, "while updating scenarios label")
 		}
@@ -214,7 +205,7 @@ func (e *engine) upsertMergedScenarios(ctx context.Context, labels []model.Label
 	return nil
 }
 
-func (e *engine) updateScenarioLabel(ctx context.Context, tenantID string, label model.Label, scenarios []interface{}) error {
+func (e *engine) updateScenario(ctx context.Context, tenantID string, label model.Label, scenarios []interface{}) error {
 	if len(scenarios) == 0 {
 		return e.labelRepo.Delete(ctx, tenantID, model.RuntimeLabelableObject, label.ObjectID, model.ScenariosKey)
 	} else {
