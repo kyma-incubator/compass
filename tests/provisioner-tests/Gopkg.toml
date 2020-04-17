@@ -5,7 +5,13 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  revision = "fb6306fe65c818e9cf5462a73f9681344ab40438"
+  source = "github.com/Szymongib/compass"
+  branch = "runtime-upgrade-in-provisioner"
+
+[[constraint]]
+  name = "github.com/kyma-project/kyma"
+  source = "github.com/Szymongib/kyma"
+  branch = "rename-compass-runtime-agent-module"
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"

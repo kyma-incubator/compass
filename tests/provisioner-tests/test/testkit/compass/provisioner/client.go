@@ -14,7 +14,7 @@ const (
 
 type Client interface {
 	ProvisionRuntime(config schema.ProvisionRuntimeInput) (operationStatusID string, runtimeID string, err error)
-	UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error)
+	UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (schema.OperationStatus, error)
 	DeprovisionRuntime(runtimeID string) (string, error)
 	ReconnectRuntimeAgent(runtimeID string) (string, error)
 	RuntimeStatus(runtimeID string) (schema.RuntimeStatus, error)
@@ -57,21 +57,21 @@ func (c client) ProvisionRuntime(config schema.ProvisionRuntimeInput) (operation
 	return *operationStatus.ID, *operationStatus.RuntimeID, nil
 }
 
-func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error) {
+func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (schema.OperationStatus, error) {
 	upgradeRuntimeIptGQL, err := c.graphqlizer.UpgradeRuntimeInputToGraphQL(config)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to convert Upgrade Runtime Input to query")
+		return schema.OperationStatus{}, errors.Wrap(err, "Failed to convert Upgrade Runtime Input to query")
 	}
 
 	query := c.queryProvider.upgradeRuntime(runtimeID, upgradeRuntimeIptGQL)
 	req := c.newRequest(query)
 
-	var operationId string
-	err = c.graphQLClient.ExecuteRequest(req, &operationId)
+	var operationStatus schema.OperationStatus
+	err = c.graphQLClient.ExecuteRequest(req, &operationStatus)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to upgrade Runtime")
+		return schema.OperationStatus{}, errors.Wrap(err, "Failed to upgrade Runtime")
 	}
-	return operationId, nil
+	return operationStatus, nil
 }
 
 func (c client) DeprovisionRuntime(runtimeID string) (string, error) {

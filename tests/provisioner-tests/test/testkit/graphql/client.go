@@ -5,9 +5,11 @@ import (
 	"crypto/tls"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/avast/retry-go"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -50,7 +52,11 @@ func (c Client) ExecuteRequest(req *gcli.Request, respDestination interface{}) e
 	}
 
 	wrapper := &graphQLResponseWrapper{Result: respDestination}
-	err := c.graphQLClient.Run(context.Background(), req, wrapper)
+
+	err := retry.Do(func() error {
+		return c.graphQLClient.Run(context.Background(), req, wrapper)
+	}, retry.Delay(1*time.Second), retry.Attempts(3))
+
 	if err != nil {
 		return errors.Wrap(err, "Failed to execute request")
 	}

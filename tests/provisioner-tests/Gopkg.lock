@@ -53,6 +53,14 @@
   version = "v1.0.3"
 
 [[projects]]
+  digest = "1:49bb655587fa61c5b986d03c0b5b2a7c163683bc5d1379f32927bbb86f461115"
+  name = "github.com/avast/retry-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a8f6dc7e8f46a5d11c01d9da1e887bb5a51fd107"
+  version = "v2.6.0"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -157,22 +165,30 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:d49d6a22b2e920f5090c2553e276fd6644d767ab6171d231f150605dd4935349"
+  branch = "runtime-upgrade-in-provisioner"
+  digest = "1:2d99401b3ae31f314ce6fe1ed7cf38904b5216d937264c73ef0b24ae6e0ccb00"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/scalar",
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "fb6306fe65c818e9cf5462a73f9681344ab40438"
+  revision = "5b13a6203a6c9fcd34ea32bc507b9b30c67d8b57"
+  source = "github.com/Szymongib/compass"
 
 [[projects]]
-  digest = "1:bde204c6c8dd5169cd05ed5aa9a1e027bc8d2cdd172c5e80b971cb4e14b55e3c"
+  branch = "rename-compass-runtime-agent-module"
+  digest = "1:a7dce581c3ee35b891aba315e84db7e78ccb534e6558d00290221e7907067fb3"
   name = "github.com/kyma-project/kyma"
-  packages = ["components/kyma-operator/pkg/apis/installer/v1alpha1"]
+  packages = [
+    "components/compass-runtime-agent/pkg/apis/compass/v1alpha1",
+    "components/compass-runtime-agent/pkg/client/clientset/versioned/scheme",
+    "components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1",
+    "components/kyma-operator/pkg/apis/installer/v1alpha1",
+  ]
   pruneopts = "UT"
-  revision = "119010d0810e5e1e23b78e1058f2b0fbea293ae9"
-  version = "1.9.0"
+  revision = "8511cc62d0cd85301fb6abf9cd787d752ff13e80"
+  source = "github.com/Szymongib/kyma"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -619,9 +635,12 @@
   analyzer-version = 1
   input-imports = [
     "github.com/Masterminds/sprig",
+    "github.com/avast/retry-go",
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
+    "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1",
+    "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
@@ -635,6 +654,7 @@
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/typed/core/v1",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
+    "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
   ]
   solver-name = "gps-cdcl"

@@ -24,7 +24,7 @@ pushd ${CURRENT_DIR}/..
 
 go clean --testcache
 
-go test ./... -timeout 120m -v
+go test ./... -timeout 120m -v -run TestRuntimeUpgrade
 
 popd
 
