@@ -178,14 +178,9 @@
 
 [[projects]]
   branch = "rename-compass-runtime-agent-module"
-  digest = "1:a7dce581c3ee35b891aba315e84db7e78ccb534e6558d00290221e7907067fb3"
+  digest = "1:3bc22082ebec066e069fd08b5e84aeabbb05d9148b87e5378bed61827f730741"
   name = "github.com/kyma-project/kyma"
-  packages = [
-    "components/compass-runtime-agent/pkg/apis/compass/v1alpha1",
-    "components/compass-runtime-agent/pkg/client/clientset/versioned/scheme",
-    "components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1",
-    "components/kyma-operator/pkg/apis/installer/v1alpha1",
-  ]
+  packages = ["components/kyma-operator/pkg/apis/installer/v1alpha1"]
   pruneopts = "UT"
   revision = "8511cc62d0cd85301fb6abf9cd787d752ff13e80"
   source = "github.com/Szymongib/kyma"
@@ -639,8 +634,6 @@
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
-    "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1",
-    "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
@@ -654,7 +647,6 @@
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/typed/core/v1",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
-    "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
   ]
   solver-name = "gps-cdcl"
