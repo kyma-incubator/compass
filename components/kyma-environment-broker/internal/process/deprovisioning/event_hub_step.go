@@ -71,7 +71,6 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	// parse provisioning parameters
 	fmt.Printf("instance provisiong parameters :%s\n", instance.ProvisioningParameters)
 	pp, err := GetParameters(instance.ProvisioningParameters)
-	// pp, err := operation.GetParameters()
 	if err != nil {
 		// if the parameters are incorrect, there is no reason to retry the operation
 		// a new request has to be issued by the user
@@ -92,8 +91,9 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure config: %v", err)
-		return s.OperationManager.RetryForever(operation, errorMessage, time.Minute, log)
-		// return s.OperationManager.OperationFailed(operation, errorMessage)
+		//TODO(montaro) Failing the operation assuming this is the desired behaviour
+		//return s.OperationManager.RetryForever(operation, errorMessage, time.Minute, log)
+		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
 
 	// create hyperscaler client
@@ -101,8 +101,9 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
-		return s.OperationManager.RetryForever(operation, errorMessage, time.Minute, log)
-		// return s.OperationManager.OperationFailed(operation, errorMessage)
+		//TODO(montaro) Failing the operation assuming this is the desired behaviour
+		//return s.OperationManager.RetryForever(operation, errorMessage, time.Minute, log)
+		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
 	// prepare azure tags
 	tags := azure.Tags{azure.TagInstanceID: &operation.InstanceID}

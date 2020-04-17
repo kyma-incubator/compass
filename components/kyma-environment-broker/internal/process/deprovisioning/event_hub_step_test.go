@@ -185,62 +185,66 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			},
 			wantRepeatOperation: true,
 		},
-		// {
-		// 	name:          "EventHubs Namespace creation error",
-		// 	giveOperation: fixProvisioningOperation,
-		// 	giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
-		// 		accountProvider := fixAccountProvider()
-		// 		return NewDeprovisionAzureEventHubStep(storage.Operations(),
-		// 			// ups ... namespace cannot get created
-		// 			azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientCreationError()),
-		// 			accountProvider,
-		// 			context.Background(),
-		// 		)
-		// 	},
-		// 	wantRepeatOperation: true,
-		// },
-		// {
-		// 	name:          "Error while getting EventHubs Namespace credentials",
-		// 	giveOperation: fixProvisioningOperation,
-		// 	giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
-		// 		accountProvider := fixAccountProvider()
-		// 		return NewDeprovisionAzureEventHubStep(storage.Operations(),
-		// 			// ups ... namespace cannot get listed
-		// 			azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientListError()),
-		// 			accountProvider,
-		// 			context.Background(),
-		// 		)
-		// 	},
-		// 	wantRepeatOperation: true,
-		// },
-		// {
-		// 	name:          "No error while getting EventHubs Namespace credentials, but PrimaryConnectionString in AccessKey is nil",
-		// 	giveOperation: fixDeprovisioningOperationWithParameters,
-		// 	giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
-		// 		accountProvider := fixAccountProvider()
-		// 		return *NewDeprovisionAzureEventHubStep(storage.Operations(),
-		// 			// ups ... PrimaryConnectionString is nil
-		// 			azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceAccessKeysNil()),
-		// 			accountProvider,
-		// 			context.Background(),
-		// 		)
-		// 	},
-		// 	wantRepeatOperation: true,
-		// },
-		// {
-		// 	name:          "Error while getting config from HAP",
-		// 	giveOperation: fixProvisioningOperation,
-		// 	giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
-		// 		accountProvider := fixAccountProvider()
-		// 		return NewDeprovisionAzureEventHubStep(storage.Operations(),
-		// 			// ups ... client cannot be created
-		// 			azuretesting.NewFakeHyperscalerProviderError(),
-		// 			accountProvider,
-		// 			context.Background(),
-		// 		)
-		// 	},
-		// 	wantRepeatOperation: false,
-		// },
+		//TODO(montaro) Invalid test
+		//{
+		//	name:          "EventHubs Namespace creation error",
+		//	giveOperation: fixProvisioningOperation,
+		//	giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
+		//		accountProvider := fixAccountProvider()
+		//		return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+		//			// ups ... namespace cannot get created
+		//			azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientCreationError()),
+		//			accountProvider,
+		//			context.Background(),
+		//		)
+		//	},
+		//	wantRepeatOperation: true,
+		//},
+		{
+			name:          "Error while getting EventHubs Namespace credentials",
+			giveOperation: fixDeprovisioningOperationWithParameters,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
+				accountProvider := fixAccountProviderGardenerCredentialsError()
+				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+					// ups ... namespace cannot get listed
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientListError()),
+					accountProvider,
+					context.Background(),
+				)
+			},
+			wantRepeatOperation: true,
+		},
+		//TODO(montaro) invalid test
+		//{
+		//	name:          "No error while getting EventHubs Namespace credentials, but PrimaryConnectionString in AccessKey is nil",
+		//	giveOperation: fixDeprovisioningOperationWithParameters,
+		//	giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
+		//		accountProvider := fixAccountProvider()
+		//		return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+		//			// ups ... PrimaryConnectionString is nil
+		//			azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceAccessKeysNil()),
+		//			accountProvider,
+		//			context.Background(),
+		//		)
+		//	},
+		//	wantRepeatOperation: false,
+		//},
+		{
+			name:          "Error while getting config from HAP",
+			giveOperation: fixDeprovisioningOperation,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
+				accountProvider := fixAccountProvider()
+				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+					// ups ... client cannot be created
+					azuretesting.NewFakeHyperscalerProviderError(),
+					accountProvider,
+					context.Background(),
+				)
+			},
+			wantRepeatOperation: false,
+		},
+		//TODO(montaro) invalid test
+		
 		// {
 		// 	name:          "Error while creating Azure ResourceGroup",
 		// 	giveOperation: fixDeprovisioningOperationWithParameters,
@@ -265,9 +269,10 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			step := tt.giveStep(t, memoryStorage)
 			// this is required to avoid storage retries (without this statement there will be an error => retry)
 			// TODO(nachtmaar): can this be deleted ??
-			// err := memoryStorage.Operations().InsertDeprovisioningOperation(op)
-			// require.NoError(t, err)
-			err := memoryStorage.Instances().Insert(fixInstance())
+			//TODO(montaro): Had to get it back, otherwise the failed operation would be retried
+			err := memoryStorage.Operations().InsertDeprovisioningOperation(op)
+			require.NoError(t, err)
+			err = memoryStorage.Instances().Insert(fixInstance())
 			require.NoError(t, err)
 
 			// when
@@ -299,7 +304,7 @@ func fixInstance() internal.Instance {
 				"components": [],
 				"region": "westeurope"
 			}
-		}`,}
+		}`}
 }
 
 func fixTags() azure.Tags {
