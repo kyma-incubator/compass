@@ -56,6 +56,10 @@ type Config struct {
 	// Currently works only with /info endpoints.
 	DevelopmentMode bool `envconfig:"default=false"`
 
+	// DumpProvisionerRequests enables dumping Provisioner requests. Must be disabled on Production environments
+	// because some data must not be visible in the log file.
+	DumpProvisionerRequests bool `envconfig:"default=false"`
+
 	Host       string `envconfig:"optional"`
 	Port       string `envconfig:"default=8080"`
 	StatusPort string `envconfig:"default=8071"`
@@ -100,7 +104,7 @@ func main() {
 	health.NewServer(cfg.Host, cfg.StatusPort, logs).ServeAsync()
 
 	// create provisioner client
-	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
+	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, cfg.DumpProvisionerRequests)
 
 	// create kubernetes client
 	k8sCfg, err := config.GetConfig()
