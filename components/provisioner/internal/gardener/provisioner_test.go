@@ -23,6 +23,7 @@ const (
 	subAccountId      = "sub-account"
 	operationId       = "operationId"
 	clusterName       = "test-cluster"
+	region            = "westeurope"
 
 	auditLogsPolicyCMName = "audit-logs-policy"
 )
@@ -31,13 +32,12 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 	clientset := fake.NewSimpleClientset()
 
 	auditLogsConfigPath := filepath.Join("testdata", "config.json")
-	region := "westeurope"
 	expectedTenant := "e7382275-e835-4549-94e1-3b1101e3a1fa"
 
 	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{})
 	require.NoError(t, err)
 
-	cluster := newClusterConfig("test-cluster", "", gcpGardenerConfig)
+	cluster := newClusterConfig("test-cluster", "", gcpGardenerConfig, region)
 
 	t.Run("should start provisioning", func(t *testing.T) {
 		// given
@@ -46,7 +46,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, "", "")
 
 		// when
-		err := provisionerClient.ProvisionCluster(cluster, operationId, "")
+		err := provisionerClient.ProvisionCluster(cluster, operationId)
 		require.NoError(t, err)
 
 		// then
@@ -111,7 +111,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 			provisionerClient := NewProvisioner(gardenerNamespace, shootClient, testCase.auditLogsConfigPath, testCase.configMapName)
 
 			// when
-			err := provisionerClient.ProvisionCluster(newClusterConfig(testCase.clusterName, testCase.subAccountId, gcpGardenerConfig), operationId, testCase.region)
+			err := provisionerClient.ProvisionCluster(newClusterConfig(testCase.clusterName, testCase.subAccountId, gcpGardenerConfig, testCase.region), operationId)
 			require.NoError(t, err)
 
 			// then
@@ -142,7 +142,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 
 }
 
-func newClusterConfig(name, subAccountId string, providerConfig model.GardenerProviderConfig) model.Cluster {
+func newClusterConfig(name, subAccountId string, providerConfig model.GardenerProviderConfig, region string) model.Cluster {
 	return model.Cluster{
 		ID:           runtimeId,
 		Tenant:       tenant,
@@ -158,7 +158,7 @@ func newClusterConfig(name, subAccountId string, providerConfig model.GardenerPr
 			MachineType:            "n1-standard-4",
 			Provider:               "gcp",
 			TargetSecret:           "secret",
-			Region:                 "eu",
+			Region:                 region,
 			WorkerCidr:             "10.10.10.10",
 			AutoScalerMin:          1,
 			AutoScalerMax:          5,

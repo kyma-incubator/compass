@@ -113,6 +113,7 @@ func newDeprovisionOperation(id, runtimeId, message string, state model.Operatio
 }
 
 func (g *GardenerProvisioner) enableAuditLogs(shoot *gardener_types.Shoot, policyConfigMapName, region string) error {
+	logrus.Info("Enabling audit logs")
 	tenant, err := g.getAuditLogTenant(region)
 
 	if err != nil {
@@ -132,6 +133,7 @@ func (g *GardenerProvisioner) getAuditLogTenant(region string) (string, error) {
 	if err != nil {
 		// As ConfigMap is optional, if file not exists we return empty string and no error
 		if os.IsNotExist(err) {
+			logrus.Infof("Audit logs can't be enabled. File in path %s not exists", g.auditLogTenantConfigPath)
 			return "", nil
 		}
 		return "", err
@@ -143,7 +145,6 @@ func (g *GardenerProvisioner) getAuditLogTenant(region string) (string, error) {
 	if err := json.NewDecoder(file).Decode(&data); err != nil {
 		return "", err
 	}
-
 	return data[region], nil
 }
 
