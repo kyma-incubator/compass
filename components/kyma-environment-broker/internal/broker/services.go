@@ -71,6 +71,7 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 				"SAP",
 				"Kyma",
 			},
+			InstancesRetrievable: true,
 		},
 	}, nil
 }
