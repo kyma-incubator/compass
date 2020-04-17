@@ -58,8 +58,8 @@ func TestAvsEvaluationsRemovalStep_Run(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, inDB.Avs.AVSInternalEvaluationDeleted)
 	assert.True(t, inDB.Avs.AVSExternalEvaluationDeleted)
-	assert.Equal(t,internalEvalId, inDB.Avs.AvsEvaluationInternalId)
-	assert.Equal(t,externalEvalId,inDB.Avs.AVSEvaluationExternalId)
+	assert.Equal(t, internalEvalId, inDB.Avs.AvsEvaluationInternalId)
+	assert.Equal(t, externalEvalId, inDB.Avs.AVSEvaluationExternalId)
 }
 
 func newMockAvsOauthServer() *httptest.Server {
