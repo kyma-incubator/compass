@@ -10,7 +10,7 @@ This document presents the workflow of the Runtime Agent.
 
 3. Runtime Agent synchronizes the Runtime with the Director. It does so by:
  - fetching new Applications from the Director and creating them in the Runtime
- - removing from the Runtime the Applications that no longer exist in the Director. 
+ - removing from the Runtime the Applications that no longer exist in the Director.
 
 4. Runtime Agent labels the Runtime data in the Director with the Event Gateway URL and the Console URL of the Kyma cluster. These URLs are displayed in the Compass UI. 
 
