@@ -49,11 +49,11 @@ func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticS
 
 	labels, err := e.labelRepo.GetScenarioLabelsForRuntimes(ctx, in.Tenant, runtimesIDs)
 	if err != nil {
-		return errors.Wrap(err, "while fetching scenarios labels for matchd runtimes")
+		return errors.Wrap(err, "while fetching scenarios labels for matched runtimes")
 	}
 	err = e.upsertMergedScenarios(ctx, labels, in.Tenant, in.ScenarioName, e.uniqueScenarios)
 	if err != nil {
-		return errors.Wrap(err, "while adding runtime scenarios to existing one ")
+		return errors.Wrap(err, "while upserting merged scenarios to runtimes")
 	}
 
 	rtmWithoutScenarios := make(map[string]interface{})
@@ -120,7 +120,7 @@ func (e *engine) upsertMergedScenarios(ctx context.Context, labels []model.Label
 		}
 		err = e.updateScenarioLabel(ctx, tenantID, label, newScenarios)
 		if err != nil {
-			return errors.Wrap(err, "while updating scenraios labels")
+			return errors.Wrap(err, "while updating scenarios label")
 		}
 	}
 	return nil
