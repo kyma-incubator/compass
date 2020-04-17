@@ -105,32 +105,28 @@ func Test_E2E_Gardener(t *testing.T) {
 }
 
 type Logger struct {
-	t              *testing.T
-	realTimeLogger logrus.FieldLogger
-	fields         []string
-	joinedFields   string
+	t            *testing.T
+	fields       []string
+	joinedFields string
 }
 
 func NewLogger(t *testing.T, fields ...string) *Logger {
 	joinedFields := strings.Join(fields, " ")
 
 	return &Logger{
-		t:              t,
-		realTimeLogger: logrus.WithField("Fields", joinedFields),
-		fields:         fields,
-		joinedFields:   joinedFields,
+		t:            t,
+		fields:       fields,
+		joinedFields: joinedFields,
 	}
 }
 
 func (l Logger) Log(msg string) {
-	l.realTimeLogger.Info(msg)
 	l.t.Logf("%s   %s", msg, l.joinedFields)
 }
 
 func (l *Logger) AddField(field string) {
 	l.fields = append(l.fields, field)
 	l.joinedFields = strings.Join(l.fields, " ")
-	l.realTimeLogger = logrus.WithField("Fields", l.joinedFields)
 }
 
 func ensureClusterIsDeprovisioned(runtimeId string) {
