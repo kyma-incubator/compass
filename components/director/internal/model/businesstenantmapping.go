@@ -25,15 +25,6 @@ type BusinessTenantMappingPage struct {
 	TotalCount int
 }
 
-func (t BusinessTenantMapping) IsIn(tenants []BusinessTenantMapping) bool {
-	for _, tenant := range tenants {
-		if (tenant.ExternalTenant == t.ExternalTenant) && (tenant.Provider == t.Provider) {
-			return true
-		}
-	}
-	return false
-}
-
 func (t BusinessTenantMapping) WithExternalTenant(externalTenant string) BusinessTenantMapping {
 	t.ExternalTenant = externalTenant
 	return t
