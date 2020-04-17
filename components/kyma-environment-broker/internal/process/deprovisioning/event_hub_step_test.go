@@ -164,45 +164,34 @@ func Test_StepsUnhappyPath(t *testing.T) {
 	tests := []struct {
 		name                string
 		giveOperation       func() internal.DeprovisioningOperation
+		giveInstance		func() internal.Instance
 		giveStep            func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep
 		wantRepeatOperation bool
 	}{
-		// {
-		// 	name:          "Provision parameter errors",
-		// 	giveOperation: fixDeprovisioningOperationWithParameters,
-		// 	giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
-		// 		accountProvider := fixAccountProvider()
-		// 		return fixEventHubStep(storage.Operations(), storage.Instances(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
-		// 	},
-		// 	wantRepeatOperation: false,
-		// },
+		{
+			name:          "Provision parameter errors",
+			giveOperation: fixDeprovisioningOperationWithParameters,
+			giveInstance: fixInvalidInstance,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
+				accountProvider := fixAccountProvider()
+				return fixEventHubStep(storage.Operations(), storage.Instances(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
+			},
+			wantRepeatOperation: false,
+		},
 		{
 			name:          "AccountProvider cannot get gardener credentials",
 			giveOperation: fixDeprovisioningOperationWithParameters,
+			giveInstance: fixInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProviderGardenerCredentialsError()
 				return fixEventHubStep(storage.Operations(), storage.Instances(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
 			},
 			wantRepeatOperation: true,
 		},
-		//TODO(montaro) Invalid test
-		//{
-		//	name:          "EventHubs Namespace creation error",
-		//	giveOperation: fixProvisioningOperation,
-		//	giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
-		//		accountProvider := fixAccountProvider()
-		//		return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
-		//			// ups ... namespace cannot get created
-		//			azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientCreationError()),
-		//			accountProvider,
-		//			context.Background(),
-		//		)
-		//	},
-		//	wantRepeatOperation: true,
-		//},
 		{
 			name:          "Error while getting EventHubs Namespace credentials",
 			giveOperation: fixDeprovisioningOperationWithParameters,
+			giveInstance: fixInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProviderGardenerCredentialsError()
 				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
@@ -214,24 +203,24 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			},
 			wantRepeatOperation: true,
 		},
-		//TODO(montaro) invalid test
-		//{
-		//	name:          "No error while getting EventHubs Namespace credentials, but PrimaryConnectionString in AccessKey is nil",
-		//	giveOperation: fixDeprovisioningOperationWithParameters,
-		//	giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
-		//		accountProvider := fixAccountProvider()
-		//		return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
-		//			// ups ... PrimaryConnectionString is nil
-		//			azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceAccessKeysNil()),
-		//			accountProvider,
-		//			context.Background(),
-		//		)
-		//	},
-		//	wantRepeatOperation: false,
-		//},
 		{
-			name:          "Error while getting config from HAP",
+			name:          "Error while getting config from Credentials",
 			giveOperation: fixDeprovisioningOperation,
+			giveInstance: fixInstance,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
+				accountProvider := fixAccountProviderGardenerCredentialsHAPError()
+				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceAccessKeysNil()),
+					accountProvider,
+					context.Background(),
+				)
+			},
+			wantRepeatOperation: false,
+		},
+		{
+			name:          "Error while getting client from HAP",
+			giveOperation: fixDeprovisioningOperation,
+			giveInstance: fixInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
 				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
@@ -243,26 +232,9 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			},
 			wantRepeatOperation: false,
 		},
-		//TODO(montaro) invalid test
-		
-		// {
-		// 	name:          "Error while creating Azure ResourceGroup",
-		// 	giveOperation: fixDeprovisioningOperationWithParameters,
-		// 	giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
-		// 		accountProvider := fixAccountProvider()
-		// 		return NewDeprovisionAzureEventHubStep(storage.Operations(),
-		// 			// ups ... resource group cannot be created
-		// 			azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceResourceGroupError()),
-		// 			accountProvider,
-		// 			context.Background(),
-		// 		)
-		// 	},
-		// 	wantRepeatOperation: true,
-		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			// given
 			memoryStorage := storage.NewMemoryStorage()
 			op := tt.giveOperation()
@@ -272,7 +244,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			//TODO(montaro): Had to get it back, otherwise the failed operation would be retried
 			err := memoryStorage.Operations().InsertDeprovisioningOperation(op)
 			require.NoError(t, err)
-			err = memoryStorage.Instances().Insert(fixInstance())
+			err = memoryStorage.Instances().Insert(tt.giveInstance())
 			require.NoError(t, err)
 
 			// when
@@ -305,6 +277,13 @@ func fixInstance() internal.Instance {
 				"region": "westeurope"
 			}
 		}`}
+}
+
+func fixInvalidInstance() internal.Instance {
+	// TODO(nachtmaar): share with provisiong test ?
+	return internal.Instance{
+		InstanceID: fixInstanceID,
+		ProvisioningParameters: `}{INVALID JSON}{`}
 }
 
 func fixTags() azure.Tags {
@@ -389,5 +368,19 @@ func fixAccountProviderGardenerCredentialsError() *hyperscalerautomock.AccountPr
 		HyperscalerType: hyperscaler.Azure,
 		CredentialData:  map[string][]byte{},
 	}, fmt.Errorf("ups ... gardener credentials could not be retrieved"))
+	return &accountProvider
+}
+
+func fixAccountProviderGardenerCredentialsHAPError() *hyperscalerautomock.AccountProvider {
+	accountProvider := hyperscalerautomock.AccountProvider{}
+	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.AWS,
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+	}, nil)
 	return &accountProvider
 }
