@@ -34,11 +34,13 @@ type GardenerProvisioner struct {
 	log                      *logrus.Entry
 }
 
-func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string, region string) error {
+func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) error {
 	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace, cluster.Tenant, cluster.SubAccountId)
 	if err != nil {
 		return fmt.Errorf("failed to convert cluster config to Shoot template")
 	}
+
+	region := getRegion(cluster)
 
 	if g.shouldEnableAuditLogs() {
 		if err := g.enableAuditLogs(shootTemplate, g.auditLogsConfigMapName, region); err != nil {
@@ -157,4 +159,12 @@ func setAuditConfig(shoot *gardener_types.Shoot, policyConfigMapName, subAccount
 	}
 
 	annotate(shoot, auditLogsAnnotation, subAccountId)
+}
+
+func getRegion(cluster model.Cluster) string {
+	config, ok := cluster.GardenerConfig()
+	if ok {
+		return config.Region
+	}
+	return ""
 }
