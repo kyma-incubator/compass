@@ -1,4 +1,4 @@
-#Runtime Agent architecture
+# Runtime Agent architecture
 
 This document presents the workflow of the Runtime Agent. 
 
