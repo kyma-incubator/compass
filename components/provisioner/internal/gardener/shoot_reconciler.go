@@ -3,8 +3,9 @@ package gardener
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 

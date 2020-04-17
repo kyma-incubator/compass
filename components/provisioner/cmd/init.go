@@ -3,11 +3,12 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 
