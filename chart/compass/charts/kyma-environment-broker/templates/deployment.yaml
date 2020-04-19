@@ -139,6 +139,8 @@ spec:
               value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_DUMP_PROVISIONER_REQUESTS
               value: "{{ .Values.provisioner.dumpRequests }}"
+            - name: APP_DEFAULT_REQUEST_REGION
+              value: "{{ .Values.broker.defaultRequestRegion }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

@@ -1,7 +1,7 @@
 # Authorization
 
 Kyma Environment Broker provides two ways to authorize users:
-- Basic authorization (default)
+- Basic authorization
 - OAuth2 authorization
 
 ## Basic authorization
@@ -20,7 +20,7 @@ To access the Kyma Environment Broker endpoints with the Basic authorization ena
 Authorization: Basic $ENCODED_CREDENTIALS
 ```
 
->**NOTE**: This implementation is currently being replaced with the Oauth2 implementation and will be deprecated soon.
+>**NOTE**: The basic authorization implementation is deprecated. Use Oauth2 instead.
 
 ## OAuth2 authorization
 
@@ -30,7 +30,7 @@ To authorize with the Kyma Environment Broker, use an OAuth2 client registered t
 To access the Kyma Environment Broker endpoints with the OAuth2 authorization enabled, use the `/oauth` prefix. For example:
 
 ```
-/oauth/v2/catalog
+/oauth/{region}/v2/catalog
 ```
 >**NOTE:** If you do not use the `/oauth` prefix, the Basic authorization is performed.
 

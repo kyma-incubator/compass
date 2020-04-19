@@ -9,6 +9,7 @@ type ProvisioningParameters struct {
 	ServiceID  string                    `json:"service_id"`
 	ErsContext ERSContext                `json:"ers_context"`
 	Parameters ProvisioningParametersDTO `json:"parameters"`
+	Region     string                    `json:"region"`
 }
 
 func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {

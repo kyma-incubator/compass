@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 
@@ -74,12 +75,20 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
 	}
 
+	region, found := middleware.RegionFromContext(ctx)
+	if !found {
+		err := errors.New("No region specified in request.")
+		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusInternalServerError, "provisioning")
+	}
+
 	provisioningParameters := internal.ProvisioningParameters{
 		PlanID:     details.PlanID,
 		ServiceID:  details.ServiceID,
 		ErsContext: ersContext,
 		Parameters: parameters,
+		Region:     region,
 	}
+
 	logger.Infof("Starting provisioning runtime: Name=%s, GlobalAccountID=%s, SubAccountID=%s", parameters.Name, ersContext.GlobalAccountID, ersContext.SubAccountID)
 	logger.Infof("Runtime parameters: %+v", parameters)
 
