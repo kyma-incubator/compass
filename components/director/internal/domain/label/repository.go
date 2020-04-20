@@ -180,7 +180,7 @@ func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string)
 	return nil
 }
 
-func (r *repository) GetRuntimesIDsByKeyAndValue(ctx context.Context, tenantID, key, value string) ([]string, error) {
+func (r *repository) GetRuntimesIDsByStringLabel(ctx context.Context, tenantID, key, value string) ([]string, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching persistence from context")

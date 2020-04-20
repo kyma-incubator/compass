@@ -969,7 +969,7 @@ func TestRepository_GetRuntimesIDsWhereLabelsMatchSelector(t *testing.T) {
 		conv := label.NewConverter()
 		labelRepo := label.NewRepository(conv)
 		//WHEN
-		rtmIDs, err := labelRepo.GetRuntimesIDsByKeyAndValue(ctx, tenantID, selectorKey, selectorValue)
+		rtmIDs, err := labelRepo.GetRuntimesIDsByStringLabel(ctx, tenantID, selectorKey, selectorValue)
 
 		//THEN
 		require.NoError(t, err)
@@ -987,7 +987,7 @@ func TestRepository_GetRuntimesIDsWhereLabelsMatchSelector(t *testing.T) {
 		conv := label.NewConverter()
 		labelRepo := label.NewRepository(conv)
 		//WHEN
-		_, err := labelRepo.GetRuntimesIDsByKeyAndValue(ctx, tenantID, selectorKey, selectorValue)
+		_, err := labelRepo.GetRuntimesIDsByStringLabel(ctx, tenantID, selectorKey, selectorValue)
 
 		//THEN
 		require.Error(t, err)
@@ -998,7 +998,7 @@ func TestRepository_GetRuntimesIDsWhereLabelsMatchSelector(t *testing.T) {
 	t.Run("Return error when no persistance in context", func(t *testing.T) {
 		labelRepo := label.NewRepository(nil)
 		//WHEN
-		_, err := labelRepo.GetRuntimesIDsByKeyAndValue(context.TODO(), tenantID, selectorKey, selectorValue)
+		_, err := labelRepo.GetRuntimesIDsByStringLabel(context.TODO(), tenantID, selectorKey, selectorValue)
 
 		//THEN
 		require.Error(t, err)
