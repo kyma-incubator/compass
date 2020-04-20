@@ -2,6 +2,7 @@ package director
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -28,7 +29,7 @@ type DirectorClient interface {
 type directorClient struct {
 	gqlClient     gql.Client
 	queryProvider queryProvider
-	graphqlizer   graphqlizer
+	graphqlizer   graphqlizer.Graphqlizer
 	token         oauth.Token
 	oauthClient   oauth.Client
 }
@@ -38,7 +39,7 @@ func NewDirectorClient(gqlClient gql.Client, oauthClient oauth.Client) DirectorC
 		gqlClient:     gqlClient,
 		oauthClient:   oauthClient,
 		queryProvider: queryProvider{},
-		graphqlizer:   graphqlizer{},
+		graphqlizer:   graphqlizer.Graphqlizer{},
 		token:         oauth.Token{},
 	}
 }
@@ -50,7 +51,19 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput, tenant s
 		return "", errors.New("Cannot register runtime in Director: missing Runtime config")
 	}
 
-	runtimeInput, err := cc.graphqlizer.RuntimeInputToGraphQL(*config)
+	var labels *graphql.Labels
+	if config.Labels != nil {
+		l := graphql.Labels(*config.Labels)
+		labels = &l
+	}
+
+	directorInput := graphql.RuntimeInput{
+		Name:        config.Name,
+		Description: config.Description,
+		Labels:      labels,
+	}
+
+	runtimeInput, err := cc.graphqlizer.RuntimeInputToGQL(directorInput)
 	if err != nil {
 		log.Infof("Failed to create graphQLized Runtime input")
 		return "", err
