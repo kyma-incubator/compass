@@ -385,6 +385,51 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	})
 }
 
+// func TestService_DeleteStaleRuntime(t *testing.T) {
+// 	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), nil, gardenerProject)
+// 	graphQLConverter := NewGraphQLConverter()
+// 	lastOperation := model.Operation{State: model.Succeeded}
+
+// 	operation := model.Operation{
+// 		ID:             operationID,
+// 		Type:           model.Deprovision,
+// 		State:          model.InProgress,
+// 		StartTimestamp: time.Now(),
+// 		Message:        "Deprovisioning started",
+// 		ClusterID:      runtimeID,
+// 	}
+
+// 	cluster := model.Cluster{
+// 		ID: runtimeID,
+// 	}
+
+// 	clusterMatcher := getClusterMatcher(cluster)
+// 	operationMatcher := getOperationMatcher(operation)
+
+// 	t.Run("Should start Runtime deprovisioning and return operation ID", func(t *testing.T) {
+// 		//given
+// 		sessionFactoryMock := &sessionMocks.Factory{}
+// 		writeSession := &sessionMocks.WriteSession{}
+// 		provisioner := &mocks2.Provisioner{}
+
+// 		sessionFactoryMock.On("NewWriteSession").Return(writeSession)
+// 		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+// 		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
+// 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
+// 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+
+// 		//when
+// 		opID, err := resolver.DeprovisionRuntime(runtimeID, tenant)
+// 		require.NoError(t, err)
+
+// 		//then
+// 		assert.Equal(t, operationID, opId)
+// 		sessionFactoryMock.AssertExpectations(t)
+// 		readWriteSession.AssertExpectations(t)
+// 		provisioner.AssertExpectations(t)
+// 	})
+// }
+
 func TestService_RuntimeOperationStatus(t *testing.T) {
 	uuidGenerator := &uuidMocks.UUIDGenerator{}
 	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject)

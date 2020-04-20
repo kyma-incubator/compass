@@ -112,6 +112,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		DeprovisionRuntime       func(childComplexity int, id string) int
 		ProvisionRuntime         func(childComplexity int, config ProvisionRuntimeInput) int
+		MarkRuntimeAsDeleted     func(childComplexity int, id string) int
 		ReconnectRuntimeAgent    func(childComplexity int, id string) int
 		RollBackUpgradeOperation func(childComplexity int, id string) int
 		UpgradeRuntime           func(childComplexity int, id string, config UpgradeRuntimeInput) int
@@ -466,6 +467,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeprovisionRuntime(childComplexity, args["id"].(string)), true
+
+	case "Mutation.markRuntimeAsDeleted":
+		if e.complexity.Mutation.MarkRuntimeAsDeleted == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_markRuntimeAsDeleted_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.MarkRuntimeAsDeleted(childComplexity, args["id"].(string)), true
 
 	case "Mutation.provisionRuntime":
 		if e.complexity.Mutation.ProvisionRuntime == nil {
@@ -914,6 +927,7 @@ type Mutation {
     provisionRuntime(config: ProvisionRuntimeInput!): OperationStatus
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): OperationStatus
     deprovisionRuntime(id: String!): String!
+    markRuntimeAsDeleted(id: String!): String!
 
     # rollbackUpgradeOperation rolls back last upgrade operation for the Runtime but does not affect cluster in any way
     # can be used in case upgrade failed and the cluster was restored from the backup to align data stored in Provisioner database
@@ -938,6 +952,20 @@ type Query {
 // region    ***************************** args.gotpl *****************************
 
 func (ec *executionContext) field_Mutation_deprovisionRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_markRuntimeAsDeleted_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
