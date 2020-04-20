@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -180,24 +182,36 @@ func (e *engine) appendMissingScenarioLabelsForRuntimes(tenantID string, runtime
 func (e *engine) createNewEmptyScenarioLabel(tenantID string, rtmID string) model.Label {
 	return model.Label{Tenant: tenantID,
 		Key:        model.ScenariosKey,
-		Value:      []interface{}{},
+		Value:      []string{},
 		ObjectID:   rtmID,
 		ObjectType: model.RuntimeLabelableObject,
 	}
 }
 
-func (e *engine) upsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenario string, mergeFn func(scenarios []interface{}, diffScenario string) ([]interface{}, error)) error {
+func (e *engine) upsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenario string, mergeFn func(scenarios []string, diffScenario string) []string) error {
 	for _, label := range labels {
-		scenarios, ok := label.Value.([]interface{})
-		if !ok {
+		var scenariosString []string
+		switch label.Value.(type) {
+
+		case []string:
+			{
+				scenariosString = label.Value.([]string)
+			}
+		case []interface{}:
+			{
+				scenarios := label.Value.([]interface{})
+				convertedScenarios, err := e.convertInterfaceArrayToStringArray(scenarios)
+				if err != nil {
+					return errors.Wrap(err, "while converting arary of interfaces to array of strings")
+				}
+				scenariosString = convertedScenarios
+			}
+		default:
 			return errors.Errorf("scenarios value is invalid type: %t", label.Value)
 		}
 
-		newScenarios, err := mergeFn(scenarios, newScenario)
-		if err != nil {
-			return errors.Wrap(err, "while merging scenarios")
-		}
-		err = e.updateScenario(ctx, tenantID, label, newScenarios)
+		newScenarios := mergeFn(scenariosString, newScenario)
+		err := e.updateScenario(ctx, tenantID, label, newScenarios)
 		if err != nil {
 			return errors.Wrap(err, "while updating scenarios label")
 		}
@@ -205,7 +219,7 @@ func (e *engine) upsertScenarios(ctx context.Context, tenantID string, labels []
 	return nil
 }
 
-func (e *engine) updateScenario(ctx context.Context, tenantID string, label model.Label, scenarios []interface{}) error {
+func (e *engine) updateScenario(ctx context.Context, tenantID string, label model.Label, scenarios []string) error {
 	if len(scenarios) == 0 {
 		return e.labelRepo.Delete(ctx, tenantID, model.RuntimeLabelableObject, label.ObjectID, model.ScenariosKey)
 	} else {
@@ -219,39 +233,31 @@ func (e *engine) updateScenario(ctx context.Context, tenantID string, label mode
 	}
 }
 
-func (e *engine) uniqueScenarios(scenarios []interface{}, newScenario string) ([]interface{}, error) {
-	set := make(map[interface{}]struct{})
-
+func (e *engine) convertInterfaceArrayToStringArray(scenarios []interface{}) ([]string, error) {
+	var scenariosString []string
 	for _, scenario := range scenarios {
-		output, ok := scenario.(string)
+		item, ok := scenario.(string)
 		if !ok {
-			return nil, errors.New("scenario is not a string")
+			return nil, errors.New("scenario value is not a string")
 		}
-		set[output] = struct{}{}
+		scenariosString = append(scenariosString, item)
 	}
-	set[newScenario] = struct{}{}
-
-	var uniqueScenarios []interface{}
-	for scenario, _ := range set {
-		uniqueScenarios = append(uniqueScenarios, scenario)
-	}
-
-	return uniqueScenarios, nil
+	return scenariosString, nil
 }
 
-func (e *engine) removeScenario(scenarios []interface{}, toRemove string) ([]interface{}, error) {
-	var newScenarios []interface{}
-	for _, scenario := range scenarios {
-		output, ok := scenario.(string)
-		if !ok {
-			return nil, errors.New("item in scenarios is not a string")
-		}
+func (e *engine) uniqueScenarios(scenarios []string, newScenario string) []string {
+	scenarios = append(scenarios, newScenario)
+	return str.Unique(scenarios)
+}
 
-		if output != toRemove {
-			newScenarios = append(newScenarios, output)
+func (e *engine) removeScenario(scenarios []string, toRemove string) []string {
+	var newScenarios []string
+	for _, scenario := range scenarios {
+		if scenario != toRemove {
+			newScenarios = append(newScenarios, scenario)
 		}
 	}
-	return newScenarios, nil
+	return newScenarios
 }
 
 func (e engine) convertMapStringInterfaceToMapStringString(inputLabels map[string]interface{}) map[string]string {

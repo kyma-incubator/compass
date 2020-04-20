@@ -21,14 +21,17 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 	selectorScenario := "SELECTOR_SCENARIO"
 	in := fixAutomaticScenarioAssigment(selectorScenario, selectorKey, selectorValue)
 	testErr := errors.New("test err")
-	scenarios := []interface{}{"OTHER", "SCENARIO"}
+	otherScenario := "OTHER"
+	basicScenario := "SCENARIO"
+	scenarios := []interface{}{otherScenario, basicScenario}
+	stringScenarios := []string{otherScenario, basicScenario}
 
 	rtmIDWithScenario := "rtm1_scenario"
 	rtmIDWithoutScenario := "rtm1_no_scenario"
 
-	expectedScenarios := map[string]interface{}{
-		rtmIDWithScenario:    append(scenarios, selectorScenario),
-		rtmIDWithoutScenario: []interface{}{selectorScenario},
+	expectedScenarios := map[string][]string{
+		rtmIDWithScenario:    append(stringScenarios, selectorScenario),
+		rtmIDWithoutScenario: []string{selectorScenario},
 	}
 	runtimesIDs := []string{rtmIDWithoutScenario, rtmIDWithScenario}
 	scenarioLabel := model.Label{
@@ -183,8 +186,8 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 			ObjectID: rtmID,
 		}
 
-		expectedScenarios := map[string]interface{}{
-			rtmID: scenarios,
+		expectedScenarios := map[string][]string{
+			rtmID: {"OTHER", "SCENARIO"},
 		}
 
 		ctx := context.TODO()
@@ -210,14 +213,13 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 	})
 
 	t.Run("Success, empty scenarios label deleted", func(t *testing.T) {
-
 		scenarioLabel := model.Label{
 			Key:      model.ScenariosKey,
 			Value:    []interface{}{selectorScenario},
 			ObjectID: rtmID,
 		}
-		expectedScenarios := map[string]interface{}{
-			rtmID: []interface{}{},
+		expectedScenarios := map[string][]string{
+			rtmID: {},
 		}
 
 		ctx := context.TODO()
@@ -250,9 +252,7 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 			Value:    append(scenarios, selectorScenario),
 			ObjectID: rtmID,
 		}
-		expectedScenarios := map[string]interface{}{
-			rtmID: scenarios,
-		}
+		expectedScenarios := map[string][]string{rtmID: {"OTHER", "SCENARIO"}}
 
 		ctx := context.TODO()
 
@@ -297,7 +297,6 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 
 func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 	selectorKey, selectorValue := "KEY", "VALUE"
-	expctedScenario := []interface{}{"SCENARIO2"}
 	in := []*model.AutomaticScenarioAssignment{
 		{
 			ScenarioName: "SCENARIO1",
@@ -315,8 +314,8 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
-		expectedScenarios := map[string]interface{}{
-			rtmID: expctedScenario,
+		expectedScenarios := map[string][]string{
+			rtmID: {"SCENARIO2"},
 		}
 
 		ctx := context.TODO()
@@ -356,9 +355,9 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 	})
 }
 
-func matchExpectedScenarios(t *testing.T, expected map[string]interface{}) func(label *model.LabelInput) bool {
+func matchExpectedScenarios(t *testing.T, expected map[string][]string) func(label *model.LabelInput) bool {
 	return func(actual *model.LabelInput) bool {
-		actualArray, ok := actual.Value.([]interface{})
+		actualArray, ok := actual.Value.([]string)
 		require.True(t, ok)
 
 		expectedArray, ok := expected[actual.ObjectID]
