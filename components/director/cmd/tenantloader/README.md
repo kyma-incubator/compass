@@ -15,7 +15,7 @@ To run the application, provide these environment variables:
 | **APP_DB_HOST**                              | `localhost`                       | Database host                                                 |
 | **APP_DB_PORT**                              | `5432`                            | Database port                                                 |
 | **APP_DB_NAME**                              | `postgres`                        | Database name                                                 |
-| **APP_DB_SSL**                               | `disable`                         | Database SSL mode (disable / enable)                          |
+| **APP_DB_SSL**                               | `disable`                         | Parameter that activates database SSL mode                          |
 
 ## Details
 
