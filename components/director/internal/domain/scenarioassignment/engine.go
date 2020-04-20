@@ -191,15 +191,20 @@ func (e *engine) createNewEmptyScenarioLabel(tenantID string, rtmID string) mode
 func (e *engine) upsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenario string, mergeFn func(scenarios []string, diffScenario string) []string) error {
 	for _, label := range labels {
 		var scenariosString []string
-		if value, ok := label.Value.([]string); ok {
-			scenariosString = value
-		} else if value, ok := label.Value.([]interface{}); ok {
-			convertedScenarios, err := e.convertInterfaceArrayToStringArray(value)
-			if err != nil {
-				return errors.Wrap(err, "while converting array of interfaces to array of strings")
+		switch value := label.Value.(type) {
+		case []string:
+			{
+				scenariosString = value
 			}
-			scenariosString = convertedScenarios
-		} else {
+		case []interface{}:
+			{
+				convertedScenarios, err := e.convertInterfaceArrayToStringArray(value)
+				if err != nil {
+					return errors.Wrap(err, "while converting array of interfaces to array of strings")
+				}
+				scenariosString = convertedScenarios
+			}
+		default:
 			return errors.Errorf("scenarios value is invalid type: %t", label.Value)
 		}
 
