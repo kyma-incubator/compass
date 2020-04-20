@@ -81,6 +81,7 @@ func fixProvisioningOperation() internal.ProvisioningOperation {
 			Description:            "",
 			UpdatedAt:              time.Now(),
 		},
+		ProvisioningParameters: `{"ers_context":{"globalaccount_id":"1"}}`,
 	}
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//go:generate mockery -name=EDPClient -output=automock -outpkg=automock -case=underscore
 type EDPClient interface {
 	CreateDataTenant(data edp.DataTenantPayload) error
 	CreateMetadataTenant(name, env string, data edp.MetadataTenantPayload) error
@@ -40,7 +41,7 @@ func (s *EDPRegistration) Name() string {
 func (s *EDPRegistration) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	parameters, err := operation.GetProvisioningParameters()
 	if err != nil {
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
+		return s.handleError(operation, err, log, "invalid operation provisioning parameters")
 	}
 
 	log.Info("Create DataTenant")

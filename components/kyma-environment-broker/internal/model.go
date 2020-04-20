@@ -100,7 +100,8 @@ type ProvisioningOperation struct {
 type DeprovisioningOperation struct {
 	Operation `json:"-"`
 
-	Avs AvsLifecycleData `json:"avs"`
+	Avs          AvsLifecycleData `json:"avs"`
+	SubAccountID string           `json:"-"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation

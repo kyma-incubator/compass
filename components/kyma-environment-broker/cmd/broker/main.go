@@ -258,6 +258,11 @@ func main() {
 		},
 		{
 			weight:   1,
+			step:     deprovisioning.NewEDPDeregistration(edpClient, cfg.EDP),
+			disabled: cfg.EDP.Disabled,
+		},
+		{
+			weight:   1,
 			step:     deprovisioning.NewIASDeregistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
 		},

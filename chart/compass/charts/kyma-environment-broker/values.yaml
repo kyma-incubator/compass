@@ -95,6 +95,16 @@ ias:
   identityProvider: "TBD"
   disabled: true
 
+edp:
+  authURL: "TBD"
+  adminURL: "TBD"
+  namespace: "kyma-dev"
+  environment: "dev"
+  required: false
+  disabled: false
+  secret: "TBD"
+  secretName: "edp-creds"
+
 e2e:
   azure:
     configName: "e2e-runtime-config-azure"
