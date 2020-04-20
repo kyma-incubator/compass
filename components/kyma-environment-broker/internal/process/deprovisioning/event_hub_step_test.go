@@ -234,6 +234,51 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			},
 			wantRepeatOperation: false,
 		},
+		{
+			name:          "Error while getting resource group",
+			giveOperation: fixDeprovisioningOperation,
+			giveInstance:  fixInstance,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
+				accountProvider := fixAccountProvider()
+				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+					// ups ... can't get resource group
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientResourceGroupConnectionError()),
+					accountProvider,
+					context.Background(),
+				)
+			},
+			wantRepeatOperation: true,
+		},
+		{
+			name:          "Error while deleting resource group",
+			giveOperation: fixDeprovisioningOperation,
+			giveInstance:  fixInstance,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
+				accountProvider := fixAccountProvider()
+				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+					// ups ... can't delete resource group
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientResourceGroupDeleteError()),
+					accountProvider,
+					context.Background(),
+				)
+			},
+			wantRepeatOperation: true,
+		},
+		{
+			name:          "Resource group properties is Nil",
+			giveOperation: fixDeprovisioningOperation,
+			giveInstance:  fixInstance,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
+				accountProvider := fixAccountProvider()
+				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+					// ups ... can't delete resource group
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientResourceGroupPropertiesError()),
+					accountProvider,
+					context.Background(),
+				)
+			},
+			wantRepeatOperation: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

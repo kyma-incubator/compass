@@ -125,7 +125,10 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		// return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Hour, log)
 	}
 	// delete the resource group if it still exists and deletion has not been triggered yet
-	// TODO: check pointer
+	if resourceGroup.Properties == nil || resourceGroup.Properties.ProvisioningState == nil{
+		errorMessage := fmt.Sprintf("Nil pointer in the resource group")
+		return s.OperationManager.OperationFailed(operation, errorMessage)
+	}
 	deprovisioningState := *resourceGroup.Properties.ProvisioningState
 	if deprovisioningState != azure.AzureFutureOperationDeleting {
 		future, err := namespaceClient.DeleteResourceGroup(s.EventHub.Context, tags)
@@ -135,17 +138,16 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 			return s.OperationManager.RetryForever(operation, errorMessage, time.Minute, log)
 		}
 		if future.Status() != azure.AzureFutureOperationSucceeded {
+			var retryAfterDuration time.Duration
 			if retryAfter, retryAfterHeaderExist := future.GetPollingDelay(); retryAfterHeaderExist {
-				errorMessage := "rescheduling step to check deletion of resource group completed"
-				log.Info(errorMessage)
-				return s.OperationManager.RetryForever(operation, errorMessage, retryAfter, log)
-				// return s.OperationManager.RetryOperation(operation, "waiting for deprovisioning of azure resource group", retryAfter, time.Hour, log)
+				retryAfterDuration = retryAfter
 			} else {
-				errorMessage := "rescheduling step to check deletion of resource group completed"
-				log.Infof(errorMessage)
-				return s.OperationManager.RetryForever(operation, errorMessage, time.Minute, log)
-				// return s.OperationManager.RetryOperation(operation, "waiting for deprovisioning of azure resource group", time.Minute, time.Hour, log)
+				retryAfterDuration = time.Minute
 			}
+			errorMessage := "rescheduling step to check deletion of resource group completed"
+			log.Infof(errorMessage)
+			return s.OperationManager.RetryForever(operation, errorMessage, retryAfterDuration, log)
+			// return s.OperationManager.RetryOperation(operation, "waiting for deprovisioning of azure resource group", time.Minute, time.Hour, log)
 		}
 	}
 	errorMessage := "waiting for deprovisioning of azure resource group"

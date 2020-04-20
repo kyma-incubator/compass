@@ -2,6 +2,7 @@ package testing
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Azure/go-autorest/autorest"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 )
 
@@ -28,6 +28,7 @@ type FakeNamespaceClient struct {
 	GetResourceGroupError          error
 	GetResourceGroupReturnValue    resources.Group
 	DeleteResourceGroupCalled      bool
+	DeleteResourceGroupError       error
 }
 
 func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
@@ -60,7 +61,7 @@ func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *az
 func (nc *FakeNamespaceClient) DeleteResourceGroup(ctx context.Context, tags azure.Tags) (resources.GroupsDeleteFuture, error) {
 	//TODO(montaro) double check me
 	nc.DeleteResourceGroupCalled = true
-	return resources.GroupsDeleteFuture{}, nil
+	return resources.GroupsDeleteFuture{}, nc.DeleteResourceGroupError
 }
 
 func NewFakeNamespaceClientCreationError() azure.AzureInterface {
@@ -93,6 +94,29 @@ func NewFakeNamespaceClientHappyPath() *FakeNamespaceClient {
 func NewFakeNamespaceClientResourceGroupDoesNotExist() *FakeNamespaceClient {
 	return &FakeNamespaceClient{
 		GetResourceGroupError: azure.NewResourceGroupDoesNotExist("ups .. resource group already exists"),
+	}
+}
+
+func NewFakeNamespaceClientResourceGroupConnectionError() *FakeNamespaceClient {
+	return &FakeNamespaceClient{
+		GetResourceGroupError: errors.New("ups .. can't connect to azure"),
+	}
+}
+
+func NewFakeNamespaceClientResourceGroupDeleteError() *FakeNamespaceClient {
+	return &FakeNamespaceClient{
+		DeleteResourceGroupError: errors.New("error while trying to delete resource group"),
+		GetResourceGroupReturnValue: resources.Group{
+			Response:   autorest.Response{},
+			Name:       ptr.String("montaro"),
+			Properties: &resources.GroupProperties{ProvisioningState: ptr.String(azure.AzureFutureOperationSucceeded)},
+		},
+	}
+}
+
+func NewFakeNamespaceClientResourceGroupPropertiesError() *FakeNamespaceClient {
+	return &FakeNamespaceClient{
+		DeleteResourceGroupError: errors.New("error while trying to delete resource group"),
 	}
 }
 
