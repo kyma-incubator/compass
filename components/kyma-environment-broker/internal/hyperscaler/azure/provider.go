@@ -10,6 +10,7 @@ import (
 )
 
 type HyperscalerProvider interface {
+	// GetClient returns a client for interacting with Azure
 	GetClient(config *Config) (AzureInterface, error)
 }
 

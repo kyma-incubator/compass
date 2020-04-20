@@ -3,6 +3,8 @@ package azure
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 )
@@ -11,6 +13,8 @@ type AzureInterface interface {
 	GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
 	CreateResourceGroup(ctx context.Context, config *Config, name string, tags Tags) (resources.Group, error)
 	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags Tags) (*eventhub.EHNamespace, error)
+	// CheckNamespaceAvailability check an Event Hubs namespace name availability
+	CheckNamespaceAvailability(ctx context.Context, name string) (bool, error)
 }
 
 var _ AzureInterface = (*AzureClient)(nil)
@@ -44,6 +48,19 @@ func (nc *AzureClient) CreateNamespace(ctx context.Context, azureCfg *Config, gr
 	parameters := eventhub.EHNamespace{Location: &locationCopy, Tags: tags}
 	ehNamespace, err := nc.createAndWait(ctx, groupName, namespace, parameters)
 	return &ehNamespace, err
+}
+
+func (nc *AzureClient) CheckNamespaceAvailability(ctx context.Context, name string) (bool, error) {
+	//TODO Validate name string
+	res, err := nc.eventhubNamespaceClient.CheckNameAvailability(ctx, eventhub.CheckNameAvailabilityParameter{Name: &name})
+	if err != nil {
+		return false, errors.Wrapf(err, "Failed to check Event Hubs namespace availability with name: %s", name)
+	}
+	if res.NameAvailable == nil {
+		return false, errors.Errorf("Failed to check Event Hubs namespace availability with name: %s. Received no response using Azure client.", name)
+	} else {
+		return *res.NameAvailable, nil
+	}
 }
 
 func (nc *AzureClient) createAndWait(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {

@@ -47,6 +47,7 @@ type FakeNamespaceClient struct {
 	accessKeysError                error
 	accessKeys                     *eventhub.AccessKeys
 	tags                           azure.Tags
+	uniqueNamespace                bool
 }
 
 func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
@@ -72,16 +73,29 @@ func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *az
 	}, nc.persistEventhubsNamespaceError
 }
 
+func (nc *FakeNamespaceClient) CheckNamespaceAvailability(ctx context.Context, name string) (bool, error) {
+	return nc.uniqueNamespace, nil
+}
+
 func NewFakeNamespaceClientCreationError() azure.AzureInterface {
-	return &FakeNamespaceClient{persistEventhubsNamespaceError: fmt.Errorf("error while creating namespace")}
+	return &FakeNamespaceClient{
+		persistEventhubsNamespaceError: fmt.Errorf("error while creating namespace"),
+		uniqueNamespace:                true,
+	}
 }
 
 func NewFakeNamespaceClientListError() azure.AzureInterface {
-	return &FakeNamespaceClient{accessKeysError: fmt.Errorf("cannot list namespaces")}
+	return &FakeNamespaceClient{
+		accessKeysError: fmt.Errorf("cannot list namespaces"),
+		uniqueNamespace: true,
+	}
 }
 
 func NewFakeNamespaceResourceGroupError() azure.AzureInterface {
-	return &FakeNamespaceClient{resourceGroupError: fmt.Errorf("cannot create resource group")}
+	return &FakeNamespaceClient{
+		resourceGroupError: fmt.Errorf("cannot create resource group"),
+		uniqueNamespace:    true,
+	}
 }
 
 func NewFakeNamespaceAccessKeysNil() azure.AzureInterface {
@@ -92,11 +106,16 @@ func NewFakeNamespaceAccessKeysNil() azure.AzureInterface {
 			// ups .. we got an AccessKeys with nil connection string even though there was no error
 			PrimaryConnectionString: nil,
 		},
+		uniqueNamespace: true,
 	}
 }
 
+func NewFakeNamespaceClientDuplicateNamespaceError() *FakeNamespaceClient {
+	return &FakeNamespaceClient{uniqueNamespace: false}
+}
+
 func NewFakeNamespaceClientHappyPath() *FakeNamespaceClient {
-	return &FakeNamespaceClient{}
+	return &FakeNamespaceClient{uniqueNamespace: true}
 }
 
 // ensure the fake client is implementing the interface
@@ -246,6 +265,20 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			},
 			wantRepeatOperation: true,
 		},
+		{
+			name:          "Error because of duplicate Event Hub Namespace name",
+			giveOperation: fixProvisioningOperation,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
+				accountProvider := fixAccountProvider()
+				return *NewProvisionAzureEventHubStep(storage.Operations(),
+					// ups ... resource group cannot be created
+					NewFakeHyperscalerProvider(NewFakeNamespaceClientDuplicateNamespaceError()),
+					&accountProvider,
+					context.Background(),
+				)
+			},
+			wantRepeatOperation: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -260,6 +293,8 @@ func Test_StepsUnhappyPath(t *testing.T) {
 
 			// when
 			op.UpdatedAt = time.Now()
+			// If operation should be repeated (e.g as a retry due to an error), 'when' should be set to the time duration
+			// after which the operation will be repeated.
 			op, when, err := step.Run(op, fixLogger())
 			require.NotNil(t, op)
 
@@ -272,10 +307,6 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		})
 	}
 }
-
-// operationManager.OperationFailed(...)
-// manager.go: if processedOperation.State != domain.InProgress { return 0, nil } => repeat
-// queue.go: if err == nil && when != 0 => repeat
 
 func ensureOperationIsRepeated(t *testing.T, err error, when time.Duration) {
 	t.Helper()

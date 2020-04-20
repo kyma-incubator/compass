@@ -6,9 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
-	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
@@ -16,6 +13,11 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+
+	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -56,7 +58,6 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
 	hypType := hyperscaler.Azure
-
 	// parse provisioning parameters
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
@@ -82,7 +83,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	}
 
 	// create hyperscaler client
-	namespaceClient, err := p.hyperscalerProvider.GetClient(azureCfg)
+	azureClient, err := p.hyperscalerProvider.GetClient(azureCfg)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
@@ -96,29 +97,35 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		azure.TagOperationID:  &operation.ID,
 	}
 
+	// Generating a unique name for resource group and namespace with operation ID as suffix if available
+	uniqueName, err := p.getUniqueNSName(operation.ID, azureClient, log)
+	if err != nil {
+		return p.operationManager.OperationFailed(operation, fmt.Sprintf("Can't find a unique name for Event Hubs namespace. Error:%v", err))
+	}
+
 	// create Resource Group
-	groupName := pp.Parameters.Name
+	groupName := uniqueName
 	// TODO(nachtmaar): use different resource group name https://github.com/kyma-incubator/compass/issues/967
-	resourceGroup, err := namespaceClient.CreateResourceGroup(p.context, azureCfg, groupName, tags)
+	resourceGroup, err := azureClient.CreateResourceGroup(p.context, azureCfg, groupName, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
-		errorMessage := fmt.Sprintf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
+		errorMessage := fmt.Sprintf("Failed to create Azure Resource Group [%s] with error: %v", groupName, err)
 		return p.operationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
-	log.Printf("Persisted Azure Resource Group [%s]", groupName)
+	log.Info("created Azure Resource Group [%s]", groupName)
 
 	// create EventHubs Namespace
-	eventHubsNamespace := pp.Parameters.Name
-	eventHubNamespace, err := namespaceClient.CreateNamespace(p.context, azureCfg, groupName, eventHubsNamespace, tags)
+	namespaceName := uniqueName
+	ns, err := azureClient.CreateNamespace(p.context, azureCfg, groupName, namespaceName, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
-		errorMessage := fmt.Sprintf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
+		errorMessage := fmt.Sprintf("Failed to create Azure Event Hubs namespace [%s] with error: %v", namespaceName, err)
 		return p.operationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
-	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
+	log.Infof("created Azure Event Hubs namespace [%s]", namespaceName)
 
 	// get EventHubs Namespace secret
-	accessKeys, err := namespaceClient.GetEventhubAccessKeys(p.context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
+	accessKeys, err := azureClient.GetEventhubAccessKeys(p.context, *resourceGroup.Name, *ns.Name, authorizationRuleName)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Unable to retrieve access keys to azure event-hub namespace: %v", err)
@@ -138,6 +145,41 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	operation.InputCreator.SetOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, kafkaPort, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
 
 	return operation, 0, nil
+}
+
+// getUniqueNSName will try to use suffix to generate a unique name for Event Hubs namespace, or generate a random one
+// if it already exists
+func (p *ProvisionAzureEventHubStep) getUniqueNSName(suffix string, azureClient azure.AzureInterface,
+	log logrus.FieldLogger) (string, error) {
+	uniqueName := fmt.Sprintf("skr-%s", suffix)
+	u, err := azureClient.CheckNamespaceAvailability(p.context, uniqueName)
+	if err != nil {
+		log.Errorf("Error while calling Azure Event Hubs client. Can't check namespace name availability. "+
+			"Error: %v", err)
+		return "", errors.Errorf("Error while calling Azure Event Hubs client. Can't check namespace name "+
+			"availability. Error: %v", err)
+	}
+
+	attempts := 10
+	for !u && attempts > 0 {
+		newName := fmt.Sprintf("skr-%s", uuid.New().String())
+		log.Info("Namespace %s already exists. Checking new name %s.", uniqueName, newName)
+		uniqueName = newName
+		u, err = azureClient.CheckNamespaceAvailability(p.context, uniqueName)
+		if err != nil {
+			log.Errorf("Error while calling Azure Event Hubs client. Can't check namespace name availability. "+
+				"Error: %v", err)
+			return "", errors.Errorf("Error while calling Azure Event Hubs client. Can't check namespace name "+
+				"availability. Error: %v", err)
+		}
+		attempts--
+	}
+
+	if !u {
+		log.Errorf("Can't find a unique name for Event Hubs namespace. Failed after 10 attempts.")
+		return "", errors.New("Can't find a unique name for Event Hubs namespace. Failed after 10 attempts.")
+	}
+	return uniqueName, nil
 }
 
 func extractEndpoint(accessKeys eventhub.AccessKeys) string {
