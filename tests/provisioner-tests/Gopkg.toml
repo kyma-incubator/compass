@@ -9,11 +9,6 @@ required = [
   branch = "runtime-upgrade-in-provisioner"
 
 [[constraint]]
-  name = "github.com/kyma-project/kyma"
-  source = "github.com/Szymongib/kyma"
-  branch = "rename-compass-runtime-agent-module"
-
-[[constraint]]
   name = "github.com/Masterminds/sprig"
   version = "2.20.0"
 
