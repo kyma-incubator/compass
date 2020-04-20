@@ -16,7 +16,7 @@ global:
       version: "PR-1162"
     connectivity_adapter:
       dir:
-      version: "PR-1156"
+      version: "PR-1182"
     pairing_adapter:
       dir:
       version: "PR-1156"
