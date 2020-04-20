@@ -75,9 +75,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		// if the parameters are incorrect, there is no reason to retry the operation
 		// a new request has to be issued by the user
 		log.Errorf("Aborting after failing to get valid operation provisioning parameters: %v", err)
-		//TODO(montaro) Aborting the operation
 		errorMessage := "invalid operation provisioning parameters"
-		//return s.OperationManager.RetryForever(operation, "invalid operation provisioning parameters", time.Minute, log)
 		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
 	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
@@ -87,15 +85,12 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	if err != nil {
 		// retrying might solve the issue, the HAP could be temporarily unavailable
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
-		return s.OperationManager.RetryForever(operation, errorMessage, time.Minute, log)
-		// return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
+		return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
 	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, pp)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure config: %v", err)
-		//TODO(montaro) Failing the operation assuming this is the desired behaviour
-		//return s.OperationManager.RetryForever(operation, errorMessage, time.Minute, log)
 		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
 
@@ -104,8 +99,6 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
-		//TODO(montaro) Failing the operation assuming this is the desired behaviour
-		//return s.OperationManager.RetryForever(operation, errorMessage, time.Minute, log)
 		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
 	// prepare azure tags
@@ -116,16 +109,18 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	if err != nil {
 		// if it doesn't exist anymore, there is nothing to delete - we are done
 		if _, ok := err.(azure.ResourceGroupDoesNotExist); ok {
-			//return s.OperationManager.OperationSucceeded(operation, "deprovisioning of event_hub_step succeeded")
+			if &resourceGroup != nil && resourceGroup.Name != nil {
+				log.Infof("deprovisioning of event hub step succeeded, resource group: %v", resourceGroup.Name)
+			}
+			log.Info("deprovisioning of event hub step succeeded")
 			return operation, 0, nil
 		}
 		// custom error occurred while getting resource group - try again
 		errorMessage := fmt.Sprintf("error while getting resource group, error: %s", err)
-		return s.OperationManager.RetryForever(operation, errorMessage, time.Minute, log)
-		// return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Hour, log)
+		return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Hour, log)
 	}
 	// delete the resource group if it still exists and deletion has not been triggered yet
-	if resourceGroup.Properties == nil || resourceGroup.Properties.ProvisioningState == nil{
+	if resourceGroup.Properties == nil || resourceGroup.Properties.ProvisioningState == nil {
 		errorMessage := fmt.Sprintf("Nil pointer in the resource group")
 		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
@@ -134,8 +129,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		future, err := namespaceClient.DeleteResourceGroup(s.EventHub.Context, tags)
 		if err != nil {
 			errorMessage := fmt.Sprintf("Unable to delete Azure resource group: %v", err)
-			// return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Hour, log)
-			return s.OperationManager.RetryForever(operation, errorMessage, time.Minute, log)
+			return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Hour, log)
 		}
 		if future.Status() != azure.AzureFutureOperationSucceeded {
 			var retryAfterDuration time.Duration
@@ -146,11 +140,9 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 			}
 			errorMessage := "rescheduling step to check deletion of resource group completed"
 			log.Infof(errorMessage)
-			return s.OperationManager.RetryForever(operation, errorMessage, retryAfterDuration, log)
-			// return s.OperationManager.RetryOperation(operation, "waiting for deprovisioning of azure resource group", time.Minute, time.Hour, log)
+			return s.OperationManager.RetryOperation(operation, "waiting for deprovisioning of azure resource group", retryAfterDuration, time.Hour, log)
 		}
 	}
 	errorMessage := "waiting for deprovisioning of azure resource group"
-	return s.OperationManager.RetryForever(operation, errorMessage, time.Minute, log)
-	// return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Hour, log)
+	return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Hour, log)
 }
