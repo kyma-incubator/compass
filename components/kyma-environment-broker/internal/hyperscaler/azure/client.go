@@ -51,16 +51,17 @@ func (nc *AzureClient) CreateNamespace(ctx context.Context, azureCfg *Config, gr
 }
 
 func (nc *AzureClient) CheckNamespaceAvailability(ctx context.Context, name string) (bool, error) {
-	//TODO Validate name string
+	if name == "" {
+		return false, errors.New("Name cannot be empty")
+	}
 	res, err := nc.eventhubNamespaceClient.CheckNameAvailability(ctx, eventhub.CheckNameAvailabilityParameter{Name: &name})
 	if err != nil {
 		return false, errors.Wrapf(err, "Failed to check Event Hubs namespace availability with name: %s", name)
 	}
 	if res.NameAvailable == nil {
 		return false, errors.Errorf("Failed to check Event Hubs namespace availability with name: %s. Received no response using Azure client.", name)
-	} else {
-		return *res.NameAvailable, nil
 	}
+	return *res.NameAvailable, nil
 }
 
 func (nc *AzureClient) createAndWait(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {

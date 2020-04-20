@@ -21,6 +21,7 @@ import (
 )
 
 const (
+	retryCount            = 10
 	authorizationRuleName = "RootManageSharedAccessKey"
 
 	kafkaPort = "9093"
@@ -105,7 +106,6 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	// create Resource Group
 	groupName := uniqueName
-	// TODO(nachtmaar): use different resource group name https://github.com/kyma-incubator/compass/issues/967
 	resourceGroup, err := azureClient.CreateResourceGroup(p.context, azureCfg, groupName, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
@@ -154,30 +154,28 @@ func (p *ProvisionAzureEventHubStep) getUniqueNSName(suffix string, azureClient 
 	uniqueName := fmt.Sprintf("skr-%s", suffix)
 	u, err := azureClient.CheckNamespaceAvailability(p.context, uniqueName)
 	if err != nil {
-		log.Errorf("Error while calling Azure Event Hubs client. Can't check namespace name availability. "+
-			"Error: %v", err)
-		return "", errors.Errorf("Error while calling Azure Event Hubs client. Can't check namespace name "+
-			"availability. Error: %v", err)
+		msg := "Error while calling Azure Event Hubs client. Can't check namespace name availability. Error: %v"
+		log.Errorf(msg, err)
+		return "", errors.Errorf(msg, err)
 	}
 
-	attempts := 10
-	for !u && attempts > 0 {
+	for i := retryCount; !u && i > 0; i-- {
 		newName := fmt.Sprintf("skr-%s", uuid.New().String())
 		log.Info("Namespace %s already exists. Checking new name %s.", uniqueName, newName)
 		uniqueName = newName
 		u, err = azureClient.CheckNamespaceAvailability(p.context, uniqueName)
 		if err != nil {
-			log.Errorf("Error while calling Azure Event Hubs client. Can't check namespace name availability. "+
-				"Error: %v", err)
-			return "", errors.Errorf("Error while calling Azure Event Hubs client. Can't check namespace name "+
-				"availability. Error: %v", err)
+			msg := "Error while calling Azure Event Hubs client. Can't check namespace name availability. Error: %v"
+			log.Errorf(msg, err)
+			return "", errors.Errorf(msg, err)
 		}
-		attempts--
 	}
 
 	if !u {
-		log.Errorf("Can't find a unique name for Event Hubs namespace. Failed after 10 attempts.")
-		return "", errors.New("Can't find a unique name for Event Hubs namespace. Failed after 10 attempts.")
+		msg := fmt.Sprintf("Can't find a unique name for Event Hubs namespace. Failed after %d attempts.",
+			retryCount)
+		log.Error(msg)
+		return "", errors.New(msg)
 	}
 	return uniqueName, nil
 }
