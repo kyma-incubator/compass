@@ -17,13 +17,14 @@ type BrokerStorage interface {
 }
 
 func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, error) {
+	log.Infof("Setting DB connection pool params: connectionMaxLifetime=%s "+
+		"maxIdleConnections=%d maxOpenConnections=%d", cfg.ConnMaxLifetime, cfg.MaxIdleConns, cfg.MaxOpenConns)
+
 	connection, err := postsql.InitializeDatabase(cfg.ConnectionURL())
 	if err != nil {
 		return nil, err
 	}
 
-	log.Infof("Setting DB connection pool params: connectionMaxLifetime=%s "+
-		"maxIdleConnections=%d maxOpenConnections=%d", cfg.ConnMaxLifetime, cfg.MaxIdleConns, cfg.MaxOpenConns)
 	connection.SetConnMaxLifetime(cfg.ConnMaxLifetime)
 	connection.SetMaxIdleConns(cfg.MaxIdleConns)
 	connection.SetMaxOpenConns(cfg.MaxOpenConns)
@@ -38,9 +39,10 @@ func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, error) {
 }
 
 func NewMemoryStorage() BrokerStorage {
+	op := memory.NewOperation()
 	return storage{
-		instance:   memory.NewInstance(),
-		operation:  memory.NewOperation(),
+		instance:   memory.NewInstance(op),
+		operation:  op,
 		lmsTenants: memory.NewLMSTenants(),
 	}
 }

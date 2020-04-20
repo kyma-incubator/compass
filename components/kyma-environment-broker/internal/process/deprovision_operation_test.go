@@ -45,6 +45,38 @@ func Test_Deprovision_RetryOperationOnce(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func Test_Deprovision_RetryOperationWithoutFail(t *testing.T) {
+	// given
+	memory := storage.NewMemoryStorage()
+	operations := memory.Operations()
+	opManager := NewDeprovisionOperationManager(operations)
+	op := internal.DeprovisioningOperation{}
+	op.UpdatedAt = time.Now()
+	retryInterval := time.Hour
+	errorMessage := fmt.Sprintf("ups ... ")
+
+	// this is required to avoid storage retries (without this statement there will be an error => retry)
+	err := operations.InsertDeprovisioningOperation(op)
+	require.NoError(t, err)
+
+	// then - first call
+	op, when, err := opManager.RetryOperationWithoutFail(op, errorMessage, retryInterval, retryInterval+1, fixLogger())
+
+	// when - first retry
+	assert.True(t, when > 0)
+	assert.Nil(t, err)
+
+	// then - second call
+	t.Log(op.UpdatedAt.String())
+	op.UpdatedAt = op.UpdatedAt.Add(-retryInterval - time.Second) // simulate wait of first retry
+	t.Log(op.UpdatedAt.String())
+	op, when, err = opManager.RetryOperationWithoutFail(op, errorMessage, retryInterval, retryInterval+1, fixLogger())
+
+	// when - second call => no retry
+	assert.True(t, when == 0)
+	assert.NoError(t, err)
+}
+
 func Test_Deprovision_RetryOperation(t *testing.T) {
 	// given
 	memory := storage.NewMemoryStorage()

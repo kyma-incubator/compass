@@ -37,6 +37,7 @@ resources: {}
 
 provisioner:
   URL: "http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"
+  dumpRequests: "false"
   gardener:
     # name of the secret with kubeconfig to the gardener cluster
     secretName: "gardener"
@@ -80,3 +81,9 @@ lms:
   environment: "dev"
   samlTenant: "TBD"
   disabled: false
+
+e2e:
+  azure:
+    configName: "e2e-runtime-config-azure"
+  gcp:
+    configName: "e2e-runtime-config-gcp"

@@ -23,7 +23,7 @@ type ResolveCredentialsStep struct {
 
 func getHyperscalerTypeForPlanID(planID string) (hyperscaler.HyperscalerType, error) {
 	switch planID {
-	case broker.GcpPlanID:
+	case broker.GCPPlanID:
 		return hyperscaler.GCP, nil
 	case broker.AzurePlanID:
 		return hyperscaler.Azure, nil
@@ -47,7 +47,7 @@ func (s *ResolveCredentialsStep) Name() string {
 
 func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
-	pp, err := operation.GetParameters()
+	pp, err := operation.GetProvisioningParameters()
 
 	if err != nil {
 		logger.Error("Aborting after failing to get valid operation provisioning parameters")

@@ -54,6 +54,8 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 		return operation, time.Minute, nil
 	}
 
+	setAvsIds(&operation, op, log)
+
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
@@ -67,6 +69,16 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
 		return operation, 1 * time.Second, nil
+	}
+}
+
+func setAvsIds(deprovisioningOperation *internal.DeprovisioningOperation, provisioningOperation *internal.ProvisioningOperation, logger logrus.FieldLogger) {
+	logger.Infof("AVS data from provisioning operation is [%+v]", provisioningOperation.Avs)
+	if deprovisioningOperation.Avs.AvsEvaluationInternalId == 0 {
+		deprovisioningOperation.Avs.AvsEvaluationInternalId = provisioningOperation.Avs.AvsEvaluationInternalId
+	}
+	if deprovisioningOperation.Avs.AVSEvaluationExternalId == 0 {
+		deprovisioningOperation.Avs.AVSEvaluationExternalId = provisioningOperation.Avs.AVSEvaluationExternalId
 	}
 }
 

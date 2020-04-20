@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -35,12 +36,23 @@ type LMS struct {
 	RequestedAt time.Time `json:"requested_at"`
 }
 
+type AvsLifecycleData struct {
+	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
+	AVSEvaluationExternalId int64 `json:"avs_evaluation_external_id"`
+
+	AVSInternalEvaluationDeleted bool `json:"avs_internal_evaluation_deleted"`
+	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`
+}
+
 type Instance struct {
 	InstanceID      string
 	RuntimeID       string
 	GlobalAccountID string
+	SubAccountID    string
 	ServiceID       string
+	ServiceName     string
 	ServicePlanID   string
+	ServicePlanName string
 
 	DashboardURL           string
 	ProvisioningParameters string
@@ -62,8 +74,12 @@ type Operation struct {
 	Description            string
 }
 
-type OperationInterface interface {
-	GetParameters() (ProvisioningParameters, error)
+type InstanceWithOperation struct {
+	Instance
+
+	Type        sql.NullString
+	State       sql.NullString
+	Description sql.NullString
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -77,16 +93,14 @@ type ProvisioningOperation struct {
 	// following fields are not stored in the storage
 	InputCreator ProvisionInputCreator `json:"-"`
 
-	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
-
-	AVSEvaluationExternalId int64 `json:"avs_evaluation_external_id"`
+	Avs AvsLifecycleData `json:"avs"`
 }
 
-// DeprovisioningOperation holds all information about provisioning operation
+// DeprovisioningOperation holds all information about de-provisioning operation
 type DeprovisioningOperation struct {
 	Operation `json:"-"`
 
-	DeprovisioningParameters string `json:"deprovisioning_parameters"`
+	Avs AvsLifecycleData `json:"avs"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
@@ -130,18 +144,7 @@ func NewDeprovisioningOperationWithID(operationID, instanceID string) (Deprovisi
 	}, nil
 }
 
-func (do DeprovisioningOperation) GetParameters() (ProvisioningParameters, error) {
-	var pp ProvisioningParameters
-
-	err := json.Unmarshal([]byte(do.DeprovisioningParameters), &pp)
-	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
-	}
-
-	return pp, nil
-}
-
-func (po ProvisioningOperation) GetParameters() (ProvisioningParameters, error) {
+func (po *ProvisioningOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
 	var pp ProvisioningParameters
 
 	err := json.Unmarshal([]byte(po.ProvisioningParameters), &pp)

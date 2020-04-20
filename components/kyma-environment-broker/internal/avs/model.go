@@ -10,8 +10,8 @@ const (
 	DefinitionType   = "BASIC"
 	interval         = 180
 	timeout          = 30000
-	contentCheck     = "SAP Kyma Runtime Monitoring"
-	contentCheckType = "CONTAINS"
+	contentCheck     = "error"
+	contentCheckType = "NOT_CONTAINS"
 	threshold        = "30000"
 	visibility       = "PUBLIC"
 )
@@ -66,7 +66,7 @@ type BasicEvaluationCreateResponse struct {
 }
 
 func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, configurator ModelConfigurator, groupId int64, url string) (*BasicEvaluationCreateRequest, error) {
-	provisionParams, err := operation.GetParameters()
+	provisionParams, err := operation.GetProvisioningParameters()
 	if err != nil {
 		return nil, err
 	}

@@ -276,14 +276,19 @@ func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key st
 		return nil, err
 	}
 
+	label, err := r.svc.GetLabel(ctx, runtimeID, key)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting label with key: [%s]", key)
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
 
 	return &graphql.Label{
-		Key:   key,
-		Value: value,
+		Key:   label.Key,
+		Value: label.Value,
 	}, nil
 }
 

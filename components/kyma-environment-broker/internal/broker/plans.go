@@ -7,8 +7,10 @@ import (
 )
 
 const (
-	GcpPlanID   = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
-	AzurePlanID = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	GCPPlanID     = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+	GCPPlanName   = "gcp"
+	AzurePlanID   = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	AzurePlanName = "azure"
 )
 
 func AzureRegions() []string {
@@ -206,14 +208,14 @@ func ToInterfaceSlice(input []string) []interface{} {
 
 // plans is designed to hold plan defaulting logic
 // keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
-var plans = map[string]struct {
-	planDefinition        domain.ServicePlan
+var Plans = map[string]struct {
+	PlanDefinition        domain.ServicePlan
 	provisioningRawSchema []byte
 }{
-	GcpPlanID: {
-		planDefinition: domain.ServicePlan{
-			ID:          GcpPlanID,
-			Name:        "gcp",
+	GCPPlanID: {
+		PlanDefinition: domain.ServicePlan{
+			ID:          GCPPlanID,
+			Name:        GCPPlanName,
 			Description: "GCP",
 			Metadata: &domain.ServicePlanMetadata{
 				DisplayName: "GCP",
@@ -229,9 +231,9 @@ var plans = map[string]struct {
 		provisioningRawSchema: GCPSchema(),
 	},
 	AzurePlanID: {
-		planDefinition: domain.ServicePlan{
+		PlanDefinition: domain.ServicePlan{
 			ID:          AzurePlanID,
-			Name:        "azure",
+			Name:        AzurePlanName,
 			Description: "Azure",
 			Metadata: &domain.ServicePlanMetadata{
 				DisplayName: "Azure",

@@ -39,7 +39,7 @@ func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, log
 		return operation, 0, nil
 	}
 
-	pp, err := operation.GetParameters()
+	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
 		msg := fmt.Sprintf("Unable to get provisioning parameters: %s", err.Error())
 		logger.Errorf(msg)
@@ -47,11 +47,7 @@ func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, log
 	}
 	region := s.provideRegion(pp.Parameters.Region)
 
-	name := pp.ErsContext.GlobalAccountID
-	if len(name) > 8 {
-		name = name[:8]
-	}
-	lmsTenantID, err := s.tenantProvider.ProvideLMSTenantID(name, region)
+	lmsTenantID, err := s.tenantProvider.ProvideLMSTenantID(pp.ErsContext.GlobalAccountID, region)
 	if err != nil {
 		errorMessage := fmt.Sprintf("Unable to request for LMS tenant ID: %s", err.Error())
 		return s.operationManager.RetryOperation(operation, errorMessage, 30*time.Second, 2*time.Minute, logger)

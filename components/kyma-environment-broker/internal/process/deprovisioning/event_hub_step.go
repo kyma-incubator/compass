@@ -116,7 +116,8 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	if err != nil {
 		// if it doesn't exist anymore, there is nothing to delete - we are done
 		if _, ok := err.(azure.ResourceGroupDoesNotExist); ok {
-			return s.OperationManager.OperationSucceeded(operation, "deprovisioning of event_hub_step succeeded")
+			//return s.OperationManager.OperationSucceeded(operation, "deprovisioning of event_hub_step succeeded")
+			return operation, 0, nil
 		}
 		// custom error occurred while getting resource group - try again
 		errorMessage := fmt.Sprintf("error while getting resource group, error: %s", err)
@@ -134,7 +135,6 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 			return s.OperationManager.RetryForever(operation, errorMessage, time.Minute, log)
 		}
 		if future.Status() != azure.AzureFutureOperationSucceeded {
-			//TODO(montaro) Optimization, retry after the polling delay provided by Azure
 			if retryAfter, retryAfterHeaderExist := future.GetPollingDelay(); retryAfterHeaderExist {
 				errorMessage := "rescheduling step to check deletion of resource group completed"
 				log.Info(errorMessage)

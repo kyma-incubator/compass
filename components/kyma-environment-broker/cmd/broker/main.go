@@ -6,13 +6,14 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/appinfo"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/health"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/http_client"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
@@ -48,6 +49,16 @@ type Config struct {
 	// which are in progress on starting application. Set to true if you are
 	// running in a separate testing deployment but with the production DB.
 	DisableProcessOperationsInProgress bool `envconfig:"default=false"`
+
+	// DevelopmentMode if set to true then errors are returned in http
+	// responses, otherwise errors are only logged and generic message
+	// is returned to client.
+	// Currently works only with /info endpoints.
+	DevelopmentMode bool `envconfig:"default=false"`
+
+	// DumpProvisionerRequests enables dumping Provisioner requests. Must be disabled on Production environments
+	// because some data must not be visible in the log file.
+	DumpProvisionerRequests bool `envconfig:"default=false"`
 
 	Host       string `envconfig:"optional"`
 	Port       string `envconfig:"default=8080"`
@@ -93,7 +104,7 @@ func main() {
 	health.NewServer(cfg.Host, cfg.StatusPort, logs).ServeAsync()
 
 	// create provisioner client
-	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
+	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, cfg.DumpProvisionerRequests)
 
 	// create kubernetes client
 	k8sCfg, err := config.GetConfig()
@@ -102,7 +113,7 @@ func main() {
 	fatalOnError(err)
 
 	// create director client on the base of graphQL client and OAuth client
-	httpClient := http_client.NewHTTPClient(30, cfg.Director.SkipCertVerification)
+	httpClient := httputil.NewClient(30, cfg.Director.SkipCertVerification)
 	graphQLClient := gcli.NewClient(cfg.Director.URL, gcli.WithHTTPClient(httpClient))
 	oauthClient := oauth.NewOauthClient(httpClient, cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
 	fatalOnError(oauthClient.WaitForCredentials())
@@ -127,11 +138,11 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Kiali":     runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"Jaeger":    runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
-		"BackupInt": runtime.NewGenericComponentDisabler("backup-init", "kyma-system"),
-		"Backup":    runtime.NewGenericComponentDisabler("backup", "kyma-system"),
+		"Kiali":  runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
+		"Jaeger": runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
 		// TODO(workaround until #1049): following components should be always disabled and user should not be able to enable them in provisioning request. This implies following components cannot be specified under the plan schema definition.
+		"BackupInt":               runtime.NewGenericComponentDisabler("backup-init", "kyma-system"),
+		"Backup":                  runtime.NewGenericComponentDisabler("backup", "kyma-system"),
 		"KnativeProvisionerNatss": runtime.NewGenericComponentDisabler("knative-provisioner-natss", "knative-eventing"),
 		"NatssStreaming":          runtime.NewGenericComponentDisabler("nats-streaming", "natss"),
 	}
@@ -152,7 +163,9 @@ func main() {
 	fatalOnError(err)
 
 	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
-	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled)
+	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
+	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
+	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), logs)
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs)
@@ -172,7 +185,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewInternalEvaluationStep(cfg.Avs, avsDel),
+			step:     provisioning.NewInternalEvaluationStep(cfg.Avs, avsDel, internalEvalAssistant),
 			disabled: cfg.Avs.Disabled,
 		},
 		{
@@ -214,6 +227,10 @@ func main() {
 		weight int
 		step   deprovisioning.Step
 	}{
+		{
+			weight: 1,
+			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+		},
 		{
 			weight: 1,
 			step:   deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), db.Instances(), azure.NewAzureProvider(), accountProvider, ctx),
@@ -260,6 +277,10 @@ func main() {
 		broker.NewLastBindingOperation(logs),
 	}
 
+	// create info endpoints
+	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
+	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), respWriter)
+
 	// create broker credentials
 	brokerCredentials := broker.BrokerCredentials{
 		Username: cfg.Auth.Username,
@@ -275,6 +296,7 @@ func main() {
 	sm := http.NewServeMux()
 	sm.Handle("/", brokerBasicAPI)
 	sm.Handle("/oauth/", http.StripPrefix("/oauth", brokerAPI))
+	sm.Handle("/info/runtimes", runtimesInfoHandler)
 
 	r := handlers.LoggingHandler(os.Stdout, sm)
 

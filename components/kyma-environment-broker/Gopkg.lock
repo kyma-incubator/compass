@@ -392,7 +392,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:1b82049d7fd8cd3f1c9e2899148b0d6e52cb37bad5ec953ee874d5f019d96e03"
+  digest = "1:b1088526fcb0be1a92ae8feb398260cdab4e648b6e541f1de28bb0f7590cd815"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -402,7 +402,6 @@
     "components/director/pkg/pagination",
     "components/director/pkg/scalar",
     "components/provisioner/pkg/gqlschema",
-    "tests/provisioner-tests/test/testkit/graphql",
   ]
   pruneopts = "UT"
   revision = "b43e05d8331a01c557eb7be4822dd17d24faf97f"
@@ -542,6 +541,22 @@
   pruneopts = "UT"
   revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
   version = "v1.2.0"
+
+[[projects]]
+  digest = "1:e19e030356c9a7a95a05584afdab42f7845f5a3e78a467b9c74af479556300fc"
+  name = "github.com/sebdah/goldie"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "010f04b0191e18a446e81ae35047fb0545aace70"
+  version = "v2.2.0"
+
+[[projects]]
+  digest = "1:d0d418e1c02e6fc00259ef09d0d4f5135fc6aedac356ff0a11f4e5ef0c447270"
+  name = "github.com/sergi/go-diff"
+  packages = ["diffmatchpatch"]
+  pruneopts = "UT"
+  revision = "58c5cb1602ee9676b5d3590d782bedde80706fcc"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
@@ -796,12 +811,12 @@
   version = "v0.9.1"
 
 [[projects]]
-  digest = "1:b75b3deb2bce8bc079e16bb2aecfe01eb80098f5650f9e93e5643ca8b7b73737"
+  digest = "1:55b110c99c5fdc4f14930747326acce56b52cfce60b24b1c03ef686ac0e46bb1"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "UT"
-  revision = "1f64d6156d11335c3f22d9330b0ad14fc1e789ce"
-  version = "v2.2.7"
+  revision = "53403b58ad1b561927d19068c655246f2db79d48"
+  version = "v2.2.8"
 
 [[projects]]
   digest = "1:57858c910b7c29c64f742c34df7bc6ce76ea72e561276c80c0eda16980443736"
@@ -1077,7 +1092,6 @@
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/director/pkg/jsonschema",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
-    "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
     "github.com/machinebox/graphql",
@@ -1087,6 +1101,7 @@
     "github.com/pivotal-cf/brokerapi/v7/handlers",
     "github.com/pivotal-cf/brokerapi/v7/middlewares",
     "github.com/pkg/errors",
+    "github.com/sebdah/goldie",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",

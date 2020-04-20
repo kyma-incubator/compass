@@ -10,3 +10,5 @@ require (
 	github.com/vrischmann/envconfig v1.2.0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 )
+
+replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8

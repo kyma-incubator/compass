@@ -22,7 +22,7 @@ func TestInputBuilderFactory_IsPlanSupport(t *testing.T) {
 	assert.NoError(t, err)
 
 	// when/then
-	assert.True(t, ibf.IsPlanSupport(broker.GcpPlanID))
+	assert.True(t, ibf.IsPlanSupport(broker.GCPPlanID))
 	assert.True(t, ibf.IsPlanSupport(broker.AzurePlanID))
 }
 
@@ -37,7 +37,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		assert.NoError(t, err)
 
 		// when
-		input, err := ibf.ForPlan(broker.GcpPlanID, "")
+		input, err := ibf.ForPlan(broker.GCPPlanID, "")
 
 		// Then
 		assert.NoError(t, err)
@@ -55,7 +55,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		assert.NoError(t, err)
 
 		// when
-		input, err := ibf.ForPlan(broker.GcpPlanID, "PR-1")
+		input, err := ibf.ForPlan(broker.GCPPlanID, "PR-1")
 
 		// Then
 		assert.NoError(t, err)

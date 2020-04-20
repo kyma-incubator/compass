@@ -43,7 +43,7 @@ func TestResolveCredentialsStepHappyPath_Run(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	pp, err := operation.GetParameters()
+	pp, err := operation.GetProvisioningParameters()
 
 	// then
 	assert.NoError(t, err)
@@ -79,7 +79,7 @@ func TestResolveCredentialsStepRetry_Run(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	pp, err := operation.GetParameters()
+	pp, err := operation.GetProvisioningParameters()
 	assert.NoError(t, err)
 
 	// then
@@ -91,7 +91,7 @@ func TestResolveCredentialsStepRetry_Run(t *testing.T) {
 	time.Sleep(repeat)
 	operation, repeat, err = step.Run(operation, log)
 
-	pp, err = operation.GetParameters()
+	pp, err = operation.GetProvisioningParameters()
 	assert.NoError(t, err)
 
 	assert.NoError(t, err)

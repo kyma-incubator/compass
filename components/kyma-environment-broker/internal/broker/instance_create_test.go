@@ -323,7 +323,7 @@ func TestProvision_Provision(t *testing.T) {
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
 
-		parameters, err := operation.GetParameters()
+		parameters, err := operation.GetProvisioningParameters()
 		assert.NoError(t, err)
 		assert.Equal(t, "master-00e83e99", parameters.Parameters.KymaVersion)
 	})
@@ -368,7 +368,7 @@ func TestProvision_Provision(t *testing.T) {
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
 
-		parameters, err := operation.GetParameters()
+		parameters, err := operation.GetProvisioningParameters()
 		assert.NoError(t, err)
 		assert.Equal(t, "", parameters.Parameters.KymaVersion)
 	})
@@ -391,7 +391,7 @@ func fixAlwaysPassJSONValidator() broker.PlansSchemaValidator {
 	validatorMock.On("ValidateString", mock.Anything).Return(jsonschema.ValidationResult{Valid: true}, nil)
 
 	fixValidator := broker.PlansSchemaValidator{
-		broker.GcpPlanID:   validatorMock,
+		broker.GCPPlanID:   validatorMock,
 		broker.AzurePlanID: validatorMock,
 	}
 

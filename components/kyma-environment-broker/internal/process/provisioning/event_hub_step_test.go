@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -51,13 +52,13 @@ func Test_HappyPath(t *testing.T) {
 
 	// when
 	op.UpdatedAt = time.Now()
-	op, _, err = step.Run(op, fixLogger())
+	op, when, err := step.Run(op, fixLogger())
 	require.NoError(t, err)
 	provisionRuntimeInput, err := op.InputCreator.Create()
 	require.NoError(t, err)
 
 	// then
-	assert.Equal(t, op.Operation.State, domain.Succeeded)
+	ensureOperationSuccessful(t, op, when, err)
 	allOverridesFound := ensureOverrides(t, provisionRuntimeInput)
 	assert.True(t, allOverridesFound[componentNameKnativeEventing], "overrides for %s were not found", componentNameKnativeEventing)
 	assert.True(t, allOverridesFound[componentNameKnativeEventingKafka], "overrides for %s were not found", componentNameKnativeEventingKafka)
@@ -313,9 +314,9 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{}, kymaVersion)
 	assert.NoError(t, err)
 
-	creator, err := ibf.ForPlan(broker.GcpPlanID, "")
+	creator, err := ibf.ForPlan(broker.GCPPlanID, "")
 	if err != nil {
-		t.Errorf("cannot create input creator for %q plan", broker.GcpPlanID)
+		t.Errorf("cannot create input creator for %q plan", broker.GCPPlanID)
 	}
 
 	return creator
@@ -389,4 +390,11 @@ func fixTags() azure.Tags {
 		azure.TagOperationID:  ptr.String(fixOperationID),
 		azure.TagInstanceID:   ptr.String(fixInstanceID),
 	}
+}
+
+func ensureOperationSuccessful(t *testing.T, op internal.ProvisioningOperation, when time.Duration, err error) {
+	t.Helper()
+	assert.Equal(t, when, time.Duration(0))
+	assert.Equal(t, op.Operation.State, domain.LastOperationState(""))
+	assert.Nil(t, err)
 }

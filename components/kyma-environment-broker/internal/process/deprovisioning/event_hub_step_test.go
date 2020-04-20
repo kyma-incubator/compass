@@ -166,14 +166,14 @@ func Test_StepsUnhappyPath(t *testing.T) {
 	tests := []struct {
 		name                string
 		giveOperation       func() internal.DeprovisioningOperation
-		giveInstance		func() internal.Instance
+		giveInstance        func() internal.Instance
 		giveStep            func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep
 		wantRepeatOperation bool
 	}{
 		{
 			name:          "Instance provision parameter errors",
 			giveOperation: fixDeprovisioningOperationWithParameters,
-			giveInstance: fixInvalidInstance,
+			giveInstance:  fixInvalidInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
 				return fixEventHubStep(storage.Operations(), storage.Instances(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
@@ -183,7 +183,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		{
 			name:          "AccountProvider cannot get gardener credentials",
 			giveOperation: fixDeprovisioningOperationWithParameters,
-			giveInstance: fixInstance,
+			giveInstance:  fixInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProviderGardenerCredentialsError()
 				return fixEventHubStep(storage.Operations(), storage.Instances(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
@@ -193,7 +193,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		{
 			name:          "Error while getting EventHubs Namespace credentials",
 			giveOperation: fixDeprovisioningOperationWithParameters,
-			giveInstance: fixInstance,
+			giveInstance:  fixInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProviderGardenerCredentialsError()
 				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
@@ -208,7 +208,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		{
 			name:          "Error while getting config from Credentials",
 			giveOperation: fixDeprovisioningOperation,
-			giveInstance: fixInstance,
+			giveInstance:  fixInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProviderGardenerCredentialsHAPError()
 				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
@@ -222,7 +222,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		{
 			name:          "Error while getting client from HAP",
 			giveOperation: fixDeprovisioningOperation,
-			giveInstance: fixInstance,
+			giveInstance:  fixInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
 				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
@@ -284,7 +284,7 @@ func fixInstance() internal.Instance {
 func fixInvalidInstance() internal.Instance {
 	// TODO(nachtmaar): share with provisiong test ?
 	return internal.Instance{
-		InstanceID: fixInstanceID,
+		InstanceID:             fixInstanceID,
 		ProvisioningParameters: `}{INVALID JSON}{`}
 }
 
@@ -328,17 +328,6 @@ func fixDeprovisioningOperationWithParameters() internal.DeprovisioningOperation
 			Description:            "",
 			UpdatedAt:              time.Now(),
 		},
-		DeprovisioningParameters: `{
-			"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
-			"ers_context": {
-				"subaccount_id": "` + fixSubAccountID + `"
-			},
-			"parameters": {
-				"name": "nachtmaar-15",
-				"components": [],
-				"region": "westeurope"
-			}
-		}`,
 	}
 }
 
@@ -361,7 +350,8 @@ func ensureOperationIsNotRepeated(t *testing.T, err error) {
 func ensureOperationSuccessful(t *testing.T, op internal.DeprovisioningOperation, when time.Duration, err error) {
 	t.Helper()
 	assert.Equal(t, when, time.Duration(0))
-	assert.Equal(t, op.Operation.State, domain.Succeeded)
+	assert.Equal(t, op.Operation.State, domain.LastOperationState(""))
+	assert.Nil(t, err)
 }
 
 func fixAccountProviderGardenerCredentialsError() *hyperscalerautomock.AccountProvider {
