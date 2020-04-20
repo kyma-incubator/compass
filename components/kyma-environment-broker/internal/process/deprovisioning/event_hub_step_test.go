@@ -287,8 +287,6 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			op := tt.giveOperation()
 			step := tt.giveStep(t, memoryStorage)
 			// this is required to avoid storage retries (without this statement there will be an error => retry)
-			// TODO(nachtmaar): can this be deleted ??
-			//TODO(montaro): Had to get it back, otherwise the failed operation would be retried
 			err := memoryStorage.Operations().InsertDeprovisioningOperation(op)
 			require.NoError(t, err)
 			err = memoryStorage.Instances().Insert(tt.giveInstance())

@@ -62,6 +62,17 @@ type Instance struct {
 	DelatedAt time.Time
 }
 
+func (instance Instance) GetProvisioningParameters() (ProvisioningParameters, error) {
+	var pp ProvisioningParameters
+
+	err := json.Unmarshal([]byte(instance.ProvisioningParameters), &pp)
+	if err != nil {
+		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+	}
+
+	return pp, nil
+}
+
 type Operation struct {
 	ID        string
 	Version   int

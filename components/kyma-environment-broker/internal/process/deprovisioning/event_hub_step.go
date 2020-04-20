@@ -2,11 +2,9 @@ package deprovisioning
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -42,20 +40,7 @@ func (s DeprovisionAzureEventHubStep) Name() string {
 	return "Deprovision Azure Event Hubs"
 }
 
-// TODO(nachtmaar): move to better place
-func GetParameters(provisioningParameters string) (internal.ProvisioningParameters, error) {
-	var pp internal.ProvisioningParameters
-
-	err := json.Unmarshal([]byte(provisioningParameters), &pp)
-	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
-	}
-
-	return pp, nil
-}
-
 func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
-	// TODO(nachtmaar): have shared code between provisioning/deprovisioning
 	hypType := hyperscaler.Azure
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
@@ -69,8 +54,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	}
 
 	// parse provisioning parameters
-	fmt.Printf("instance provisiong parameters :%s\n", instance.ProvisioningParameters)
-	pp, err := GetParameters(instance.ProvisioningParameters)
+	pp, err := instance.GetProvisioningParameters()
 	if err != nil {
 		// if the parameters are incorrect, there is no reason to retry the operation
 		// a new request has to be issued by the user
