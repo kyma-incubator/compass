@@ -101,7 +101,7 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 
 	id := s.uidService.Generate()
 
-	eventAPI := in.ToEventDefinitionWithinPackage(id, &packageID, tnt)
+	eventAPI := in.ToEventDefinitionWithinPackage(id, packageID, tnt)
 
 	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {

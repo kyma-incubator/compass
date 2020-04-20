@@ -92,7 +92,7 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 
 	out := Entity{
 		ID:          in.ID,
-		PkgID:       repo.NewNullableString(in.PackageID),
+		PkgID:       in.PackageID,
 		TenantID:    in.Tenant,
 		Title:       in.Title,
 		DisplayName: in.DisplayName,
@@ -111,7 +111,7 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 
 	out := model.Document{
 		ID:          in.ID,
-		PackageID:   repo.StringPtrFromNullableString(in.PkgID),
+		PackageID:   in.PkgID,
 		Tenant:      in.TenantID,
 		Title:       in.Title,
 		DisplayName: in.DisplayName,

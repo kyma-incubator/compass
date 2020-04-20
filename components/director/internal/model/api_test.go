@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -13,7 +11,7 @@ import (
 func TestAPIDefinitionInput_ToAPIDefinitionWithPackageID(t *testing.T) {
 	// given
 	id := "foo"
-	pkgID := str.Ptr("bar")
+	pkgID := "bar"
 	desc := "Sample"
 	name := "sample"
 	targetUrl := "https://foo.bar"

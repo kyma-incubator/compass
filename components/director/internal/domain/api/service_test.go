@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -32,7 +30,7 @@ func TestService_Get(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	apiDefinition := fixAPIDefinitionModel(id, &packageID, name, desc)
+	apiDefinition := fixAPIDefinitionModel(id, packageID, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID)
@@ -108,7 +106,7 @@ func TestService_GetForPackage(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	apiDefinition := fixAPIDefinitionModel(id, &pkgID, name, desc)
+	apiDefinition := fixAPIDefinitionModel(id, pkgID, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID)
@@ -188,9 +186,9 @@ func TestService_ListForPackage(t *testing.T) {
 	desc := "bar"
 
 	apiDefinitions := []*model.APIDefinition{
-		fixAPIDefinitionModel(id, &pkgID, name, desc),
-		fixAPIDefinitionModel(id, &pkgID, name, desc),
-		fixAPIDefinitionModel(id, &pkgID, name, desc),
+		fixAPIDefinitionModel(id, pkgID, name, desc),
+		fixAPIDefinitionModel(id, pkgID, name, desc),
+		fixAPIDefinitionModel(id, pkgID, name, desc),
 	}
 	apiDefinitionPage := &model.APIDefinitionPage{
 		Data:       apiDefinitions,
@@ -294,7 +292,7 @@ func TestService_CreateToPackage(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	packageID := str.Ptr("pkgid")
+	packageID := "pkgid"
 	name := "Foo"
 	targetUrl := "https://test-url.com"
 
@@ -408,7 +406,7 @@ func TestService_CreateToPackage(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			result, err := svc.CreateInPackage(ctx, *packageID, testCase.Input)
+			result, err := svc.CreateInPackage(ctx, packageID, testCase.Input)
 
 			// then
 			if testCase.ExpectedErr != nil {

@@ -100,7 +100,7 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 
 	id := s.uidService.Generate()
 
-	api := in.ToAPIDefinitionWithinPackage(id, &packageID, tnt)
+	api := in.ToAPIDefinitionWithinPackage(id, packageID, tnt)
 	err = s.repo.Create(ctx, api)
 	if err != nil {
 		return "", err

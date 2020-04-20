@@ -253,7 +253,7 @@ func TestService_CreateToPackage(t *testing.T) {
 	frID := "fr-id"
 	timestamp := time.Now()
 	modelInput := fixModelDocumentInputWithFetchRequest(frURL)
-	modelDoc := modelInput.ToDocumentWithinPackage(id, tnt, &packageID)
+	modelDoc := modelInput.ToDocumentWithinPackage(id, tnt, packageID)
 
 	testCases := []struct {
 		Name               string

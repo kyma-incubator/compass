@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/require"
@@ -155,7 +153,7 @@ func TestToEntity(t *testing.T) {
 	modelWithRequiredFields := model.Document{
 		ID:          "givenID",
 		Tenant:      "givenTenant",
-		PackageID:   str.Ptr("givenPackageID"),
+		PackageID:   "givenPackageID",
 		Title:       "givenTitle",
 		Description: "givenDescription",
 		DisplayName: "givenDisplayName",
@@ -171,7 +169,7 @@ func TestToEntity(t *testing.T) {
 		assert.Equal(t, document.Entity{
 			ID:          "givenID",
 			TenantID:    "givenTenant",
-			PkgID:       repo.NewNullableString(str.Ptr("givenPackageID")),
+			PkgID:       "givenPackageID",
 			Title:       "givenTitle",
 			Description: "givenDescription",
 			DisplayName: "givenDisplayName",
@@ -198,7 +196,7 @@ func TestFromEntity(t *testing.T) {
 	entityWithRequiredFields := document.Entity{
 		ID:          "givenID",
 		TenantID:    "givenTenant",
-		PkgID:       repo.NewNullableString(str.Ptr("givenPackageID")),
+		PkgID:       "givenPackageID",
 		Title:       "givenTitle",
 		DisplayName: "givenDisplayName",
 		Description: "givenDescription",
@@ -214,7 +212,7 @@ func TestFromEntity(t *testing.T) {
 		assert.Equal(t, model.Document{
 			ID:          "givenID",
 			Tenant:      "givenTenant",
-			PackageID:   str.Ptr("givenPackageID"),
+			PackageID:   "givenPackageID",
 			Title:       "givenTitle",
 			DisplayName: "givenDisplayName",
 			Description: "givenDescription",

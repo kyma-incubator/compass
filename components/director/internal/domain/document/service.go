@@ -96,7 +96,7 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 
 	id := s.uidService.Generate()
 
-	document := in.ToDocumentWithinPackage(id, tnt, &packageID)
+	document := in.ToDocumentWithinPackage(id, tnt, packageID)
 	err = s.repo.Create(ctx, document)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating Document")

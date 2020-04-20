@@ -849,19 +849,17 @@ const (
 	FetchRequestStatusConditionInitial   FetchRequestStatusCondition = "INITIAL"
 	FetchRequestStatusConditionSucceeded FetchRequestStatusCondition = "SUCCEEDED"
 	FetchRequestStatusConditionFailed    FetchRequestStatusCondition = "FAILED"
-	FetchRequestStatusConditionUnused    FetchRequestStatusCondition = "UNUSED"
 )
 
 var AllFetchRequestStatusCondition = []FetchRequestStatusCondition{
 	FetchRequestStatusConditionInitial,
 	FetchRequestStatusConditionSucceeded,
 	FetchRequestStatusConditionFailed,
-	FetchRequestStatusConditionUnused,
 }
 
 func (e FetchRequestStatusCondition) IsValid() bool {
 	switch e {
-	case FetchRequestStatusConditionInitial, FetchRequestStatusConditionSucceeded, FetchRequestStatusConditionFailed, FetchRequestStatusConditionUnused:
+	case FetchRequestStatusConditionInitial, FetchRequestStatusConditionSucceeded, FetchRequestStatusConditionFailed:
 		return true
 	}
 	return false

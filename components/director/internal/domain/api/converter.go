@@ -117,7 +117,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
 		ID:          entity.ID,
-		PackageID:   repo.StringPtrFromNullableString(entity.PkgID),
+		PackageID:   entity.PkgID,
 		Name:        entity.Name,
 		TargetURL:   entity.TargetURL,
 		Tenant:      entity.TenantID,
@@ -133,7 +133,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
 	return Entity{
 		ID:          apiModel.ID,
 		TenantID:    apiModel.Tenant,
-		PkgID:       repo.NewNullableString(apiModel.PackageID),
+		PkgID:       apiModel.PackageID,
 		Name:        apiModel.Name,
 		Description: repo.NewNullableString(apiModel.Description),
 		Group:       repo.NewNullableString(apiModel.Group),

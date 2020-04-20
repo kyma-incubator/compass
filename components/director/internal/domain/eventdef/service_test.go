@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -308,7 +306,7 @@ func TestService_CreateToPackage(t *testing.T) {
 	modelEventAPIDefinition := &model.EventDefinition{
 		ID:        id,
 		Tenant:    tenantID,
-		PackageID: &packageID,
+		PackageID: packageID,
 		Name:      name,
 		Spec:      &model.EventSpec{},
 		Version:   &model.Version{},
@@ -450,7 +448,7 @@ func TestService_Update(t *testing.T) {
 	eventAPIDefinitionModel := &model.EventDefinition{
 		Name:      "Bar",
 		Tenant:    tenantID,
-		PackageID: str.Ptr("id"),
+		PackageID: "id",
 		Spec:      &model.EventSpec{},
 		Version:   &model.Version{},
 	}

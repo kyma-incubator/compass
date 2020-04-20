@@ -239,9 +239,9 @@ var (
 	docCLOB  = graphql.CLOB(docData)
 )
 
-func fixModelDocument(applicationID, packageID, id string) *model.Document {
+func fixModelDocument(packageID, id string) *model.Document {
 	return &model.Document{
-		PackageID: &packageID,
+		PackageID: packageID,
 		ID:        id,
 		Title:     docTitle,
 		Format:    model.DocumentFormatMarkdown,
@@ -327,7 +327,7 @@ func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *
 	}
 }
 
-func fixModelEventAPIDefinition(id string, appId, packageID *string, name, description string, group string) *model.EventDefinition {
+func fixModelEventAPIDefinition(id string, appId, packageID string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
 		ID:          id,
 		PackageID:   packageID,
@@ -338,9 +338,9 @@ func fixModelEventAPIDefinition(id string, appId, packageID *string, name, descr
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
 	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		PackageID: str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"), Name: placeholder}
+		PackageID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
 }
-func fixGQLEventDefinition(id string, appId, packageID *string, name, description string, group string) *graphql.EventDefinition {
+func fixGQLEventDefinition(id string, appId, packageID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
 		ID:          id,
 		PackageID:   packageID,

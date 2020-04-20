@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -98,15 +96,15 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.APIDefinition{
-		fixAPIDefinitionModel("foo", str.Ptr("1"), "Foo", "Lorem ipsum"),
-		fixAPIDefinitionModel("bar", str.Ptr("1"), "Bar", "Dolor sit amet"),
+		fixAPIDefinitionModel("foo", "1", "Foo", "Lorem ipsum"),
+		fixAPIDefinitionModel("bar", "1", "Bar", "Dolor sit amet"),
 		{},
 		nil,
 	}
 
 	expected := []*graphql.APIDefinition{
-		fixGQLAPIDefinition("foo", str.Ptr("1"), "Foo", "Lorem ipsum"),
-		fixGQLAPIDefinition("bar", str.Ptr("1"), "Bar", "Dolor sit amet"),
+		fixGQLAPIDefinition("foo", "1", "Foo", "Lorem ipsum"),
+		fixGQLAPIDefinition("bar", "1", "Bar", "Dolor sit amet"),
 		{},
 	}
 
@@ -298,7 +296,7 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 	require.NotNil(t, convertedInputModel)
 	require.NotNil(t, convertedInputModel.Spec)
 	require.Nil(t, convertedInputModel.Spec.Data)
-	convertedAPIDef := convertedInputModel.ToAPIDefinitionWithinPackage("id", str.Ptr("app_id"), tenantID)
+	convertedAPIDef := convertedInputModel.ToAPIDefinitionWithinPackage("id", "app_id", tenantID)
 	require.NotNil(t, convertedAPIDef)
 	convertedGraphqlAPIDef := converter.ToGraphQL(convertedAPIDef)
 	require.NotNil(t, convertedGraphqlAPIDef)
@@ -319,14 +317,14 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		apiModel := fixAPIDefinitionModel("id", str.Ptr("pkg_id"), "name", "target_url")
+		apiModel := fixAPIDefinitionModel("id", "pkg_id", "name", "target_url")
 		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, versionConv)
 		//WHEN
 		entity := conv.ToEntity(*apiModel)
 		//THEN
-		assert.Equal(t, fixEntityAPIDefinition("id", str.Ptr("app_id"), str.Ptr("pkg_id"), "name", "target_url"), entity)
+		assert.Equal(t, fixEntityAPIDefinition("id", "pkg_id", "name", "target_url"), entity)
 	})
 }
 
@@ -343,13 +341,13 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		entity := fixEntityAPIDefinition("id", str.Ptr("app_id"), str.Ptr("pkg_id"), "name", "target_url")
+		entity := fixEntityAPIDefinition("id", "pkg_id", "name", "target_url")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, versionConv)
 		//WHEN
 		apiModel := conv.FromEntity(entity)
 		//THEN
-		expectedModel := fixAPIDefinitionModel("id", str.Ptr("pkg_id"), "name", "target_url")
+		expectedModel := fixAPIDefinitionModel("id", "pkg_id", "name", "target_url")
 		require.NotNil(t, expectedModel)
 		assert.Equal(t, *expectedModel, apiModel)
 	})

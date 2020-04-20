@@ -22,7 +22,7 @@ const (
 	packageID = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 )
 
-func fixAPIDefinitionModel(id string, pkgID *string, name, targetURL string) *model.APIDefinition {
+func fixAPIDefinitionModel(id string, pkgID string, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ID:        id,
 		PackageID: pkgID,
@@ -51,7 +51,7 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 	return model.APIDefinition{
 		ID:          apiDefID,
 		Tenant:      tenantID,
-		PackageID:   str.Ptr(packageID),
+		PackageID:   packageID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Spec:        spec,
@@ -61,7 +61,7 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 	}
 }
 
-func fixGQLAPIDefinition(id string, pkgId *string, name, targetURL string) *graphql.APIDefinition {
+func fixGQLAPIDefinition(id string, pkgId string, name, targetURL string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:        id,
 		PackageID: pkgId,
@@ -93,7 +93,7 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 
 	return &graphql.APIDefinition{
 		ID:          apiDefID,
-		PackageID:   str.Ptr(packageID),
+		PackageID:   packageID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Spec:        spec,
@@ -237,10 +237,10 @@ func fixModelAPIRtmAuth(id string, auth *model.Auth) *model.APIRuntimeAuth {
 	}
 }
 
-func fixEntityAPIDefinition(id string, appId, pkgID *string, name, targetUrl string) api.Entity {
+func fixEntityAPIDefinition(id string, pkgID string, name, targetUrl string) api.Entity {
 	return api.Entity{
 		ID:        id,
-		PkgID:     repo.NewNullableString(pkgID),
+		PkgID:     pkgID,
 		Name:      name,
 		TargetURL: targetUrl,
 	}
@@ -252,7 +252,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	return api.Entity{
 		ID:          apiDefID,
 		TenantID:    tenantID,
-		PkgID:       repo.NewNullableString(str.Ptr(packageID)),
+		PkgID:       packageID,
 		Name:        placeholder,
 		Description: repo.NewValidNullableString("desc_" + placeholder),
 		Group:       repo.NewValidNullableString("group_" + placeholder),

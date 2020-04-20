@@ -113,7 +113,7 @@ func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
 	return model.EventDefinition{
 		ID:          entity.ID,
 		Tenant:      entity.TenantID,
-		PackageID:   repo.StringPtrFromNullableString(entity.PkgID),
+		PackageID:   entity.PkgID,
 		Name:        entity.Name,
 		Description: repo.StringPtrFromNullableString(entity.Description),
 		Group:       repo.StringPtrFromNullableString(entity.GroupName),
@@ -126,7 +126,7 @@ func (c *converter) ToEntity(eventModel model.EventDefinition) (Entity, error) {
 	return Entity{
 		ID:          eventModel.ID,
 		TenantID:    eventModel.Tenant,
-		PkgID:       repo.NewNullableString(eventModel.PackageID),
+		PkgID:       eventModel.PackageID,
 		Name:        eventModel.Name,
 		Description: repo.NewNullableString(eventModel.Description),
 		GroupName:   repo.NewNullableString(eventModel.Group),

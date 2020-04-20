@@ -2869,7 +2869,6 @@ enum FetchRequestStatusCondition {
 	INITIAL
 	SUCCEEDED
 	FAILED
-	UNUSED
 }
 
 enum HealthCheckStatusCondition {

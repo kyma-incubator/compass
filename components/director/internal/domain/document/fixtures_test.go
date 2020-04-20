@@ -23,7 +23,7 @@ var (
 func fixModelDocument(id, packageID string) *model.Document {
 	return &model.Document{
 		ID:          id,
-		PackageID:   &packageID,
+		PackageID:   packageID,
 		Tenant:      docTenant,
 		Title:       docTitle,
 		DisplayName: docDisplayName,
@@ -37,7 +37,7 @@ func fixModelDocument(id, packageID string) *model.Document {
 func fixEntityDocument(id, packageID string) *document.Entity {
 	return &document.Entity{
 		ID:          id,
-		PkgID:       repo.NewNullableString(&packageID),
+		PkgID:       packageID,
 		TenantID:    docTenant,
 		Title:       docTitle,
 		DisplayName: docDisplayName,
@@ -51,7 +51,7 @@ func fixEntityDocument(id, packageID string) *document.Entity {
 func fixGQLDocument(id, packageID string) *graphql.Document {
 	return &graphql.Document{
 		ID:          id,
-		PackageID:   &packageID,
+		PackageID:   packageID,
 		Title:       docTitle,
 		DisplayName: docDisplayName,
 		Description: docDescription,

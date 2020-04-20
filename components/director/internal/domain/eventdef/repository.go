@@ -70,25 +70,6 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return &eventAPIDefModel, nil
 }
 
-func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.EventDefinition, error) {
-	var ent Entity
-
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("id", id),
-		repo.NewEqualCondition("app_id", applicationID),
-	}
-	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
-		return nil, err
-	}
-
-	eventAPIModel, err := r.conv.FromEntity(ent)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating event definition model from entity")
-	}
-
-	return &eventAPIModel, nil
-}
-
 func (r *pgRepository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.EventDefinition, error) {
 	var ent Entity
 

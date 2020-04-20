@@ -21,13 +21,13 @@ const (
 )
 
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
-	return &model.EventDefinition{ID: id, Tenant: tenantID, PackageID: str.Ptr(packageID), Name: placeholder}
+	return &model.EventDefinition{ID: id, Tenant: tenantID, PackageID: packageID, Name: placeholder}
 }
 
 func fixGQLEventDefinition(id, placeholder string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
 		ID:        id,
-		PackageID: str.Ptr(packageID),
+		PackageID: packageID,
 		Name:      placeholder,
 	}
 }
@@ -43,7 +43,7 @@ func fixFullModelEventDefinition(id, placeholder string) model.EventDefinition {
 	return model.EventDefinition{
 		ID:          id,
 		Tenant:      tenantID,
-		PackageID:   str.Ptr(packageID),
+		PackageID:   packageID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Group:       str.Ptr("group_" + placeholder),
@@ -75,7 +75,7 @@ func fixDetailedGQLEventDefinition(id, placeholder string) *graphql.EventDefinit
 
 	return &graphql.EventDefinition{
 		ID:          id,
-		PackageID:   str.Ptr(packageID),
+		PackageID:   packageID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Spec:        spec,
@@ -147,7 +147,7 @@ func fixFullEventDef(id, placeholder string) eventdef.Entity {
 	v := fixVersionEntity()
 	return eventdef.Entity{
 		ID:          id,
-		PkgID:       repo.NewNullableString(str.Ptr(packageID)),
+		PkgID:       packageID,
 		TenantID:    tenantID,
 		Name:        placeholder,
 		GroupName:   repo.NewValidNullableString("group_" + placeholder),
@@ -163,7 +163,7 @@ func fixFullEventDef(id, placeholder string) eventdef.Entity {
 
 func fixMinEntityEventDef(id, placeholder string) eventdef.Entity {
 	return eventdef.Entity{ID: id, TenantID: tenantID,
-		PkgID: repo.NewNullableString(str.Ptr(packageID)), Name: placeholder}
+		PkgID: packageID, Name: placeholder}
 }
 
 func fixVersionModel() model.Version {

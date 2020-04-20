@@ -6,8 +6,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api/automock"
@@ -67,7 +65,7 @@ func TestPgRepository_GetForPackage(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{ID: apiDefID, Tenant: tenantID, PackageID: str.Ptr(packageID)}, nil).Once()
+		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{ID: apiDefID, Tenant: tenantID, PackageID: packageID}, nil).Once()
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
 		modelApiDef, err := pgRepository.GetForPackage(ctx, tenantID, apiDefID, packageID)
@@ -75,7 +73,7 @@ func TestPgRepository_GetForPackage(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, apiDefID, modelApiDef.ID)
 		assert.Equal(t, tenantID, modelApiDef.Tenant)
-		assert.Equal(t, packageID, *modelApiDef.PackageID)
+		assert.Equal(t, packageID, modelApiDef.PackageID)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
 	})

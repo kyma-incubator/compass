@@ -2,7 +2,7 @@ package graphql
 
 type EventDefinition struct {
 	ID          string  `json:"id"`
-	PackageID   *string `json:"packageID"`
+	PackageID   string  `json:"packageID"`
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
 	// group allows you to find the same API but in different version

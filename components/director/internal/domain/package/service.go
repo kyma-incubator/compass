@@ -238,7 +238,7 @@ func (s *service) createAPIs(ctx context.Context, packageID, tenant string, apis
 	var err error
 	for _, item := range apis {
 		apiDefID := s.uidService.Generate()
-		err = s.apiRepo.Create(ctx, item.ToAPIDefinitionWithinPackage(apiDefID, &packageID, tenant))
+		err = s.apiRepo.Create(ctx, item.ToAPIDefinitionWithinPackage(apiDefID, packageID, tenant))
 		if err != nil {
 			return errors.Wrap(err, "while creating API for application")
 		}
@@ -257,7 +257,7 @@ func (s *service) createEvents(ctx context.Context, packageID, tenant string, ev
 	var err error
 	for _, item := range events {
 		eventID := s.uidService.Generate()
-		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinitionWithinPackage(eventID, &packageID, tenant))
+		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinitionWithinPackage(eventID, packageID, tenant))
 		if err != nil {
 			return errors.Wrap(err, "while creating EventDefinitions for application")
 		}
@@ -276,7 +276,7 @@ func (s *service) createDocuments(ctx context.Context, packageID, tenant string,
 	var err error
 	for _, item := range events {
 		documentID := s.uidService.Generate()
-		err = s.documentRepo.Create(ctx, item.ToDocumentWithinPackage(documentID, tenant, &packageID))
+		err = s.documentRepo.Create(ctx, item.ToDocumentWithinPackage(documentID, tenant, packageID))
 		if err != nil {
 			return errors.Wrapf(err, "while creating Document for application")
 		}

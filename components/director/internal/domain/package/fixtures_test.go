@@ -11,10 +11,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
-func fixModelAPIDefinition(id string, pkgID *string, name, description string, group string) *model.APIDefinition {
+func fixModelAPIDefinition(id string, pkgID string, name, description string, group string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ID:          id,
 		PackageID:   pkgID,
@@ -24,7 +23,7 @@ func fixModelAPIDefinition(id string, pkgID *string, name, description string, g
 	}
 }
 
-func fixGQLAPIDefinition(id string, pkgID *string, name, description string, group string) *graphql.APIDefinition {
+func fixGQLAPIDefinition(id string, pkgID string, name, description string, group string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:          id,
 		PackageID:   pkgID,
@@ -58,7 +57,7 @@ func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.A
 	}
 }
 
-func fixModelEventAPIDefinition(id string, packageID *string, name, description string, group string) *model.EventDefinition {
+func fixModelEventAPIDefinition(id string, packageID string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
 		ID:          id,
 		PackageID:   packageID,
@@ -69,9 +68,9 @@ func fixModelEventAPIDefinition(id string, packageID *string, name, description 
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
 	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		PackageID: str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"), Name: placeholder}
+		PackageID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
 }
-func fixGQLEventDefinition(id string, packageID *string, name, description string, group string) *graphql.EventDefinition {
+func fixGQLEventDefinition(id string, packageID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
 		ID:          id,
 		PackageID:   packageID,
@@ -113,9 +112,9 @@ var (
 	desc     = "Lorem Ipsum"
 )
 
-func fixModelDocument(packageID, applicationID, id string) *model.Document {
+func fixModelDocument(packageID, id string) *model.Document {
 	return &model.Document{
-		PackageID: &packageID,
+		PackageID: packageID,
 		ID:        id,
 		Title:     docTitle,
 		Format:    model.DocumentFormatMarkdown,
