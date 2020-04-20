@@ -136,6 +136,8 @@ func Test_StepsProvisionSucceeded(t *testing.T) {
 			// this is required to avoid storage retries (without this statement there will be an error => retry)
 			err := memoryStorage.Operations().InsertDeprovisioningOperation(op)
 			require.NoError(t, err)
+			err = memoryStorage.Instances().Insert(fixInstance())
+			require.NoError(t, err)
 			steps := tt.giveSteps(t, memoryStorage.Operations(), memoryStorage.Instances(), accountProvider)
 			wantStates := tt.wantStates(t)
 			for idx, step := range steps {
@@ -169,7 +171,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		wantRepeatOperation bool
 	}{
 		{
-			name:          "Provision parameter errors",
+			name:          "Instance provision parameter errors",
 			giveOperation: fixDeprovisioningOperationWithParameters,
 			giveInstance: fixInvalidInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
