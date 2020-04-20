@@ -50,3 +50,19 @@ testing-with-database-network:
 
 clean-up:
 	@docker network rm $(TESTING_DB_NETWORK) || true
+
+run-local:
+	kind create cluster --name compass --config config/kind/cluster.yaml
+	kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+	kubectl patch daemonsets -n projectcontour envoy -p '{"spec":{"template":{"spec":{"nodeSelector":{"ingress-ready":"true"},"tolerations":[{"key":"node-role.kubernetes.io/master","operator":"Equal","effect":"NoSchedule"}]}}}}'
+	while [[ `kubectl get pods -n projectcontour -l app=envoy -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}'` != "True" ]]; do \
+  		echo "Waiting for envoy pod" && sleep 2;\
+	done;
+	ko apply -f config
+	while [[ `kubectl get pods -n compass-system -l app=postgresql -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}'` != "True" ]]; do \
+  		echo "Waiting for postgresql pod" && sleep 2;\
+	done;
+	if [ -a config/kind/database.sql ]; \
+	then \
+		cat config/kind/database.sql | kubectl -n compass-system exec -i compass-postgresql-0 -- psql 'postgresql://postgres:KCRXNu2d1g@localhost/broker' ;\
+	fi \

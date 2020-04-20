@@ -1,0 +1,59 @@
+apiVersion: v1
+data:
+  additionalRuntimeComponents.yaml: |-
+    components:
+      - name: service-manager-proxy
+        namespace: kyma-system
+      - name: uaa-activator
+        namespace: kyma-system
+      - name: compass-runtime-agent
+        namespace: compass-system
+      - name: knative-eventing-kafka
+        namespace: knative-eventing
+      - name: "prometheus-config-updater"
+        namespace: "kyma-system"
+        source:
+          url: "https://storage.googleapis.com/kyma-mps-dev-artifacts/prometheus-config-updater.zip"
+      - name: "avs-bridge"
+        namespace: "kyma-system"
+        source:
+          url: "https://storage.googleapis.com/kyma-mps-dev-artifacts/avs-bridge-noparent-1.1.0.tgz"
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: compass
+    app.kubernetes.io/name: kyma-environment-broker
+  name: compass-kyma-environment-broker
+  namespace: compass-system
+---
+apiVersion: v1
+data:
+  console.managementPlane.url: https://compass-gateway.mps.dev.kyma.cloud.sap/runtime/director/graphql
+kind: ConfigMap
+metadata:
+  labels:
+    component: core
+    provisioning-runtime-override: "true"
+  name: core-overrides
+  namespace: compass-system
+---
+apiVersion: v1
+data:
+  global.enableAPIPackages: "true"
+kind: ConfigMap
+metadata:
+  labels:
+    provisioning-runtime-override: "true"
+  name: global-overrides
+  namespace: compass-system
+---
+apiVersion: v1
+data:
+  managementPlane.url: https://compass-gateway.mps.dev.kyma.cloud.sap/runtime/director/graphql
+kind: ConfigMap
+metadata:
+  labels:
+    component: compass-runtime-agent
+    provisioning-runtime-override: "true"
+  name: compass-runtime-agent-overrides
+  namespace: compass-system

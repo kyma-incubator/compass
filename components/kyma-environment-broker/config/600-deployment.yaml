@@ -1,0 +1,213 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: kyma-environment-broker
+    app.kubernetes.io/version: 0.1.0
+  name: compass-kyma-environment-broker
+  namespace: compass-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: compass
+      app.kubernetes.io/name: kyma-environment-broker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: compass
+        app.kubernetes.io/name: kyma-environment-broker
+    spec:
+      containers:
+      - env:
+        - name: APP_BROKER_ENABLE_PLANS
+          value: azure,gcp
+        - name: APP_PROVISIONING_URL
+          value: http://compass-provisioner.compass-system.svc.cluster.local/graphql
+        - name: APP_PORT
+          value: "8080"
+        - name: APP_AUTH_USERNAME
+          value: broker
+        - name: APP_AUTH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: broker-password
+              name: compass-kyma-environment-broker
+        - name: APP_DIRECTOR_NAMESPACE
+          value: compass-system
+        - name: APP_DIRECTOR_DEFAULT_TENANT
+          value: tenant9ccee153a0ae
+        - name: APP_DIRECTOR_URL
+          value: http://compass-director.compass-system.svc.cluster.local
+        - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
+          value: compass-kyma-environment-broker-credentials
+        - name: APP_DIRECTOR_SKIP_CERT_VERIFICATION
+          value: "true"
+        - name: APP_LMS_URL
+          value: https://lms.compass-system.svc.cluster.local
+        - name: APP_LMS_CLUSTER_TYPE
+          value: single-node
+        - name: APP_LMS_ENVIRONMENT
+          value: dev
+        - name: APP_LMS_SAML_TENANT
+          value: kymatest.accounts400.ondemand.com
+        - name: APP_LMS_DISABLED
+          value: "true"
+        - name: APP_LMS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: lms-creds
+        - name: APP_DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-broker-username
+              name: compass-postgresql
+        - name: APP_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-broker-password
+              name: compass-postgresql
+        - name: APP_DATABASE_HOST
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-serviceName
+              name: compass-postgresql
+        - name: APP_DATABASE_PORT
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-servicePort
+              name: compass-postgresql
+        - name: APP_DATABASE_NAME
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-broker-db-name
+              name: compass-postgresql
+        - name: APP_DATABASE_SSL
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-sslMode
+              name: compass-postgresql
+        - name: APP_SERVICE_MANAGER_OVERRIDE_MODE
+          value: WhenNotSentInRequest
+        - name: APP_SERVICE_MANAGER_URL
+          valueFrom:
+            secretKeyRef:
+              key: url
+              name: service-manager-creds
+        - name: APP_SERVICE_MANAGER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: service-manager-creds
+        - name: APP_SERVICE_MANAGER_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: service-manager-creds
+        - name: APP_AVS_OAUTH_TOKEN_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              key: oauthTokenEndpoint
+              name: avs-creds
+        - name: APP_AVS_OAUTH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: oauthUserName
+              name: avs-creds
+        - name: APP_AVS_OAUTH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: oauthPassword
+              name: avs-creds
+        - name: APP_AVS_API_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              key: apiEndpoint
+              name: avs-creds
+        - name: APP_AVS_OAUTH_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              key: clientId
+              name: avs-creds
+        - name: APP_AVS_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: apiKey
+              name: avs-creds
+        - name: APP_AVS_INTERNAL_TESTER_ACCESS_ID
+          valueFrom:
+            secretKeyRef:
+              key: internalTesterAccessId
+              name: avs-creds
+        - name: APP_AVS_EXTERNAL_TESTER_ACCESS_ID
+          valueFrom:
+            secretKeyRef:
+              key: externalTesterAccessId
+              name: avs-creds
+        - name: APP_AVS_GROUP_ID
+          valueFrom:
+            secretKeyRef:
+              key: groupId
+              name: avs-creds
+        - name: APP_KYMA_VERSION
+          value: 1.11.0-rc2
+        - name: APP_ENABLE_ON_DEMAND_VERSION
+          value: "true"
+        - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_FILE_PATH
+          value: /config/additionalRuntimeComponents.yaml
+        - name: APP_GARDENER_PROJECT
+          value: kyma-dev
+        - name: APP_GARDENER_KUBECONFIG_PATH
+          value: /gardener/kubeconfig/kubeconfig
+        image: github.com/kyma-incubator/compass/components/kyma-environment-broker/cmd/broker
+        imagePullPolicy: IfNotPresent
+        name: kyma-environment-broker
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /gardener/kubeconfig
+          name: gardener-kubeconfig
+          readOnly: true
+        - mountPath: /config
+          name: config-volume
+#        - mountPath: /secrets/cloudsql-instance-credentials
+#          name: cloudsql-instance-credentials
+#          readOnly: true
+#      - command:
+#        - /cloud_sql_proxy
+#        - -instances=sap-ti-dx-kyma-mps-dev:europe-west1:kyma-mps-dev-f720=tcp:5432
+#        - -credential_file=/secrets/cloudsql-instance-credentials/credentials.json
+#        image: gcr.io/cloudsql-docker/gce-proxy:1.16
+#        imagePullPolicy: IfNotPresent
+#        name: cloudsql-proxy
+#        resources: {}
+#        securityContext:
+#          runAsUser: 2000
+#        volumeMounts:
+#        - mountPath: /secrets/cloudsql-instance-credentials
+#          name: cloudsql-instance-credentials
+#          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 2000
+      serviceAccount: compass-kyma-environment-broker
+      serviceAccountName: compass-kyma-environment-broker
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: compass-kyma-environment-broker
+        name: config-volume
+#      - name: cloudsql-instance-credentials
+#        secret:
+#          defaultMode: 420
+#          secretName: cloudsql-instance-credentials
+      - name: gardener-kubeconfig
+        secret:
+          defaultMode: 420
+          secretName: gardener-credentials

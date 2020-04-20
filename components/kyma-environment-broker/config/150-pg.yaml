@@ -1,0 +1,265 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: compass-postgresql
+  namespace: compass-system
+  labels:
+    app: postgresql
+type: Opaque
+data:
+  postgresql-director-db-name: "cG9zdGdyZXM=" # broker
+  postgresql-director-username: "cG9zdGdyZXM=" # postgresql
+  postgresql-director-password: "S0NSWE51MmQxZw==" #KCRXNu2d1g
+  postgresql-provisioner-db-name: "cHJvdmlzaW9uZXI=" # provisioner
+  postgresql-provisioner-username: "cG9zdGdyZXM=" # postgres
+  postgresql-provisioner-password: "S0NSWE51MmQxZw==" #KCRXNu2d1g
+  postgresql-broker-db-name: "YnJva2Vy" # broker
+  postgresql-broker-username: "cG9zdGdyZXM=" # postgres
+  postgresql-broker-password: "S0NSWE51MmQxZw==" #KCRXNu2d1g
+  postgresql-serviceName: "Y29tcGFzcy1wb3N0Z3Jlc3Fs" # compass-postgresql
+  postgresql-servicePort: "NTQzMg==" # 5432
+  postgresql-sslMode: "ZGlzYWJsZQ==" # disable
+  postgresql-username: "cG9zdGdyZXM=" # postgres
+  postgresql-password: "M1EwS3RpMzZ4Ng==" # 3Q0Kti36x6
+  postgresql-directorDatabaseName: "cG9zdGdyZXM=" # postgres
+  postgresql-provisionerDatabaseName: "cHJvdmlzaW9uZXI=" # provisioner
+  postgresql-brokerDatabaseName: "YnJva2Vy" # broker
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compass-postgresql-db-init
+  namespace: compass-system
+data:
+  init-director-db.sql: |
+    CREATE DATABASE postgres;
+  init-provisioner-db.sql: |
+    CREATE DATABASE provisioner;
+  init-broker-db.sql: |
+    CREATE DATABASE broker;
+---
+# Source: compass/charts/postgresql/templates/svc-headless.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: compass-postgresql-headless
+  namespace: compass-system
+  labels:
+    app: postgresql
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: postgresql
+  selector:
+    app: postgresql
+---
+# Source: compass/charts/postgresql/templates/svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: compass-postgresql
+  namespace: compass-system
+  labels:
+    app: postgresql
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: postgresql
+  selector:
+    app: postgresql
+    role: master
+
+---
+# Source: compass/charts/postgresql/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: compass-postgresql
+  namespace: compass-system
+  labels:
+    app: postgresql
+spec:
+  serviceName: compass-postgresql-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: postgresql
+      role: master
+  template:
+    metadata:
+      name: compass-postgresql
+      labels:
+        app: postgresql
+        role: master
+    spec:
+      securityContext:
+        fsGroup: 1001
+      initContainers:
+        - name: init-chmod-data
+          image: docker.io/bitnami/minideb:stretch
+          imagePullPolicy: "Always"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /bitnami/postgresql/data
+              chmod 700 /bitnami/postgresql/data
+              find /bitnami/postgresql -mindepth 1 -maxdepth 1 -not -name ".snapshot" -not -name "lost+found" | \
+                xargs chown -R 1001:1001
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: data
+              mountPath: /bitnami/postgresql
+              subPath:
+      containers:
+        - name: compass-postgresql
+          image: docker.io/bitnami/postgresql:11.4.0-debian-9-r12
+          imagePullPolicy: "IfNotPresent"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+
+          securityContext:
+            runAsUser: 1001
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+            - name: POSTGRESQL_PORT_NUMBER
+              value: "5432"
+            - name: PGDATA
+              value: "/bitnami/postgresql/data"
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-password
+          ports:
+            - name: postgresql
+              containerPort: 5432
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+                  [ -f /opt/bitnami/postgresql/tmp/.initialized ]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          volumeMounts:
+            - name: custom-init-scripts
+              mountPath: /docker-entrypoint-initdb.d/
+            - name: data
+              mountPath: /bitnami/postgresql
+              subPath:
+      volumes:
+        - name: custom-init-scripts
+          configMap:
+            name: compass-postgresql-db-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "8Gi"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: compass-migration-broker
+  namespace: compass-system
+  labels:
+    app: compass
+    release: compass
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    metadata:
+      labels:
+        app: compass
+        release: compass
+    spec:
+      restartPolicy: Never
+      shareProcessNamespace: true
+      containers:
+
+        - name: migrator
+          image: eu.gcr.io/kyma-project/incubator/compass-schema-migrator:PR-1134
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-broker-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-broker-password
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-broker-db-name
+            - name: DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-sslMode
+            - name: MIGRATION_PATH
+              value: "kyma-environment-broker"
+            - name: DIRECTION
+              value: "up"
+
+          command:
+            - "/bin/bash"
+          args:
+            - "-c"
+            - "sleep 20; ./run.sh; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"

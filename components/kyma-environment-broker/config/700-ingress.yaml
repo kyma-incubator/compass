@@ -1,0 +1,15 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: broker-ingress
+  namespace: compass-system
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /v2
+            backend:
+              serviceName: compass-kyma-environment-broker
+              servicePort: 80
