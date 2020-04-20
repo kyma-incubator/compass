@@ -22,7 +22,7 @@ func TestClient_CreateDataStream(t *testing.T) {
 	testServer := fixHTTPServer(t)
 	defer testServer.Close()
 
-	config := ClientConfig{
+	config := Config{
 		AdminURL:  testServer.URL,
 		Namespace: testNamespace,
 	}
@@ -40,7 +40,7 @@ func TestClient_CreateMetadataTenant(t *testing.T) {
 	testServer := fixHTTPServer(t)
 	defer testServer.Close()
 
-	config := ClientConfig{
+	config := Config{
 		AdminURL:  testServer.URL,
 		Namespace: testNamespace,
 	}
@@ -67,7 +67,7 @@ func TestClient_DeleteMetadataTenant(t *testing.T) {
 	testServer := fixHTTPServer(t)
 	defer testServer.Close()
 
-	config := ClientConfig{
+	config := Config{
 		AdminURL:  testServer.URL,
 		Namespace: testNamespace,
 	}

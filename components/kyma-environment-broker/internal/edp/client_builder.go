@@ -13,14 +13,17 @@ const (
 	namespaceToken = "%s/oauth2/token"
 )
 
-type ClientConfig struct {
-	AuthURL   string
-	AdminURL  string
-	Namespace string
-	Secret    string
+type Config struct {
+	AuthURL     string
+	AdminURL    string
+	Namespace   string
+	Secret      string
+	Environment string `envconfig:"default=prod"`
+	Required    bool   `envconfig:"default=false"`
+	Disabled    bool
 }
 
-func CreateEDPAdminClient(config ClientConfig, log logrus.FieldLogger) *Client {
+func CreateEDPAdminClient(config Config, log logrus.FieldLogger) *Client {
 	data := url.Values{}
 	data.Add("grant_type", "client_credentials")
 	data.Add("scope", "edp-namespace.read edp-namespace.update")

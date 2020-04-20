@@ -14,17 +14,21 @@ import (
 )
 
 const (
+	MaasConsumerEnvironmentKey = "maasConsumerEnvironment"
+	MaasConsumerRegionKey      = "maasConsumerRegion"
+	MaasConsumerSubAccountKey  = "maasConsumerSubAccount"
+
 	dataTenantTmpl     = "%s/namespaces/%s/dataTenants"
 	metadataTenantTmpl = "%s/namespaces/%s/dataTenants/%s/%s/metadata"
 )
 
 type Client struct {
-	config     ClientConfig
+	config     Config
 	httpClient *http.Client
 	log        logrus.FieldLogger
 }
 
-func NewClient(config ClientConfig, httpClient *http.Client, log logrus.FieldLogger) *Client {
+func NewClient(config Config, httpClient *http.Client, log logrus.FieldLogger) *Client {
 	return &Client{
 		config:     config,
 		httpClient: httpClient,
