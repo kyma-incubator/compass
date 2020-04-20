@@ -92,6 +92,6 @@ func fixInstanceRuntimeStatus() internal.Instance {
 		GlobalAccountID: fixGlobalAccountID,
 		CreatedAt:       time.Time{},
 		UpdatedAt:       time.Time{},
-		DelatedAt:       time.Time{},
+		DeletedAt:       time.Time{},
 	}
 }

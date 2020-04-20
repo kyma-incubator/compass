@@ -123,6 +123,6 @@ func fixInstanceRuntimeStatus() internal.Instance {
 		GlobalAccountID: statusGlobalAccountID,
 		CreatedAt:       time.Time{},
 		UpdatedAt:       time.Time{},
-		DelatedAt:       time.Time{},
+		DeletedAt:       time.Time{},
 	}
 }
