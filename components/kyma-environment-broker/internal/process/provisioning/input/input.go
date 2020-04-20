@@ -67,8 +67,8 @@ func (r *RuntimeInput) SetRuntimeLabels(instanceID, subAccountID string) interna
 	defer r.mutex.Unlock("SetRuntimeLabels")
 
 	r.input.RuntimeInput.Labels = &gqlschema.Labels{
-		brokerKeyPrefix + "instance_id":   []string{instanceID},
-		globalKeyPrefix + "subaccount_id": []string{subAccountID},
+		brokerKeyPrefix + "instance_id":   instanceID,
+		globalKeyPrefix + "subaccount_id": subAccountID,
 	}
 
 	return r

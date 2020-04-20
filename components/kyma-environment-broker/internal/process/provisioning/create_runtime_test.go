@@ -51,8 +51,8 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 			Name:        "dummy",
 			Description: nil,
 			Labels: &gqlschema.Labels{
-				"broker_instance_id":   []string{instanceID},
-				"global_subaccount_id": []string{subAccountID},
+				"broker_instance_id":   instanceID,
+				"global_subaccount_id": subAccountID,
 			},
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
