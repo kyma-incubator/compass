@@ -16,6 +16,7 @@ For more information, read the [documentation](../../docs/kyma-environment-broke
 - [Provisioning Kyma environment](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/08-01-provisioning-kyma-environment.md)
 - [Deprovisioning Kyma environment](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/08-02-deprovisioning-kyma-environment.md)
 - [Operation status](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/08-03-operation-status.md)
+- [Instance details](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/08-04-instance-details.md)
 
 ## Configuration
 
