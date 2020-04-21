@@ -55,8 +55,8 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	if err != nil {
 		// if the parameters are incorrect, there is no reason to retry the operation
 		// a new request has to be issued by the user
-		log.Errorf("Aborting after failing to get valid operation provisioning parameters: %v", err)
-		errorMessage := "invalid operation provisioning parameters"
+		errorMessage := fmt.Sprintf("aborting deprovisioning after failing to get valid operation provisioning parameters: %v", err)
+		log.Errorf(errorMessage)
 		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
 	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
