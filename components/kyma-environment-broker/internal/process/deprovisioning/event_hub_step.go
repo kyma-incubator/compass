@@ -40,16 +40,28 @@ func (s DeprovisionAzureEventHubStep) Name() string {
 	return "Deprovision Azure Event Hubs"
 }
 
-func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
-	hypType := hyperscaler.Azure
-
+func (s DeprovisionAzureEventHubStep) getInstance(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (*internal.Instance, error) {
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
 	case dberr.IsNotFound(err):
-		return s.OperationManager.OperationSucceeded(operation, "instance already deprovisioned")
+		return nil, newInstanceNotFoundError("instance already deprovisioned")
 	default:
-		log.Errorf("unable to get instance from storage: %s", err)
+		errorMessage := fmt.Sprintf("unable to get instance from storage: %s", err)
+		log.Errorf(errorMessage)
+		return nil, newInstanceGetError(errorMessage)
+	}
+	return instance, nil
+}
+
+func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	hypType := hyperscaler.Azure
+
+	instance, err := s.getInstance(operation, log)
+	switch err.(type) {
+	case instanceNotFoundError:
+		return s.OperationManager.OperationSucceeded(operation, "instance already deprovisioned")
+	case instanceGetError:
 		return operation, 1 * time.Second, nil
 	}
 
@@ -95,8 +107,9 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		if _, ok := err.(azure.ResourceGroupDoesNotExist); ok {
 			if &resourceGroup != nil && resourceGroup.Name != nil {
 				log.Infof("deprovisioning of event hub step succeeded, resource group: %v", resourceGroup.Name)
+			} else {
+				log.Info("deprovisioning of event hub step succeeded")
 			}
-			log.Info("deprovisioning of event hub step succeeded")
 			return operation, 0, nil
 		}
 		// custom error occurred while getting resource group - try again
