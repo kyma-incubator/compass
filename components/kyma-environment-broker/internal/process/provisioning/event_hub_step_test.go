@@ -276,7 +276,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 					context.Background(),
 				)
 			},
-			wantRepeatOperation: false,
+			wantRepeatOperation: true,
 		},
 	}
 	for _, tt := range tests {

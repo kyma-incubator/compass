@@ -101,7 +101,9 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	// Generating a unique name for resource group and namespace with operation ID as suffix if available
 	uniqueName, err := p.getUniqueNSName(operation.ID, azureClient, log)
 	if err != nil {
-		return p.operationManager.OperationFailed(operation, fmt.Sprintf("Can't find a unique name for Event Hubs namespace. Error:%v", err))
+		// We need to find a better timing logic across this whole step. Probably have them configurable.
+		return p.operationManager.RetryOperation(operation, fmt.Sprintf("Can't find a unique name for Event " +
+			"Hubs namespace. Error:%v", err), time.Minute, time.Minute*30, log)
 	}
 
 	// create Resource Group
@@ -152,18 +154,18 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 func (p *ProvisionAzureEventHubStep) getUniqueNSName(suffix string, azureClient azure.AzureInterface,
 	log logrus.FieldLogger) (string, error) {
 	uniqueName := fmt.Sprintf("skr-%s", suffix)
-	u, err := azureClient.CheckNamespaceAvailability(p.context, uniqueName)
+	available, err := azureClient.CheckNamespaceAvailability(p.context, uniqueName)
 	if err != nil {
 		msg := "Error while calling Azure Event Hubs client. Can't check namespace name availability. Error: %v"
 		log.Errorf(msg, err)
 		return "", errors.Errorf(msg, err)
 	}
 
-	for i := retryCount; !u && i > 0; i-- {
+	for i := retryCount; !available && i > 0; i-- {
 		newName := fmt.Sprintf("skr-%s", uuid.New().String())
 		log.Info("Namespace %s already exists. Checking new name %s.", uniqueName, newName)
 		uniqueName = newName
-		u, err = azureClient.CheckNamespaceAvailability(p.context, uniqueName)
+		available, err = azureClient.CheckNamespaceAvailability(p.context, uniqueName)
 		if err != nil {
 			msg := "Error while calling Azure Event Hubs client. Can't check namespace name availability. Error: %v"
 			log.Errorf(msg, err)
@@ -171,7 +173,7 @@ func (p *ProvisionAzureEventHubStep) getUniqueNSName(suffix string, azureClient 
 		}
 	}
 
-	if !u {
+	if !available {
 		msg := fmt.Sprintf("Can't find a unique name for Event Hubs namespace. Failed after %d attempts.",
 			retryCount)
 		log.Error(msg)
