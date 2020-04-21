@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/vburenin/nsync"
+	"time"
 )
 
 const (
@@ -13,7 +14,8 @@ const (
 )
 
 type Config struct {
-	URL string
+	URL     string
+	Timeout time.Duration `envconfig:"default=12h"`
 }
 
 type RuntimeInput struct {

@@ -99,6 +99,7 @@ func main() {
 	logger.Info("Starting Kyma Environment Broker")
 
 	logs := logrus.New()
+	logs.Infof(" Timeout: %s", cfg.Provisioning.Timeout.String()) //todo: remove it
 
 	logger.Info("Registering healthz endpoint for health probes")
 	health.NewServer(cfg.Host, cfg.StatusPort, logs).ServeAsync()
@@ -171,7 +172,8 @@ func main() {
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs)
 
 	// define steps
-	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, externalEvalCreator)
+	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
+		provisionerClient, directorClient, inputFactory, externalEvalCreator, cfg.Provisioning.Timeout)
 	provisionManager.InitStep(provisioningInit)
 
 	provisioningSteps := []struct {
