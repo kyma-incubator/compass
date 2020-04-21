@@ -9,8 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
-
 	"github.com/sirupsen/logrus"
 )
 
@@ -43,17 +41,15 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", RemoveRuntimeTimeout))
 	}
 
-	// TODO(nachtmaar): reusable as well?
-	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
-	switch {
-	case err == nil:
-	case dberr.IsNotFound(err):
+	instance, err := getInstance(s.instanceStorage, operation, log)
+	switch err.(type) {
+	case instanceNotFoundError:
 		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned")
-	default:
-		log.Errorf("unable to get instance from storage: %s", err)
+	case instanceGetError:
 		return operation, 1 * time.Second, nil
 	}
 
+	// instance being nil is protected by the previous switch case
 	if instance.RuntimeID == "" {
 		log.Warn("Runtime not exist")
 		return s.operationManager.OperationSucceeded(operation, "runtime was never provisioned")

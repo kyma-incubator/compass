@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	processazure "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 )
 
 type DeprovisionAzureEventHubStep struct {
@@ -40,24 +39,10 @@ func (s DeprovisionAzureEventHubStep) Name() string {
 	return "Deprovision Azure Event Hubs"
 }
 
-func (s DeprovisionAzureEventHubStep) getInstance(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (*internal.Instance, error) {
-	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
-	switch {
-	case err == nil:
-	case dberr.IsNotFound(err):
-		return nil, newInstanceNotFoundError("instance already deprovisioned")
-	default:
-		errorMessage := fmt.Sprintf("unable to get instance from storage: %s", err)
-		log.Errorf(errorMessage)
-		return nil, newInstanceGetError(errorMessage)
-	}
-	return instance, nil
-}
-
 func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	hypType := hyperscaler.Azure
 
-	instance, err := s.getInstance(operation, log)
+	instance, err := getInstance(s.instanceStorage, operation, log)
 	switch err.(type) {
 	case instanceNotFoundError:
 		return s.OperationManager.OperationSucceeded(operation, "instance already deprovisioned")
@@ -65,7 +50,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		return operation, 1 * time.Second, nil
 	}
 
-	// parse provisioning parameters
+	// parse provisioning parameters (instance being nil is protected by the previous switch case)
 	pp, err := instance.GetProvisioningParameters()
 	if err != nil {
 		// if the parameters are incorrect, there is no reason to retry the operation
