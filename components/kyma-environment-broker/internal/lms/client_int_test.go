@@ -27,14 +27,13 @@ func TestCreateTenant(t *testing.T) {
 		ClusterType: ClusterTypeSingleNode,
 		Token:       token,
 		Environment: EnvironmentDev,
-		FakeClient:  false,
 		SamlTenant:  "ycloud.accounts.ondemand.com",
 		URL:         url,
 	}, logrus.StandardLogger())
 
 	output, err := c.CreateTenant(CreateTenantInput{
 		Region: "eu",
-		Name:   "kymatest3",
+		Name:   "kymatest32109ooo87675abcdefgh",
 	})
 
 	t.Log(err)
@@ -58,7 +57,6 @@ func TestTenantStatus(t *testing.T) {
 		ClusterType: ClusterTypeSingleNode,
 		Token:       token,
 		Environment: EnvironmentDev,
-		FakeClient:  false,
 		SamlTenant:  "ycloud.accounts.ondemand.com",
 		URL:         url,
 	}, logrus.StandardLogger())
@@ -80,7 +78,6 @@ func TestGenerateCsr(t *testing.T) {
 		ClusterType: ClusterTypeSingleNode,
 		Token:       token,
 		Environment: EnvironmentDev,
-		FakeClient:  false,
 		SamlTenant:  "ycloud.accounts.ondemand.com",
 		URL:         url,
 	}, logrus.StandardLogger())
@@ -110,7 +107,6 @@ func TestGetCert(t *testing.T) {
 		ClusterType: ClusterTypeSingleNode,
 		Token:       token,
 		Environment: EnvironmentDev,
-		FakeClient:  false,
 		SamlTenant:  "ycloud.accounts.ondemand.com",
 		URL:         url,
 	}, logrus.StandardLogger())

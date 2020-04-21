@@ -118,7 +118,7 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 	})
 }
 
-func TestRepository_GetForSelector(t *testing.T) {
+func TestRepository_ListForSelector(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		scenarioEntities := []scenarioassignment.Entity{fixEntityWithScenarioName(scenarioName),
@@ -333,4 +333,15 @@ func TestRepository_DeleteForScenarioName(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "while deleting from database: some error")
 	})
+}
+
+func mockUpdateQuery(dbMock testdb.DBMock, key, value string) *sqlmock.ExpectedExec {
+	return dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE labels AS l SET value=SCENARIOS.SCENARIOS 
+		FROM (SELECT array_to_json(array_agg(scenario)) AS SCENARIOS FROM automatic_scenario_assignments 
+					WHERE selector_key=$1 AND selector_value=$2 AND tenant_id=$3) AS SCENARIOS
+		WHERE l.runtime_id IN (SELECT runtime_id FROM labels  
+									WHERE key =$1 AND value ?| array[$2] AND runtime_id IS NOT NULL AND tenant_ID=$3) 
+			AND l.key ='scenarios'
+			AND l.tenant_id=$3`)).
+		WithArgs(key, value, tenantID)
 }

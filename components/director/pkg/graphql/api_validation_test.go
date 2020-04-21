@@ -281,48 +281,6 @@ func TestAPIDefinitionInput_Validate_Version(t *testing.T) {
 	}
 }
 
-func TestAPIDefinitionInput_Validate_DefaultAuth(t *testing.T) {
-	validObj := fixValidAuthInput()
-
-	testCases := []struct {
-		Name          string
-		Value         *graphql.AuthInput
-		ExpectedValid bool
-	}{
-		{
-			Name:          "ExpectedValid obj",
-			Value:         &validObj,
-			ExpectedValid: true,
-		},
-		{
-			Name:          "Nil object",
-			Value:         nil,
-			ExpectedValid: true,
-		},
-		{
-			Name:          "Invalid - Nested validation error",
-			Value:         &graphql.AuthInput{Credential: &graphql.CredentialDataInput{}},
-			ExpectedValid: false,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
-			obj := fixValidAPIDefinitionInput()
-			obj.DefaultAuth = testCase.Value
-			//WHEN
-			err := obj.Validate()
-			//THEN
-			if testCase.ExpectedValid {
-				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
-			}
-		})
-	}
-}
-
 func TestAPISpecInput_Validate_Type(t *testing.T) {
 	testCases := []struct {
 		Name          string

@@ -10,6 +10,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/statusupdate"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
@@ -259,7 +261,12 @@ func getRuntimeMappingHanderFunc(transact persistence.Transactioner, cachePeriod
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, defaultScenarioEnabled)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	runtimeRepo := runtime.NewRepository()
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc)
+
+	scenarioAssignmentConv := scenarioassignment.NewConverter()
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignmentConv)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelRepo, scenarioAssignmentRepo)
+
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine)
 
 	tenantConv := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConv)

@@ -16,7 +16,7 @@ See the examples:
       name: global-overrides
       namespace: compass-system
     data:
-      global.enableAPIPackages: "true"
+      global.disableLegacyConnectivity: "true"
     ```  
 
 - Secret with overrides for the `core` component:

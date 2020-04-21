@@ -13,7 +13,7 @@ const eventAPIDefTable string = `"public"."event_api_definitions"`
 
 var (
 	tenantColumn  string = `tenant_id`
-	apiDefColumns        = []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "spec_data",
+	apiDefColumns        = []string{"id", "tenant_id", "package_id", "name", "description", "group_name", "spec_data",
 		"spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal"}
 	idColumns        = []string{"id"}
@@ -68,25 +68,6 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	}
 
 	return &eventAPIDefModel, nil
-}
-
-func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.EventDefinition, error) {
-	var ent Entity
-
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("id", id),
-		repo.NewEqualCondition("app_id", applicationID),
-	}
-	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
-		return nil, err
-	}
-
-	eventAPIModel, err := r.conv.FromEntity(ent)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating event definition model from entity")
-	}
-
-	return &eventAPIModel, nil
 }
 
 func (r *pgRepository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.EventDefinition, error) {

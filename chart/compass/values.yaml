@@ -16,13 +16,13 @@ global:
       version: "PR-1162"
     connectivity_adapter:
       dir:
-      version: "PR-1156"
+      version: "PR-1182"
     pairing_adapter:
       dir:
       version: "PR-1156"
     director:
       dir:
-      version: "PR-1156"
+      version: "PR-1182"
     gateway:
       dir:
       version: "PR-1156"
@@ -42,11 +42,11 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-1134"
+      version: "PR-1198"
     tests:
       director:
         dir:
-        version: "PR-1161"
+        version: "PR-1182"
       connector:
         dir:
         version: "PR-1156"

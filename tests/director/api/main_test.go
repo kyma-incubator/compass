@@ -17,7 +17,6 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), dbCfg)
 
 	defer func() {

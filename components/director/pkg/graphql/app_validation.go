@@ -13,9 +13,6 @@ func (i ApplicationRegisterInput) Validate() error {
 		validation.Field(&i.Labels, inputvalidation.EachKey(validation.Required, validation.Match(alphanumericUnderscoreRegexp))),
 		validation.Field(&i.HealthCheckURL, inputvalidation.IsURL, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.Webhooks, validation.Each(validation.Required)),
-		validation.Field(&i.APIDefinitions, inputvalidation.Each(validation.Required)),
-		validation.Field(&i.EventDefinitions, inputvalidation.Each(validation.Required)),
-		validation.Field(&i.Documents, inputvalidation.Each(validation.Required)),
 	)
 }
 

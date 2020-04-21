@@ -88,6 +88,13 @@ func (mgr *TestTenantsManager) InitializeDB(transact persistence.Transactioner) 
 			ProviderName:   testProvider,
 			Status:         Active,
 		},
+		"TestCreateAutomaticScenarioAssignment": {
+			ID:             "8c733a45-d988-4472-af10-1256b82c70c0",
+			Name:           "TestCreateAutomaticScenarioAssignment",
+			ExternalTenant: "8c733a45-d988-4472-af10-1256b82c70c0",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
 		"ASA1": {
 			ID:             "8263cc13-5698-4a2d-9257-e8e76b543e88",
 			Name:           "ASA1",
@@ -99,6 +106,13 @@ func (mgr *TestTenantsManager) InitializeDB(transact persistence.Transactioner) 
 			ID:             "2263cc13-5698-4a2d-9257-e8e76b543e33",
 			Name:           "TestGetScenariosLabelDefinitionCreatesOneIfNotExists",
 			ExternalTenant: "2263cc13-5698-4a2d-9257-e8e76b543e33",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
+		"TestWholeScenario": {
+			ID:             "65a63692-c00a-4a7d-8376-8615ee37f45c",
+			Name:           "TestWholeScenario",
+			ExternalTenant: "65a63692-c00a-4a7d-8376-8615ee37f45c",
 			ProviderName:   testProvider,
 			Status:         Active,
 		},

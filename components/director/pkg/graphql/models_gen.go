@@ -32,10 +32,9 @@ type APIDefinitionInput struct {
 	// **Validation:** valid URL, max=256
 	TargetURL string `json:"targetURL"`
 	// **Validation:** max=36
-	Group       *string       `json:"group"`
-	Spec        *APISpecInput `json:"spec"`
-	Version     *VersionInput `json:"version"`
-	DefaultAuth *AuthInput    `json:"defaultAuth"`
+	Group   *string       `json:"group"`
+	Spec    *APISpecInput `json:"spec"`
+	Version *VersionInput `json:"version"`
 }
 
 type APIDefinitionPage struct {
@@ -45,12 +44,6 @@ type APIDefinitionPage struct {
 }
 
 func (APIDefinitionPage) IsPageable() {}
-
-// Deprecated
-type APIRuntimeAuth struct {
-	RuntimeID string `json:"runtimeID"`
-	Auth      *Auth  `json:"auth"`
-}
 
 // **Validation:**
 // - for ODATA type, accepted formats are XML and JSON, for OPEN_API accepted formats are YAML and JSON
@@ -93,9 +86,6 @@ type ApplicationRegisterInput struct {
 	Webhooks []*WebhookInput `json:"webhooks"`
 	// **Validation:** valid URL, max=256
 	HealthCheckURL      *string                     `json:"healthCheckURL"`
-	APIDefinitions      []*APIDefinitionInput       `json:"apiDefinitions"`
-	EventDefinitions    []*EventDefinitionInput     `json:"eventDefinitions"`
-	Documents           []*DocumentInput            `json:"documents"`
 	Packages            []*PackageCreateInput       `json:"packages"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
@@ -859,19 +849,17 @@ const (
 	FetchRequestStatusConditionInitial   FetchRequestStatusCondition = "INITIAL"
 	FetchRequestStatusConditionSucceeded FetchRequestStatusCondition = "SUCCEEDED"
 	FetchRequestStatusConditionFailed    FetchRequestStatusCondition = "FAILED"
-	FetchRequestStatusConditionUnused    FetchRequestStatusCondition = "UNUSED"
 )
 
 var AllFetchRequestStatusCondition = []FetchRequestStatusCondition{
 	FetchRequestStatusConditionInitial,
 	FetchRequestStatusConditionSucceeded,
 	FetchRequestStatusConditionFailed,
-	FetchRequestStatusConditionUnused,
 }
 
 func (e FetchRequestStatusCondition) IsValid() bool {
 	switch e {
-	case FetchRequestStatusConditionInitial, FetchRequestStatusConditionSucceeded, FetchRequestStatusConditionFailed, FetchRequestStatusConditionUnused:
+	case FetchRequestStatusConditionInitial, FetchRequestStatusConditionSucceeded, FetchRequestStatusConditionFailed:
 		return true
 	}
 	return false

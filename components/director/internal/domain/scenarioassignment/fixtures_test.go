@@ -42,6 +42,14 @@ func fixModelWithScenarioName(scenario string) model.AutomaticScenarioAssignment
 	}
 }
 
+func fixModelWithScenarioNameAndSelector(scenario string, selector model.LabelSelector) model.AutomaticScenarioAssignment {
+	return model.AutomaticScenarioAssignment{
+		ScenarioName: scenario,
+		Tenant:       tenantID,
+		Selector:     selector,
+	}
+}
+
 func fixModelPage() model.AutomaticScenarioAssignmentPage {
 	mod1 := fixModelWithScenarioName("foo")
 	mod2 := fixModelWithScenarioName("bar")

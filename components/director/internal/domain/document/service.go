@@ -18,7 +18,6 @@ type DocumentRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Document, error)
 	GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.Document, error)
-	ListForApplication(ctx context.Context, tenant string, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error)
 	ListForPackage(ctx context.Context, tenant string, packageID string, pageSize int, cursor string) (*model.DocumentPage, error)
 	Create(ctx context.Context, item *model.Document) error
 	Delete(ctx context.Context, tenant, id string) error
@@ -80,15 +79,6 @@ func (s *service) GetForPackage(ctx context.Context, id string, packageID string
 	return document, nil
 }
 
-func (s *service) List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	return s.repo.ListForApplication(ctx, tnt, applicationID, pageSize, cursor)
-}
-
 func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.DocumentPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -96,33 +86,6 @@ func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize
 	}
 
 	return s.repo.ListForPackage(ctx, tnt, packageID, pageSize, cursor)
-}
-
-func (s *service) Create(ctx context.Context, applicationID string, in model.DocumentInput) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	id := s.uidService.Generate()
-
-	document := in.ToDocument(id, tnt, &applicationID)
-	err = s.repo.Create(ctx, document)
-	if err != nil {
-		return "", errors.Wrap(err, "while creating Document")
-	}
-
-	if in.FetchRequest != nil {
-		generatedID := s.uidService.Generate()
-		fetchRequestID := &generatedID
-		fetchRequestModel := in.FetchRequest.ToFetchRequest(s.timestampGen(), *fetchRequestID, tnt, model.DocumentFetchRequestReference, id)
-		err := s.fetchRequestRepo.Create(ctx, fetchRequestModel)
-		if err != nil {
-			return "", errors.Wrapf(err, "while creating FetchRequest for Document %s", id)
-		}
-	}
-
-	return document.ID, nil
 }
 
 func (s *service) CreateInPackage(ctx context.Context, packageID string, in model.DocumentInput) (string, error) {
@@ -133,7 +96,7 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 
 	id := s.uidService.Generate()
 
-	document := in.ToDocumentWithinPackage(id, tnt, &packageID)
+	document := in.ToDocumentWithinPackage(id, tnt, packageID)
 	err = s.repo.Create(ctx, document)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating Document")
