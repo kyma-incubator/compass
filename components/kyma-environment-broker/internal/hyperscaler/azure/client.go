@@ -6,7 +6,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -89,6 +88,8 @@ func (nc *AzureClient) DeleteResourceGroup(ctx context.Context, tags Tags) (reso
 	return future, err
 }
 
+// GetResourceGroup gets the resource group by tags.
+// If more than one resource group is found, it is treated as an error.
 func (nc *AzureClient) GetResourceGroup(ctx context.Context, tags Tags) (resources.Group, error) {
 	if tags[TagInstanceID] == nil {
 		return resources.Group{}, fmt.Errorf("serviceInstance is nil")
@@ -98,18 +99,18 @@ func (nc *AzureClient) GetResourceGroup(ctx context.Context, tags Tags) (resourc
 	filter := fmt.Sprintf("tagName eq 'InstanceID' and tagValue eq '%s'", serviceInstanceID)
 
 	// we only expect one ResourceGroup, so not using pagination here should be fine
-	resourceGroupIterator, err := nc.resourcegroupClient.ListComplete(ctx, filter, nil)
+	resourceGroupIterator, err := nc.resourcegroupClient.List(ctx, filter, nil)
 	if err != nil {
 		return resources.Group{}, err
 	}
-	for resourceGroupIterator.NotDone() {
-		resourceGroup := resourceGroupIterator.Value()
+	// values() gives us all values because `top` is set to nil in the List call - so there is only one page
+	resourceGroups := resourceGroupIterator.Values()
 
-		// there should only be one resource group with the given service instance id
-		if err := resourceGroupIterator.NextWithContext(ctx); err != nil {
-			return resources.Group{}, errors.Wrapf(err, "while getting resource group for service instance: %s", serviceInstanceID)
-		}
-		return resourceGroup, nil
+	if len(resourceGroups) > 1 {
+		return resources.Group{}, fmt.Errorf("only one resource group expected with the given instance id: %s, found: %d", serviceInstanceID, len(resourceGroups))
+	} else if len(resourceGroups) == 1 {
+		// we found it
+		return resourceGroups[0], nil
 	}
 	return resources.Group{}, NewResourceGroupDoesNotExist(fmt.Sprintf("no resource group found for service instance id: %s", serviceInstanceID))
 }
