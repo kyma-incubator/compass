@@ -54,11 +54,10 @@ func main() {
 		auditlogSvc = &auditlog.NoOpService{}
 	}
 
-	defaultTr := http.Transport{}
-	err = proxyRequestsForComponent(router, "/connector", cfg.ConnectorOrigin, &defaultTr)
+	tr := proxy.NewTransport(auditlogSvc, http.DefaultTransport)
+	err = proxyRequestsForComponent(router, "/connector", cfg.ConnectorOrigin, tr)
 	exitOnError(err, "Error while initializing proxy for Connector")
 
-	tr := proxy.NewTransport(auditlogSvc, http.DefaultTransport)
 	err = proxyRequestsForComponent(router, "/director", cfg.DirectorOrigin, tr)
 	exitOnError(err, "Error while initializing proxy for Director")
 
