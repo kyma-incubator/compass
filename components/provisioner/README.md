@@ -53,8 +53,10 @@ This table lists the environment variables, their descriptions, and default valu
 | **APP_DATABASE_PORT** | Database port | `5432` |
 | **APP_DATABASE_NAME** | Database name | `provisioner` |
 | **APP_DATABASE_SSL_MODE** | SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html)  | `disable`|
-| **APP_INSTALLATION_TIMEOUT** | Kyma installation timeout | `30m`|
-| **APP_INSTALLATION_ERRORS_COUNT_FAILURE_THRESHOLD** | Number of installation errors that cause installation to fail  | `5`|
+| **APP_PROVISIONING_TIMEOUT_INSTALLATION** | Kyma installation timeout | `60m`|
+| **APP_PROVISIONING_TIMEOUT_UPGRADE** | Kyma installation timeout | `60m`|
+| **APP_PROVISIONING_TIMEOUT_AGENT_CONFIGURATION** | Runtime Agent configuration timeout | `15m`|
+| **APP_PROVISIONING_TIMEOUT_AGENT_CONNECTION** | Runtime Agent connection timeout | `15m`|
 | **APP_GARDENER_PROJECT** | Name of the Gardener project connected to the service account  | `gardenerProject`|
 | **APP_GARDENER_KUBECONFIG_PATH** | Filepath for the Gardener kubeconfig  | `./dev/kubeconfig.yaml`|
 | **APP_GARDENER_AUDIT_LOGS_POLICY_CONFIG_MAP** | Name of the Config Map containing the audit logs policy  | **optional** |

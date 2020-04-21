@@ -12,16 +12,23 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 )
 
+type ProvisioningTimeouts struct {
+	Installation       time.Duration `envconfig:"default=60m"`
+	Upgrade            time.Duration `envconfig:"default=60m"`
+	AgentConfiguration time.Duration `envconfig:"default=15m"`
+	AgentConnection    time.Duration `envconfig:"default=15m"`
+}
+
 func CreateInstallationQueue(
-	installationTimeout time.Duration,
+	timeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
 	installationClient installation.Service,
 	configurator runtime.Configurator,
 	ccClientConstructor stages.CompassConnectionClientConstructor) OperationQueue {
 
-	waitForAgentToConnectStep := stages.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, 10*time.Minute)
-	configureAgentStep := stages.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Stage(), 10*time.Minute)
-	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Stage(), installationTimeout)
+	waitForAgentToConnectStep := stages.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, timeouts.AgentConnection)
+	configureAgentStep := stages.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Stage(), timeouts.AgentConfiguration)
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Stage(), timeouts.Installation)
 	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Stage(), 20*time.Minute)
 
 	installSteps := map[model.OperationStage]operations.Step{
@@ -37,12 +44,12 @@ func CreateInstallationQueue(
 }
 
 func CreateUpgradeQueue(
-	upgradeTimeout time.Duration,
+	timeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
 	installationClient installation.Service) OperationQueue {
 
 	updatingUpgradeStep := stages.NewUpdateUpgradeStateStep(factory.NewWriteSession(), model.FinishedStage, 5*time.Minute)
-	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, updatingUpgradeStep.Stage(), upgradeTimeout)
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, updatingUpgradeStep.Stage(), timeouts.Installation)
 	upgradeStep := stages.NewUpgradeKymaStep(installationClient, waitForInstallStep.Stage(), 10*time.Minute)
 
 	upgradeSteps := map[model.OperationStage]operations.Step{

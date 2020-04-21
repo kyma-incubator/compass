@@ -67,10 +67,7 @@ type config struct {
 		SSLMode  string `envconfig:"default=disable"`
 	}
 
-	Installation struct {
-		Timeout                     time.Duration `envconfig:"default=40m"`
-		ErrorsCountFailureThreshold int           `envconfig:"default=5"`
-	}
+	ProvisioningTimeout queue.ProvisioningTimeouts
 
 	Gardener struct {
 		Project                  string `envconfig:"default=gardenerProject"`
@@ -95,6 +92,8 @@ func (c *config) String() string {
 		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
+		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
+		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, GardenerAuditLogsTenant: %s, "+
 		"Provisioner: %s, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, SupportOnDemandReleases: %v, "+
@@ -104,6 +103,8 @@ func (c *config) String() string {
 		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
+		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
+		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenant,
 		c.Provisioner,
 		c.LatestDownloadedReleases, c.DownloadPreReleases, c.SupportOnDemandReleases,
@@ -152,15 +153,15 @@ func main() {
 	}
 
 	dbsFactory := dbsession.NewFactory(connection)
-	installationService := installation.NewInstallationService(cfg.Installation.Timeout, installationHandlerConstructor, cfg.Installation.ErrorsCountFailureThreshold)
+	installationService := installation.NewInstallationService(cfg.ProvisioningTimeout.Installation, installationHandlerConstructor)
 
 	directorClient, err := newDirectorClient(cfg)
 	exitOnError(err, "Failed to initialize Director client")
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(clientbuilder.NewConfigMapClientBuilder(), directorClient)
 
-	installationQueue := queue.CreateInstallationQueue(cfg.Installation.Timeout, dbsFactory, installationService, runtimeConfigurator, stages.NewCompassConnectionClient)
-	upgradeQueue := queue.CreateUpgradeQueue(cfg.Installation.Timeout, dbsFactory, installationService)
+	installationQueue := queue.CreateInstallationQueue(cfg.ProvisioningTimeout, dbsFactory, installationService, runtimeConfigurator, stages.NewCompassConnectionClient)
+	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, installationService)
 
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {

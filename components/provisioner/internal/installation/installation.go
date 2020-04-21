@@ -39,18 +39,16 @@ type Service interface {
 	TriggerUninstall(kubeconfig *rest.Config) error
 }
 
-func NewInstallationService(installationTimeout time.Duration, installationHandler InstallationHandler, installErrFailureThreshold int) Service {
+func NewInstallationService(installationTimeout time.Duration, installationHandler InstallationHandler) Service {
 	return &installationService{
-		installationErrorsFailureThreshold: installErrFailureThreshold,
-		kymaInstallationTimeout:            installationTimeout,
-		installationHandler:                installationHandler,
+		kymaInstallationTimeout: installationTimeout,
+		installationHandler:     installationHandler,
 	}
 }
 
 type installationService struct {
-	installationErrorsFailureThreshold int
-	kymaInstallationTimeout            time.Duration
-	installationHandler                InstallationHandler
+	kymaInstallationTimeout time.Duration
+	installationHandler     InstallationHandler
 }
 
 func (s *installationService) TriggerInstallation(kubeconfig *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
@@ -175,10 +173,6 @@ func (s *installationService) waitForInstallation(runtimeId string, stateChannel
 			installationError := installation.InstallationError{}
 			if ok := errors.As(err, &installationError); ok {
 				logrus.Warnf("Warning: installation error occurred while installing Kyma for %s Runtime: %s. Details: %s", runtimeId, installationError.Error(), installationError.Details())
-
-				if len(installationError.ErrorEntries) > s.installationErrorsFailureThreshold {
-					return fmt.Errorf("installation errors exceeded threshold, errors details: %s", installationError.Details())
-				}
 				continue
 			}
 

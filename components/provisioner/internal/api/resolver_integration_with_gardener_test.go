@@ -176,9 +176,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	installationQueue := queue.CreateInstallationQueue(5*time.Minute, dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor)
+	installationQueue := queue.CreateInstallationQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor)
 	installationQueue.Run(queueCtx.Done())
-	upgradeQueue := queue.CreateUpgradeQueue(5*time.Minute, dbsFactory, installationServiceMock)
+	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
 	controler, err := gardener.NewShootController(mgr, shootInterface, secretsInterface, dbsFactory, directorServiceMock, installationServiceMock, installationQueue)
@@ -366,6 +366,15 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		installationServiceMock.AssertNotCalled(t, "TriggerInstallation", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 		installationServiceMock.AssertNotCalled(t, "CheckInstallationState", mock.Anything)
 	})
+}
+
+func testProvisioningTimeouts() queue.ProvisioningTimeouts {
+	return queue.ProvisioningTimeouts{
+		Installation:       5 * time.Minute,
+		Upgrade:            5 * time.Minute,
+		AgentConfiguration: 5 * time.Minute,
+		AgentConnection:    5 * time.Minute,
+	}
 }
 
 func newFakeShootsInterface(t *testing.T, config *rest.Config) gardener_apis.ShootInterface {
