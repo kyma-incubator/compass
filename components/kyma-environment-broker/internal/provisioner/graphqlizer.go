@@ -3,9 +3,10 @@ package provisioner
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/sirupsen/logrus"
 	"reflect"
 	"text/template"
+
+	"github.com/sirupsen/logrus"
 
 	"fmt"
 
