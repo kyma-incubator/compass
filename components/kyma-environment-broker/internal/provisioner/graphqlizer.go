@@ -197,12 +197,14 @@ func (g *Graphqlizer) marshal(obj interface{}) string {
 	case reflect.Slice, reflect.Array:
 		s, err := g.genericToGraphQL(obj, `[{{ range $i, $e := . }}{{ if $i }},{{ end }}{{ marshal $e }}{{ end }}]`)
 		if err != nil {
+			logrus.Warnf("failed to marshal labels: %s", err.Error())
 			return ""
 		}
 		out = s
 	default:
 		marshalled, err := json.Marshal(obj)
 		if err != nil {
+			logrus.Warnf("failed to marshal labels: %s", err.Error())
 			return ""
 		}
 		out = string(marshalled)
