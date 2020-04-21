@@ -34,12 +34,6 @@ func (om *DeprovisionOperationManager) OperationSucceeded(operation internal.Dep
 	return updatedOperation, 0, nil
 }
 
-// RetryForever retries the operation forever
-func (om *DeprovisionOperationManager) RetryForever(operation internal.DeprovisioningOperation, errorMessage string, retryInterval time.Duration, logger logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
-	logger.Info(errorMessage)
-	return operation, retryInterval, nil
-}
-
 // OperationFailed marks the operation as failed and only repeats it if there is a storage error
 func (om *DeprovisionOperationManager) OperationFailed(operation internal.DeprovisioningOperation, description string) (internal.DeprovisioningOperation, time.Duration, error) {
 	updatedOperation, repeat := om.update(operation, domain.Failed, description)

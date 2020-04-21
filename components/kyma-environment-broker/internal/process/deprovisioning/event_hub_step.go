@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	processazure "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 )
 
 type DeprovisionAzureEventHubStep struct {
@@ -43,23 +42,21 @@ func (s DeprovisionAzureEventHubStep) Name() string {
 func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	hypType := hyperscaler.Azure
 
-	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
-	switch {
-	case err == nil:
-	case dberr.IsNotFound(err):
+	instance, err := getInstance(s.instanceStorage, operation, log)
+	switch err.(type) {
+	case instanceNotFoundError:
 		return s.OperationManager.OperationSucceeded(operation, "instance already deprovisioned")
-	default:
-		log.Errorf("unable to get instance from storage: %s", err)
+	case instanceGetError:
 		return operation, 1 * time.Second, nil
 	}
 
-	// parse provisioning parameters
+	// parse provisioning parameters (instance being nil is protected by the previous switch case)
 	pp, err := instance.GetProvisioningParameters()
 	if err != nil {
 		// if the parameters are incorrect, there is no reason to retry the operation
 		// a new request has to be issued by the user
-		log.Errorf("Aborting after failing to get valid operation provisioning parameters: %v", err)
-		errorMessage := "invalid operation provisioning parameters"
+		errorMessage := fmt.Sprintf("aborting deprovisioning after failing to get valid operation provisioning parameters: %v", err)
+		log.Errorf(errorMessage)
 		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
 	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
@@ -95,8 +92,9 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		if _, ok := err.(azure.ResourceGroupDoesNotExist); ok {
 			if &resourceGroup != nil && resourceGroup.Name != nil {
 				log.Infof("deprovisioning of event hub step succeeded, resource group: %v", resourceGroup.Name)
+			} else {
+				log.Info("deprovisioning of event hub step succeeded")
 			}
-			log.Info("deprovisioning of event hub step succeeded")
 			return operation, 0, nil
 		}
 		// custom error occurred while getting resource group - try again

@@ -17,7 +17,6 @@ import (
 	hyperscalerautomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	azuretesting "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure/testing"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 )
 
@@ -147,13 +146,9 @@ func Test_StepsProvisionSucceeded(t *testing.T) {
 				require.NoError(t, err)
 
 				fakeHyperscalerProvider, ok := step.HyperscalerProvider.(*azuretesting.FakeHyperscalerProvider)
-				if !ok {
-					require.True(t, ok)
-				}
+				require.True(t, ok)
 				fakeAzureClient, ok := fakeHyperscalerProvider.Client.(*azuretesting.FakeNamespaceClient)
-				if !ok {
-					require.True(t, ok)
-				}
+				require.True(t, ok)
 
 				// then
 				wantStates[idx](t, op, when, err, *fakeAzureClient)
@@ -308,7 +303,6 @@ func Test_StepsUnhappyPath(t *testing.T) {
 }
 
 func fixInstance() internal.Instance {
-	// TODO(nachtmaar): share with provisiong test ?
 	return internal.Instance{
 		InstanceID: fixInstanceID,
 		ProvisioningParameters: `{
@@ -329,14 +323,6 @@ func fixInvalidInstance() internal.Instance {
 	return internal.Instance{
 		InstanceID:             fixInstanceID,
 		ProvisioningParameters: `}{INVALID JSON}{`}
-}
-
-func fixTags() azure.Tags {
-	return azure.Tags{
-		azure.TagSubAccountID: ptr.String(fixSubAccountID),
-		azure.TagOperationID:  ptr.String(fixOperationID),
-		azure.TagInstanceID:   ptr.String(fixInstanceID),
-	}
 }
 
 func fixAccountProvider() *hyperscalerautomock.AccountProvider {

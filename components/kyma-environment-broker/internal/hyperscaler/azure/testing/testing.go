@@ -93,7 +93,7 @@ func NewFakeNamespaceClientHappyPath() *FakeNamespaceClient {
 
 func NewFakeNamespaceClientResourceGroupDoesNotExist() *FakeNamespaceClient {
 	return &FakeNamespaceClient{
-		GetResourceGroupError: azure.NewResourceGroupDoesNotExist("ups .. resource group already exists"),
+		GetResourceGroupError: azure.NewResourceGroupDoesNotExist("ups .. resource group does not exist"),
 	}
 }
 
