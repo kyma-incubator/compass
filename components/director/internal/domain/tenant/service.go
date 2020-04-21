@@ -59,45 +59,17 @@ func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, err
 	return s.tenantMappingRepo.List(ctx)
 }
 
-func (s *service) Sync(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
-
-	tenants := s.multipleToTenantMapping(tenantInputs)
-
-	tenantsFromDb, err := s.tenantMappingRepo.List(ctx)
-	if err != nil {
-		return errors.Wrap(err, "while listing tenants")
-	}
-
-	for _, tenantFromDb := range tenantsFromDb {
-		if tenantFromDb.IsIn(tenants) {
-			continue
-		}
-		err := s.markAsInactive(ctx, *tenantFromDb)
-		if err != nil {
-			return errors.Wrap(err, "while marking the tenant as inactive")
-		}
-	}
-
-	err = s.createIfNotExists(ctx, tenants)
-	if err != nil {
-		return errors.Wrap(err, "while creating tenants")
-	}
-
-	return nil
-}
-
 func (s *service) multipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping {
 	var tenants []model.BusinessTenantMapping
 
 	for _, tenant := range tenantInputs {
 		id := s.uidService.Generate()
-		internalTenant := s.uidService.Generate()
-		tenants = append(tenants, *tenant.ToBusinessTenantMapping(id, internalTenant))
+		tenants = append(tenants, *tenant.ToBusinessTenantMapping(id))
 	}
 	return tenants
 }
 
-func (s *service) Create(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
+func (s *service) CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
 	tenants := s.multipleToTenantMapping(tenantInputs)
 	err := s.createIfNotExists(ctx, tenants)
 	if err != nil {
@@ -129,18 +101,6 @@ func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessT
 		if err != nil {
 			return errors.Wrap(err, "while deleting tenant")
 		}
-	}
-
-	return nil
-}
-
-func (s *service) markAsInactive(ctx context.Context, tenant model.BusinessTenantMapping) error {
-	tenant.Status = model.Inactive
-
-	err := s.tenantMappingRepo.Update(ctx, &tenant)
-
-	if err != nil {
-		return errors.Wrap(err, "while updating the tenant")
 	}
 
 	return nil

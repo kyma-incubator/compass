@@ -68,7 +68,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), append(businessTenants, businessTenants...)).Return(nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), append(businessTenants, businessTenants...)).Return(nil).Once()
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenants).Return(nil).Once()
 				return svc
 			},
@@ -92,7 +92,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), businessTenants).Return(nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), businessTenants).Return(nil).Once()
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenants).Return(nil).Once()
 				return svc
 			},
@@ -119,7 +119,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), append(multiBusinessTenants, businessTenants...)).Return(nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), append(multiBusinessTenants, businessTenants...)).Return(nil).Once()
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenants).Return(nil).Once()
 				return svc
 			},
@@ -276,7 +276,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
 				return svc
 			},
@@ -298,7 +298,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), nilSlice).Return(testErr).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), nilSlice).Return(testErr).Once()
 				return svc
 			},
 			ExpectedError: testErr,
@@ -319,7 +319,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), nilSlice).Return(testErr).Once()
 				return svc
 			},
@@ -366,7 +366,7 @@ func TestService_SyncTenants(t *testing.T) {
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, 1).Return(nil, testErr).Once()
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, 1).Return(nil, nil).Once()
 		tenantStorageSvc := &automock.TenantStorageService{}
-		tenantStorageSvc.On("Create", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
+		tenantStorageSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
 		tenantStorageSvc.On("DeleteMany", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
 
 		svc := tenantfetcher.NewService(transact, conv, apiClient, tenantStorageSvc)
