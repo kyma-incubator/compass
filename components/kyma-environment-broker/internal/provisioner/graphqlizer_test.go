@@ -146,6 +146,13 @@ func Test_LabelsToGQL(t *testing.T) {
 			},
 			expected: `{test:["966"],}`,
 		},
+		{
+			description: "string array labels",
+			input: gqlschema.Labels{
+				"test": map[string]string{"abcd": "966"},
+			},
+			expected: `{test:{abcd:"966",},}`,
+		},
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
 			// when

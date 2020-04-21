@@ -3,6 +3,7 @@ package provisioner
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/sirupsen/logrus"
 	"reflect"
 	"text/template"
 
@@ -189,6 +190,7 @@ func (g *Graphqlizer) marshal(obj interface{}) string {
 	case reflect.Map:
 		s, err := g.genericToGraphQL(obj, `{ {{- range $k, $v := . }}{{ $k }}:{{ marshal $v }},{{ end -}} }`)
 		if err != nil {
+			logrus.Warnf("failed to marshal labels: %s", err.Error())
 			return ""
 		}
 		out = s
