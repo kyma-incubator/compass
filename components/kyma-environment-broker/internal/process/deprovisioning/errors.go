@@ -23,4 +23,3 @@ func (inf instanceGetError) Error() string {
 func newInstanceGetError(message string) *instanceGetError {
 	return &instanceGetError{message: message}
 }
-
