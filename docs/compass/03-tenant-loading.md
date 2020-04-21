@@ -24,25 +24,25 @@ You can load external tenants manually at any time by following these steps:
 
 1. Create the `compass-director-external-tenant-config` ConfigMap with an embedded JSON file that contains tenants to add. See the example:
 
- ```yaml
- apiVersion: v1
- kind: ConfigMap
- metadata:
-   name: compass-director-external-tenant-config
-   namespace: compass-system
- data:
-   tenants.json: |-
-     [
-       {
-         "name": "tenant-name-1",
-         "id": "tenant-id-1"
-       },
-       {
-         "name": "tenant-name-2",
-         "id": "tenant-id-2"
-       }
-     ]
- ```
+   ```yaml
+   apiVersion: v1
+   kind: ConfigMap
+   metadata:
+     name: compass-director-external-tenant-config
+     namespace: compass-system
+   data:
+     tenants.json: |-
+       [
+         {
+           "name": "tenant-name-1",
+           "id": "tenant-id-1"
+         },
+         {
+           "name": "tenant-name-2",
+           "id": "tenant-id-2"
+         }
+       ]
+   ```
 
 2. Create a job that loads tenants from the provided ConfigMap by using the suspended `compass-director-tenant-loader-external` CronJob as a template: 
 
