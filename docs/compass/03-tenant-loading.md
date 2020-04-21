@@ -1,7 +1,9 @@
 # Tenant loading
 
-## Overview
-This document describes how Compass handles tenant loading. 
+There are two ways in which Compass loads a list of tenants:
+- Initial loading of default tenants that occurs after the chart installation
+- Manual loading of tenants provided in a ConfigMap
+
 
 ## Load default tenants
 
