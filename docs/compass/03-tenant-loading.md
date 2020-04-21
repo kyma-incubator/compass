@@ -3,15 +3,15 @@
 ## Overview
 This document describes how Compass handles tenant loading. 
 
-## Loading default tenants
+## Load default tenants
 
-In Compass, there is a `compass-director-tenant-loader-default` job that allows user to load default tenants specified in `global.tenants` value, which can be found [here](../../chart/compass/values.yaml).
+In Compass, there is a `compass-director-tenant-loader-default` job that allows you to load default tenants specified in the [**global.tenants** parameter](../../chart/compass/values.yaml).
 
-This job is executed once, after the installation of compass chart.
+This job is executed once, after the installation of the Compass chart.
  
-It is enabled by default. To disable it, user has to set `global.tenantConfig.useDefaultTenants` value to `false`, [here](../../chart/compass/values.yaml).
+The job is enabled by default. To disable it, set **global.tenantConfig.useDefaultTenants** to `false`.
 
-Example `global.tenants` value:
+See the example of the specified **global.tenants** parameter:
 ```yaml
 global:
   tenants:
@@ -24,16 +24,16 @@ global:
 ``` 
 
 
-## Loading external tenants from json
+## Load external tenants manually
 
-External tenants can be manually loaded at any time by following these steps:
-1. Create a ConfigMap `compass-director-external-tenant-config` with embedded JSON file containing tenants to add
-2. Create a Job that will load tenants from provided config map by using suspended `compass-director-tenant-loader-external` CronJob as template: 
+You can load external tenants manually at any time by following these steps:
+1. Create the `compass-director-external-tenant-config` ConfigMap with an embedded JSON file that contains tenants to add.
+2. Create a job that loads tenants from the provided ConfigMap by using the suspended `compass-director-tenant-loader-external` CronJob as a template: 
 `kubectl -n compass-system create job --from=cronjob/compass-director-tenant-loader-external compass-director-tenant-loader-external`
-3. Wait for the job to finish adding tenants
-4. Delete manually created job and config map from cluster
+3. Wait for the job to finish adding tenants.
+4. Delete the manually created job and ConfigMap from the cluster.
 
-Example ConfigMap:
+See the example of a ConfigMap:
 ```yaml
 apiVersion: v1
 kind: ConfigMap
