@@ -29,7 +29,9 @@ global:
 You can load external tenants manually at any time by following these steps:
 1. Create the `compass-director-external-tenant-config` ConfigMap with an embedded JSON file that contains tenants to add.
 2. Create a job that loads tenants from the provided ConfigMap by using the suspended `compass-director-tenant-loader-external` CronJob as a template: 
-`kubectl -n compass-system create job --from=cronjob/compass-director-tenant-loader-external compass-director-tenant-loader-external`
+    ```sh
+    kubectl -n compass-system create job --from=cronjob/compass-director-tenant-loader-external compass-director-tenant-loader-external
+    ```
 3. Wait for the job to finish adding tenants.
 4. Delete the manually created job and ConfigMap from the cluster.
 

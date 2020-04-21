@@ -64,8 +64,7 @@ func (s *service) multipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 
 	for _, tenant := range tenantInputs {
 		id := s.uidService.Generate()
-		internalTenant := s.uidService.Generate()
-		tenants = append(tenants, *tenant.ToBusinessTenantMapping(id, internalTenant))
+		tenants = append(tenants, *tenant.ToBusinessTenantMapping(id))
 	}
 	return tenants
 }

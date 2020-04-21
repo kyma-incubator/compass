@@ -8,14 +8,14 @@ Tenant Loader is an application that loads tenants from a given directory to Com
 
 To run the application, provide these environment variables:
 
-| Environment variable                                      | Default value                         | Description                                                   |
-| ---------------------------------------- | ------------------------------- | ------------------------------------------------------------- |
-| **APP_DB_USER**                              | `postgres`                        | Database username                                             |
-| **APP_DB_PASSWORD**                          | `pgsql@12345`                     | Database password                                             |
-| **APP_DB_HOST**                              | `localhost`                       | Database host                                                 |
-| **APP_DB_PORT**                              | `5432`                            | Database port                                                 |
-| **APP_DB_NAME**                              | `postgres`                        | Database name                                                 |
-| **APP_DB_SSL**                               | `disable`                         | Parameter that activates database SSL mode                          |
+| Environment variable           | Default value      | Description                                    |
+| ------------------------------ | ------------------ | ---------------------------------------------- |
+| **APP_DB_USER**                | `postgres`         | Database username                              |
+| **APP_DB_PASSWORD**            | `pgsql@12345`      | Database password                              |
+| **APP_DB_HOST**                | `localhost`        | Database host                                  |
+| **APP_DB_PORT**                | `5432`             | Database port                                  |
+| **APP_DB_NAME**                | `postgres`         | Database name                                  |
+| **APP_DB_SSL**                 | `disable`          | Parameter that activates database SSL mode     |
 
 ## Details
 

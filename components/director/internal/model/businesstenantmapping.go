@@ -41,7 +41,7 @@ type BusinessTenantMappingInput struct {
 	Provider       string
 }
 
-func (i *BusinessTenantMappingInput) ToBusinessTenantMapping(id, internalTenant string) *BusinessTenantMapping {
+func (i *BusinessTenantMappingInput) ToBusinessTenantMapping(id string) *BusinessTenantMapping {
 	return &BusinessTenantMapping{
 		ID:             id,
 		Name:           i.Name,
