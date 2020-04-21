@@ -138,8 +138,9 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Kiali":  runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"Jaeger": runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
+		"Kiali":   runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
+		"Jaeger":  runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
+		"Tracing": runtime.NewGenericComponentDisabler("tracing", "kyma-system"),
 		// TODO(workaround until #1049): following components should be always disabled and user should not be able to enable them in provisioning request. This implies following components cannot be specified under the plan schema definition.
 		"BackupInt":               runtime.NewGenericComponentDisabler("backup-init", "kyma-system"),
 		"Backup":                  runtime.NewGenericComponentDisabler("backup", "kyma-system"),
