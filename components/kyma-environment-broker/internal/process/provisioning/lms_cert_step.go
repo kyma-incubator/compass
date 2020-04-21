@@ -173,7 +173,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 [FILTER]
         Name record_modifier
         Match *
-        Record cluster_name %s
+        Record subaccount_id %s
 `, pp.ErsContext.SubAccountID)}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
 	})
 
