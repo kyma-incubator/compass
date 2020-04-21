@@ -24,6 +24,12 @@ type Delegator struct {
 	avsConfig         Config
 	clientHolder      *clientHolder
 	operationsStorage storage.Operations
+	configForModel    *configForModel
+}
+
+type configForModel struct {
+	groupId  int64
+	parentId int64
 }
 
 func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Delegator {
@@ -32,6 +38,10 @@ func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Deleg
 		avsConfig:         avsConfig,
 		clientHolder:      newClientHolder(avsConfig),
 		operationsStorage: operationsStorage,
+		configForModel: &configForModel{
+			groupId:  avsConfig.GroupId,
+			parentId: avsConfig.ParentId,
+		},
 	}
 }
 
@@ -43,7 +53,7 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 		return operation, 0, nil
 	}
 
-	evaluationObject, err := evalAssistant.CreateBasicEvaluationRequest(operation, url)
+	evaluationObject, err := evalAssistant.CreateBasicEvaluationRequest(operation, del.configForModel, url)
 	if err != nil {
 		logger.Errorf("step failed with error %v", err)
 		return operation, 5 * time.Second, nil

@@ -32,6 +32,7 @@ type BasicEvaluationCreateRequest struct {
 	Threshold        string `json:"threshold"`
 	GroupId          int64  `json:"group_id"`
 	Visibility       string `json:"visibility"`
+	ParentId         int64  `json:"parent_id"`
 }
 
 type BasicEvaluationCreateResponse struct {
@@ -65,13 +66,15 @@ type BasicEvaluationCreateResponse struct {
 	IdOnTester                 string   `json:"id_on_tester"`
 }
 
-func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, configurator ModelConfigurator, groupId int64, url string) (*BasicEvaluationCreateRequest, error) {
+func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, evalTypeSpecificConfig ModelConfigurator,
+	configForModel *configForModel, url string) (*BasicEvaluationCreateRequest, error) {
 	provisionParams, err := operation.GetProvisioningParameters()
 	if err != nil {
 		return nil, err
 	}
 
-	beName, beDescription := generateNameAndDescription(provisionParams.ErsContext.GlobalAccountID, provisionParams.ErsContext.SubAccountID, provisionParams.Parameters.Name, configurator.ProvideSuffix())
+	beName, beDescription := generateNameAndDescription(provisionParams.ErsContext.GlobalAccountID,
+		provisionParams.ErsContext.SubAccountID, provisionParams.Parameters.Name, evalTypeSpecificConfig.ProvideSuffix())
 
 	return &BasicEvaluationCreateRequest{
 		DefinitionType:   DefinitionType,
@@ -79,16 +82,17 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, c
 		Description:      beDescription,
 		Service:          beName,
 		URL:              url,
-		CheckType:        configurator.ProvideCheckType(),
+		CheckType:        evalTypeSpecificConfig.ProvideCheckType(),
 		Interval:         interval,
-		TesterAccessId:   configurator.ProvideTesterAccessId(),
+		TesterAccessId:   evalTypeSpecificConfig.ProvideTesterAccessId(),
 		Timeout:          timeout,
 		ReadOnly:         false,
 		ContentCheck:     contentCheck,
 		ContentCheckType: contentCheckType,
 		Threshold:        threshold,
-		GroupId:          groupId,
+		GroupId:          configForModel.groupId,
 		Visibility:       visibility,
+		ParentId:         configForModel.parentId,
 	}, nil
 }
 
