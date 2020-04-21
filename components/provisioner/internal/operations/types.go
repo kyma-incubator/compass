@@ -13,7 +13,7 @@ type ProcessingResult struct {
 }
 
 type Step interface {
-	Stage() model.OperationStage
+	Name() model.OperationStage
 	Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (StageResult, error)
 	TimeLimit() time.Duration
 }

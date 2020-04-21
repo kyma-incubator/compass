@@ -24,7 +24,7 @@ func NewConnectAgentStep(configurator runtime.Configurator, nextStage model.Oper
 	}
 }
 
-func (s *ConnectAgentStep) Stage() model.OperationStage {
+func (s *ConnectAgentStep) Name() model.OperationStage {
 	return model.ConnectRuntimeAgent
 }
 

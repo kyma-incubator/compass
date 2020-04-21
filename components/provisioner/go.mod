@@ -4,7 +4,6 @@ go 1.13
 
 require (
 	github.com/99designs/gqlgen v0.9.3
-	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/avast/retry-go v2.6.0+incompatible
 	github.com/gardener/gardener v0.33.7
@@ -14,7 +13,7 @@ require (
 	github.com/hashicorp/hil v0.0.0-20190212132231-97b3a9cdfa93 // indirect
 	github.com/hashicorp/terraform v0.12.16
 	github.com/kubernetes/client-go v11.0.0+incompatible
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200302114843-fb6306fe65c8
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200417141145-3a08dc5142a0
 	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
 	github.com/kyma-incubator/hydroform/install v0.0.0-20200414071650-35d4d6f8c53e
 	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442

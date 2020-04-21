@@ -27,7 +27,7 @@ func NewWaitForInstallationStep(installationClient installation.Service, nextSte
 	}
 }
 
-func (s *WaitForInstallationStep) Stage() model.OperationStage {
+func (s *WaitForInstallationStep) Name() model.OperationStage {
 	return model.WaitingForInstallation
 }
 
@@ -51,7 +51,7 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, _ model.Operation, 
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
 			logger.Warnf("installation error occurred: %s", installErr.Error())
-			return operations.StageResult{Stage: s.Stage(), Delay: 30 * time.Second}, nil
+			return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
 		}
 
 		return operations.StageResult{}, fmt.Errorf("error: failed to check installation state: %s", err.Error())
@@ -67,5 +67,5 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, _ model.Operation, 
 	}
 
 	logger.Infof("Installation in progress: %s", installationState.Description)
-	return operations.StageResult{Stage: s.Stage(), Delay: 30 * time.Second}, nil
+	return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
 }

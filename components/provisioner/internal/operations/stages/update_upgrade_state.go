@@ -24,7 +24,7 @@ func NewUpdateUpgradeStateStep(dbSession dbsession.WriteSession, nextStep model.
 	}
 }
 
-func (s *UpdateUpgradeStateStep) Stage() model.OperationStage {
+func (s *UpdateUpgradeStateStep) Name() model.OperationStage {
 	return model.UpdatingUpgradeState
 }
 

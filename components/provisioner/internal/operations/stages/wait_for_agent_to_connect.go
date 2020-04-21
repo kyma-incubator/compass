@@ -45,7 +45,7 @@ func NewWaitForAgentToConnectStep(ccClientProvider CompassConnectionClientConstr
 	}
 }
 
-func (s *WaitForAgentToConnectStep) Stage() model.OperationStage {
+func (s *WaitForAgentToConnectStep) Name() model.OperationStage {
 	return model.WaitForAgentToConnect
 }
 
@@ -73,7 +73,7 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			logger.Infof("Compass Connection not yet found on cluster")
-			return operations.StageResult{Stage: s.Stage(), Delay: 5 * time.Second}, nil
+			return operations.StageResult{Stage: s.Name(), Delay: 5 * time.Second}, nil
 		}
 
 		return operations.StageResult{}, fmt.Errorf("error getting Compass Connection CR on the Runtime: %s", err.Error())
@@ -94,7 +94,7 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 		}
 
 		logger.Infof("Compass Connection not yet in Synchronized state, current state: %s", compassConnCR.Status.State)
-		return operations.StageResult{Stage: s.Stage(), Delay: 2 * time.Second}, nil
+		return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Second}, nil
 	}
 
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil

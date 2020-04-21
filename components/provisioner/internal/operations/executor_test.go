@@ -51,7 +51,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 			model.WaitingForInstallation: mockStage,
 		}
 
-		executor := NewStepsExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler())
+		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler())
 
 		// when
 		result := executor.Execute(operationId)
@@ -73,7 +73,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 			model.WaitingForInstallation: mockStage,
 		}
 
-		executor := NewStepsExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler())
+		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler())
 
 		// when
 		result := executor.Execute(operationId)
@@ -98,7 +98,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		}
 
 		failureHandler := MockFailureHandler{}
-		executor := NewStepsExecutor(dbSession, model.Provision, installationStages, &failureHandler)
+		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler)
 
 		// when
 		result := executor.Execute(operationId)
@@ -126,7 +126,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		}
 
 		failureHandler := MockFailureHandler{}
-		executor := NewStepsExecutor(dbSession, model.Provision, installationStages, &failureHandler)
+		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler)
 
 		// when
 		result := executor.Execute(operationId)
@@ -165,7 +165,7 @@ func NewErrorStep(name model.OperationStage, err error, timeLimit time.Duration)
 	}
 }
 
-func (m mockStep) Stage() model.OperationStage {
+func (m mockStep) Name() model.OperationStage {
 	return m.name
 }
 

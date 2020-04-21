@@ -384,8 +384,8 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
 
-		validator.On("ValidateUpgradeInput", upgradeInput).Return(nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(errors.Errorf("error"))
+		validator.On("ValidateUpgradeInput", upgradeInput).Return(errors.Errorf("error"))
+		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
 		resolver := NewResolver(provisioningService, validator)
 

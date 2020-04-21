@@ -27,9 +27,9 @@ func CreateInstallationQueue(
 	ccClientConstructor stages.CompassConnectionClientConstructor) OperationQueue {
 
 	waitForAgentToConnectStep := stages.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, timeouts.AgentConnection)
-	configureAgentStep := stages.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Stage(), timeouts.AgentConfiguration)
-	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Stage(), timeouts.Installation)
-	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Stage(), 20*time.Minute)
+	configureAgentStep := stages.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation)
+	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 20*time.Minute)
 
 	installSteps := map[model.OperationStage]operations.Step{
 		model.WaitForAgentToConnect:  waitForAgentToConnectStep,
@@ -38,7 +38,7 @@ func CreateInstallationQueue(
 		model.StartingInstallation:   installStep,
 	}
 
-	installationExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(), model.Provision, installSteps, failure.NewNoopFailureHandler())
+	installationExecutor := operations.NewExecutor(factory.NewReadWriteSession(), model.Provision, installSteps, failure.NewNoopFailureHandler())
 
 	return NewQueue(installationExecutor)
 }
@@ -49,8 +49,8 @@ func CreateUpgradeQueue(
 	installationClient installation.Service) OperationQueue {
 
 	updatingUpgradeStep := stages.NewUpdateUpgradeStateStep(factory.NewWriteSession(), model.FinishedStage, 5*time.Minute)
-	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, updatingUpgradeStep.Stage(), timeouts.Installation)
-	upgradeStep := stages.NewUpgradeKymaStep(installationClient, waitForInstallStep.Stage(), 10*time.Minute)
+	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, updatingUpgradeStep.Name(), timeouts.Installation)
+	upgradeStep := stages.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
 
 	upgradeSteps := map[model.OperationStage]operations.Step{
 		model.UpdatingUpgradeState:   updatingUpgradeStep,
@@ -58,7 +58,7 @@ func CreateUpgradeQueue(
 		model.StartingUpgrade:        upgradeStep,
 	}
 
-	upgradeExecutor := operations.NewStepsExecutor(factory.NewReadWriteSession(),
+	upgradeExecutor := operations.NewExecutor(factory.NewReadWriteSession(),
 		model.Upgrade,
 		upgradeSteps,
 		failure.NewUpgradeFailureHandler(factory.NewWriteSession()),
