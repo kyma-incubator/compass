@@ -99,7 +99,6 @@ func main() {
 	logger.Info("Starting Kyma Environment Broker")
 
 	logs := logrus.New()
-	logs.Infof(" Timeout: %s", cfg.Provisioning.Timeout.String()) //todo: remove it
 
 	logger.Info("Registering healthz endpoint for health probes")
 	health.NewServer(cfg.Host, cfg.StatusPort, logs).ServeAsync()

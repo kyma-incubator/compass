@@ -65,7 +65,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
 	externalEvalCreator := NewExternalEvalCreator(avsConfig, avsDel, false, externalEvalAssistant)
 
-	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient, nil, externalEvalCreator)
+	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient, nil, externalEvalCreator, time.Hour)
 
 	// when
 	operation, repeat, err := step.Run(operation, log)
