@@ -5,7 +5,6 @@ mutation {
     in: { name: "name", spec: { data: "data", type: ASYNC_API, format: JSON } }
   ) {
     id
-    applicationID
     name
     description
     group

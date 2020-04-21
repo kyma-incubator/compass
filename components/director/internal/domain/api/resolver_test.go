@@ -6,15 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
@@ -22,219 +19,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestResolver_AddAPI(t *testing.T) {
-	// given
-	testErr := errors.New("Test error")
-
-	id := "bar"
-	appId := str.Ptr("1")
-	pkgID := str.Ptr("pkg_id")
-
-	modelAPI := fixAPIDefinitionModel(id, appId, pkgID, "name", "bar")
-	gqlAPI := fixGQLAPIDefinition(id, appId, pkgID, "name", "bar")
-	gqlAPIInput := fixGQLAPIDefinitionInput("name", "foo", "bar")
-	modelAPIInput := fixModelAPIDefinitionInput("name", "foo", "bar")
-
-	txGen := txtest.NewTransactionContextGenerator(testErr)
-
-	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn       func() *automock.APIService
-		AppServiceFn    func() *automock.ApplicationService
-		ConverterFn     func() *automock.APIConverter
-		ExpectedAPI     *graphql.APIDefinition
-		ExpectedErr     error
-	}{
-		{
-			Name:            "Success",
-			TransactionerFn: txGen.ThatSucceeds,
-			ServiceFn: func() *automock.APIService {
-				svc := &automock.APIService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), *appId, *modelAPIInput).Return(id, nil).Once()
-				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelAPI, nil).Once()
-				return svc
-			},
-			AppServiceFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *appId).Return(true, nil)
-				return appSvc
-			},
-			ConverterFn: func() *automock.APIConverter {
-				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
-				conv.On("ToGraphQL", modelAPI).Return(gqlAPI).Once()
-				return conv
-			},
-			ExpectedAPI: gqlAPI,
-			ExpectedErr: nil,
-		},
-		{
-			Name:            "Returns error when starting transaction",
-			TransactionerFn: txGen.ThatFailsOnBegin,
-			ServiceFn: func() *automock.APIService {
-				svc := &automock.APIService{}
-				return svc
-			},
-			AppServiceFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				return appSvc
-			},
-			ConverterFn: func() *automock.APIConverter {
-				conv := &automock.APIConverter{}
-				return conv
-			},
-			ExpectedAPI: nil,
-			ExpectedErr: testErr,
-		},
-		{
-			Name:            "Returns error when application not exist",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.APIService {
-				svc := &automock.APIService{}
-				return svc
-			},
-			AppServiceFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *appId).Return(false, nil)
-				return appSvc
-			},
-			ConverterFn: func() *automock.APIConverter {
-				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
-				return conv
-			},
-			ExpectedAPI: nil,
-			ExpectedErr: errors.New("Cannot add API to not existing Application"),
-		},
-		{
-			Name:            "Returns error when application existence check failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.APIService {
-				svc := &automock.APIService{}
-				return svc
-			},
-			AppServiceFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *appId).Return(false, testErr)
-				return appSvc
-			},
-			ConverterFn: func() *automock.APIConverter {
-				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
-				return conv
-			},
-			ExpectedAPI: nil,
-			ExpectedErr: testErr,
-		},
-		{
-			Name:            "Returns error when API creation failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.APIService {
-				svc := &automock.APIService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), *appId, *modelAPIInput).Return("", testErr).Once()
-				return svc
-			},
-			AppServiceFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *appId).Return(true, nil)
-				return appSvc
-			},
-			ConverterFn: func() *automock.APIConverter {
-				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
-				return conv
-			},
-			ExpectedAPI: nil,
-			ExpectedErr: testErr,
-		},
-		{
-			Name:            "Returns error when API retrieval failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.APIService {
-				svc := &automock.APIService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), *appId, *modelAPIInput).Return(id, nil).Once()
-				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
-				return svc
-			},
-			AppServiceFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *appId).Return(true, nil)
-				return appSvc
-			},
-			ConverterFn: func() *automock.APIConverter {
-				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
-				return conv
-			},
-			ExpectedAPI: nil,
-			ExpectedErr: testErr,
-		},
-		{
-			Name:            "Returns error when commit transaction failed",
-			TransactionerFn: txGen.ThatFailsOnCommit,
-			ServiceFn: func() *automock.APIService {
-				svc := &automock.APIService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), *appId, *modelAPIInput).Return(id, nil).Once()
-				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelAPI, nil).Once()
-				return svc
-			},
-			AppServiceFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *appId).Return(true, nil)
-				return appSvc
-			},
-			ConverterFn: func() *automock.APIConverter {
-				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
-				return conv
-			},
-			ExpectedAPI: nil,
-			ExpectedErr: testErr,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			// given
-			persist, transact := testCase.TransactionerFn()
-			svc := testCase.ServiceFn()
-			converter := testCase.ConverterFn()
-			appSvc := testCase.AppServiceFn()
-
-			resolver := api.NewResolver(transact, svc, appSvc, nil, nil, nil, converter, nil, nil, nil)
-
-			// when
-			result, err := resolver.AddAPIDefinition(context.TODO(), *appId, *gqlAPIInput)
-
-			// then
-			assert.Equal(t, testCase.ExpectedAPI, result)
-			if testCase.ExpectedErr != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
-			} else {
-				require.Nil(t, err)
-			}
-
-			persist.AssertExpectations(t)
-			transact.AssertExpectations(t)
-			svc.AssertExpectations(t)
-			appSvc.AssertExpectations(t)
-			converter.AssertExpectations(t)
-		})
-	}
-}
-
 func TestResolver_AddAPIToPackage(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	packageID := str.Ptr("1")
-	appID := str.Ptr("pkg_id")
+	packageID := "1"
 
-	modelAPI := fixAPIDefinitionModel(id, appID, packageID, "name", "bar")
-	gqlAPI := fixGQLAPIDefinition(id, appID, packageID, "name", "bar")
+	modelAPI := fixAPIDefinitionModel(id, packageID, "name", "bar")
+	gqlAPI := fixGQLAPIDefinition(id, packageID, "name", "bar")
 	gqlAPIInput := fixGQLAPIDefinitionInput("name", "foo", "bar")
 	modelAPIInput := fixModelAPIDefinitionInput("name", "foo", "bar")
 
@@ -254,13 +47,13 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), *packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), packageID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelAPI, nil).Once()
 				return svc
 			},
 			PkgServiceFn: func() *automock.PackageService {
 				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *packageID).Return(true, nil)
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), packageID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -299,7 +92,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			},
 			PkgServiceFn: func() *automock.PackageService {
 				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *packageID).Return(false, nil)
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), packageID).Return(false, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -319,7 +112,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			},
 			PkgServiceFn: func() *automock.PackageService {
 				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *packageID).Return(false, testErr)
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), packageID).Return(false, testErr)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -335,12 +128,12 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), *packageID, *modelAPIInput).Return("", testErr).Once()
+				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), packageID, *modelAPIInput).Return("", testErr).Once()
 				return svc
 			},
 			PkgServiceFn: func() *automock.PackageService {
 				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *packageID).Return(true, nil)
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), packageID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -356,13 +149,13 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), *packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), packageID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
 				return svc
 			},
 			PkgServiceFn: func() *automock.PackageService {
 				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *packageID).Return(true, nil)
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), packageID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -378,13 +171,13 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), *packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), packageID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelAPI, nil).Once()
 				return svc
 			},
 			PkgServiceFn: func() *automock.PackageService {
 				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), *packageID).Return(true, nil)
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), packageID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -405,10 +198,10 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			converter := testCase.ConverterFn()
 			pkgSvc := testCase.PkgServiceFn()
 
-			resolver := api.NewResolver(transact, svc, nil, nil, nil, pkgSvc, converter, nil, nil, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, pkgSvc, converter, nil)
 
 			// when
-			result, err := resolver.AddAPIDefinitionToPackage(context.TODO(), *packageID, *gqlAPIInput)
+			result, err := resolver.AddAPIDefinitionToPackage(context.TODO(), packageID, *gqlAPIInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPI, result)
@@ -433,8 +226,8 @@ func TestResolver_DeleteAPI(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	modelAPIDefinition := fixAPIDefinitionModel(id, str.Ptr("1"), str.Ptr("1"), "foo", "bar")
-	gqlAPIDefinition := fixGQLAPIDefinition(id, str.Ptr("1"), str.Ptr("1"), "foo", "bar")
+	modelAPIDefinition := fixAPIDefinitionModel(id, "1", "foo", "bar")
+	gqlAPIDefinition := fixGQLAPIDefinition(id, "1", "foo", "bar")
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -533,7 +326,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, converter, nil, nil, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, nil, converter, nil)
 
 			// when
 			result, err := resolver.DeleteAPIDefinition(context.TODO(), id)
@@ -557,8 +350,8 @@ func TestResolver_UpdateAPI(t *testing.T) {
 	id := "bar"
 	gqlAPIDefinitionInput := fixGQLAPIDefinitionInput(id, "foo", "bar")
 	modelAPIDefinitionInput := fixModelAPIDefinitionInput(id, "foo", "bar")
-	gqlAPIDefinition := fixGQLAPIDefinition(id, str.Ptr("1"), str.Ptr("1"), "foo", "bar")
-	modelAPIDefinition := fixAPIDefinitionModel(id, str.Ptr("1"), str.Ptr("1"), "foo", "bar")
+	gqlAPIDefinition := fixGQLAPIDefinition(id, "1", "foo", "bar")
+	modelAPIDefinition := fixAPIDefinitionModel(id, "1", "foo", "bar")
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -673,7 +466,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, converter, nil, nil, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, nil, converter, nil)
 
 			// when
 			result, err := resolver.UpdateAPIDefinition(context.TODO(), id, *gqlAPIDefinitionInput)
@@ -686,587 +479,6 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			transact.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
-		})
-	}
-}
-
-func TestResolver_Auth(t *testing.T) {
-	// GIVEN
-	tnt := "tenant"
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
-
-	rtmID := "foo"
-	apiID := "bar"
-
-	parentAPI := fixGQLAPIDefinition(apiID, str.Ptr("baz"), str.Ptr("1"), "Test API", "API used by tests")
-
-	modelAPIRtmAuth := fixModelAPIRtmAuth(rtmID, fixModelAuth())
-	gqlAPIRtmAuth := fixGQLAPIRtmAuth(rtmID, fixGQLAuth())
-
-	testErr := errors.New("this is a test error")
-
-	txGen := txtest.NewTransactionContextGenerator(testErr)
-
-	testCases := []struct {
-		Name             string
-		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		RtmSvcFn         func() *automock.RuntimeService
-		APIRtmAuthSvcFn  func() *automock.APIRuntimeAuthService
-		APIRtmAuthConvFn func() *automock.APIRuntimeAuthConverter
-		ExpectedOutput   *graphql.APIRuntimeAuth
-		ExpectedError    error
-	}{
-		{
-			Name:            "Success",
-			TransactionerFn: txGen.ThatSucceeds,
-			RtmSvcFn: func() *automock.RuntimeService {
-				rtmSvc := &automock.RuntimeService{}
-				rtmSvc.On("Get", txtest.CtxWithDBMatcher(), rtmID).Return(nil, nil).Once()
-				return rtmSvc
-			},
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				apiRtmAuthSvc.On("GetOrDefault", txtest.CtxWithDBMatcher(), apiID, rtmID).Return(modelAPIRtmAuth, nil).Once()
-				return apiRtmAuthSvc
-			},
-			APIRtmAuthConvFn: func() *automock.APIRuntimeAuthConverter {
-				apiRtmAuthConv := &automock.APIRuntimeAuthConverter{}
-				apiRtmAuthConv.On("ToGraphQL", modelAPIRtmAuth).Return(gqlAPIRtmAuth).Once()
-				return apiRtmAuthConv
-			},
-			ExpectedOutput: gqlAPIRtmAuth,
-			ExpectedError:  nil,
-		},
-		{
-			Name:            "Error when beginning transaction",
-			TransactionerFn: txGen.ThatFailsOnBegin,
-			RtmSvcFn: func() *automock.RuntimeService {
-				rtmSvc := &automock.RuntimeService{}
-				return rtmSvc
-			},
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				return apiRtmAuthSvc
-			},
-			APIRtmAuthConvFn: func() *automock.APIRuntimeAuthConverter {
-				apiRtmAuthConv := &automock.APIRuntimeAuthConverter{}
-				return apiRtmAuthConv
-			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
-		},
-		{
-			Name:            "Error when getting Runtime",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			RtmSvcFn: func() *automock.RuntimeService {
-				rtmSvc := &automock.RuntimeService{}
-				rtmSvc.On("Get", txtest.CtxWithDBMatcher(), rtmID).Return(nil, testErr).Once()
-				return rtmSvc
-			},
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				return apiRtmAuthSvc
-			},
-			APIRtmAuthConvFn: func() *automock.APIRuntimeAuthConverter {
-				apiRtmAuthConv := &automock.APIRuntimeAuthConverter{}
-				return apiRtmAuthConv
-			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
-		},
-		{
-			Name:            "Error when getting API Runtime Auth",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			RtmSvcFn: func() *automock.RuntimeService {
-				rtmSvc := &automock.RuntimeService{}
-				rtmSvc.On("Get", txtest.CtxWithDBMatcher(), rtmID).Return(nil, nil).Once()
-				return rtmSvc
-			},
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				apiRtmAuthSvc.On("GetOrDefault", txtest.CtxWithDBMatcher(), apiID, rtmID).Return(nil, testErr).Once()
-				return apiRtmAuthSvc
-			},
-			APIRtmAuthConvFn: func() *automock.APIRuntimeAuthConverter {
-				apiRtmAuthConv := &automock.APIRuntimeAuthConverter{}
-				return apiRtmAuthConv
-			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
-		},
-		{
-			Name:            "Error when committing transaction",
-			TransactionerFn: txGen.ThatFailsOnCommit,
-			RtmSvcFn: func() *automock.RuntimeService {
-				rtmSvc := &automock.RuntimeService{}
-				rtmSvc.On("Get", txtest.CtxWithDBMatcher(), rtmID).Return(nil, nil).Once()
-				return rtmSvc
-			},
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				apiRtmAuthSvc.On("GetOrDefault", txtest.CtxWithDBMatcher(), apiID, rtmID).Return(modelAPIRtmAuth, nil).Once()
-				return apiRtmAuthSvc
-			},
-			APIRtmAuthConvFn: func() *automock.APIRuntimeAuthConverter {
-				apiRtmAuthConv := &automock.APIRuntimeAuthConverter{}
-				return apiRtmAuthConv
-			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			rtmSvc := testCase.RtmSvcFn()
-			apiRtmAuthSvc := testCase.APIRtmAuthSvcFn()
-			apiRtmAuthConv := testCase.APIRtmAuthConvFn()
-			persist, transact := testCase.TransactionerFn()
-
-			resolver := api.NewResolver(transact, nil, nil, rtmSvc, apiRtmAuthSvc, nil, nil, nil, nil, apiRtmAuthConv)
-
-			// WHEN
-			ra, err := resolver.Auth(ctx, parentAPI, rtmID)
-
-			// THEN
-			if testCase.ExpectedError != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-			assert.Equal(t, testCase.ExpectedOutput, ra)
-
-			rtmSvc.AssertExpectations(t)
-			apiRtmAuthSvc.AssertExpectations(t)
-			apiRtmAuthConv.AssertExpectations(t)
-			persist.AssertExpectations(t)
-			transact.AssertExpectations(t)
-		})
-	}
-}
-
-func TestResolver_Auths(t *testing.T) {
-	// GIVEN
-	tnt := "tenant"
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
-
-	apiID := "bar"
-
-	parentAPI := fixGQLAPIDefinition(apiID, str.Ptr("baz"), str.Ptr("1"), "Test API", "API used by tests")
-
-	modelAPIRtmAuths := []model.APIRuntimeAuth{
-		*fixModelAPIRtmAuth("r1", fixModelAuth()),
-		*fixModelAPIRtmAuth("r2", fixModelAuth()),
-		*fixModelAPIRtmAuth("r3", fixModelAuth()),
-	}
-	gqlAPIRtmAuths := []*graphql.APIRuntimeAuth{
-		fixGQLAPIRtmAuth("r1", fixGQLAuth()),
-		fixGQLAPIRtmAuth("r2", fixGQLAuth()),
-		fixGQLAPIRtmAuth("r3", fixGQLAuth()),
-	}
-
-	testErr := errors.New("this is a test error")
-
-	txGen := txtest.NewTransactionContextGenerator(testErr)
-
-	testCases := []struct {
-		Name             string
-		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		APIRtmAuthSvcFn  func() *automock.APIRuntimeAuthService
-		APIRtmAuthConvFn func() *automock.APIRuntimeAuthConverter
-		ExpectedOutput   []*graphql.APIRuntimeAuth
-		ExpectedError    error
-	}{
-		{
-			Name:            "Success",
-			TransactionerFn: txGen.ThatSucceeds,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				apiRtmAuthSvc.On("ListForAllRuntimes", txtest.CtxWithDBMatcher(), apiID).Return(modelAPIRtmAuths, nil).Once()
-				return apiRtmAuthSvc
-			},
-			APIRtmAuthConvFn: func() *automock.APIRuntimeAuthConverter {
-				apiRtmAuthConv := &automock.APIRuntimeAuthConverter{}
-				apiRtmAuthConv.On("ToGraphQL", &modelAPIRtmAuths[0]).Return(gqlAPIRtmAuths[0]).Once()
-				apiRtmAuthConv.On("ToGraphQL", &modelAPIRtmAuths[1]).Return(gqlAPIRtmAuths[1]).Once()
-				apiRtmAuthConv.On("ToGraphQL", &modelAPIRtmAuths[2]).Return(gqlAPIRtmAuths[2]).Once()
-				return apiRtmAuthConv
-			},
-			ExpectedOutput: gqlAPIRtmAuths,
-			ExpectedError:  nil,
-		},
-		{
-			Name:            "Error when beginning transaction",
-			TransactionerFn: txGen.ThatFailsOnBegin,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				return apiRtmAuthSvc
-			},
-			APIRtmAuthConvFn: func() *automock.APIRuntimeAuthConverter {
-				apiRtmAuthConv := &automock.APIRuntimeAuthConverter{}
-				return apiRtmAuthConv
-			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
-		},
-		{
-			Name:            "Error when listing for all runtimes",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				apiRtmAuthSvc.On("ListForAllRuntimes", txtest.CtxWithDBMatcher(), apiID).Return(nil, testErr).Once()
-				return apiRtmAuthSvc
-			},
-			APIRtmAuthConvFn: func() *automock.APIRuntimeAuthConverter {
-				apiRtmAuthConv := &automock.APIRuntimeAuthConverter{}
-				return apiRtmAuthConv
-			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
-		},
-		{
-			Name:            "Error when committing transaction",
-			TransactionerFn: txGen.ThatFailsOnCommit,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				apiRtmAuthSvc.On("ListForAllRuntimes", txtest.CtxWithDBMatcher(), apiID).Return(modelAPIRtmAuths, nil).Once()
-				return apiRtmAuthSvc
-			},
-			APIRtmAuthConvFn: func() *automock.APIRuntimeAuthConverter {
-				apiRtmAuthConv := &automock.APIRuntimeAuthConverter{}
-				return apiRtmAuthConv
-			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			apiRtmAuthSvc := testCase.APIRtmAuthSvcFn()
-			apiRtmAuthConv := testCase.APIRtmAuthConvFn()
-			persist, transact := testCase.TransactionerFn()
-
-			resolver := api.NewResolver(transact, nil, nil, nil, apiRtmAuthSvc, nil, nil, nil, nil, apiRtmAuthConv)
-
-			// WHEN
-			ra, err := resolver.Auths(ctx, parentAPI)
-
-			// THEN
-			if testCase.ExpectedError != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-			assert.Equal(t, testCase.ExpectedOutput, ra)
-
-			apiRtmAuthSvc.AssertExpectations(t)
-			apiRtmAuthConv.AssertExpectations(t)
-			persist.AssertExpectations(t)
-			transact.AssertExpectations(t)
-		})
-	}
-}
-
-func TestResolver_SetAPIAuth(t *testing.T) {
-	// given
-	testErr := errors.New("Test error")
-
-	apiID := "apiID"
-	runtimeID := "runtimeID"
-
-	headers := map[string][]string{"header": {"hval1", "hval2"}}
-	httpHeaders := graphql.HttpHeaders(headers)
-	gqlAuth := &graphql.Auth{
-		AdditionalHeaders: &httpHeaders,
-	}
-
-	tnt := "tenant"
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
-
-	modelAuthInput := fixModelAuthInput(headers)
-	modelAPIRtmAuth := fixModelAPIRtmAuth(runtimeID, modelAuthInput.ToAuth())
-	gqlAuthInput := fixGQLAuthInput(headers)
-	graphqlAPIRtmAuth := fixGQLAPIRtmAuth(runtimeID, gqlAuth)
-
-	txGen := txtest.NewTransactionContextGenerator(testErr)
-
-	testCases := []struct {
-		Name               string
-		TransactionerFn    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		APIRtmAuthSvcFn    func() *automock.APIRuntimeAuthService
-		AuthConvFn         func() *automock.AuthConverter
-		ExpectedAPIRtmAuth *graphql.APIRuntimeAuth
-		ExpectedErr        error
-	}{
-		{
-			Name:            "Success",
-			TransactionerFn: txGen.ThatSucceeds,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				apiRtmAuthSvc.On("Set", txtest.CtxWithDBMatcher(), apiID, runtimeID, *modelAuthInput).Return(nil).Once()
-				apiRtmAuthSvc.On("Get", txtest.CtxWithDBMatcher(), apiID, runtimeID).Return(modelAPIRtmAuth, nil).Once()
-				return apiRtmAuthSvc
-			},
-			AuthConvFn: func() *automock.AuthConverter {
-				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", gqlAuthInput).Return(modelAuthInput).Once()
-				conv.On("ToGraphQL", modelAPIRtmAuth.Value).Return(gqlAuth).Once()
-				return conv
-			},
-			ExpectedAPIRtmAuth: graphqlAPIRtmAuth,
-			ExpectedErr:        nil,
-		},
-		{
-			Name:            "Error when beginning transaction",
-			TransactionerFn: txGen.ThatFailsOnBegin,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				return apiRtmAuthSvc
-			},
-			AuthConvFn: func() *automock.AuthConverter {
-				conv := &automock.AuthConverter{}
-				return conv
-			},
-			ExpectedAPIRtmAuth: nil,
-			ExpectedErr:        testErr,
-		},
-		{
-			Name:            "Error when setting up auth failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				apiRtmAuthSvc.On("Set", txtest.CtxWithDBMatcher(), apiID, runtimeID, *modelAuthInput).Return(testErr).Once()
-				return apiRtmAuthSvc
-			},
-			AuthConvFn: func() *automock.AuthConverter {
-				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", gqlAuthInput).Return(modelAuthInput).Once()
-				return conv
-			},
-			ExpectedAPIRtmAuth: nil,
-			ExpectedErr:        testErr,
-		},
-		{
-			Name:            "Error when getting api runtime auth",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				apiRtmAuthSvc.On("Set", txtest.CtxWithDBMatcher(), apiID, runtimeID, *modelAuthInput).Return(nil).Once()
-				apiRtmAuthSvc.On("Get", txtest.CtxWithDBMatcher(), apiID, runtimeID).Return(nil, testErr).Once()
-				return apiRtmAuthSvc
-			},
-			AuthConvFn: func() *automock.AuthConverter {
-				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", gqlAuthInput).Return(modelAuthInput).Once()
-				return conv
-			},
-			ExpectedAPIRtmAuth: nil,
-			ExpectedErr:        testErr,
-		},
-		{
-			Name:            "Error when input converted to nil",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				return apiRtmAuthSvc
-			},
-			AuthConvFn: func() *automock.AuthConverter {
-				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", gqlAuthInput).Return(nil).Once()
-				return conv
-			},
-			ExpectedAPIRtmAuth: nil,
-			ExpectedErr:        errors.New("object cannot be empty"),
-		},
-		{
-			Name:            "Error when committing transaction",
-			TransactionerFn: txGen.ThatFailsOnCommit,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				apiRtmAuthSvc := &automock.APIRuntimeAuthService{}
-				apiRtmAuthSvc.On("Set", txtest.CtxWithDBMatcher(), apiID, runtimeID, *modelAuthInput).Return(nil).Once()
-				apiRtmAuthSvc.On("Get", txtest.CtxWithDBMatcher(), apiID, runtimeID).Return(modelAPIRtmAuth, nil).Once()
-				return apiRtmAuthSvc
-			},
-			AuthConvFn: func() *automock.AuthConverter {
-				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", gqlAuthInput).Return(modelAuthInput).Once()
-				return conv
-			},
-			ExpectedAPIRtmAuth: nil,
-			ExpectedErr:        testErr,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			// given
-			apiRtmAuthSvc := testCase.APIRtmAuthSvcFn()
-			conv := testCase.AuthConvFn()
-			persist, transact := testCase.TransactionerFn()
-
-			resolver := api.NewResolver(transact, nil, nil, nil, apiRtmAuthSvc, nil, nil, conv, nil, nil)
-
-			// when
-			result, err := resolver.SetAPIAuth(ctx, apiID, runtimeID, *gqlAuthInput)
-
-			// then
-			if testCase.ExpectedErr != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-			assert.Equal(t, testCase.ExpectedAPIRtmAuth, result)
-
-			apiRtmAuthSvc.AssertExpectations(t)
-			conv.AssertExpectations(t)
-			persist.AssertExpectations(t)
-			transact.AssertExpectations(t)
-		})
-	}
-}
-
-func TestResolver_DeleteAPIAuth(t *testing.T) {
-	// given
-	testErr := errors.New("Test error")
-
-	apiID := "apiID"
-	runtimeID := "runtimeID"
-
-	tnt := "tenant"
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
-
-	headers := map[string][]string{"header": {"hval1", "hval2"}}
-	httpHeaders := graphql.HttpHeaders(headers)
-	gqlAuth := &graphql.Auth{
-		AdditionalHeaders: &httpHeaders,
-	}
-
-	modelAuthInput := fixModelAuthInput(headers)
-	modelAPIRtmAuth := fixModelAPIRtmAuth(runtimeID, modelAuthInput.ToAuth())
-	graphqlAPIRtmAuth := fixGQLAPIRtmAuth(runtimeID, gqlAuth)
-
-	txGen := txtest.NewTransactionContextGenerator(testErr)
-
-	testCases := []struct {
-		Name               string
-		TransactionerFn    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		APIRtmAuthSvcFn    func() *automock.APIRuntimeAuthService
-		AuthConvFn         func() *automock.AuthConverter
-		ExpectedAPIRtmAuth *graphql.APIRuntimeAuth
-		ExpectedErr        error
-	}{
-		{
-			Name:            "Success",
-			TransactionerFn: txGen.ThatSucceeds,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				svc := &automock.APIRuntimeAuthService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), apiID, runtimeID).Return(modelAPIRtmAuth, nil).Once()
-				svc.On("Delete", txtest.CtxWithDBMatcher(), apiID, runtimeID).Return(nil).Once()
-				return svc
-			},
-			AuthConvFn: func() *automock.AuthConverter {
-				conv := &automock.AuthConverter{}
-				conv.On("ToGraphQL", modelAPIRtmAuth.Value).Return(gqlAuth).Once()
-				return conv
-			},
-			ExpectedAPIRtmAuth: graphqlAPIRtmAuth,
-			ExpectedErr:        nil,
-		},
-		{
-			Name:            "Error when beginning transaction",
-			TransactionerFn: txGen.ThatFailsOnBegin,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				svc := &automock.APIRuntimeAuthService{}
-				return svc
-			},
-			AuthConvFn: func() *automock.AuthConverter {
-				conv := &automock.AuthConverter{}
-				return conv
-			},
-			ExpectedAPIRtmAuth: nil,
-			ExpectedErr:        testErr,
-		},
-		{
-			Name:            "Error when getting api runtime auth",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				svc := &automock.APIRuntimeAuthService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), apiID, runtimeID).Return(nil, testErr).Once()
-				return svc
-			},
-			AuthConvFn: func() *automock.AuthConverter {
-				conv := &automock.AuthConverter{}
-				return conv
-			},
-			ExpectedAPIRtmAuth: nil,
-			ExpectedErr:        testErr,
-		},
-		{
-			Name:            "Error when deleting auth failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				svc := &automock.APIRuntimeAuthService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), apiID, runtimeID).Return(modelAPIRtmAuth, nil).Once()
-				svc.On("Delete", txtest.CtxWithDBMatcher(), apiID, runtimeID).Return(testErr).Once()
-				return svc
-			},
-			AuthConvFn: func() *automock.AuthConverter {
-				conv := &automock.AuthConverter{}
-				return conv
-			},
-			ExpectedAPIRtmAuth: nil,
-			ExpectedErr:        testErr,
-		},
-		{
-			Name:            "Error when committing transaction",
-			TransactionerFn: txGen.ThatFailsOnCommit,
-			APIRtmAuthSvcFn: func() *automock.APIRuntimeAuthService {
-				svc := &automock.APIRuntimeAuthService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), apiID, runtimeID).Return(modelAPIRtmAuth, nil).Once()
-				svc.On("Delete", txtest.CtxWithDBMatcher(), apiID, runtimeID).Return(nil).Once()
-				return svc
-			},
-			AuthConvFn: func() *automock.AuthConverter {
-				conv := &automock.AuthConverter{}
-				return conv
-			},
-			ExpectedAPIRtmAuth: nil,
-			ExpectedErr:        testErr,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			// given
-			apiRtmAuthSvc := testCase.APIRtmAuthSvcFn()
-			authConv := testCase.AuthConvFn()
-			persist, transact := testCase.TransactionerFn()
-			resolver := api.NewResolver(transact, nil, nil, nil, apiRtmAuthSvc, nil, nil, authConv, nil, nil)
-
-			// when
-			result, err := resolver.DeleteAPIAuth(ctx, apiID, runtimeID)
-
-			// then
-			if testCase.ExpectedErr != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-			assert.Equal(t, testCase.ExpectedAPIRtmAuth, result)
-
-			persist.AssertExpectations(t)
-			transact.AssertExpectations(t)
-			apiRtmAuthSvc.AssertExpectations(t)
-			authConv.AssertExpectations(t)
 		})
 	}
 }
@@ -1373,7 +585,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
 			persist, transact := testCase.TransactionerFn()
-			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, conv, nil, nil, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, nil, conv, nil)
 
 			// when
 			result, err := resolver.RefetchAPISpec(context.TODO(), apiID)
@@ -1509,7 +721,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, converter, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, converter)
 
 			// when
 			result, err := resolver.FetchRequest(context.TODO(), &graphql.APISpec{DefinitionID: id})

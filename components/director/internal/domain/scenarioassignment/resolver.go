@@ -28,8 +28,7 @@ type Service interface {
 	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
-// TODO: Change order of params: Service before Converter
-func NewResolver(transact persistence.Transactioner, converter Converter, svc Service) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc Service, converter Converter) *Resolver {
 	return &Resolver{
 		transact:  transact,
 		svc:       svc,

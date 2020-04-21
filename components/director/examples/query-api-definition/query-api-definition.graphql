@@ -5,7 +5,6 @@ query {
       apiDefinition(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
         id
         name
-        applicationID
         description
         spec {
           data
@@ -56,75 +55,6 @@ query {
         }
         targetURL
         group
-        auths {
-          runtimeID
-          auth {
-            credential {
-              ... on BasicCredentialData {
-                username
-                password
-              }
-              ... on OAuthCredentialData {
-                clientId
-                clientSecret
-                url
-              }
-            }
-            additionalHeaders
-            additionalQueryParams
-            requestAuth {
-              csrf {
-                tokenEndpointURL
-                credential {
-                  ... on BasicCredentialData {
-                    username
-                    password
-                  }
-                  ... on OAuthCredentialData {
-                    clientId
-                    clientSecret
-                    url
-                  }
-                }
-                additionalHeaders
-                additionalQueryParams
-              }
-            }
-          }
-        }
-        defaultAuth {
-          credential {
-            ... on BasicCredentialData {
-              username
-              password
-            }
-            ... on OAuthCredentialData {
-              clientId
-              clientSecret
-              url
-            }
-          }
-          additionalHeaders
-          additionalQueryParams
-          requestAuth {
-            csrf {
-              tokenEndpointURL
-              credential {
-                ... on BasicCredentialData {
-                  username
-                  password
-                }
-                ... on OAuthCredentialData {
-                  clientId
-                  clientSecret
-                  url
-                }
-              }
-              additionalHeaders
-              additionalQueryParams
-            }
-          }
-        }
         version {
           value
           deprecated

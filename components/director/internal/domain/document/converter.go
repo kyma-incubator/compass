@@ -27,15 +27,14 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 	}
 
 	return &graphql.Document{
-		ID:            in.ID,
-		ApplicationID: in.ApplicationID,
-		PackageID:     in.PackageID,
-		Title:         in.Title,
-		DisplayName:   in.DisplayName,
-		Description:   in.Description,
-		Format:        graphql.DocumentFormat(in.Format),
-		Kind:          in.Kind,
-		Data:          clob,
+		ID:          in.ID,
+		PackageID:   in.PackageID,
+		Title:       in.Title,
+		DisplayName: in.DisplayName,
+		Description: in.Description,
+		Format:      graphql.DocumentFormat(in.Format),
+		Kind:        in.Kind,
+		Data:        clob,
 	}
 }
 
@@ -93,8 +92,7 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 
 	out := Entity{
 		ID:          in.ID,
-		AppID:       repo.NewNullableString(in.ApplicationID),
-		PkgID:       repo.NewNullableString(in.PackageID),
+		PkgID:       in.PackageID,
 		TenantID:    in.Tenant,
 		Title:       in.Title,
 		DisplayName: in.DisplayName,
@@ -112,16 +110,15 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 	data := repo.StringPtrFromNullableString(in.Data)
 
 	out := model.Document{
-		ID:            in.ID,
-		ApplicationID: repo.StringPtrFromNullableString(in.AppID),
-		PackageID:     repo.StringPtrFromNullableString(in.PkgID),
-		Tenant:        in.TenantID,
-		Title:         in.Title,
-		DisplayName:   in.DisplayName,
-		Description:   in.Description,
-		Format:        model.DocumentFormat(in.Format),
-		Kind:          kind,
-		Data:          data,
+		ID:          in.ID,
+		PackageID:   in.PkgID,
+		Tenant:      in.TenantID,
+		Title:       in.Title,
+		DisplayName: in.DisplayName,
+		Description: in.Description,
+		Format:      model.DocumentFormat(in.Format),
+		Kind:        kind,
+		Data:        data,
 	}
 	return out, nil
 }

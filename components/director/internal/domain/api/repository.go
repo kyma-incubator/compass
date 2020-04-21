@@ -13,18 +13,17 @@ const apiDefTable string = `"public"."api_definitions"`
 
 var (
 	tenantColumn  = "tenant_id"
-	apiDefColumns = []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "target_url", "spec_data",
-		"spec_format", "spec_type", "default_auth",
-		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+	apiDefColumns = []string{"id", "tenant_id", "package_id", "name", "description", "group_name", "target_url", "spec_data",
+		"spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 	idColumns        = []string{"id"}
 	updatableColumns = []string{"name", "description", "group_name", "target_url", "spec_data", "spec_format", "spec_type",
-		"default_auth", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 )
 
 //go:generate mockery -name=APIDefinitionConverter -output=automock -outpkg=automock -case=underscore
 type APIDefinitionConverter interface {
-	FromEntity(entity Entity) (model.APIDefinition, error)
-	ToEntity(apiModel model.APIDefinition) (Entity, error)
+	FromEntity(entity Entity) model.APIDefinition
+	ToEntity(apiModel model.APIDefinition) Entity
 }
 
 type pgRepository struct {
@@ -55,11 +54,6 @@ func (r APIDefCollection) Len() int {
 	return len(r)
 }
 
-func (r *pgRepository) ListForApplication(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
-	appCond := fmt.Sprintf("%s = '%s'", "app_id", applicationID)
-	return r.list(ctx, tenantID, pageSize, cursor, appCond)
-}
-
 func (r *pgRepository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
 	pkgCond := fmt.Sprintf("%s = '%s'", "package_id", packageID)
 	return r.list(ctx, tenantID, pageSize, cursor, pkgCond)
@@ -75,10 +69,8 @@ func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cu
 	var items []*model.APIDefinition
 
 	for _, apiDefEnt := range apiDefCollection {
-		m, err := r.conv.FromEntity(apiDefEnt)
-		if err != nil {
-			return nil, errors.Wrap(err, "while creating APIDefinition model from entity")
-		}
+		m := r.conv.FromEntity(apiDefEnt)
+
 		items = append(items, &m)
 	}
 
@@ -96,29 +88,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 		return nil, errors.Wrap(err, "while getting APIDefinition")
 	}
 
-	apiDefModel, err := r.conv.FromEntity(apiDefEntity)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating APIDefinition entity to model")
-	}
-
-	return &apiDefModel, nil
-}
-
-func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.APIDefinition, error) {
-	var ent Entity
-
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("id", id),
-		repo.NewEqualCondition("app_id", applicationID),
-	}
-	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
-		return nil, err
-	}
-
-	apiDefModel, err := r.conv.FromEntity(ent)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating api definition model from entity")
-	}
+	apiDefModel := r.conv.FromEntity(apiDefEntity)
 
 	return &apiDefModel, nil
 }
@@ -134,10 +104,7 @@ func (r *pgRepository) GetForPackage(ctx context.Context, tenant string, id stri
 		return nil, err
 	}
 
-	apiDefModel, err := r.conv.FromEntity(ent)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating api definition model from entity")
-	}
+	apiDefModel := r.conv.FromEntity(ent)
 
 	return &apiDefModel, nil
 }
@@ -147,12 +114,8 @@ func (r *pgRepository) Create(ctx context.Context, item *model.APIDefinition) er
 		return errors.New("item cannot be nil")
 	}
 
-	entity, err := r.conv.ToEntity(*item)
-	if err != nil {
-		return errors.Wrap(err, "while creating APIDefinition model to entity")
-	}
-
-	err = r.creator.Create(ctx, entity)
+	entity := r.conv.ToEntity(*item)
+	err := r.creator.Create(ctx, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")
 	}
@@ -162,11 +125,9 @@ func (r *pgRepository) Create(ctx context.Context, item *model.APIDefinition) er
 
 func (r *pgRepository) CreateMany(ctx context.Context, items []*model.APIDefinition) error {
 	for index, item := range items {
-		entity, err := r.conv.ToEntity(*item)
-		if err != nil {
-			return errors.Wrapf(err, "while creating %d item", index)
-		}
-		err = r.creator.Create(ctx, entity)
+		entity := r.conv.ToEntity(*item)
+
+		err := r.creator.Create(ctx, entity)
 		if err != nil {
 			return errors.Wrapf(err, "while persisting %d item", index)
 		}
@@ -180,10 +141,7 @@ func (r *pgRepository) Update(ctx context.Context, item *model.APIDefinition) er
 		return errors.New("item cannot be nil")
 	}
 
-	entity, err := r.conv.ToEntity(*item)
-	if err != nil {
-		return errors.Wrap(err, "while converting model to entity")
-	}
+	entity := r.conv.ToEntity(*item)
 
 	return r.updater.UpdateSingle(ctx, entity)
 }
@@ -194,8 +152,4 @@ func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, e
 
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
-}
-
-func (r *pgRepository) DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error {
-	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("app_id", appID)})
 }
