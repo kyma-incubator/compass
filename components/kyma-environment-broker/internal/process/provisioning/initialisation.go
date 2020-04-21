@@ -108,7 +108,7 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.provisioningTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout))
 	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
