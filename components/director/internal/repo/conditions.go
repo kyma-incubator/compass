@@ -7,75 +7,81 @@ import (
 	"github.com/lib/pq"
 )
 
-type ConditionOp string
+type Condition interface {
+	// GetQueryPart returns formatted string that will be included in the SQL query for a given condition
+	GetQueryPart(idx int) string
 
-const (
-	EqualOp     ConditionOp = "="
-	IsNotNullOp ConditionOp = "IS NOT NULL"
-	InOp        ConditionOp = "IN"
-	NotEqualOP  ConditionOp = "!="
-)
+	// GetQueryArg returns a boolean flag if the condition contains argument and the argument value
+	//
+	// For conditions like IN and IS NOT NULL there are no arguments to be included in the query.
+	// For conditions like = there is a placeholder which value will be returned calling this func.
+	GetQueryArg() (interface{}, bool)
+}
 
 type Conditions []Condition
-type Condition struct {
-	Field string
-	Op    ConditionOp
-	Val   interface{}
-}
-
-// GetQueryPart returns formatted string that will be included in the SQL query for a given condition
-func (c *Condition) GetQueryPart(idx int) string {
-	switch c.Op {
-	case IsNotNullOp:
-		return fmt.Sprintf("%s %s", c.Field, c.Op)
-	case InOp:
-		return fmt.Sprintf("%s %s (%s)", c.Field, c.Op, c.Val)
-	default:
-		return fmt.Sprintf("%s %s $%d", c.Field, c.Op, idx)
-	}
-}
-
-// GetQueryArg returns a boolean flag if the condition contains argument and the argument value
-//
-// For conditions like IN and IS NOT NULL there are no arguments to be included in the query.
-// For conditions like = there is a placeholder which value will be returned calling this func.
-func (c *Condition) GetQueryArg() (interface{}, bool) {
-	switch c.Op {
-	case IsNotNullOp, InOp:
-		return "", false
-	default:
-		return c.Val, true
-	}
-}
 
 func NewEqualCondition(field string, val interface{}) Condition {
-	return Condition{
-		Field: field,
-		Val:   val,
-		Op:    EqualOp,
+	return &equalCondition{
+		field: field,
+		val:   val,
 	}
+}
+
+type equalCondition struct {
+	field string
+	val   interface{}
+}
+
+func (c *equalCondition) GetQueryPart(idx int) string {
+	return fmt.Sprintf("%s = $%d", c.field, idx)
+}
+
+func (c *equalCondition) GetQueryArg() (interface{}, bool) {
+	return c.val, true
 }
 
 func NewNotEqualCondition(field string, val interface{}) Condition {
-	return Condition{
-		Field: field,
-		Val:   val,
-		Op:    NotEqualOP,
+	return &notEqualCondition{
+		field: field,
+		val:   val,
 	}
+}
+
+type notEqualCondition struct {
+	field string
+	val   interface{}
+}
+
+func (c *notEqualCondition) GetQueryPart(idx int) string {
+	return fmt.Sprintf("%s != $%d", c.field, idx)
+}
+
+func (c *notEqualCondition) GetQueryArg() (interface{}, bool) {
+	return c.val, true
 }
 
 func NewNotNullCondition(field string) Condition {
-	return Condition{
-		Field: field,
-		Op:    IsNotNullOp,
+	return &notNullCondition{
+		field: field,
 	}
 }
 
+type notNullCondition struct {
+	field string
+}
+
+func (c *notNullCondition) GetQueryPart(idx int) string {
+	return fmt.Sprintf("%s IS NOT NULL", c.field)
+}
+
+func (c *notNullCondition) GetQueryArg() (interface{}, bool) {
+	return nil, false
+}
+
 func NewInConditionForSubQuery(field, subQuery string) Condition {
-	return Condition{
-		Field: field,
-		Val:   subQuery,
-		Op:    InOp,
+	return &inCondition{
+		field:       field,
+		parenthesis: subQuery,
 	}
 }
 
@@ -85,9 +91,21 @@ func NewInConditionForStringValues(field string, values []string) Condition {
 		escapedValues = append(escapedValues, pq.QuoteLiteral(value))
 	}
 
-	return Condition{
-		Field: field,
-		Val:   strings.Join(escapedValues, ", "),
-		Op:    InOp,
+	return &inCondition{
+		field:       field,
+		parenthesis: strings.Join(escapedValues, ", "),
 	}
+}
+
+type inCondition struct {
+	field       string
+	parenthesis string
+}
+
+func (c *inCondition) GetQueryPart(idx int) string {
+	return fmt.Sprintf("%s IN (%s)", c.field, c.parenthesis)
+}
+
+func (c *inCondition) GetQueryArg() (interface{}, bool) {
+	return nil, false
 }

@@ -183,7 +183,7 @@ func TestGetSingle(t *testing.T) {
 	})
 
 	t.Run("returns error if destination is nil", func(t *testing.T) {
-		err := sut.Get(context.TODO(), givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}}, repo.NoOrderBy, nil)
+		err := sut.Get(context.TODO(), givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, nil)
 		require.EqualError(t, err, "item cannot be nil")
 	})
 }
