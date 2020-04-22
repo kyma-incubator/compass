@@ -38,6 +38,7 @@ resources: {}
 provisioner:
   URL: "http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"
   dumpRequests: "false"
+  timeout: "12h"
   gardener:
     # name of the secret with kubeconfig to the gardener cluster
     secretName: "gardener"
