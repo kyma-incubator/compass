@@ -173,6 +173,8 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 
 		//kubernetes filter should not parse the document to avoid indexing on LMS side
 		{Key: "fluent-bit.conf.Filter.Kubernetes.Merge_Log", Value: "Off"},
+		//input should not conatain dex logs as it contains sensitive data
+		{Key: "fluent-bit.conf.Input.Kubernetes.Exclude_Path", Value: "/var/log/containers/*_dex-*.log"},
 
 		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
 [FILTER]
