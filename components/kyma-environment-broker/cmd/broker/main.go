@@ -171,7 +171,6 @@ func main() {
 	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled, externalEvalAssistant)
-	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled)
 
 	bundleBuilder := ias.NewBundleBuilder(httpClient, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
