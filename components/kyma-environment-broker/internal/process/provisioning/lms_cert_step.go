@@ -159,6 +159,8 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.conf.Output.forward.enabled", Value: "true"},
+		{Key: "fluent-bit.conf.Output.forward.Match", Value: "kube.*"},
+
 		{Key: "fluent-bit.backend.forward.host", Value: fmt.Sprintf("forward.%s", tenantInfo.DNS)},
 		{Key: "fluent-bit.backend.forward.port", Value: "8443"},
 		{Key: "fluent-bit.backend.forward.tls.enabled", Value: "true"},
@@ -168,6 +170,9 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 		{Key: "fluent-bit.backend.forward.tls.ca", Value: base64.StdEncoding.EncodeToString([]byte(caCert))},
 		{Key: "fluent-bit.backend.forward.tls.cert", Value: base64.StdEncoding.EncodeToString([]byte(signedCert))},
 		{Key: "fluent-bit.backend.forward.tls.key", Value: base64.StdEncoding.EncodeToString(pKey)},
+
+		//kubernetes filter should not parse the document to avoid indexing on LMS side
+		{Key: "fluent-bit.conf.Filter.Kubernetes.Merge_Log", Value: "Off"},
 
 		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
 [FILTER]
