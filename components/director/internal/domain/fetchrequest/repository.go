@@ -29,6 +29,7 @@ type repository struct {
 	creator      repo.Creator
 	singleGetter repo.SingleGetter
 	deleter      repo.Deleter
+	updater      repo.Updater
 	conv         Converter
 }
 
@@ -37,6 +38,7 @@ func NewRepository(conv Converter) *repository {
 		creator:      repo.NewCreator(fetchRequestTable, fetchRequestColumns),
 		singleGetter: repo.NewSingleGetter(fetchRequestTable, tenantColumn, fetchRequestColumns),
 		deleter:      repo.NewDeleter(fetchRequestTable, tenantColumn),
+		updater:      repo.NewUpdater(fetchRequestTable, []string{"status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
 		conv:         conv,
 	}
 }
@@ -84,6 +86,15 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 	}
 
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)})
+}
+
+func (r *repository) Update(ctx context.Context, item *model.FetchRequest) error {
+
+	entity, err := r.conv.ToEntity(*item)
+	if err != nil {
+		return err
+	}
+	return r.updater.UpdateSingle(ctx, entity)
 }
 
 func (r *repository) referenceObjectFieldName(objectType model.FetchRequestReferenceObjectType) (string, error) {
