@@ -11,8 +11,10 @@ import (
 const eventAPIDefTable string = `"public"."event_api_definitions"`
 
 var (
-	tenantColumn  = `tenant_id`
-	apiDefColumns = []string{"id", "tenant_id", "package_id", "name", "description", "group_name", "spec_data",
+	idColumn      = "id"
+	tenantColumn  = "tenant_id"
+	packageColumn = "package_id"
+	apiDefColumns = []string{idColumn, tenantColumn, packageColumn, "name", "description", "group_name", "spec_data",
 		"spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal"}
 	idColumns        = []string{"id"}
@@ -73,8 +75,8 @@ func (r *pgRepository) GetForPackage(ctx context.Context, tenant string, id stri
 	var ent Entity
 
 	conditions := repo.Conditions{
-		repo.NewEqualCondition("id", id),
-		repo.NewEqualCondition("package_id", packageID),
+		repo.NewEqualCondition(idColumn, id),
+		repo.NewEqualCondition(packageColumn, packageID),
 	}
 	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return nil, err
@@ -88,17 +90,9 @@ func (r *pgRepository) GetForPackage(ctx context.Context, tenant string, id stri
 	return &eventAPIModel, nil
 }
 
-func (r *pgRepository) ListForApplication(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("app_id", applicationID),
-	}
-
-	return r.list(ctx, tenantID, pageSize, cursor, conditions)
-}
-
 func (r *pgRepository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
 	conditions := repo.Conditions{
-		repo.NewEqualCondition("package_id", packageID),
+		repo.NewEqualCondition(packageColumn, packageID),
 	}
 
 	return r.list(ctx, tenantID, pageSize, cursor, conditions)
@@ -106,7 +100,7 @@ func (r *pgRepository) ListForPackage(ctx context.Context, tenantID string, pack
 
 func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions repo.Conditions) (*model.EventDefinitionPage, error) {
 	var eventCollection EventAPIDefCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &eventCollection, conditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, idColumn, &eventCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}
@@ -175,13 +169,9 @@ func (r *pgRepository) Update(ctx context.Context, item *model.EventDefinition) 
 }
 
 func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
-	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
-}
-
-func (r *pgRepository) DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error {
-	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("app_id", appID)})
+	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
