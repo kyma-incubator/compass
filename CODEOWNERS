@@ -22,7 +22,7 @@
 /tests/e2e/provisioning @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 
 # Compass UI
-/chart/compass/charts/cockpit @kwiatekus @dariadomagala @y-kkamil @parostatkiem @akucharska @sjanota
+/chart/compass/charts/cockpit @kwiatekus @dariadomagala @parostatkiem @akucharska @sjanota
 
 # All .md files
 *.md @klaudiagrz @kazydek @tomekpapiernik @bszwarc @mmitoraj @majakurcius @alexandra-simeonova
