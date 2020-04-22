@@ -149,16 +149,30 @@ func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.Depro
 }
 
 func (del *Delegator) tryDeleting(assistant EvalAssistant, lifecycleData internal.AvsLifecycleData, logger logrus.FieldLogger) error {
-	err := del.deleteRequest(logger, assistant.GetEvaluationId(lifecycleData))
+	evaluationId := assistant.GetEvaluationId(lifecycleData)
+	err := del.removeReferenceFromParentEval(logger, evaluationId)
+	if err != nil {
+		logger.Errorf("error while deleting reference for evaluation %v", err)
+		return err
+	}
+
+	err = del.deleteEvaluation(logger, evaluationId)
 	if err != nil {
 		logger.Errorf("error while deleting evaluation %v", err)
 	}
 	return err
 }
-
-func (del *Delegator) deleteRequest(logger logrus.FieldLogger, evaluationId int64) error {
+func (del *Delegator) removeReferenceFromParentEval(logger logrus.FieldLogger, evaluationId int64) error {
+	absoluteURL := fmt.Sprintf("%s/child/%d", appendId(del.avsConfig.ApiEndpoint, del.avsConfig.ParentId), evaluationId)
+	return del.deleteRequest(absoluteURL, logger)
+}
+func (del *Delegator) deleteEvaluation(logger logrus.FieldLogger, evaluationId int64) error {
 	absoluteURL := appendId(del.avsConfig.ApiEndpoint, evaluationId)
+	return del.deleteRequest(absoluteURL, logger)
 
+}
+
+func (del *Delegator) deleteRequest(absoluteURL string, logger logrus.FieldLogger) error {
 	req, err := http.NewRequest(http.MethodDelete, absoluteURL, nil)
 	if err != nil {
 		return err
@@ -171,19 +185,18 @@ func (del *Delegator) deleteRequest(logger logrus.FieldLogger, evaluationId int6
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return errors.Wrap(err, "Error during Http call")
+		return errors.Wrap(err, "Error during DELETE call for url")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 200 || resp.StatusCode == 404 {
-		logger.Infof("Evaluation successfully delete [%d]", evaluationId)
+		logger.Infof("Delete successful for url [%s]", absoluteURL)
 		return nil
 	} else {
-		msg := fmt.Sprintf("Got unexpected status %d while deleting evaluation", resp.StatusCode)
+		msg := fmt.Sprintf("Got unexpected status [%d] while deleting for url [%s]", resp.StatusCode, absoluteURL)
 		logger.Error(msg)
 		return fmt.Errorf(msg)
 	}
-
 }
 
 func appendId(baseUrl string, id int64) string {

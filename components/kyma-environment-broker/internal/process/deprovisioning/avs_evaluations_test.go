@@ -7,17 +7,20 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
-var idsHolder []int64
+var evalIdsHolder []int64
+var parentEvalIdHolder map[int64]int64 = make(map[int64]int64)
 
 const (
 	internalEvalId = int64(1234)
 	externalEvalId = int64(5678)
+	parentEvalId   = int64(91011)
 )
 
 func TestAvsEvaluationsRemovalStep_Run(t *testing.T) {
@@ -43,16 +46,24 @@ func TestAvsEvaluationsRemovalStep_Run(t *testing.T) {
 	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
 	step := NewAvsEvaluationsRemovalStep(avsDel, memoryStorage.Operations(), externalEvalAssistant, internalEvalAssistant)
 
-	assert.Equal(t, 0, len(idsHolder))
+	assert.Equal(t, 0, len(evalIdsHolder))
+	assert.Equal(t, 0, len(parentEvalIdHolder))
 	// when
 	deProvisioningOperation, repeat, err := step.Run(deProvisioningOperation, logger)
 
 	// then
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), repeat)
-	assert.Equal(t, 2, len(idsHolder))
-	assert.Contains(t, idsHolder, internalEvalId)
-	assert.Contains(t, idsHolder, externalEvalId)
+
+	assert.Equal(t, 2, len(evalIdsHolder))
+	assert.Contains(t, evalIdsHolder, internalEvalId)
+	assert.Contains(t, evalIdsHolder, externalEvalId)
+
+	assert.Equal(t, 2, len(parentEvalIdHolder))
+	assert.Contains(t, parentEvalIdHolder, internalEvalId)
+	assert.Contains(t, parentEvalIdHolder, externalEvalId)
+	assert.Equal(t, parentEvalIdHolder[internalEvalId], parentEvalId)
+	assert.Equal(t, parentEvalIdHolder[externalEvalId], parentEvalId)
 
 	inDB, err := memoryStorage.Operations().GetDeprovisioningOperationByID(deProvisioningOperation.ID)
 	assert.NoError(t, err)
@@ -71,15 +82,31 @@ func newMockAvsOauthServer() *httptest.Server {
 }
 
 func newMockAvsServer(t *testing.T) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	router := mux.NewRouter()
+	router.HandleFunc("/{evalId}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, r.Method, http.MethodDelete)
-		uri := r.URL.RequestURI()
-		id := uri[1:len(uri)]
-		intVal, err := strconv.ParseInt(id, 10, 64)
-		assert.NoError(t, err)
-		idsHolder = append(idsHolder, intVal)
+		vars := mux.Vars(r)
+		evalIdsHolder = append(evalIdsHolder, extractId(vars, "evalId", t))
 		w.WriteHeader(http.StatusOK)
 	}))
+	router.HandleFunc("/{parentId}/child/{evalId}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, r.Method, http.MethodDelete)
+		vars := mux.Vars(r)
+
+		parentEval := extractId(vars, "parentId", t)
+		evalId := extractId(vars, "evalId", t)
+		parentEvalIdHolder[evalId] = parentEval
+
+		w.WriteHeader(http.StatusOK)
+	}))
+	return httptest.NewServer(router)
+}
+
+func extractId(vars map[string]string, key string, t *testing.T) int64 {
+	evalIdStr := vars[key]
+	evalId, err := strconv.ParseInt(evalIdStr, 10, 64)
+	assert.NoError(t, err)
+	return evalId
 }
 
 func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server) avs.Config {
@@ -93,6 +120,6 @@ func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server)
 		InternalTesterAccessId: 1234,
 		ExternalTesterAccessId: 5678,
 		GroupId:                5555,
-		ParentId:               9101112,
+		ParentId:               parentEvalId,
 	}
 }
