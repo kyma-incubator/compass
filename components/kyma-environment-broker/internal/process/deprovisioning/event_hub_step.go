@@ -98,19 +98,19 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 			return operation, 0, nil
 		}
 		// custom error occurred while getting resource group - try again
-		errorMessage := fmt.Sprintf("error while getting resource group, error: %s", err)
+		errorMessage := fmt.Sprintf("error while getting resource group, error: %v", err)
 		return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Hour, log)
 	}
 	// delete the resource group if it still exists and deletion has not been triggered yet
 	if resourceGroup.Properties == nil || resourceGroup.Properties.ProvisioningState == nil {
-		errorMessage := fmt.Sprintf("Nil pointer in the resource group")
+		errorMessage := fmt.Sprintf("nil pointer in the resource group")
 		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
 	deprovisioningState := *resourceGroup.Properties.ProvisioningState
 	if deprovisioningState != azure.AzureFutureOperationDeleting {
 		future, err := namespaceClient.DeleteResourceGroup(s.EventHub.Context, tags)
 		if err != nil {
-			errorMessage := fmt.Sprintf("Unable to delete Azure resource group: %v", err)
+			errorMessage := fmt.Sprintf("unable to delete Azure resource group: %v", err)
 			return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Hour, log)
 		}
 		if future.Status() != azure.AzureFutureOperationSucceeded {
@@ -121,7 +121,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 				retryAfterDuration = time.Minute
 			}
 			errorMessage := "rescheduling step to check deletion of resource group completed"
-			log.Infof(errorMessage)
+			log.Info(errorMessage)
 			return s.OperationManager.RetryOperation(operation, "waiting for deprovisioning of azure resource group", retryAfterDuration, time.Hour, log)
 		}
 	}

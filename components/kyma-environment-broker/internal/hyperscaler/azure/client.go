@@ -82,9 +82,6 @@ func (nc *AzureClient) DeleteResourceGroup(ctx context.Context, tags Tags) (reso
 	}
 	nc.logger.Infof("deleting resource group: %s", *resourceGroup.Name)
 	future, err := nc.resourcegroupClient.Delete(ctx, *resourceGroup.Name)
-	if err != nil {
-		return resources.GroupsDeleteFuture{}, err
-	}
 	return future, err
 }
 
