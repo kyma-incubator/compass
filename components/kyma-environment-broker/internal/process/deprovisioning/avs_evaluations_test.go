@@ -84,13 +84,12 @@ func newMockAvsOauthServer() *httptest.Server {
 func newMockAvsServer(t *testing.T) *httptest.Server {
 	router := mux.NewRouter()
 	router.HandleFunc("/{evalId}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, r.Method, http.MethodDelete)
 		vars := mux.Vars(r)
 		evalIdsHolder = append(evalIdsHolder, extractId(vars, "evalId", t))
 		w.WriteHeader(http.StatusOK)
-	}))
+	})).Methods(http.MethodDelete)
+
 	router.HandleFunc("/{parentId}/child/{evalId}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, r.Method, http.MethodDelete)
 		vars := mux.Vars(r)
 
 		parentEval := extractId(vars, "parentId", t)
@@ -98,7 +97,7 @@ func newMockAvsServer(t *testing.T) *httptest.Server {
 		parentEvalIdHolder[evalId] = parentEval
 
 		w.WriteHeader(http.StatusOK)
-	}))
+	})).Methods(http.MethodDelete)
 	return httptest.NewServer(router)
 }
 
