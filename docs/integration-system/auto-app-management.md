@@ -57,7 +57,7 @@ mutation {
     }
 }
 ```
-3. Compass adds protected label with name `integration-system-id` for just registered Application, so output of the previous mutation is the following:
+3. Compass adds protected label with name `integrationSystemID` for just registered Application, so output of the previous mutation is the following:
 ```json
 {
   "data": {
@@ -67,7 +67,7 @@ mutation {
       "integrationSystemID": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       "labels": {
         "scenarios":["DEFAULT"],
-        "integration-system-id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        "integrationSystemID":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       }
     }
   }
@@ -162,7 +162,7 @@ mutation {
         applicationInput:{
             name: "ecommerce-app",
             integrationSystemID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-            labels: [{key:"simple-integration-system/application-type",value:"ecommerce"}]
+            labels: [{key:"simpleIntegrationSystem_applicationType",value:"ecommerce"}]
         }
         }) {
            name
@@ -196,8 +196,8 @@ mutation {
 
 This mutation registers Application with name `ecommerce-app`, integrationSystemID is set to `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` and
 with two labels:
-- `integration-system-id` with value `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa`
-- `simple-integration-system/application-type` with value `ecommerce`
+- `integrationSystemID` with value `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa`
+- `simpleIntegrationSystem_applicationType` with value `ecommerce`
 
 When Integration System noticed, that new Application was registered, it starts configuring it according to information
 stored in the `application-type` label.
@@ -223,7 +223,7 @@ mutation {
         applicationInput:{
             name: "{{application-name}}",
             integrationSystemID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-            labels:[{key:"simple-integration-system/application-type",value:"ecommerce"}]
+            labels:[{key:"simpleIntegrationSystem_applicationType",value:"ecommerce"}]
 
         },
         placeholders: [
@@ -267,8 +267,8 @@ mutation {
         applicationInput:{
             name: "{{application-name}}",
             integrationSystemID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-            labels:[{key:"simple-integration-system/application-type",value:"ecommerce"},
-                    {key:"simple-integration-system/input-params""{\"type\": \"object\",\"required\": [\"username\",\"password\"],\"properties\": {\"username\": {\"type\": \"string\"},\"password\": {\"type\": \"string\"}}}"}
+            labels:[{key:"simpleIntegrationSystem_applicationType",value:"ecommerce"},
+                    {key:"simpleIntegrationSystem_inputParams""{\"type\": \"object\",\"required\": [\"username\",\"password\"],\"properties\": {\"username\": {\"type\": \"string\"},\"password\": {\"type\": \"string\"}}}"}
              ]
         },
         placeholders: [

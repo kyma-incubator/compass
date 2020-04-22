@@ -11,15 +11,13 @@ import (
 )
 
 type converter struct {
-	webhook  WebhookConverter
-	api      APIConverter
-	eventAPI EventAPIConverter
-	document DocumentConverter
-	pkg      PackageConverter
+	webhook WebhookConverter
+
+	pkg PackageConverter
 }
 
-func NewConverter(webhook WebhookConverter, api APIConverter, eventAPI EventAPIConverter, document DocumentConverter, pkgConverter PackageConverter) *converter {
-	return &converter{webhook: webhook, api: api, eventAPI: eventAPI, document: document, pkg: pkgConverter}
+func NewConverter(webhook WebhookConverter, pkgConverter PackageConverter) *converter {
+	return &converter{webhook: webhook, pkg: pkgConverter}
 }
 
 func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
@@ -105,11 +103,9 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 		Labels:              labels,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
+		StatusCondition:     c.statusConditionToModel(in.StatusCondition),
 		ProviderName:        in.ProviderName,
 		Webhooks:            c.webhook.MultipleInputFromGraphQL(in.Webhooks),
-		Documents:           c.document.MultipleInputFromGraphQL(in.Documents),
-		EventDefinitions:    c.eventAPI.MultipleInputFromGraphQL(in.EventDefinitions),
-		APIDefinitions:      c.api.MultipleInputFromGraphQL(in.APIDefinitions),
 		Packages:            c.pkg.MultipleCreateInputFromGraphQL(in.Packages),
 	}
 }
@@ -120,6 +116,7 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) mo
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
 		ProviderName:        in.ProviderName,
+		StatusCondition:     c.statusConditionToModel(in.StatusCondition),
 	}
 }
 
@@ -171,8 +168,8 @@ func (c *converter) statusToGraphQL(in *model.ApplicationStatus) *graphql.Applic
 		condition = graphql.ApplicationStatusConditionInitial
 	case model.ApplicationStatusConditionFailed:
 		condition = graphql.ApplicationStatusConditionFailed
-	case model.ApplicationStatusConditionReady:
-		condition = graphql.ApplicationStatusConditionReady
+	case model.ApplicationStatusConditionConnected:
+		condition = graphql.ApplicationStatusConditionConnected
 	default:
 		condition = graphql.ApplicationStatusConditionInitial
 	}
@@ -195,8 +192,8 @@ func (c *converter) statusToModel(in *graphql.ApplicationStatus) *model.Applicat
 		condition = model.ApplicationStatusConditionInitial
 	case graphql.ApplicationStatusConditionFailed:
 		condition = model.ApplicationStatusConditionFailed
-	case graphql.ApplicationStatusConditionReady:
-		condition = model.ApplicationStatusConditionReady
+	case graphql.ApplicationStatusConditionConnected:
+		condition = model.ApplicationStatusConditionConnected
 	default:
 		condition = model.ApplicationStatusConditionInitial
 	}
@@ -204,4 +201,24 @@ func (c *converter) statusToModel(in *graphql.ApplicationStatus) *model.Applicat
 		Condition: condition,
 		Timestamp: time.Time(in.Timestamp),
 	}
+}
+
+func (c *converter) statusConditionToModel(in *graphql.ApplicationStatusCondition) *model.ApplicationStatusCondition {
+	if in == nil {
+		return nil
+	}
+
+	var condition model.ApplicationStatusCondition
+	switch *in {
+	case graphql.ApplicationStatusConditionConnected:
+		condition = model.ApplicationStatusConditionConnected
+	case graphql.ApplicationStatusConditionFailed:
+		condition = model.ApplicationStatusConditionFailed
+	case graphql.ApplicationStatusConditionInitial:
+		fallthrough
+	default:
+		condition = model.ApplicationStatusConditionInitial
+	}
+
+	return &condition
 }

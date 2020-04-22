@@ -39,6 +39,6 @@ func (c GCPConfig) ToHydroformConfiguration(credentialsFileName string) (*types.
 	return cluster, provider, nil
 }
 
-func (c GCPConfig) ToShootTemplate(namespace string) (*gardener_types.Shoot, error) {
+func (c GCPConfig) ToShootTemplate(namespace string, accountId string, subAccountId string) (*gardener_types.Shoot, error) {
 	panic("Method not supported for GCP Config")
 }

@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -15,16 +16,43 @@ import (
 type ProvisionInputCreator interface {
 	SetProvisioningParameters(params ProvisioningParametersDTO) ProvisionInputCreator
 	SetRuntimeLabels(instanceID, SubAccountID string) ProvisionInputCreator
+	// Deprecated, use: AppendOverrides
 	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
+	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
+	AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
 	Create() (gqlschema.ProvisionRuntimeInput, error)
+}
+
+type LMSTenant struct {
+	ID        string
+	Name      string
+	Region    string
+	CreatedAt time.Time
+}
+
+type LMS struct {
+	TenantID    string    `json:"tenant_id"`
+	Failed      bool      `json:"failed"`
+	RequestedAt time.Time `json:"requested_at"`
+}
+
+type AvsLifecycleData struct {
+	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
+	AVSEvaluationExternalId int64 `json:"avs_evaluation_external_id"`
+
+	AVSInternalEvaluationDeleted bool `json:"avs_internal_evaluation_deleted"`
+	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`
 }
 
 type Instance struct {
 	InstanceID      string
 	RuntimeID       string
 	GlobalAccountID string
+	SubAccountID    string
 	ServiceID       string
+	ServiceName     string
 	ServicePlanID   string
+	ServicePlanName string
 
 	DashboardURL           string
 	ProvisioningParameters string
@@ -46,16 +74,33 @@ type Operation struct {
 	Description            string
 }
 
+type InstanceWithOperation struct {
+	Instance
+
+	Type        sql.NullString
+	State       sql.NullString
+	Description sql.NullString
+}
+
 // ProvisioningOperation holds all information about provisioning operation
 type ProvisioningOperation struct {
 	Operation `json:"-"`
 
 	// following fields are serialized to JSON and stored in the storage
-	LmsTenantID            string `json:"lms_tenant_id"`
+	Lms                    LMS    `json:"lms"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionInputCreator `json:"-"`
+
+	Avs AvsLifecycleData `json:"avs"`
+}
+
+// DeprovisioningOperation holds all information about de-provisioning operation
+type DeprovisioningOperation struct {
+	Operation `json:"-"`
+
+	Avs AvsLifecycleData `json:"avs"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
@@ -81,6 +126,21 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			UpdatedAt:   time.Now(),
 		},
 		ProvisioningParameters: string(params),
+	}, nil
+}
+
+// NewProvisioningOperationWithID creates a fresh (just starting) instance of the ProvisioningOperation with provided ID
+func NewDeprovisioningOperationWithID(operationID, instanceID string) (DeprovisioningOperation, error) {
+	return DeprovisioningOperation{
+		Operation: Operation{
+			ID:          operationID,
+			Version:     0,
+			Description: "Operation created",
+			InstanceID:  instanceID,
+			State:       domain.InProgress,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		},
 	}, nil
 }
 
@@ -125,6 +185,7 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 		copiedList = append(copiedList, &gqlschema.ComponentConfigurationInput{
 			Component:     component.Component,
 			Namespace:     component.Namespace,
+			SourceURL:     component.SourceURL,
 			Configuration: cpyCfg,
 		})
 	}

@@ -19,6 +19,11 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 				Namespace: "bello",
 			},
 			{
+				Component: "custom-component",
+				Namespace: "bello",
+				SourceURL: ptr.String("github.com/kyma-incubator/custom-component"),
+			},
+			{
 				Component: "hakuna",
 				Namespace: "matata",
 				Configuration: []*gqlschema.ConfigEntryInput{
@@ -29,9 +34,20 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 					},
 					{
 						Key:   "testing-public-key",
-						Value: "testing-public-value",
+						Value: "testing-public-value\nmultiline",
 					},
 				},
+			},
+		},
+		Configuration: []*gqlschema.ConfigEntryInput{
+			{
+				Key:   "important-global-override",
+				Value: "false",
+			},
+			{
+				Key:    "ultimate.answer",
+				Value:  "42",
+				Secret: ptr.Bool(true),
 			},
 		},
 	}
@@ -41,6 +57,11 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
           {
             component: "pico",
             namespace: "bello", 
+          }
+          {
+            component: "custom-component",
+            namespace: "bello",
+            sourceURL: "github.com/kyma-incubator/custom-component", 
           }
           {
             component: "hakuna",
@@ -53,11 +74,22 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
               }
               {
                 key: "testing-public-key",
-                value: "testing-public-value",
+                value: "testing-public-value\nmultiline",
               } 
             ] 
           } 
-        ]         
+        ]
+		configuration: [
+		  {
+			key: "important-global-override",
+			value: "false",
+		  }
+		  {
+			key: "ultimate.answer",
+			value: "42",
+			secret: true,
+		  }
+		]
 	}`
 
 	sut := Graphqlizer{}
@@ -77,7 +109,7 @@ func TestKymaConfigToGraphQLOnlyKymaVersion(t *testing.T) {
 		Version: "966",
 	}
 	expRender := `{
-		version: "966",         
+		version: "966",
 	}`
 
 	sut := Graphqlizer{}
@@ -89,4 +121,46 @@ func TestKymaConfigToGraphQLOnlyKymaVersion(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, expRender, gotRender)
+}
+
+func Test_LabelsToGQL(t *testing.T) {
+
+	sut := Graphqlizer{}
+
+	for _, testCase := range []struct {
+		description string
+		input       gqlschema.Labels
+		expected    string
+	}{
+		{
+			description: "string labels",
+			input: gqlschema.Labels{
+				"test": "966",
+			},
+			expected: `{test:"966",}`,
+		},
+		{
+			description: "string array labels",
+			input: gqlschema.Labels{
+				"test": []string{"966"},
+			},
+			expected: `{test:["966"],}`,
+		},
+		{
+			description: "string array labels",
+			input: gqlschema.Labels{
+				"test": map[string]string{"abcd": "966"},
+			},
+			expected: `{test:{abcd:"966",},}`,
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// when
+			render, err := sut.LabelsToGQL(testCase.input)
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, testCase.expected, render)
+		})
+	}
 }

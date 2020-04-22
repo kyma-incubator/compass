@@ -125,6 +125,13 @@ func TestRuntimeInput_Validate_Labels(t *testing.T) {
 			},
 			ExpectedValid: false,
 		},
+		{
+			Name: "Invalid - Unsupported characters in key",
+			Value: &graphql.Labels{
+				"not/valid": "val",
+			},
+			ExpectedValid: false,
+		},
 	}
 
 	for _, testCase := range testCases {

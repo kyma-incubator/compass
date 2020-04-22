@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/retry"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/machinebox/graphql"
 )
@@ -76,7 +77,6 @@ func (c *client) executeExternal(headers map[string]string, query string, res in
 }
 
 func (c *client) execute(client *graphql.Client, headers map[string]string, query string, res interface{}) error {
-
 	req := graphql.NewRequest(query)
 	for k, v := range headers {
 		req.Header.Set(k, v)
@@ -85,9 +85,7 @@ func (c *client) execute(client *graphql.Client, headers map[string]string, quer
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
-	err := client.Run(ctx, req, res)
-
-	return err
+	return retry.GQLRun(client.Run, ctx, req, res)
 }
 
 type ConfigurationResponse struct {

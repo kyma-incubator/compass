@@ -31,14 +31,13 @@ func (c *converter) ToGraphQL(in *model.EventDefinition) *graphql.EventDefinitio
 	}
 
 	return &graphql.EventDefinition{
-		ID:            in.ID,
-		ApplicationID: in.ApplicationID,
-		PackageID:     in.PackageID,
-		Name:          in.Name,
-		Description:   in.Description,
-		Group:         in.Group,
-		Spec:          c.eventAPISpecToGraphQL(in.ID, in.Spec),
-		Version:       c.vc.ToGraphQL(in.Version),
+		ID:          in.ID,
+		PackageID:   in.PackageID,
+		Name:        in.Name,
+		Description: in.Description,
+		Group:       in.Group,
+		Spec:        c.eventAPISpecToGraphQL(in.ID, in.Spec),
+		Version:     c.vc.ToGraphQL(in.Version),
 	}
 }
 
@@ -112,15 +111,14 @@ func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventSpecInput) *mo
 
 func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
 	return model.EventDefinition{
-		ID:            entity.ID,
-		Tenant:        entity.TenantID,
-		ApplicationID: repo.StringPtrFromNullableString(entity.AppID),
-		PackageID:     repo.StringPtrFromNullableString(entity.PkgID),
-		Name:          entity.Name,
-		Description:   repo.StringPtrFromNullableString(entity.Description),
-		Group:         repo.StringPtrFromNullableString(entity.GroupName),
-		Version:       c.vc.FromEntity(entity.Version),
-		Spec:          c.apiSpecFromEntity(entity.EntitySpec),
+		ID:          entity.ID,
+		Tenant:      entity.TenantID,
+		PackageID:   entity.PkgID,
+		Name:        entity.Name,
+		Description: repo.StringPtrFromNullableString(entity.Description),
+		Group:       repo.StringPtrFromNullableString(entity.GroupName),
+		Version:     c.vc.FromEntity(entity.Version),
+		Spec:        c.apiSpecFromEntity(entity.EntitySpec),
 	}, nil
 }
 
@@ -128,8 +126,7 @@ func (c *converter) ToEntity(eventModel model.EventDefinition) (Entity, error) {
 	return Entity{
 		ID:          eventModel.ID,
 		TenantID:    eventModel.Tenant,
-		AppID:       repo.NewNullableString(eventModel.ApplicationID),
-		PkgID:       repo.NewNullableString(eventModel.PackageID),
+		PkgID:       eventModel.PackageID,
 		Name:        eventModel.Name,
 		Description: repo.NewNullableString(eventModel.Description),
 		GroupName:   repo.NewNullableString(eventModel.Group),

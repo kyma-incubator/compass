@@ -2,9 +2,15 @@ package provisioner
 
 import (
 	"bytes"
+	"encoding/json"
+	"reflect"
 	"text/template"
 
+	"github.com/sirupsen/logrus"
+
 	"fmt"
+
+	"strconv"
 
 	"github.com/Masterminds/sprig"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -51,15 +57,8 @@ func (g *Graphqlizer) RuntimeInputToGraphQL(in gqlschema.RuntimeInput) (string, 
 	}`)
 }
 
-func (g Graphqlizer) LabelsToGQL(in gqlschema.Labels) (string, error) {
-	return g.genericToGraphQL(in, `{
-		{{- range $k,$v := . }}
-			{{$k}}: [
-				{{- range $i,$j := $v }}
-					{{- if $i}},{{- end}}"{{$j}}"
-				{{- end }}],
-		{{- end}}
-	}`)
+func (g *Graphqlizer) LabelsToGQL(in gqlschema.Labels) (string, error) {
+	return g.marshal(in), nil
 }
 
 func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (string, error) {
@@ -76,13 +75,11 @@ func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		kubernetesVersion: "{{.KubernetesVersion}}",
-		nodeCount: 1,
 		volumeSizeGB: {{.VolumeSizeGb }},
 		machineType: "{{.MachineType}}",
 		region: "{{.Region}}",
 		provider: "{{ .Provider }}",
 		diskType: "{{.DiskType}}",
-		seed: "az-eu3",
 		targetSecret: "{{ .TargetSecret }}",
 		workerCidr: "{{ .WorkerCidr }}",
         autoScalerMin: {{ .AutoScalerMin }},
@@ -149,12 +146,15 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
           {
             component: "{{ .Component }}",
             namespace: "{{ .Namespace }}",
+            {{- if .SourceURL }}
+            sourceURL: "{{ .SourceURL }}",
+            {{- end }}
       	    {{- with .Configuration }}
             configuration: [
 			  {{- range . }}
               {
                 key: "{{ .Key }}",
-                value: "{{ .Value }}",
+                value: {{ .Value | strQuote }},
 				{{- if .Secret }}
                 secret: true,
 				{{- end }}
@@ -165,12 +165,58 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
           }
 		  {{- end }} 
         ]
-      	{{- end }}         
+      	{{- end }}
+		{{- with .Configuration }}
+		configuration: [
+		  {{- range . }}
+		  {
+			key: "{{ .Key }}",
+			value: "{{ .Value }}",
+			{{- if .Secret }}
+			secret: true,
+			{{- end }}
+		  }
+		  {{- end }}
+		]
+		{{- end }}
 	}`)
+}
+
+func (g *Graphqlizer) marshal(obj interface{}) string {
+	var out string
+
+	val := reflect.ValueOf(obj)
+
+	switch val.Kind() {
+	case reflect.Map:
+		s, err := g.genericToGraphQL(obj, `{ {{- range $k, $v := . }}{{ $k }}:{{ marshal $v }},{{ end -}} }`)
+		if err != nil {
+			logrus.Warnf("failed to marshal labels: %s", err.Error())
+			return ""
+		}
+		out = s
+	case reflect.Slice, reflect.Array:
+		s, err := g.genericToGraphQL(obj, `[{{ range $i, $e := . }}{{ if $i }},{{ end }}{{ marshal $e }}{{ end }}]`)
+		if err != nil {
+			logrus.Warnf("failed to marshal labels: %s", err.Error())
+			return ""
+		}
+		out = s
+	default:
+		marshalled, err := json.Marshal(obj)
+		if err != nil {
+			logrus.Warnf("failed to marshal labels: %s", err.Error())
+			return ""
+		}
+		out = string(marshalled)
+	}
+
+	return out
 }
 
 func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
+	fm["marshal"] = g.marshal
 	fm["RuntimeInputToGraphQL"] = g.RuntimeInputToGraphQL
 	fm["ClusterConfigToGraphQL"] = g.ClusterConfigToGraphQL
 	fm["KymaConfigToGraphQL"] = g.KymaConfigToGraphQL
@@ -181,6 +227,7 @@ func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["GCPProviderConfigInputToGraphQL"] = g.GCPProviderConfigInputToGraphQL
 	fm["AWSProviderConfigInputToGraphQL"] = g.AWSProviderConfigInputToGraphQL
 	fm["LabelsToGQL"] = g.LabelsToGQL
+	fm["strQuote"] = strconv.Quote
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {

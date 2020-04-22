@@ -10,7 +10,7 @@ import (
 
 func TestDocumentInput_ToDocument(t *testing.T) {
 	// given
-	applicationID := "foo"
+	packageID := "foo"
 	id := "bar"
 	tenant := "baz"
 	kind := "fookind"
@@ -37,15 +37,15 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 				},
 			},
 			Expected: &model.Document{
-				ApplicationID: &applicationID,
-				ID:            id,
-				Tenant:        tenant,
-				Title:         title,
-				DisplayName:   displayName,
-				Description:   description,
-				Format:        model.DocumentFormatMarkdown,
-				Kind:          &kind,
-				Data:          &data,
+				PackageID:   packageID,
+				ID:          id,
+				Tenant:      tenant,
+				Title:       title,
+				DisplayName: displayName,
+				Description: description,
+				Format:      model.DocumentFormatMarkdown,
+				Kind:        &kind,
+				Data:        &data,
 			},
 		},
 		{
@@ -60,24 +60,24 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 				FetchRequest: nil,
 			},
 			Expected: &model.Document{
-				ApplicationID: &applicationID,
-				ID:            id,
-				Tenant:        tenant,
-				Title:         title,
-				DisplayName:   displayName,
-				Description:   description,
-				Format:        model.DocumentFormatMarkdown,
-				Kind:          &kind,
-				Data:          &data,
+				PackageID:   packageID,
+				ID:          id,
+				Tenant:      tenant,
+				Title:       title,
+				DisplayName: displayName,
+				Description: description,
+				Format:      model.DocumentFormatMarkdown,
+				Kind:        &kind,
+				Data:        &data,
 			},
 		},
 		{
 			Name:  "Empty",
 			Input: &model.DocumentInput{},
 			Expected: &model.Document{
-				ApplicationID: &applicationID,
-				ID:            id,
-				Tenant:        tenant,
+				PackageID: packageID,
+				ID:        id,
+				Tenant:    tenant,
 			},
 		},
 		{
@@ -91,7 +91,7 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToDocument(id, tenant, &applicationID)
+			result := testCase.Input.ToDocumentWithinPackage(id, tenant, packageID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

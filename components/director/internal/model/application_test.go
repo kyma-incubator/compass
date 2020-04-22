@@ -20,6 +20,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 	intSysID := "bar"
 	providerName := "provider name"
 	timestamp := time.Now()
+	statusCondition := model.ApplicationStatusConditionInitial
 	testCases := []struct {
 		Name     string
 		Input    *model.ApplicationRegisterInput
@@ -38,6 +39,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 				HealthCheckURL:      &url,
 				IntegrationSystemID: &intSysID,
 				ProviderName:        &providerName,
+				StatusCondition:     &statusCondition,
 			},
 			Expected: &model.Application{
 				Name:                "Foo",
@@ -49,7 +51,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 				ProviderName:        &providerName,
 				Status: &model.ApplicationStatus{
 					Timestamp: timestamp,
-					Condition: model.ApplicationStatusConditionUnknown,
+					Condition: model.ApplicationStatusConditionInitial,
 				},
 			},
 		},
@@ -64,7 +66,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToApplication(timestamp, model.ApplicationStatusConditionUnknown, id, tenant)
+			result := testCase.Input.ToApplication(timestamp, id, tenant)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)
@@ -74,20 +76,24 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 
 func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 	//GIVEN
+	timestamp := time.Now()
+	statusCondition := model.ApplicationStatusConditionConnected
 	filledAppUpdate := model.ApplicationUpdateInput{
 		ProviderName:        str.Ptr("provider name"),
 		Description:         str.Ptr("description"),
 		HealthCheckURL:      str.Ptr("https://kyma-project.io"),
 		IntegrationSystemID: str.Ptr("int sys id"),
+		StatusCondition:     &statusCondition,
 	}
 	app := model.Application{}
 
 	//WHEN
-	app.SetFromUpdateInput(filledAppUpdate)
+	app.SetFromUpdateInput(filledAppUpdate, timestamp)
 
 	//THEN
 	assert.Equal(t, filledAppUpdate.Description, app.Description)
 	assert.Equal(t, filledAppUpdate.HealthCheckURL, app.HealthCheckURL)
 	assert.Equal(t, filledAppUpdate.IntegrationSystemID, app.IntegrationSystemID)
 	assert.Equal(t, filledAppUpdate.ProviderName, app.ProviderName)
+	assert.Equal(t, *filledAppUpdate.StatusCondition, app.Status.Condition)
 }

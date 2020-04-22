@@ -1,9 +1,6 @@
 package api
 
 import (
-	"database/sql"
-	"encoding/json"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
@@ -11,14 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/pkg/errors"
 )
-
-//go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
-type AuthConverter interface {
-	ToGraphQL(in *model.Auth) *graphql.Auth
-	InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput
-}
 
 //go:generate mockery -name=VersionConverter -output=automock -outpkg=automock -case=underscore
 type VersionConverter interface {
@@ -29,13 +19,12 @@ type VersionConverter interface {
 }
 
 type converter struct {
-	auth    AuthConverter
 	fr      FetchRequestConverter
 	version VersionConverter
 }
 
-func NewConverter(auth AuthConverter, fr FetchRequestConverter, version VersionConverter) *converter {
-	return &converter{auth: auth, fr: fr, version: version}
+func NewConverter(fr FetchRequestConverter, version VersionConverter) *converter {
+	return &converter{fr: fr, version: version}
 }
 
 func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
@@ -44,16 +33,14 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 	}
 
 	return &graphql.APIDefinition{
-		ID:            in.ID,
-		ApplicationID: in.ApplicationID,
-		PackageID:     in.PackageID,
-		Name:          in.Name,
-		Description:   in.Description,
-		Spec:          c.apiSpecToGraphQL(in.ID, in.Spec),
-		TargetURL:     in.TargetURL,
-		Group:         in.Group,
-		DefaultAuth:   c.auth.ToGraphQL(in.DefaultAuth),
-		Version:       c.version.ToGraphQL(in.Version),
+		ID:          in.ID,
+		PackageID:   in.PackageID,
+		Name:        in.Name,
+		Description: in.Description,
+		Spec:        c.apiSpecToGraphQL(in.ID, in.Spec),
+		TargetURL:   in.TargetURL,
+		Group:       in.Group,
+		Version:     c.version.ToGraphQL(in.Version),
 	}
 }
 
@@ -91,7 +78,6 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APID
 		Group:       in.Group,
 		Spec:        c.apiSpecInputFromGraphQL(in.Spec),
 		Version:     c.version.InputFromGraphQL(in.Version),
-		DefaultAuth: c.auth.InputFromGraphQL(in.DefaultAuth),
 	}
 }
 
@@ -127,47 +113,35 @@ func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) *model.API
 	}
 }
 
-func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
-	defaultAuth, err := unmarshallDefaultAuth(entity.DefaultAuth)
-	if err != nil {
-		return model.APIDefinition{}, err
-	}
+func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
-		ID:            entity.ID,
-		ApplicationID: repo.StringPtrFromNullableString(entity.AppID),
-		PackageID:     repo.StringPtrFromNullableString(entity.PkgID),
-		Name:          entity.Name,
-		TargetURL:     entity.TargetURL,
-		Tenant:        entity.TenantID,
-		DefaultAuth:   defaultAuth,
-		Description:   repo.StringPtrFromNullableString(entity.Description),
-		Group:         repo.StringPtrFromNullableString(entity.Group),
-		Spec:          c.apiSpecFromEntity(entity.EntitySpec),
-		Version:       c.version.FromEntity(entity.Version),
-	}, nil
+		ID:          entity.ID,
+		PackageID:   entity.PkgID,
+		Name:        entity.Name,
+		TargetURL:   entity.TargetURL,
+		Tenant:      entity.TenantID,
+		Description: repo.StringPtrFromNullableString(entity.Description),
+		Group:       repo.StringPtrFromNullableString(entity.Group),
+		Spec:        c.apiSpecFromEntity(entity.EntitySpec),
+		Version:     c.version.FromEntity(entity.Version),
+	}
 }
 
-func (c *converter) ToEntity(apiModel model.APIDefinition) (Entity, error) {
-	defaultAuth, err := marshallDefaultAuth(apiModel.DefaultAuth)
-	if err != nil {
-		return Entity{}, err
-	}
+func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
 
 	return Entity{
 		ID:          apiModel.ID,
 		TenantID:    apiModel.Tenant,
-		AppID:       repo.NewNullableString(apiModel.ApplicationID),
-		PkgID:       repo.NewNullableString(apiModel.PackageID),
+		PkgID:       apiModel.PackageID,
 		Name:        apiModel.Name,
 		Description: repo.NewNullableString(apiModel.Description),
 		Group:       repo.NewNullableString(apiModel.Group),
 		TargetURL:   apiModel.TargetURL,
 
-		EntitySpec:  c.apiSpecToEntity(apiModel.Spec),
-		DefaultAuth: repo.NewNullableString(defaultAuth),
-		Version:     c.convertVersionToEntity(apiModel.Version),
-	}, nil
+		EntitySpec: c.apiSpecToEntity(apiModel.Spec),
+		Version:    c.convertVersionToEntity(apiModel.Version),
+	}
 }
 
 func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version {
@@ -208,29 +182,4 @@ func (c *converter) apiSpecFromEntity(specEnt EntitySpec) *model.APISpec {
 	}
 	apiSpec.Data = repo.StringPtrFromNullableString(specEnt.SpecData)
 	return &apiSpec
-}
-
-func unmarshallDefaultAuth(defaultAuthSql sql.NullString) (*model.Auth, error) {
-	var defaultAuth *model.Auth
-	if defaultAuthSql.Valid && defaultAuthSql.String != "" {
-		defaultAuth = &model.Auth{}
-		err := json.Unmarshal([]byte(defaultAuthSql.String), defaultAuth)
-		if err != nil {
-			return nil, errors.Wrap(err, "while unmarshalling default auth")
-		}
-	}
-
-	return defaultAuth, nil
-}
-
-func marshallDefaultAuth(defaultAuth *model.Auth) (*string, error) {
-	if defaultAuth == nil {
-		return nil, nil
-	}
-
-	output, err := json.Marshal(defaultAuth)
-	if err != nil {
-		return nil, errors.Wrap(err, "while marshaling default auth")
-	}
-	return str.Ptr(string(output)), nil
 }

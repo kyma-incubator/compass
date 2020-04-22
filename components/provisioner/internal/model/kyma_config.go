@@ -40,11 +40,13 @@ type Asset struct {
 }
 
 type KymaComponentConfig struct {
-	ID            string
-	Component     KymaComponent
-	Namespace     string
-	Configuration Configuration
-	KymaConfigID  string
+	ID             string
+	Component      KymaComponent
+	Namespace      string
+	SourceURL      string
+	Configuration  Configuration
+	ComponentOrder int
+	KymaConfigID   string
 }
 
 type Configuration struct {

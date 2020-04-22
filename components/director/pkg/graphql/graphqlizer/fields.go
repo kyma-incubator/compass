@@ -50,14 +50,11 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		status {condition timestamp}
 		webhooks {%s}
 		healthCheckURL
-		apiDefinitions {%s}
-		eventDefinitions {%s}
-		documents {%s}
 		packages {%s}
 		auths {%s}
 		eventingConfiguration { defaultURL }
-	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventDefinition()), fp.Page(fp.ForDocument()), fp.Page(fp.ForPackage()), fp.ForSystemAuth()),
-		ctx, []string{"Application.package"})
+	`, fp.ForWebhooks(), fp.Page(fp.ForPackage()), fp.ForSystemAuth()),
+		ctx, []string{"Application.package", "Application.apiDefinition", "Application.eventDefinition"})
 }
 
 func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
@@ -84,14 +81,11 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 func (fp *GqlFieldsProvider) ForAPIDefinition(ctx ...FieldCtx) string {
 	return addFieldsFromContext(fmt.Sprintf(`id
 		name
-		applicationID
 		description
 		spec {%s}
 		targetURL
 		group
-		auths {%s}
-		defaultAuth {%s}
-		version {%s}`, fp.ForApiSpec(), fp.ForAPIRuntimeAuth(), fp.ForAuth(), fp.ForVersion()),
+		version {%s}`, fp.ForApiSpec(), fp.ForVersion()),
 		ctx, []string{"APIDefinition.auth"})
 }
 
@@ -137,7 +131,6 @@ func (fp *GqlFieldsProvider) ForPageInfo() string {
 func (fp *GqlFieldsProvider) ForEventDefinition() string {
 	return fmt.Sprintf(`
 			id
-			applicationID
 			name
 			description
 			group 
@@ -156,7 +149,6 @@ func (fp *GqlFieldsProvider) ForEventSpec() string {
 func (fp *GqlFieldsProvider) ForDocument() string {
 	return fmt.Sprintf(`
 		id
-		applicationID
 		title
 		displayName
 		description
@@ -309,4 +301,10 @@ func (fp *GqlFieldsProvider) ForPackageInstanceAuthStatus() string {
 		timestamp
 		message
 		reason`
+}
+
+func (fp *GqlFieldsProvider) ForAutomaticScenarioAssignment() string {
+	return fmt.Sprintf(`
+		scenarioName
+		selector {%s}`, fp.ForLabel())
 }

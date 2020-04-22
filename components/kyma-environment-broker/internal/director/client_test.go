@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	mocks "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
+	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
 
 	machineGraphql "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
@@ -88,7 +89,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 			arg.Result = graphql.RuntimeExt{
 				Runtime: graphql.Runtime{
 					Status: &graphql.RuntimeStatus{
-						Condition: graphql.RuntimeStatusConditionReady,
+						Condition: graphql.RuntimeStatusConditionConnected,
 					},
 				},
 				Labels: map[string]interface{}{
@@ -102,7 +103,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 
 		// Then
 		assert.NoError(t, tokenErr)
-		assert.False(t, IsTemporaryError(tokenErr))
+		assert.False(t, kebError.IsTemporaryError(tokenErr))
 		assert.Equal(t, expectedURL, URL)
 	})
 
@@ -124,7 +125,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 
 		// Then
 		assert.Error(t, tokenErr)
-		assert.True(t, IsTemporaryError(tokenErr))
+		assert.True(t, kebError.IsTemporaryError(tokenErr))
 		assert.Equal(t, "", URL)
 	})
 
@@ -161,7 +162,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 
 		// Then
 		assert.Error(t, tokenErr)
-		assert.False(t, IsTemporaryError(tokenErr))
+		assert.False(t, kebError.IsTemporaryError(tokenErr))
 		assert.Equal(t, "", URL)
 	})
 
@@ -184,7 +185,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 			arg.Result = graphql.RuntimeExt{
 				Runtime: graphql.Runtime{
 					Status: &graphql.RuntimeStatus{
-						Condition: graphql.RuntimeStatusConditionReady,
+						Condition: graphql.RuntimeStatusConditionConnected,
 					},
 				},
 				Labels: map[string]interface{}{
@@ -198,7 +199,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 
 		// Then
 		assert.Error(t, tokenErr)
-		assert.True(t, IsTemporaryError(tokenErr))
+		assert.True(t, kebError.IsTemporaryError(tokenErr))
 		assert.Equal(t, "", URL)
 	})
 
@@ -221,7 +222,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 			arg.Result = graphql.RuntimeExt{
 				Runtime: graphql.Runtime{
 					Status: &graphql.RuntimeStatus{
-						Condition: graphql.RuntimeStatusConditionReady,
+						Condition: graphql.RuntimeStatusConditionConnected,
 					},
 				},
 				Labels: map[string]interface{}{
@@ -235,7 +236,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 
 		// Then
 		assert.Error(t, tokenErr)
-		assert.False(t, IsTemporaryError(tokenErr))
+		assert.False(t, kebError.IsTemporaryError(tokenErr))
 		assert.Equal(t, "", URL)
 	})
 
@@ -258,7 +259,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 			arg.Result = graphql.RuntimeExt{
 				Runtime: graphql.Runtime{
 					Status: &graphql.RuntimeStatus{
-						Condition: graphql.RuntimeStatusConditionReady,
+						Condition: graphql.RuntimeStatusConditionConnected,
 					},
 				},
 				Labels: map[string]interface{}{
@@ -272,7 +273,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 
 		// Then
 		assert.Error(t, tokenErr)
-		assert.False(t, IsTemporaryError(tokenErr))
+		assert.False(t, kebError.IsTemporaryError(tokenErr))
 		assert.Equal(t, "", URL)
 	})
 
@@ -298,7 +299,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 
 		// Then
 		assert.Error(t, tokenErr)
-		assert.True(t, IsTemporaryError(tokenErr))
+		assert.True(t, kebError.IsTemporaryError(tokenErr))
 		assert.Equal(t, "", URL)
 	})
 }

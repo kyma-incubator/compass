@@ -6,26 +6,26 @@ import (
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 )
 
-type Auditlog interface {
+type AuditlogService interface {
 	Log(request, response string, claims proxy.Claims) error
 }
 
-type AuditLogWorker struct {
-	svc             Auditlog
+type Worker struct {
+	svc             AuditlogService
 	client          Client
-	auditlogChannel chan AuditlogMessage
+	auditlogChannel chan Message
 	done            chan bool
 }
 
-func NewWorker(svc Auditlog, auditlogChannel chan AuditlogMessage, done chan bool) *AuditLogWorker {
-	return &AuditLogWorker{
+func NewWorker(svc AuditlogService, auditlogChannel chan Message, done chan bool) *Worker {
+	return &Worker{
 		svc:             svc,
 		auditlogChannel: auditlogChannel,
 		done:            done,
 	}
 }
 
-func (w *AuditLogWorker) Start() {
+func (w *Worker) Start() {
 	for {
 		select {
 		case <-w.done:

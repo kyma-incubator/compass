@@ -14,7 +14,7 @@ import (
 const documentTable = "public.documents"
 
 var (
-	documentColumns = []string{"id", "tenant_id", "app_id", "package_id", "title", "display_name", "description", "format", "kind", "data"}
+	documentColumns = []string{"id", "tenant_id", "package_id", "title", "display_name", "description", "format", "kind", "data"}
 	tenantColumn    = "tenant_id"
 )
 
@@ -112,15 +112,6 @@ func (r *repository) CreateMany(ctx context.Context, items []*model.Document) er
 
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
-}
-
-func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant string, applicationID string) error {
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition("app_id", applicationID)})
-}
-
-func (r *repository) ListForApplication(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error) {
-	appCond := fmt.Sprintf("%s = '%s'", "app_id", applicationID)
-	return r.list(ctx, tenantID, pageSize, cursor, appCond)
 }
 
 func (r *repository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.DocumentPage, error) {

@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/uid"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/service/validation"
 
@@ -24,14 +23,12 @@ func RegisterHandler(router *mux.Router, cfg Config) {
 	logger.SetReportCaller(true)
 
 	gqlCliProvider := gqlcli.NewProvider(cfg.DirectorEndpoint)
-	serviceManagerProvider := service.NewServiceManagerFactory()
+	reqContextProvider := service.NewRequestContextProvider()
 
 	converter := service.NewConverter()
 	validator := validation.NewServiceDetailsValidator()
 
-	uidService := uid.NewService()
-
-	serviceHandler := service.NewHandler(converter, validator, serviceManagerProvider, uidService, logger)
+	serviceHandler := service.NewHandler(converter, validator, reqContextProvider, logger)
 	appMiddleware := appdetails.NewApplicationMiddleware(gqlCliProvider, logger)
 
 	router.Use(appMiddleware.Middleware)

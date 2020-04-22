@@ -46,12 +46,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
-                  key: postgresql-username
+                  key: postgresql-provisioner-username
             - name: APP_DATABASE_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
-                  key: postgresql-password
+                  key: postgresql-provisioner-password
             - name: APP_DATABASE_HOST
               valueFrom:
                 secretKeyRef:
@@ -66,7 +66,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
-                  key: postgresql-provisionerDatabaseName
+                  key: postgresql-provisioner-db-name
             - name: APP_DATABASE_SSL
               valueFrom:
                 secretKeyRef:
@@ -88,16 +88,27 @@ spec:
               value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_GARDENER_AUDIT_LOGS_POLICY_CONFIG_MAP
               value: {{ .Values.gardener.auditLogsPolicyConfigMap }}
+            - name: APP_GARDENER_AUDIT_LOGS_TENANT_CONFIG_PATH
+              value: {{ .Values.gardener.auditLogTenantConfigPath }}
             - name: APP_PROVISIONER
               value: {{ .Values.provisioner }}
             - name: APP_SUPPORT_ON_DEMAND_RELEASES
               value: "{{ .Values.kymaRelease.onDemand.enabled }}"
+            - name: APP_DOWNLOAD_PRE_RELEASES
+              value: "{{ .Values.kymaRelease.preReleases.enabled }}"
+            - name: APP_LOG_LEVEL
+              value: "{{ .Values.logs.level }}"
           volumeMounts:
-            - mountPath: /gardener/kubeconfig
-              name: gardener-kubeconfig
-              readOnly: true
+          {{if .Values.gardener.auditLogTenantConfigMapName }}
+          - mountPath: /gardener/tenant
+            name: gardener-audit-log-tenant-config
+            readOnly: true
+          {{- end }}
+          - mountPath: /gardener/kubeconfig
+            name: gardener-kubeconfig
+            readOnly: true
         {{- with .Values.deployment.securityContext }}
-          securityContext:
+        securityContext:
 {{ toYaml . | indent 12 }}
         {{- end }}
 
@@ -115,13 +126,18 @@ spec:
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
-        {{end}}
-      volumes:
-      {{if eq .Values.global.database.embedded.enabled false}}
-      - name: cloudsql-instance-credentials
-        secret:
-          secretName: cloudsql-instance-credentials
-      {{end}}
-      - name: gardener-kubeconfig
-        secret:
-          secretName: {{ .Values.gardener.secretName }}
+  {{end}}
+volumes:
+  {{if eq .Values.global.database.embedded.enabled false}}
+  - name: cloudsql-instance-credentials
+    secret:
+      secretName: cloudsql-instance-credentials
+    {{end}}
+  - name: gardener-kubeconfig
+    secret:
+      secretName: {{ .Values.gardener.secretName }}
+    {{if .Values.gardener.auditLogTenantConfigMapName }}
+  - name: gardener-audit-log-tenant-config
+    configMap:
+      name: {{ .Values.gardener.auditLogTenantConfigMapName }}
+    {{end}}

@@ -20,16 +20,13 @@ func assertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 	assert.Equal(t, in.HealthCheckURL, actualApp.HealthCheckURL)
 	assert.Equal(t, in.ProviderName, actualApp.ProviderName)
 	assertWebhooks(t, in.Webhooks, actualApp.Webhooks)
-	assertDocuments(t, in.Documents, actualApp.Documents.Data)
-	assertAPI(t, in.APIDefinitions, actualApp.APIDefinitions.Data)
-	assertEventsAPI(t, in.EventDefinitions, actualApp.EventDefinitions.Data)
 	assertPackages(t, in.Packages, actualApp.Packages.Data)
 }
 
 //TODO: After fixing the 'Labels' scalar turn this back into regular assertion
 func assertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, app graphql.ApplicationExt) {
 	for key, value := range actual {
-		if key == "integration-system-id" {
+		if key == "integrationSystemID" {
 			if app.IntegrationSystemID == nil {
 				continue
 			}
@@ -171,7 +168,6 @@ func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql
 			assert.Equal(t, inApi.Description, actApi.Description)
 			assert.Equal(t, inApi.TargetURL, actApi.TargetURL)
 			assert.Equal(t, inApi.Group, actApi.Group)
-			assertAuth(t, inApi.DefaultAuth, actApi.DefaultAuth)
 			assertVersion(t, inApi.Version, actApi.Version)
 			if inApi.Spec != nil {
 				require.NotNil(t, actApi.Spec)
@@ -363,4 +359,28 @@ func unmarshalJSONSchema(t *testing.T, schema *graphql.JSONSchema) interface{} {
 	require.NoError(t, err)
 
 	return output
+}
+
+func assertAutomaticScenarioAssignment(t *testing.T, expected graphql.AutomaticScenarioAssignmentSetInput, actual graphql.AutomaticScenarioAssignment) {
+	assert.Equal(t, expected.ScenarioName, actual.ScenarioName)
+	require.NotNil(t, actual.Selector)
+	require.NotNil(t, expected.Selector)
+	assert.Equal(t, expected.Selector.Value, actual.Selector.Value)
+	assert.Equal(t, expected.Selector.Key, actual.Selector.Key)
+}
+
+func assertAutomaticScenarioAssignments(t *testing.T, expected []graphql.AutomaticScenarioAssignmentSetInput, actual []*graphql.AutomaticScenarioAssignment) {
+	assert.Equal(t, len(expected), len(actual))
+	for _, expectedAssignment := range expected {
+		found := false
+		for _, actualAssignment := range actual {
+			require.NotNil(t, actualAssignment)
+			if expectedAssignment.ScenarioName == actualAssignment.ScenarioName {
+				found = true
+				assertAutomaticScenarioAssignment(t, expectedAssignment, *actualAssignment)
+				break
+			}
+		}
+		assert.True(t, found, "Assignment for scenario: '%s' not found", expectedAssignment.ScenarioName)
+	}
 }

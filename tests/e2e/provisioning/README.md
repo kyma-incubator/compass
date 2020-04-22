@@ -16,15 +16,39 @@ You must also have the Kyma Environment Broker [configured](https://github.com/k
 
 ## Details
 
-The provisioning end-to-end test contains a broker client implementation which mocks Registry. It is an external dependency that calls the broker in the regular scenario. The test consists of the following steps:
+The provisioning end-to-end test contains a broker client implementation which mocks Registry. It is an external dependency that calls the broker in the regular scenario. The test is divided into two phases:
 
-1. Send the a call to KEB to provision a Runtime. KEB creates an operation and sends a request to Runtime Provisioner. Wait until the operation is successful. It takes about 30 minutes on GCP and a few hours on Azure. You can configure the timeout using the environment variable. 
-2. Fetch the DashboardURL from KEB.  To do so, the Runtime must be successfully provisioned and registered in the Director.
-3. Ensure that the DashboardURL redirects you to the UUA login page. It means that the Kyma Runtime is accessible.
+1. Provisioning
 
-The cleanup logic is executed at the end of the test or in case of an error. It consists of the following steps:
-1. Fetch the Runtime kubeconfig from Runtime Provisioner and use it to clean resources which block the cluster from deprovisioning.
-2. Send a request to deprovision the Runtime to KEB. The request is passed to Runtime Provisioner which deprovisions the Runtime.
+    During the provisioning phase, the test executes the following steps:
+    
+    a. Sends a call to KEB to provision a Runtime. KEB creates an operation and sends a request to the Runtime Provisioner. The test waits until the operation is successful. It takes about 30 minutes on GCP and a few hours on Azure. You can configure the timeout using the environment variable. 
+    
+    b. Creates a ConfigMap with **instanceId** specified.
+    
+    c. Fetches the DashboardURL from KEB. To do so, the Runtime must be successfully provisioned and registered in the Director.
+    
+    d. Updates the ConfigMap with **dashboardUrl** field.
+    
+    e. Creates a Secret with a kubeconfig of the provisioned Runtime.
+    
+    f. Ensures that the DashboardURL redirects to the UUA login page. It means that the Kyma Runtime is accessible.
+
+2. Cleanup
+
+    The cleanup logic is executed at the end of the end-to-end test or when the provisioning phase fails. During this phase, the test executes the following steps:
+    
+    a. Gets **instanceId** from the ConfigMap.
+    
+    b. Removes the test's Secret and ConfigMap.
+    
+    c. Fetches the Runtime kubeconfig from the Runtime Provisioner and uses it to clean resources which block the cluster from deprovisioning.
+    
+    d. Sends a request to deprovision the Runtime to KEB. The request is passed to the Runtime Provisioner which deprovisions the Runtime.
+    
+    e. Waits until the deprovisioning is successful. It takes about 20 minutes to complete. You can configure the timeout using the environment variable.
+
+Between the end-to-end test phases, you can execute your own test directly on the provisioned Runtime. To do so, use a kubeconfig stored in a Secret created in the provisioning phase. 
 
 ## Configuration
 
@@ -47,3 +71,6 @@ You can configure the test execution by using the following environment variable
 | **APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME** | Specifies the name of the Secret created by the Integration System. | `compass-kyma-environment-broker-credentials` |
 | **APP_SKIP_CERT_VERIFICATION** | Specifies whether TLS checks the presented certificates. | `false` |
 | **APP_DUMMY_TEST** | Specifies if test should success without any action. | `false` |
+| **APP_CLEANUP_PHASE** | Specifies if the test executes the cleanup phase. | `false` |
+| **APP_CONFIG_NAME** | Specifies the name of the ConfigMap and Secret created in the test. | `e2e-runtime-config` |
+| **APP_DEPLOY_NAMESPACE** | Specifies the Namespace of the ConfigMap and Secret created in the test. | `compass-system` |

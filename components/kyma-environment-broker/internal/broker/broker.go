@@ -7,12 +7,13 @@ import (
 )
 
 const (
-	kymaServiceID = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+	KymaServiceID   = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+	KymaServiceName = "kymaruntime"
 )
 
 var planIDsMapping = map[string]string{
-	"azure": AzurePlanID,
-	"gcp":   GcpPlanID,
+	AzurePlanName: AzurePlanID,
+	GCPPlanName:   GCPPlanID,
 }
 
 type KymaEnvironmentBroker struct {

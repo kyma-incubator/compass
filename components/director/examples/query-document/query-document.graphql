@@ -4,7 +4,6 @@ query {
     package(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
       document(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
         id
-        applicationID
         title
         displayName
         description

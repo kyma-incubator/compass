@@ -20,7 +20,7 @@ The directory has the following structure:
   ├── connector                # Documentation for the Connector component     
   ├── director                 # Documentation for the Director component      
   ├── integration-system       # Documentation for the Integration System component                                    
-  ├── investigations           # Directory for conducted investigations
+  ├── internal                 # Internal documentation, such as investigations, proposals, and standards
   ├── kyma-environment-broker  # Documentation for the Kyma Environment Broker component
   ├── provisioner              # Documentation for the Runtime Provisioner component                                          
   └── runtime-agent            # Documentation for the Runtime Agent component     

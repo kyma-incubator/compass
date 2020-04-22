@@ -15,7 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,9 +23,9 @@ func TestResolver_API(t *testing.T) {
 	{
 		// given
 		id := "bar"
-		appId := str.Ptr("1")
-		modelAPI := fixModelAPIDefinition(id, appId, "name", "bar", "test")
-		gqlAPI := fixGQLAPIDefinition(id, appId, "name", "bar", "test")
+		pkgID := "1"
+		modelAPI := fixModelAPIDefinition(id, pkgID, "name", "bar", "test")
+		gqlAPI := fixGQLAPIDefinition(id, pkgID, "name", "bar", "test")
 		app := fixGQLPackage("foo", "foo", "foo")
 		testErr := errors.New("Test error")
 		txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -165,13 +164,13 @@ func TestResolver_Apis(t *testing.T) {
 	app := fixGQLPackage(packageID, "foo", "foo")
 	modelAPIDefinitions := []*model.APIDefinition{
 
-		fixModelAPIDefinition("foo", &packageID, "Foo", "Lorem Ipsum", group),
-		fixModelAPIDefinition("bar", &packageID, "Bar", "Lorem Ipsum", group),
+		fixModelAPIDefinition("foo", packageID, "Foo", "Lorem Ipsum", group),
+		fixModelAPIDefinition("bar", packageID, "Bar", "Lorem Ipsum", group),
 	}
 
 	gqlAPIDefinitions := []*graphql.APIDefinition{
-		fixGQLAPIDefinition("foo", &packageID, "Foo", "Lorem Ipsum", group),
-		fixGQLAPIDefinition("bar", &packageID, "Bar", "Lorem Ipsum", group),
+		fixGQLAPIDefinition("foo", packageID, "Foo", "Lorem Ipsum", group),
+		fixGQLAPIDefinition("bar", packageID, "Bar", "Lorem Ipsum", group),
 	}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -278,7 +277,7 @@ func TestResolver_EventAPI(t *testing.T) {
 	id := "bar"
 
 	modelAPI := fixMinModelEventAPIDefinition(id, "placeholder")
-	gqlAPI := fixGQLEventDefinition(id, str.Ptr("placeholder"), str.Ptr("placeholder"), "placeholder", "placeholder", "placeholder")
+	gqlAPI := fixGQLEventDefinition(id, "placeholder", "placeholder", "placeholder", "placeholder")
 	pkg := fixGQLPackage("foo", "foo", "foo")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -412,18 +411,17 @@ func TestResolver_EventAPIs(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	packageID := "1"
-	applicationID := "1"
 	group := "group"
 	pkg := fixGQLPackage(packageID, "foo", "foo")
 	modelEventAPIDefinitions := []*model.EventDefinition{
 
-		fixModelEventAPIDefinition("foo", &packageID, &applicationID, "Foo", "Lorem Ipsum", group),
-		fixModelEventAPIDefinition("bar", &packageID, &applicationID, "Bar", "Lorem Ipsum", group),
+		fixModelEventAPIDefinition("foo", packageID, "Foo", "Lorem Ipsum", group),
+		fixModelEventAPIDefinition("bar", packageID, "Bar", "Lorem Ipsum", group),
 	}
 
 	gqlEventAPIDefinitions := []*graphql.EventDefinition{
-		fixGQLEventDefinition("foo", &packageID, &applicationID, "Foo", "Lorem Ipsum", group),
-		fixGQLEventDefinition("bar", &packageID, &applicationID, "Bar", "Lorem Ipsum", group),
+		fixGQLEventDefinition("foo", packageID, "Foo", "Lorem Ipsum", group),
+		fixGQLEventDefinition("bar", packageID, "Bar", "Lorem Ipsum", group),
 	}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -506,7 +504,7 @@ func TestResolver_Document(t *testing.T) {
 	// given
 	id := "bar"
 
-	modelDoc := fixModelDocument("foo", "bar", id)
+	modelDoc := fixModelDocument("foo", id)
 	gqlDoc := fixGQLDocument(id)
 	pkg := fixGQLPackage("foo", "foo", "foo")
 	testErr := errors.New("Test error")
@@ -639,12 +637,11 @@ func TestResolver_Document(t *testing.T) {
 func TestResolver_Documents(t *testing.T) {
 	// given
 	pkgID := "fooid"
-	appID := "barid"
 	contextParam := txtest.CtxWithDBMatcher()
 
 	modelDocuments := []*model.Document{
-		fixModelDocument(pkgID, appID, "foo"),
-		fixModelDocument(pkgID, appID, "bar"),
+		fixModelDocument(pkgID, "foo"),
+		fixModelDocument(pkgID, "bar"),
 	}
 	gqlDocuments := []*graphql.Document{
 		fixGQLDocument("foo"),

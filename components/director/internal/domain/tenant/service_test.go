@@ -5,8 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -184,8 +182,6 @@ func TestService_DeleteMany(t *testing.T) {
 	//GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test")
 	tenantInput := newModelBusinessTenantMappingInput(testName)
-	tenantModel := newModelBusinessTenantMapping(testID, testName)
-	tenantModelInactive := newModelBusinessTenantMapping(testID, testName).WithStatus(model.Inactive)
 	testErr := errors.New("test")
 	testCases := []struct {
 		Name                string
@@ -196,37 +192,16 @@ func TestService_DeleteMany(t *testing.T) {
 			Name: "Success",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).Return(tenantModel, nil).Once()
-				tenantMappingRepo.On("Update", ctx, &tenantModelInactive).Return(nil).Once()
+				tenantMappingRepo.On("DeleteByExternalTenant", ctx, tenantInput.ExternalTenant).Return(nil).Once()
 				return tenantMappingRepo
 			},
 			ExpectedOutput: nil,
 		},
 		{
-			Name: "Success when tenant not found",
+			Name: "Error while deleting the tenant mapping",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).
-					Return(tenantModel, apperrors.NewNotFoundError("test")).Once()
-				return tenantMappingRepo
-			},
-			ExpectedOutput: nil,
-		},
-		{
-			Name: "Error while getting the tenant mapping",
-			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
-				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).Return(nil, testErr).Once()
-				return tenantMappingRepo
-			},
-			ExpectedOutput: testErr,
-		},
-		{
-			Name: "Error while marking as inactive",
-			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
-				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInput.ExternalTenant).Return(tenantModel, nil).Once()
-				tenantMappingRepo.On("Update", ctx, &tenantModelInactive).Return(testErr).Once()
+				tenantMappingRepo.On("DeleteByExternalTenant", ctx, tenantInput.ExternalTenant).Return(testErr).Once()
 				return tenantMappingRepo
 			},
 			ExpectedOutput: testErr,
@@ -255,7 +230,7 @@ func TestService_DeleteMany(t *testing.T) {
 
 }
 
-func TestService_AbsolutelyNotUpsert(t *testing.T) {
+func TestService_CreateManyIfNotExists(t *testing.T) {
 	//GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test")
 
@@ -277,7 +252,7 @@ func TestService_AbsolutelyNotUpsert(t *testing.T) {
 		ExpectedOutput      error
 	}{
 		{
-			Name: "Succes",
+			Name: "Success",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
 				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(false, nil)
@@ -315,115 +290,7 @@ func TestService_AbsolutelyNotUpsert(t *testing.T) {
 			svc := tenant.NewService(tenantMappingRepo, uidSvc)
 
 			// WHEN
-			err := svc.Create(ctx, tenantInputs)
-
-			// THEN
-			if testCase.ExpectedOutput != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedOutput.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-
-			tenantMappingRepo.AssertExpectations(t)
-			uidSvc.AssertExpectations(t)
-		})
-	}
-
-}
-
-func TestService_Sync(t *testing.T) {
-	//GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), "test")
-
-	tenantInputs := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1"),
-		newModelBusinessTenantMappingInput("test2").WithExternalTenant("external2")}
-
-	tenantModels := []model.BusinessTenantMapping{*newModelBusinessTenantMapping(testID, "test1"),
-		newModelBusinessTenantMapping(testID, "test2").WithExternalTenant("external2")}
-
-	tenantFromDb := newModelBusinessTenantMapping(testID, "test3").WithExternalTenant("external3")
-
-	tenantsFromDb := []*model.BusinessTenantMapping{&tenantFromDb}
-
-	tenantToDelete := newModelBusinessTenantMapping(testID, "test3").WithStatus(model.Inactive).WithExternalTenant("external3")
-
-	uidSvcFn := func() *automock.UIDService {
-		uidSvc := &automock.UIDService{}
-		uidSvc.On("Generate").Return(testID)
-		return uidSvc
-	}
-	testErr := errors.New("test")
-	testCases := []struct {
-		Name                string
-		TenantMappingRepoFn func() *automock.TenantMappingRepository
-		ExpectedOutput      error
-	}{
-		{
-			Name: "Success",
-			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
-				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("List", ctx).Return(tenantsFromDb, nil).Once()
-				tenantMappingRepo.On("Update", ctx, &tenantToDelete).Return(nil).Once()
-				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(false, nil).Once()
-				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[1].ExternalTenant).Return(true, nil).Once()
-				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
-				return tenantMappingRepo
-			},
-			ExpectedOutput: nil,
-		},
-		{
-			Name: "Error when listing",
-			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
-				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("List", ctx).Return(nil, testErr).Once()
-				return tenantMappingRepo
-			},
-			ExpectedOutput: testErr,
-		},
-		{
-			Name: "Error when deleting",
-			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
-				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("List", ctx).Return(tenantsFromDb, nil).Once()
-				tenantMappingRepo.On("Update", ctx, &tenantToDelete).Return(testErr).Once()
-				return tenantMappingRepo
-			},
-			ExpectedOutput: testErr,
-		},
-		{
-			Name: "Error when checking the existence",
-			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
-				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("List", ctx).Return(tenantsFromDb, nil).Once()
-				tenantMappingRepo.On("Update", ctx, &tenantToDelete).Return(nil).Once()
-				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(false, testErr).Once()
-				return tenantMappingRepo
-			},
-			ExpectedOutput: testErr,
-		},
-		{
-			Name: "Error when creating tenant",
-			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
-				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("List", ctx).Return(tenantsFromDb, nil).Once()
-				tenantMappingRepo.On("Update", ctx, &tenantToDelete).Return(nil).Once()
-				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(false, nil).Once()
-				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(testErr).Once()
-				return tenantMappingRepo
-			},
-			ExpectedOutput: testErr,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			tenantMappingRepo := testCase.TenantMappingRepoFn()
-			uidSvc := uidSvcFn()
-			svc := tenant.NewService(tenantMappingRepo, uidSvc)
-
-			// WHEN
-			err := svc.Sync(ctx, tenantInputs)
+			err := svc.CreateManyIfNotExists(ctx, tenantInputs)
 
 			// THEN
 			if testCase.ExpectedOutput != nil {

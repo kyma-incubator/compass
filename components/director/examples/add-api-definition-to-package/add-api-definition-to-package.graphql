@@ -14,7 +14,6 @@ mutation {
   ) {
     id
     name
-    applicationID
     description
     spec {
       data
@@ -65,75 +64,6 @@ mutation {
     }
     targetURL
     group
-    auths {
-      runtimeID
-      auth {
-        credential {
-          ... on BasicCredentialData {
-            username
-            password
-          }
-          ... on OAuthCredentialData {
-            clientId
-            clientSecret
-            url
-          }
-        }
-        additionalHeaders
-        additionalQueryParams
-        requestAuth {
-          csrf {
-            tokenEndpointURL
-            credential {
-              ... on BasicCredentialData {
-                username
-                password
-              }
-              ... on OAuthCredentialData {
-                clientId
-                clientSecret
-                url
-              }
-            }
-            additionalHeaders
-            additionalQueryParams
-          }
-        }
-      }
-    }
-    defaultAuth {
-      credential {
-        ... on BasicCredentialData {
-          username
-          password
-        }
-        ... on OAuthCredentialData {
-          clientId
-          clientSecret
-          url
-        }
-      }
-      additionalHeaders
-      additionalQueryParams
-      requestAuth {
-        csrf {
-          tokenEndpointURL
-          credential {
-            ... on BasicCredentialData {
-              username
-              password
-            }
-            ... on OAuthCredentialData {
-              clientId
-              clientSecret
-              url
-            }
-          }
-          additionalHeaders
-          additionalQueryParams
-        }
-      }
-    }
     version {
       value
       deprecated

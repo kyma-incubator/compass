@@ -291,7 +291,7 @@ func TestPgRepository_List(t *testing.T) {
 			{id: "id2", name: "name2", externalTenant: testExternal, provider: "Compass", status: tenant.Active},
 			{id: "id3", name: "name3", externalTenant: testExternal, provider: "Compass", status: tenant.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE status = 'Active'`)).
 			WillReturnRows(rowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -312,7 +312,7 @@ func TestPgRepository_List(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE status = 'Active'`)).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -372,6 +372,48 @@ func TestPgRepository_Update(t *testing.T) {
 
 		// WHEN
 		err := tenantMappingRepo.Update(ctx, &tenantMappingModel)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testError.Error())
+	})
+}
+
+func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
+	deleteStatement := regexp.QuoteMeta(`DELETE FROM public.business_tenant_mappings WHERE external_tenant = $1`)
+
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectExec(deleteStatement).
+			WithArgs(testExternal).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := tenant.NewRepository(nil)
+
+		// WHEN
+		err := repo.DeleteByExternalTenant(ctx, testExternal)
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Database error", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectExec(deleteStatement).
+			WithArgs(testExternal).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := tenant.NewRepository(nil)
+
+		// WHEN
+		err := repo.DeleteByExternalTenant(ctx, testExternal)
 
 		// THEN
 		require.Error(t, err)

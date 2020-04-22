@@ -15,7 +15,6 @@ func TestValidator_ValidateInput(t *testing.T) {
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion:      "1.15.4",
-			NodeCount:              3,
 			VolumeSizeGb:           30,
 			MachineType:            "n1-standard-4",
 			Region:                 "europe",

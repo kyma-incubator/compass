@@ -9,7 +9,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +18,7 @@ const appEventURLFormat = "https://%s/%s/v1/events"
 func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventingAssigned(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	runtimeEventingURLLabelKey := "runtime/event_service_url"
+	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtime1Eventing := "eventing.runtime1.local"
 	runtime1EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime1Eventing)
 	runtime2EventingURL := "https://eventing.runtime2.local"
@@ -51,7 +50,7 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 func TestGetEventingConfigurationForRuntime(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	runtimeEventingURLLabelKey := "runtime/event_service_url"
+	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtimeEventingURL := "http://eventing.runtime.local"
 
 	runtime := registerRuntime(t, ctx, "runtime-eventing")
@@ -69,7 +68,7 @@ func TestGetEventingConfigurationForRuntime(t *testing.T) {
 func TestSetDefaultEventingForApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	runtimeEventingURLLabelKey := "runtime/event_service_url"
+	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtime1Eventing := "eventing.runtime1.local"
 	runtime1EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime1Eventing)
 	runtime2Eventing := "eventing.runtime2.local"
@@ -97,13 +96,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 
 	actualEventingCfg := graphql.ApplicationEventingConfiguration{}
-	request := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-				result: setDefaultEventingForApplication(appID: "%s", runtimeID: "%s") {
-						%s
-					}
-				}`,
-			application.ID, runtime2.ID, tc.gqlFieldsProvider.ForEventingConfiguration()))
+	request := fixSetDefaultEventingForApplication(application.ID, runtime2.ID)
 	err := tc.RunOperation(ctx, request, &actualEventingCfg)
 
 	// THEN
@@ -134,7 +127,7 @@ func TestEmptyEventConfigurationForApp(t *testing.T) {
 func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	runtimeEventingURLLabelKey := "runtime/event_service_url"
+	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtime1Eventing := "eventing.runtime1.local"
 	runtime1EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime1Eventing)
 	runtime2Eventing := "eventing.runtime2.local"
@@ -167,13 +160,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 
 	// WHEN
 	actualEventingCfg := graphql.ApplicationEventingConfiguration{}
-	request := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-				result: deleteDefaultEventingForApplication(appID: "%s") {
-						%s
-					}
-				}`,
-			application.ID, tc.gqlFieldsProvider.ForEventingConfiguration()))
+	request := fixDeleteDefaultEventingForApplication(application.ID)
 	err := tc.RunOperation(ctx, request, &actualEventingCfg)
 
 	// THEN

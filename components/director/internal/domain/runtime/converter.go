@@ -47,9 +47,10 @@ func (c *converter) InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput
 	}
 
 	return model.RuntimeInput{
-		Name:        in.Name,
-		Description: in.Description,
-		Labels:      labels,
+		Name:            in.Name,
+		Description:     in.Description,
+		Labels:          labels,
+		StatusCondition: c.statusConditionToModel(in.StatusCondition),
 	}
 }
 
@@ -67,8 +68,8 @@ func (c *converter) statusToGraphQL(in *model.RuntimeStatus) *graphql.RuntimeSta
 		condition = graphql.RuntimeStatusConditionInitial
 	case model.RuntimeStatusConditionFailed:
 		condition = graphql.RuntimeStatusConditionFailed
-	case model.RuntimeStatusConditionReady:
-		condition = graphql.RuntimeStatusConditionReady
+	case model.RuntimeStatusConditionConnected:
+		condition = graphql.RuntimeStatusConditionConnected
 	default:
 		condition = graphql.RuntimeStatusConditionInitial
 	}
@@ -83,4 +84,24 @@ func (c *converter) metadataToGraphQL(creationTimestamp time.Time) *graphql.Runt
 	return &graphql.RuntimeMetadata{
 		CreationTimestamp: graphql.Timestamp(creationTimestamp),
 	}
+}
+
+func (c *converter) statusConditionToModel(in *graphql.RuntimeStatusCondition) *model.RuntimeStatusCondition {
+	if in == nil {
+		return nil
+	}
+
+	var condition model.RuntimeStatusCondition
+	switch *in {
+	case graphql.RuntimeStatusConditionConnected:
+		condition = model.RuntimeStatusConditionConnected
+	case graphql.RuntimeStatusConditionFailed:
+		condition = model.RuntimeStatusConditionFailed
+	case graphql.RuntimeStatusConditionInitial:
+		fallthrough
+	default:
+		condition = model.RuntimeStatusConditionInitial
+	}
+
+	return &condition
 }

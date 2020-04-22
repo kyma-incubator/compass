@@ -5,14 +5,13 @@ import (
 )
 
 type Document struct {
-	ApplicationID *string
-	PackageID     *string
-	ID            string
-	Tenant        string
-	Title         string
-	DisplayName   string
-	Description   string
-	Format        DocumentFormat
+	PackageID   string
+	ID          string
+	Tenant      string
+	Title       string
+	DisplayName string
+	Description string
+	Format      DocumentFormat
 	// for example Service Class, API etc
 	Kind *string
 	Data *string
@@ -40,26 +39,7 @@ type DocumentPage struct {
 	TotalCount int
 }
 
-func (d *DocumentInput) ToDocument(id, tenant string, applicationID *string) *Document {
-	if d == nil {
-		return nil
-	}
-
-	return &Document{
-		ApplicationID: applicationID,
-		ID:            id,
-		Tenant:        tenant,
-		Title:         d.Title,
-		DisplayName:   d.DisplayName,
-		Description:   d.Description,
-		Format:        d.Format,
-		Kind:          d.Kind,
-		Data:          d.Data,
-	}
-}
-
-//TODO after switching to the new packages API this method will replace ToDocument
-func (d *DocumentInput) ToDocumentWithinPackage(id, tenant string, packageID *string) *Document {
+func (d *DocumentInput) ToDocumentWithinPackage(id, tenant string, packageID string) *Document {
 	if d == nil {
 		return nil
 	}

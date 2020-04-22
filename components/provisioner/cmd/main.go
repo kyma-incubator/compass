@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/healthz"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder"
@@ -46,6 +48,7 @@ type config struct {
 	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
 	OauthCredentialsSecretName   string `envconfig:"default=compass-provisioner-credentials"`
+	DownloadPreReleases          bool   `envconfig:"default=true"`
 
 	Database struct {
 		User     string `envconfig:"default=postgres"`
@@ -62,28 +65,33 @@ type config struct {
 	}
 
 	Gardener struct {
-		Project                  string `envconfig:"default=gardenerProject"`
-		KubeconfigPath           string `envconfig:"default=./dev/kubeconfig.yaml"`
-		AuditLogsPolicyConfigMap string `envconfig:"optional"`
+		Project                   string `envconfig:"default=gardenerProject"`
+		KubeconfigPath            string `envconfig:"default=./dev/kubeconfig.yaml"`
+		AuditLogsPolicyConfigMap  string `envconfig:"optional"`
+		AuditLogsTenantConfigPath string `envconfig:"optional"`
 	}
 
 	Provisioner             string `envconfig:"default=gardener"`
 	SupportOnDemandReleases bool   `envconfig:"default=false"`
+
+	LogLevel string `envconfig:"default=info"`
 }
 
 func (c *config) String() string {
 	return fmt.Sprintf("Address: %s, APIEndpoint: %s, CredentialsNamespace: %s, "+
-		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s"+
+		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s, DownloadPreReleases: %v, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
-		"GardenerProject: %s, GardenerKubeconfigPath: %s, Provisioner: %s"+
-		"SupportOnDemandReleases: %v",
+		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
+		"Provisioner: %s, SupportOnDemandReleases: %v, "+
+		"LogLevel: %s",
 		c.Address, c.APIEndpoint, c.CredentialsNamespace,
-		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
+		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName, c.DownloadPreReleases,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
-		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Provisioner,
-		c.SupportOnDemandReleases)
+		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
+		c.Provisioner, c.SupportOnDemandReleases,
+		c.LogLevel)
 }
 
 func main() {
@@ -95,6 +103,13 @@ func main() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Failed to load application config")
+
+	logLevel, err := log.ParseLevel(cfg.LogLevel)
+	if err != nil {
+		log.Warnf("Invalid log level: '%s', defaulting to 'info'", cfg.LogLevel)
+		logLevel = log.InfoLevel
+	}
+	log.SetLevel(logLevel)
 
 	log.Infof("Starting Provisioner")
 	log.Infof("Config: %s", cfg.String())
@@ -129,7 +144,7 @@ func main() {
 		hydroformSvc := hydroform.NewHydroformService(client.NewHydroformClient(), cfg.Gardener.KubeconfigPath)
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
-		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, cfg.Gardener.AuditLogsPolicyConfigMap)
+		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, cfg.Gardener.AuditLogsTenantConfigPath, cfg.Gardener.AuditLogsPolicyConfigMap)
 		shootController, err := newShootController(cfg, gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, installationService, directorClient, runtimeConfigurator)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {
@@ -153,7 +168,7 @@ func main() {
 	resolver := api.NewResolver(provisioningSVC, validator)
 
 	logger := log.WithField("Component", "Artifact Downloader")
-	downloader := release.NewArtifactsDownloader(releaseRepository, 5, false, httpClient, logger)
+	downloader := release.NewArtifactsDownloader(releaseRepository, 5, cfg.DownloadPreReleases, httpClient, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -170,6 +185,7 @@ func main() {
 
 	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
+	router.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
 
 	http.Handle("/", router)
 

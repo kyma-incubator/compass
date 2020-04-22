@@ -21,6 +21,35 @@
   version = "v0.10.2"
 
 [[projects]]
+  digest = "1:298d4ba5657d3558241332cfdf2062b9ef91a7ab7543db7e47677eecc6d750c6"
+  name = "github.com/Azure/azure-sdk-for-go"
+  packages = [
+    "services/eventhub/mgmt/2017-04-01/eventhub",
+    "services/resources/mgmt/2019-05-01/resources",
+    "version",
+  ]
+  pruneopts = "UT"
+  revision = "ee7c54530df34dd03f392562bcb869613fd7efdc"
+  version = "v39.3.0"
+
+[[projects]]
+  digest = "1:24f3d5aa436b7cf0244efff65e6346602eb0af08e1026bb9d1940b458c5326f9"
+  name = "github.com/Azure/go-autorest"
+  packages = [
+    "autorest",
+    "autorest/adal",
+    "autorest/azure",
+    "autorest/date",
+    "autorest/to",
+    "autorest/validation",
+    "logger",
+    "tracing",
+  ]
+  pruneopts = "UT"
+  revision = "327ff6ce8b902f9afe648d5ea8ff6dc26c26f150"
+  version = "v13.4.0"
+
+[[projects]]
   digest = "1:3b10c6fd33854dc41de2cf78b7bae105da94c2789b6fa5b9ac9e593ea43484ac"
   name = "github.com/Masterminds/goutils"
   packages = ["."]
@@ -113,6 +142,14 @@
   pruneopts = "UT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
+
+[[projects]]
+  digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
 
 [[projects]]
   digest = "1:5d7f88f9487f370e3ae52155465156370fc5798102d811d2d4448d2385ccaf67"
@@ -355,7 +392,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:ea808d89112be5076fa384bcbbe497a6320ef22e98d98715fc0a0f208b56b2da"
+  digest = "1:b1088526fcb0be1a92ae8feb398260cdab4e648b6e541f1de28bb0f7590cd815"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -365,18 +402,17 @@
     "components/director/pkg/pagination",
     "components/director/pkg/scalar",
     "components/provisioner/pkg/gqlschema",
-    "tests/provisioner-tests/test/testkit/graphql",
   ]
   pruneopts = "UT"
-  revision = "ad250cc742673ef5b628cc806841182bafe9750a"
+  revision = "b43e05d8331a01c557eb7be4822dd17d24faf97f"
 
 [[projects]]
-  digest = "1:bde204c6c8dd5169cd05ed5aa9a1e027bc8d2cdd172c5e80b971cb4e14b55e3c"
+  digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
   name = "github.com/kyma-project/kyma"
   packages = ["components/kyma-operator/pkg/apis/installer/v1alpha1"]
   pruneopts = "UT"
-  revision = "119010d0810e5e1e23b78e1058f2b0fbea293ae9"
-  version = "1.9.0"
+  revision = "cc5a238a6c239e3f2ee7accd2e819bc8dd0e8aaa"
+  version = "1.11.0"
 
 [[projects]]
   digest = "1:9ff22c26414baf7deaf74f2a788fe7b97666048bcbe346c52cfe823442abbdfb"
@@ -507,6 +543,22 @@
   version = "v1.2.0"
 
 [[projects]]
+  digest = "1:e19e030356c9a7a95a05584afdab42f7845f5a3e78a467b9c74af479556300fc"
+  name = "github.com/sebdah/goldie"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "010f04b0191e18a446e81ae35047fb0545aace70"
+  version = "v2.2.0"
+
+[[projects]]
+  digest = "1:d0d418e1c02e6fc00259ef09d0d4f5135fc6aedac356ff0a11f4e5ef0c447270"
+  name = "github.com/sergi/go-diff"
+  packages = ["diffmatchpatch"]
+  pruneopts = "UT"
+  revision = "58c5cb1602ee9676b5d3590d782bedde80706fcc"
+  version = "v1.1.0"
+
+[[projects]]
   digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
@@ -552,6 +604,14 @@
   pruneopts = "UT"
   revision = "0c6fcb48ff1cfa4d82a45b587e76b3588a4dc192"
   version = "v0.0.10"
+
+[[projects]]
+  branch = "master"
+  digest = "1:8126c338c3a93a2c86230e5ee671241ab5881404435d75f2ceb0353311ae268b"
+  name = "github.com/vburenin/nsync"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "9a75d1c80410815ac45d65fc01ccabac9c98dd4a"
 
 [[projects]]
   digest = "1:831b94be76a8fe3b3b882e52752423070f1b2d7940ecc381cdac66ac01492bfd"
@@ -751,12 +811,12 @@
   version = "v0.9.1"
 
 [[projects]]
-  digest = "1:b75b3deb2bce8bc079e16bb2aecfe01eb80098f5650f9e93e5643ca8b7b73737"
+  digest = "1:55b110c99c5fdc4f14930747326acce56b52cfce60b24b1c03ef686ac0e46bb1"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "UT"
-  revision = "1f64d6156d11335c3f22d9330b0ad14fc1e789ce"
-  version = "v2.2.7"
+  revision = "53403b58ad1b561927d19068c655246f2db79d48"
+  version = "v2.2.8"
 
 [[projects]]
   digest = "1:57858c910b7c29c64f742c34df7bc6ce76ea72e561276c80c0eda16980443736"
@@ -1017,6 +1077,11 @@
   analyzer-version = 1
   input-imports = [
     "code.cloudfoundry.org/lager",
+    "github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub",
+    "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources",
+    "github.com/Azure/go-autorest/autorest",
+    "github.com/Azure/go-autorest/autorest/adal",
+    "github.com/Azure/go-autorest/autorest/azure",
     "github.com/Masterminds/sprig",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
     "github.com/gocraft/dbr",
@@ -1027,7 +1092,6 @@
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/director/pkg/jsonschema",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
-    "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
     "github.com/machinebox/graphql",
@@ -1037,13 +1101,16 @@
     "github.com/pivotal-cf/brokerapi/v7/handlers",
     "github.com/pivotal-cf/brokerapi/v7/middlewares",
     "github.com/pkg/errors",
+    "github.com/sebdah/goldie",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
     "github.com/testcontainers/testcontainers-go",
     "github.com/testcontainers/testcontainers-go/wait",
+    "github.com/vburenin/nsync",
     "github.com/vrischmann/envconfig",
+    "golang.org/x/oauth2",
     "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",

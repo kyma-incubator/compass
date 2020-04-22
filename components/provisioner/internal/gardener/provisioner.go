@@ -1,7 +1,9 @@
 package gardener
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -15,29 +17,35 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 )
 
-func NewProvisioner(namespace string, client gardener_apis.ShootInterface, auditLogsCMName string) *GardenerProvisioner {
+func NewProvisioner(namespace string, shootClient gardener_apis.ShootInterface, auditLogTenantConfigPath string, auditLogsCMName string) *GardenerProvisioner {
 	return &GardenerProvisioner{
-		namespace:              namespace,
-		client:                 client,
-		auditLogsConfigMapName: auditLogsCMName,
+		namespace:                namespace,
+		shootClient:              shootClient,
+		auditLogTenantConfigPath: auditLogTenantConfigPath,
+		auditLogsConfigMapName:   auditLogsCMName,
 	}
 }
 
 type GardenerProvisioner struct {
-	namespace              string
-	client                 gardener_apis.ShootInterface
-	auditLogsConfigMapName string
-	log                    *logrus.Entry
+	namespace                string
+	shootClient              gardener_apis.ShootInterface
+	auditLogsConfigMapName   string
+	auditLogTenantConfigPath string
+	log                      *logrus.Entry
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) error {
-	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace)
+	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace, cluster.Tenant, cluster.SubAccountId)
 	if err != nil {
-		return fmt.Errorf("Failed to convert cluster config to Shoot template")
+		return fmt.Errorf("failed to convert cluster config to Shoot template")
 	}
 
-	if g.shouldEnableAuditLogs(cluster.SubAccountId) {
-		enableAuditLogs(shootTemplate, g.auditLogsConfigMapName, cluster.SubAccountId)
+	region := getRegion(cluster)
+
+	if g.shouldEnableAuditLogs() {
+		if err := g.enableAuditLogs(shootTemplate, g.auditLogsConfigMapName, region); err != nil {
+			return fmt.Errorf("error enabling audit logs for %s cluster: %s", cluster.ID, err.Error())
+		}
 	}
 
 	annotate(shootTemplate, operationIdAnnotation, operationId)
@@ -45,7 +53,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	annotate(shootTemplate, runtimeIdAnnotation, cluster.ID)
 	annotate(shootTemplate, provisioningStepAnnotation, ProvisioningInProgressStep.String())
 
-	_, err = g.client.Create(shootTemplate)
+	_, err = g.shootClient.Create(shootTemplate)
 	if err != nil {
 		return fmt.Errorf("error creating Shoot for %s cluster: %s", cluster.ID, err.Error())
 	}
@@ -60,7 +68,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 		return model.Operation{}, fmt.Errorf("cluster does not have Gardener configuration")
 	}
 
-	shoot, err := g.client.Get(gardenerCfg.Name, v1.GetOptions{})
+	shoot, err := g.shootClient.Get(gardenerCfg.Name, v1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			message := fmt.Sprintf("Cluster %s does not exist. Nothing to deprovision.", cluster.ID)
@@ -80,7 +88,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	annotate(shoot, provisioningStepAnnotation, DeprovisioningInProgressStep.String())
 	annotate(shoot, operationIdAnnotation, operationId)
 	AnnotateWithConfirmDeletion(shoot)
-	err = UpdateAndDeleteShoot(g.client, shoot)
+	err = UpdateAndDeleteShoot(g.shootClient, shoot)
 	if err != nil {
 		return model.Operation{}, fmt.Errorf("error scheduling shoot %s for deletion: %s", shoot.Name, err.Error())
 	}
@@ -89,8 +97,8 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, deletionTime), nil
 }
 
-func (g *GardenerProvisioner) shouldEnableAuditLogs(subAccountId string) bool {
-	return g.auditLogsConfigMapName != "" && subAccountId != ""
+func (g *GardenerProvisioner) shouldEnableAuditLogs() bool {
+	return g.auditLogsConfigMapName != "" && g.auditLogTenantConfigPath != ""
 }
 
 func newDeprovisionOperation(id, runtimeId, message string, state model.OperationState, startTime time.Time) model.Operation {
@@ -104,7 +112,40 @@ func newDeprovisionOperation(id, runtimeId, message string, state model.Operatio
 	}
 }
 
-func enableAuditLogs(shoot *gardener_types.Shoot, policyConfigMapName, subAccountId string) {
+func (g *GardenerProvisioner) enableAuditLogs(shoot *gardener_types.Shoot, policyConfigMapName, region string) error {
+	logrus.Info("Enabling audit logs")
+	tenant, err := g.getAuditLogTenant(region)
+
+	if err != nil {
+		return err
+	}
+
+	if tenant != "" {
+		setAuditConfig(shoot, policyConfigMapName, tenant)
+	} else {
+		logrus.Warnf("Cannot enable audit logs. Tenant for region %s is empty", region)
+	}
+
+	return nil
+}
+
+func (g *GardenerProvisioner) getAuditLogTenant(region string) (string, error) {
+	file, err := os.Open(g.auditLogTenantConfigPath)
+
+	if err != nil {
+		return "", err
+	}
+
+	defer file.Close()
+
+	var data map[string]string
+	if err := json.NewDecoder(file).Decode(&data); err != nil {
+		return "", err
+	}
+	return data[region], nil
+}
+
+func setAuditConfig(shoot *gardener_types.Shoot, policyConfigMapName, subAccountId string) {
 	if shoot.Spec.Kubernetes.KubeAPIServer == nil {
 		shoot.Spec.Kubernetes.KubeAPIServer = &gardener_types.KubeAPIServerConfig{}
 	}
@@ -116,4 +157,12 @@ func enableAuditLogs(shoot *gardener_types.Shoot, policyConfigMapName, subAccoun
 	}
 
 	annotate(shoot, auditLogsAnnotation, subAccountId)
+}
+
+func getRegion(cluster model.Cluster) string {
+	config, ok := cluster.GardenerConfig()
+	if ok {
+		return config.Region
+	}
+	return ""
 }

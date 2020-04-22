@@ -27,8 +27,7 @@ func main() {
 
 	configureLogger()
 
-	connString := persistence.GetConnString(cfg.Database)
-	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), connString)
+	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), cfg.Database)
 	exitOnError(err, "error while establishing the connection to the database")
 
 	defer func() {
@@ -50,8 +49,8 @@ func main() {
 
 	ctx := persistence.SaveToContext(context.Background(), tx)
 
-	err = tenantSvc.Sync(ctx, tenants)
-	exitOnError(err, "error while synchronising tenants with db")
+	err = tenantSvc.CreateManyIfNotExists(ctx, tenants)
+	exitOnError(err, "error while creating tenants")
 
 	err = tx.Commit()
 	exitOnError(err, "error while committing the transaction")

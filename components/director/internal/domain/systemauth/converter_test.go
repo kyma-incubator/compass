@@ -3,7 +3,8 @@ package systemauth_test
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth/automock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	gcli "github.com/machinebox/graphql"
 )
 
@@ -16,6 +18,15 @@ func fixRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
 				}
 			}`,
 			applicationInGQL, tc.gqlFieldsProvider.ForApplication()))
+}
+
+func fixUpdateApplicationRequest(id, updateInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+  				result: updateApplication(id: "%s", in: %s) {
+    					%s
+					}
+				}`, id, updateInputGQL, tc.gqlFieldsProvider.ForApplication()))
 }
 
 func fixCreateIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Request {
@@ -69,13 +80,28 @@ func fixGetViewerRequest() *gcli.Request {
 }
 
 // ADD
-func fixAddApiRequest(applicationId, apiInputInGQL string) *gcli.Request {
+func fixAddAPIToPackageRequest(pkgID, APIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: addAPIDefinition(applicationID: "%s", in: %s) {
-					%s
-				}
-			}`, applicationId, apiInputInGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+		result: addAPIDefinitionToPackage(packageID: "%s", in: %s) {
+				%s
+			}
+		}
+		`, pkgID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+}
+
+func fixPackageCreateInput(name string) graphql.PackageCreateInput {
+	return graphql.PackageCreateInput{
+		Name: name,
+	}
+}
+
+func fixAddPackageRequest(appID, pkgCreateInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addPackage(applicationID: "%s", in: %s) {
+				%s
+			}}`, appID, pkgCreateInput, tc.gqlFieldsProvider.ForPackage()))
 }
 
 // UPDATE
@@ -116,7 +142,7 @@ func fixDeleteApplicationRequest(t *testing.T, id string) *gcli.Request {
 	}`, id, tc.gqlFieldsProvider.ForApplication()))
 }
 
-func fixUnregisterRuntime(id string) *gcli.Request {
+func fixUnregisterRuntimeRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{unregisterRuntime(id: "%s") {
 				%s
@@ -149,6 +175,15 @@ func fixDeleteApplicationTemplateRequest(appTemplateID string) *gcli.Request {
 					%s
 				}
 			}`, appTemplateID, tc.gqlFieldsProvider.ForApplicationTemplate()))
+}
+
+func fixDeletePackageRequest(packageID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deletePackage(id: "%s") {
+				%s
+			}
+		}`, packageID, tc.gqlFieldsProvider.ForPackage()))
 }
 
 //GET

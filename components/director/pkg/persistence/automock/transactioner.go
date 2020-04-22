@@ -2,6 +2,7 @@
 
 package automock
 
+import context "context"
 import mock "github.com/stretchr/testify/mock"
 import persistence "github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -31,6 +32,20 @@ func (_m *Transactioner) Begin() (persistence.PersistenceTx, error) {
 	}
 
 	return r0, r1
+}
+
+// PingContext provides a mock function with given fields: ctx
+func (_m *Transactioner) PingContext(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // RollbackUnlessCommited provides a mock function with given fields: tx

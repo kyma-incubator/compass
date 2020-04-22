@@ -6,6 +6,7 @@ mutation {
       providerName: "after"
       description: "after"
       healthCheckURL: "https://kyma-project.io"
+      statusCondition: CONNECTED
     }
   ) {
     id
@@ -58,272 +59,6 @@ mutation {
       }
     }
     healthCheckURL
-    apiDefinitions {
-      data {
-        id
-        name
-        applicationID
-        description
-        spec {
-          data
-          format
-          type
-          fetchRequest {
-            url
-            auth {
-              credential {
-                ... on BasicCredentialData {
-                  username
-                  password
-                }
-                ... on OAuthCredentialData {
-                  clientId
-                  clientSecret
-                  url
-                }
-              }
-              additionalHeaders
-              additionalQueryParams
-              requestAuth {
-                csrf {
-                  tokenEndpointURL
-                  credential {
-                    ... on BasicCredentialData {
-                      username
-                      password
-                    }
-                    ... on OAuthCredentialData {
-                      clientId
-                      clientSecret
-                      url
-                    }
-                  }
-                  additionalHeaders
-                  additionalQueryParams
-                }
-              }
-            }
-            mode
-            filter
-            status {
-              condition
-              timestamp
-            }
-          }
-        }
-        targetURL
-        group
-        auths {
-          runtimeID
-          auth {
-            credential {
-              ... on BasicCredentialData {
-                username
-                password
-              }
-              ... on OAuthCredentialData {
-                clientId
-                clientSecret
-                url
-              }
-            }
-            additionalHeaders
-            additionalQueryParams
-            requestAuth {
-              csrf {
-                tokenEndpointURL
-                credential {
-                  ... on BasicCredentialData {
-                    username
-                    password
-                  }
-                  ... on OAuthCredentialData {
-                    clientId
-                    clientSecret
-                    url
-                  }
-                }
-                additionalHeaders
-                additionalQueryParams
-              }
-            }
-          }
-        }
-        defaultAuth {
-          credential {
-            ... on BasicCredentialData {
-              username
-              password
-            }
-            ... on OAuthCredentialData {
-              clientId
-              clientSecret
-              url
-            }
-          }
-          additionalHeaders
-          additionalQueryParams
-          requestAuth {
-            csrf {
-              tokenEndpointURL
-              credential {
-                ... on BasicCredentialData {
-                  username
-                  password
-                }
-                ... on OAuthCredentialData {
-                  clientId
-                  clientSecret
-                  url
-                }
-              }
-              additionalHeaders
-              additionalQueryParams
-            }
-          }
-        }
-        version {
-          value
-          deprecated
-          deprecatedSince
-          forRemoval
-        }
-      }
-      pageInfo {
-        startCursor
-        endCursor
-        hasNextPage
-      }
-      totalCount
-    }
-    eventDefinitions {
-      data {
-        id
-        applicationID
-        name
-        description
-        group
-        spec {
-          data
-          type
-          format
-          fetchRequest {
-            url
-            auth {
-              credential {
-                ... on BasicCredentialData {
-                  username
-                  password
-                }
-                ... on OAuthCredentialData {
-                  clientId
-                  clientSecret
-                  url
-                }
-              }
-              additionalHeaders
-              additionalQueryParams
-              requestAuth {
-                csrf {
-                  tokenEndpointURL
-                  credential {
-                    ... on BasicCredentialData {
-                      username
-                      password
-                    }
-                    ... on OAuthCredentialData {
-                      clientId
-                      clientSecret
-                      url
-                    }
-                  }
-                  additionalHeaders
-                  additionalQueryParams
-                }
-              }
-            }
-            mode
-            filter
-            status {
-              condition
-              timestamp
-            }
-          }
-        }
-        version {
-          value
-          deprecated
-          deprecatedSince
-          forRemoval
-        }
-      }
-      pageInfo {
-        startCursor
-        endCursor
-        hasNextPage
-      }
-      totalCount
-    }
-    documents {
-      data {
-        id
-        applicationID
-        title
-        displayName
-        description
-        format
-        kind
-        data
-        fetchRequest {
-          url
-          auth {
-            credential {
-              ... on BasicCredentialData {
-                username
-                password
-              }
-              ... on OAuthCredentialData {
-                clientId
-                clientSecret
-                url
-              }
-            }
-            additionalHeaders
-            additionalQueryParams
-            requestAuth {
-              csrf {
-                tokenEndpointURL
-                credential {
-                  ... on BasicCredentialData {
-                    username
-                    password
-                  }
-                  ... on OAuthCredentialData {
-                    clientId
-                    clientSecret
-                    url
-                  }
-                }
-                additionalHeaders
-                additionalQueryParams
-              }
-            }
-          }
-          mode
-          filter
-          status {
-            condition
-            timestamp
-          }
-        }
-      }
-      pageInfo {
-        startCursor
-        endCursor
-        hasNextPage
-      }
-      totalCount
-    }
     packages {
       data {
         id
@@ -411,7 +146,6 @@ mutation {
           data {
             id
             name
-            applicationID
             description
             spec {
               data
@@ -462,75 +196,6 @@ mutation {
             }
             targetURL
             group
-            auths {
-              runtimeID
-              auth {
-                credential {
-                  ... on BasicCredentialData {
-                    username
-                    password
-                  }
-                  ... on OAuthCredentialData {
-                    clientId
-                    clientSecret
-                    url
-                  }
-                }
-                additionalHeaders
-                additionalQueryParams
-                requestAuth {
-                  csrf {
-                    tokenEndpointURL
-                    credential {
-                      ... on BasicCredentialData {
-                        username
-                        password
-                      }
-                      ... on OAuthCredentialData {
-                        clientId
-                        clientSecret
-                        url
-                      }
-                    }
-                    additionalHeaders
-                    additionalQueryParams
-                  }
-                }
-              }
-            }
-            defaultAuth {
-              credential {
-                ... on BasicCredentialData {
-                  username
-                  password
-                }
-                ... on OAuthCredentialData {
-                  clientId
-                  clientSecret
-                  url
-                }
-              }
-              additionalHeaders
-              additionalQueryParams
-              requestAuth {
-                csrf {
-                  tokenEndpointURL
-                  credential {
-                    ... on BasicCredentialData {
-                      username
-                      password
-                    }
-                    ... on OAuthCredentialData {
-                      clientId
-                      clientSecret
-                      url
-                    }
-                  }
-                  additionalHeaders
-                  additionalQueryParams
-                }
-              }
-            }
             version {
               value
               deprecated
@@ -548,7 +213,6 @@ mutation {
         eventDefinitions {
           data {
             id
-            applicationID
             name
             description
             group
@@ -616,7 +280,6 @@ mutation {
         documents {
           data {
             id
-            applicationID
             title
             displayName
             description

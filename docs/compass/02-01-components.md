@@ -23,10 +23,7 @@ Runtime is a system to which you can apply configuration provided by Compass. Yo
 
 ## Runtime Agent
 
-Runtime Agent is an integral part of every Runtime and it fetches the latest configuration from Compass. In the future releases, Runtime Agent will:
-- Provide Runtime specific information that will be displayed in the Compass UI, such as Runtime UI URL
-- Provide Compass with Runtime configuration, such as Event Gateway URL, that should be passed to an Application
-- Send Runtime health checks to Compass
+Runtime Agent is an integral part of every Runtime and it fetches the latest configuration from Compass. It also provides Runtime specific information that is displayed in the Compass UI, such as Runtime UI URL, and it provides Compass with Runtime configuration, such as Event Gateway URL, that should be passed to an Application. In the future releases, Runtime Agent will send Runtime health checks to Compass.
 
 An example of Runtime Agent implementation is the [Kyma Compass Runtime Agent](https://github.com/kyma-project/kyma/tree/master/components/compass-runtime-agent).
 
