@@ -26,7 +26,7 @@ const (
 
 type wantStateFunction = func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error, azureClient azuretesting.FakeNamespaceClient)
 
-func Test_StepsProvisionSucceeded(t *testing.T) {
+func Test_StepsDeprovisionSucceeded(t *testing.T) {
 	tests := []struct {
 		name                string
 		giveOperation       func() internal.DeprovisioningOperation
