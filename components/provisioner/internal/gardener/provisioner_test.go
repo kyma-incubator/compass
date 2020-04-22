@@ -77,7 +77,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 			auditLogsEnabled:    true,
 		},
 		{
-			description:         "audit logs disabled when no configfile",
+			description:         "audit logs disabled when no config file",
 			clusterName:         "test-2",
 			subAccountId:        "acc",
 			configMapName:       auditLogsPolicyCMName,

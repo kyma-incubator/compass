@@ -89,7 +89,7 @@ spec:
             - name: APP_GARDENER_AUDIT_LOGS_POLICY_CONFIG_MAP
               value: {{ .Values.gardener.auditLogsPolicyConfigMap }}
             - name: APP_GARDENER_AUDIT_LOGS_TENANT_CONFIG_PATH
-              value: {{ .Values.gardener.tenantConfigPath }}
+              value: {{ .Values.gardener.auditLogTenantConfigPath }}
             - name: APP_PROVISIONER
               value: {{ .Values.provisioner }}
             - name: APP_SUPPORT_ON_DEMAND_RELEASES
@@ -98,15 +98,15 @@ spec:
               value: "{{ .Values.kymaRelease.preReleases.enabled }}"
             - name: APP_LOG_LEVEL
               value: "{{ .Values.logs.level }}"
-        {{if .Values.gardener.tenantConfigMapName }}
-        volumeMounts:
+          volumeMounts:
+          {{if .Values.gardener.auditLogTenantConfigMapName }}
           - mountPath: /gardener/tenant
-            name: gardener-tenant-config
+            name: gardener-audit-log-tenant-config
             readOnly: true
-        {{- end }}
-        - mountPath: /gardener/kubeconfig
-          name: gardener-kubeconfig
-          readOnly: true
+          {{- end }}
+          - mountPath: /gardener/kubeconfig
+            name: gardener-kubeconfig
+            readOnly: true
         {{- with .Values.deployment.securityContext }}
         securityContext:
 {{ toYaml . | indent 12 }}
@@ -129,16 +129,15 @@ spec:
   {{end}}
 volumes:
   {{if eq .Values.global.database.embedded.enabled false}}
-- name: cloudsql-instance-credentials
-  secret:
-    secretName: cloudsql-instance-credentials
-  {{end}}
-- name: gardener-kubeconfig
-  secret:
-    secretName: {{ .Values.gardener.secretName }}
-  {{if .Values.gardener.tenantConfigMapName }}
-- name: gardener-tenant-config
-  configMap:
-    name: {{ .Values.gardener.tenantConfigMapName }}
-    optional: true
-  {{end}}
+  - name: cloudsql-instance-credentials
+    secret:
+      secretName: cloudsql-instance-credentials
+    {{end}}
+  - name: gardener-kubeconfig
+    secret:
+      secretName: {{ .Values.gardener.secretName }}
+    {{if .Values.gardener.auditLogTenantConfigMapName }}
+  - name: gardener-audit-log-tenant-config
+    configMap:
+      name: {{ .Values.gardener.auditLogTenantConfigMapName }}
+    {{end}}
