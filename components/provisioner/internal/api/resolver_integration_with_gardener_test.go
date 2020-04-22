@@ -83,7 +83,7 @@ users:
 `
 
 	auditLogCMName = "auditLogPolicyConfigMap"
-	auditLogTenant = "audit-tenant"
+	auditLogTenant = "e7382275-e835-4549-94e1-3b1101e3a1fa"
 	subAccountId   = "sub-account"
 )
 
@@ -170,6 +170,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	cmClientBuilder.On("CreateK8SConfigMapClient", mockedKubeconfig, compassSystemNamespace).Return(configMapClient, nil)
 	runtimeConfigurator := runtimeConfigrtr.NewRuntimeConfigurator(cmClientBuilder, directorServiceMock)
 
+	auditLogsConfigPath := filepath.Join("testdata", "config.json")
+
 	shootInterface := newFakeShootsInterface(t, cfg)
 	secretsInterface := setupSecretsClient(t, cfg)
 	dbsFactory := dbsession.NewFactory(connection)
@@ -201,7 +203,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
 			uuidGenerator := uuid.NewUUIDGenerator()
-			provisioner := gardener.NewProvisioner(namespace, shootInterface, auditLogCMName, auditLogTenant)
+			provisioner := gardener.NewProvisioner(namespace, shootInterface, auditLogsConfigPath, auditLogCMName)
 
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 
@@ -443,7 +445,7 @@ func (f *fakeShootsInterface) Delete(name string, options *metav1.DeleteOptions)
 	return f.client.Delete(name, options)
 }
 
-func (f *fakeShootsInterface) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+func (f *fakeShootsInterface) DeleteCollection(_ *metav1.DeleteOptions, _ metav1.ListOptions) error {
 	return nil
 }
 
@@ -465,10 +467,10 @@ func (f *fakeShootsInterface) List(opts metav1.ListOptions) (*gardener_types.Sho
 
 	return listFromUnstructured(list)
 }
-func (f *fakeShootsInterface) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+func (f *fakeShootsInterface) Watch(_ metav1.ListOptions) (watch.Interface, error) {
 	return nil, nil
 }
-func (f *fakeShootsInterface) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *gardener_types.Shoot, err error) {
+func (f *fakeShootsInterface) Patch(_ string, pt types.PatchType, _ []byte, _ ...string) (result *gardener_types.Shoot, err error) {
 	return nil, nil
 }
 

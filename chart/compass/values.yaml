@@ -22,7 +22,7 @@ global:
       version: "PR-1156"
     director:
       dir:
-      version: "PR-1183"
+      version: "PR-1184"
     gateway:
       dir:
       version: "PR-1156"
@@ -71,7 +71,6 @@ global:
 
   tenantConfig:
     useDefaultTenants: true
-    useExternalTenants: false
     dbPool:
       maxOpenConnections: 1
       maxIdleConnections: 1

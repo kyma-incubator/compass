@@ -70,10 +70,10 @@ type config struct {
 	ProvisioningTimeout queue.ProvisioningTimeouts
 
 	Gardener struct {
-		Project                  string `envconfig:"default=gardenerProject"`
-		KubeconfigPath           string `envconfig:"default=./dev/kubeconfig.yaml"`
-		AuditLogsPolicyConfigMap string `envconfig:"optional"`
-		AuditLogsTenant          string `envconfig:"optional"`
+		Project                   string `envconfig:"default=gardenerProject"`
+		KubeconfigPath            string `envconfig:"default=./dev/kubeconfig.yaml"`
+		AuditLogsPolicyConfigMap  string `envconfig:"optional"`
+		AuditLogsTenantConfigPath string `envconfig:"optional"`
 	}
 
 	Provisioner string `envconfig:"default=gardener"`
@@ -94,7 +94,7 @@ func (c *config) String() string {
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
 		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
-		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, GardenerAuditLogsTenant: %s, "+
+		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
 		"Provisioner: %s, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, SupportOnDemandReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
@@ -105,7 +105,7 @@ func (c *config) String() string {
 		c.Database.Name, c.Database.SSLMode,
 		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
 		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
-		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenant,
+		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
 		c.Provisioner,
 		c.LatestDownloadedReleases, c.DownloadPreReleases, c.SupportOnDemandReleases,
 		c.EnqueueInProgressOperations,
@@ -169,7 +169,7 @@ func main() {
 		hydroformSvc := hydroform.NewHydroformService(client.NewHydroformClient(), cfg.Gardener.KubeconfigPath)
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
-		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.AuditLogsTenant)
+		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, cfg.Gardener.AuditLogsTenantConfigPath, cfg.Gardener.AuditLogsPolicyConfigMap)
 		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, directorClient, installationService, installationQueue)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {
