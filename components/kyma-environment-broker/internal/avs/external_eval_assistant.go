@@ -20,8 +20,8 @@ func NewExternalEvalAssistant(avsConfig Config) *ExternalEvalAssistant {
 	}
 }
 
-func (eea *ExternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error) {
-	return newBasicEvaluationCreateRequest(operations, eea, eea.avsConfig.GroupId, url)
+func (eea *ExternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, configForModel *configForModel, url string) (*BasicEvaluationCreateRequest, error) {
+	return newBasicEvaluationCreateRequest(operations, eea, configForModel, url)
 }
 
 func (eea *ExternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64) {
