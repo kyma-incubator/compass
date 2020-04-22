@@ -24,6 +24,7 @@ type RuntimeStatusCondition string
 
 const (
 	RuntimeStatusConditionInitial   RuntimeStatusCondition = "INITIAL"
+	RuntimeStatusConditionProvisioning   RuntimeStatusCondition = "PROVISIONING"
 	RuntimeStatusConditionConnected RuntimeStatusCondition = "CONNECTED"
 	RuntimeStatusConditionFailed    RuntimeStatusCondition = "FAILED"
 )

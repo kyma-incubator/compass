@@ -199,7 +199,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
 			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
-			directorServiceMock.On("GetRuntime", mock.Anything, mock.Anything).Return(graphql.Runtime{
+			directorServiceMock.On("GetRuntime", mock.Anything, mock.Anything).Return(graphql.RuntimeExt{
 				ID:          config.runtimeID,
 				Name:        config.runtimeInput.Name,
 				Description: config.runtimeInput.Description,

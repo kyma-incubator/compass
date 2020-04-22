@@ -9,7 +9,7 @@ type CreateRuntimeResponse struct {
 }
 
 type GetRuntimeResponse struct {
-	Result *graphql.Runtime `json:"result"`
+	Result *graphql.RuntimeExt `json:"result"`
 }
 
 type DeleteRuntimeResponse struct {
