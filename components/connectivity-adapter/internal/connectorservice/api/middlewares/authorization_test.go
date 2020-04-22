@@ -35,6 +35,7 @@ func TestMiddleware_ExtractHeaders(t *testing.T) {
 	headersFromCertificate := map[string]string{
 		oathkeeper.ClientIdFromCertificateHeader: "myapp",
 		oathkeeper.ClientCertificateHashHeader:   "certificate hash",
+		authorizationHeader: "Bearer: abc",
 	}
 
 	testCases := []struct {

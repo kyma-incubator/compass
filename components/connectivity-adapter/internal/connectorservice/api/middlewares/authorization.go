@@ -12,6 +12,10 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 )
 
+const (
+	authorizationHeader string = "Authorization"
+)
+
 func NewAuthorizationMiddleware() authorizationHeadersMiddleware {
 	return authorizationHeadersMiddleware{}
 }
@@ -43,10 +47,13 @@ func extractHeaders(r *http.Request) (map[string]string, error) {
 
 	clientIdFromCertificate := r.Header.Get(oathkeeper.ClientIdFromCertificateHeader)
 	clientCertificateHash := r.Header.Get(oathkeeper.ClientCertificateHashHeader)
-	if clientIdFromCertificate != "" && clientCertificateHash != "" {
+	clientAuthorization := r.Header.Get(authorizationHeader)
+
+	if clientIdFromCertificate != "" && clientCertificateHash != "" && clientAuthorization != "" {
 		return map[string]string{
 			oathkeeper.ClientIdFromCertificateHeader: clientIdFromCertificate,
 			oathkeeper.ClientCertificateHashHeader:   clientCertificateHash,
+			authorizationHeader:                      clientAuthorization,
 		}, nil
 	}
 
