@@ -32,6 +32,11 @@ type configForModel struct {
 	parentId int64
 }
 
+type avsNonSuccessResp struct {
+	Status  int    `json:"status"`
+	Message string `json:"message"`
+}
+
 func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Delegator {
 	return &Delegator{
 		operationManager:  process.NewProvisionOperationManager(operationsStorage),
@@ -164,15 +169,15 @@ func (del *Delegator) tryDeleting(assistant EvalAssistant, lifecycleData interna
 }
 func (del *Delegator) removeReferenceFromParentEval(logger logrus.FieldLogger, evaluationId int64) error {
 	absoluteURL := fmt.Sprintf("%s/child/%d", appendId(del.avsConfig.ApiEndpoint, del.avsConfig.ParentId), evaluationId)
-	return del.deleteRequest(absoluteURL, logger)
+	return del.deleteRequest(absoluteURL, logger, inferIfReferenceIsGone)
 }
 func (del *Delegator) deleteEvaluation(logger logrus.FieldLogger, evaluationId int64) error {
 	absoluteURL := appendId(del.avsConfig.ApiEndpoint, evaluationId)
-	return del.deleteRequest(absoluteURL, logger)
+	return del.deleteRequest(absoluteURL, logger, cannotInfer)
 
 }
 
-func (del *Delegator) deleteRequest(absoluteURL string, logger logrus.FieldLogger) error {
+func (del *Delegator) deleteRequest(absoluteURL string, logger logrus.FieldLogger, inferDelete func(resp *http.Response, logger2 logrus.FieldLogger) bool) error {
 	req, err := http.NewRequest(http.MethodDelete, absoluteURL, nil)
 	if err != nil {
 		return err
@@ -192,6 +197,8 @@ func (del *Delegator) deleteRequest(absoluteURL string, logger logrus.FieldLogge
 	if resp.StatusCode == 200 || resp.StatusCode == 404 {
 		logger.Infof("Delete successful for url [%s]", absoluteURL)
 		return nil
+	} else if inferDelete(resp, logger) {
+		return nil
 	} else {
 		msg := fmt.Sprintf("Got unexpected status [%d] while deleting for url [%s]", resp.StatusCode, absoluteURL)
 		logger.Error(msg)
@@ -205,4 +212,23 @@ func appendId(baseUrl string, id int64) string {
 	} else {
 		return baseUrl + "/" + strconv.FormatInt(id, 10)
 	}
+}
+func cannotInfer(resp *http.Response, logger logrus.FieldLogger) bool {
+	return false
+}
+
+func inferIfReferenceIsGone(resp *http.Response, logger logrus.FieldLogger) bool {
+	nonSuccessResp, err := deserializeNonSuccessAvsResponse(resp)
+	if err != nil {
+		return false
+	}
+	logger.Infof("Non Success avs response is %+v", nonSuccessResp)
+	return strings.Contains(strings.ToLower(nonSuccessResp.Message), "does not contain subevaluation")
+}
+
+func deserializeNonSuccessAvsResponse(resp *http.Response) (*avsNonSuccessResp, error) {
+	dec := json.NewDecoder(resp.Body)
+	var responseObject avsNonSuccessResp
+	err := dec.Decode(&responseObject)
+	return &responseObject, err
 }
