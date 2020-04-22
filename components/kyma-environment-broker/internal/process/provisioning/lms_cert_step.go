@@ -169,12 +169,11 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 		{Key: "fluent-bit.backend.forward.tls.cert", Value: base64.StdEncoding.EncodeToString([]byte(signedCert))},
 		{Key: "fluent-bit.backend.forward.tls.key", Value: base64.StdEncoding.EncodeToString(pKey)},
 
-		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
-[FILTER]
-        Name record_modifier
-        Match *
-        Record cluster_name %s
-`, pp.ErsContext.SubAccountID)}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
+		// record modifier filter
+		{Key: "fluent-bit.conf.Filter.record_modifier.enabled", Value: "true"},
+		{Key: "fluent-bit.conf.Filter.record_modifier.Match", Value: "*"},
+		{Key: "fluent-bit.conf.Filter.record_modifier.Key", Value: "cluster_name"},
+		{Key: "fluent-bit.conf.Filter.record_modifier.Value", Value: pp.ErsContext.SubAccountID}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
 	})
 
 	return operation, 0, nil
