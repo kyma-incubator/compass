@@ -17,6 +17,7 @@
 /chart/compass/charts/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 /components/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 /docs/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
+/components/schema-migrator/migrations/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 
 # e2e-provisioning
 /tests/e2e/provisioning @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001

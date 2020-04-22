@@ -106,7 +106,7 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstance.ProvisioningParameters, inst.ProvisioningParameters)
 			assert.NotEmpty(t, inst.CreatedAt)
 			assert.NotEmpty(t, inst.UpdatedAt)
-			assert.Equal(t, "0001-01-01 00:00:00 +0000 UTC", inst.DelatedAt.String())
+			assert.Equal(t, "0001-01-01 00:00:00 +0000 UTC", inst.DeletedAt.String())
 
 			// when
 			err = brokerStorage.Instances().Delete(fixInstance.InstanceID)
@@ -493,7 +493,7 @@ func assertInstanceByIgnoreTime(t *testing.T, want, got internal.Instance) {
 	t.Helper()
 	want.CreatedAt, got.CreatedAt = time.Time{}, time.Time{}
 	want.UpdatedAt, got.UpdatedAt = time.Time{}, time.Time{}
-	want.DelatedAt, got.DelatedAt = time.Time{}, time.Time{}
+	want.DeletedAt, got.DeletedAt = time.Time{}, time.Time{}
 
 	assert.EqualValues(t, want, got)
 }
