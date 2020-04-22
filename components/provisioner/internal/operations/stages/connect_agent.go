@@ -40,7 +40,7 @@ func (s *ConnectAgentStep) Run(cluster model.Cluster, _ model.Operation, _ logru
 
 	err := s.runtimeConfigurator.ConfigureRuntime(cluster, *cluster.Kubeconfig)
 	if err != nil {
-		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
+		return operations.StageResult{}, fmt.Errorf("failed to configure Runtime Agent: %s", err.Error())
 	}
 
 	return operations.StageResult{Stage: s.nextStage, Delay: 0}, nil
