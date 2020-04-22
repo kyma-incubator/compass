@@ -47,7 +47,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// when
-			converter := application.NewConverter(nil, nil, nil, nil, nil)
+			converter := application.NewConverter(nil, nil)
 			res := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -75,7 +75,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 
 	// when
-	converter := application.NewConverter(nil, nil, nil, nil, nil)
+	converter := application.NewConverter(nil, nil)
 	res := converter.MultipleToGraphQL(input)
 
 	// then
@@ -88,14 +88,11 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 
 	// given
 	testCases := []struct {
-		Name                string
-		Input               graphql.ApplicationRegisterInput
-		Expected            model.ApplicationRegisterInput
-		WebhookConverterFn  func() *automock.WebhookConverter
-		DocumentConverterFn func() *automock.DocumentConverter
-		APIConverterFn      func() *automock.APIConverter
-		EventAPIConverterFn func() *automock.EventAPIConverter
-		PackageConverterFn  func() *automock.PackageConverter
+		Name               string
+		Input              graphql.ApplicationRegisterInput
+		Expected           model.ApplicationRegisterInput
+		WebhookConverterFn func() *automock.WebhookConverter
+		PackageConverterFn func() *automock.PackageConverter
 	}{
 		{
 			Name:     "All properties given",
@@ -104,21 +101,6 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			WebhookConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
 				conv.On("MultipleInputFromGraphQL", allPropsInput.Webhooks).Return(allPropsExpected.Webhooks)
-				return conv
-			},
-			APIConverterFn: func() *automock.APIConverter {
-				conv := &automock.APIConverter{}
-				conv.On("MultipleInputFromGraphQL", allPropsInput.APIDefinitions).Return(allPropsExpected.APIDefinitions)
-				return conv
-			},
-			EventAPIConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("MultipleInputFromGraphQL", allPropsInput.EventDefinitions).Return(allPropsExpected.EventDefinitions)
-				return conv
-			},
-			DocumentConverterFn: func() *automock.DocumentConverter {
-				conv := &automock.DocumentConverter{}
-				conv.On("MultipleInputFromGraphQL", allPropsInput.Documents).Return(allPropsExpected.Documents)
 				return conv
 			},
 			PackageConverterFn: func() *automock.PackageConverter {
@@ -136,21 +118,6 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return(nil)
 				return conv
 			},
-			APIConverterFn: func() *automock.APIConverter {
-				conv := &automock.APIConverter{}
-				conv.On("MultipleInputFromGraphQL", []*graphql.APIDefinitionInput(nil)).Return(nil)
-				return conv
-			},
-			EventAPIConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("MultipleInputFromGraphQL", []*graphql.EventDefinitionInput(nil)).Return(nil)
-				return conv
-			},
-			DocumentConverterFn: func() *automock.DocumentConverter {
-				conv := &automock.DocumentConverter{}
-				conv.On("MultipleInputFromGraphQL", []*graphql.DocumentInput(nil)).Return(nil)
-				return conv
-			},
 			PackageConverterFn: func() *automock.PackageConverter {
 				conv := &automock.PackageConverter{}
 				conv.On("MultipleCreateInputFromGraphQL", []*graphql.PackageCreateInput(nil)).Return(nil)
@@ -164,9 +131,6 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			// when
 			converter := application.NewConverter(
 				testCase.WebhookConverterFn(),
-				testCase.APIConverterFn(),
-				testCase.EventAPIConverterFn(),
-				testCase.DocumentConverterFn(),
 				testCase.PackageConverterFn(),
 			)
 			res := converter.CreateInputFromGraphQL(testCase.Input)
@@ -204,7 +168,7 @@ func TestConverter_UpdateInputFromGraphQL_StatusCondition(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			gqlApp := graphql.ApplicationUpdateInput{StatusCondition: &testCase.CondtionGQL}
 
-			converter := application.NewConverter(nil, nil, nil, nil, nil)
+			converter := application.NewConverter(nil, nil)
 			modelApp := converter.UpdateInputFromGraphQL(gqlApp)
 
 			require.Equal(t, &testCase.ConditionModel, modelApp.StatusCondition)
@@ -237,7 +201,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// when
-			converter := application.NewConverter(nil, nil, nil, nil, nil)
+			converter := application.NewConverter(nil, nil)
 			res := converter.UpdateInputFromGraphQL(testCase.Input)
 
 			// then
@@ -247,7 +211,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 }
 
 func TestConverter_ToEntity(t *testing.T) {
-	conv := application.NewConverter(nil, nil, nil, nil, nil)
+	conv := application.NewConverter(nil, nil)
 
 	t.Run("All properties given", func(t *testing.T) {
 		// GIVEN
@@ -287,7 +251,7 @@ func TestConverter_ToEntity(t *testing.T) {
 }
 
 func TestConverter_FromEntity(t *testing.T) {
-	conv := application.NewConverter(nil, nil, nil, nil, nil)
+	conv := application.NewConverter(nil, nil)
 
 	t.Run("All properties given", func(t *testing.T) {
 		// GIVEN
@@ -322,7 +286,7 @@ func TestConverter_FromEntity(t *testing.T) {
 
 func TestConverter_CreateInputGQLJSONConversion(t *testing.T) {
 	// GIVEN
-	conv := application.NewConverter(nil, nil, nil, nil, nil)
+	conv := application.NewConverter(nil, nil)
 
 	t.Run("Successful two-way conversion", func(t *testing.T) {
 		inputGQL := fixGQLApplicationRegisterInput("name", "description")
@@ -353,7 +317,7 @@ func TestConverter_CreateInputGQLJSONConversion(t *testing.T) {
 }
 
 func TestConverter_ConvertToModel(t *testing.T) {
-	conv := application.NewConverter(nil, nil, nil, nil, nil)
+	conv := application.NewConverter(nil, nil)
 
 	t.Run("Successful full model", func(t *testing.T) {
 		tenantID := uuid.New().String()

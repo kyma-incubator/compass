@@ -21,11 +21,6 @@ type ApplicationExt struct {
 	Application
 	Labels                Labels                           `json:"labels"`
 	Webhooks              []Webhook                        `json:"webhooks"`
-	APIDefinitions        APIDefinitionPageExt             `json:"apiDefinitions"`
-	EventDefinitions      EventAPIDefinitionPageExt        `json:"eventDefinitions"`
-	APIDefinition         APIDefinition                    `json:"apiDefinition"`
-	EventDefinition       EventDefinition                  `json:"eventDefinition"`
-	Documents             DocumentPageExt                  `json:"documents"`
 	Auths                 []*SystemAuth                    `json:"auths"`
 	Package               PackageExt                       `json:"package"`
 	Packages              PackagePageExt                   `json:"packages"`

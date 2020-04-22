@@ -37,6 +37,42 @@ func TestAddAPIToPackage(t *testing.T) {
 	saveExample(t, req.Query(), "add api definition to package")
 }
 
+func TestManageAPIInPackage(t *testing.T) {
+	ctx := context.Background()
+
+	appName := "app-test-package"
+	application := registerApplication(t, ctx, appName)
+	defer unregisterApplication(t, application.ID)
+
+	pkgName := "test-package"
+	pkg := createPackage(t, ctx, application.ID, pkgName)
+	defer deletePackage(t, ctx, pkg.ID)
+
+	api := addAPIToPackage(t, ctx, pkg.ID)
+
+	apiUpdateInput := fixAPIDefinitionInputWithName("new-name")
+	apiUpdateGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(apiUpdateInput)
+	require.NoError(t, err)
+
+	req := fixUpdateAPIRequest(api.ID, apiUpdateGQL)
+
+	var updatedAPI graphql.APIDefinitionExt
+	err = tc.RunOperation(ctx, req, &updatedAPI)
+	require.NoError(t, err)
+
+	assert.Equal(t, updatedAPI.ID, api.ID)
+	assert.Equal(t, updatedAPI.Name, "new-name")
+	saveExample(t, req.Query(), "update api definition")
+
+	var deletedAPI graphql.APIDefinitionExt
+	req = fixDeleteAPIRequest(api.ID)
+	err = tc.RunOperation(ctx, req, &deletedAPI)
+	require.NoError(t, err)
+
+	assert.Equal(t, api.ID, deletedAPI.ID)
+	saveExample(t, req.Query(), "delete api definition")
+}
+
 func TestAddEventDefinitionToPackage(t *testing.T) {
 	ctx := context.Background()
 
@@ -61,6 +97,42 @@ func TestAddEventDefinitionToPackage(t *testing.T) {
 	saveExample(t, req.Query(), "add event definition to package")
 }
 
+func TestManageEventDefinitionInPackage(t *testing.T) {
+	ctx := context.Background()
+
+	appName := "app-test-package"
+	application := registerApplication(t, ctx, appName)
+	defer unregisterApplication(t, application.ID)
+
+	pkgName := "test-package"
+	pkg := createPackage(t, ctx, application.ID, pkgName)
+	defer deletePackage(t, ctx, pkg.ID)
+
+	event := addEventToPackage(t, ctx, pkg.ID)
+
+	eventUpdateInput := fixEventAPIDefinitionInputWithName("new-name")
+	eventUpdateGQL, err := tc.graphqlizer.EventDefinitionInputToGQL(eventUpdateInput)
+	require.NoError(t, err)
+
+	req := fixUpdateEventAPIRequest(event.ID, eventUpdateGQL)
+
+	var updatedEvent graphql.EventAPIDefinitionExt
+	err = tc.RunOperation(ctx, req, &updatedEvent)
+	require.NoError(t, err)
+
+	assert.Equal(t, updatedEvent.ID, event.ID)
+	assert.Equal(t, updatedEvent.Name, "new-name")
+	saveExample(t, req.Query(), "update event definition")
+
+	var deletedEvent graphql.EventAPIDefinitionExt
+	req = fixDeleteEventAPIRequest(event.ID)
+	err = tc.RunOperation(ctx, req, &deletedEvent)
+	require.NoError(t, err)
+
+	assert.Equal(t, event.ID, deletedEvent.ID)
+	saveExample(t, req.Query(), "delete event definition")
+}
+
 func TestAddDocumentToPackage(t *testing.T) {
 	ctx := context.Background()
 
@@ -83,6 +155,28 @@ func TestAddDocumentToPackage(t *testing.T) {
 
 	assertDocuments(t, []*graphql.DocumentInput{&input}, []*graphql.DocumentExt{&actualDocument})
 	saveExample(t, req.Query(), "add document to package")
+}
+
+func TestManageDocumentInPackage(t *testing.T) {
+	ctx := context.Background()
+
+	appName := "app-test-package"
+	application := registerApplication(t, ctx, appName)
+	defer unregisterApplication(t, application.ID)
+
+	pkgName := "test-package"
+	pkg := createPackage(t, ctx, application.ID, pkgName)
+	defer deletePackage(t, ctx, pkg.ID)
+
+	document := addDocumentToPackage(t, ctx, pkg.ID)
+
+	var deletedDocument graphql.DocumentExt
+	req := fixDeleteDocumentRequest(document.ID)
+	err := tc.RunOperation(ctx, req, &deletedDocument)
+	require.NoError(t, err)
+
+	assert.Equal(t, document.ID, deletedDocument.ID)
+	saveExample(t, req.Query(), "delete document")
 }
 
 func TestAPIDefinitionInPackage(t *testing.T) {

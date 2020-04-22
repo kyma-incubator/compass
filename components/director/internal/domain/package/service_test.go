@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -95,14 +93,14 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: str.Ptr("foo"), Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: str.Ptr("foo"), Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: str.Ptr("foo"), Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: str.Ptr("foo"), Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -165,7 +163,7 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: str.Ptr("foo"), Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(testErr).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(testErr).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -197,13 +195,13 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: str.Ptr("foo"), Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: str.Ptr("foo"), Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: str.Ptr("foo"), Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(testErr).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(testErr).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -232,14 +230,14 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: str.Ptr("foo"), Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: str.Ptr("foo"), Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: str.Ptr("foo"), Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: str.Ptr("foo"), Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {

@@ -2,11 +2,18 @@
 mutation {
   result: updateAPIDefinition(
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    in: { name: "updated-api-name", targetURL: "http://updated-target.url" }
+    in: {
+      name: "new-name"
+      targetURL: "https://target.url"
+      spec: {
+        type: OPEN_API
+        format: JSON
+        fetchRequest: { url: "https://foo.bar" }
+      }
+    }
   ) {
     id
     name
-    applicationID
     description
     spec {
       data
@@ -57,75 +64,6 @@ mutation {
     }
     targetURL
     group
-    auths {
-      runtimeID
-      auth {
-        credential {
-          ... on BasicCredentialData {
-            username
-            password
-          }
-          ... on OAuthCredentialData {
-            clientId
-            clientSecret
-            url
-          }
-        }
-        additionalHeaders
-        additionalQueryParams
-        requestAuth {
-          csrf {
-            tokenEndpointURL
-            credential {
-              ... on BasicCredentialData {
-                username
-                password
-              }
-              ... on OAuthCredentialData {
-                clientId
-                clientSecret
-                url
-              }
-            }
-            additionalHeaders
-            additionalQueryParams
-          }
-        }
-      }
-    }
-    defaultAuth {
-      credential {
-        ... on BasicCredentialData {
-          username
-          password
-        }
-        ... on OAuthCredentialData {
-          clientId
-          clientSecret
-          url
-        }
-      }
-      additionalHeaders
-      additionalQueryParams
-      requestAuth {
-        csrf {
-          tokenEndpointURL
-          credential {
-            ... on BasicCredentialData {
-              username
-              password
-            }
-            ... on OAuthCredentialData {
-              clientId
-              clientSecret
-              url
-            }
-          }
-          additionalHeaders
-          additionalQueryParams
-        }
-      }
-    }
     version {
       value
       deprecated

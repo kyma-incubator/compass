@@ -3,16 +3,11 @@ mutation {
   result: updateEventDefinition(
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     in: {
-      name: "updated-event-api"
-      spec: {
-        type: ASYNC_API
-        fetchRequest: { url: "https://kyma-project.io" }
-        format: YAML
-      }
+      name: "new-name"
+      spec: { data: "data", type: ASYNC_API, format: JSON }
     }
   ) {
     id
-    applicationID
     name
     description
     group

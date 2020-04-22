@@ -2,7 +2,11 @@ package provisioner
 
 import (
 	"bytes"
+	"encoding/json"
+	"reflect"
 	"text/template"
+
+	"github.com/sirupsen/logrus"
 
 	"fmt"
 
@@ -53,15 +57,8 @@ func (g *Graphqlizer) RuntimeInputToGraphQL(in gqlschema.RuntimeInput) (string, 
 	}`)
 }
 
-func (g Graphqlizer) LabelsToGQL(in gqlschema.Labels) (string, error) {
-	return g.genericToGraphQL(in, `{
-		{{- range $k,$v := . }}
-			{{$k}}: [
-				{{- range $i,$j := $v }}
-					{{- if $i}},{{- end}}"{{$j}}"
-				{{- end }}],
-		{{- end}}
-	}`)
+func (g *Graphqlizer) LabelsToGQL(in gqlschema.Labels) (string, error) {
+	return g.marshal(in), nil
 }
 
 func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (string, error) {
@@ -184,8 +181,42 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
 		{{- end }}
 	}`)
 }
+
+func (g *Graphqlizer) marshal(obj interface{}) string {
+	var out string
+
+	val := reflect.ValueOf(obj)
+
+	switch val.Kind() {
+	case reflect.Map:
+		s, err := g.genericToGraphQL(obj, `{ {{- range $k, $v := . }}{{ $k }}:{{ marshal $v }},{{ end -}} }`)
+		if err != nil {
+			logrus.Warnf("failed to marshal labels: %s", err.Error())
+			return ""
+		}
+		out = s
+	case reflect.Slice, reflect.Array:
+		s, err := g.genericToGraphQL(obj, `[{{ range $i, $e := . }}{{ if $i }},{{ end }}{{ marshal $e }}{{ end }}]`)
+		if err != nil {
+			logrus.Warnf("failed to marshal labels: %s", err.Error())
+			return ""
+		}
+		out = s
+	default:
+		marshalled, err := json.Marshal(obj)
+		if err != nil {
+			logrus.Warnf("failed to marshal labels: %s", err.Error())
+			return ""
+		}
+		out = string(marshalled)
+	}
+
+	return out
+}
+
 func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
+	fm["marshal"] = g.marshal
 	fm["RuntimeInputToGraphQL"] = g.RuntimeInputToGraphQL
 	fm["ClusterConfigToGraphQL"] = g.ClusterConfigToGraphQL
 	fm["KymaConfigToGraphQL"] = g.KymaConfigToGraphQL

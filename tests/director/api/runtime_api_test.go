@@ -76,32 +76,6 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	require.NotEmpty(t, actualApp.ID)
 	defer unregisterApplication(t, actualApp.ID)
 
-	// set Auth
-	// GIVEN
-	authIn := graphql.AuthInput{
-		Credential: &graphql.CredentialDataInput{
-			Basic: &graphql.BasicCredentialDataInput{
-				Username: "x-men",
-				Password: "secret",
-			}}}
-	actualAPIRuntimeAuth := graphql.APIRuntimeAuth{}
-
-	authInStr, err := tc.graphqlizer.AuthInputToGQL(&authIn)
-	require.NoError(t, err)
-	setAuthReq := fixSetAPIAuthRequest(actualApp.APIDefinitions.Data[0].ID, actualRuntime.ID, authInStr)
-
-	//WHEN
-	err = tc.RunOperation(ctx, setAuthReq, &actualAPIRuntimeAuth)
-
-	//THEN
-	require.NoError(t, err)
-	require.NotNil(t, actualAPIRuntimeAuth.Auth)
-	assert.Equal(t, actualRuntime.ID, actualAPIRuntimeAuth.RuntimeID)
-	actualBasic, ok := actualAPIRuntimeAuth.Auth.Credential.(*graphql.BasicCredentialData)
-	require.True(t, ok)
-	assert.Equal(t, "x-men", actualBasic.Username)
-	assert.Equal(t, "secret", actualBasic.Password)
-
 	// update runtime, check if only simple values are updated
 	//GIVEN
 	givenInput.Name = "updated-name"
@@ -216,68 +190,6 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	//THEN
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not unique")
-}
-
-func TestSetAndDeleteAPIAuth(t *testing.T) {
-	// GIVEN
-	// create application
-	ctx := context.Background()
-	placeholder := "app"
-	in := fixSampleApplicationRegisterInput(placeholder)
-
-	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
-	require.NoError(t, err)
-	registerReq := fixRegisterApplicationRequest(appInputGQL)
-	actualApp := graphql.ApplicationExt{}
-	err = tc.RunOperation(ctx, registerReq, &actualApp)
-	require.NoError(t, err)
-	require.NotEmpty(t, actualApp.ID)
-	defer unregisterApplication(t, actualApp.ID)
-
-	// create runtime
-	runtimeInput := graphql.RuntimeInput{
-		Name:        "runtime-set-delete-api",
-		Description: ptr.String("runtime-1-description"),
-	}
-	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
-	require.NoError(t, err)
-	actualRuntime := graphql.Runtime{}
-	registerRuntimeReq := fixRegisterRuntimeRequest(runtimeInGQL)
-	err = tc.RunOperation(ctx, registerRuntimeReq, &actualRuntime)
-	require.NoError(t, err)
-	require.NotEmpty(t, actualRuntime.ID)
-
-	defer unregisterRuntime(t, actualRuntime.ID)
-
-	actualAPIRuntimeAuth := graphql.APIRuntimeAuth{}
-
-	// WHEN
-	// set Auth
-	authIn := graphql.AuthInput{
-		Credential: &graphql.CredentialDataInput{
-			Basic: &graphql.BasicCredentialDataInput{
-				Username: "x-men",
-				Password: "secret",
-			}}}
-
-	authInStr, err := tc.graphqlizer.AuthInputToGQL(&authIn)
-	require.NoError(t, err)
-	setAuthReq := fixSetAPIAuthRequest(actualApp.APIDefinitions.Data[0].ID, actualRuntime.ID, authInStr)
-	err = tc.RunOperation(ctx, setAuthReq, &actualAPIRuntimeAuth)
-
-	//THEN
-	require.NoError(t, err)
-	require.NotNil(t, actualAPIRuntimeAuth.Auth)
-	assert.Equal(t, actualRuntime.ID, actualAPIRuntimeAuth.RuntimeID)
-	actualBasic, ok := actualAPIRuntimeAuth.Auth.Credential.(*graphql.BasicCredentialData)
-	require.True(t, ok)
-	assert.Equal(t, "x-men", actualBasic.Username)
-	assert.Equal(t, "secret", actualBasic.Password)
-
-	// delete Auth
-	delAuthReq := fixDeleteAPIAuthRequestRequest(actualApp.APIDefinitions.Data[0].ID, actualRuntime.ID)
-	err = tc.RunOperation(ctx, delAuthReq, nil)
-	require.NoError(t, err)
 }
 
 func TestQueryRuntimes(t *testing.T) {

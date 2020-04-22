@@ -1,18 +1,15 @@
 package graphql
 
 type APIDefinition struct {
-	ID            string   `json:"id"`
-	ApplicationID *string  `json:"applicationID"`
-	PackageID     *string  `json:"packageID"`
-	Name          string   `json:"name"`
-	Description   *string  `json:"description"`
-	Spec          *APISpec `json:"spec"`
-	TargetURL     string   `json:"targetURL"`
+	ID          string   `json:"id"`
+	PackageID   string   `json:"packageID"`
+	Name        string   `json:"name"`
+	Description *string  `json:"description"`
+	Spec        *APISpec `json:"spec"`
+	TargetURL   string   `json:"targetURL"`
 	//  group allows you to find the same API but in different version
-	Group *string `json:"group"`
-	// If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
-	DefaultAuth *Auth    `json:"defaultAuth"`
-	Version     *Version `json:"version"`
+	Group   *string  `json:"group"`
+	Version *Version `json:"version"`
 }
 
 type APISpec struct {
@@ -33,10 +30,6 @@ type APIDefinitionPageExt struct {
 type APIDefinitionExt struct {
 	APIDefinition
 	Spec *APISpecExt `json:"spec"`
-	// "If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
-	Auth *APIRuntimeAuth `json:"auth"`
-	// Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
-	Auths []*APIRuntimeAuth `json:"auths"`
 }
 
 type APISpecExt struct {

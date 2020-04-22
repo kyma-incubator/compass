@@ -122,3 +122,45 @@ func TestKymaConfigToGraphQLOnlyKymaVersion(t *testing.T) {
 
 	assert.Equal(t, expRender, gotRender)
 }
+
+func Test_LabelsToGQL(t *testing.T) {
+
+	sut := Graphqlizer{}
+
+	for _, testCase := range []struct {
+		description string
+		input       gqlschema.Labels
+		expected    string
+	}{
+		{
+			description: "string labels",
+			input: gqlschema.Labels{
+				"test": "966",
+			},
+			expected: `{test:"966",}`,
+		},
+		{
+			description: "string array labels",
+			input: gqlschema.Labels{
+				"test": []string{"966"},
+			},
+			expected: `{test:["966"],}`,
+		},
+		{
+			description: "string array labels",
+			input: gqlschema.Labels{
+				"test": map[string]string{"abcd": "966"},
+			},
+			expected: `{test:{abcd:"966",},}`,
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// when
+			render, err := sut.LabelsToGQL(testCase.input)
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, testCase.expected, render)
+		})
+	}
+}

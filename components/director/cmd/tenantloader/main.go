@@ -49,8 +49,8 @@ func main() {
 
 	ctx := persistence.SaveToContext(context.Background(), tx)
 
-	err = tenantSvc.Sync(ctx, tenants)
-	exitOnError(err, "error while synchronising tenants with db")
+	err = tenantSvc.CreateManyIfNotExists(ctx, tenants)
+	exitOnError(err, "error while creating tenants")
 
 	err = tx.Commit()
 	exitOnError(err, "error while committing the transaction")

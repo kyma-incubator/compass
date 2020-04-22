@@ -185,6 +185,16 @@ func fixUpdateEventAPIRequest(eventAPIID, eventAPIInputGQL string) *gcli.Request
 		`, eventAPIID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
+func fixUpdateDocumentRequest(documentID, documentInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: updateDocument(id: "%s", in: %s) {
+				%s
+			}
+		}
+		`, documentID, documentInputGQL, tc.gqlFieldsProvider.ForDocument()))
+}
+
 func fixDeleteEventAPIRequest(eventAPIID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
