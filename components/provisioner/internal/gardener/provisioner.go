@@ -7,6 +7,7 @@ import (
 	"time"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/sirupsen/logrus"
 	v12 "k8s.io/api/core/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -29,7 +30,7 @@ type GardenerProvisioner struct {
 	namespace                string
 	shootClient              gardener_apis.ShootInterface
 	auditLogsConfigMapName   string
-	auditLogTenantConfigPath         string
+	auditLogTenantConfigPath string
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) error {
