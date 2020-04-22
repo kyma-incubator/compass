@@ -697,10 +697,14 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/kyma-incubator/compass v0.0.0-20200302114843-fb6306fe65c8 h1:hM+HIcv/AvXFaXCsuk8T9L1v9ykzlOQ10SrWyHy/Ll8=
 github.com/kyma-incubator/compass v0.0.0-20200302114843-fb6306fe65c8/go.mod h1:QzxfnmINIGUzElyHs9KhdeMDsYRJTS8TxYtqMZo0YHc=
+github.com/kyma-incubator/compass v0.0.0-20200421071627-8604d53a20a2 h1:/rk3EVS3Jls62msFfnM/vLZ6y53QdZWXK/q0M7ow73g=
+github.com/kyma-incubator/compass v0.0.0-20200421071627-8604d53a20a2/go.mod h1:QzxfnmINIGUzElyHs9KhdeMDsYRJTS8TxYtqMZo0YHc=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200302114843-fb6306fe65c8 h1:p3jxIkrAD8UeTFq7Lo7HANQvDSZM+DtoijIKG8FGgeo=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200302114843-fb6306fe65c8/go.mod h1:YCMIcaXV5kofz/VeajqyTEt/ELCLIuDeH+RpkohyIsY=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200417141145-3a08dc5142a0 h1:RqR3c56rtFlG554zwi/fP976XF/+OXSuGhMnrfYU+rk=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200417141145-3a08dc5142a0/go.mod h1:ZcUC6E1u/IwP7JfozHmHnmN6u6ZA5gEa95gDB0ZO3hk=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200421071627-8604d53a20a2 h1:97Kefi+Dxsy10b4OgmRnMEqRyUmwgEXJikAyVz5cWaE=
+github.com/kyma-incubator/compass/components/director v0.0.0-20200421071627-8604d53a20a2/go.mod h1:C41YpM1c0uzB8mzfFifxmsljBvhhycUxHg/kkUospDo=
 github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9 h1:YERsmPrrApdKkGuOOUwznIZxfIURticqgJpKjN5AYu0=
 github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9/go.mod h1:AxIzJWwHlpqqSdLjwV+bMBK2dpTaQaVpFRprmum1BB8=
 github.com/kyma-incubator/hydroform/install v0.0.0-20200414071650-35d4d6f8c53e h1:+uM7H7E1BW4TG9k3KnO8PqEWMeDe6q7nFegn0NaeaWg=
@@ -710,6 +714,8 @@ github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0/go.mod h1:cfj5
 github.com/kyma-project/kyma v0.5.1-0.20200317154738-0bb20217c2cb/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442 h1:az/bKbDh2ePViYBebcsApy2EXB+dLieLnfg4ise9JRM=
 github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
+github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200422062252-6074323197a6 h1:9sxqW3wMwBrOmh9/hS+olTn0RGf9kt1u60ZY1o1i5bo=
+github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200422062252-6074323197a6/go.mod h1:vk9N+KZchGYtGXrCy26frdn3emV/Pp+OlZZO2aD6SnY=
 github.com/kyma-project/rafter v0.0.0-20200402080904-a0157e52e150/go.mod h1:zlQEXkFdCYTii7GGjd0jLOudgPtxgZLJy2VDXW7j54I=
 github.com/leodido/go-urn v1.1.0/go.mod h1:+cyI34gQWZcE1eQU7NVgKkkzdXDQHr1dBMtdAPozLkw=
 github.com/lestrrat-go/jwx v0.9.0/go.mod h1:iEoxlYfZjvoGpuWwxUz+eR5e6KTJGsaRcy/YNA/UnBk=
@@ -1001,6 +1007,7 @@ github.com/vektah/dataloaden v0.2.1-0.20190515034641-a19b9a6e7c9e/go.mod h1:/HUd
 github.com/vektah/gqlparser v1.1.2/go.mod h1:1ycwN7Ij5njmMkPPAOaRFY4rET2Enx7IkVv3vaXspKw=
 github.com/vektah/gqlparser v1.2.0 h1:ntkSCX7F5ZJKl+HIVnmLaO269MruasVpNiMOjX9kgo0=
 github.com/vektah/gqlparser v1.2.0/go.mod h1:bkVf0FX+Stjg/MHnm8mEyubuaArhNEqfQhF+OTiAL74=
+github.com/vektra/mockery v0.0.0-20181123154057-e78b021dcbb5/go.mod h1:ppEjwdhyy7Y31EnHRDm1JkChoC7LXIJ7Ex0VYLWtZtQ=
 github.com/vmihailenco/msgpack v3.3.3+incompatible/go.mod h1:fy3FlTQTDXWkZ7Bh6AcGMlsjHatGryHQYUTf1ShIgkk=
 github.com/vmihailenco/msgpack v4.0.1+incompatible h1:RMF1enSPeKTlXrXdOcqjFUElywVZjjC6pqse21bKbEU=
 github.com/vmihailenco/msgpack v4.0.1+incompatible/go.mod h1:fy3FlTQTDXWkZ7Bh6AcGMlsjHatGryHQYUTf1ShIgkk=
@@ -1184,6 +1191,7 @@ golang.org/x/tools v0.0.0-20180828015842-6cd1fcedba52/go.mod h1:n7NCudcB/nEzxVGm
 golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
 golang.org/x/tools v0.0.0-20181011042414-1f849cf54d09/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
 golang.org/x/tools v0.0.0-20181030221726-6c7e314b6563/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
+golang.org/x/tools v0.0.0-20181112210238-4b1f3b6b1646/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
 golang.org/x/tools v0.0.0-20181219222714-6e267b5cc78e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
 golang.org/x/tools v0.0.0-20190114222345-bf090417da8b/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
 golang.org/x/tools v0.0.0-20190125232054-d66bd3c5d5a6/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
