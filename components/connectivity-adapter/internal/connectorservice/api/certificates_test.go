@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,7 +37,10 @@ func TestHandler_Certificates(t *testing.T) {
 			ClientCertificate: "client_cert",
 		}, nil)
 
-		handler := NewCertificatesHandler(connectorClientMock, logrus.New())
+		connectorClientProviderMock := &mocks.ClientProvider{}
+		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
+
+		handler := NewCertificatesHandler(connectorClientProviderMock, logrus.New())
 		req := newRequestWithContext(bytes.NewReader(signatureRequestRaw), headersFromToken)
 
 		r := httptest.NewRecorder()
@@ -65,7 +69,10 @@ func TestHandler_Certificates(t *testing.T) {
 		connectorClientMock.On("SignCSR", "Q1NSCg==", headersFromToken).
 			Return(schema.CertificationResult{}, apperrors.Internal("error"))
 
-		handler := NewCertificatesHandler(connectorClientMock, logrus.New())
+		connectorClientProviderMock := &mocks.ClientProvider{}
+		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
+
+		handler := NewCertificatesHandler(connectorClientProviderMock, logrus.New())
 		req := newRequestWithContext(bytes.NewReader(signatureRequestRaw), headersFromToken)
 
 		r := httptest.NewRecorder()
@@ -81,9 +88,12 @@ func TestHandler_Certificates(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
 
+		connectorClientProviderMock := &mocks.ClientProvider{}
+		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
+
 		r := httptest.NewRecorder()
 		req := newRequestWithContext(strings.NewReader(""), nil)
-		handler := NewCertificatesHandler(connectorClientMock, logrus.New())
+		handler := NewCertificatesHandler(connectorClientProviderMock, logrus.New())
 
 		// when
 		handler.SignCSR(r, req)

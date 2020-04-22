@@ -21,14 +21,14 @@ type certRequest struct {
 }
 
 type certificatesHandler struct {
-	client connector.Client
-	logger *log.Logger
+	connectorClientProvider connector.ClientProvider
+	logger                  *log.Logger
 }
 
-func NewCertificatesHandler(client connector.Client, logger *log.Logger) certificatesHandler {
+func NewCertificatesHandler(connectorClientProvider connector.ClientProvider, logger *log.Logger) certificatesHandler {
 	return certificatesHandler{
-		client: client,
-		logger: logger,
+		connectorClientProvider: connectorClientProvider,
+		logger:                  logger,
 	}
 }
 
@@ -48,10 +48,8 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contextLogger.Info("Generating certificate")
-
 	{
-		certificationResult, err := ch.client.SignCSR(certRequest.CSR, authorizationHeaders)
+		certificationResult, err := ch.connectorClientProvider.Client(r).SignCSR(certRequest.CSR, authorizationHeaders)
 		if err != nil {
 			respondWithError(w, contextLogger, errors.Wrap(err, "Failed to sign CSR"), err.Code())
 

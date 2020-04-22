@@ -2,7 +2,6 @@ package connector
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/retry"
@@ -18,15 +17,11 @@ type client struct {
 	timeout       time.Duration
 }
 
-func NewClient(compassConnectorAPIURL string, timeout time.Duration) (Client, error) {
-	gqlExternalAPIClient := graphql.NewClient(compassConnectorAPIURL, graphql.WithHTTPClient(&http.Client{}))
-
-	client := &client{
-		gqlAPIClient: gqlExternalAPIClient,
-		timeout:      timeout,
+func NewClient(gqlClient *graphql.Client, timeout time.Duration) Client {
+	return client{
+		gqlAPIClient: gqlClient,
+		timeout:      30 * time.Second,
 	}
-
-	return client, nil
 }
 
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
