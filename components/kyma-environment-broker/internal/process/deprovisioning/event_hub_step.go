@@ -65,13 +65,13 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	credentials, err := s.EventHub.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
 	if err != nil {
 		// retrying might solve the issue, the HAP could be temporarily unavailable
-		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
+		errorMessage := fmt.Sprintf("unable to retrieve Gardener Credentials from HAP lookup: %v", err)
 		return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
 	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, pp)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
-		errorMessage := fmt.Sprintf("Failed to create Azure config: %v", err)
+		errorMessage := fmt.Sprintf("failed to create Azure config: %v", err)
 		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
 
@@ -79,7 +79,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	namespaceClient, err := s.HyperscalerProvider.GetClient(azureCfg, log)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
-		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
+		errorMessage := fmt.Sprintf("failed to create Azure EventHubs client: %v", err)
 		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
 	// prepare azure tags
@@ -120,8 +120,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 			} else {
 				retryAfterDuration = time.Minute
 			}
-			errorMessage := "rescheduling step to check deletion of resource group completed"
-			log.Info(errorMessage)
+			log.Info("rescheduling step to check deletion of resource group completed")
 			return s.OperationManager.RetryOperation(operation, "waiting for deprovisioning of azure resource group", retryAfterDuration, time.Hour, log)
 		}
 	}

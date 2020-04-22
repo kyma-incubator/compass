@@ -58,7 +58,6 @@ func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *az
 }
 
 func (nc *FakeNamespaceClient) DeleteResourceGroup(ctx context.Context, tags azure.Tags) (resources.GroupsDeleteFuture, error) {
-	//TODO(montaro) double check me
 	nc.DeleteResourceGroupCalled = true
 	return resources.GroupsDeleteFuture{}, nc.DeleteResourceGroupError
 }
@@ -80,7 +79,7 @@ func NewFakeNamespaceAccessKeysNil() azure.AzureInterface {
 		// no error here
 		AccessKeysError: nil,
 		AccessKeys: &eventhub.AccessKeys{
-			// ups .. we got an AccessKeys with nil connection string even though there was no error
+			// ups .. we got an AccessKey with nil connection string even though there was no error
 			PrimaryConnectionString: nil,
 		},
 	}

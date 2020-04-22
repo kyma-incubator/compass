@@ -32,7 +32,7 @@ type AzureClient struct {
 }
 
 type ResourceGroupDoesNotExist struct {
-	S string
+	errorMessage string
 }
 
 func NewResourceGroupDoesNotExist(errorMessage string) ResourceGroupDoesNotExist {
@@ -40,7 +40,7 @@ func NewResourceGroupDoesNotExist(errorMessage string) ResourceGroupDoesNotExist
 }
 
 func (e ResourceGroupDoesNotExist) Error() string {
-	return e.S
+	return e.errorMessage
 }
 
 func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourcegroupClient resources.GroupsClient, logger logrus.FieldLogger) *AzureClient {
