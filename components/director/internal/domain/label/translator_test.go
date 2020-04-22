@@ -12,20 +12,20 @@ func Test_ExtractValueFromJSONPath_WithValidInput(t *testing.T) {
 	testCases := []struct {
 		Name     string
 		Input    string
-		Expected []string
+		Expected []interface{}
 	}{
 		{
 			Name:     "Single word",
 			Input:    `$[*] ? (@ == "dd")`,
-			Expected: []string{"dd"},
+			Expected: []interface{}{"dd"},
 		}, {
 			Name:     "Single with space",
 			Input:    `$[*] ? (@ == "aa cc")`,
-			Expected: []string{"aa cc"},
+			Expected: []interface{}{"aa cc"},
 		}, {
 			Name:     "Many words",
 			Input:    `$[*] ? (@ == "aacc" || @ == "bbee")`,
-			Expected: []string{"aacc", "bbee"},
+			Expected: []interface{}{"aacc", "bbee"},
 		},
 	}
 

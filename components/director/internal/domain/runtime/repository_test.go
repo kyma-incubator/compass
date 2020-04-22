@@ -103,8 +103,8 @@ func TestPgRepository_GetByFiltersAndID_WithAdditionalFiltersShouldReturnRuntime
 	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}).
 		AddRow(runtimeID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, timestamp)
 
-	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE tenant_id = \$1 AND id = \$2 AND id IN \(SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "tenant_id" = '`+tenantID+`' AND "key" = 'someKey'\)$`).
-		WithArgs(tenantID, runtimeID).
+	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE tenant_id = \$1 AND id = \$2 AND id IN \(SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "tenant_id" = \$3 AND "key" = \$4\)$`).
+		WithArgs(tenantID, runtimeID, tenantID, "someKey").
 		WillReturnRows(rows)
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -136,7 +136,8 @@ func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeModelForRuntimeEntit
 	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}).
 		AddRow(runtimeID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, timestamp)
 
-	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE id IN \(SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "key" = 'someKey'\)$`).
+	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE id IN \(SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "key" = \$1\)$`).
+		WithArgs("someKey").
 		WillReturnRows(rows)
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -198,8 +199,8 @@ func TestPgRepository_GetOldestForFilters_WithAdditionalFilers_ShouldReturnRunti
 
 	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}).
 		AddRow(runtimeID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, timestamp)
-	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE tenant_id = \$1 AND id IN \(SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "tenant_id" = '` + tenantID + `' AND "key" = 'scenarios' AND "value" \?\| array\['DEFAULT'\]\) ORDER BY creation_timestamp ASC$`).
-		WithArgs(tenantID).
+	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE tenant_id = \$1 AND id IN \(SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "tenant_id" = \$2 AND "key" = \$3 AND "value" \?\| array\[\$4\]\) ORDER BY creation_timestamp ASC$`).
+		WithArgs(tenantID, tenantID, "scenarios", "DEFAULT").
 		WillReturnRows(rows)
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -333,23 +334,23 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 		AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, timestamp).
 		AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, timestamp)
 
-	filterQuery := fmt.Sprintf(`  AND id IN 
+	filterQuery := `  AND id IN 
 						\(SELECT "runtime_id" FROM public.labels 
 							WHERE "runtime_id" IS NOT NULL 
-							AND "tenant_id" = '%s' 
-							AND "key" = 'foo'\)`, tenantID)
+							AND "tenant_id" = \$2 
+							AND "key" = \$3\)`
 	sqlQuery := fmt.Sprintf(`^SELECT (.+) FROM public.runtimes 
 								WHERE tenant_id = \$1 %s ORDER BY name LIMIT %d OFFSET 0`, filterQuery, rowSize)
 
 	sqlMock.ExpectQuery(sqlQuery).
-		WithArgs(tenantID).
+		WithArgs(tenantID, tenantID, "foo").
 		WillReturnRows(rows)
 
 	countRows := sqlMock.NewRows([]string{"count"}).AddRow(rowSize)
 
 	countQuery := fmt.Sprintf(`^SELECT COUNT\(\*\) FROM public.runtimes WHERE tenant_id = \$1 %s`, filterQuery)
 	sqlMock.ExpectQuery(countQuery).
-		WithArgs(tenantID).
+		WithArgs(tenantID, tenantID, "foo").
 		WillReturnRows(countRows)
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)

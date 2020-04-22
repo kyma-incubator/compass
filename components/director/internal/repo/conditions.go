@@ -3,19 +3,17 @@ package repo
 import (
 	"fmt"
 	"strings"
-
-	"github.com/lib/pq"
 )
 
 type Condition interface {
 	// GetQueryPart returns formatted string that will be included in the SQL query for a given condition
-	GetQueryPart(idx int) string
+	GetQueryPart() string
 
 	// GetQueryArg returns a boolean flag if the condition contains argument and the argument value
 	//
 	// For conditions like IN and IS NOT NULL there are no arguments to be included in the query.
 	// For conditions like = there is a placeholder which value will be returned calling this func.
-	GetQueryArg() (interface{}, bool)
+	GetQueryArgs() ([]interface{}, bool)
 }
 
 type Conditions []Condition
@@ -32,12 +30,12 @@ type equalCondition struct {
 	val   interface{}
 }
 
-func (c *equalCondition) GetQueryPart(idx int) string {
-	return fmt.Sprintf("%s = $%d", c.field, idx)
+func (c *equalCondition) GetQueryPart() string {
+	return fmt.Sprintf("%s = ?", c.field)
 }
 
-func (c *equalCondition) GetQueryArg() (interface{}, bool) {
-	return c.val, true
+func (c *equalCondition) GetQueryArgs() ([]interface{}, bool) {
+	return []interface{}{c.val}, true
 }
 
 func NewNotEqualCondition(field string, val interface{}) Condition {
@@ -52,12 +50,12 @@ type notEqualCondition struct {
 	val   interface{}
 }
 
-func (c *notEqualCondition) GetQueryPart(idx int) string {
-	return fmt.Sprintf("%s != $%d", c.field, idx)
+func (c *notEqualCondition) GetQueryPart() string {
+	return fmt.Sprintf("%s != ?", c.field)
 }
 
-func (c *notEqualCondition) GetQueryArg() (interface{}, bool) {
-	return c.val, true
+func (c *notEqualCondition) GetQueryArgs() ([]interface{}, bool) {
+	return []interface{}{c.val}, true
 }
 
 func NewNotNullCondition(field string) Condition {
@@ -70,42 +68,47 @@ type notNullCondition struct {
 	field string
 }
 
-func (c *notNullCondition) GetQueryPart(idx int) string {
+func (c *notNullCondition) GetQueryPart() string {
 	return fmt.Sprintf("%s IS NOT NULL", c.field)
 }
 
-func (c *notNullCondition) GetQueryArg() (interface{}, bool) {
+func (c *notNullCondition) GetQueryArgs() ([]interface{}, bool) {
 	return nil, false
 }
 
-func NewInConditionForSubQuery(field, subQuery string) Condition {
+func NewInConditionForSubQuery(field, subQuery string, args []interface{}) Condition {
 	return &inCondition{
 		field:       field,
 		parenthesis: subQuery,
-	}
-}
-
-func NewInConditionForStringValues(field string, values []string) Condition {
-	var escapedValues []string
-	for _, value := range values {
-		escapedValues = append(escapedValues, pq.QuoteLiteral(value))
-	}
-
-	return &inCondition{
-		field:       field,
-		parenthesis: strings.Join(escapedValues, ", "),
+		args:        args,
 	}
 }
 
 type inCondition struct {
 	field       string
 	parenthesis string
+	args        []interface{}
 }
 
-func (c *inCondition) GetQueryPart(idx int) string {
+func (c *inCondition) GetQueryPart() string {
 	return fmt.Sprintf("%s IN (%s)", c.field, c.parenthesis)
 }
 
-func (c *inCondition) GetQueryArg() (interface{}, bool) {
-	return nil, false
+func (c *inCondition) GetQueryArgs() ([]interface{}, bool) {
+	return c.args, true
+}
+
+func NewInConditionForStringValues(field string, values []string) Condition {
+	var parenthesisParams []string
+	var args []interface{}
+	for _, value := range values {
+		parenthesisParams = append(parenthesisParams, "?")
+		args = append(args, value)
+	}
+
+	return &inCondition{
+		field:       field,
+		args:        args,
+		parenthesis: strings.Join(parenthesisParams, ", "),
+	}
 }

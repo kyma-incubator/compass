@@ -72,14 +72,14 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing tenant as UUID")
 	}
-	filterSubquery, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filter)
+	filterSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
 
 	var conditions repo.Conditions
 	if filterSubquery != "" {
-		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery))
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
 	}
 
 	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &appsCollection, conditions...)
@@ -104,20 +104,19 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 	var appsCollection EntityCollection
 
 	var scenariosFilers []*labelfilter.LabelFilter
-
 	for _, scenarioValue := range scenarios {
 		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
 		scenariosFilers = append(scenariosFilers, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
 	}
 
-	scenariosSubquery, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenant, scenariosFilers)
+	scenariosSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenant, scenariosFilers)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating scenarios filter query")
 	}
 
 	var conditions repo.Conditions
 	if scenariosSubquery != "" {
-		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery))
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery, args))
 	}
 
 	page, totalCount, err := r.pageableQuerier.List(ctx, tenant.String(), pageSize, cursor, "id", &appsCollection, conditions...)

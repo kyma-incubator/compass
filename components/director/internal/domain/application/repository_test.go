@@ -358,15 +358,16 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 	assert.NoError(t, err)
 
 	runtimeScenarios := []string{"Java", "Go", "Elixir"}
-	scenariosQuery := fmt.Sprintf(`SELECT "app_id" FROM public.labels
-					WHERE "app_id" IS NOT NULL AND "tenant_id" = '%s'
-						AND "key" = 'scenarios' AND "value" ?| array['Java']
+	scenariosKey := "scenarios"
+	scenariosQuery := `SELECT "app_id" FROM public.labels
+					WHERE "app_id" IS NOT NULL AND "tenant_id" = $2
+						AND "key" = $3 AND "value" ?| array[$4]
 					UNION SELECT "app_id" FROM public.labels
-						WHERE "app_id" IS NOT NULL AND "tenant_id" = '%s'
-						AND "key" = 'scenarios' AND "value" ?| array['Go']
+						WHERE "app_id" IS NOT NULL AND "tenant_id" = $5
+						AND "key" = $6 AND "value" ?| array[$7]
 					UNION SELECT "app_id" FROM public.labels
-						WHERE "app_id" IS NOT NULL AND "tenant_id" = '%s'
-						AND "key" = 'scenarios' AND "value" ?| array['Elixir']`, tenantID, tenantID, tenantID)
+						WHERE "app_id" IS NOT NULL AND "tenant_id" = $8
+						AND "key" = $9 AND "value" ?| array[$10]`
 	applicationScenarioQuery := regexp.QuoteMeta(scenariosQuery)
 
 	pagableQuery := fmt.Sprintf(`SELECT (.+) FROM public\.applications WHERE tenant_id = \$1 AND id IN \(%s\) ORDER BY id LIMIT %d OFFSET %d`,
@@ -407,12 +408,12 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			sqlxDB, sqlMock := testdb.MockDatabase(t)
 			if testCase.ExpectedApplicationRows != nil {
 				sqlMock.ExpectQuery(pagableQuery).
-					WithArgs(tenantID).
+					WithArgs(tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir").
 					WillReturnRows(testCase.ExpectedApplicationRows)
 
 				countRow := sqlMock.NewRows([]string{"count"}).AddRow(testCase.TotalCount)
 				sqlMock.ExpectQuery(countQuery).
-					WithArgs(tenantID).
+					WithArgs(tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir").
 					WillReturnRows(countRow)
 			}
 			repository := application.NewRepository(conv)

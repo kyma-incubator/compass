@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -1013,14 +1012,14 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 	rtmIDs := []string{rtm1ID, rtm2ID}
 	testErr := errors.New("test error")
 
-	query := regexp.QuoteMeta(fmt.Sprintf(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE tenant_id = $1 AND key = $2 AND runtime_id IN ('%s', '%s')`, rtm1ID, rtm2ID))
+	query := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE tenant_id = $1 AND key = $2 AND runtime_id IN ($3, $4)`)
 	t.Run("Success", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
 			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm1ID).
 			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm2ID)
 
-		dbMock.ExpectQuery(query).WithArgs(tenantID, model.ScenariosKey).WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(query).WithArgs(tenantID, model.ScenariosKey, rtm1ID, rtm2ID).WillReturnRows(mockedRows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
 		conv := label.NewConverter()
@@ -1040,7 +1039,7 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm1ID).
 			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm2ID)
 
-		dbMock.ExpectQuery(query).WithArgs(tenantID, model.ScenariosKey).WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(query).WithArgs(tenantID, model.ScenariosKey, rtm1ID, rtm2ID).WillReturnRows(mockedRows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
 		conv := &automock.Converter{}
@@ -1058,7 +1057,7 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 
 	t.Run("Database returns error", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
-		dbMock.ExpectQuery(query).WithArgs(tenantID, model.ScenariosKey).WillReturnError(testErr)
+		dbMock.ExpectQuery(query).WithArgs(tenantID, model.ScenariosKey, rtm1ID, rtm2ID).WillReturnError(testErr)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
 		conv := label.NewConverter()
