@@ -11,18 +11,26 @@ import (
 )
 
 type service struct {
+	repo   FetchRequestRepository
 	client http.Client
 	logger *log.Logger
 }
 
-func NewService(client http.Client, logger *log.Logger) *service {
+//go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
+type FetchRequestRepository interface {
+	Update(ctx context.Context, item *model.FetchRequest) error
+}
+
+func NewService(repo FetchRequestRepository, client http.Client, logger *log.Logger) *service {
 	return &service{
+		repo:   repo,
 		client: client,
 		logger: logger,
 	}
 }
 
 func (s *service) FetchAPISpec(ctx context.Context, fr *model.FetchRequest) *string {
+
 	if fr.Mode != model.FetchModeSingle {
 		return nil
 	}
@@ -50,6 +58,11 @@ func (s *service) FetchAPISpec(ctx context.Context, fr *model.FetchRequest) *str
 
 	spec := string(body)
 	fr.Status.Condition = model.FetchRequestStatusConditionSucceeded
+	err = s.repo.Update(ctx, fr)
+	if err != nil {
+		log.Errorf("While updating Fetch Request status: %s", err.Error())
+		return nil
+	}
 	return &spec
 
 }

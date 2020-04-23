@@ -24,6 +24,7 @@ type PackageRepository interface {
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
 type APIRepository interface {
 	Create(ctx context.Context, item *model.APIDefinition) error
+	Update(ctx context.Context, item *model.APIDefinition) error
 }
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
@@ -39,7 +40,6 @@ type DocumentRepository interface {
 //go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
 type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
-	Update(ctx context.Context, item *model.FetchRequest) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -245,31 +245,28 @@ func (s *service) createAPIs(ctx context.Context, packageID, tenant string, apis
 	for _, item := range apis {
 		apiDefID := s.uidService.Generate()
 
-		if item.Spec != nil && item.Spec.FetchRequest != nil {
+		api := item.ToAPIDefinitionWithinPackage(apiDefID, packageID, tenant)
 
-			fr, err := s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
-			if err != nil {
-				return errors.Wrap(err, "while creating FetchRequest for application")
-			}
-			item.Spec.Data = s.fetchRequestService.FetchAPISpec(ctx, fr)
-			//
-			//err = s.fetchRequestRepo.Update(ctx, fr)
-			//if err != nil {
-			//	return errors.Wrap(err, "while updating status")
-			//}
-
-		}
-
-		err = s.apiRepo.Create(ctx, item.ToAPIDefinitionWithinPackage(apiDefID, packageID, tenant))
+		err = s.apiRepo.Create(ctx, api)
 		if err != nil {
 			return errors.Wrap(err, "while creating API for application")
 		}
 
-		if item.Spec == nil {
-			return nil
+		if item.Spec != nil && item.Spec.FetchRequest != nil {
+			fr, err := s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
+			if err != nil {
+				return errors.Wrap(err, "while creating FetchRequest for application")
+			}
+
+			api.Spec.Data = s.fetchRequestService.FetchAPISpec(ctx, fr)
+			err = s.apiRepo.Update(ctx, api)
+			if err != nil {
+				return errors.Wrap(err, "while updating api with api spec")
+			}
 		}
 
 	}
+
 	return nil
 }
 

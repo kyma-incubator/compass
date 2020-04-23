@@ -70,7 +70,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := api.NewService(repo, nil, nil)
+			svc := api.NewService(repo, nil, nil, nil)
 
 			// when
 			document, err := svc.Get(ctx, testCase.InputID)
@@ -88,7 +88,7 @@ func TestService_Get(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Get(context.TODO(), "")
 		// THEN
@@ -149,7 +149,7 @@ func TestService_GetForPackage(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := api.NewService(repo, nil, nil)
+			svc := api.NewService(repo, nil, nil, nil)
 
 			// when
 			api, err := svc.GetForPackage(ctx, testCase.InputID, testCase.PackageID)
@@ -167,7 +167,7 @@ func TestService_GetForPackage(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.GetForPackage(context.TODO(), "", "")
 		// THEN
@@ -260,7 +260,7 @@ func TestService_ListForPackage(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil, nil)
+			svc := api.NewService(repo, nil, nil, nil)
 
 			// when
 			docs, err := svc.ListForPackage(ctx, packageID, testCase.PageSize, after)
@@ -278,7 +278,7 @@ func TestService_ListForPackage(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListForPackage(context.TODO(), "", 5, "")
 		// THEN
@@ -402,7 +402,7 @@ func TestService_CreateToPackage(t *testing.T) {
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
 			uidService := testCase.UIDServiceFn()
 
-			svc := api.NewService(repo, fetchRequestRepo, uidService)
+			svc := api.NewService(repo, fetchRequestRepo, uidService, nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -422,7 +422,7 @@ func TestService_CreateToPackage(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.CreateInPackage(context.TODO(), "", model.APIDefinitionInput{})
 		// THEN
@@ -590,7 +590,7 @@ func TestService_Update(t *testing.T) {
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
 			uidSvc := testCase.UIDServiceFn()
 
-			svc := api.NewService(repo, fetchRequestRepo, uidSvc)
+			svc := api.NewService(repo, fetchRequestRepo, uidSvc, nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -610,7 +610,7 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		err := svc.Update(context.TODO(), "", model.APIDefinitionInput{})
 		// THEN
@@ -662,7 +662,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil, nil)
+			svc := api.NewService(repo, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -679,7 +679,7 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		err := svc.Delete(context.TODO(), "")
 		// THEN
@@ -739,7 +739,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil, nil)
+			svc := api.NewService(repo, nil, nil, nil)
 
 			// when
 			result, err := svc.RefetchAPISpec(ctx, apiID)
@@ -752,7 +752,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.RefetchAPISpec(context.TODO(), "")
 		// THEN
@@ -866,7 +866,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
-			svc := api.NewService(repo, fetchRequestRepo, nil)
+			svc := api.NewService(repo, fetchRequestRepo, nil, nil)
 
 			// when
 			l, err := svc.GetFetchRequest(ctx, testCase.InputAPIDefID)
@@ -886,7 +886,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// when
 		_, err := svc.GetFetchRequest(context.TODO(), "dd")
 		assert.Equal(t, tenant.NoTenantError, err)

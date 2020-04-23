@@ -29,6 +29,7 @@ type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error
+	Update(ctx context.Context, item *model.FetchRequest) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -36,18 +37,25 @@ type UIDService interface {
 	Generate() string
 }
 
-type service struct {
-	repo             APIRepository
-	fetchRequestRepo FetchRequestRepository
-	uidService       UIDService
-	timestampGen     timestamp.Generator
+//go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
+type FetchRequestService interface {
+	FetchAPISpec(ctx context.Context, fr *model.FetchRequest) *string
 }
 
-func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService) *service {
+type service struct {
+	repo                APIRepository
+	fetchRequestRepo    FetchRequestRepository
+	uidService          UIDService
+	FetchRequestService FetchRequestService
+	timestampGen        timestamp.Generator
+}
+
+func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
 	return &service{repo: repo,
-		fetchRequestRepo: fetchRequestRepo,
-		uidService:       uidService,
-		timestampGen:     timestamp.DefaultGenerator(),
+		fetchRequestRepo:    fetchRequestRepo,
+		uidService:          uidService,
+		FetchRequestService: fetchRequestService,
+		timestampGen:        timestamp.DefaultGenerator(),
 	}
 }
 
@@ -99,17 +107,23 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 	}
 
 	id := s.uidService.Generate()
-
 	api := in.ToAPIDefinitionWithinPackage(id, packageID, tnt)
+
 	err = s.repo.Create(ctx, api)
 	if err != nil {
 		return "", err
 	}
 
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		_, err = s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
+		fr, err := s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
+		}
+		api.Spec.Data = s.FetchRequestService.FetchAPISpec(ctx, fr)
+
+		err = s.repo.Update(ctx, api)
+		if err != nil {
+			return "", errors.Wrap(err, "while updating api with api spec")
 		}
 	}
 
@@ -131,14 +145,15 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		return errors.Wrapf(err, "while deleting FetchRequest for APIDefinition %s", id)
 	}
 
+	api = in.ToAPIDefinitionWithinPackage(id, api.PackageID, tnt)
+
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		_, err = s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
+		fr, err := s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
 		if err != nil {
 			return errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
+		api.Spec.Data = s.FetchRequestService.FetchAPISpec(ctx, fr)
 	}
-
-	api = in.ToAPIDefinitionWithinPackage(id, api.PackageID, tnt)
 
 	err = s.repo.Update(ctx, api)
 	if err != nil {
@@ -201,7 +216,7 @@ func (s *service) GetFetchRequest(ctx context.Context, apiDefID string) (*model.
 	return fetchRequest, nil
 }
 
-func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string) (*string, error) {
+func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string) (*model.FetchRequest, error) {
 	id := s.uidService.Generate()
 	fr := in.ToFetchRequest(s.timestampGen(), id, tenant, model.APIFetchRequestReference, parentObjectID)
 	err := s.fetchRequestRepo.Create(ctx, fr)
@@ -209,5 +224,5 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in mode
 		return nil, errors.Wrapf(err, "while creating FetchRequest for %s with ID %s", model.APIFetchRequestReference, parentObjectID)
 	}
 
-	return &id, nil
+	return fr, nil
 }

@@ -27,3 +27,17 @@ func (_m *APIRepository) Create(ctx context.Context, item *model.APIDefinition) 
 
 	return r0
 }
+
+// Update provides a mock function with given fields: ctx, item
+func (_m *APIRepository) Update(ctx context.Context, item *model.APIDefinition) error {
+	ret := _m.Called(ctx, item)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.APIDefinition) error); ok {
+		r0 = rf(ctx, item)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
