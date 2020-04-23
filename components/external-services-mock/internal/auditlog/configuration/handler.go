@@ -2,7 +2,10 @@ package configuration
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 
@@ -43,6 +46,12 @@ func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request
 	err := json.NewDecoder(req.Body).Decode(&auditLog)
 	if err != nil {
 		httphelpers.WriteError(writer, errors.Wrap(err, "while decoding input"), http.StatusInternalServerError)
+		return
+	}
+
+	err = h.validateInput(auditLog)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "while validation configuration change log"), http.StatusBadRequest)
 		return
 	}
 
@@ -98,6 +107,7 @@ func (h *ConfigChangeHandler) Delete(writer http.ResponseWriter, req *http.Reque
 		httphelpers.WriteError(writer, errors.New("parameter [id] not provided"), http.StatusBadRequest)
 	}
 
+	writer.WriteHeader(http.StatusOK)
 	h.service.Delete(id)
 }
 
@@ -120,4 +130,33 @@ func (h *ConfigChangeHandler) closeBody(req *http.Request) {
 	if err != nil {
 		h.logger.Error(errors.Wrap(err, "while closing body"))
 	}
+}
+
+func (h *ConfigChangeHandler) validateInput(input model.ConfigurationChange) error {
+	var invalidData []string
+
+	if input.User != "$USER" {
+		invalidData = append(invalidData, fmt.Sprintf("User is not valid, expected $USER, got %s", input.User))
+	}
+
+	if input.Tenant != "$PROVIDER" && input.Tenant != "$SUBSCRIBER" {
+		invalidData = append(invalidData, fmt.Sprintf("Tenant is not valid, expected $SUBSCRIBER or $PROVIDER, got %s", input.Tenant))
+	}
+
+	if _, err := time.Parse(model.LogFormatDate, input.Time); err != nil {
+		invalidData = append(invalidData, fmt.Sprintf("Time is not valid with schema: %s, got %s", model.LogFormatDate, input.Time))
+	}
+
+	if len(invalidData) != 0 {
+		return errors.New(buildValidationErrors(invalidData))
+	}
+	return nil
+}
+
+func buildValidationErrors(bad []string) string {
+	builder := strings.Builder{}
+	for _, value := range bad {
+		builder.WriteString(value)
+	}
+	return builder.String()
 }

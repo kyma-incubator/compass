@@ -1,11 +1,10 @@
 package main
 
 import (
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/oauth"
 	"io"
 	"log"
 	"net/http"
-
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/oauth"
 
 	"github.com/sirupsen/logrus"
 
@@ -53,20 +52,20 @@ func initApiHandlers(cfg config) http.Handler {
 
 	//router.Use(authMiddleware)
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
-	router.HandleFunc("/auditlog/v2/configuration-changes/search", configHandler.SearchByString).Methods("GET")
-	router.HandleFunc("/auditlog/v2/configuration-changes", configHandler.Save).Methods("POST")
-	router.HandleFunc("/auditlog/v2/configuration-changes", configHandler.List).Methods("GET")
-	router.HandleFunc("/auditlog/v2/configuration-changes/{id}", configHandler.Get).Methods("GET")
-	router.HandleFunc("/auditlog/v2/configuration-changes/{id}", configHandler.Delete).Methods("DELETE")
+	router.HandleFunc("/auditlog/v2/configuration-changes/search", configHandler.SearchByString).Methods(http.MethodGet)
+	router.HandleFunc("/auditlog/v2/configuration-changes", configHandler.Save).Methods(http.MethodPost)
+	router.HandleFunc("/auditlog/v2/configuration-changes", configHandler.List).Methods(http.MethodGet)
+	router.HandleFunc("/auditlog/v2/configuration-changes/{id}", configHandler.Get).Methods(http.MethodGet)
+	router.HandleFunc("/auditlog/v2/configuration-changes/{id}", configHandler.Delete).Methods(http.MethodDelete)
 
 	//router.Path("/auditlog/v2/configuration-changes/search").Queries("query", "*").HandlerFunc(configHandler.SearchByString).Methods("GET")
 
-	router.HandleFunc("/auditlog/v2/security-events", securityHandler.Save).Methods("POST")
-	router.HandleFunc("/auditlog/v2/security-events", securityHandler.List).Methods("GET")
-	router.HandleFunc("/auditlog/v2/security-events/{id}", securityHandler.Get).Methods("GET")
-	router.HandleFunc("/auditlog/v2/security-events/{id}", securityHandler.Delete).Methods("DELETE")
+	router.HandleFunc("/auditlog/v2/security-events", securityHandler.Save).Methods(http.MethodPost)
+	router.HandleFunc("/auditlog/v2/security-events", securityHandler.List).Methods(http.MethodGet)
+	router.HandleFunc("/auditlog/v2/security-events/{id}", securityHandler.Get).Methods(http.MethodGet)
+	router.HandleFunc("/auditlog/v2/security-events/{id}", securityHandler.Delete).Methods(http.MethodDelete)
 
-	router.HandleFunc("/auditlog/v2/oauth/token", oauthHandler.Generate).Methods("POST")
+	router.HandleFunc("/auditlog/v2/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
 	return router
 }
 
