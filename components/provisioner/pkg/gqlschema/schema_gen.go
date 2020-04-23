@@ -114,7 +114,7 @@ type ComplexityRoot struct {
 		ProvisionRuntime         func(childComplexity int, config ProvisionRuntimeInput) int
 		ReconnectRuntimeAgent    func(childComplexity int, id string) int
 		RollBackUpgradeOperation func(childComplexity int, id string) int
-		UpgradeRuntime           func(childComplexity int, id string, input UpgradeRuntimeInput) int
+		UpgradeRuntime           func(childComplexity int, id string, config UpgradeRuntimeInput) int
 	}
 
 	OperationStatus struct {
@@ -150,7 +150,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	ProvisionRuntime(ctx context.Context, config ProvisionRuntimeInput) (*OperationStatus, error)
-	UpgradeRuntime(ctx context.Context, id string, input UpgradeRuntimeInput) (*OperationStatus, error)
+	UpgradeRuntime(ctx context.Context, id string, config UpgradeRuntimeInput) (*OperationStatus, error)
 	DeprovisionRuntime(ctx context.Context, id string) (string, error)
 	RollBackUpgradeOperation(ctx context.Context, id string) (*RuntimeStatus, error)
 	ReconnectRuntimeAgent(ctx context.Context, id string) (string, error)
@@ -513,7 +513,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpgradeRuntime(childComplexity, args["id"].(string), args["input"].(UpgradeRuntimeInput)), true
+		return e.complexity.Mutation.UpgradeRuntime(childComplexity, args["id"].(string), args["config"].(UpgradeRuntimeInput)), true
 
 	case "OperationStatus.id":
 		if e.complexity.OperationStatus.ID == nil {
@@ -912,7 +912,7 @@ input UpgradeRuntimeInput {
 type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
     provisionRuntime(config: ProvisionRuntimeInput!): OperationStatus
-    upgradeRuntime(id: String!, input: UpgradeRuntimeInput!): OperationStatus
+    upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): OperationStatus
     deprovisionRuntime(id: String!): String!
 
     # rollbackUpgradeOperation rolls back last upgrade operation for the Runtime but does not affect cluster in any way
@@ -1005,13 +1005,13 @@ func (ec *executionContext) field_Mutation_upgradeRuntime_args(ctx context.Conte
 	}
 	args["id"] = arg0
 	var arg1 UpgradeRuntimeInput
-	if tmp, ok := rawArgs["input"]; ok {
+	if tmp, ok := rawArgs["config"]; ok {
 		arg1, err = ec.unmarshalNUpgradeRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg1
+	args["config"] = arg1
 	return args, nil
 }
 
@@ -2532,7 +2532,7 @@ func (ec *executionContext) _Mutation_upgradeRuntime(ctx context.Context, field 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpgradeRuntime(rctx, args["id"].(string), args["input"].(UpgradeRuntimeInput))
+		return ec.resolvers.Mutation().UpgradeRuntime(rctx, args["id"].(string), args["config"].(UpgradeRuntimeInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
