@@ -6,12 +6,6 @@ import (
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 )
 
-const (
-	LogFormatDate  = "2006-01-02T15:04:05.999Z"
-	UserVariable   = "$USER"
-	TenantVariable = "$PROVIDER"
-)
-
 //go:generate mockery -name=UUIDService -output=automock -outpkg=automock -case=underscore
 type UUIDService interface {
 	Generate() string
@@ -31,7 +25,7 @@ type MessageFactory struct {
 
 func (f *MessageFactory) CreateConfigurationChange() model.ConfigurationChange {
 	t := f.timeSvc.Now()
-	logTime := t.Format(LogFormatDate)
+	logTime := t.Format(model.LogFormatDate)
 
 	return model.ConfigurationChange{User: f.user,
 		Metadata: model.Metadata{Tenant: f.tenant,
@@ -42,7 +36,7 @@ func (f *MessageFactory) CreateConfigurationChange() model.ConfigurationChange {
 
 func (f *MessageFactory) CreateSecurityEvent() model.SecurityEvent {
 	t := f.timeSvc.Now()
-	logTime := t.Format(LogFormatDate)
+	logTime := t.Format(model.LogFormatDate)
 
 	return model.SecurityEvent{User: f.user,
 		Metadata: model.Metadata{Tenant: f.tenant,

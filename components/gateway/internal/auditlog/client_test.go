@@ -178,7 +178,7 @@ func TestDateFormat(t *testing.T) {
 	timestamp := time.Date(2020, 03, 6, 13, 45, 53, 904000000, location)
 
 	//WHEN
-	formattedDate := timestamp.Format(auditlog.LogFormatDate)
+	formattedDate := timestamp.Format(model.LogFormatDate)
 
 	//THEN
 	require.Equal(t, expected, formattedDate)
