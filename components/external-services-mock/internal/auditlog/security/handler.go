@@ -2,6 +2,7 @@ package security
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -26,23 +27,20 @@ func NewSecurityEventHandler(service SecurityEventService, logger *log.Logger) *
 	return &ConfigChangeHandler{service: service, logger: logger}
 }
 
-const (
-	HeaderContentTypeKey   = "Content-Type"
-	HeaderContentTypeValue = "application/json;charset=UTF-8"
-)
+
 
 func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request) {
 	defer h.closeBody(req)
 	var auditLog model.SecurityEvent
 	err := json.NewDecoder(req.Body).Decode(&auditLog)
 	if err != nil {
-		WriteError(writer, errors.Wrap(err, "while decoding input"), http.StatusInternalServerError)
+		httphelpers.WriteError(writer, errors.Wrap(err, "while decoding input"), http.StatusInternalServerError)
 		return
 	}
 
 	id, err := h.service.Save(auditLog)
 	if err != nil {
-		WriteError(writer, errors.Wrap(err, "while saving security event log"), http.StatusInternalServerError)
+		httphelpers.WriteError(writer, errors.Wrap(err, "while saving security event log"), http.StatusInternalServerError)
 		return
 	}
 
@@ -51,7 +49,7 @@ func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request
 	err = json.NewEncoder(writer).Encode(&response)
 	if err != nil {
 		err := errors.New("error while encoding response")
-		WriteError(writer, err, http.StatusInternalServerError)
+		httphelpers.WriteError(writer, err, http.StatusInternalServerError)
 		return
 	}
 }
@@ -59,7 +57,7 @@ func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request
 func (h *ConfigChangeHandler) Get(writer http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["id"]
 	if len(id) == 0 {
-		WriteError(writer, errors.New("parameter id not provided"), http.StatusBadRequest)
+		httphelpers.WriteError(writer, errors.New("parameter id not provided"), http.StatusBadRequest)
 		return
 	}
 
@@ -71,7 +69,7 @@ func (h *ConfigChangeHandler) Get(writer http.ResponseWriter, req *http.Request)
 
 	err := json.NewEncoder(writer).Encode(&val)
 	if err != nil {
-		WriteError(writer, errors.New("error while encoding response"), http.StatusInternalServerError)
+		httphelpers.WriteError(writer, errors.New("error while encoding response"), http.StatusInternalServerError)
 		return
 	}
 }
@@ -81,7 +79,7 @@ func (h *ConfigChangeHandler) List(writer http.ResponseWriter, req *http.Request
 
 	err := json.NewEncoder(writer).Encode(&values)
 	if err != nil {
-		WriteError(writer, errors.New("error while encoding response"), http.StatusInternalServerError)
+		httphelpers.WriteError(writer, errors.New("error while encoding response"), http.StatusInternalServerError)
 		return
 	}
 }
@@ -89,7 +87,7 @@ func (h *ConfigChangeHandler) List(writer http.ResponseWriter, req *http.Request
 func (h *ConfigChangeHandler) Delete(writer http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["id"]
 	if len(id) == 0 {
-		WriteError(writer, errors.New("parameter id not provided"), http.StatusBadRequest)
+		httphelpers.WriteError(writer, errors.New("parameter id not provided"), http.StatusBadRequest)
 	}
 
 	h.service.Delete(id)
@@ -100,20 +98,4 @@ func (h *ConfigChangeHandler) closeBody(req *http.Request) {
 	if err != nil {
 		h.logger.Error(errors.Wrap(err, "while closing body"))
 	}
-}
-
-func WriteError(writer http.ResponseWriter, err error, statusCode int) {
-	writer.Header().Set(HeaderContentTypeKey, HeaderContentTypeValue)
-
-	response := model.ErrorResponse{
-		Error: err.Error(),
-	}
-
-	value, err := json.Marshal(&response)
-	if err != nil {
-		//TODO: cleanup
-		panic(err)
-	}
-	http.Error(writer, string(value), statusCode)
-
 }
