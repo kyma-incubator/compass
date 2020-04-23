@@ -5,11 +5,15 @@ import (
 )
 
 type ProvisioningParameters struct {
-	PlanID     string                    `json:"plan_id"`
-	ServiceID  string                    `json:"service_id"`
-	ErsContext ERSContext                `json:"ers_context"`
-	Parameters ProvisioningParametersDTO `json:"parameters"`
-	Region     string                    `json:"region"`
+	PlanID         string                    `json:"plan_id"`
+	ServiceID      string                    `json:"service_id"`
+	ErsContext     ERSContext                `json:"ers_context"`
+	Parameters     ProvisioningParametersDTO `json:"parameters"`
+
+	// PlatformRegion defines the Platform region send in the request path, terminology:
+	//  - `Platform` is a place where KEB is registered and which later sends request to KEB.
+	//  - `Region` value is use e.g. for billing integration such as EDP.
+	PlatformRegion string                    `json:"platform_region"`
 }
 
 func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {

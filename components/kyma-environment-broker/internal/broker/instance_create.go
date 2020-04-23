@@ -82,14 +82,14 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}
 
 	provisioningParameters := internal.ProvisioningParameters{
-		PlanID:     details.PlanID,
-		ServiceID:  details.ServiceID,
-		ErsContext: ersContext,
-		Parameters: parameters,
-		Region:     region,
+		PlanID:         details.PlanID,
+		ServiceID:      details.ServiceID,
+		ErsContext:     ersContext,
+		Parameters:     parameters,
+		PlatformRegion: region,
 	}
 
-	logger.Infof("Starting provisioning runtime: Name=%s, GlobalAccountID=%s, SubAccountID=%s", parameters.Name, ersContext.GlobalAccountID, ersContext.SubAccountID)
+	logger.Infof("Starting provisioning runtime: Name=%s, GlobalAccountID=%s, SubAccountID=%s PlatformRegion=%s", parameters.Name, ersContext.GlobalAccountID, ersContext.SubAccountID, region)
 	logger.Infof("Runtime parameters: %+v", parameters)
 
 	// check if operation with instance ID already created
