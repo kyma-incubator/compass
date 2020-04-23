@@ -292,10 +292,9 @@ func main() {
 	}
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
 	for prefix, creds := range map[string]*broker.Credentials{
-		"/":                        basicAuth, // legacy basic auth
-		"/{region:[^oauth|info]}/": basicAuth, // legacy basic auth with region
-		"/oauth/":                  nil,       // oauth2 handled by Ory
-		"/oauth/{region}/":         nil,       // oauth2 handled by Ory with region
+		"/":                basicAuth, // legacy basic auth
+		"/oauth/":          nil,       // oauth2 handled by Ory
+		"/oauth/{region}/": nil,       // oauth2 handled by Ory with region
 	} {
 		route := router.PathPrefix(prefix).Subrouter()
 		broker.AttachRoutes(route, kymaEnvBroker, logger, creds)
