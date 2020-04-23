@@ -2,6 +2,7 @@ package appdetails
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -39,12 +40,26 @@ func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 		variables := mux.Vars(r)
 		appName := variables[appNamePathVariable]
 
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Error("while reading body", err)
+		}
+
+		defer func() {
+			err := r.Body.Close()
+			if err != nil {
+				log.Error("body close", err)
+			}
+		}()
+
+		log.Printf(">>>\n> HEADERS: %+v\n> BODY: %s\n\n", r.Header, string(body))
+
 		client := mw.cliProvider.GQLClient(r)
 		directorCli := director.NewClient(client, &graphqlizer.Graphqlizer{}, &graphqlizer.GqlFieldsProvider{})
 		query := directorCli.GetApplicationsByNameRequest(appName)
 
 		var apps GqlSuccessfulAppPage
-		err := retry.GQLRun(client.Run, r.Context(), query, &apps)
+		err = retry.GQLRun(client.Run, r.Context(), query, &apps)
 		if err != nil {
 			wrappedErr := errors.Wrap(err, "while getting service")
 			mw.logger.Error(wrappedErr)
