@@ -44,6 +44,7 @@ func TestCreateTenant(t *testing.T) {
 	t.Log(err)
 }
 
+
 // export TENANT_ID=<tenant id>
 // go test -v -tags=lms_integration ./internal/lms/... -run TestTenantStatus
 func TestTenantStatus(t *testing.T) {
