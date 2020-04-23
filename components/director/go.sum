@@ -84,6 +84,7 @@ github.com/kyma-incubator/compass v0.0.0-20200324074159-925d2ea8c3c3 h1:jnmGvsAn
 github.com/kyma-incubator/compass v0.0.0-20200324084605-a9e02034e81a h1:AOJ7nHjdMTlUM58h/sLnPmTIPeJ2xn8j0RSSyJeow1M=
 github.com/kyma-incubator/compass v0.0.0-20200408122638-cbf308943f93 h1:bZVS5TvBjNdZyoU2lJB+WNsAhxS8gKwFL/a4UXEGpgg=
 github.com/kyma-incubator/compass v0.0.0-20200415114012-a927b9a4d67d h1:pd6OIpd4JDXe/MvkF0Ue5gM8Ala8/XdN+ikoj4dvZbg=
+github.com/kyma-incubator/compass v0.0.0-20200422113159-a267c133e9b9 h1:MNv5UYy+IM5pfcmcDMzvZRn/AcDqW4KuqBNVPNmwRlY=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979 h1:wnrU/8skRjKqboJrlK1Mw9oQRuGs2sWMTrlIctNa3SQ=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/lestrrat-go/jwx v0.9.0 h1:Fnd0EWzTm0kFrBPzE/PEPp9nzllES5buMkksPMjEKpM=

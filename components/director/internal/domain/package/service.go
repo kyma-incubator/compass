@@ -252,11 +252,11 @@ func (s *service) createAPIs(ctx context.Context, packageID, tenant string, apis
 				return errors.Wrap(err, "while creating FetchRequest for application")
 			}
 			item.Spec.Data = s.fetchRequestService.FetchAPISpec(ctx, fr)
-
-			err = s.fetchRequestRepo.Update(ctx, fr)
-			if err != nil {
-				return errors.Wrap(err, "while updating status")
-			}
+			//
+			//err = s.fetchRequestRepo.Update(ctx, fr)
+			//if err != nil {
+			//	return errors.Wrap(err, "while updating status")
+			//}
 
 		}
 
