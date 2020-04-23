@@ -98,6 +98,8 @@ spec:
               value: "{{ .Values.kymaRelease.preReleases.enabled }}"
             - name: APP_LOG_LEVEL
               value: "{{ .Values.logs.level }}"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
           {{if .Values.gardener.auditLogTenantConfigMapName }}
           - mountPath: /gardener/tenant
