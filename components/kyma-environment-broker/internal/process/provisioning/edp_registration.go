@@ -57,7 +57,7 @@ func (s *EDPRegistration) Run(operation internal.ProvisioningOperation, log logr
 	log.Info("Create DataTenant metadata")
 	for key, value := range map[string]string{
 		edp.MaasConsumerEnvironmentKey: "KUBERNETES",
-		edp.MaasConsumerRegionKey:      "<TEMP>", // TODO: use region from parameters
+		edp.MaasConsumerRegionKey:      parameters.PlatformRegion,
 		edp.MaasConsumerSubAccountKey:  parameters.ErsContext.SubAccountID,
 	} {
 		err = s.client.CreateMetadataTenant(parameters.ErsContext.SubAccountID, s.config.Environment, edp.MetadataTenantPayload{

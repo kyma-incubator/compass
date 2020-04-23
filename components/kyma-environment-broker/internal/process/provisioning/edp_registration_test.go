@@ -18,6 +18,7 @@ import (
 const (
 	edpName        = "cd4b333c-97fb-4894-bb20-7874f5833e8d"
 	edpEnvironment = "test"
+	edpRegion      = "cf-eu10"
 )
 
 func TestEDPRegistration_Run(t *testing.T) {
@@ -36,7 +37,7 @@ func TestEDPRegistration_Run(t *testing.T) {
 	}).Return(nil).Once()
 	client.On("CreateMetadataTenant", edpName, edpEnvironment, edp.MetadataTenantPayload{
 		Key:   edp.MaasConsumerRegionKey,
-		Value: "<TEMP>",
+		Value: edpRegion,
 	}).Return(nil).Once()
 	client.On("CreateMetadataTenant", edpName, edpEnvironment, edp.MetadataTenantPayload{
 		Key:   edp.MaasConsumerSubAccountKey,
@@ -51,7 +52,7 @@ func TestEDPRegistration_Run(t *testing.T) {
 
 	// when
 	_, repeat, err := step.Run(internal.ProvisioningOperation{
-		ProvisioningParameters: `{"ers_context":{"subaccount_id":"` + edpName + `"}}`,
+		ProvisioningParameters: `{"platform_region":"` + edpRegion + `", "ers_context":{"subaccount_id":"` + edpName + `"}}`,
 	}, logrus.New())
 
 	// then
