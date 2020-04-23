@@ -33,7 +33,13 @@ func (s *service) FetchAPISpec(ctx context.Context, fr *model.FetchRequest) *str
 		log.Errorf("While fetching API Spec: %s", err.Error())
 		return nil
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			s.logger.Errorf("While closing body: %s", err.Error())
+		}
+	}()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
