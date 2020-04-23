@@ -5,8 +5,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  source = "github.com/Szymongib/compass"
-  branch = "runtime-upgrade-in-provisioner"
+  revision = "b1da4ae4937a331fea6d517bdee91eeee183bb1d"
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"

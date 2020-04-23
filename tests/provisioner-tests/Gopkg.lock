@@ -165,25 +165,22 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "runtime-upgrade-in-provisioner"
-  digest = "1:2d99401b3ae31f314ce6fe1ed7cf38904b5216d937264c73ef0b24ae6e0ccb00"
+  digest = "1:457842b436a44b9b0799339356ae6cb91c740b6052e0ed3d5f35dd2df1a6bbfe"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/scalar",
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "5b13a6203a6c9fcd34ea32bc507b9b30c67d8b57"
-  source = "github.com/Szymongib/compass"
+  revision = "b1da4ae4937a331fea6d517bdee91eeee183bb1d"
 
 [[projects]]
-  branch = "rename-compass-runtime-agent-module"
-  digest = "1:3bc22082ebec066e069fd08b5e84aeabbb05d9148b87e5378bed61827f730741"
+  digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
   name = "github.com/kyma-project/kyma"
   packages = ["components/kyma-operator/pkg/apis/installer/v1alpha1"]
   pruneopts = "UT"
-  revision = "8511cc62d0cd85301fb6abf9cd787d752ff13e80"
-  source = "github.com/Szymongib/kyma"
+  revision = "68742a10ec230206503af278f32b2d60b5a783e2"
+  version = "1.11.1"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
