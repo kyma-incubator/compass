@@ -20,7 +20,7 @@ To access the Kyma Environment Broker endpoints with the Basic authorization ena
 Authorization: Basic $ENCODED_CREDENTIALS
 ```
 
->**NOTE**: The basic authorization implementation is deprecated. Use Oauth2 instead.
+>**NOTE**: The basic authorization implementation is deprecated. Use OAuth2 instead.
 
 ## OAuth2 authorization
 

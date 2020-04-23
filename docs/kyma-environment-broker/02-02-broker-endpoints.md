@@ -4,12 +4,12 @@ Kyma Environment Broker (KEB) implements the [Open Service Broker API](https://g
 
 | Prefix            | Description                                                                                                                                                                                                                                      |
 |-------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `/`               | Defines prefix for legacy endpoint secured by basic access authentication. EDP is configured with region which defaults to **broker.defaultRequestRegion** value specified in [values.yaml](./../../chart/compass/charts/kyma-environment-broker/values.yaml) file. |
-| `/{region}`       | Defines prefix for legacy endpoint secured by basic access authentication. EDP is configured with region value specified in request.                                                                                                                                |
-| `/oauth`          | Defines prefix for endpoint secured by OAuth2 authorization. EDP is configured with region which defaults to **broker.defaultRequestRegion** value specified in [values.yaml](./../../chart/compass/charts/kyma-environment-broker/values.yaml) file.               |
-| `/oauth/{region}` | Defines prefix for endpoint secured by OAuth2 authorization. EDP is configured with region value specified in request.                                                                                                                           |
+| `/`               | Defines a prefix for the legacy endpoint secured with the basic access authentication. EDP is configured with a region whose default value is specified under the **broker.defaultRequestRegion** parameter in the [`values.yaml`](./../../chart/compass/charts/kyma-environment-broker/values.yaml) file. |
+| `/{region}`       | Defines a prefix for the legacy endpoint secured with the basic access authentication. EDP is configured with the region value specified in the request.                                                                                                                                |
+| `/oauth`          | Defines a prefix for the endpoint secured with the OAuth2 authorization. EDP is configured with a region whose default value is specified under the  **broker.defaultRequestRegion** parameter specified in the [`values.yaml`](./../../chart/compass/charts/kyma-environment-broker/values.yaml) file.               |
+| `/oauth/{region}` | Defines a prefix for the endpoint secured with the OAuth2 authorization. EDP is configured with the region value specified in the request.                                                                                                                           |
 
 
-> **NOTE:** The KEB does not implement the OSB API update operation.
+> **NOTE:** KEB does not implement the OSB API update operation.
 
-Beside OSB API endpoints KEB exposes the REST `/info/runtimes` endpoint that provides information about all created Runtimes, both succeeded and failed. This endpoint is secured with the OAuth2 authorization.
+Besides OSB API endpoints, KEB exposes the REST `/info/runtimes` endpoint that provides information about all created Runtimes, both succeeded and failed. This endpoint is secured with the OAuth2 authorization.
