@@ -325,18 +325,21 @@ func TestService_CreateToPackage(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tenantID)
 
 	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.APIRepository
-		FetchRequestRepoFn func() *automock.FetchRequestRepository
-		UIDServiceFn       func() *automock.UIDService
-		Input              model.APIDefinitionInput
-		ExpectedErr        error
+		Name                  string
+		RepositoryFn          func() *automock.APIRepository
+		FetchRequestRepoFn    func() *automock.FetchRequestRepository
+		UIDServiceFn          func() *automock.UIDService
+		FetchRequestServiceFn func() *automock.FetchRequestService
+		Input                 model.APIDefinitionInput
+		ExpectedErr           error
 	}{
 		{
 			Name: "Success",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
+				repo.On("Update", ctx, modelAPIDefinition).Return(nil).Once()
+
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -348,6 +351,11 @@ func TestService_CreateToPackage(t *testing.T) {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
 				svc.On("Generate").Return(frID).Once()
+				return svc
+			},
+			FetchRequestServiceFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				svc.On("FetchAPISpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return svc
 			},
 			Input:       modelInput,
@@ -367,6 +375,10 @@ func TestService_CreateToPackage(t *testing.T) {
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			FetchRequestServiceFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
 				return svc
 			},
 			Input:       modelInput,
@@ -390,6 +402,10 @@ func TestService_CreateToPackage(t *testing.T) {
 				svc.On("Generate").Return(frID).Once()
 				return svc
 			},
+			FetchRequestServiceFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -401,8 +417,9 @@ func TestService_CreateToPackage(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
 			uidService := testCase.UIDServiceFn()
+			fetchRequestService := testCase.FetchRequestServiceFn()
 
-			svc := api.NewService(repo, fetchRequestRepo, uidService, nil)
+			svc := api.NewService(repo, fetchRequestRepo, uidService, fetchRequestService)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -466,13 +483,14 @@ func TestService_Update(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tenantID)
 
 	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.APIRepository
-		FetchRequestRepoFn func() *automock.FetchRequestRepository
-		UIDServiceFn       func() *automock.UIDService
-		Input              model.APIDefinitionInput
-		InputID            string
-		ExpectedErr        error
+		Name                  string
+		RepositoryFn          func() *automock.APIRepository
+		FetchRequestRepoFn    func() *automock.FetchRequestRepository
+		UIDServiceFn          func() *automock.UIDService
+		FetchRequestServiceFn func() *automock.FetchRequestService
+		Input                 model.APIDefinitionInput
+		InputID               string
+		ExpectedErr           error
 	}{
 		{
 			Name: "Success",
@@ -493,6 +511,11 @@ func TestService_Update(t *testing.T) {
 				svc.On("Generate").Return(frID).Once()
 				return svc
 			},
+			FetchRequestServiceFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				svc.On("FetchAPISpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				return svc
+			},
 			InputID:     "foo",
 			Input:       modelInput,
 			ExpectedErr: nil,
@@ -510,6 +533,11 @@ func TestService_Update(t *testing.T) {
 				repo.On("DeleteByReferenceObjectID", ctx, tenantID, model.APIFetchRequestReference, id).Return(nil).Once()
 				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return repo
+			},
+			FetchRequestServiceFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				svc.On("FetchAPISpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
@@ -536,6 +564,10 @@ func TestService_Update(t *testing.T) {
 				svc := &automock.UIDService{}
 				return svc
 			},
+			FetchRequestServiceFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				return svc
+			},
 			InputID:     "foo",
 			Input:       modelInput,
 			ExpectedErr: testErr,
@@ -558,6 +590,10 @@ func TestService_Update(t *testing.T) {
 				svc.On("Generate").Return(frID).Once()
 				return svc
 			},
+			FetchRequestServiceFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				return svc
+			},
 			InputID:     "foo",
 			Input:       modelInput,
 			ExpectedErr: testErr,
@@ -577,6 +613,10 @@ func TestService_Update(t *testing.T) {
 				repo.On("GetByID", ctx, tenantID, "foo").Return(nil, testErr).Once()
 				return repo
 			},
+			FetchRequestServiceFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				return svc
+			},
 			InputID:     "foo",
 			Input:       modelInput,
 			ExpectedErr: testErr,
@@ -589,8 +629,9 @@ func TestService_Update(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
 			uidSvc := testCase.UIDServiceFn()
+			fetchRequestSvc := testCase.FetchRequestServiceFn()
 
-			svc := api.NewService(repo, fetchRequestRepo, uidSvc, nil)
+			svc := api.NewService(repo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
