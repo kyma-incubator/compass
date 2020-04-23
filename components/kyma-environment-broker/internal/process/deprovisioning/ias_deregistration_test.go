@@ -32,7 +32,7 @@ func TestIASDeregistration_Run(t *testing.T) {
 		},
 	}
 
-	step := NewIASDeregistration(memoryStorage.Operations(), bundleBuilder)
+	step := NewIASDeregistrationStep(memoryStorage.Operations(), bundleBuilder)
 
 	// when
 	_, repeat, err := step.Run(operation, logrus.New())

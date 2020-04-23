@@ -31,33 +31,29 @@ func NewAssertionAttributeDeliver() *AssertionAttributeDeliver {
 	}
 }
 
-func (a *AssertionAttributeDeliver) assertionAttributesKeys() map[string]bool {
-	attributes := make(map[string]bool, len(a.assertionAttributesTemplate))
-	for key, _ := range a.assertionAttributesTemplate {
-		attributes[key] = false
-	}
-
-	return attributes
-}
-
 // GenerateAssertionAttribute remove not existing in template attributes, leaves existing
 func (a *AssertionAttributeDeliver) GenerateAssertionAttribute(serviceProvider ServiceProvider) []AssertionAttribute {
-	var newAssertionAttributes []AssertionAttribute
-	aats := a.assertionAttributesKeys()
-
-	for key, _ := range aats {
-		for _, atr := range serviceProvider.AssertionAttributes {
-			if atr.AssertionAttribute == key {
-				newAssertionAttributes = append(newAssertionAttributes, atr)
-				aats[key] = true
-			}
+	defaults := a.tmplDeepCopy()
+	// overrides defaults with given attr
+	for _, overrideAtr := range serviceProvider.AssertionAttributes {
+		if _, found := defaults[overrideAtr.AssertionAttribute]; found {
+			defaults[overrideAtr.AssertionAttribute] = overrideAtr
 		}
 	}
-	for key, exist := range aats {
-		if !exist {
-			newAssertionAttributes = append(newAssertionAttributes, a.assertionAttributesTemplate[key])
-		}
+
+	// convert to slice
+	var newAssertionAttributes []AssertionAttribute
+	for _, atr := range defaults {
+		newAssertionAttributes = append(newAssertionAttributes, atr)
 	}
 
 	return newAssertionAttributes
+}
+
+func (a AssertionAttributeDeliver) tmplDeepCopy() map[string]AssertionAttribute {
+	cpy := map[string]AssertionAttribute{}
+	for k, v := range a.assertionAttributesTemplate {
+		cpy[k] = v
+	}
+	return cpy
 }

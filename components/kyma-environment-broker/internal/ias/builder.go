@@ -24,23 +24,23 @@ type (
 )
 
 type Builder struct {
-	httpClient *http.Client
-	config     Config
+	iasClient *Client
+	config    Config
 }
 
 func NewBundleBuilder(httpClient *http.Client, config Config) BundleBuilder {
+	client := NewClient(httpClient, ClientConfig{
+		URL:    config.URL,
+		ID:     config.UserID,
+		Secret: config.UserSecret,
+	})
+
 	return &Builder{
-		httpClient: httpClient,
-		config:     config,
+		iasClient: client,
+		config:    config,
 	}
 }
 
 func (b *Builder) NewBundle(identifier string) Bundle {
-	client := NewClient(b.httpClient, ClientConfig{
-		URL:    b.config.URL,
-		ID:     b.config.UserID,
-		Secret: b.config.UserSecret,
-	})
-
-	return NewServiceProviderBundle(identifier, client, b.config)
+	return NewServiceProviderBundle(identifier, b.iasClient, b.config)
 }

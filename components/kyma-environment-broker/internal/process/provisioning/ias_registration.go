@@ -14,23 +14,23 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type IASRegistration struct {
+type IASRegistrationStep struct {
 	operationManager *process.ProvisionOperationManager
 	bundleBuilder    ias.BundleBuilder
 }
 
-func NewIASRegistration(os storage.Operations, builder ias.BundleBuilder) *IASRegistration {
-	return &IASRegistration{
+func NewIASRegistrationStep(os storage.Operations, builder ias.BundleBuilder) *IASRegistrationStep {
+	return &IASRegistrationStep{
 		operationManager: process.NewProvisionOperationManager(os),
 		bundleBuilder:    builder,
 	}
 }
 
-func (s *IASRegistration) Name() string {
+func (s *IASRegistrationStep) Name() string {
 	return "IAS_Registration"
 }
 
-func (s *IASRegistration) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *IASRegistrationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	spb := s.bundleBuilder.NewBundle(operation.InstanceID)
 
 	log.Info("Check if IAS ServiceProvider already exist")
@@ -77,7 +77,7 @@ func (s *IASRegistration) Run(operation internal.ProvisioningOperation, log logr
 	return operation, 0, nil
 }
 
-func (s *IASRegistration) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *IASRegistrationStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
 	switch {
 	case kebError.IsTemporaryError(err):

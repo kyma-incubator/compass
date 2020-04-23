@@ -93,7 +93,7 @@ ias:
   id: "TBD"
   secret: "TBD"
   identityProvider: "TBD"
-  disabled: false
+  disabled: true
 
 e2e:
   azure:

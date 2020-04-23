@@ -39,6 +39,8 @@ func TestClient_setToken(t *testing.T) {
 			qc := &mocks.GraphQLClient{}
 
 			oc.On("GetAuthorizationToken").Return(oauth.Token{tc.token, tc.expire}, tc.expectedErr)
+			defer oc.AssertExpectations(t)
+
 			client := NewDirectorClient(oc, qc)
 
 			// When
@@ -97,6 +99,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 				},
 			}
 		}).Return(nil)
+		defer qc.AssertExpectations(t)
 
 		// When
 		URL, tokenErr := client.GetConsoleURL(accountID, runtimeID)
@@ -119,6 +122,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 
 		// #mock on Run method for grapQL client
 		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getURLResponse")).Return(nil)
+		defer qc.AssertExpectations(t)
 
 		// When
 		URL, tokenErr := client.GetConsoleURL(accountID, runtimeID)
@@ -156,6 +160,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 				},
 			}
 		}).Return(nil)
+		defer qc.AssertExpectations(t)
 
 		// When
 		URL, tokenErr := client.GetConsoleURL(accountID, runtimeID)
@@ -193,6 +198,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 				},
 			}
 		}).Return(nil)
+		defer qc.AssertExpectations(t)
 
 		// When
 		URL, tokenErr := client.GetConsoleURL(accountID, runtimeID)
@@ -230,6 +236,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 				},
 			}
 		}).Return(nil)
+		defer qc.AssertExpectations(t)
 
 		// When
 		URL, tokenErr := client.GetConsoleURL(accountID, runtimeID)
@@ -267,6 +274,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 				},
 			}
 		}).Return(nil)
+		defer qc.AssertExpectations(t)
 
 		// When
 		URL, tokenErr := client.GetConsoleURL(accountID, runtimeID)
@@ -290,9 +298,11 @@ func TestClient_GetConsoleURL(t *testing.T) {
 
 		// #mock on GetAuthorizationToken for OauthClient
 		oc.On("GetAuthorizationToken").Return(token, nil)
+		defer oc.AssertExpectations(t)
 
 		// #mock on Run method for grapQL client
 		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getURLResponse")).Times(3).Return(fmt.Errorf("director error"))
+		defer qc.AssertExpectations(t)
 
 		// When
 		URL, tokenErr := client.GetConsoleURL(accountID, runtimeID)
@@ -334,6 +344,7 @@ func TestClient_SetLabel(t *testing.T) {
 			Value: labelValue,
 		}
 	}).Return(nil)
+	defer qc.AssertExpectations(t)
 
 	// when
 	err := client.SetLabel(accountID, runtimeID, labelKey, labelValue)

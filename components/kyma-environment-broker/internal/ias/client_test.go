@@ -3,6 +3,7 @@ package ias
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -70,6 +71,17 @@ func TestClient_SetType(t *testing.T) {
 
 	// then
 	assert.NoError(t, err)
+
+	response, err := server.Client().Get(fmt.Sprintf("%s/get", server.URL))
+	assert.NoError(t, err)
+
+	var conf Type
+	err = json.NewDecoder(response.Body).Decode(&conf)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "openID", conf.SsoType)
+	assert.Equal(t, "example.com", conf.ServiceProviderName)
+	assert.Equal(t, "https://example.com", conf.OpenIDConnectConfig.RedirectURIs[0])
 }
 
 func TestClient_SetAssertionAttribute(t *testing.T) {
@@ -92,6 +104,16 @@ func TestClient_SetAssertionAttribute(t *testing.T) {
 
 	// then
 	assert.NoError(t, err)
+
+	response, err := server.Client().Get(fmt.Sprintf("%s/get", server.URL))
+	assert.NoError(t, err)
+
+	var conf PostAssertionAttributes
+	err = json.NewDecoder(response.Body).Decode(&conf)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "first_name", conf.AssertionAttributes[0].AssertionAttribute)
+	assert.Equal(t, "firstName", conf.AssertionAttributes[0].UserAttribute)
 }
 
 func TestClient_SetSubjectNameIdentifier(t *testing.T) {
@@ -109,6 +131,15 @@ func TestClient_SetSubjectNameIdentifier(t *testing.T) {
 
 	// then
 	assert.NoError(t, err)
+
+	response, err := server.Client().Get(fmt.Sprintf("%s/get", server.URL))
+	assert.NoError(t, err)
+
+	var conf SubjectNameIdentifier
+	err = json.NewDecoder(response.Body).Decode(&conf)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "email", conf.NameIDAttribute)
 }
 
 func TestClient_SetAuthenticationAndAccess(t *testing.T) {
@@ -137,6 +168,18 @@ func TestClient_SetAuthenticationAndAccess(t *testing.T) {
 
 	// then
 	assert.NoError(t, err)
+
+	response, err := server.Client().Get(fmt.Sprintf("%s/get", server.URL))
+	assert.NoError(t, err)
+
+	var conf AuthenticationAndAccess
+	err = json.NewDecoder(response.Body).Decode(&conf)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "Allow", conf.ServiceProviderAccess.RBAConfig.DefaultAction)
+	assert.Equal(t, "Allow", conf.ServiceProviderAccess.RBAConfig.RBARules[0].Action)
+	assert.Equal(t, "admins", conf.ServiceProviderAccess.RBAConfig.RBARules[0].Group)
+	assert.Equal(t, "cloud", conf.ServiceProviderAccess.RBAConfig.RBARules[0].GroupType)
 }
 
 func TestClient_GenerateServiceProviderSecret(t *testing.T) {
@@ -200,114 +243,144 @@ var companies = `{
 	}]
 }`
 
+type server struct {
+	t *testing.T
+
+	configuration []byte
+}
+
 func fixHTTPServer(t *testing.T) *httptest.Server {
-	var authorized = func(pass func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
-		return func(w http.ResponseWriter, r *http.Request) {
-			auth := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
-
-			if len(auth) != 2 || auth[0] != "Basic" {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-
-			payload, _ := base64.StdEncoding.DecodeString(auth[1])
-			pair := strings.SplitN(string(payload), ":", 2)
-
-			if len(pair) != 2 || !(pair[0] == "admin" && pair[1] == "admin123") {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			pass(w, r)
-		}
-	}
-	var handleConfiguration = func(w http.ResponseWriter, r *http.Request) {
-		val, ok := mux.Vars(r)["spID"]
-		if !ok {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		if val != serviceProviderID {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			t.Errorf("test server cannot read request body: %s", err)
-		}
-		if !isJSON(string(body)) {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	}
+	s := server{t: t}
 
 	r := mux.NewRouter()
-	r.HandleFunc("/service/company/global", authorized(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, err := w.Write([]byte(companies))
-		if err != nil {
-			t.Errorf("test server cannot write response body: %s", err)
-		}
-	})).Methods(http.MethodGet)
-	r.HandleFunc("/service/sps", authorized(func(w http.ResponseWriter, r *http.Request) {
-		if err := r.ParseForm(); err != nil {
-			t.Errorf("cannot parse form: %s", err)
-			return
-		}
-		if r.FormValue("company_id") != companyID {
-			w.WriteHeader(http.StatusForbidden)
-		}
-		w.WriteHeader(http.StatusCreated)
-	})).Methods(http.MethodPost)
-	r.HandleFunc("/service/sps", authorized(func(w http.ResponseWriter, r *http.Request) {
-		var sc SecretConfiguration
-		err := json.NewDecoder(r.Body).Decode(&sc)
-		if err != nil {
-			t.Errorf("test server cannot read request body: %s", err)
-			return
-		}
+	r.HandleFunc("/service/company/global", s.authorized(s.companies)).Methods(http.MethodGet)
+	r.HandleFunc("/service/sps", s.authorized(s.createSP)).Methods(http.MethodPost)
+	r.HandleFunc("/service/sps", s.authorized(s.createSPSecret)).Methods(http.MethodPut)
+	r.HandleFunc("/service/sps/delete", s.authorized(s.deleteSP)).Methods(http.MethodPut)
+	r.HandleFunc("/service/sps/{spID}", s.authorized(s.configureSP)).Methods(http.MethodPut)
+	r.HandleFunc("/service/sps/{spID}/rba", s.authorized(s.configureSP)).Methods(http.MethodPut)
 
-		if sc.ID != serviceProviderID || sc.Organization != companyID {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		secret := ServiceProviderSecret{
-			ClientID:     clientID,
-			ClientSecret: clientSecret,
-		}
-		rawSecret, err := json.Marshal(secret)
-		if err != nil {
-			t.Errorf("test server cannot marshal secret struct: %s", err)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		_, err = w.Write(rawSecret)
-		if err != nil {
-			t.Errorf("test server cannot write response body: %s", err)
-			return
-		}
-	})).Methods(http.MethodPut)
-	r.HandleFunc("/service/sps/delete", authorized(func(w http.ResponseWriter, r *http.Request) {
-		keys, ok := r.URL.Query()["sp_id"]
-		if !ok {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		if keys[0] != serviceProviderID {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	})).Methods(http.MethodPut)
-	r.HandleFunc("/service/sps/{spID}", authorized(handleConfiguration)).Methods(http.MethodPut)
-	r.HandleFunc("/service/sps/{spID}/rba", authorized(handleConfiguration)).Methods(http.MethodPut)
+	r.HandleFunc("/get", s.getConfiguration).Methods(http.MethodGet)
 
 	return httptest.NewServer(r)
 }
 
-func isJSON(s string) bool {
-	var js map[string]interface{}
-	return json.Unmarshal([]byte(s), &js) == nil
+func (s *server) authorized(pass func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		auth := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
+
+		if len(auth) != 2 || auth[0] != "Basic" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		payload, _ := base64.StdEncoding.DecodeString(auth[1])
+		pair := strings.SplitN(string(payload), ":", 2)
+
+		if len(pair) != 2 || !(pair[0] == "admin" && pair[1] == "admin123") {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		pass(w, r)
+	}
+}
+
+func (s *server) companies(w http.ResponseWriter, _ *http.Request) {
+	_, err := w.Write([]byte(companies))
+	if err != nil {
+		s.t.Errorf("test server cannot write response body: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *server) createSP(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		s.t.Errorf("cannot parse form: %s", err)
+		return
+	}
+	if r.FormValue("company_id") != companyID {
+		w.WriteHeader(http.StatusForbidden)
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (s *server) configureSP(w http.ResponseWriter, r *http.Request) {
+	val, ok := mux.Vars(r)["spID"]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if val != serviceProviderID {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		s.t.Errorf("test server cannot read request body: %s", err)
+		return
+	}
+
+	s.configuration = body
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *server) createSPSecret(w http.ResponseWriter, r *http.Request) {
+	var sc SecretConfiguration
+	err := json.NewDecoder(r.Body).Decode(&sc)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		s.t.Errorf("test server cannot read request body: %s", err)
+		return
+	}
+
+	if sc.ID != serviceProviderID || sc.Organization != companyID {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	secret := ServiceProviderSecret{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+	}
+	rawSecret, err := json.Marshal(secret)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		s.t.Errorf("test server cannot marshal secret struct: %s", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(rawSecret)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		s.t.Errorf("test server cannot write response body: %s", err)
+		return
+	}
+}
+
+func (s *server) deleteSP(w http.ResponseWriter, r *http.Request) {
+	keys, ok := r.URL.Query()["sp_id"]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if keys[0] != serviceProviderID {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *server) getConfiguration(w http.ResponseWriter, r *http.Request) {
+	_, err := w.Write(s.configuration)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		s.t.Errorf("test server cannot read request body: %s", err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }

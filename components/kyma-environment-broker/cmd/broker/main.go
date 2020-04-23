@@ -206,7 +206,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewIASRegistration(db.Operations(), bundleBuilder),
+			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
 		},
 		{
@@ -250,7 +250,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     deprovisioning.NewIASDeregistration(db.Operations(), bundleBuilder),
+			step:     deprovisioning.NewIASDeregistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
 		},
 		{

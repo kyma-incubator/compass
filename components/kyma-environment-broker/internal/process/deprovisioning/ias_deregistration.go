@@ -12,23 +12,23 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type IASDeregistration struct {
+type IASDeregistrationStep struct {
 	operationManager *process.DeprovisionOperationManager
 	bundleBuilder    ias.BundleBuilder
 }
 
-func NewIASDeregistration(os storage.Operations, bundleBuilder ias.BundleBuilder) *IASDeregistration {
-	return &IASDeregistration{
+func NewIASDeregistrationStep(os storage.Operations, bundleBuilder ias.BundleBuilder) *IASDeregistrationStep {
+	return &IASDeregistrationStep{
 		operationManager: process.NewDeprovisionOperationManager(os),
 		bundleBuilder:    bundleBuilder,
 	}
 }
 
-func (s *IASDeregistration) Name() string {
+func (s *IASDeregistrationStep) Name() string {
 	return "IAS_Deregistration"
 }
 
-func (s *IASDeregistration) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *IASDeregistrationStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	spb := s.bundleBuilder.NewBundle(operation.InstanceID)
 
 	log.Info("Removing ServiceProvider from IAS")
