@@ -9,8 +9,8 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.3
 	github.com/huandu/xstrings v1.3.0 // indirect
-	github.com/kyma-incubator/compass v0.0.0-20200123101435-9cd00b2924b8
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200311113338-5937d9aa0fa8
+	github.com/kyma-incubator/compass v0.0.0-20200423121118-ddae913f3e98
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200423121118-ddae913f3e98
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
@@ -29,7 +29,3 @@ require (
 )
 
 replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
-
-replace github.com/kyma-incubator/compass => github.com/kjaksik/compass v0.0.0-20200420111408-839cea4b21e9
-
-replace github.com/kyma-incubator/compass/components/director => github.com/kjaksik/compass/components/director v0.0.0-20200420111408-839cea4b21e9
