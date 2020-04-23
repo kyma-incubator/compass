@@ -103,18 +103,34 @@ func getRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenan
 	return runtime
 }
 
-// API Spec
-func addAPIWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.APIDefinitionInput, applicationID string) graphql.APIDefinitionExt {
-	apiInputGQL, err := tc.Graphqlizer.APIDefinitionInputToGQL(in)
+func addAPIToPackageWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, pkgID, tenant string, input graphql.APIDefinitionInput) graphql.APIDefinitionExt {
+	inStr, err := tc.Graphqlizer.APIDefinitionInputToGQL(input)
 	require.NoError(t, err)
 
-	addApiRequest := fixAddApiRequest(applicationID, apiInputGQL)
-	api := graphql.APIDefinitionExt{}
-
-	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, addApiRequest, &api)
+	actualApi := graphql.APIDefinitionExt{}
+	req := fixAddAPIToPackageRequest(pkgID, inStr)
+	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &actualApi)
 	require.NoError(t, err)
-	require.NotEmpty(t, api.ID)
-	return api
+	return actualApi
+}
+
+func createPackage(t *testing.T, ctx context.Context, gqlClient *gcli.Client, appID, tenant, pkgName string) graphql.PackageExt {
+	in, err := tc.Graphqlizer.PackageCreateInputToGQL(fixPackageCreateInput(pkgName))
+	require.NoError(t, err)
+
+	req := fixAddPackageRequest(appID, in)
+	var resp graphql.PackageExt
+
+	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &resp)
+	require.NoError(t, err)
+
+	return resp
+}
+
+func deletePackage(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
+	req := fixDeletePackageRequest(id)
+
+	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
 }
 
 // Integration System

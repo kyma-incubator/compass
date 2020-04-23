@@ -155,18 +155,6 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
 		},
-		APIDefinitions: []*model.APIDefinitionInput{
-			{Name: "api1", TargetURL: "foo.bar"},
-			{Name: "api2", TargetURL: "foo.bar2"},
-		},
-		EventDefinitions: []*model.EventDefinitionInput{
-			{Name: "event1", Description: &desc},
-			{Name: "event2", Description: &desc},
-		},
-		Documents: []*model.DocumentInput{
-			{DisplayName: "doc1", Kind: &kind},
-			{DisplayName: "doc2", Kind: &kind},
-		},
 		Packages: []*model.PackageCreateInput{
 			{
 				Name: "foo",
@@ -214,18 +202,6 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
 		},
-		APIDefinitions: []*graphql.APIDefinitionInput{
-			{Name: "api1", TargetURL: "foo.bar"},
-			{Name: "api2", TargetURL: "foo.bar2"},
-		},
-		EventDefinitions: []*graphql.EventDefinitionInput{
-			{Name: "event1", Description: &desc},
-			{Name: "event2", Description: &desc},
-		},
-		Documents: []*graphql.DocumentInput{
-			{DisplayName: "doc1", Kind: &kind},
-			{DisplayName: "doc2", Kind: &kind},
-		},
 		Packages: []*graphql.PackageCreateInput{
 			{
 				Name: "foo",
@@ -263,15 +239,14 @@ var (
 	docCLOB  = graphql.CLOB(docData)
 )
 
-func fixModelDocument(applicationID, packageID, id string) *model.Document {
+func fixModelDocument(packageID, id string) *model.Document {
 	return &model.Document{
-		ApplicationID: &applicationID,
-		PackageID:     &packageID,
-		ID:            id,
-		Title:         docTitle,
-		Format:        model.DocumentFormatMarkdown,
-		Kind:          &docKind,
-		Data:          &docData,
+		PackageID: packageID,
+		ID:        id,
+		Title:     docTitle,
+		Format:    model.DocumentFormatMarkdown,
+		Kind:      &docKind,
+		Data:      &docData,
 	}
 }
 
@@ -328,49 +303,6 @@ func fixGQLWebhook(id string) *graphql.Webhook {
 	}
 }
 
-func fixAPIDefinitionPage(apiDefinitions []*model.APIDefinition) *model.APIDefinitionPage {
-	return &model.APIDefinitionPage{
-		Data: apiDefinitions,
-		PageInfo: &pagination.Page{
-			StartCursor: "start",
-			EndCursor:   "end",
-			HasNextPage: false,
-		},
-		TotalCount: len(apiDefinitions),
-	}
-}
-
-func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.APIDefinitionPage {
-	return &graphql.APIDefinitionPage{
-		Data: apiDefinitions,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: "start",
-			EndCursor:   "end",
-			HasNextPage: false,
-		},
-		TotalCount: len(apiDefinitions),
-	}
-}
-
-func fixModelAPIDefinition(id string, appId *string, name, description string, group string) *model.APIDefinition {
-	return &model.APIDefinition{
-		ID:            id,
-		ApplicationID: appId,
-		Name:          name,
-		Description:   &description,
-		Group:         &group,
-	}
-}
-
-func fixGQLAPIDefinition(id string, appId *string, name, description string, group string) *graphql.APIDefinition {
-	return &graphql.APIDefinition{
-		ID:            id,
-		ApplicationID: appId,
-		Name:          name,
-		Description:   &description,
-		Group:         &group,
-	}
-}
 func fixEventAPIDefinitionPage(eventAPIDefinitions []*model.EventDefinition) *model.EventDefinitionPage {
 	return &model.EventDefinitionPage{
 		Data: eventAPIDefinitions,
@@ -395,28 +327,26 @@ func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *
 	}
 }
 
-func fixModelEventAPIDefinition(id string, appId, packageID *string, name, description string, group string) *model.EventDefinition {
+func fixModelEventAPIDefinition(id string, appId, packageID string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
-		ID:            id,
-		ApplicationID: appId,
-		PackageID:     packageID,
-		Name:          name,
-		Description:   &description,
-		Group:         &group,
+		ID:          id,
+		PackageID:   packageID,
+		Name:        name,
+		Description: &description,
+		Group:       &group,
 	}
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
 	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		ApplicationID: str.Ptr("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), PackageID: str.Ptr("ppppppppp-pppp-pppp-pppp-pppppppppppp"), Name: placeholder}
+		PackageID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
 }
-func fixGQLEventDefinition(id string, appId, packageID *string, name, description string, group string) *graphql.EventDefinition {
+func fixGQLEventDefinition(id string, appId, packageID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
-		ID:            id,
-		ApplicationID: appId,
-		PackageID:     packageID,
-		Name:          name,
-		Description:   &description,
-		Group:         &group,
+		ID:          id,
+		PackageID:   packageID,
+		Name:        name,
+		Description: &description,
+		Group:       &group,
 	}
 }
 

@@ -156,7 +156,7 @@ func fixInstance(idx int) internal.Instance {
 		ProvisioningParameters: fmt.Sprintf("ProvisioningParameters field. IDX: %d", idx),
 		CreatedAt:              fixTime().Add(time.Duration(idx) * time.Second),
 		UpdatedAt:              fixTime().Add(time.Duration(idx) * time.Minute),
-		DelatedAt:              fixTime().Add(time.Duration(idx) * time.Hour),
+		DeletedAt:              fixTime().Add(time.Duration(idx) * time.Hour),
 	}
 }
 

@@ -4,7 +4,6 @@ go 1.13
 
 require (
 	github.com/99designs/gqlgen v0.9.3
-	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/gardener/gardener v0.33.7
 	github.com/gocraft/dbr/v2 v2.6.3
@@ -12,15 +11,13 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/hashicorp/hil v0.0.0-20190212132231-97b3a9cdfa93 // indirect
 	github.com/hashicorp/terraform v0.12.16
-	github.com/json-iterator/go v1.1.8 // indirect
 	github.com/kubernetes/client-go v11.0.0+incompatible
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200123101435-9cd00b2924b8
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200417141145-3a08dc5142a0
 	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
 	github.com/kyma-incubator/hydroform/install v0.0.0-20200302090055-3f3b00d9799c
 	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442
 	github.com/lib/pq v1.2.0
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
-	github.com/matryer/is v1.2.0 // indirect
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/pkg/errors v0.9.1
@@ -30,7 +27,6 @@ require (
 	github.com/vektah/gqlparser v1.2.0
 	github.com/vrischmann/envconfig v1.2.0
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
-	google.golang.org/appengine v1.6.4 // indirect
 	google.golang.org/genproto v0.0.0-20190927181202-20e1ac93f88c // indirect
 	google.golang.org/grpc v1.24.0 // indirect
 	k8s.io/api v0.15.8-beta.1

@@ -2,6 +2,7 @@ package avs
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -13,15 +14,19 @@ const (
 )
 
 type InternalEvalAssistant struct {
-	avsConfig Config
+	avsConfig   Config
+	retryConfig *RetryConfig
 }
 
 func NewInternalEvalAssistant(avsConfig Config) *InternalEvalAssistant {
-	return &InternalEvalAssistant{avsConfig: avsConfig}
+	return &InternalEvalAssistant{
+		avsConfig:   avsConfig,
+		retryConfig: &RetryConfig{maxTime: 10 * time.Minute, retryInterval: 1 * time.Minute},
+	}
 }
 
-func (iec *InternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error) {
-	return newBasicEvaluationCreateRequest(operations, iec, iec.avsConfig.GroupId, url)
+func (iec *InternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, configForModel *configForModel, url string) (*BasicEvaluationCreateRequest, error) {
+	return newBasicEvaluationCreateRequest(operations, iec, configForModel, url)
 }
 
 func (iec *InternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64) {
@@ -37,8 +42,8 @@ func (iec *InternalEvalAssistant) AppendOverrides(inputCreator internal.Provisio
 	})
 }
 
-func (iec *InternalEvalAssistant) CheckIfAlreadyDone(operation internal.ProvisioningOperation) bool {
-	return operation.AvsEvaluationInternalId != 0
+func (iec *InternalEvalAssistant) IsAlreadyCreated(lifecycleData internal.AvsLifecycleData) bool {
+	return lifecycleData.AvsEvaluationInternalId != 0
 }
 
 func (iec *InternalEvalAssistant) ProvideSuffix() string {
@@ -53,6 +58,21 @@ func (iec *InternalEvalAssistant) ProvideCheckType() string {
 	return ""
 }
 
-func (iec *InternalEvalAssistant) SetEvalId(operation *internal.ProvisioningOperation, evalId int64) {
-	operation.AvsEvaluationInternalId = evalId
+func (iec *InternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycleData, evalId int64) {
+	lifecycleData.AvsEvaluationInternalId = evalId
+}
+
+func (iec *InternalEvalAssistant) IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool {
+	return lifecycleData.AVSInternalEvaluationDeleted
+}
+func (iec *InternalEvalAssistant) GetEvaluationId(lifecycleData internal.AvsLifecycleData) int64 {
+	return lifecycleData.AvsEvaluationInternalId
+}
+
+func (iec *InternalEvalAssistant) markDeleted(lifecycleData *internal.AvsLifecycleData) {
+	lifecycleData.AVSInternalEvaluationDeleted = true
+}
+
+func (iec *InternalEvalAssistant) provideRetryConfig() *RetryConfig {
+	return iec.retryConfig
 }

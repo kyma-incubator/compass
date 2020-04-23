@@ -15,35 +15,54 @@ import (
 //go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
 type LabelRepository interface {
 	GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error)
-	Upsert(ctx context.Context, label *model.Label) error
+	GetRuntimesIDsByStringLabel(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]string, error)
+	GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error)
+	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
+}
+
+//go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
+type LabelUpsertService interface {
+	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
 type engine struct {
 	labelRepo              LabelRepository
 	scenarioAssignmentRepo Repository
+	labelService           LabelUpsertService
 }
 
-func NewEngine(labelRepo LabelRepository, scenarioAssignmentRepo Repository) *engine {
+func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scenarioAssignmentRepo Repository) *engine {
 	return &engine{
 		labelRepo:              labelRepo,
 		scenarioAssignmentRepo: scenarioAssignmentRepo,
+		labelService:           labelService,
 	}
 }
 
 func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	labels, err := e.labelRepo.GetRuntimeScenariosWhereLabelsMatchSelector(ctx, in.Tenant, in.Selector.Key, in.Selector.Value)
+	runtimesIDs, err := e.labelRepo.GetRuntimesIDsByStringLabel(ctx, in.Tenant, in.Selector.Key, in.Selector.Value)
 	if err != nil {
-		return errors.Wrap(err, "while getting runtimes scenarios which match given selector")
+		return errors.Wrapf(err, "while fetching runtimes id which match given selector:%+v", in)
 	}
-	return e.upsertMergedScenarios(ctx, labels, in.ScenarioName, e.uniqueScenarios)
+
+	if len(runtimesIDs) == 0 {
+		return nil
+	}
+	labels, err := e.labelRepo.GetScenarioLabelsForRuntimes(ctx, in.Tenant, runtimesIDs)
+	if err != nil {
+		return errors.Wrap(err, "while fetching scenarios labels for matched runtimes")
+	}
+
+	labels = e.appendMissingScenarioLabelsForRuntimes(in.Tenant, runtimesIDs, labels)
+	return e.upsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.uniqueScenarios)
 }
 
-func (e engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
 	labels, err := e.labelRepo.GetRuntimeScenariosWhereLabelsMatchSelector(ctx, in.Tenant, in.Selector.Key, in.Selector.Value)
 	if err != nil {
 		return errors.Wrap(err, "while getting runtimes scenarios which match given selector")
 	}
-	return e.upsertMergedScenarios(ctx, labels, in.ScenarioName, e.removeScenario)
+	return e.upsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.removeScenario)
 }
 
 func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
@@ -54,56 +73,6 @@ func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.Automa
 		}
 	}
 	return nil
-}
-
-func (e *engine) upsertMergedScenarios(ctx context.Context, labels []model.Label, scenarioName string, mergeFn func(scenarios []interface{}, diffScenario string) ([]string, error)) error {
-	for _, label := range labels {
-		scenarios, ok := label.Value.([]interface{})
-		if !ok {
-			return errors.Errorf("scenarios value is invalid type: %t", label.Value)
-		}
-
-		output, err := mergeFn(scenarios, scenarioName)
-		if err != nil {
-			return errors.Wrap(err, "while merging scenarios")
-		}
-		label.Value = output
-		err = e.labelRepo.Upsert(ctx, &label)
-		if err != nil {
-			return errors.Wrapf(err, "while updating runtime label: %s", label.ObjectID)
-		}
-	}
-	return nil
-}
-
-func (e *engine) uniqueScenarios(scenarios []interface{}, newScenario string) ([]string, error) {
-	set := make(map[string]struct{})
-	set[newScenario] = struct{}{}
-
-	for _, scenario := range scenarios {
-		output, ok := scenario.(string)
-		if !ok {
-			return nil, errors.New("scenario is not a string")
-		}
-		set[output] = struct{}{}
-	}
-
-	return str.MapToSlice(set), nil
-}
-
-func (e *engine) removeScenario(scenarios []interface{}, toRemove string) ([]string, error) {
-	var newScenarios []string
-	for _, scenario := range scenarios {
-		output, ok := scenario.(string)
-		if !ok {
-			return nil, errors.New("scenario is not a string")
-		}
-
-		if output != toRemove {
-			newScenarios = append(newScenarios, output)
-		}
-	}
-	return newScenarios, nil
 }
 
 func (e engine) GetScenariosForSelectorLabels(ctx context.Context, inputLabels map[string]string) ([]string, error) {
@@ -135,7 +104,6 @@ func (e engine) GetScenariosForSelectorLabels(ctx context.Context, inputLabels m
 	for k := range scenariosSet {
 		scenarios = append(scenarios, k)
 	}
-
 	return scenarios, nil
 }
 
@@ -171,7 +139,6 @@ func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context,
 	for k := range scenariosSet {
 		scenarios = append(scenarios, k)
 	}
-
 	return scenarios, nil
 }
 
@@ -193,8 +160,102 @@ func (e engine) MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd 
 	for k := range scenariosSet {
 		scenarios = append(scenarios, k)
 	}
-
 	return scenarios
+}
+
+func (e *engine) appendMissingScenarioLabelsForRuntimes(tenantID string, runtimesIDs []string, labels []model.Label) []model.Label {
+	rtmWithScenario := make(map[string]struct{})
+	for _, label := range labels {
+		rtmWithScenario[label.ObjectID] = struct{}{}
+	}
+
+	for _, rtmID := range runtimesIDs {
+		_, ok := rtmWithScenario[rtmID]
+		if !ok {
+			labels = append(labels, e.createNewEmptyScenarioLabel(tenantID, rtmID))
+		}
+	}
+
+	return labels
+}
+
+func (e *engine) createNewEmptyScenarioLabel(tenantID string, rtmID string) model.Label {
+	return model.Label{Tenant: tenantID,
+		Key:        model.ScenariosKey,
+		Value:      []string{},
+		ObjectID:   rtmID,
+		ObjectType: model.RuntimeLabelableObject,
+	}
+}
+
+func (e *engine) upsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenario string, mergeFn func(scenarios []string, diffScenario string) []string) error {
+	for _, label := range labels {
+		var scenariosString []string
+		switch value := label.Value.(type) {
+		case []string:
+			{
+				scenariosString = value
+			}
+		case []interface{}:
+			{
+				convertedScenarios, err := e.convertInterfaceArrayToStringArray(value)
+				if err != nil {
+					return errors.Wrap(err, "while converting array of interfaces to array of strings")
+				}
+				scenariosString = convertedScenarios
+			}
+		default:
+			return errors.Errorf("scenarios value is invalid type: %t", label.Value)
+		}
+
+		newScenarios := mergeFn(scenariosString, newScenario)
+		err := e.updateScenario(ctx, tenantID, label, newScenarios)
+		if err != nil {
+			return errors.Wrap(err, "while updating scenarios label")
+		}
+	}
+	return nil
+}
+
+func (e *engine) updateScenario(ctx context.Context, tenantID string, label model.Label, scenarios []string) error {
+	if len(scenarios) == 0 {
+		return e.labelRepo.Delete(ctx, tenantID, model.RuntimeLabelableObject, label.ObjectID, model.ScenariosKey)
+	} else {
+		labelInput := model.LabelInput{
+			Key:        label.Key,
+			Value:      scenarios,
+			ObjectID:   label.ObjectID,
+			ObjectType: label.ObjectType,
+		}
+		return e.labelService.UpsertLabel(ctx, tenantID, &labelInput)
+	}
+}
+
+func (e *engine) convertInterfaceArrayToStringArray(scenarios []interface{}) ([]string, error) {
+	var scenariosString []string
+	for _, scenario := range scenarios {
+		item, ok := scenario.(string)
+		if !ok {
+			return nil, errors.New("scenario value is not a string")
+		}
+		scenariosString = append(scenariosString, item)
+	}
+	return scenariosString, nil
+}
+
+func (e *engine) uniqueScenarios(scenarios []string, newScenario string) []string {
+	scenarios = append(scenarios, newScenario)
+	return str.Unique(scenarios)
+}
+
+func (e *engine) removeScenario(scenarios []string, toRemove string) []string {
+	var newScenarios []string
+	for _, scenario := range scenarios {
+		if scenario != toRemove {
+			newScenarios = append(newScenarios, scenario)
+		}
+	}
+	return newScenarios
 }
 
 func (e engine) convertMapStringInterfaceToMapStringString(inputLabels map[string]interface{}) map[string]string {

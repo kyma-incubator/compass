@@ -62,7 +62,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
 	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
-	externalEvalCreator := NewExternalEvalCreator(avsConfig, avsDel, false)
+	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
+	externalEvalCreator := NewExternalEvalCreator(avsConfig, avsDel, false, externalEvalAssistant)
 
 	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient, nil, externalEvalCreator)
 
@@ -78,10 +79,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, dashboardURL, updatedInstance.DashboardURL)
 
-	assert.Equal(t, idh.id, operation.AVSEvaluationExternalId)
+	assert.Equal(t, idh.id, operation.Avs.AVSEvaluationExternalId)
 	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(operation.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, inDB.AVSEvaluationExternalId, idh.id)
+	assert.Equal(t, inDB.Avs.AVSEvaluationExternalId, idh.id)
 }
 
 func fixOperationRuntimeStatus(t *testing.T) internal.ProvisioningOperation {
@@ -122,6 +123,6 @@ func fixInstanceRuntimeStatus() internal.Instance {
 		GlobalAccountID: statusGlobalAccountID,
 		CreatedAt:       time.Time{},
 		UpdatedAt:       time.Time{},
-		DelatedAt:       time.Time{},
+		DeletedAt:       time.Time{},
 	}
 }

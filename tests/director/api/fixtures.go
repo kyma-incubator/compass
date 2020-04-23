@@ -111,7 +111,6 @@ func fixPackageCreateInputWithRelatedObjects(name string) graphql.PackageCreateI
 				Description: ptr.String("api for adding comments"),
 				TargetURL:   "http://mywordpress.com/comments",
 				Group:       ptr.String("comments"),
-				DefaultAuth: fixBasicAuth(),
 				Version:     fixDepracatedVersion1(),
 				Spec: &graphql.APISpecInput{
 					Type:   graphql.APISpecTypeOpenAPI,
@@ -130,15 +129,6 @@ func fixPackageCreateInputWithRelatedObjects(name string) graphql.PackageCreateI
 						Mode:   ptr.FetchMode(graphql.FetchModePackage),
 						Filter: ptr.String("odata.json"),
 						Auth:   fixBasicAuth(),
-					},
-				},
-				DefaultAuth: &graphql.AuthInput{
-					Credential: fixBasicCredential(),
-					RequestAuth: &graphql.CredentialRequestAuthInput{
-						Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{
-							Credential:       fixOAuthCredential(),
-							TokenEndpointURL: "http://token.URL",
-						},
 					},
 				},
 			},

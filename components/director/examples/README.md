@@ -25,7 +25,6 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [set default eventing for application](./eventing/set-default-eventing-for-application.graphql)
 - [query api definition](./query-api-definition/query-api-definition.graphql)
 - [query api definitions](./query-api-definitions/query-api-definitions.graphql)
-- [query api runtime auths](./query-application/query-api-runtime-auths.graphql)
 - [query application](./query-application/query-application.graphql)
 - [query application template](./query-application-template/query-application-template.graphql)
 - [query application templates](./query-application-templates/query-application-templates.graphql)

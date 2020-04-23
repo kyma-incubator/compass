@@ -34,8 +34,8 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
 	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
-
-	ies := NewInternalEvaluationStep(avsConfig, avsDel)
+	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
+	ies := NewInternalEvaluationStep(avsConfig, avsDel, internalEvalAssistant)
 
 	// when
 	logger := log.WithFields(logrus.Fields{"step": "TEST"})
@@ -44,11 +44,11 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	//then
 	assert.NoError(t, err)
 	assert.Equal(t, 0*time.Second, repeat)
-	assert.Equal(t, idh.id, provisioningOperation.AvsEvaluationInternalId)
+	assert.Equal(t, idh.id, provisioningOperation.Avs.AvsEvaluationInternalId)
 
 	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(provisioningOperation.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, inDB.AvsEvaluationInternalId, idh.id)
+	assert.Equal(t, inDB.Avs.AvsEvaluationInternalId, idh.id)
 }
 
 func newMockAvsOauthServer() *httptest.Server {
@@ -94,6 +94,7 @@ func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server)
 		InternalTesterAccessId: 1234,
 		ExternalTesterAccessId: 5678,
 		GroupId:                5555,
+		ParentId:               9101112,
 	}
 }
 

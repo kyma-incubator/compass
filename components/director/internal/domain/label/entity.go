@@ -12,3 +12,8 @@ type Entity struct {
 	RuntimeID sql.NullString `db:"runtime_id"`
 	Value     string         `db:"value"`
 }
+type Collection []Entity
+
+func (c Collection) Len() int {
+	return len(c)
+}

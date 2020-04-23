@@ -56,6 +56,10 @@ type Config struct {
 	// Currently works only with /info endpoints.
 	DevelopmentMode bool `envconfig:"default=false"`
 
+	// DumpProvisionerRequests enables dumping Provisioner requests. Must be disabled on Production environments
+	// because some data must not be visible in the log file.
+	DumpProvisionerRequests bool `envconfig:"default=false"`
+
 	Host       string `envconfig:"optional"`
 	Port       string `envconfig:"default=8080"`
 	StatusPort string `envconfig:"default=8071"`
@@ -100,7 +104,7 @@ func main() {
 	health.NewServer(cfg.Host, cfg.StatusPort, logs).ServeAsync()
 
 	// create provisioner client
-	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
+	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, cfg.DumpProvisionerRequests)
 
 	// create kubernetes client
 	k8sCfg, err := config.GetConfig()
@@ -134,11 +138,12 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Kiali":     runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"Jaeger":    runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
-		"BackupInt": runtime.NewGenericComponentDisabler("backup-init", "kyma-system"),
-		"Backup":    runtime.NewGenericComponentDisabler("backup", "kyma-system"),
+		"Kiali":   runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
+		"Jaeger":  runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
+		"Tracing": runtime.NewGenericComponentDisabler("tracing", "kyma-system"),
 		// TODO(workaround until #1049): following components should be always disabled and user should not be able to enable them in provisioning request. This implies following components cannot be specified under the plan schema definition.
+		"BackupInt":               runtime.NewGenericComponentDisabler("backup-init", "kyma-system"),
+		"Backup":                  runtime.NewGenericComponentDisabler("backup", "kyma-system"),
 		"KnativeProvisionerNatss": runtime.NewGenericComponentDisabler("knative-provisioner-natss", "knative-eventing"),
 		"NatssStreaming":          runtime.NewGenericComponentDisabler("nats-streaming", "natss"),
 	}
@@ -159,7 +164,9 @@ func main() {
 	fatalOnError(err)
 
 	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
-	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled)
+	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
+	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
+	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), logs)
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs)
@@ -179,7 +186,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewInternalEvaluationStep(cfg.Avs, avsDel),
+			step:     provisioning.NewInternalEvaluationStep(cfg.Avs, avsDel, internalEvalAssistant),
 			disabled: cfg.Avs.Disabled,
 		},
 		{
@@ -221,6 +228,10 @@ func main() {
 		weight int
 		step   deprovisioning.Step
 	}{
+		{
+			weight: 1,
+			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+		},
 		{
 			weight: 10,
 			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient),

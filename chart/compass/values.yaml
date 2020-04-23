@@ -16,13 +16,13 @@ global:
       version: "PR-1162"
     connectivity_adapter:
       dir:
-      version: "PR-1156"
+      version: "PR-1182"
     pairing_adapter:
       dir:
       version: "PR-1156"
     director:
       dir:
-      version: "PR-1152"
+      version: "PR-1184"
     gateway:
       dir:
       version: "PR-1156"
@@ -31,7 +31,7 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-1134"
+      version: "PR-1201"
     provisioner:
       dir:
       version: "PR-1193"
@@ -42,11 +42,11 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-1134"
+      version: "PR-1201"
     tests:
       director:
         dir:
-        version: "PR-1170"
+        version: "PR-1182"
       connector:
         dir:
         version: "PR-1156"
@@ -71,7 +71,6 @@ global:
 
   tenantConfig:
     useDefaultTenants: true
-    useExternalTenants: false
     dbPool:
       maxOpenConnections: 1
       maxIdleConnections: 1

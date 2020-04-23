@@ -36,6 +36,14 @@ type LMS struct {
 	RequestedAt time.Time `json:"requested_at"`
 }
 
+type AvsLifecycleData struct {
+	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
+	AVSEvaluationExternalId int64 `json:"avs_evaluation_external_id"`
+
+	AVSInternalEvaluationDeleted bool `json:"avs_internal_evaluation_deleted"`
+	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`
+}
+
 type Instance struct {
 	InstanceID      string
 	RuntimeID       string
@@ -51,7 +59,7 @@ type Instance struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DelatedAt time.Time
+	DeletedAt time.Time
 }
 
 type Operation struct {
@@ -85,14 +93,14 @@ type ProvisioningOperation struct {
 	// following fields are not stored in the storage
 	InputCreator ProvisionInputCreator `json:"-"`
 
-	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
-
-	AVSEvaluationExternalId int64 `json:"avs_evaluation_external_id"`
+	Avs AvsLifecycleData `json:"avs"`
 }
 
-// DeprovisioningOperation holds all information about provisioning operation
+// DeprovisioningOperation holds all information about de-provisioning operation
 type DeprovisioningOperation struct {
 	Operation `json:"-"`
+
+	Avs AvsLifecycleData `json:"avs"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation

@@ -234,50 +234,6 @@ func listLabelDefinitionsWithinTenant(t *testing.T, ctx context.Context, tenantI
 	return labelDefinitions, err
 }
 
-// API Definition
-func setAPIAuth(t *testing.T, ctx context.Context, apiID string, rtmID string, auth graphql.AuthInput) *graphql.APIRuntimeAuth {
-	authInStr, err := tc.graphqlizer.AuthInputToGQL(&auth)
-	require.NoError(t, err)
-
-	var apiRtmAuth graphql.APIRuntimeAuth
-
-	request := fixSetAPIAuthRequest(apiID, rtmID, authInStr)
-	err = tc.RunOperation(ctx, request, &apiRtmAuth)
-	require.NoError(t, err)
-
-	return &apiRtmAuth
-}
-
-func deleteAPIAuth(t *testing.T, ctx context.Context, apiID string, rtmID string) {
-	request := fixDeleteAPIAuthRequestRequest(apiID, rtmID)
-
-	err := tc.RunOperation(ctx, request, nil)
-
-	require.NoError(t, err)
-}
-
-func addAPI(t *testing.T, ctx context.Context, appID string, apiInput graphql.APIDefinitionInput) graphql.APIDefinition {
-	apiGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(apiInput)
-	require.NoError(t, err)
-	addAPIRequest := fixAddAPIRequest(appID, apiGQL)
-	//WHEN
-	outAPI := graphql.APIDefinition{}
-	err = tc.RunOperation(ctx, addAPIRequest, &outAPI)
-	require.NoError(t, err)
-	return outAPI
-}
-
-func addEventDefinition(t *testing.T, ctx context.Context, appID string, apiInput graphql.EventDefinitionInput) graphql.EventDefinition {
-	eventAPIGQL, err := tc.graphqlizer.EventDefinitionInputToGQL(apiInput)
-	require.NoError(t, err)
-	addAPIRequest := fixAddEventAPIRequest(appID, eventAPIGQL)
-	//WHEN
-	outEventAPI := graphql.EventDefinition{}
-	err = tc.RunOperation(ctx, addAPIRequest, &outEventAPI)
-	require.NoError(t, err)
-	return outEventAPI
-}
-
 //OneTimeToken
 
 func requestOneTimeTokenForApplication(t *testing.T, ctx context.Context, id string) graphql.OneTimeTokenForApplicationExt {
