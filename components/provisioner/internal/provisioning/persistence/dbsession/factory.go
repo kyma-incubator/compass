@@ -1,6 +1,8 @@
 package dbsession
 
 import (
+	"time"
+
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -21,6 +23,9 @@ type ReadSession interface {
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 	GetGardenerClusterByName(name string) (model.Cluster, dberrors.Error)
 	GetTenant(runtimeID string) (string, dberrors.Error)
+	ListInProgressOperations() ([]model.Operation, dberrors.Error)
+	GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade, dberrors.Error)
+	GetTenantForOperation(operationID string) (string, dberrors.Error)
 }
 
 //go:generate mockery -name=WriteSession
@@ -30,10 +35,14 @@ type WriteSession interface {
 	InsertGCPConfig(config model.GCPConfig) dberrors.Error
 	InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error
 	InsertOperation(operation model.Operation) dberrors.Error
-	UpdateOperationState(operationID string, message string, state model.OperationState) dberrors.Error
+	UpdateOperationState(operationID string, message string, state model.OperationState, endTime time.Time) dberrors.Error
+	TransitionOperation(operationID string, message string, stage model.OperationStage, transitionTime time.Time) dberrors.Error
 	UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error
+	SetActiveKymaConfig(runtimeID string, kymaConfigId string) dberrors.Error
+	UpdateUpgradeState(operationID string, upgradeState model.UpgradeState) dberrors.Error
 	DeleteCluster(runtimeID string) dberrors.Error
 	MarkClusterAsDeleted(runtimeID string) dberrors.Error
+	InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) dberrors.Error
 }
 
 //go:generate mockery -name=ReadWriteSession

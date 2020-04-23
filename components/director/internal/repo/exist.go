@@ -50,21 +50,22 @@ func (g *universalExistQuerier) unsafeExists(ctx context.Context, conditions Con
 	}
 
 	var stmtBuilder strings.Builder
-	startIdx := 1
 
 	stmtBuilder.WriteString(fmt.Sprintf("SELECT 1 FROM %s", g.tableName))
 	if len(conditions) > 0 {
 		stmtBuilder.WriteString(" WHERE")
 	}
 
-	err = writeEnumeratedConditions(&stmtBuilder, startIdx, conditions)
+	err = writeEnumeratedConditions(&stmtBuilder, conditions)
 	if err != nil {
 		return false, errors.Wrap(err, "while writing enumerated conditions")
 	}
 	allArgs := getAllArgs(conditions)
 
+	query := getQueryFromBuilder(stmtBuilder)
+
 	var count int
-	err = persist.Get(&count, stmtBuilder.String(), allArgs...)
+	err = persist.Get(&count, query, allArgs...)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil

@@ -8,11 +8,17 @@ import (
 	"testing"
 	"time"
 
+	v1alpha12 "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
+	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
+	compass_connection_fake "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/fake"
 	"k8s.io/client-go/kubernetes/fake"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -53,7 +59,6 @@ var mgr ctrl.Manager
 
 const (
 	namespace  = "default"
-	timeout    = 10 * time.Second
 	syncPeriod = 5 * time.Second
 	waitPeriod = syncPeriod + 3*time.Second
 
@@ -124,13 +129,14 @@ func setupEnv() error {
 func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	//given
 	installationServiceMock := &installationMocks.Service{}
-	installationServiceMock.On("InstallKyma", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("model.Release"),
-		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
-
 	installationServiceMock.On("TriggerInstallation", mock.Anything, mock.AnythingOfType("model.Release"),
 		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
 
 	installationServiceMock.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
+
+	installationServiceMock.On("TriggerUpgrade", mock.Anything, mock.AnythingOfType("model.Release"),
+		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
+
 	installationServiceMock.On("TriggerUninstall", mock.Anything).Return(nil)
 
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
@@ -170,7 +176,14 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	secretsInterface := setupSecretsClient(t, cfg)
 	dbsFactory := dbsession.NewFactory(connection)
 
-	controler, err := gardener.NewShootController(namespace, mgr, shootInterface, secretsInterface, installationServiceMock, dbsFactory, timeout, directorServiceMock, runtimeConfigurator)
+	queueCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	installationQueue := queue.CreateInstallationQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor)
+	installationQueue.Run(queueCtx.Done())
+	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock)
+	upgradeQueue.Run(queueCtx.Done())
+
+	controler, err := gardener.NewShootController(mgr, shootInterface, secretsInterface, dbsFactory, directorServiceMock, installationServiceMock, installationQueue)
 	require.NoError(t, err)
 
 	go func() {
@@ -197,7 +210,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project")
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, upgradeQueue)
 
 			validator := NewValidator(dbsFactory.NewReadSession())
 
@@ -230,7 +243,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
 			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
 			assert.Equal(t, "provisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
-			assert.Equal(t, "provisioning-in-progress", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning-step"])
 
 			simmulateSuccessfullClusterProvisioning(t, shootInterface, secretsInterface, shoot)
 
@@ -242,14 +254,49 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			//then
 			require.NoError(t, err)
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-			assert.Equal(t, "provisioning-finished", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning-step"])
 			assert.Equal(t, "provisioned", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
-			assert.Equal(t, "installed", shoot.Annotations["compass.provisioner.kyma-project.io/kyma-installation"])
+
+			// when
+			upgradeRuntimeOp, err := resolver.UpgradeRuntime(ctx, config.runtimeID, gqlschema.UpgradeRuntimeInput{KymaConfig: fixKymaGraphQLConfigInput()})
+
+			// then
+			require.NoError(t, err)
+			assert.NotEmpty(t, upgradeRuntimeOp.ID)
+			assert.Equal(t, gqlschema.OperationTypeUpgrade, upgradeRuntimeOp.Operation)
+			assert.Equal(t, gqlschema.OperationStateInProgress, upgradeRuntimeOp.State)
+			require.NotNil(t, upgradeRuntimeOp.RuntimeID)
+			assert.Equal(t, config.runtimeID, *upgradeRuntimeOp.RuntimeID)
+
+			// wait for queue to process operation
+			time.Sleep(waitPeriod)
+
+			// assert db content
+			readSession := dbsFactory.NewReadSession()
+			runtimeUpgrade, err := readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
+			require.NoError(t, err)
+			assert.Equal(t, model.UpgradeSucceeded, runtimeUpgrade.State)
+			assert.NotEmpty(t, runtimeUpgrade.PostUpgradeKymaConfigId)
+			runtimeFromDb, err := readSession.GetCluster(config.runtimeID)
+			require.NoError(t, err)
+			assert.Equal(t, runtimeFromDb.KymaConfig.ID, runtimeUpgrade.PostUpgradeKymaConfigId)
+
+			// when
+			// Roll Back last upgrade
+			_, err = resolver.RollBackUpgradeOperation(ctx, config.runtimeID)
+			require.NoError(t, err)
+
+			// then
+			// assert db content
+			runtimeUpgrade, err = readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
+			require.NoError(t, err)
+			assert.Equal(t, model.UpgradeRolledBack, runtimeUpgrade.State)
+
+			runtimeFromDb, err = readSession.GetCluster(config.runtimeID)
+			require.NoError(t, err)
+			assert.Equal(t, runtimeFromDb.KymaConfig.ID, runtimeUpgrade.PreUpgradeKymaConfigId)
 
 			//when
 			deprovisionRuntimeID, err := resolver.DeprovisionRuntime(ctx, config.runtimeID)
-
-			//then
 			require.NoError(t, err)
 			require.NotEmpty(t, deprovisionRuntimeID)
 
@@ -261,10 +308,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			//then
 			require.NoError(t, err)
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-			assert.Equal(t, "deprovisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning-step"])
 			assert.Equal(t, deprovisionRuntimeID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
 			assert.Equal(t, "deprovisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
-			assert.Equal(t, "uninstalling", shoot.Annotations["compass.provisioner.kyma-project.io/kyma-installation"])
 
 			//when
 			shoot = removeFinalizers(t, shootInterface, shoot)
@@ -275,16 +320,13 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.Error(t, err)
 			require.Empty(t, shoot)
 
-			// when
-			readSession := dbsFactory.NewReadSession()
-			runtimeFromDb, err := readSession.GetCluster(config.runtimeID)
-
 			// then
+			// assert database content
+			runtimeFromDb, err = readSession.GetCluster(config.runtimeID)
 			require.NoError(t, err)
 			assert.Equal(t, tenant, runtimeFromDb.Tenant)
 			assert.Equal(t, subAccountId, runtimeFromDb.SubAccountId)
 			assert.Equal(t, true, runtimeFromDb.Deleted)
-
 		})
 	}
 
@@ -326,6 +368,15 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		installationServiceMock.AssertNotCalled(t, "TriggerInstallation", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 		installationServiceMock.AssertNotCalled(t, "CheckInstallationState", mock.Anything)
 	})
+}
+
+func testProvisioningTimeouts() queue.ProvisioningTimeouts {
+	return queue.ProvisioningTimeouts{
+		Installation:       5 * time.Minute,
+		Upgrade:            5 * time.Minute,
+		AgentConfiguration: 5 * time.Minute,
+		AgentConnection:    5 * time.Minute,
+	}
 }
 
 func newFakeShootsInterface(t *testing.T, config *rest.Config) gardener_apis.ShootInterface {
@@ -497,4 +548,15 @@ func setupSecretsClient(t *testing.T, config *rest.Config) v1core.SecretInterfac
 	require.NoError(t, err)
 
 	return coreClient.Secrets(namespace)
+}
+
+func fakeCompassConnectionClientConstructor(k8sConfig *rest.Config) (v1alpha1.CompassConnectionInterface, error) {
+	fakeClient := compass_connection_fake.NewSimpleClientset(&v1alpha12.CompassConnection{
+		ObjectMeta: metav1.ObjectMeta{Name: "compass-connection"},
+		Status: v1alpha12.CompassConnectionStatus{
+			State: v1alpha12.Synchronized,
+		},
+	})
+
+	return fakeClient.CompassV1alpha1().CompassConnections(), nil
 }

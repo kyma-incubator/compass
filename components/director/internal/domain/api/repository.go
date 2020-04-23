@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -55,13 +54,15 @@ func (r APIDefCollection) Len() int {
 }
 
 func (r *pgRepository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
-	pkgCond := fmt.Sprintf("%s = '%s'", "package_id", packageID)
-	return r.list(ctx, tenantID, pageSize, cursor, pkgCond)
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("package_id", packageID),
+	}
+	return r.list(ctx, tenantID, pageSize, cursor, conditions)
 }
 
-func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions string) (*model.APIDefinitionPage, error) {
+func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions repo.Conditions) (*model.APIDefinitionPage, error) {
 	var apiDefCollection APIDefCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &apiDefCollection, conditions)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &apiDefCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}

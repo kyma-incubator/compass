@@ -5,7 +5,16 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages"
+
+	"github.com/avast/retry-go"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
+	"k8s.io/client-go/rest"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/healthz"
 
@@ -48,7 +57,6 @@ type config struct {
 	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
 	OauthCredentialsSecretName   string `envconfig:"default=compass-provisioner-credentials"`
-	DownloadPreReleases          bool   `envconfig:"default=true"`
 
 	Database struct {
 		User     string `envconfig:"default=postgres"`
@@ -59,10 +67,7 @@ type config struct {
 		SSLMode  string `envconfig:"default=disable"`
 	}
 
-	Installation struct {
-		Timeout                     time.Duration `envconfig:"default=40m"`
-		ErrorsCountFailureThreshold int           `envconfig:"default=5"`
-	}
+	ProvisioningTimeout queue.ProvisioningTimeouts
 
 	Gardener struct {
 		Project                   string `envconfig:"default=gardenerProject"`
@@ -71,26 +76,39 @@ type config struct {
 		AuditLogsTenantConfigPath string `envconfig:"optional"`
 	}
 
-	Provisioner             string `envconfig:"default=gardener"`
-	SupportOnDemandReleases bool   `envconfig:"default=false"`
+	Provisioner string `envconfig:"default=gardener"`
+
+	LatestDownloadedReleases int  `envconfig:"default=5"`
+	DownloadPreReleases      bool `envconfig:"default=true"`
+	SupportOnDemandReleases  bool `envconfig:"default=false"`
+
+	EnqueueInProgressOperations bool `envconfig:"default=true"`
 
 	LogLevel string `envconfig:"default=info"`
 }
 
 func (c *config) String() string {
 	return fmt.Sprintf("Address: %s, APIEndpoint: %s, CredentialsNamespace: %s, "+
-		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s, DownloadPreReleases: %v, "+
+		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
+		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
+		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
-		"Provisioner: %s, SupportOnDemandReleases: %v, "+
+		"Provisioner: %s, "+
+		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, SupportOnDemandReleases: %v, "+
+		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
 		c.Address, c.APIEndpoint, c.CredentialsNamespace,
-		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName, c.DownloadPreReleases,
+		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
+		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
+		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
-		c.Provisioner, c.SupportOnDemandReleases,
+		c.Provisioner,
+		c.LatestDownloadedReleases, c.DownloadPreReleases, c.SupportOnDemandReleases,
+		c.EnqueueInProgressOperations,
 		c.LogLevel)
 }
 
@@ -130,13 +148,20 @@ func main() {
 	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
 	exitOnError(err, "Failed to initialize persistence")
 
+	installationHandlerConstructor := func(c *rest.Config, o ...installationSDK.InstallationOption) (installationSDK.Installer, error) {
+		return installationSDK.NewKymaInstaller(c, o...)
+	}
+
 	dbsFactory := dbsession.NewFactory(connection)
-	installationService := installation.NewInstallationService(cfg.Installation.Timeout, installationSDK.NewKymaInstaller, cfg.Installation.ErrorsCountFailureThreshold)
+	installationService := installation.NewInstallationService(cfg.ProvisioningTimeout.Installation, installationHandlerConstructor)
 
 	directorClient, err := newDirectorClient(cfg)
 	exitOnError(err, "Failed to initialize Director client")
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(clientbuilder.NewConfigMapClientBuilder(), directorClient)
+
+	installationQueue := queue.CreateInstallationQueue(cfg.ProvisioningTimeout, dbsFactory, installationService, runtimeConfigurator, stages.NewCompassConnectionClient)
+	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, installationService)
 
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {
@@ -145,7 +170,7 @@ func main() {
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
 		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, cfg.Gardener.AuditLogsTenantConfigPath, cfg.Gardener.AuditLogsPolicyConfigMap)
-		shootController, err := newShootController(cfg, gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, installationService, directorClient, runtimeConfigurator)
+		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, directorClient, installationService, installationQueue)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {
 			err := shootController.StartShootController()
@@ -162,17 +187,23 @@ func main() {
 		releaseProvider = release.NewOnDemandWrapper(httpClient, releaseRepository)
 	}
 
-	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseProvider, directorClient)
+	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseProvider, directorClient, upgradeQueue)
 	validator := api.NewValidator(dbsFactory.NewReadSession())
 
 	resolver := api.NewResolver(provisioningSVC, validator)
 
 	logger := log.WithField("Component", "Artifact Downloader")
-	downloader := release.NewArtifactsDownloader(releaseRepository, 5, cfg.DownloadPreReleases, httpClient, logger)
+	downloader := release.NewArtifactsDownloader(releaseRepository, cfg.LatestDownloadedReleases, cfg.DownloadPreReleases, httpClient, logger)
 
+	// Run release downloader
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go downloader.FetchPeriodically(ctx, release.ShortInterval, release.LongInterval)
+
+	// Run installation queue
+	installationQueue.Run(ctx.Done())
+	// Run upgrade queue
+	upgradeQueue.Run(ctx.Done())
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
@@ -191,9 +222,57 @@ func main() {
 
 	log.Infof("API listening on %s...", cfg.Address)
 
-	if err := http.ListenAndServe(cfg.Address, router); err != nil {
-		panic(err)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+
+		if err := http.ListenAndServe(cfg.Address, router); err != nil {
+			log.Errorf("Error starting server: %s", err.Error())
+		}
+	}()
+
+	if cfg.EnqueueInProgressOperations {
+		err = enqueueOperationsInProgress(dbsFactory, installationQueue, upgradeQueue)
+		exitOnError(err, "Failed to enqueue in progress operations")
 	}
+
+	wg.Wait()
+}
+
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue, upgradeQueue queue.OperationQueue) error {
+	readSession := dbFactory.NewReadSession()
+
+	var inProgressOps []model.Operation
+	var err error
+
+	// Due to Schema Migrator running post upgrade the pod will be in crash loop back off and Helm deployment will not finish
+	// therefor we need to wait for schema to be initialized in case of blank installation
+	err = retry.Do(func() error {
+		inProgressOps, err = readSession.ListInProgressOperations()
+		if err != nil {
+			log.Warnf("failed to list in progress operation")
+			return err
+		}
+		return nil
+	}, retry.Attempts(30), retry.DelayType(retry.FixedDelay), retry.Delay(5*time.Second))
+	if err != nil {
+		return fmt.Errorf("error enqueuing in progress operations: %s", err.Error())
+	}
+
+	for _, op := range inProgressOps {
+		if op.Type == model.Provision && op.Stage != model.ShootProvisioning {
+			installationQueue.Add(op.ID)
+			continue
+		}
+
+		if op.Type == model.Upgrade {
+			upgradeQueue.Add(op.ID)
+		}
+	}
+
+	return nil
 }
 
 func exitOnError(err error, context string) {

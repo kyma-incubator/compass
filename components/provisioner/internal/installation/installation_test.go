@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
+
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -23,8 +25,6 @@ import (
 const (
 	tillerYAML    = "tillerYAML"
 	installerYAML = "installerYAML"
-
-	installErrFailureThreshold = 5
 
 	kymaSystemNamespace      = "kyma-system"
 	kymaIntegrationNamespace = "kyma-integration"
@@ -70,12 +70,15 @@ func TestInstallationService_TriggerInstallation(t *testing.T) {
 		Configuration: fixInstallationConfig(),
 	}
 
+	k8sConfig, err := k8s.ParseToK8sConfig([]byte(kubeconfig))
+	require.NoError(t, err)
+
 	t.Run("should trigger installation", func(t *testing.T) {
 		installationHandlerConstructor := newMockInstallerHandler(t, expectedInstallation, nil, nil)
-		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
+		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor)
 
 		// when
-		err := installationSvc.TriggerInstallation([]byte(kubeconfig), kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.TriggerInstallation(k8sConfig, kymaRelease, globalConfig, componentsConfig)
 
 		// then
 		require.NoError(t, err)
@@ -137,7 +140,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 			expectedInstallation: defaultExpectedInstallation,
 		},
 		{
-			description: "should continue installation if error threshold not exceeded",
+			description: "should continue installation if error occured",
 			installationMock: func(stateChan chan installation.InstallationState, errChannel chan error) {
 				stateChan <- installation.InstallationState{State: "Installing"}
 				errChannel <- installation.InstallationError{
@@ -150,22 +153,6 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 			globalConfig:         model.Configuration{},
 			componentsConfig:     []model.KymaComponentConfig{},
 			shouldFail:           false,
-			expectedInstallation: defaultExpectedInstallation,
-		},
-		{
-			description: "should fail if error threshold exceeded",
-			installationMock: func(stateChan chan installation.InstallationState, errChannel chan error) {
-				stateChan <- installation.InstallationState{State: "Installing"}
-				errChannel <- installation.InstallationError{
-					ErrorEntries: make([]installation.ErrorEntry, 10),
-				}
-				time.Sleep(1 * time.Second)
-				close(stateChan)
-				close(errChannel)
-			},
-			globalConfig:         model.Configuration{},
-			componentsConfig:     []model.KymaComponentConfig{},
-			shouldFail:           true,
 			expectedInstallation: defaultExpectedInstallation,
 		},
 		{
@@ -189,7 +176,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 			errChannel := make(chan error)
 
 			installationHandlerConstructor := newMockInstallerHandler(t, testCase.expectedInstallation, stateChannel, errChannel)
-			installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
+			installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor)
 
 			go testCase.installationMock(stateChannel, errChannel)
 
@@ -208,7 +195,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 	t.Run("should return error when failed to trigger installation", func(t *testing.T) {
 		// given
 		installationHandlerConstructor := newErrorInstallerHandler(t, nil, errors.New("error"))
-		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
+		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor)
 
 		// when
 		err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease, globalConfig, componentsConfig)
@@ -220,7 +207,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 	t.Run("should return error when failed to prepare installation", func(t *testing.T) {
 		// given
 		installationHandlerConstructor := newErrorInstallerHandler(t, errors.New("error"), nil)
-		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
+		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor)
 
 		// when
 		err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease, globalConfig, componentsConfig)
@@ -231,7 +218,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 
 	t.Run("should return error when failed to parse kubeconfig", func(t *testing.T) {
 		// given
-		installationSvc := NewInstallationService(10*time.Minute, nil, installErrFailureThreshold)
+		installationSvc := NewInstallationService(10*time.Minute, nil)
 
 		// when
 		err := installationSvc.InstallKyma(runtimeId, "", kymaRelease, globalConfig, componentsConfig)
@@ -287,6 +274,58 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 
 }
 
+func TestInstallationService_TriggerUpgrade(t *testing.T) {
+	kymaVersion := "1.7.0"
+	kymaRelease := model.Release{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
+
+	globalConfig := fixGlobalConfig()
+	componentsConfig := fixComponentsConfig()
+
+	expectedInstallation := installation.Installation{
+		TillerYaml:    tillerYAML,
+		InstallerYaml: installerYAML,
+		Configuration: fixInstallationConfig(),
+	}
+
+	k8sConfig, err := k8s.ParseToK8sConfig([]byte(kubeconfig))
+	require.NoError(t, err)
+
+	t.Run("should trigger upgrade", func(t *testing.T) {
+		installationHandlerConstructor := newMockInstallerHandler(t, expectedInstallation, nil, nil)
+		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor)
+
+		// when
+		err := installationSvc.TriggerUpgrade(k8sConfig, kymaRelease, globalConfig, componentsConfig)
+
+		// then
+		require.NoError(t, err)
+	})
+
+	t.Run("should return error when failed to prepare upgrade", func(t *testing.T) {
+		installationHandlerConstructor := newErrorInstallerHandler(t, errors.New("failed to prepare upgrade"), nil)
+
+		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor)
+
+		// when
+		err := installationSvc.TriggerUpgrade(k8sConfig, kymaRelease, globalConfig, componentsConfig)
+
+		// then
+		require.Error(t, err)
+	})
+
+	t.Run("should return error when failed to start upgrade", func(t *testing.T) {
+		installationHandlerConstructor := newErrorInstallerHandler(t, nil, errors.New("failed to start upgrade"))
+
+		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor)
+
+		// when
+		err := installationSvc.TriggerUpgrade(k8sConfig, kymaRelease, globalConfig, componentsConfig)
+
+		// then
+		require.Error(t, err)
+	})
+}
+
 type installerMock struct {
 	t                    *testing.T
 	expectedInstallation installation.Installation
@@ -295,6 +334,11 @@ type installerMock struct {
 }
 
 func (i installerMock) PrepareInstallation(installation installation.Installation) error {
+	assert.Equal(i.t, i.expectedInstallation, installation)
+	return nil
+}
+
+func (i installerMock) PrepareUpgrade(installation installation.Installation) error {
 	assert.Equal(i.t, i.expectedInstallation, installation)
 	return nil
 }
@@ -316,27 +360,31 @@ func newMockInstallerHandler(t *testing.T, expectedInstallation installation.Ins
 }
 
 type errorInstallerMock struct {
-	t                        *testing.T
-	prepareInstallationError error
-	startInstallationError   error
+	t                      *testing.T
+	prepareError           error
+	startInstallationError error
 }
 
 func newErrorInstallerHandler(t *testing.T, prepareErr, startErr error) InstallationHandler {
 	return func(config *rest.Config, option ...installation.InstallationOption) (installer installation.Installer, e error) {
 		return errorInstallerMock{
-			t:                        t,
-			prepareInstallationError: prepareErr,
-			startInstallationError:   startErr,
+			t:                      t,
+			prepareError:           prepareErr,
+			startInstallationError: startErr,
 		}, nil
 	}
 }
 
-func (i errorInstallerMock) PrepareInstallation(installation installation.Installation) error {
-	return i.prepareInstallationError
+func (i errorInstallerMock) PrepareInstallation(_ installation.Installation) error {
+	return i.prepareError
 }
 
-func (i errorInstallerMock) StartInstallation(context context.Context) (<-chan installation.InstallationState, <-chan error, error) {
+func (i errorInstallerMock) StartInstallation(_ context.Context) (<-chan installation.InstallationState, <-chan error, error) {
 	return nil, nil, i.startInstallationError
+}
+
+func (i errorInstallerMock) PrepareUpgrade(_ installation.Installation) error {
+	return i.prepareError
 }
 
 func assertComponent(t *testing.T, expectedName, expectedNamespace string, expectedSource *v1alpha1.ComponentSource, component v1alpha1.KymaComponent) {

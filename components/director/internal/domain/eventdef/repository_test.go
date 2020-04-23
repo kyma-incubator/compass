@@ -176,104 +176,6 @@ func TestPgRepository_GetForPackage(t *testing.T) {
 	})
 }
 
-func TestPgRepository_ListForApplication(t *testing.T) {
-	// GIVEN
-	testErr := errors.New("test error")
-
-	ExpectedLimit := 3
-	ExpectedOffset := 0
-
-	inputPageSize := 3
-	inputCursor := ""
-	totalCount := 2
-	firstEventAPIDefID := "111111111-1111-1111-1111-111111111111"
-	firstEventAPIDefEntity := fixFullEventDef(firstEventAPIDefID, "placeholder")
-	secondEventAPIDefID := "222222222-2222-2222-2222-222222222222"
-	secondEventAPIDefEntity := fixFullEventDef(secondEventAPIDefID, "placeholder")
-
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."event_api_definitions" 
-		WHERE tenant_id=\$1 AND app_id = '%s' 
-		ORDER BY id LIMIT %d OFFSET %d`, appID, ExpectedLimit, ExpectedOffset)
-
-	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM "public"."event_api_definitions" 
-		WHERE tenant_id=$1 AND app_id = '%s'`, appID)
-	countQuery := regexp.QuoteMeta(rawCountQuery)
-
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
-			AddRow(fixEventDefinitionRow(firstEventAPIDefID, "placeholder")...).
-			AddRow(fixEventDefinitionRow(secondEventAPIDefID, "placeholder")...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
-			WillReturnRows(rows)
-
-		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID).
-			WillReturnRows(testdb.RowCount(2))
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("FromEntity", firstEventAPIDefEntity).Return(model.EventDefinition{ID: firstEventAPIDefID}, nil)
-		convMock.On("FromEntity", secondEventAPIDefEntity).Return(model.EventDefinition{ID: secondEventAPIDefID}, nil)
-		pgRepository := eventdef.NewRepository(convMock)
-		// WHEN
-		modelEventAPIDef, err := pgRepository.ListForApplication(ctx, tenantID, appID, inputPageSize, inputCursor)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelEventAPIDef.Data, 2)
-		assert.Equal(t, firstEventAPIDefID, modelEventAPIDef.Data[0].ID)
-		assert.Equal(t, secondEventAPIDefID, modelEventAPIDef.Data[1].ID)
-		assert.Equal(t, "", modelEventAPIDef.PageInfo.StartCursor)
-		assert.Equal(t, totalCount, modelEventAPIDef.TotalCount)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when conversion from entity to model failed", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
-			AddRow(fixEventDefinitionRow(firstEventAPIDefID, "placeholder")...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
-			WillReturnRows(rows)
-
-		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID).
-			WillReturnRows(testdb.RowCount(1))
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("FromEntity", firstEventAPIDefEntity).Return(model.EventDefinition{}, testErr).Once()
-		pgRepository := eventdef.NewRepository(convMock)
-		//WHEN
-		_, err := pgRepository.ListForApplication(ctx, tenantID, appID, inputPageSize, inputCursor)
-		//THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), testErr.Error())
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when list operation failed", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
-			WillReturnError(testErr)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		pgRepository := eventdef.NewRepository(nil)
-		// WHEN
-		_, err := pgRepository.ListForApplication(ctx, tenantID, appID, inputPageSize, inputCursor)
-		//THEN
-		require.Error(t, err)
-		assert.Error(t, err, testErr)
-		sqlMock.AssertExpectations(t)
-	})
-}
-
 func TestPgRepository_ListForPackage(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("test error")
@@ -290,11 +192,11 @@ func TestPgRepository_ListForPackage(t *testing.T) {
 	secondEventAPIDefEntity := fixFullEventDef(secondEventAPIDefID, "placeholder")
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."event_api_definitions" 
-		WHERE tenant_id=\$1 AND package_id = '%s' 
-		ORDER BY id LIMIT %d OFFSET %d`, packageID, ExpectedLimit, ExpectedOffset)
+		WHERE tenant_id = \$1 AND package_id = \$2 
+		ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
 
-	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM "public"."event_api_definitions" 
-		WHERE tenant_id=$1 AND package_id = '%s'`, packageID)
+	rawCountQuery := `SELECT COUNT(*) FROM "public"."event_api_definitions" 
+		WHERE tenant_id = $1 AND package_id = $2`
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("success", func(t *testing.T) {
@@ -304,11 +206,11 @@ func TestPgRepository_ListForPackage(t *testing.T) {
 			AddRow(fixEventDefinitionRow(secondEventAPIDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, packageID).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, packageID).
 			WillReturnRows(testdb.RowCount(2))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -335,11 +237,11 @@ func TestPgRepository_ListForPackage(t *testing.T) {
 			AddRow(fixEventDefinitionRow(firstEventAPIDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, packageID).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, packageID).
 			WillReturnRows(testdb.RowCount(1))
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
@@ -358,7 +260,7 @@ func TestPgRepository_ListForPackage(t *testing.T) {
 	t.Run("returns error when list operation failed", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, packageID).
 			WillReturnError(testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -577,22 +479,6 @@ func TestPgRepository_Delete(t *testing.T) {
 	pgRepository := eventdef.NewRepository(convMock)
 	//WHEN
 	err := pgRepository.Delete(ctx, tenantID, eventAPIID)
-	//THEN
-	require.NoError(t, err)
-	sqlMock.AssertExpectations(t)
-	convMock.AssertExpectations(t)
-}
-
-func TestPgRepository_DeleteAllByApplicationID(t *testing.T) {
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := `^DELETE FROM "public"."event_api_definitions" WHERE tenant_id = \$1 AND app_id = \$2$`
-
-	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, appID).WillReturnResult(sqlmock.NewResult(-1, 1))
-	convMock := &automock.EventAPIDefinitionConverter{}
-	pgRepository := eventdef.NewRepository(convMock)
-	//WHEN
-	err := pgRepository.DeleteAllByApplicationID(ctx, tenantID, appID)
 	//THEN
 	require.NoError(t, err)
 	sqlMock.AssertExpectations(t)

@@ -29,7 +29,10 @@ kymaRelease:
 
 installation:
   timeout: 24h
-  errorsCountFailureThreshold: 5
+
+runtimeAgent:
+  configurationTimeout: 1h
+  connectionTimeout: 1h
 
 logs:
   level: "info"
