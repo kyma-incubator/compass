@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/deprovisioning"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning"
@@ -28,6 +29,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -74,6 +76,7 @@ type Config struct {
 	KymaVersion                          string
 	EnableOnDemandVersion                bool `envconfig:"default=false"`
 	ManagedRuntimeComponentsYAMLFilePath string
+	DefaultRequestRegion                 string `envconfig:"default=cf-eu10"`
 
 	Broker broker.Config
 
@@ -274,30 +277,32 @@ func main() {
 		broker.NewLastBindingOperation(logs),
 	}
 
+	// create server
+	router := mux.NewRouter()
+
 	// create info endpoints
 	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
 	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), respWriter)
+	router.Handle("/info/runtimes", runtimesInfoHandler)
 
-	// create broker credentials
-	brokerCredentials := broker.BrokerCredentials{
+	// create OSB API endpoints
+	basicAuth := &broker.Credentials{
 		Username: cfg.Auth.Username,
 		Password: cfg.Auth.Password,
 	}
+	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
+	for prefix, creds := range map[string]*broker.Credentials{
+		"/":                        basicAuth, // legacy basic auth
+		"/{region:[^oauth|info]}/": basicAuth, // legacy basic auth with region
+		"/oauth/":                  nil,       // oauth2 handled by Ory
+		"/oauth/{region}/":         nil,       // oauth2 handled by Ory with region
+	} {
+		route := router.PathPrefix(prefix).Subrouter()
+		broker.AttachRoutes(route, kymaEnvBroker, logger, creds)
+	}
 
-	// create and run broker OSB API in 2 modes:
-	// with basic auth
-	// with oauth
-	brokerAPI := broker.New(kymaEnvBroker, logger, nil)
-	brokerBasicAPI := broker.New(kymaEnvBroker, logger, &brokerCredentials)
-
-	sm := http.NewServeMux()
-	sm.Handle("/", brokerBasicAPI)
-	sm.Handle("/oauth/", http.StripPrefix("/oauth", brokerAPI))
-	sm.Handle("/info/runtimes", runtimesInfoHandler)
-
-	r := handlers.LoggingHandler(os.Stdout, sm)
-
-	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
+	svr := handlers.LoggingHandler(os.Stdout, router)
+	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
 }
 
 // queues all in progress provision operations existing in the database

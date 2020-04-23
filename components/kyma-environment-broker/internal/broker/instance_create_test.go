@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker/automock"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
@@ -54,7 +57,7 @@ func TestProvision_Provision(t *testing.T) {
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(context.TODO(), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "req-region"), instanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -75,6 +78,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		assert.Equal(t, globalAccountID, instanceParameters.ErsContext.GlobalAccountID)
 		assert.Equal(t, clusterName, instanceParameters.Parameters.Name)
+		assert.Equal(t, "req-region", instanceParameters.PlatformRegion)
 
 		instance, err := memoryStorage.Instances().GetByID(instanceID)
 		require.NoError(t, err)
@@ -106,7 +110,7 @@ func TestProvision_Provision(t *testing.T) {
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(context.TODO(), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -144,7 +148,7 @@ func TestProvision_Provision(t *testing.T) {
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(context.TODO(), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -182,7 +186,7 @@ func TestProvision_Provision(t *testing.T) {
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(context.TODO(), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
 			ServiceID: serviceID,
 			PlanID:    planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{
@@ -225,7 +229,7 @@ func TestProvision_Provision(t *testing.T) {
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(context.TODO(), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
 			ServiceID: serviceID,
 			PlanID:    planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{
@@ -267,7 +271,7 @@ func TestProvision_Provision(t *testing.T) {
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(context.TODO(), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
 			ServiceID: serviceID,
 			PlanID:    planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{
@@ -308,7 +312,7 @@ func TestProvision_Provision(t *testing.T) {
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(context.TODO(), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
 			ServiceID: serviceID,
 			PlanID:    planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{
@@ -326,6 +330,37 @@ func TestProvision_Provision(t *testing.T) {
 		parameters, err := operation.GetProvisioningParameters()
 		assert.NoError(t, err)
 		assert.Equal(t, "master-00e83e99", parameters.Parameters.KymaVersion)
+	})
+
+	t.Run("should return error when region is not specified", func(t *testing.T) {
+		// given
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", planID).Return(true)
+
+		fixValidator, err := broker.NewPlansSchemaValidator()
+		require.NoError(t, err)
+
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			nil,
+			nil,
+			nil,
+			factoryBuilder,
+			fixValidator,
+			true,
+			logrus.StandardLogger(),
+		)
+
+		// when
+		_, provisionErr := provisionEndpoint.Provision(context.Background(), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        planID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4")),
+		}, true)
+
+		// then
+		require.EqualError(t, provisionErr, "No region specified in request.")
 	})
 
 	t.Run("kyma version parameters should NOT be saved", func(t *testing.T) {
@@ -353,7 +388,7 @@ func TestProvision_Provision(t *testing.T) {
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(context.TODO(), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
 			ServiceID: serviceID,
 			PlanID:    planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{
@@ -405,4 +440,18 @@ func fixInstance() internal.Instance {
 		ServiceID:       serviceID,
 		ServicePlanID:   planID,
 	}
+}
+
+func fixReqCtxWithRegion(t *testing.T, region string) context.Context {
+	t.Helper()
+
+	req, err := http.NewRequest("GET", "http://url.io", nil)
+	require.NoError(t, err)
+	var ctx context.Context
+	spyHandler := http.HandlerFunc(func(_ http.ResponseWriter, req *http.Request) {
+		ctx = req.Context()
+	})
+
+	middleware.AddRegionToContext(region).Middleware(spyHandler).ServeHTTP(httptest.NewRecorder(), req)
+	return ctx
 }
