@@ -414,7 +414,9 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 			AddRow(givenID(), givenTenant(), givenApplicationID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil).
 			AddRow(anotherID(), givenTenant(), givenApplicationID(), model.WebhookTypeConfigurationChanged, "http://kyma2.io", nil)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, tenant_id, app_id, type, url, auth FROM public.webhooks WHERE tenant_id=$1 AND app_id = 'cccccccc-cccc-cccc-cccc-cccccccccccc'")).WithArgs(givenTenant()).WillReturnRows(rows)
+		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, tenant_id, app_id, type, url, auth FROM public.webhooks WHERE tenant_id = $1 AND app_id = $2")).
+			WithArgs(givenTenant(), givenApplicationID()).
+			WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		// WHEN
 		actual, err := sut.ListByApplicationID(ctx, givenTenant(), givenApplicationID())
@@ -434,7 +436,7 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 
 		noRows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "type", "url", "auth"})
 
-		dbMock.ExpectQuery("SELECT").WithArgs(givenTenant()).WillReturnRows(noRows)
+		dbMock.ExpectQuery("SELECT").WithArgs(givenTenant(), givenApplicationID()).WillReturnRows(noRows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		// WHEN
 		actual, err := sut.ListByApplicationID(ctx, givenTenant(), givenApplicationID())
@@ -471,7 +473,7 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "type", "url", "auth"}).
 			AddRow(givenID(), givenTenant(), givenApplicationID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT")).WithArgs(givenTenant()).WillReturnRows(rows)
+		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT")).WithArgs(givenTenant(), givenApplicationID()).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		// WHEN
 		_, err := sut.ListByApplicationID(ctx, givenTenant(), givenApplicationID())

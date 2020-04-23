@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lib/pq"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -200,20 +198,13 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 		return nil, errors.New("Cannot execute query without runtimesIDs")
 	}
 
-	stringBuilder := strings.Builder{}
-	for idx, id := range runtimesIDs {
-		stringBuilder.WriteString(pq.QuoteLiteral(id))
-		if idx < len(runtimesIDs)-1 {
-			stringBuilder.WriteString(", ")
-		}
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("key", model.ScenariosKey),
+		repo.NewInConditionForStringValues("runtime_id", runtimesIDs),
 	}
 
-	//TODO: those condition will be refactored in https://github.com/kyma-incubator/compass/pull/1187
-	rtmInCondition := repo.NewInCondition("runtime_id", stringBuilder.String())
-	keyCond := fmt.Sprintf("key = %s", pq.QuoteLiteral(model.ScenariosKey))
-
 	var labels Collection
-	err := r.lister.List(ctx, tenantID, &labels, keyCond, rtmInCondition.GetQueryPart(1))
+	err := r.lister.List(ctx, tenantID, &labels, conditions...)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching runtimes scenarios")
 	}

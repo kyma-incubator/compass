@@ -8,14 +8,15 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
@@ -34,7 +35,7 @@ import (
 
 const (
 	databaseConnectionRetries = 20
-	defaultSyncPeriod         = 3 * time.Minute
+	defaultSyncPeriod         = 10 * time.Minute
 )
 
 func newProvisioningService(
@@ -42,13 +43,14 @@ func newProvisioningService(
 	provisioner provisioning.Provisioner,
 	dbsFactory dbsession.Factory,
 	releaseRepo release.Provider,
-	directorService director.DirectorClient) provisioning.Service {
+	directorService director.DirectorClient,
+	upgradeQueue queue.OperationQueue) provisioning.Service {
 	uuidGenerator := uuid.NewUUIDGenerator()
 
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo, gardenerProject)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
-	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator)
+	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, upgradeQueue)
 }
 
 func newDirectorClient(config config) (director.DirectorClient, error) {
@@ -63,9 +65,9 @@ func newDirectorClient(config config) (director.DirectorClient, error) {
 	return director.NewDirectorClient(gqlClient, oauthClient), nil
 }
 
-func newShootController(cfg config, gardenerNamespace string, gardenerClusterCfg *restclient.Config, gardenerClientSet *gardener_apis.CoreV1beta1Client,
-	dbsFactory dbsession.Factory, installationSvc installation.Service, direcotrClietnt director.DirectorClient,
-	runtimeConfigurator runtime.Configurator) (*gardener.ShootController, error) {
+func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient.Config, gardenerClientSet *gardener_apis.CoreV1beta1Client,
+	dbsFactory dbsession.Factory, direcotrClietnt director.DirectorClient, installationSvc installation.Service,
+	queue queue.OperationQueue) (*gardener.ShootController, error) {
 	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
 	if err != nil {
 		return nil, err
@@ -82,7 +84,7 @@ func newShootController(cfg config, gardenerNamespace string, gardenerClusterCfg
 		return nil, fmt.Errorf("unable to create shoot controller manager: %w", err)
 	}
 
-	return gardener.NewShootController(gardenerNamespace, mgr, shootClient, secretsInterface, installationSvc, dbsFactory, cfg.Installation.Timeout, direcotrClietnt, runtimeConfigurator)
+	return gardener.NewShootController(mgr, shootClient, secretsInterface, dbsFactory, direcotrClietnt, installationSvc, queue)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {

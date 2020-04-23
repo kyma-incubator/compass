@@ -8,7 +8,7 @@ The Runtime Provisioner allows you to upgrade your Kyma Runtime using the GraphQ
 
 ```graphql
 mutation {
-  upgradeRuntime(id: "{RUNTIME_ID}", input: {
+  upgradeRuntime(id: "{RUNTIME_ID}", config: {
     kymaConfig: { 
         version: "1.11.0",
         configuration: [

@@ -153,9 +153,12 @@ func (r *pgRepository) GetByInstanceAuthID(ctx context.Context, tenant string, i
 }
 
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.PackagePage, error) {
-	pkgCond := fmt.Sprintf("%s = '%s'", "app_id", applicationID)
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("app_id", applicationID),
+	}
+
 	var packageCollection PackageCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &packageCollection, pkgCond)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &packageCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +182,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 
 func (r *pgRepository) prefixStrings(in []string, prefix string) []string {
 	var prefixedFieldNames []string
-	for _, column := range packageColumns {
+	for _, column := range in {
 		prefixedFieldNames = append(prefixedFieldNames, fmt.Sprintf("%s%s", prefix, column))
 	}
 

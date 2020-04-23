@@ -31,7 +31,6 @@ type GardenerProvisioner struct {
 	shootClient              gardener_apis.ShootInterface
 	auditLogsConfigMapName   string
 	auditLogTenantConfigPath string
-	log                      *logrus.Entry
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) error {
@@ -51,7 +50,6 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	annotate(shootTemplate, operationIdAnnotation, operationId)
 	annotate(shootTemplate, provisioningAnnotation, Provisioning.String())
 	annotate(shootTemplate, runtimeIdAnnotation, cluster.ID)
-	annotate(shootTemplate, provisioningStepAnnotation, ProvisioningInProgressStep.String())
 
 	_, err = g.shootClient.Create(shootTemplate)
 	if err != nil {
@@ -61,7 +59,6 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	return nil
 }
 
-// TODO: If already deleted - try to unregister Runtime in Director?
 func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error) {
 	gardenerCfg, ok := cluster.GardenerConfig()
 	if !ok {
@@ -72,20 +69,19 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	if err != nil {
 		if errors.IsNotFound(err) {
 			message := fmt.Sprintf("Cluster %s does not exist. Nothing to deprovision.", cluster.ID)
-			return newDeprovisionOperation(operationId, cluster.ID, message, model.Succeeded, time.Now()), nil
+			return newDeprovisionOperation(operationId, cluster.ID, message, model.Succeeded, model.FinishedStage, time.Now()), nil
 		}
 	}
 
 	if shoot.DeletionTimestamp != nil {
 		message := fmt.Sprintf("Cluster %s already %s scheduled for deletion.", gardenerCfg.Name, cluster.ID)
-		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, shoot.DeletionTimestamp.Time), nil
+		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeprovisioningStage, shoot.DeletionTimestamp.Time), nil
 	}
 
 	deletionTime := time.Now()
 
 	// TODO: consider adding some annotation and uninstall before deleting shoot
 	annotate(shoot, provisioningAnnotation, Deprovisioning.String())
-	annotate(shoot, provisioningStepAnnotation, DeprovisioningInProgressStep.String())
 	annotate(shoot, operationIdAnnotation, operationId)
 	AnnotateWithConfirmDeletion(shoot)
 	err = UpdateAndDeleteShoot(g.shootClient, shoot)
@@ -94,19 +90,20 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	}
 
 	message := fmt.Sprintf("Deprovisioning started")
-	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, deletionTime), nil
+	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeprovisioningStage, deletionTime), nil
 }
 
 func (g *GardenerProvisioner) shouldEnableAuditLogs() bool {
 	return g.auditLogsConfigMapName != "" && g.auditLogTenantConfigPath != ""
 }
 
-func newDeprovisionOperation(id, runtimeId, message string, state model.OperationState, startTime time.Time) model.Operation {
+func newDeprovisionOperation(id, runtimeId, message string, state model.OperationState, stage model.OperationStage, startTime time.Time) model.Operation {
 	return model.Operation{
 		ID:             id,
 		Type:           model.Deprovision,
 		StartTimestamp: startTime,
 		State:          state,
+		Stage:          stage,
 		Message:        message,
 		ClusterID:      runtimeId,
 	}

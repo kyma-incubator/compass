@@ -291,7 +291,8 @@ func TestPgRepository_List(t *testing.T) {
 			{id: "id2", name: "name2", externalTenant: testExternal, provider: "Compass", status: tenant.Active},
 			{id: "id3", name: "name3", externalTenant: testExternal, provider: "Compass", status: tenant.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE status = 'Active'`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE status = $1`)).
+			WithArgs(tenant.Active).
 			WillReturnRows(rowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -312,7 +313,8 @@ func TestPgRepository_List(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE status = 'Active'`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE status = $1`)).
+			WithArgs(tenant.Active).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)

@@ -10,6 +10,7 @@ Both provisioning and deprovisioning operation consist of several steps. Each st
 
 Each provisioning step is responsible for a separate part of preparing Runtime parameters. For example, in a step you can provide tokens, credentials, or URLs to integrate Kyma Runtime with external systems. All data collected in provisioning steps are used in the step called [`create_runtime`](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
 The provisioning process contains the following steps:
+
 | Name                                   | Domain                   | Description                                                                                                                                     | Owner            |
 |----------------------------------------|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
 | Initialisation                         | Provisioning             | Starts the provisioning process and asks the Director for the Dashboard URL if the provisioning in Gardener is finished.                                | @jasiu001        |
@@ -29,6 +30,7 @@ Each deprovisioning step is responsible for a separate part of cleaning Runtime 
 Any deprovisioning step shouldn't block the entire deprovisioning operation. Use the `RetryOperationWithoutFail` function from the `DeprovisionOperationManager` struct to skip your step in case of retry timeout. Set at most 5min timeout for retries in your step.
 
 The deprovisioning process contains the following steps:
+
 | Name                         | Domain         | Status      | Description                                                                            | Owner     |
 |------------------------------|----------------|-------------|----------------------------------------------------------------------------------------|-----------|
 | Deprovision_Initialization   | Deprovisioning | Done        | Initialize the `DeprovisioningOperation` instance with data fetched from the `ProvisioningOperation`. | @jasiu001 |
