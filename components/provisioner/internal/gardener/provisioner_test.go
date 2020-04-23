@@ -54,7 +54,6 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		require.NoError(t, err)
 		assertAnnotation(t, shoot, operationIdAnnotation, operationId)
 		assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
-		assertAnnotation(t, shoot, provisioningStepAnnotation, ProvisioningInProgressStep.String())
 		assert.Equal(t, "", shoot.Labels[model.SubAccountLabel])
 	})
 
@@ -119,7 +118,6 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 			require.NoError(t, err)
 			assertAnnotation(t, shoot, operationIdAnnotation, operationId)
 			assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
-			assertAnnotation(t, shoot, provisioningStepAnnotation, ProvisioningInProgressStep.String())
 
 			assert.Equal(t, testCase.subAccountId, shoot.Labels[model.SubAccountLabel])
 

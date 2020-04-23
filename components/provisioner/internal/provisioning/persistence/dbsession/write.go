@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -23,6 +24,7 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 		Pair("creation_timestamp", cluster.CreationTimestamp).
 		Pair("tenant", cluster.Tenant).
 		Pair("sub_account_id", cluster.SubAccountId).
+		Pair("active_kyma_config_id", cluster.KymaConfig.ID). // Possible due to deferred constrain
 		Exec()
 
 	if err != nil {
@@ -127,7 +129,7 @@ func (ws writeSession) insertKymaComponentConfig(kymaConfigModule model.KymaComp
 
 func (ws writeSession) InsertOperation(operation model.Operation) dberrors.Error {
 	_, err := ws.insertInto("operation").
-		Columns("id", "type", "state", "message", "start_timestamp", "cluster_id").
+		Columns(operationColumns...).
 		Record(operation).
 		Exec()
 
@@ -160,15 +162,31 @@ func (ws writeSession) DeleteCluster(runtimeID string) dberrors.Error {
 	return nil
 }
 
-func (ws writeSession) UpdateOperationState(operationID string, message string, state model.OperationState) dberrors.Error {
+func (ws writeSession) UpdateOperationState(operationID string, message string, state model.OperationState, endTime time.Time) dberrors.Error {
 	res, err := ws.update("operation").
 		Where(dbr.Eq("id", operationID)).
 		Set("state", state).
 		Set("message", message).
+		Set("end_timestamp", endTime).
 		Exec()
 
 	if err != nil {
 		return dberrors.Internal("Failed to update operation %s state: %s", operationID, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))
+}
+
+func (ws writeSession) TransitionOperation(operationID string, message string, stage model.OperationStage, transitionTime time.Time) dberrors.Error {
+	res, err := ws.update("operation").
+		Where(dbr.Eq("id", operationID)).
+		Set("stage", stage).
+		Set("message", message).
+		Set("last_transition", transitionTime).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update operation %s stage: %s", operationID, err)
 	}
 
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))
@@ -188,6 +206,32 @@ func (ws writeSession) UpdateCluster(runtimeID string, kubeconfig string, terraf
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update cluster %s data: %s", runtimeID, err))
 }
 
+func (ws writeSession) SetActiveKymaConfig(runtimeID string, kymaConfigId string) dberrors.Error {
+	res, err := ws.update("cluster").
+		Where(dbr.Eq("id", runtimeID)).
+		Set("active_kyma_config_id", kymaConfigId).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update cluster %s Kyma config: %s", runtimeID, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update cluster %s kyma config: %s", runtimeID, err))
+}
+
+func (ws writeSession) UpdateUpgradeState(operationID string, upgradeState model.UpgradeState) dberrors.Error {
+	res, err := ws.update("runtime_upgrade").
+		Where(dbr.Eq("operation_id", operationID)).
+		Set("state", upgradeState).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update operation %s upgrade state: %s", operationID, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s upgrade state: %s", operationID, err))
+}
+
 func (ws writeSession) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).
@@ -199,6 +243,18 @@ func (ws writeSession) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
 	}
 
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update cluster %s data: %s", runtimeID, err))
+}
+
+func (ws writeSession) InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) dberrors.Error {
+	_, err := ws.insertInto("runtime_upgrade").
+		Columns("id", "state", "operation_id", "pre_upgrade_kyma_config_id", "post_upgrade_kyma_config_id").
+		Record(runtimeUpgrade).
+		Exec()
+	if err != nil {
+		return dberrors.Internal("Failed to insert Runtime Upgrade: %s", err.Error())
+	}
+
+	return nil
 }
 
 func (ws writeSession) updateSucceeded(result sql.Result, errorMsg string) dberrors.Error {
