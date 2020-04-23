@@ -39,7 +39,7 @@ func NewResolver(provisioningService provisioning.Service, validator Validator) 
 }
 
 func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.ProvisionRuntimeInput) (*gqlschema.OperationStatus, error) {
-	err := r.validator.ValidateInput(config)
+	err := r.validator.ValidateProvisioningInput(config)
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s", err)
 		return nil, err
@@ -75,7 +75,6 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 	log.Infof("Requested deprovisioning of Runtime %s.", id)
 
 	tenant, err := r.getAndValidateTenant(ctx, id)
-
 	if err != nil {
 		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
 		return "", err
@@ -91,8 +90,44 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 	return operationID, nil
 }
 
-func (r *Resolver) UpgradeRuntime(ctx context.Context, id string, config gqlschema.UpgradeRuntimeInput) (string, error) {
-	return "", nil
+func (r *Resolver) UpgradeRuntime(ctx context.Context, runtimeId string, input gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
+	log.Infof("Requested upgrade of Runtime %s.", runtimeId)
+
+	_, err := r.getAndValidateTenant(ctx, runtimeId)
+	if err != nil {
+		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
+		return &gqlschema.OperationStatus{}, err
+	}
+
+	err = r.validator.ValidateUpgradeInput(input)
+	if err != nil {
+		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
+		return nil, err
+	}
+
+	operationStatus, err := r.provisioning.UpgradeRuntime(runtimeId, input)
+	if err != nil {
+		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
+		return nil, err
+	}
+
+	return operationStatus, nil
+}
+
+func (r *Resolver) RollBackUpgradeOperation(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
+	_, err := r.getAndValidateTenant(ctx, runtimeID)
+	if err != nil {
+		log.Errorf("Failed to roll back last Runtime upgrade: %s, Runtime ID: %s", err, runtimeID)
+		return nil, err
+	}
+
+	runtimeStatus, err := r.provisioning.RollBackLastUpgrade(runtimeID)
+	if err != nil {
+		log.Errorf("Failed to roll back last Runtime upgrade: %s, Runtime ID: %s", err, runtimeID)
+		return nil, err
+	}
+
+	return runtimeStatus, nil
 }
 
 func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string, error) {
@@ -103,7 +138,6 @@ func (r *Resolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gqlsch
 	log.Infof("Requested to get status for Runtime %s.", runtimeID)
 
 	_, err := r.getAndValidateTenant(ctx, runtimeID)
-
 	if err != nil {
 		log.Errorf("Failed to get status for Runtime %s: %s", runtimeID, err)
 		return nil, err
@@ -122,16 +156,15 @@ func (r *Resolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gqlsch
 func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID string) (*gqlschema.OperationStatus, error) {
 	log.Infof("Requested to get Runtime operation status for Operation %s.", operationID)
 
-	status, err := r.provisioning.RuntimeOperationStatus(operationID)
+	_, err := r.getAndValidateTenantForOp(ctx, operationID)
 	if err != nil {
-		log.Errorf("Failed to get Runtime operation status: %s Operation ID: %s", err, operationID)
+		log.Errorf("Failed to get Runtime operation status: %s, Operation ID: %s", err, operationID)
 		return nil, err
 	}
 
-	_, err = r.getAndValidateTenant(ctx, *status.RuntimeID)
-
+	status, err := r.provisioning.RuntimeOperationStatus(operationID)
 	if err != nil {
-		log.Errorf("Failed to get Runtime operation status: %s Operation ID: %s, Runtime: %s", err, operationID, *status.RuntimeID)
+		log.Errorf("Failed to get Runtime operation status: %s Operation ID: %s", err, operationID)
 		return nil, err
 	}
 
@@ -142,25 +175,38 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 
 func (r *Resolver) getAndValidateTenant(ctx context.Context, runtimeID string) (string, error) {
 	tenant, err := getTenant(ctx)
-
 	if err != nil {
 		return "", err
 	}
 
 	err = r.validator.ValidateTenant(runtimeID, tenant)
-
 	if err != nil {
 		return "", err
 	}
+
+	return tenant, nil
+}
+
+func (r *Resolver) getAndValidateTenantForOp(ctx context.Context, operationID string) (string, error) {
+	tenant, err := getTenant(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	err = r.validator.ValidateTenantForOperation(operationID, tenant)
+	if err != nil {
+		return "", err
+	}
+
 	return tenant, nil
 }
 
 func getTenant(ctx context.Context) (string, error) {
 	tenant, ok := ctx.Value(middlewares.Tenant).(string)
-
 	if !ok || tenant == "" {
 		return "", errors.New("tenant header is empty")
 	}
+
 	return tenant, nil
 }
 
