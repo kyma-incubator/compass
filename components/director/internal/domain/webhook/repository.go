@@ -2,9 +2,7 @@ package webhook
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -61,7 +59,12 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Web
 
 func (r *repository) ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error) {
 	var entities Collection
-	if err := r.lister.List(ctx, tenant, &entities, fmt.Sprintf("app_id = %s ", pq.QuoteLiteral(applicationID))); err != nil {
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("app_id", applicationID),
+	}
+
+	if err := r.lister.List(ctx, tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 

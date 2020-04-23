@@ -2,12 +2,10 @@ package systemauth
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
@@ -94,7 +92,11 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 
 	var entities Collection
 
-	err = r.lister.List(ctx, tenant, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID)))
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(objTypeFieldName, objectID),
+	}
+
+	err = r.lister.List(ctx, tenant, &entities, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -111,7 +113,11 @@ func (r *repository) ListForObjectGlobal(ctx context.Context, objectType model.S
 
 	var entities Collection
 
-	err = r.listerGlobal.ListGlobal(ctx, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID)))
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(objTypeFieldName, objectID),
+	}
+
+	err = r.listerGlobal.ListGlobal(ctx, &entities, conditions...)
 	if err != nil {
 		return nil, err
 	}
