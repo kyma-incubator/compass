@@ -30,8 +30,8 @@ func (r *ProvisioningOperator) ProvisioningInitial(
 		return ctrl.Result{}, err
 	}
 	labels := gqlschema.Labels{
-		"gardenerClusterName":   []string{shoot.ObjectMeta.Name},
-		"gardenerClusterDomain": []string{*shoot.Spec.DNS.Domain},
+		"gardenerClusterName":   shoot.ObjectMeta.Name,
+		"gardenerClusterDomain": *shoot.Spec.DNS.Domain,
 	}
 	for key, value := range runtime.Labels {
 		labels[key] = value

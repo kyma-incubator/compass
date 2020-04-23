@@ -23,10 +23,10 @@ type RuntimeStatus struct {
 type RuntimeStatusCondition string
 
 const (
-	RuntimeStatusConditionInitial   RuntimeStatusCondition = "INITIAL"
-	RuntimeStatusConditionProvisioning   RuntimeStatusCondition = "PROVISIONING"
-	RuntimeStatusConditionConnected RuntimeStatusCondition = "CONNECTED"
-	RuntimeStatusConditionFailed    RuntimeStatusCondition = "FAILED"
+	RuntimeStatusConditionInitial      RuntimeStatusCondition = "INITIAL"
+	RuntimeStatusConditionProvisioning RuntimeStatusCondition = "PROVISIONING"
+	RuntimeStatusConditionConnected    RuntimeStatusCondition = "CONNECTED"
+	RuntimeStatusConditionFailed       RuntimeStatusCondition = "FAILED"
 )
 
 type RuntimeInput struct {

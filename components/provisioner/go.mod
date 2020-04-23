@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/99designs/gqlgen v0.9.3
+	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/avast/retry-go v2.6.0+incompatible
 	github.com/gardener/gardener v0.33.7

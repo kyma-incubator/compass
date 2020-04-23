@@ -3,10 +3,8 @@ package director
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	gql "github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -118,7 +116,22 @@ func (cc *directorClient) UpdateRuntime(id string, config *gqlschema.RuntimeInpu
 	if config == nil {
 		return errors.New("Cannot update runtime in Director: missing Runtime config")
 	}
-	runtimeInput, err := cc.graphqlizer.RuntimeInputToGraphQL(*config)
+	var labels *graphql.Labels
+	if config.Labels != nil {
+		l := graphql.Labels(*config.Labels)
+		labels = &l
+	}
+
+	statusCondition := (graphql.RuntimeStatusCondition)(*config.StatusCondition)
+
+	directorInput := graphql.RuntimeInput{
+		Name:            config.Name,
+		Description:     config.Description,
+		Labels:          labels,
+		StatusCondition: &statusCondition,
+	}
+
+	runtimeInput, err := cc.graphqlizer.RuntimeInputToGQL(directorInput)
 	if err != nil {
 		log.Infof("Failed to create graphQLized Runtime input")
 		return err
