@@ -16,4 +16,4 @@ require (
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 )
 
-replace github.com/kyma-incubator/compass/components/gateway => github.com/dbadura/compass/components/gateway v0.0.0-20200422121610-f13c3a3eb9d7
+replace github.com/kyma-incubator/compass/components/gateway => github.com/dbadura/compass/components/gateway v0.0.0-20200423075049-ae423978ddd5

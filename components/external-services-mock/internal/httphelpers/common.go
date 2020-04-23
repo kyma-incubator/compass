@@ -2,8 +2,9 @@ package httphelpers
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 )
 
 const (

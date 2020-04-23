@@ -1,5 +1,5 @@
-APP_NAME = compass-mock-external-test-component
-APP_PATH = components/mock-external-test-component
+APP_NAME = compass-external-services-mock
+APP_PATH = components/external-services-mock
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20190913-65b55d1
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export GO111MODULE = on
@@ -24,4 +24,4 @@ dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
 build-local:
-	env go build -o bin/mock-external-test-component ./cmd/main.go
+	env go build -o bin/external-services-mock ./cmd/main.go

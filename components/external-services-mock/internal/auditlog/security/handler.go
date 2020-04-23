@@ -2,8 +2,9 @@ package security
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
@@ -26,8 +27,6 @@ type ConfigChangeHandler struct {
 func NewSecurityEventHandler(service SecurityEventService, logger *log.Logger) *ConfigChangeHandler {
 	return &ConfigChangeHandler{service: service, logger: logger}
 }
-
-
 
 func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request) {
 	defer h.closeBody(req)

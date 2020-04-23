@@ -2,8 +2,9 @@ package configuration
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
@@ -105,5 +106,3 @@ func (h *ConfigChangeHandler) closeBody(req *http.Request) {
 		h.logger.Error(errors.Wrap(err, "while closing body"))
 	}
 }
-
-
