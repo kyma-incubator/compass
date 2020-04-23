@@ -69,7 +69,7 @@ func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation
 				Status: StatusDTO{
 					CreatedAt: getIfNotZero(inst.CreatedAt),
 					UpdatedAt: getIfNotZero(inst.UpdatedAt),
-					DeletedAt: getIfNotZero(inst.DelatedAt),
+					DeletedAt: getIfNotZero(inst.DeletedAt),
 				},
 			})
 			idx = len(items) - 1

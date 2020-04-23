@@ -12,4 +12,5 @@ type Config struct {
 	InternalTesterAccessId int64
 	GroupId                int64
 	ExternalTesterAccessId int64
+	ParentId               int64
 }
