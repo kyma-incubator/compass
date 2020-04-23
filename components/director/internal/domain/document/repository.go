@@ -2,7 +2,6 @@ package document
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -115,13 +114,15 @@ func (r *repository) Delete(ctx context.Context, tenant, id string) error {
 }
 
 func (r *repository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.DocumentPage, error) {
-	pkgCond := fmt.Sprintf("%s = '%s'", "package_id", packageID)
-	return r.list(ctx, tenantID, pageSize, cursor, pkgCond)
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("package_id", packageID),
+	}
+	return r.list(ctx, tenantID, pageSize, cursor, conditions)
 }
 
-func (r *repository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions string) (*model.DocumentPage, error) {
+func (r *repository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions repo.Conditions) (*model.DocumentPage, error) {
 	var documentCollection Collection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &documentCollection, conditions)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &documentCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}

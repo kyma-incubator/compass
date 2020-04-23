@@ -199,9 +199,9 @@ func TestRepository_ListForPackage(t *testing.T) {
 	docEntity2 := fixEntityDocument("2", pkgID())
 
 	selectQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT id, tenant_id, package_id, title, display_name, description, format, kind, data
-		FROM public.documents WHERE tenant_id=$1 AND package_id = '%s' ORDER BY id LIMIT %d OFFSET %d`, pkgID(), ExpectedLimit, ExpectedOffset))
+		FROM public.documents WHERE tenant_id = $1 AND package_id = $2 ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset))
 
-	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM public.documents WHERE tenant_id=$1 AND package_id = '%s'`, pkgID())
+	rawCountQuery := "SELECT COUNT(*) FROM public.documents WHERE tenant_id = $1 AND package_id = $2"
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("Success", func(t *testing.T) {
@@ -212,11 +212,11 @@ func TestRepository_ListForPackage(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, pkgID()).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, pkgID()).
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -242,7 +242,7 @@ func TestRepository_ListForPackage(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, pkgID()).
 			WillReturnError(testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -270,11 +270,11 @@ func TestRepository_ListForPackage(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, pkgID()).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, pkgID()).
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 

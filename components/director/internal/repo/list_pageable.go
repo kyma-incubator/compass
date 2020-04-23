@@ -5,19 +5,17 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 )
 
 type PageableQuerier interface {
-	List(ctx context.Context, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...string) (*pagination.Page, int, error)
+	List(ctx context.Context, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error)
 }
 
 type PageableQuerierGlobal interface {
-	ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...string) (*pagination.Page, int, error)
+	ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error)
 }
 
 type universalPageableQuerier struct {
@@ -46,15 +44,20 @@ type Collection interface {
 }
 
 // List returns Page, TotalCount or error
-func (g *universalPageableQuerier) List(ctx context.Context, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...string) (*pagination.Page, int, error) {
-	return g.unsafeList(ctx, str.Ptr(tenant), pageSize, cursor, orderByColumn, dest, additionalConditions...)
+func (g *universalPageableQuerier) List(ctx context.Context, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error) {
+	if tenant == "" {
+		return nil, -1, errors.New("tenant cannot be empty")
+	}
+
+	additionalConditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, additionalConditions...)
+	return g.unsafeList(ctx, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }
 
-func (g *universalPageableQuerier) ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...string) (*pagination.Page, int, error) {
-	return g.unsafeList(ctx, nil, pageSize, cursor, orderByColumn, dest, additionalConditions...)
+func (g *universalPageableQuerier) ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error) {
+	return g.unsafeList(ctx, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }
 
-func (g *universalPageableQuerier) unsafeList(ctx context.Context, tenant *string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...string) (*pagination.Page, int, error) {
+func (g *universalPageableQuerier) unsafeList(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, conditions ...Condition) (*pagination.Page, int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, -1, err
@@ -70,20 +73,20 @@ func (g *universalPageableQuerier) unsafeList(ctx context.Context, tenant *strin
 		return nil, -1, errors.Wrap(err, "while converting offset and limit to cursor")
 	}
 
-	stmtWithoutPagination := buildSelectStatement(g.selectedColumns, g.tableName, g.tenantColumn, additionalConditions)
-	stmtWithPagination := fmt.Sprintf("%s %s", stmtWithoutPagination, paginationSQL)
-
-	var args []interface{}
-	if tenant != nil {
-		args = append(args, *tenant)
+	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, OrderByParams{})
+	if err != nil {
+		return nil, -1, errors.Wrap(err, "while building list query")
 	}
+
+	// TODO: Refactor query builder
+	stmtWithPagination := fmt.Sprintf("%s %s", query, paginationSQL)
 
 	err = persist.Select(dest, stmtWithPagination, args...)
 	if err != nil {
 		return nil, -1, errors.Wrap(err, "while fetching list of objects from DB")
 	}
 
-	totalCount, err := g.getTotalCount(persist, stmtWithoutPagination, args)
+	totalCount, err := g.getTotalCount(persist, query, args)
 	if err != nil {
 		return nil, -1, err
 	}

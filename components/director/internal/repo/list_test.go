@@ -33,7 +33,7 @@ func TestList(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"}).
 			AddRow(peterRow...).
 			AddRow(homerRow...)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id=$1`)).
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1")).
 			WithArgs(givenTenant).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
@@ -51,12 +51,17 @@ func TestList(t *testing.T) {
 
 		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"}).
 			AddRow(peterRow...)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id=$1 AND first_name='Peter' AND age > 18`)).
-			WithArgs(givenTenant).WillReturnRows(rows)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name = $2 AND age != $3`)).
+			WithArgs(givenTenant, "Peter", 18).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
-		err := sut.List(ctx, givenTenant, &dest, "first_name='Peter'", "age > 18")
+		conditions := repo.Conditions{
+			repo.NewEqualCondition("first_name", "Peter"),
+			repo.NewNotEqualCondition("age", 18),
+		}
+
+		err := sut.List(ctx, givenTenant, &dest, conditions...)
 		require.NoError(t, err)
 		assert.Len(t, dest, 1)
 	})
@@ -116,12 +121,17 @@ func TestListGlobal(t *testing.T) {
 
 		rows := sqlmock.NewRows([]string{"id_col", "first_name", "last_name", "age"}).
 			AddRow(peterRow...)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, first_name, last_name, age FROM users WHERE first_name='Peter' AND age > 18`)).
-			WillReturnRows(rows)
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id_col, first_name, last_name, age FROM users WHERE first_name = $1 AND age != $2")).
+			WithArgs("Peter", 18).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
-		err := sut.ListGlobal(ctx, &dest, "first_name='Peter'", "age > 18")
+		conditions := repo.Conditions{
+			repo.NewEqualCondition("first_name", "Peter"),
+			repo.NewNotEqualCondition("age", 18),
+		}
+
+		err := sut.ListGlobal(ctx, &dest, conditions...)
 		require.NoError(t, err)
 		assert.Len(t, dest, 1)
 	})

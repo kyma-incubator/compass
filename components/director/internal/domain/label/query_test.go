@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+// TODO: Split the test for global and tenant-scoped version
 func Test_FilterQuery_Intersection(t *testing.T) {
 	tenantID := uuid.New()
 
@@ -49,7 +50,7 @@ func Test_FilterQuery_Intersection(t *testing.T) {
 	}
 
 	stmtPrefix := `SELECT "runtime_id" FROM public.labels ` +
-		`WHERE "runtime_id" IS NOT NULL AND "tenant_id" = '` + tenantID.String() + `'`
+		`WHERE "runtime_id" IS NOT NULL AND "tenant_id" = ?`
 
 	stmtPrefixGlobal := `SELECT "runtime_id" FROM public.labels ` +
 		`WHERE "runtime_id" IS NOT NULL`
@@ -60,6 +61,8 @@ func Test_FilterQuery_Intersection(t *testing.T) {
 		FilterInput               []*labelfilter.LabelFilter
 		ExpectedQueryFilter       string
 		ExpectedQueryFilterGlobal string
+		ExpectedArgs              []interface{}
+		ExpectedArgsGlobal        []interface{}
 		ExpectedError             error
 	}{
 		{
@@ -80,102 +83,118 @@ func Test_FilterQuery_Intersection(t *testing.T) {
 			Name:                      "Query only for label assigned if label filter defined only with key - intersect set",
 			ReturnSetCombination:      IntersectSet,
 			FilterInput:               []*labelfilter.LabelFilter{&filterAllFoos},
-			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = '` + filterAllFoos.Key + `'`,
-			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = '` + filterAllFoos.Key + `'`,
+			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = ?`,
+			ExpectedArgs:              []interface{}{tenantID, filterAllFoos.Key},
+			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = ?`,
+			ExpectedArgsGlobal:        []interface{}{filterAllFoos.Key},
 			ExpectedError:             nil,
 		}, {
 			Name:                      "Query only for label assigned if label filter defined only with key - union set",
 			ReturnSetCombination:      UnionSet,
 			FilterInput:               []*labelfilter.LabelFilter{&filterAllFoos},
-			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = '` + filterAllFoos.Key + `'`,
-			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = '` + filterAllFoos.Key + `'`,
+			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = ?`,
+			ExpectedArgs:              []interface{}{tenantID, filterAllFoos.Key},
+			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = ?`,
+			ExpectedArgsGlobal:        []interface{}{filterAllFoos.Key},
 			ExpectedError:             nil,
 		}, {
-			Name:                 "Query only for labels assigned if label filter defined only with keys (multiple) - intersect set",
-			ReturnSetCombination: IntersectSet,
-			FilterInput:          []*labelfilter.LabelFilter{&filterAllFoos, &filterAllBars},
-			ExpectedQueryFilter: stmtPrefix + ` AND "key" = '` + filterAllFoos.Key + `'` +
-				` INTERSECT ` + stmtPrefix + ` AND "key" = '` + filterAllBars.Key + `'`,
-			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = '` + filterAllFoos.Key + `'` +
-				` INTERSECT ` + stmtPrefixGlobal + ` AND "key" = '` + filterAllBars.Key + `'`,
-			ExpectedError: nil,
+			Name:                      "Query only for labels assigned if label filter defined only with keys (multiple) - intersect set",
+			ReturnSetCombination:      IntersectSet,
+			FilterInput:               []*labelfilter.LabelFilter{&filterAllFoos, &filterAllBars},
+			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = ? INTERSECT ` + stmtPrefix + ` AND "key" = ?`,
+			ExpectedArgs:              []interface{}{tenantID, filterAllFoos.Key, tenantID, filterAllBars.Key},
+			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = ? INTERSECT ` + stmtPrefixGlobal + ` AND "key" = ?`,
+			ExpectedArgsGlobal:        []interface{}{filterAllFoos.Key, filterAllBars.Key},
+			ExpectedError:             nil,
 		}, {
-			Name:                 "Query only for labels assigned if label filter defined only with keys (multiple) - union set",
-			ReturnSetCombination: UnionSet,
-			FilterInput:          []*labelfilter.LabelFilter{&filterAllFoos, &filterAllBars},
-			ExpectedQueryFilter: stmtPrefix + ` AND "key" = '` + filterAllFoos.Key + `'` +
-				` UNION ` + stmtPrefix + ` AND "key" = '` + filterAllBars.Key + `'`,
-			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = '` + filterAllFoos.Key + `'` +
-				` UNION ` + stmtPrefixGlobal + ` AND "key" = '` + filterAllBars.Key + `'`,
-			ExpectedError: nil,
+			Name:                      "Query only for labels assigned if label filter defined only with keys (multiple) - union set",
+			ReturnSetCombination:      UnionSet,
+			FilterInput:               []*labelfilter.LabelFilter{&filterAllFoos, &filterAllBars},
+			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = ? UNION ` + stmtPrefix + ` AND "key" = ?`,
+			ExpectedArgs:              []interface{}{tenantID, filterAllFoos.Key, tenantID, filterAllBars.Key},
+			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = ? UNION ` + stmtPrefixGlobal + ` AND "key" = ?`,
+			ExpectedArgsGlobal:        []interface{}{filterAllFoos.Key, filterAllBars.Key},
+			ExpectedError:             nil,
 		}, {
 			Name:                      "Query for label assigned with value - intersect set",
 			ReturnSetCombination:      IntersectSet,
 			FilterInput:               []*labelfilter.LabelFilter{&filterFoosWithValues},
-			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = '` + filterFoosWithValues.Key + `' AND "value" @> '` + *filterFoosWithValues.Query + `'`,
-			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = '` + filterFoosWithValues.Key + `' AND "value" @> '` + *filterFoosWithValues.Query + `'`,
+			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = ? AND "value" @> ?`,
+			ExpectedArgs:              []interface{}{tenantID, filterFoosWithValues.Key, *filterFoosWithValues.Query},
+			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = ? AND "value" @> ?`,
+			ExpectedArgsGlobal:        []interface{}{filterFoosWithValues.Key, *filterFoosWithValues.Query},
 			ExpectedError:             nil,
 		}, {
 			Name:                      "Query for label assigned with value - union set",
 			ReturnSetCombination:      UnionSet,
 			FilterInput:               []*labelfilter.LabelFilter{&filterFoosWithValues},
-			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = '` + filterFoosWithValues.Key + `' AND "value" @> '` + *filterFoosWithValues.Query + `'`,
-			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = '` + filterFoosWithValues.Key + `' AND "value" @> '` + *filterFoosWithValues.Query + `'`,
+			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = ? AND "value" @> ?`,
+			ExpectedArgs:              []interface{}{tenantID, filterFoosWithValues.Key, *filterFoosWithValues.Query},
+			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = ? AND "value" @> ?`,
+			ExpectedArgsGlobal:        []interface{}{filterFoosWithValues.Key, *filterFoosWithValues.Query},
 			ExpectedError:             nil,
 		}, {
-			Name:                 "Query for labels assigned with values (multiple) - intersect set",
-			ReturnSetCombination: IntersectSet,
-			FilterInput:          []*labelfilter.LabelFilter{&filterFoosWithValues, &filterBarsWithValues},
-			ExpectedQueryFilter: stmtPrefix + ` AND "key" = '` + filterFoosWithValues.Key + `' AND "value" @> '` + *filterFoosWithValues.Query + `'` +
-				` INTERSECT ` + stmtPrefix + ` AND "key" = '` + filterBarsWithValues.Key + `' AND "value" @> '` + *filterBarsWithValues.Query + `'`,
-			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = '` + filterFoosWithValues.Key + `' AND "value" @> '` + *filterFoosWithValues.Query + `'` +
-				` INTERSECT ` + stmtPrefixGlobal + ` AND "key" = '` + filterBarsWithValues.Key + `' AND "value" @> '` + *filterBarsWithValues.Query + `'`,
-			ExpectedError: nil,
+			Name:                      "Query for labels assigned with values (multiple) - intersect set",
+			ReturnSetCombination:      IntersectSet,
+			FilterInput:               []*labelfilter.LabelFilter{&filterFoosWithValues, &filterBarsWithValues},
+			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = ? AND "value" @> ? INTERSECT ` + stmtPrefix + ` AND "key" = ? AND "value" @> ?`,
+			ExpectedArgs:              []interface{}{tenantID, filterFoosWithValues.Key, *filterFoosWithValues.Query, tenantID, filterBarsWithValues.Key, *filterBarsWithValues.Query},
+			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = ? AND "value" @> ? INTERSECT ` + stmtPrefixGlobal + ` AND "key" = ? AND "value" @> ?`,
+			ExpectedArgsGlobal:        []interface{}{filterFoosWithValues.Key, *filterFoosWithValues.Query, filterBarsWithValues.Key, *filterBarsWithValues.Query},
+			ExpectedError:             nil,
 		}, {
-			Name:                 "Query for labels assigned with values (multiple) - union set",
-			ReturnSetCombination: UnionSet,
-			FilterInput:          []*labelfilter.LabelFilter{&filterFoosWithValues, &filterBarsWithValues},
-			ExpectedQueryFilter: stmtPrefix + ` AND "key" = '` + filterFoosWithValues.Key + `' AND "value" @> '` + *filterFoosWithValues.Query + `'` +
-				` UNION ` + stmtPrefix + ` AND "key" = '` + filterBarsWithValues.Key + `' AND "value" @> '` + *filterBarsWithValues.Query + `'`,
-			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = '` + filterFoosWithValues.Key + `' AND "value" @> '` + *filterFoosWithValues.Query + `'` +
-				` UNION ` + stmtPrefixGlobal + ` AND "key" = '` + filterBarsWithValues.Key + `' AND "value" @> '` + *filterBarsWithValues.Query + `'`,
-			ExpectedError: nil,
+			Name:                      "Query for labels assigned with values (multiple) - union set",
+			ReturnSetCombination:      UnionSet,
+			FilterInput:               []*labelfilter.LabelFilter{&filterFoosWithValues, &filterBarsWithValues},
+			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = ? AND "value" @> ? UNION ` + stmtPrefix + ` AND "key" = ? AND "value" @> ?`,
+			ExpectedArgs:              []interface{}{tenantID, filterFoosWithValues.Key, *filterFoosWithValues.Query, tenantID, filterBarsWithValues.Key, *filterBarsWithValues.Query},
+			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = ? AND "value" @> ? UNION ` + stmtPrefixGlobal + ` AND "key" = ? AND "value" @> ?`,
+			ExpectedArgsGlobal:        []interface{}{filterFoosWithValues.Key, *filterFoosWithValues.Query, filterBarsWithValues.Key, *filterBarsWithValues.Query},
+			ExpectedError:             nil,
 		}, {
 			Name:                      "[Scenarios] Query for label assigned",
 			ReturnSetCombination:      IntersectSet,
 			FilterInput:               []*labelfilter.LabelFilter{&filterAllScenarios},
-			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = '` + filterAllScenarios.Key + `'`,
-			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = '` + filterAllScenarios.Key + `'`,
+			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = ?`,
+			ExpectedArgs:              []interface{}{tenantID, filterAllScenarios.Key},
+			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = ?`,
+			ExpectedArgsGlobal:        []interface{}{filterAllScenarios.Key},
 			ExpectedError:             nil,
 		}, {
 			Name:                      "[Scenarios] Query for label assigned with value",
 			ReturnSetCombination:      IntersectSet,
 			FilterInput:               []*labelfilter.LabelFilter{&filterScenariosWithFooValues},
-			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = '` + filterScenariosWithFooValues.Key + `' AND "value" ?| array['foo']`,
-			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = '` + filterScenariosWithFooValues.Key + `' AND "value" ?| array['foo']`,
+			ExpectedQueryFilter:       stmtPrefix + ` AND "key" = ? AND "value" ?| array[?]`,
+			ExpectedArgs:              []interface{}{tenantID, filterScenariosWithFooValues.Key, "foo"},
+			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = ? AND "value" ?| array[?]`,
+			ExpectedArgsGlobal:        []interface{}{filterScenariosWithFooValues.Key, "foo"},
 			ExpectedError:             nil,
 		}, {
 			Name:                 "[Scenarios] Query for label assigned with values",
 			ReturnSetCombination: IntersectSet,
 			FilterInput:          []*labelfilter.LabelFilter{&filterScenariosWithFooValues, &filterScenariosWithbarPongValues},
-			ExpectedQueryFilter: stmtPrefix + ` AND "key" = '` + filterScenariosWithFooValues.Key + `' AND "value" ?| array['foo']` +
-				` INTERSECT ` + stmtPrefix + ` AND "key" = '` + filterScenariosWithbarPongValues.Key + `' AND "value" ?| array['bar pong']`,
-			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = '` + filterScenariosWithFooValues.Key + `' AND "value" ?| array['foo']` +
-				` INTERSECT ` + stmtPrefixGlobal + ` AND "key" = '` + filterScenariosWithbarPongValues.Key + `' AND "value" ?| array['bar pong']`,
-			ExpectedError: nil,
+			ExpectedQueryFilter: stmtPrefix + ` AND "key" = ? AND "value" ?| array[?]` +
+				` INTERSECT ` + stmtPrefix + ` AND "key" = ? AND "value" ?| array[?]`,
+			ExpectedArgs: []interface{}{tenantID, filterScenariosWithFooValues.Key, "foo", tenantID, filterScenariosWithbarPongValues.Key, "bar pong"},
+			ExpectedQueryFilterGlobal: stmtPrefixGlobal + ` AND "key" = ? AND "value" ?| array[?]` +
+				` INTERSECT ` + stmtPrefixGlobal + ` AND "key" = ? AND "value" ?| array[?]`,
+			ExpectedArgsGlobal: []interface{}{filterScenariosWithFooValues.Key, "foo", filterScenariosWithbarPongValues.Key, "bar pong"},
+			ExpectedError:      nil,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			queryFilter, err := FilterQuery(model.RuntimeLabelableObject, testCase.ReturnSetCombination, tenantID, testCase.FilterInput)
+			queryFilter, args, err := FilterQuery(model.RuntimeLabelableObject, testCase.ReturnSetCombination, tenantID, testCase.FilterInput)
 
 			assert.Equal(t, testCase.ExpectedQueryFilter, queryFilter)
+			assert.Equal(t, testCase.ExpectedArgs, args)
 			assert.Equal(t, testCase.ExpectedError, err)
 
-			queryFilterGlobal, err := FilterQueryGlobal(model.RuntimeLabelableObject, testCase.ReturnSetCombination, testCase.FilterInput)
+			queryFilterGlobal, args, err := FilterQueryGlobal(model.RuntimeLabelableObject, testCase.ReturnSetCombination, testCase.FilterInput)
 
 			assert.Equal(t, testCase.ExpectedQueryFilterGlobal, queryFilterGlobal)
+			assert.Equal(t, testCase.ExpectedArgsGlobal, args)
 			assert.Equal(t, testCase.ExpectedError, err)
 		})
 	}

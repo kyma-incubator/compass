@@ -3,7 +3,6 @@ package repo
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -62,24 +61,12 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Condit
 		return err
 	}
 
-	var stmtBuilder strings.Builder
-	startIdx := 1
-
-	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", g.selectedColumns, g.tableName))
-	if len(conditions) > 0 {
-		stmtBuilder.WriteString(" WHERE")
+	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, orderByParams)
+	if err != nil {
+		return errors.Wrap(err, "while building list query")
 	}
 
-	err = writeEnumeratedConditions(&stmtBuilder, startIdx, conditions)
-	if err != nil {
-		return errors.Wrap(err, "while writing enumerated conditions")
-	}
-	err = writeOrderByPart(&stmtBuilder, orderByParams)
-	if err != nil {
-		return errors.Wrap(err, "while writing order by part")
-	}
-	allArgs := getAllArgs(conditions)
-	err = persist.Get(dest, stmtBuilder.String(), allArgs...)
+	err = persist.Get(dest, query, args...)
 	switch {
 	case err == sql.ErrNoRows:
 		return apperrors.NewNotFoundError("")
