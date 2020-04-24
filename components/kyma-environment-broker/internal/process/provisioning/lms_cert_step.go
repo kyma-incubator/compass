@@ -77,7 +77,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 	// check if LMS tenant is ready
 	status, err := s.provider.GetTenantStatus(operation.Lms.TenantID)
 	if err != nil {
-		logger.Errorf("Unable to get LMS Tenant status: %s", err.Error())
+		logger.Errorf("Unable to get LMS Tenant (id=%s) status: %s", operation.Lms.TenantID, err.Error())
 		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
 			logger.Error("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
 			return s.failLmsAndUpdate(operation)
@@ -180,7 +180,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 [FILTER]
         Name record_modifier
         Match *
-        Record cluster_name %s
+        Record subaccount_id %s
 `, pp.ErsContext.SubAccountID)}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
 	})
 

@@ -1,6 +1,8 @@
 package input
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -13,7 +15,8 @@ const (
 )
 
 type Config struct {
-	URL string
+	URL     string
+	Timeout time.Duration `envconfig:"default=12h"`
 }
 
 type RuntimeInput struct {

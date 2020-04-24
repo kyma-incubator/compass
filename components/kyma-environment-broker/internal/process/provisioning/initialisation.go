@@ -18,11 +18,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	// the time after which the operation is marked as expired
-	CheckStatusTimeout = 3 * time.Hour
-)
-
 //go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
 
 type DirectorClient interface {
@@ -36,9 +31,16 @@ type InitialisationStep struct {
 	directorClient      DirectorClient
 	inputBuilder        input.CreatorForPlan
 	externalEvalCreator *ExternalEvalCreator
+	provisioningTimeout time.Duration
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan, avsExternalEvalCreator *ExternalEvalCreator) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations,
+	is storage.Instances,
+	pc provisioner.Client,
+	dc DirectorClient,
+	b input.CreatorForPlan,
+	avsExternalEvalCreator *ExternalEvalCreator,
+	timeout time.Duration) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:    process.NewProvisionOperationManager(os),
 		instanceStorage:     is,
@@ -46,6 +48,7 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 		directorClient:      dc,
 		inputBuilder:        b,
 		externalEvalCreator: avsExternalEvalCreator,
+		provisioningTimeout: timeout,
 	}
 }
 
@@ -103,9 +106,9 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 }
 
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
+	if time.Since(operation.UpdatedAt) > s.provisioningTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout))
 	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)

@@ -175,7 +175,8 @@ func main() {
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs)
 
 	// define steps
-	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, externalEvalCreator)
+	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
+		provisionerClient, directorClient, inputFactory, externalEvalCreator, cfg.Provisioning.Timeout)
 	provisionManager.InitStep(provisioningInit)
 
 	provisioningSteps := []struct {
