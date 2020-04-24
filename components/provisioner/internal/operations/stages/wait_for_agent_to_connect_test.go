@@ -60,6 +60,29 @@ func TestWaitForAgentToConnect(t *testing.T) {
 			require.Equal(t, nextStageName, result.Stage)
 			require.Equal(t, time.Duration(0), result.Delay)
 		})
+
+		t.Run(fmt.Sprintf("should rerun step if failed to update Director when Compass conccection in state: %s", testCase.state), func(t *testing.T) {
+			// given
+			clientProvider := NewMockClientProvider(&v1alpha12.CompassConnection{
+				ObjectMeta: v1.ObjectMeta{Name: defaultCompassConnectionName},
+				Status: v1alpha12.CompassConnectionStatus{
+					State: testCase.state,
+				},
+			})
+
+			directorClient := &directorMocks.DirectorClient{}
+			directorClient.On("SetRuntimeStatusCondition", mock.AnythingOfType("string"), gqlschema.RuntimeStatusConditionConnected, mock.AnythingOfType("string")).Return(fmt.Errorf("some error"))
+
+			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
+
+			// when
+			result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
+
+			// then
+			require.NoError(t, err)
+			require.Equal(t, model.WaitForAgentToConnect, result.Stage)
+			require.Equal(t, 2*time.Second, result.Delay)
+		})
 	}
 
 	t.Run("should proceed to next step when Agent connects", func(t *testing.T) {

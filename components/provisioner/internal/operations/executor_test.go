@@ -54,7 +54,6 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		}
 
 		directorClient := &directorMocks.DirectorClient{}
-		directorClient.On("SetRuntimeStatusCondition", clusterId, gqlschema.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(nil)
 
 		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler(), directorClient)
 
@@ -66,7 +65,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		assert.True(t, mockStage.called)
 	})
 
-	t.Run("should requeue operation if error occured", func(t *testing.T) {
+	t.Run("should requeue operation if error occurred", func(t *testing.T) {
 		// given
 		dbSession := &mocks.ReadWriteSession{}
 		dbSession.On("GetOperation", operationId).Return(operation, nil)
@@ -79,7 +78,6 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		}
 
 		directorClient := &directorMocks.DirectorClient{}
-		directorClient.On("SetRuntimeStatusCondition", clusterId, gqlschema.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(nil)
 
 		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler(), directorClient)
 
@@ -117,6 +115,36 @@ func TestStagesExecutor_Execute(t *testing.T) {
 
 		// then
 		assert.Equal(t, false, result.Requeue)
+		assert.True(t, mockStage.called)
+		assert.True(t, failureHandler.called)
+	})
+
+	t.Run("should requeue operation and run failure handler if NonRecoverable error occurred but failed to update Director", func(t *testing.T) {
+		// given
+		dbSession := &mocks.ReadWriteSession{}
+		dbSession.On("GetOperation", operationId).Return(operation, nil)
+		dbSession.On("GetCluster", clusterId).Return(cluster, nil)
+		dbSession.On("UpdateOperationState", operationId, "error", model.Failed, mock.AnythingOfType("time.Time")).
+			Return(nil)
+
+		mockStage := NewErrorStep(model.ShootProvisioning, NewNonRecoverableError(fmt.Errorf("error")), 10*time.Second)
+
+		installationStages := map[model.OperationStage]Step{
+			model.WaitingForInstallation: mockStage,
+		}
+
+		directorClient := &directorMocks.DirectorClient{}
+		directorClient.On("SetRuntimeStatusCondition", clusterId, gqlschema.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(fmt.Errorf("some error"))
+
+		failureHandler := MockFailureHandler{}
+
+		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler, directorClient)
+
+		// when
+		result := executor.Execute(operationId)
+
+		// then
+		assert.True(t, result.Requeue)
 		assert.True(t, mockStage.called)
 		assert.True(t, failureHandler.called)
 	})
