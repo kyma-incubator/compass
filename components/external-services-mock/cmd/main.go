@@ -4,12 +4,11 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/oauth"
 
 	"github.com/sirupsen/logrus"
-
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/security"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/configuration"
@@ -49,22 +48,14 @@ func initHTTP(cfg config) http.Handler {
 
 	router := mux.NewRouter()
 	configService := configuration.NewService()
-	securityEventService := security.NewService()
-
-	securityHandler := security.NewSecurityEventHandler(securityEventService, logger)
 	configHandler := configuration.NewConfigurationHandler(configService, logger)
 
 	oauthHandler := oauth.NewHandler(cfg.ClientSecret, cfg.ClientID)
-	router.Use(authMiddleware)
 
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
 	configChangeRouter := router.PathPrefix("/auditlog/v2/configuration-changes").Subrouter()
+	configChangeRouter.Use(authMiddleware)
 	configuration.InitConfigurationChangeHandler(configChangeRouter, configHandler)
-
-	router.HandleFunc("/auditlog/v2/security-events", securityHandler.Save).Methods(http.MethodPost)
-	router.HandleFunc("/auditlog/v2/security-events", securityHandler.List).Methods(http.MethodGet)
-	router.HandleFunc("/auditlog/v2/security-events/{id}", securityHandler.Get).Methods(http.MethodGet)
-	router.HandleFunc("/auditlog/v2/security-events/{id}", securityHandler.Delete).Methods(http.MethodDelete)
 
 	router.HandleFunc("/auditlog/v2/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
 	return router
@@ -77,6 +68,13 @@ func authMiddleware(next http.Handler) http.Handler {
 			w.Header().Add("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_, err := io.WriteString(w, `{"error":"No auth header"}`)
+			exitOnError(err, "while writing auth response")
+			return
+		}
+		if !strings.Contains(authHeader, "Bearer") {
+			w.Header().Add("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_, err := io.WriteString(w, `{"error":"No Bearer token"}`)
 			exitOnError(err, "while writing auth response")
 			return
 		}

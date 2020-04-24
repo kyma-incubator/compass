@@ -17,4 +17,5 @@ require (
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 )
 
+//TODO: Remove it after merge
 replace github.com/kyma-incubator/compass/components/gateway => github.com/dbadura/compass/components/gateway v0.0.0-20200423075049-ae423978ddd5
