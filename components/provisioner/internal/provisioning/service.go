@@ -26,6 +26,7 @@ type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, error)
 	UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error)
 	DeprovisionRuntime(id, tenant string) (string, error)
+	MarkRuntimeAsDeleted(id, tenant string) (string, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error)
