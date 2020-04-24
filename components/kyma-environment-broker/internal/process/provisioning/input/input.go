@@ -9,11 +9,6 @@ import (
 	"github.com/vburenin/nsync"
 )
 
-const (
-	brokerKeyPrefix = "broker_"
-	globalKeyPrefix = "global_"
-)
-
 type Config struct {
 	URL     string
 	Timeout time.Duration `envconfig:"default=12h"`
@@ -69,23 +64,12 @@ func (r *RuntimeInput) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryI
 func (r *RuntimeInput) SetLabel(key, value string) internal.ProvisionInputCreator {
 	r.mutex.Lock("Labels")
 	defer r.mutex.Unlock("Labels")
-	
+
 	if r.input.RuntimeInput.Labels == nil {
 		r.input.RuntimeInput.Labels = &gqlschema.Labels{}
 	}
 
 	(*r.input.RuntimeInput.Labels)[key] = value
-	return r
-}
-
-func (r *RuntimeInput) SetRuntimeLabels(instanceID, subAccountID string) internal.ProvisionInputCreator {
-	r.input.RuntimeInput.Labels = &gqlschema.Labels{
-		brokerKeyPrefix + "instance_id":   instanceID,
-		globalKeyPrefix + "subaccount_id": subAccountID,
-	}
-
-	r.SetLabel(brokerKeyPrefix + "instance_id", instanceID)
-	r.SetLabel(globalKeyPrefix + "subaccount_id", subAccountID)
 	return r
 }
 
