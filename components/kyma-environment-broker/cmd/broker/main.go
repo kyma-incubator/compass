@@ -169,7 +169,7 @@ func main() {
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, runtimeProvider, cfg.Provisioning, cfg.KymaVersion)
 	fatalOnError(err)
 
-	edpClient := edp.CreateEDPAdminClient(cfg.EDP, logs)
+	edpClient := edp.NewClient(cfg.EDP, logs)
 
 	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
 	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)

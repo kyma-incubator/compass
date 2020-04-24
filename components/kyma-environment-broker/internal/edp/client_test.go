@@ -28,7 +28,8 @@ func TestClient_CreateDataTenant(t *testing.T) {
 		AdminURL:  testServer.URL,
 		Namespace: testNamespace,
 	}
-	client := NewClient(config, testServer.Client(), logger.NewLogDummy())
+	client := NewClient(config, logger.NewLogDummy())
+	client.setHttpClient(testServer.Client())
 
 	// when
 	err := client.CreateDataTenant(DataTenantPayload{
@@ -59,7 +60,8 @@ func TestClient_DeleteDataTenant(t *testing.T) {
 		AdminURL:  testServer.URL,
 		Namespace: testNamespace,
 	}
-	client := NewClient(config, testServer.Client(), logger.NewLogDummy())
+	client := NewClient(config, logger.NewLogDummy())
+	client.setHttpClient(testServer.Client())
 
 	err := client.CreateDataTenant(DataTenantPayload{
 		Name:        subAccountID,
@@ -87,7 +89,8 @@ func TestClient_CreateMetadataTenant(t *testing.T) {
 		AdminURL:  testServer.URL,
 		Namespace: testNamespace,
 	}
-	client := NewClient(config, testServer.Client(), logger.NewLogDummy())
+	client := NewClient(config, logger.NewLogDummy())
+	client.setHttpClient(testServer.Client())
 
 	// when
 	err := client.CreateMetadataTenant(subAccountID, environment, MetadataTenantPayload{Key: "tK", Value: "tV"})
@@ -114,7 +117,8 @@ func TestClient_DeleteMetadataTenant(t *testing.T) {
 		AdminURL:  testServer.URL,
 		Namespace: testNamespace,
 	}
-	client := NewClient(config, testServer.Client(), logger.NewLogDummy())
+	client := NewClient(config, logger.NewLogDummy())
+	client.setHttpClient(testServer.Client())
 
 	err := client.CreateMetadataTenant(subAccountID, environment, MetadataTenantPayload{Key: key, Value: "tV"})
 	assert.NoError(t, err)
@@ -333,4 +337,9 @@ func (s *server) getDataTenants(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// setHttpClient auxiliary method of testing to get rid of oAuth client wrapper
+func (c *Client) setHttpClient(httpClient *http.Client) {
+	c.httpClient = httpClient
 }

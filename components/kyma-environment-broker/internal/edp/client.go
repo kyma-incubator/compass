@@ -2,16 +2,19 @@ package edp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 const (
@@ -21,7 +24,19 @@ const (
 
 	dataTenantTmpl     = "%s/namespaces/%s/dataTenants"
 	metadataTenantTmpl = "%s/namespaces/%s/dataTenants/%s/%s/metadata"
+
+	namespaceToken = "%s/oauth2/token"
 )
+
+type Config struct {
+	AuthURL     string
+	AdminURL    string
+	Namespace   string
+	Secret      string
+	Environment string `envconfig:"default=prod"`
+	Required    bool   `envconfig:"default=false"`
+	Disabled    bool
+}
 
 type Client struct {
 	config     Config
@@ -29,10 +44,19 @@ type Client struct {
 	log        logrus.FieldLogger
 }
 
-func NewClient(config Config, httpClient *http.Client, log logrus.FieldLogger) *Client {
+func NewClient(config Config, log logrus.FieldLogger) *Client {
+	cfg := clientcredentials.Config{
+		ClientID:     fmt.Sprintf("edp-namespace;%s", config.Namespace),
+		ClientSecret: config.Secret,
+		TokenURL:     fmt.Sprintf(namespaceToken, config.AuthURL),
+		Scopes:       []string{"edp-namespace.read edp-namespace.update"},
+	}
+	httpClientOAuth := cfg.Client(context.Background())
+	httpClientOAuth.Timeout = 30 * time.Second
+
 	return &Client{
 		config:     config,
-		httpClient: httpClient,
+		httpClient: httpClientOAuth,
 		log:        log,
 	}
 }
@@ -93,7 +117,7 @@ func (c *Client) DeleteMetadataTenant(name, env, key string) error {
 	return c.processResponse(response)
 }
 
-func (c *Client) GetMetadataTenant(name, env string) ([]MetadataItem, error) {
+func (c *Client) GetMetadataTenant(name, env string) (_ []MetadataItem, err error) {
 	response, err := c.httpClient.Get(c.metadataTenantURL(name, env))
 	if err != nil {
 		return []MetadataItem{}, errors.Wrap(err, "while requesting about dataTenant metadata")
@@ -111,7 +135,7 @@ func (c *Client) GetMetadataTenant(name, env string) ([]MetadataItem, error) {
 	return metadata, nil
 }
 
-func (c *Client) post(URL string, data []byte) error {
+func (c *Client) post(URL string, data []byte) (err error) {
 	response, err := c.httpClient.Post(URL, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return errors.Wrapf(err, "while sending POST request on %s", URL)
