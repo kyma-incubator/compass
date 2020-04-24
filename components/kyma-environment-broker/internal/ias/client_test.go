@@ -333,7 +333,7 @@ func (s *server) createSPSecret(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&sc)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		s.t.Errorf("test server cannot read request body: %s", err)
+		s.t.Errorf("test server cannot decode request body: %s", err)
 		return
 	}
 
@@ -379,7 +379,7 @@ func (s *server) getConfiguration(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write(s.configuration)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		s.t.Errorf("test server cannot read request body: %s", err)
+		s.t.Errorf("test server cannot write response body: %s", err)
 		return
 	}
 	w.WriteHeader(http.StatusOK)

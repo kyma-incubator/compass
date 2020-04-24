@@ -6,9 +6,9 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias/automock"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,7 +35,7 @@ func TestIASDeregistration_Run(t *testing.T) {
 	step := NewIASDeregistrationStep(memoryStorage.Operations(), bundleBuilder)
 
 	// when
-	_, repeat, err := step.Run(operation, logrus.New())
+	_, repeat, err := step.Run(operation, logger.NewLogDummy())
 
 	// then
 	assert.Equal(t, time.Duration(0), repeat)

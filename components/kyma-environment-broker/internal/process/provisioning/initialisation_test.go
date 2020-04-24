@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/automock"
 	provisionerAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
@@ -15,7 +16,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,7 +31,6 @@ const (
 
 func TestInitialisationStep_Run(t *testing.T) {
 	// given
-	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
 	operation := fixOperationRuntimeStatus(t)
@@ -65,11 +64,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 	externalEvalCreator := NewExternalEvalCreator(avsConfig, avsDel, false, externalEvalAssistant)
 	iasType := NewIASType(nil, true)
 
-	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient, nil, externalEvalCreator, time.Hour)
-	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient, nil, externalEvalCreator, iasType)
+	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, directorClient, nil, externalEvalCreator, iasType, time.Hour)
 
 	// when
-	operation, repeat, err := step.Run(operation, log)
+	operation, repeat, err := step.Run(operation, logger.NewLogDummy())
 
 	// then
 	assert.NoError(t, err)

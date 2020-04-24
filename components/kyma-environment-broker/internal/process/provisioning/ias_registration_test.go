@@ -7,12 +7,12 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias/automock"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/logger"
 	provisioningAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -65,7 +65,7 @@ func TestIASRegistration_Run(t *testing.T) {
 	step := NewIASRegistrationStep(memoryStorage.Operations(), bundleBuilder)
 
 	// when
-	_, repeat, err := step.Run(operation, logrus.New())
+	_, repeat, err := step.Run(operation, logger.NewLogDummy())
 
 	// then
 	assert.Equal(t, time.Duration(0), repeat)

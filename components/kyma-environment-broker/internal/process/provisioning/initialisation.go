@@ -20,9 +20,6 @@ import (
 )
 
 const (
-	// the time after which the operation is marked as expired
-	CheckStatusTimeout = 3 * time.Hour
-
 	// label key used to send to director
 	grafanaURLLabel = "operator_grafanaUrl"
 )
@@ -45,13 +42,13 @@ type InitialisationStep struct {
 	provisioningTimeout time.Duration
 }
 
-//func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, dc DirectorClient, b input.CreatorForPlan, avsExternalEvalCreator *ExternalEvalCreator, iasType *IASType) *InitialisationStep {
 func NewInitialisationStep(os storage.Operations,
 	is storage.Instances,
 	pc provisioner.Client,
 	dc DirectorClient,
 	b input.CreatorForPlan,
 	avsExternalEvalCreator *ExternalEvalCreator,
+	iasType *IASType,
 	timeout time.Duration) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:    process.NewProvisionOperationManager(os),

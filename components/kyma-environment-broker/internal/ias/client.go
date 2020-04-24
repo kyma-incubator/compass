@@ -69,7 +69,7 @@ func (c *Client) SetAuthenticationAndAccess(spID string, payload AuthenticationA
 	return c.call(pathAccess, payload)
 }
 
-func (c *Client) GetCompany() (*Company, error) {
+func (c *Client) GetCompany() (_ *Company, err error) {
 	company := &Company{}
 	request := &Request{Method: http.MethodGet, Path: PathCompanyGlobal}
 
@@ -89,7 +89,7 @@ func (c *Client) GetCompany() (*Company, error) {
 	return company, nil
 }
 
-func (c *Client) CreateServiceProvider(serviceName, companyID string) error {
+func (c *Client) CreateServiceProvider(serviceName, companyID string) (err error) {
 	payload := fmt.Sprintf("sp_name=%s&company_id=%s", serviceName, companyID)
 	request := &Request{
 		Method:  http.MethodPost,
@@ -109,7 +109,7 @@ func (c *Client) CreateServiceProvider(serviceName, companyID string) error {
 	return nil
 }
 
-func (c *Client) DeleteServiceProvider(spID string) error {
+func (c *Client) DeleteServiceProvider(spID string) (err error) {
 	request := &Request{
 		Method: http.MethodPut,
 		Path:   fmt.Sprintf("%s?sp_id=%s", PathDelete, spID),
@@ -125,7 +125,7 @@ func (c *Client) DeleteServiceProvider(spID string) error {
 	return nil
 }
 
-func (c *Client) GenerateServiceProviderSecret(secretCfg SecretConfiguration) (*ServiceProviderSecret, error) {
+func (c *Client) GenerateServiceProviderSecret(secretCfg SecretConfiguration) (_ *ServiceProviderSecret, err error) {
 	secretResponse := &ServiceProviderSecret{}
 	request, err := c.jsonRequest(PathServiceProviders, secretCfg)
 	if err != nil {
@@ -156,7 +156,7 @@ func (c *Client) serviceProviderPath(spID string) string {
 	return fmt.Sprintf("%s/%s", PathServiceProviders, spID)
 }
 
-func (c *Client) call(path string, payload interface{}) error {
+func (c *Client) call(path string, payload interface{}) (err error) {
 	request, err := c.jsonRequest(path, payload)
 	if err != nil {
 		return errors.Wrapf(err, "while creating json request for path %s", path)

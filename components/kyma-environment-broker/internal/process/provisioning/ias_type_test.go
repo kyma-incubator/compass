@@ -6,8 +6,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias/automock"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/logger"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +34,7 @@ func TestIASType_ConfigureType(t *testing.T) {
 		Operation: internal.Operation{
 			InstanceID: iasTypeInstanceID,
 		},
-	}, iasTypeURLDashboard, logrus.New())
+	}, iasTypeURLDashboard, logger.NewLogDummy())
 
 	// then
 	assert.Equal(t, time.Duration(0), repeat)
