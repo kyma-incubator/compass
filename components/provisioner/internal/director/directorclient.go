@@ -177,6 +177,9 @@ func (cc *directorClient) DeleteRuntime(id, tenant string) error {
 }
 
 func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition gqlschema.RuntimeStatusCondition, tenant string) error {
+	// TODO: Set StatusCondition without getting the Runtime
+	//       It'll be possible after this issue implementation:
+	//       - https://github.com/kyma-incubator/compass/issues/1186
 	runtime, err := cc.GetRuntime(id, tenant)
 	if err != nil {
 		log.Errorf("Failed to get Runtime by ID: %s", err.Error())
