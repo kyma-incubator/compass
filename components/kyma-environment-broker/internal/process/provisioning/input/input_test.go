@@ -127,7 +127,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 			Name:         "azure-cluster",
 			TargetSecret: ptr.String("azure-secret"),
 		}).
-		SetLabel("label1", "val1").
+		SetLabel("label1", "value1").
 		AppendOverrides("keb", kebOverrides).Create()
 
 	// then
