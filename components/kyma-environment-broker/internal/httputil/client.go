@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
-func NewClient(timeoutSec time.Duration, skipCertVeryfication bool) *http.Client {
+func NewClient(timeoutSec time.Duration, skipCertVerification bool) *http.Client {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.TLSClientConfig.InsecureSkipVerify = skipCertVeryfication
+	transport.TLSClientConfig.InsecureSkipVerify = skipCertVerification
 
 	return &http.Client{
 		Transport: transport,

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
 	"github.com/google/uuid"
@@ -12,60 +11,70 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-// SetCombination type defines possible result set combination for quering
+// SetCombination type defines possible result set combination for querying
 type SetCombination string
 
 const (
 	IntersectSet           SetCombination = "INTERSECT"
 	UnionSet               SetCombination = "UNION"
 	scenariosLabelKey      string         = "SCENARIOS"
-	stmtPrefixFormat       string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND "tenant_id" = '%s'`
+	stmtPrefixFormat       string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND "tenant_id" = ?`
 	stmtPrefixGlobalFormat string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL`
 )
 
 // FilterQuery builds select query for given filters
 //
-// It supports quering defined by `queryFor` parameter. All queries are created
+// It supports querying defined by `queryFor` parameter. All queries are created
 // in the context of given tenant
-func FilterQuery(queryFor model.LabelableObject, setCombination SetCombination, tenant uuid.UUID, filter []*labelfilter.LabelFilter) (string, error) {
+func FilterQuery(queryFor model.LabelableObject, setCombination SetCombination, tenant uuid.UUID, filter []*labelfilter.LabelFilter) (string, []interface{}, error) {
 	if filter == nil {
-		return "", nil
+		return "", nil, nil
 	}
 
 	objectField := labelableObjectField(queryFor)
 
-	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, objectField, tableName, objectField, tenant)
+	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, objectField, tableName, objectField)
+	var stmtPrefixArgs []interface{}
+	stmtPrefixArgs = append(stmtPrefixArgs, tenant)
 
-	return buildFilterQuery(stmtPrefix, setCombination, filter)
+	return buildFilterQuery(stmtPrefix, stmtPrefixArgs, setCombination, filter)
 }
 
 // FilterQueryGlobal builds select query for given filters
 //
-// It supports quering defined by `queryFor` parameter. All queries are created
+// It supports querying defined by `queryFor` parameter. All queries are created
 // in the global context
-func FilterQueryGlobal(queryFor model.LabelableObject, setCombination SetCombination, filter []*labelfilter.LabelFilter) (string, error) {
+func FilterQueryGlobal(queryFor model.LabelableObject, setCombination SetCombination, filter []*labelfilter.LabelFilter) (string, []interface{}, error) {
 	if filter == nil {
-		return "", nil
+		return "", nil, nil
 	}
+
 	objectField := labelableObjectField(queryFor)
 
 	stmtPrefix := fmt.Sprintf(stmtPrefixGlobalFormat, objectField, tableName, objectField)
 
-	return buildFilterQuery(stmtPrefix, setCombination, filter)
+	return buildFilterQuery(stmtPrefix, nil, setCombination, filter)
 }
 
-func buildFilterQuery(stmtPrefix string, setCombination SetCombination, filter []*labelfilter.LabelFilter) (string, error) {
+func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombination SetCombination, filter []*labelfilter.LabelFilter) (string, []interface{}, error) {
 	var queryBuilder strings.Builder
+
+	var args []interface{}
 	for idx, lblFilter := range filter {
 		if idx > 0 {
 			queryBuilder.WriteString(fmt.Sprintf(` %s `, setCombination))
 		}
 
-		queryBuilder.WriteString(fmt.Sprintf(stmtPrefix))
+		queryBuilder.WriteString(stmtPrefix)
+		if stmtPrefixArgs != nil && len(stmtPrefixArgs) > 0 {
+			args = append(args, stmtPrefixArgs...)
+		}
 
 		// TODO: for optimization it can be detected if the given Key was already added to the query
-		// if so, it can be ommited
-		queryBuilder.WriteString(fmt.Sprintf(` AND "key" = %s`, pq.QuoteLiteral(lblFilter.Key)))
+		// if so, it can be omitted
+		queryBuilder.WriteString(` AND "key" = ?`)
+
+		args = append(args, lblFilter.Key)
 
 		if lblFilter.Query != nil {
 			queryValue := *lblFilter.Query
@@ -76,21 +85,24 @@ func buildFilterQuery(stmtPrefix string, setCombination SetCombination, filter [
 			if strings.ToUpper(lblFilter.Key) == scenariosLabelKey {
 				extractedValues, err := ExtractValueFromJSONPath(queryValue)
 				if err != nil {
-					return "", errors.Wrap(err, "while extracting value from JSON path")
+					return "", nil, errors.Wrap(err, "while extracting value from JSON path")
 				}
+
+				args = append(args, extractedValues...)
 
 				queryValues := make([]string, len(extractedValues))
-				for idx, extractedValue := range extractedValues {
-					queryValues[idx] = pq.QuoteLiteral(extractedValue)
+				for idx := range extractedValues {
+					queryValues[idx] = "?"
 				}
-
 				queryValue = `array[` + strings.Join(queryValues, ",") + `]`
+
 				queryBuilder.WriteString(fmt.Sprintf(` AND "value" ?| %s`, queryValue))
 			} else {
-				queryBuilder.WriteString(fmt.Sprintf(` AND "value" @> %s`, pq.QuoteLiteral(queryValue)))
+				args = append(args, queryValue)
+				queryBuilder.WriteString(` AND "value" @> ?`)
 			}
 		}
 	}
 
-	return queryBuilder.String(), nil
+	return queryBuilder.String(), args, nil
 }

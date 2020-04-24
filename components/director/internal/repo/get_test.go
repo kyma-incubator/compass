@@ -79,16 +79,33 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success when IN condition", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 AND first_name IN ('a', 'b')")
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 AND first_name IN (SELECT name from names WHERE description = $2 AND id = $3)")
 		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
 		rows := sqlmock.NewRows([]string{"id_col"}).AddRow(uuidA())
-		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant).WillReturnRows(rows)
+		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant, "foo", 3).WillReturnRows(rows)
 		// WHEN
 		dest := User{}
-		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewInCondition("first_name", "'a', 'b'")}, repo.NoOrderBy, &dest)
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewInConditionForSubQuery("first_name", "SELECT name from names WHERE description = ? AND id = ?", []interface{}{"foo", 3})}, repo.NoOrderBy, &dest)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("success when IN condition for values", func(t *testing.T) {
+		// GIVEN
+		givenTenant := uuidB()
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 AND first_name IN ($2, $3)")
+		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		rows := sqlmock.NewRows([]string{"id_col"}).AddRow(uuidA())
+		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant, "foo", "bar").WillReturnRows(rows)
+		// WHEN
+		dest := User{}
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewInConditionForStringValues("first_name", []string{"foo", "bar"})}, repo.NoOrderBy, &dest)
 		// THEN
 		require.NoError(t, err)
 	})
@@ -183,7 +200,7 @@ func TestGetSingle(t *testing.T) {
 	})
 
 	t.Run("returns error if destination is nil", func(t *testing.T) {
-		err := sut.Get(context.TODO(), givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}}, repo.NoOrderBy, nil)
+		err := sut.Get(context.TODO(), givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, nil)
 		require.EqualError(t, err, "item cannot be nil")
 	})
 }

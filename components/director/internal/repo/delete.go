@@ -68,7 +68,6 @@ func (g *universalDeleter) unsafeDelete(ctx context.Context, conditions Conditio
 	}
 
 	var stmtBuilder strings.Builder
-	startIdx := 1
 
 	stmtBuilder.WriteString(fmt.Sprintf("DELETE FROM %s", g.tableName))
 
@@ -76,13 +75,14 @@ func (g *universalDeleter) unsafeDelete(ctx context.Context, conditions Conditio
 		stmtBuilder.WriteString(" WHERE")
 	}
 
-	err = writeEnumeratedConditions(&stmtBuilder, startIdx, conditions)
+	err = writeEnumeratedConditions(&stmtBuilder, conditions)
 	if err != nil {
 		return errors.Wrap(err, "while writing enumerated conditions")
 	}
 	allArgs := getAllArgs(conditions)
 
-	res, err := persist.Exec(stmtBuilder.String(), allArgs...)
+	query := getQueryFromBuilder(stmtBuilder)
+	res, err := persist.Exec(query, allArgs...)
 	if persistence.IsConstraintViolation(err) {
 		return apperrors.NewConstraintViolationError(err.(*pq.Error).Table)
 	}

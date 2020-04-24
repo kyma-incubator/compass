@@ -4,19 +4,17 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
 type Lister interface {
-	List(ctx context.Context, tenant string, dest Collection, additionalConditions ...string) error
+	List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error
 }
 
 type ListerGlobal interface {
-	ListGlobal(ctx context.Context, dest Collection, additionalConditions ...string) error
+	ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error
 }
 
 type universalLister struct {
@@ -40,27 +38,30 @@ func NewListerGlobal(tableName string, selectedColumns []string) ListerGlobal {
 	}
 }
 
-func (l *universalLister) List(ctx context.Context, tenant string, dest Collection, additionalConditions ...string) error {
-	return l.unsafeList(ctx, str.Ptr(tenant), dest, additionalConditions...)
+func (l *universalLister) List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error {
+	if tenant == "" {
+		return errors.New("tenant cannot be empty")
+	}
+	additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
+	return l.unsafeList(ctx, dest, additionalConditions...)
 }
 
-func (l *universalLister) ListGlobal(ctx context.Context, dest Collection, additionalConditions ...string) error {
-	return l.unsafeList(ctx, nil, dest, additionalConditions...)
+func (l *universalLister) ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
+	return l.unsafeList(ctx, dest, additionalConditions...)
 }
 
-func (l *universalLister) unsafeList(ctx context.Context, tenant *string, dest Collection, additionalConditions ...string) error {
+func (l *universalLister) unsafeList(ctx context.Context, dest Collection, conditions ...Condition) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
 	}
 
-	stmt := buildSelectStatement(l.selectedColumns, l.tableName, l.tenantColumn, additionalConditions)
-
-	var args []interface{}
-	if tenant != nil {
-		args = append(args, *tenant)
+	query, args, err := buildSelectQuery(l.tableName, l.selectedColumns, conditions, OrderByParams{})
+	if err != nil {
+		return errors.Wrap(err, "while building list query")
 	}
-	err = persist.Select(dest, stmt, args...)
+
+	err = persist.Select(dest, query, args...)
 	if err != nil {
 		return errors.Wrap(err, "while fetching list of objects from DB")
 	}
