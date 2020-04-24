@@ -20,6 +20,11 @@ import (
 
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:8080"`
+	OAuthConfig
+}
+type OAuthConfig struct {
+	ClientID     string `envconfig:"APP_AUDITLOG_CLIENT_ID"`
+	ClientSecret string `envconfig:"APP_AUDITLOG_CLIENT_SECRET"`
 }
 
 func main() {
@@ -49,17 +54,12 @@ func initApiHandlers(cfg config) http.Handler {
 	securityHandler := security.NewSecurityEventHandler(securityEventService, logger)
 	configHandler := configuration.NewConfigurationHandler(configService, logger)
 
-	oauthHandler := oauth.NewHandler()
+	oauthHandler := oauth.NewHandler(cfg.ClientSecret, cfg.ClientID)
+	router.Use(authMiddleware)
 
-	//router.Use(authMiddleware)
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
-	router.HandleFunc("/auditlog/v2/configuration-changes/search", configHandler.SearchByString).Methods(http.MethodGet)
-	router.HandleFunc("/auditlog/v2/configuration-changes", configHandler.Save).Methods(http.MethodPost)
-	router.HandleFunc("/auditlog/v2/configuration-changes", configHandler.List).Methods(http.MethodGet)
-	router.HandleFunc("/auditlog/v2/configuration-changes/{id}", configHandler.Get).Methods(http.MethodGet)
-	router.HandleFunc("/auditlog/v2/configuration-changes/{id}", configHandler.Delete).Methods(http.MethodDelete)
-
-	//router.Path("/auditlog/v2/configuration-changes/search").Queries("query", "*").HandlerFunc(configHandler.SearchByString).Methods("GET")
+	configChangeRouter := router.PathPrefix("/auditlog/v2/configuration-changes").Subrouter()
+	configuration.InitConfigurationChangeHandler(configChangeRouter, configHandler)
 
 	router.HandleFunc("/auditlog/v2/security-events", securityHandler.Save).Methods(http.MethodPost)
 	router.HandleFunc("/auditlog/v2/security-events", securityHandler.List).Methods(http.MethodGet)
