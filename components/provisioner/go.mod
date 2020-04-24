@@ -55,4 +55,4 @@ replace github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud
 
 replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
 
-replace github.com/kyma-incubator/compass => /Users/i517631/go/src/github.com/kyma-incubator/compass@remove-stale-data
+replace github.com/kyma-incubator/compass/components/provisioner/internal/provisioning => /Users/i517631/go/src/github.com/kyma-incubator/compass/components/provisioner/internal/provisioning@remove-stale-data

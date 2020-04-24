@@ -71,12 +71,13 @@ func NewProvisioningService(
 }
 
 func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, error) {
-	runtimeInput := config.RuntimeInput
+	// runtimeInput := config.RuntimeInput
 
-	runtimeID, err := r.directorService.CreateRuntime(runtimeInput, tenant)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to register Runtime: %s", err.Error())
-	}
+	// runtimeID, err := r.directorService.CreateRuntime(runtimeInput, tenant)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("Failed to register Runtime: %s", err.Error())
+	// }
+	runtimeID := "9ea5e037-a6f6-4c9e-b63e-82a5f0ef7d7d"
 
 	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config, tenant, subAccount)
 	if err != nil {
@@ -205,6 +206,8 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 	r.upgradeQueue.Add(operation.ID)
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
+}
+
 func (r *service) MarkRuntimeAsDeleted(id, tenant string) (string, error) {
 	session := r.dbSessionFactory.NewWriteSession()
 
@@ -218,10 +221,6 @@ func (r *service) MarkRuntimeAsDeleted(id, tenant string) (string, error) {
 		return "", fmt.Errorf("Failed to mark Cluster %s as 'deleted': %s", id, dberr.Error())
 	}
 	return fmt.Sprintf("Cluster %s marked as 'deleted'.", id), nil
-}
-
-func (r *service) UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error) {
-	return "", nil
 }
 
 func (r *service) ReconnectRuntimeAgent(id string) (string, error) {
