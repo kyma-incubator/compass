@@ -91,7 +91,6 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	// given
 	var (
-		fixID               = "fix-id"
 		inputComponentList  = fixKymaComponentList()
 		mappedComponentList = mapToGQLComponentConfigurationInput(inputComponentList)
 		toDisableComponents = []string{"kiali"}
@@ -128,7 +127,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 			Name:         "azure-cluster",
 			TargetSecret: ptr.String("azure-secret"),
 		}).
-		SetRuntimeLabels(fixID, fixID).
+		SetLabel("label1", "val1").
 		AppendOverrides("keb", kebOverrides).Create()
 
 	// then
@@ -139,8 +138,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 	assert.Equal(t, &gqlschema.Labels{
-		brokerKeyPrefix + "instance_id":   fixID,
-		globalKeyPrefix + "subaccount_id": fixID,
+		"label1": "value1",
 	}, input.RuntimeInput.Labels)
 
 	assertOverrides(t, "keb", input.KymaConfig.Components, kebOverrides)
