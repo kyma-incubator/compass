@@ -11,5 +11,5 @@ gateway:
   enabled: true
   manageCerts: true
   auditlog:
-    enabled: false
-    authMode: "basic"
+    enabled: true # TODO: Switch to false after testing
+    authMode: "oauth" # TODO: Switch to basic after testing

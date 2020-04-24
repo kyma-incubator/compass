@@ -269,7 +269,7 @@ global:
       name: "compass-gateway-auditlog-secret"
 
   externalServicesMock:
-    enabled: false
+    enabled: true # TODO: Switch to false after testing
 
 pairing-adapter:
   enabled: false
