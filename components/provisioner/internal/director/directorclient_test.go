@@ -40,6 +40,20 @@ const (
 	result: requestOneTimeTokenForRuntime(id: "test-runtime-ID-12345") {
 		token connectorURL
 }}`
+
+	expectedGetRuntimeQuery = `query {
+    result: runtime(id: "test-runtime-ID-12345") {
+         id name description labels
+}}`
+
+	expectedUpdateMutation = `mutation {
+    result: updateRuntime(id: "test-runtime-ID-12345" in: {
+		name: "Runtime Test name",
+		labels: {label1:"something",label2:"something2",},
+		statusCondition: CONNECTED,
+	}) {
+		id
+}}`
 )
 
 var (
@@ -71,12 +85,12 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 
 		expectedID := runtimeTestingID
 
-		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*CreateRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
 			cfg.Result = expectedResponse
-		}, expectedRequest)
+		})
 
 		token := oauth.Token{
 			AccessToken: validTokenValue,
@@ -161,12 +175,12 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
 
-		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*CreateRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
 			cfg.Result = nil
-		}, expectedRequest)
+		})
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
@@ -188,12 +202,12 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
 
-		gqlClient := gql.NewQueryAssertClient(t, true, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, true, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*CreateRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
 			cfg.Result = nil
-		}, expectedRequest)
+		})
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
@@ -221,12 +235,12 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 			Description: &responseDescription,
 		}
 
-		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*DeleteRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
 			cfg.Result = expectedResponse
-		}, expectedRequest)
+		})
 
 		validToken := oauth.Token{
 			AccessToken: validTokenValue,
@@ -308,12 +322,12 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
 
 		// given
-		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*DeleteRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
 			cfg.Result = nil
-		}, expectedRequest)
+		})
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
@@ -326,12 +340,12 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 
 	t.Run("Should return error when Director fails to delete Runtime", func(t *testing.T) {
 		// given
-		gqlClient := gql.NewQueryAssertClient(t, true, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, true, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*DeleteRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
 			cfg.Result = nil
-		}, expectedRequest)
+		})
 
 		validToken := oauth.Token{
 			AccessToken: validTokenValue,
@@ -360,12 +374,12 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 			Description: &responseDescription,
 		}
 
-		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*DeleteRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
 			cfg.Result = expectedResponse
-		}, expectedRequest)
+		})
 
 		validToken := oauth.Token{
 			AccessToken: validTokenValue,
@@ -401,12 +415,12 @@ func TestDirectorClient_GetConnectionToken(t *testing.T) {
 			},
 		}
 
-		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*OneTimeTokenResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
 			cfg.Result = expectedResponse
-		}, expectedRequest)
+		})
 
 		token := oauth.Token{
 			AccessToken: validTokenValue,
@@ -470,11 +484,11 @@ func TestDirectorClient_GetConnectionToken(t *testing.T) {
 
 	t.Run("Should return error when Director call returns nil reponse", func(t *testing.T) {
 		//given
-		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*OneTimeTokenResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
-		}, expectedRequest)
+		})
 
 		token := oauth.Token{
 			AccessToken: validTokenValue,
@@ -492,5 +506,378 @@ func TestDirectorClient_GetConnectionToken(t *testing.T) {
 		//then
 		require.Error(t, err)
 		require.Empty(t, receivedOneTimeToken)
+	})
+}
+
+func TestDirectorClient_GetRuntime(t *testing.T) {
+	expectedRequest := gcli.NewRequest(expectedGetRuntimeQuery)
+	expectedRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
+	expectedRequest.Header.Set(TenantHeader, tenantValue)
+
+	t.Run("should return Runtime", func(t *testing.T) {
+		//given
+		expectedResponse := &graphql.RuntimeExt{
+			Runtime: graphql.Runtime{
+				ID:   runtimeTestingID,
+				Name: runtimeTestingName,
+			},
+		}
+
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*GetRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = expectedResponse
+		})
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		//when
+		runtime, err := configClient.GetRuntime(runtimeTestingID, tenantValue)
+
+		//then
+		require.NoError(t, err)
+		assert.Equal(t, expectedResponse.Name, runtime.Name)
+		assert.Equal(t, expectedResponse.ID, runtime.ID)
+	})
+
+	t.Run("should return error when access token is empty", func(t *testing.T) {
+		// given
+		emptyToken := oauth.Token{
+			AccessToken: "",
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(emptyToken, nil)
+
+		configClient := NewDirectorClient(nil, mockedOAuthClient)
+
+		// when
+		runtime, err := configClient.GetRuntime(runtimeTestingID, tenantValue)
+
+		// then
+		assert.Error(t, err)
+		assert.Empty(t, runtime)
+	})
+
+	t.Run("should return error when Director returns nil response", func(t *testing.T) {
+		//given
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*GetRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = nil
+		})
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		//when
+		runtime, err := configClient.GetRuntime(runtimeTestingID, tenantValue)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, runtime)
+	})
+
+	t.Run("should return error when Director fails to get Runtime", func(t *testing.T) {
+		//given
+		gqlClient := gql.NewQueryAssertClient(t, true, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*GetRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = nil
+		})
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		//when
+		runtime, err := configClient.GetRuntime(runtimeTestingID, tenantValue)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, runtime)
+	})
+}
+
+func TestDirectorClient_UpdateRuntime(t *testing.T) {
+	expectedRequest := gcli.NewRequest(expectedUpdateMutation)
+	expectedRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
+	expectedRequest.Header.Set(TenantHeader, tenantValue)
+
+	t.Run("should update Runtime", func(t *testing.T) {
+		//given
+		conditionConnectoed := gqlschema.RuntimeStatusConditionConnected
+		runtimeInput := &gqlschema.RuntimeInput{
+			Name: runtimeTestingName,
+			Labels: &gqlschema.Labels{
+				"label1": "something",
+				"label2": "something2",
+			},
+			StatusCondition: &conditionConnectoed,
+		}
+
+		expectedResponse := &graphql.Runtime{
+			ID:   runtimeTestingID,
+			Name: runtimeTestingName,
+		}
+
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*UpdateRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = expectedResponse
+		})
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		//when
+		err := configClient.UpdateRuntime(runtimeTestingID, runtimeInput, tenantValue)
+
+		//then
+		require.NoError(t, err)
+	})
+
+	t.Run("should return error when access token is empty", func(t *testing.T) {
+		// given
+		emptyToken := oauth.Token{
+			AccessToken: "",
+			Expiration:  futureExpirationTime,
+		}
+
+		conditionConnectoed := gqlschema.RuntimeStatusConditionConnected
+		runtimeInput := &gqlschema.RuntimeInput{
+			Name: runtimeTestingName,
+			Labels: &gqlschema.Labels{
+				"label1": "something",
+				"label2": "something2",
+			},
+			StatusCondition: &conditionConnectoed,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(emptyToken, nil)
+
+		configClient := NewDirectorClient(nil, mockedOAuthClient)
+
+		// when
+		err := configClient.UpdateRuntime(runtimeTestingID, runtimeInput, tenantValue)
+
+		// then
+		assert.Error(t, err)
+	})
+
+	t.Run("should return error when Director returns nil response", func(t *testing.T) {
+		//given
+		conditionConnectoed := gqlschema.RuntimeStatusConditionConnected
+		runtimeInput := &gqlschema.RuntimeInput{
+			Name: runtimeTestingName,
+			Labels: &gqlschema.Labels{
+				"label1": "something",
+				"label2": "something2",
+			},
+			StatusCondition: &conditionConnectoed,
+		}
+
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*UpdateRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = nil
+		})
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		//when
+		err := configClient.UpdateRuntime(runtimeTestingID, runtimeInput, tenantValue)
+
+		//then
+		require.Error(t, err)
+	})
+}
+
+func TestDirectorClient_SetRuntimeStatusCondition(t *testing.T) {
+	expectedFirstRequest := gcli.NewRequest(expectedGetRuntimeQuery)
+	expectedFirstRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
+	expectedFirstRequest.Header.Set(TenantHeader, tenantValue)
+
+	statusCondition := gqlschema.RuntimeStatusConditionConnected
+
+	expectedSecondRequest := gcli.NewRequest(expectedUpdateMutation)
+	expectedSecondRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
+	expectedSecondRequest.Header.Set(TenantHeader, tenantValue)
+
+	t.Run("should set runtime status condition", func(t *testing.T) {
+		expectedGetResponse := &graphql.RuntimeExt{
+			Runtime: graphql.Runtime{
+				ID:   runtimeTestingID,
+				Name: runtimeTestingName,
+			},
+			Labels: graphql.Labels{
+				"label1": "something",
+				"label2": "something2",
+			},
+		}
+
+		getFunction := func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*GetRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = expectedGetResponse
+		}
+
+		expectedUpdateResponse := &graphql.Runtime{
+			ID:   runtimeTestingID,
+			Name: runtimeTestingName,
+		}
+
+		updateFunction := func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*UpdateRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = expectedUpdateResponse
+		}
+
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedFirstRequest, expectedSecondRequest}, getFunction, updateFunction)
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		//when
+		err := configClient.SetRuntimeStatusCondition(runtimeTestingID, statusCondition, tenantValue)
+
+		//then
+		require.NoError(t, err)
+	})
+
+	t.Run("should return error when GetRuntime returns error", func(t *testing.T) {
+		getFunction := func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*GetRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = nil
+		}
+
+		expectedUpdateResponse := &graphql.Runtime{
+			ID:   runtimeTestingID,
+			Name: runtimeTestingName,
+		}
+
+		updateFunction := func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*UpdateRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = expectedUpdateResponse
+		}
+
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedFirstRequest, expectedSecondRequest}, getFunction, updateFunction)
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		//when
+		err := configClient.SetRuntimeStatusCondition(runtimeTestingID, statusCondition, tenantValue)
+
+		//then
+		require.Error(t, err)
+	})
+
+	t.Run("should return error when UpdateRuntime returns error", func(t *testing.T) {
+		expectedGetResponse := &graphql.RuntimeExt{
+			Runtime: graphql.Runtime{
+				ID:   runtimeTestingID,
+				Name: runtimeTestingName,
+			},
+			Labels: graphql.Labels{
+				"label1": "something",
+				"label2": "something2",
+			},
+		}
+
+		getFunction := func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*GetRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = expectedGetResponse
+		}
+
+		updateFunction := func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*UpdateRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = nil
+		}
+
+		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedFirstRequest, expectedSecondRequest}, getFunction, updateFunction)
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		//when
+		err := configClient.SetRuntimeStatusCondition(runtimeTestingID, statusCondition, tenantValue)
+
+		//then
+		require.Error(t, err)
 	})
 }
