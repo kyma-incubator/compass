@@ -1,0 +1,13 @@
+global:
+  isLocalEnv: true
+  externalServicesMock:
+    enabled: true
+
+gateway:
+    auditlog:
+        enabled: true
+        authMode: "oauth"
+
+director:
+  deployment:
+    allowJWTSigningNone: true
