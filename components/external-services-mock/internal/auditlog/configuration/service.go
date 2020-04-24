@@ -1,6 +1,8 @@
 package configuration
 
 import (
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 )
 
@@ -31,6 +33,26 @@ func (s *Service) List() []model.ConfigurationChange {
 		auditLogs = append(auditLogs, v)
 	}
 	return auditLogs
+}
+
+func (s *Service) SearchByString(searchString string) []model.ConfigurationChange {
+	auditLogs := s.List()
+	configurationChangeSet := make(map[string]model.ConfigurationChange)
+
+	for _, auditLog := range auditLogs {
+		for _, attribute := range auditLog.Attributes {
+			if strings.Contains(attribute.New, searchString) {
+				configurationChangeSet[auditLog.UUID] = auditLog
+			}
+		}
+	}
+
+	var out []model.ConfigurationChange
+	for _, auditLog := range configurationChangeSet {
+		out = append(out, auditLog)
+	}
+
+	return out
 }
 
 func (s *Service) Delete(id string) {

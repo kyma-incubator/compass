@@ -27,6 +27,7 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "while loading configuration")
 	handler := initApiHandlers(cfg)
+	log.Printf("External Services Mock up and running on address: %s", cfg.Address)
 	err = http.ListenAndServe(cfg.Address, handler)
 	exitOnError(err, "while running up http server")
 }
@@ -52,10 +53,13 @@ func initApiHandlers(cfg config) http.Handler {
 
 	//router.Use(authMiddleware)
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
+	router.HandleFunc("/auditlog/v2/configuration-changes/search", configHandler.SearchByString).Methods("GET")
 	router.HandleFunc("/auditlog/v2/configuration-changes", configHandler.Save).Methods("POST")
 	router.HandleFunc("/auditlog/v2/configuration-changes", configHandler.List).Methods("GET")
 	router.HandleFunc("/auditlog/v2/configuration-changes/{id}", configHandler.Get).Methods("GET")
 	router.HandleFunc("/auditlog/v2/configuration-changes/{id}", configHandler.Delete).Methods("DELETE")
+
+	//router.Path("/auditlog/v2/configuration-changes/search").Queries("query", "*").HandlerFunc(configHandler.SearchByString).Methods("GET")
 
 	router.HandleFunc("/auditlog/v2/security-events", securityHandler.Save).Methods("POST")
 	router.HandleFunc("/auditlog/v2/security-events", securityHandler.List).Methods("GET")

@@ -18,6 +18,7 @@ type ConfigChangeService interface {
 	Save(change model.ConfigurationChange) (string, error)
 	Get(id string) *model.ConfigurationChange
 	List() []model.ConfigurationChange
+	SearchByString(searchString string) []model.ConfigurationChange
 	Delete(id string)
 }
 
@@ -64,7 +65,7 @@ func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request
 func (h *ConfigChangeHandler) Get(writer http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["id"]
 	if len(id) == 0 {
-		httphelpers.WriteError(writer, errors.New("parameter id not provided"), http.StatusBadRequest)
+		httphelpers.WriteError(writer, errors.New("parameter [id] not provided"), http.StatusBadRequest)
 		return
 	}
 
@@ -94,10 +95,24 @@ func (h *ConfigChangeHandler) List(writer http.ResponseWriter, req *http.Request
 func (h *ConfigChangeHandler) Delete(writer http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["id"]
 	if len(id) == 0 {
-		httphelpers.WriteError(writer, errors.New("parameter id not provided"), http.StatusBadRequest)
+		httphelpers.WriteError(writer, errors.New("parameter [id] not provided"), http.StatusBadRequest)
 	}
 
 	h.service.Delete(id)
+}
+
+func (h *ConfigChangeHandler) SearchByString(writer http.ResponseWriter, req *http.Request) {
+	searchString := req.URL.Query().Get("query")
+	if searchString == "" {
+		httphelpers.WriteError(writer, errors.New("parameter [query] not provided"), http.StatusBadRequest)
+	}
+
+	values := h.service.SearchByString(searchString)
+	err := json.NewEncoder(writer).Encode(&values)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.New("error while encoding response"), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *ConfigChangeHandler) closeBody(req *http.Request) {
