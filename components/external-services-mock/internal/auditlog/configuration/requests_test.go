@@ -18,9 +18,11 @@ import (
 )
 
 const (
-	logID      = "879048d0-468e-49bb-b8b7-40e053218f0c"
-	target     = "http://example.com/"
-	configPath = "/auditlog/v2/configuration-changes"
+	logID        = "879048d0-468e-49bb-b8b7-40e053218f0c"
+	target       = "http://example.com/"
+	configPath   = "/auditlog/v2/configuration-changes"
+	searchQuery  = "/search?query=" + searchString
+	searchString = "test-msg"
 )
 
 func TestConfigChangeHandler_Save(t *testing.T) {
@@ -145,7 +147,7 @@ func TestConfigChangeHandler_List(t *testing.T) {
 func TestConfigChangeHandler_Get(t *testing.T) {
 	//GIVEN
 	svc := configuration.NewService()
-	input := fixConfigurationChange(logID)
+	input := fixConfigurationChangeWithAttributes(logID)
 	_, err := svc.Save(input)
 	require.NoError(t, err)
 
@@ -167,6 +169,36 @@ func TestConfigChangeHandler_Get(t *testing.T) {
 	assert.Equal(t, input, response)
 }
 
+func TestConfigChangeHandler_SearchByString_Success(t *testing.T) {
+	//GIVEN
+	svc := configuration.NewService()
+	input := fixConfigurationChange(logID)
+	_, err := svc.Save(input)
+	require.NoError(t, err)
+
+	input = fixConfigurationChangeWithAttributes("4020af04-7c7c-4b90-a410-967571e38bec")
+	_, err = svc.Save(input)
+	require.NoError(t, err)
+
+	requestURL := path.Join(configPath, "/search")
+	handler := configuration.NewConfigurationHandler(svc, nil)
+	router := mux.NewRouter()
+	router.HandleFunc(requestURL, handler.SearchByString).Methods(http.MethodGet)
+
+	req := httptest.NewRequest(http.MethodGet, requestURL, bytes.NewBuffer([]byte{}))
+	q := req.URL.Query()
+	q.Add("query", searchString)
+	req.URL.RawQuery = q.Encode()
+
+	//WHEN
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	//THEN
+	require.Equal(t, http.StatusOK, w.Code)
+	require.Len(t, svc.SearchByString(searchString), 1)
+}
+
 func unmarshallJson(r io.Reader, target interface{}) error {
 	e := json.NewDecoder(r)
 	e.DisallowUnknownFields()
@@ -179,6 +211,26 @@ func fixConfigurationChange(id string) model.ConfigurationChange {
 		Object:     model.Object{},
 		Attributes: nil,
 		Success:    nil,
+		Metadata: model.Metadata{
+			Time:   time.Now().Format(model.LogFormatDate),
+			Tenant: "$PROVIDER",
+			UUID:   id,
+		},
+	}
+}
+
+func fixConfigurationChangeWithAttributes(id string) model.ConfigurationChange {
+	return model.ConfigurationChange{
+		User:   "$USER",
+		Object: model.Object{},
+		Attributes: []model.Attribute{
+			{
+				Name: "test",
+				Old:  "",
+				New:  searchString,
+			},
+		},
+		Success: nil,
 		Metadata: model.Metadata{
 			Time:   time.Now().Format(model.LogFormatDate),
 			Tenant: "$PROVIDER",
