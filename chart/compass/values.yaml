@@ -263,10 +263,8 @@ global:
       maxIdleConnections: 1
 
   auditlog:
-    configmap:
-      name: "compass-gateway-auditlog-config"
-    secret:
-      name: "compass-gateway-auditlog-secret"
+    configmapName: "compass-gateway-auditlog-config"
+    secretName: "compass-gateway-auditlog-secret"
 
   externalServicesMock:
     enabled: true # TODO: Switch to false after testing

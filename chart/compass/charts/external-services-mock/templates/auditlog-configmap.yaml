@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.global.auditlog.configmap.name }}
+  name: {{ .Values.global.auditlog.configmapName }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
@@ -9,6 +9,6 @@ metadata:
 data:
   auditlog-oauth-user-var: "mock-user"
   auditlog-oauth-tenant-var: "mock-tenant"
-  auditlog-url: "https://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}"
+  auditlog-url: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}"
   auditlog-config-path: "audit-log/v2/configuration-changes"
   auditlog-security-path: "audit-log/v2/security-events"
