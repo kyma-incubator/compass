@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/oauth"
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/oauth"
 
 	"github.com/sirupsen/logrus"
 

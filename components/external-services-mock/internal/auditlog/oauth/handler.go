@@ -4,9 +4,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"net/http"
 	"strings"
+
+	"github.com/gorilla/mux"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
