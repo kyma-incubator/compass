@@ -40,12 +40,7 @@ func (g *graphqlizer) RuntimeInputToGraphQL(in gqlschema.RuntimeInput) (string, 
 
 func (g *graphqlizer) UpgradeRuntimeInputToGraphQL(in gqlschema.UpgradeRuntimeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-		{{- if .ClusterConfig }}
-		clusterConfig: {{ UpgradeClusterConfigToGraphQL .ClusterConfig }}
-		{{- end }}
-		{{- if .KymaConfig }}
 		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }}
-		{{- end }}
 	}`)
 }
 
@@ -126,7 +121,7 @@ func (g *graphqlizer) GCPConfigInputToGraphQL(in gqlschema.GCPConfigInput) (stri
 	}`)
 }
 
-func (g *graphqlizer) UpgradeClusterConfigToGraphQL(in gqlschema.UpgradeClusterInput) (string, error) {
+func (g *graphqlizer) UpgradeClusterConfigToGraphQL(in gqlschema.UpgradeRuntimeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		{{- if .Version }}
 		version: "{{.Version}}"
