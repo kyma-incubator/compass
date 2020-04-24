@@ -3,6 +3,7 @@ package provisioning
 import (
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -18,10 +19,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	// label key used to send to director
+	grafanaURLLabel = "operator_grafanaUrl"
+)
+
 //go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
 
 type DirectorClient interface {
 	GetConsoleURL(accountID, runtimeID string) (string, error)
+	SetLabel(accountID, runtimeID, key, value string) error
 }
 
 type InitialisationStep struct {
@@ -31,6 +38,7 @@ type InitialisationStep struct {
 	directorClient      DirectorClient
 	inputBuilder        input.CreatorForPlan
 	externalEvalCreator *ExternalEvalCreator
+	iasType             *IASType
 	provisioningTimeout time.Duration
 }
 
@@ -40,6 +48,7 @@ func NewInitialisationStep(os storage.Operations,
 	dc DirectorClient,
 	b input.CreatorForPlan,
 	avsExternalEvalCreator *ExternalEvalCreator,
+	iasType *IASType,
 	timeout time.Duration) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:    process.NewProvisionOperationManager(os),
@@ -48,6 +57,7 @@ func NewInitialisationStep(os storage.Operations,
 		directorClient:      dc,
 		inputBuilder:        b,
 		externalEvalCreator: avsExternalEvalCreator,
+		iasType:             iasType,
 		provisioningTimeout: timeout,
 	}
 }
@@ -118,12 +128,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 
 	_, err = url.ParseRequestURI(instance.DashboardURL)
 	if err == nil {
-		operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL)
-		if err != nil || repeat != 0 {
-			return operation, repeat, nil
-		} else {
-			return s.operationManager.OperationSucceeded(operation, "URL dashboard already exist")
-		}
+		return s.launchPostActions(operation, instance, log, "URL dashboard already exist")
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
@@ -143,12 +148,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 		if err != nil || repeat != 0 {
 			return operation, repeat, err
 		}
-		operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL)
-		if err != nil || repeat != 0 {
-			return operation, repeat, nil
-		} else {
-			return s.operationManager.OperationSucceeded(operation, msg)
-		}
+		return s.launchPostActions(operation, instance, log, msg)
 	case gqlschema.OperationStateInProgress:
 		return operation, 2 * time.Minute, nil
 	case gqlschema.OperationStatePending:
@@ -176,4 +176,29 @@ func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance) (ti
 	}
 
 	return 0, nil
+}
+
+func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
+	// action #1
+	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL)
+	if err != nil || repeat != 0 {
+		return operation, repeat, nil
+	}
+
+	// action #2
+	repeat, err = s.iasType.ConfigureType(operation, instance.DashboardURL, log)
+	if err != nil || repeat != 0 {
+		return operation, repeat, nil
+	}
+	if !s.iasType.Disabled() {
+		grafanaPath := strings.Replace(instance.DashboardURL, "console.", "grafana.", 1)
+		err = s.directorClient.SetLabel(instance.GlobalAccountID, instance.RuntimeID, grafanaURLLabel, grafanaPath)
+		if err != nil {
+			log.Errorf("Cannot set labels in director: %s", err)
+		} else {
+			log.Infof("Label %s:%s set correctly", grafanaURLLabel, instance.DashboardURL)
+		}
+	}
+
+	return s.operationManager.OperationSucceeded(operation, msg)
 }
