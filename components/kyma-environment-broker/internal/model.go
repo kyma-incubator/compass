@@ -16,6 +16,7 @@ import (
 type ProvisionInputCreator interface {
 	SetProvisioningParameters(params ProvisioningParametersDTO) ProvisionInputCreator
 	SetRuntimeLabels(instanceID, SubAccountID string) ProvisionInputCreator
+	SetLabel(key, value string) ProvisionInputCreator
 	// Deprecated, use: AppendOverrides
 	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
 	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
