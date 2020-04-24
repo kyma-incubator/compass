@@ -94,10 +94,18 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 	if compassConnCR.Status.State != v1alpha1.Synchronized {
 		if compassConnCR.Status.State == v1alpha1.SynchronizationFailed {
 			logger.Warnf("Runtime Agent Connected but resource synchronization failed state: %s", compassConnCR.Status.State)
+			if err := s.directorClient.SetRuntimeStatusCondition(cluster.ID, gqlschema.RuntimeStatusConditionConnected, cluster.Tenant); err != nil {
+				logger.Errorf("Failed to set runtime %s status condition: %s", gqlschema.RuntimeStatusConditionConnected.String(), err.Error())
+				return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Second}, nil
+			}
 			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 		}
 		if compassConnCR.Status.State == v1alpha1.MetadataUpdateFailed {
 			logger.Warnf("Runtime Agent Connected but metadata update failed: %s", compassConnCR.Status.State)
+			if err := s.directorClient.SetRuntimeStatusCondition(cluster.ID, gqlschema.RuntimeStatusConditionConnected, cluster.Tenant); err != nil {
+				logger.Errorf("Failed to set runtime %s status condition: %s", gqlschema.RuntimeStatusConditionConnected.String(), err.Error())
+				return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Second}, nil
+			}
 			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 		}
 
