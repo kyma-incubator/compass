@@ -34,11 +34,6 @@ func NewConfigurationHandler(service ConfigChangeService, logger *log.Logger) *C
 	return &ConfigChangeHandler{service: service, logger: logger}
 }
 
-const (
-	HeaderContentTypeKey   = "Content-Type"
-	HeaderContentTypeValue = "application/json;charset=UTF-8"
-)
-
 func (h *ConfigChangeHandler) Save(writer http.ResponseWriter, req *http.Request) {
 	defer h.closeBody(req)
 
@@ -105,6 +100,7 @@ func (h *ConfigChangeHandler) Delete(writer http.ResponseWriter, req *http.Reque
 	id := mux.Vars(req)["id"]
 	if len(id) == 0 {
 		httphelpers.WriteError(writer, errors.New("parameter [id] not provided"), http.StatusBadRequest)
+		return
 	}
 
 	writer.WriteHeader(http.StatusOK)
@@ -115,6 +111,7 @@ func (h *ConfigChangeHandler) SearchByString(writer http.ResponseWriter, req *ht
 	searchString := req.URL.Query().Get("query")
 	if searchString == "" {
 		httphelpers.WriteError(writer, errors.New("parameter [query] not provided"), http.StatusBadRequest)
+		return
 	}
 
 	values := h.service.SearchByString(searchString)

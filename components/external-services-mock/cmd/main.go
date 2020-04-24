@@ -31,7 +31,7 @@ func main() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "while loading configuration")
-	handler := initApiHandlers(cfg)
+	handler := initHTTP(cfg)
 	log.Printf("External Services Mock up and running on address: %s", cfg.Address)
 	err = http.ListenAndServe(cfg.Address, handler)
 	exitOnError(err, "while running up http server")
@@ -44,7 +44,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initApiHandlers(cfg config) http.Handler {
+func initHTTP(cfg config) http.Handler {
 	logger := logrus.New()
 
 	router := mux.NewRouter()

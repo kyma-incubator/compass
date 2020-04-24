@@ -19,7 +19,7 @@ import (
 
 const (
 	logID        = "879048d0-468e-49bb-b8b7-40e053218f0c"
-	target       = "http://example.com/"
+	target       = "http://example.com"
 	searchString = "test-msg"
 )
 
@@ -76,21 +76,27 @@ func TestConfigChangeHandler_Save(t *testing.T) {
 			resp := w.Result()
 
 			//THEN
-			if testCase.expectedErr == "" {
-				assert.Equal(t, resp.StatusCode, http.StatusCreated)
-				var response model.SuccessResponse
-				err = unmarshallJson(resp.Body, &response)
-				require.NoError(t, err)
-				assert.Equal(t, logID, response.ID)
-				saved := svc.Get(logID)
-				assert.Equal(t, input, *saved)
-			} else {
-				assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-				var response model.ErrorResponse
-				err = unmarshallJson(resp.Body, &response)
-				require.NoError(t, err)
-				assert.Contains(t, response.Error, testCase.expectedErr)
+			switch status := resp.StatusCode; status {
+			case http.StatusCreated:
+				{
+					var response model.SuccessResponse
+					err = unmarshallJson(resp.Body, &response)
+					require.NoError(t, err)
+					assert.Equal(t, logID, response.ID)
+					saved := svc.Get(logID)
+					assert.Equal(t, input, *saved)
+				}
+			case http.StatusBadRequest:
+				{
+					var response model.ErrorResponse
+					err = unmarshallJson(resp.Body, &response)
+					require.NoError(t, err)
+					assert.Contains(t, response.Error, testCase.expectedErr)
+				}
+			default:
+				t.Errorf("unexpected status code, got: %d", status)
 			}
+
 		})
 	}
 }
@@ -103,23 +109,23 @@ func TestConfigChangeHandler_Delete(t *testing.T) {
 	require.NoError(t, err)
 
 	handler := configuration.NewConfigurationHandler(svc, nil)
-	router := mux.NewRouter()
-	configuration.InitConfigurationChangeHandler(router, handler)
 
 	endpointPath := path.Join("/", logID)
 	req := httptest.NewRequest(http.MethodDelete, endpointPath, bytes.NewBuffer([]byte{}))
+	vars := map[string]string{"id": logID}
+	req = mux.SetURLVars(req, vars)
+
 	//WHEN
 	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	handler.Delete(w, req)
 
 	//THEN
-	require.Equal(t, w.Code, http.StatusOK)
+	require.Equal(t, http.StatusOK, w.Code)
 	require.Nil(t, svc.Get(logID))
 }
 
 func TestConfigChangeHandler_List(t *testing.T) {
 	//GIVEN
-	t.Skip()
 	svc := configuration.NewService()
 	input := fixConfigurationChange(logID)
 	_, err := svc.Save(input)
@@ -130,15 +136,13 @@ func TestConfigChangeHandler_List(t *testing.T) {
 	require.NoError(t, err)
 
 	handler := configuration.NewConfigurationHandler(svc, nil)
-	router := mux.NewRouter()
-	configuration.InitConfigurationChangeHandler(router, handler)
-	req := httptest.NewRequest(http.MethodGet, target, bytes.NewBuffer([]byte{}))
+	req := httptest.NewRequest(http.MethodGet, "http://localhost", bytes.NewBuffer([]byte{}))
+
 	//WHEN
 	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
+	handler.List(w, req)
 	//THEN
-	require.Equal(t, w.Code, http.StatusOK)
+	require.Equal(t, http.StatusOK, w.Code)
 	require.Len(t, svc.List(), 2)
 }
 
@@ -150,14 +154,15 @@ func TestConfigChangeHandler_Get(t *testing.T) {
 	require.NoError(t, err)
 
 	handler := configuration.NewConfigurationHandler(svc, nil)
-	router := mux.NewRouter()
-	configuration.InitConfigurationChangeHandler(router, handler)
 
 	endpointPath := path.Join("/", logID)
 	req := httptest.NewRequest(http.MethodGet, endpointPath, bytes.NewBuffer([]byte{}))
+	vars := map[string]string{"id": logID}
+	req = mux.SetURLVars(req, vars)
+
 	//WHEN
 	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	handler.Get(w, req)
 
 	//THEN
 	require.Equal(t, w.Code, http.StatusOK)
@@ -180,9 +185,6 @@ func TestConfigChangeHandler_SearchByString_Success(t *testing.T) {
 
 	requestURL := path.Join("/search")
 	handler := configuration.NewConfigurationHandler(svc, nil)
-	router := mux.NewRouter()
-	configuration.InitConfigurationChangeHandler(router, handler)
-
 	req := httptest.NewRequest(http.MethodGet, requestURL, bytes.NewBuffer([]byte{}))
 	q := req.URL.Query()
 	q.Add("query", searchString)
@@ -190,7 +192,7 @@ func TestConfigChangeHandler_SearchByString_Success(t *testing.T) {
 
 	//WHEN
 	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	handler.SearchByString(w, req)
 
 	//THEN
 	require.Equal(t, http.StatusOK, w.Code)
