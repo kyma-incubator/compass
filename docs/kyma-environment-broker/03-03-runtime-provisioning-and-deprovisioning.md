@@ -38,9 +38,8 @@ The deprovisioning process contains the following steps:
 | Deprovision_Initialization   | Deprovisioning | Done        | Initializes the `DeprovisioningOperation` instance with data fetched from the `ProvisioningOperation`. | @polskikiel |
 | Deprovision Azure Event Hubs | Event Hub      | In progress | Deletes the Azure Event Hub Namespace.                                                  | @montaro  |
 | IAS_Deregistration           | Identity Authentication Service | Done | Removes the ServiceProvider from IAS. | @jasiu001 |
-| Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning of a Runtime in the Runtime Provisioner.                                            | @polskikiel |
 | EDP_Deregistration           | Event Data Platform | Done | Removes all entries about SKR from Event Data Platform. | @jasiu001 |
-| Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning of a Runtime in the Runtime Provisioner.                                            | @jasiu001 |
+| Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning of a Runtime in the Runtime Provisioner. | @polskikiel |
 
 
 ## Add provisioning or deprovisioning step
