@@ -8,6 +8,8 @@ global:
     - name: bar
       id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
 
+  enableCompassDefaultScenarioAssignment: true
+
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
@@ -42,7 +44,10 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-1196"
+      version: "PR-1201"
+    external_services_mock:
+      dir:
+      version: "PR-1217"
     tests:
       director:
         dir:
@@ -257,7 +262,14 @@ global:
       maxOpenConnections: 1
       maxIdleConnections: 1
 
-  enableCompassDefaultScenarioAssignment: true
+  auditlog:
+    configmap:
+      name: "compass-gateway-auditlog-config"
+    secret:
+      name: "compass-gateway-auditlog-secret"
+
+  externalServicesMock:
+    enabled: false
 
 pairing-adapter:
   enabled: false
