@@ -39,7 +39,7 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 }
 
 func (s *InitialisationStep) Name() string {
-	return "c"
+	return "Deprovision_Initialization"
 }
 
 func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
