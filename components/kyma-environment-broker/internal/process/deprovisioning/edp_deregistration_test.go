@@ -30,7 +30,7 @@ func TestEDPDeregistration_Run(t *testing.T) {
 		Return(nil).Once()
 	defer client.AssertExpectations(t)
 
-	step := NewEDPDeregistration(client, edp.Config{
+	step := NewEDPDeregistrationStep(client, edp.Config{
 		Environment: edpEnvironment,
 	})
 

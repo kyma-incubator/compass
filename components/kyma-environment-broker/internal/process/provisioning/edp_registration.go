@@ -20,25 +20,25 @@ type EDPClient interface {
 	CreateMetadataTenant(name, env string, data edp.MetadataTenantPayload) error
 }
 
-type EDPRegistration struct {
+type EDPRegistrationStep struct {
 	operationManager *process.ProvisionOperationManager
 	client           EDPClient
 	config           edp.Config
 }
 
-func NewEDPRegistration(os storage.Operations, client EDPClient, config edp.Config) *EDPRegistration {
-	return &EDPRegistration{
+func NewEDPRegistrationStep(os storage.Operations, client EDPClient, config edp.Config) *EDPRegistrationStep {
+	return &EDPRegistrationStep{
 		operationManager: process.NewProvisionOperationManager(os),
 		client:           client,
 		config:           config,
 	}
 }
 
-func (s *EDPRegistration) Name() string {
+func (s *EDPRegistrationStep) Name() string {
 	return "EDP_Registration"
 }
 
-func (s *EDPRegistration) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *EDPRegistrationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	parameters, err := operation.GetProvisioningParameters()
 	if err != nil {
 		return s.handleError(operation, err, log, "invalid operation provisioning parameters")
@@ -72,7 +72,7 @@ func (s *EDPRegistration) Run(operation internal.ProvisioningOperation, log logr
 	return operation, 0, nil
 }
 
-func (s *EDPRegistration) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *EDPRegistrationStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
 
 	if kebError.IsTemporaryError(err) {
@@ -93,6 +93,6 @@ func (s *EDPRegistration) handleError(operation internal.ProvisioningOperation, 
 
 // generateSecret generates secret during dataTenant creation, at this moment the secret is not needed
 // except required parameter
-func (s *EDPRegistration) generateSecret(name, env string) string {
+func (s *EDPRegistrationStep) generateSecret(name, env string) string {
 	return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s%s", name, env)))
 }

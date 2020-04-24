@@ -3,7 +3,7 @@ package edp
 import (
 	"context"
 	"fmt"
-	"net/url"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/clientcredentials"
@@ -24,17 +24,14 @@ type Config struct {
 }
 
 func CreateEDPAdminClient(config Config, log logrus.FieldLogger) *Client {
-	data := url.Values{}
-	data.Add("grant_type", "client_credentials")
-	data.Add("scope", "edp-namespace.read edp-namespace.update")
-
 	cfg := clientcredentials.Config{
-		ClientID:       fmt.Sprintf("edp-namespace;%s", config.Namespace),
-		ClientSecret:   config.Secret,
-		TokenURL:       fmt.Sprintf(namespaceToken, config.AuthURL),
-		EndpointParams: data,
+		ClientID:     fmt.Sprintf("edp-namespace;%s", config.Namespace),
+		ClientSecret: config.Secret,
+		TokenURL:     fmt.Sprintf(namespaceToken, config.AuthURL),
+		Scopes:       []string{"edp-namespace.read edp-namespace.update"},
 	}
 	httpClientOAuth := cfg.Client(context.Background())
+	httpClientOAuth.Timeout = 30 * time.Second
 
 	return NewClient(config, httpClientOAuth, log)
 }

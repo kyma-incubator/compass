@@ -101,7 +101,7 @@ edp:
   namespace: "kyma-dev"
   environment: "dev"
   required: false
-  disabled: false
+  disabled: true
   secret: "TBD"
   secretName: "edp-creds"
 

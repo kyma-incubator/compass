@@ -17,23 +17,23 @@ type EDPClient interface {
 	DeleteMetadataTenant(name, env, key string) error
 }
 
-type EDPDeregistration struct {
+type EDPDeregistrationStep struct {
 	client EDPClient
 	config edp.Config
 }
 
-func NewEDPDeregistration(client EDPClient, config edp.Config) *EDPDeregistration {
-	return &EDPDeregistration{
+func NewEDPDeregistrationStep(client EDPClient, config edp.Config) *EDPDeregistrationStep {
+	return &EDPDeregistrationStep{
 		client: client,
 		config: config,
 	}
 }
 
-func (s *EDPDeregistration) Name() string {
+func (s *EDPDeregistrationStep) Name() string {
 	return "EDP_Deregistration"
 }
 
-func (s *EDPDeregistration) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *EDPDeregistrationStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	log.Info("Delete DataTenant metadata")
 	for _, key := range []string{
 		edp.MaasConsumerEnvironmentKey,
@@ -55,7 +55,7 @@ func (s *EDPDeregistration) Run(operation internal.DeprovisioningOperation, log 
 	return operation, 0, nil
 }
 
-func (s *EDPDeregistration) handleError(operation internal.DeprovisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *EDPDeregistrationStep) handleError(operation internal.DeprovisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.DeprovisioningOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
 
 	if kebError.IsTemporaryError(err) {

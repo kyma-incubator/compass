@@ -2,12 +2,14 @@ package edp
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/logger"
+
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,13 +28,26 @@ func TestClient_CreateDataTenant(t *testing.T) {
 		AdminURL:  testServer.URL,
 		Namespace: testNamespace,
 	}
-	client := NewClient(config, testServer.Client(), logrus.New())
+	client := NewClient(config, testServer.Client(), logger.NewLogDummy())
 
 	// when
-	err := client.CreateDataTenant(DataTenantPayload{})
+	err := client.CreateDataTenant(DataTenantPayload{
+		Name:        subAccountID,
+		Environment: environment,
+	})
 
 	// then
 	assert.NoError(t, err)
+
+	response, err := testServer.Client().Get(fmt.Sprintf("%s/namespaces/%s/dataTenants/%s/%s", testServer.URL, testNamespace, subAccountID, environment))
+	assert.NoError(t, err)
+
+	var dt DataTenantItem
+	err = json.NewDecoder(response.Body).Decode(&dt)
+	assert.NoError(t, err)
+	assert.Equal(t, subAccountID, dt.Name)
+	assert.Equal(t, environment, dt.Environment)
+	assert.Equal(t, testNamespace, dt.Namespace.Name)
 }
 
 func TestClient_DeleteDataTenant(t *testing.T) {
@@ -44,7 +59,7 @@ func TestClient_DeleteDataTenant(t *testing.T) {
 		AdminURL:  testServer.URL,
 		Namespace: testNamespace,
 	}
-	client := NewClient(config, testServer.Client(), logrus.New())
+	client := NewClient(config, testServer.Client(), logger.NewLogDummy())
 
 	err := client.CreateDataTenant(DataTenantPayload{
 		Name:        subAccountID,
@@ -57,6 +72,10 @@ func TestClient_DeleteDataTenant(t *testing.T) {
 
 	// then
 	assert.NoError(t, err)
+
+	response, err := testServer.Client().Get(fmt.Sprintf("%s/namespaces/%s/dataTenants/%s/%s", testServer.URL, testNamespace, subAccountID, environment))
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, response.StatusCode)
 }
 
 func TestClient_CreateMetadataTenant(t *testing.T) {
@@ -68,7 +87,7 @@ func TestClient_CreateMetadataTenant(t *testing.T) {
 		AdminURL:  testServer.URL,
 		Namespace: testNamespace,
 	}
-	client := NewClient(config, testServer.Client(), logrus.New())
+	client := NewClient(config, testServer.Client(), logger.NewLogDummy())
 
 	// when
 	err := client.CreateMetadataTenant(subAccountID, environment, MetadataTenantPayload{Key: "tK", Value: "tV"})
@@ -95,7 +114,7 @@ func TestClient_DeleteMetadataTenant(t *testing.T) {
 		AdminURL:  testServer.URL,
 		Namespace: testNamespace,
 	}
-	client := NewClient(config, testServer.Client(), logrus.New())
+	client := NewClient(config, testServer.Client(), logger.NewLogDummy())
 
 	err := client.CreateMetadataTenant(subAccountID, environment, MetadataTenantPayload{Key: key, Value: "tV"})
 	assert.NoError(t, err)
@@ -122,37 +141,40 @@ func fixHTTPServer(t *testing.T) *httptest.Server {
 	r.HandleFunc("/namespaces/{namespace}/dataTenants/{name}/{env}/metadata", srv.getMetadata).Methods(http.MethodGet)
 	r.HandleFunc("/namespaces/{namespace}/dataTenants/{name}/{env}/metadata/{key}", srv.deleteMetadata).Methods(http.MethodDelete)
 
+	// enpoints use only for test (exist in real EDP)
+	r.HandleFunc("/namespaces/{namespace}/dataTenants/{name}/{env}", srv.getDataTenants).Methods(http.MethodGet)
+
 	return httptest.NewServer(r)
 }
 
 type server struct {
 	t          *testing.T
 	metadata   []MetadataItem
-	dataTenant map[string]string
+	dataTenant map[string][]byte
 }
 
 func newServer(t *testing.T) *server {
 	return &server{
 		t:          t,
 		metadata:   make([]MetadataItem, 0),
-		dataTenant: make(map[string]string, 0),
+		dataTenant: make(map[string][]byte, 0),
 	}
 }
 
-func (s *server) checkNamespace(w http.ResponseWriter, r *http.Request) bool {
+func (s *server) checkNamespace(w http.ResponseWriter, r *http.Request) (string, bool) {
 	namespace, ok := mux.Vars(r)["namespace"]
 	if !ok {
 		s.t.Error("key namespace doesn't exist")
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		return false
+		return "", false
 	}
 	if namespace != testNamespace {
 		s.t.Errorf("key namespace is not equal to %s", testNamespace)
 		w.WriteHeader(http.StatusNotFound)
-		return false
+		return namespace, false
 	}
 
-	return true
+	return namespace, true
 }
 
 func (s *server) fetchNameAndEnv(w http.ResponseWriter, r *http.Request) (string, string, bool) {
@@ -170,43 +192,61 @@ func (s *server) fetchNameAndEnv(w http.ResponseWriter, r *http.Request) (string
 }
 
 func (s *server) createDataTenant(w http.ResponseWriter, r *http.Request) {
-	if !s.checkNamespace(w, r) {
+	ns, ok := s.checkNamespace(w, r)
+	if !ok {
 		return
 	}
 
 	var dt DataTenantPayload
 	err := json.NewDecoder(r.Body).Decode(&dt)
 	if err != nil {
-		s.t.Errorf("cannot decode request")
+		s.t.Errorf("cannot read request body")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	s.dataTenant[dt.Name] = dt.Environment
+	dti := DataTenantItem{
+		Namespace: NamespaceItem{
+			Name: ns,
+		},
+		Name:        dt.Name,
+		Environment: dt.Environment,
+	}
+
+	data, err := json.Marshal(dti)
+	if err != nil {
+		s.t.Errorf("wrong request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	s.dataTenant[dt.Name] = data
 	w.WriteHeader(http.StatusCreated)
 }
 
 func (s *server) deleteDataTenant(w http.ResponseWriter, r *http.Request) {
-	if !s.checkNamespace(w, r) {
+	if _, ok := s.checkNamespace(w, r); !ok {
 		return
 	}
-	name, env, ok := s.fetchNameAndEnv(w, r)
+	name, _, ok := s.fetchNameAndEnv(w, r)
 	if !ok {
 		return
 	}
 
-	for dtName, dtEnv := range s.dataTenant {
-		if dtName == name && dtEnv == env {
+	for dtName, _ := range s.dataTenant {
+		if dtName == name {
+			delete(s.dataTenant, dtName)
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 	}
 
-	w.WriteHeader(http.StatusNotFound)
+	// EDP server return 204 if dataTenant not exist already
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *server) createMetadata(w http.ResponseWriter, r *http.Request) {
-	if !s.checkNamespace(w, r) {
+	if _, ok := s.checkNamespace(w, r); !ok {
 		return
 	}
 	name, env, ok := s.fetchNameAndEnv(w, r)
@@ -234,7 +274,7 @@ func (s *server) createMetadata(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) deleteMetadata(w http.ResponseWriter, r *http.Request) {
-	if !s.checkNamespace(w, r) {
+	if _, ok := s.checkNamespace(w, r); !ok {
 		return
 	}
 
@@ -262,6 +302,32 @@ func (s *server) getMetadata(w http.ResponseWriter, r *http.Request) {
 	err := json.NewEncoder(w).Encode(s.metadata)
 	if err != nil {
 		s.t.Errorf("%s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *server) getDataTenants(w http.ResponseWriter, r *http.Request) {
+	if _, ok := s.checkNamespace(w, r); !ok {
+		return
+	}
+	name, _, ok := s.fetchNameAndEnv(w, r)
+	if !ok {
+		s.t.Error("cannot find name/env query parameters")
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if _, ok := s.dataTenant[name]; !ok {
+		s.t.Logf("dataTenant with name %s not exist", name)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	_, err := w.Write(s.dataTenant[name])
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

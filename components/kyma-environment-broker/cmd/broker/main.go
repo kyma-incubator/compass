@@ -214,7 +214,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewEDPRegistration(db.Operations(), edpClient, cfg.EDP),
+			step:     provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
 		},
 		{
@@ -258,7 +258,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     deprovisioning.NewEDPDeregistration(edpClient, cfg.EDP),
+			step:     deprovisioning.NewEDPDeregistrationStep(edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
 		},
 		{

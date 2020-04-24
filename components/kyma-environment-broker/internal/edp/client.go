@@ -9,6 +9,7 @@ import (
 
 	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -97,12 +98,14 @@ func (c *Client) GetMetadataTenant(name, env string) ([]MetadataItem, error) {
 	if err != nil {
 		return []MetadataItem{}, errors.Wrap(err, "while requesting about dataTenant metadata")
 	}
-	defer c.closeResponseBody(response)
+	defer func() {
+		err = multierror.Append(err, errors.Wrap(c.closeResponseBody(response), "while trying to close body reader")).ErrorOrNil()
+	}()
 
 	var metadata []MetadataItem
 	err = json.NewDecoder(response.Body).Decode(&metadata)
 	if err != nil {
-		return metadata, errors.Wrap(err, "while decoding dataTenant metadata response")
+		return nil, errors.Wrap(err, "while decoding dataTenant metadata response")
 	}
 
 	return metadata, nil
@@ -113,7 +116,9 @@ func (c *Client) post(URL string, data []byte) error {
 	if err != nil {
 		return errors.Wrapf(err, "while sending POST request on %s", URL)
 	}
-	defer c.closeResponseBody(response)
+	defer func() {
+		err = multierror.Append(err, errors.Wrap(c.closeResponseBody(response), "while trying to close body reader")).ErrorOrNil()
+	}()
 
 	return c.processResponse(response)
 }
@@ -121,7 +126,7 @@ func (c *Client) post(URL string, data []byte) error {
 func (c *Client) processResponse(response *http.Response) error {
 	byteBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return errors.Wrapf(err, "while reading response body")
+		return errors.Wrapf(err, "while reading response body (status code %d)", response.StatusCode)
 	}
 	body := string(byteBody)
 
@@ -148,7 +153,7 @@ func (c *Client) processResponse(response *http.Response) error {
 		return kebError.NewTemporaryError("EDP server returns failed status %s", responseLog(response))
 	}
 
-	c.log.Errorf("EDP server notsupported response %s: %s", responseLog(response), body)
+	c.log.Errorf("EDP server not supported response %s: %s", responseLog(response), body)
 	return errors.Errorf("Undefined/empty/notsupported status code response %s", responseLog(response))
 }
 
@@ -156,13 +161,10 @@ func responseLog(r *http.Response) string {
 	return fmt.Sprintf("Response status code: %d for request %s %s", r.StatusCode, r.Request.Method, r.Request.URL)
 }
 
-func (c *Client) closeResponseBody(response *http.Response) {
+func (c *Client) closeResponseBody(response *http.Response) error {
 	if response.Body == nil {
-		return
+		return nil
 	}
 
-	err := response.Body.Close()
-	if err != nil {
-		c.log.Errorf("while closing response body on getting metadata: %s", err)
-	}
+	return response.Body.Close()
 }

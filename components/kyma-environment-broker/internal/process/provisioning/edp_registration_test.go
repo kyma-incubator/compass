@@ -28,7 +28,7 @@ func TestEDPRegistration_Run(t *testing.T) {
 	client.On("CreateDataTenant", edp.DataTenantPayload{
 		Name:        edpName,
 		Environment: edpEnvironment,
-		// it is copy of body `generateSecret` method in `EDPRegistration` step
+		// it is copy of body `generateSecret` method in `EDPRegistrationStep` step
 		Secret: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s%s", edpName, edpEnvironment))),
 	}).Return(nil).Once()
 	client.On("CreateMetadataTenant", edpName, edpEnvironment, edp.MetadataTenantPayload{
@@ -45,7 +45,7 @@ func TestEDPRegistration_Run(t *testing.T) {
 	}).Return(nil).Once()
 	defer client.AssertExpectations(t)
 
-	step := NewEDPRegistration(memoryStorage.Operations(), client, edp.Config{
+	step := NewEDPRegistrationStep(memoryStorage.Operations(), client, edp.Config{
 		Environment: edpEnvironment,
 		Required:    true,
 	})
