@@ -17,7 +17,7 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 			Region:            "europe-west4",
 			Provider:          "gcp",
 			WorkerCidr:        "10.250.0.0/19",
-			AutoScalerMin:     2,
+			AutoScalerMin:     3,
 			AutoScalerMax:     4,
 			MaxSurge:          4,
 			MaxUnavailable:    1,
