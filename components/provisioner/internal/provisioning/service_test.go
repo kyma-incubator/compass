@@ -398,13 +398,13 @@ func TestService_MarkRuntimeAsDeleted(t *testing.T) {
 		directorServiceMock := &directormock.DirectorClient{}
 
 		sessionFactoryMock.On("NewWriteSession").Return(writeSession)
-		writeSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 		directorServiceMock.On("DeleteRuntime", runtimeID, tenant).Return(nil)
+		writeSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil)
 
 		//when
-		_, err := resolver.MarkRuntimeAsDeleted(runtimeID, tenant)
+		_, err := service.MarkRuntimeAsDeleted(runtimeID, tenant)
 		require.NoError(t, err)
 
 		//then
