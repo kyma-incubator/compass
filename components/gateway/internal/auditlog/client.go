@@ -45,6 +45,7 @@ func NewClient(cfg Config, httpClient HttpClient) (*Client, error) {
 
 func (c *Client) LogConfigurationChange(change model.ConfigurationChange) error {
 	payload, err := json.Marshal(&change)
+	log.Println(payload)
 	if err != nil {
 		return errors.Wrap(err, "while marshaling auditlog payload")
 	}
@@ -59,6 +60,7 @@ func (c *Client) LogConfigurationChange(change model.ConfigurationChange) error 
 
 func (c *Client) LogSecurityEvent(event model.SecurityEvent) error {
 	payload, err := json.Marshal(&event)
+	log.Println(payload)
 	if err != nil {
 		return errors.Wrap(err, "while marshaling auditlog payload")
 	}
