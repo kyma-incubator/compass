@@ -15,8 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/pkg/errors"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
@@ -115,11 +113,11 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 }
 
 func (r *service) unregisterFailedRuntime(id, tenant string) {
-	log.Infof("Starting provisioning failed. Unregistering Runtime %s...", id)
-	err := r.directorService.DeleteRuntime(id, tenant)
-	if err != nil {
-		log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())
-	}
+	// log.Infof("Starting provisioning failed. Unregistering Runtime %s...", id)
+	// err := r.directorService.DeleteRuntime(id, tenant)
+	// if err != nil {
+	// 	log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())
+	// }
 }
 
 func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {

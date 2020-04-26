@@ -283,6 +283,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+		readWriteSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil)
 
