@@ -307,6 +307,75 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 	})
 }
 
+func TestResolver_MarkRuntimeAsDeleted(t *testing.T) {
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
+
+	t.Run("Should mark runtime as deleted and return no error", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+		provisioner := NewResolver(provisioningService, validator)
+
+		provisioningService.On("MarkRuntimeAsDeleted", runtimeID, tenant).Return("", nil)
+		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+
+		//when
+		_, err := provisioner.MarkRuntimeAsDeleted(ctx, runtimeID)
+
+		//then
+		require.NoError(t, err)
+	})
+
+	t.Run("Should return error when marking runtime as deleted fails", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+		provisioner := NewResolver(provisioningService, validator)
+
+		provisioningService.On("MarkRuntimeAsDeleted", runtimeID, tenant).Return("", errors.New("Marking runtime as deleted fails because reasons"))
+		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+
+		//when
+		_, err := provisioner.MarkRuntimeAsDeleted(ctx, runtimeID)
+
+		//then
+		require.Error(t, err)
+	})
+
+	t.Run("Should fail when tenant header is not passed to context", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+		provisioner := NewResolver(provisioningService, validator)
+
+		provisioningService.On("MarkRuntimeAsDeleted", runtimeID, tenant).Return("", nil)
+
+		ctx := context.Background()
+
+		//when
+		_, err := provisioner.MarkRuntimeAsDeleted(ctx, runtimeID)
+
+		//then
+		require.Error(t, err)
+	})
+
+	t.Run("Should fail marking runtime as deleted when tenant validation fails", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+		provisioner := NewResolver(provisioningService, validator)
+
+		provisioningService.On("MarkRuntimeAsDeleted", runtimeID, tenant).Return("", nil)
+		validator.On("ValidateTenant", runtimeID, tenant).Return(errors.New("Very bad error"))
+
+		//when
+		_, err := provisioner.MarkRuntimeAsDeleted(ctx, runtimeID)
+
+		//then
+		require.Error(t, err)
+	})
+}
+
 func TestResolver_UpgradeRuntime(t *testing.T) {
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 
