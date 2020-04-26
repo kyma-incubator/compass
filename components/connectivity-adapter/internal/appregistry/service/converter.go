@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -16,6 +17,9 @@ type converter struct{}
 func NewConverter() *converter {
 	return &converter{}
 }
+
+const oDataSpecFormat = "%s/$metadata"
+const oDataSpecType = "odata"
 
 func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails) (graphql.PackageCreateInput, error) {
 	out := graphql.PackageCreateInput{}
@@ -130,16 +134,29 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 		}
 
 		if deprecated.Api.Spec == nil { // TODO provide test for that
-			if deprecated.Api.SpecificationUrl != "" || deprecated.Api.SpecificationCredentials != nil || deprecated.Api.SpecificationRequestParameters != nil {
+
+			lowercaseDeprecatedAPIType := strings.ToLower(deprecated.Api.ApiType)
+			if deprecated.Api.SpecificationUrl != "" || deprecated.Api.SpecificationCredentials != nil || deprecated.Api.SpecificationRequestParameters != nil || lowercaseDeprecatedAPIType == oDataSpecType {
 				if apiDef.Spec == nil {
 					apiDef.Spec = &graphql.APISpecInput{}
 				}
-				apiDef.Spec.FetchRequest = &graphql.FetchRequestInput{
-					URL: deprecated.Api.SpecificationUrl,
-				}
 
 				apiDef.Spec.Type = toNewSpecType(deprecated.Api.ApiType)
-				apiDef.Spec.Format = graphql.SpecFormatJSON
+				if lowercaseDeprecatedAPIType == oDataSpecType {
+					apiDef.Spec.Format = graphql.SpecFormatXML
+				} else {
+					apiDef.Spec.Format = graphql.SpecFormatJSON
+				}
+
+				url := deprecated.Api.SpecificationUrl
+				if lowercaseDeprecatedAPIType == oDataSpecType && url == "" {
+					targetUrl := strings.TrimSuffix(apiDef.TargetURL, "/")
+					url = fmt.Sprintf(oDataSpecFormat, targetUrl)
+				}
+
+				apiDef.Spec.FetchRequest = &graphql.FetchRequestInput{
+					URL: url,
+				}
 			}
 
 			if deprecated.Api.SpecificationCredentials != nil || deprecated.Api.SpecificationRequestParameters != nil {

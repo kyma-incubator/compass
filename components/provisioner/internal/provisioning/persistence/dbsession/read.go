@@ -33,13 +33,33 @@ func (r readSession) GetTenant(runtimeID string) (string, dberrors.Error) {
 	return tenant, nil
 }
 
+func (r readSession) GetTenantForOperation(operationID string) (string, dberrors.Error) {
+	var tenant string
+
+	err := r.session.
+		Select("cluster.tenant").
+		From("operation").
+		Join("cluster", "operation.cluster_id=cluster.id").
+		Where(dbr.Eq("operation.id", operationID)).
+		LoadOne(&tenant)
+
+	if err != nil {
+		if err != dbr.ErrNotFound {
+			return "", dberrors.NotFound("Cannot find Tenant for operationID:'%s", operationID)
+		}
+
+		return "", dberrors.Internal("Failed to get Tenant: %s", err)
+	}
+	return tenant, nil
+}
+
 func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error) {
 	var cluster model.Cluster
 
 	err := r.session.
 		Select(
 			"id", "kubeconfig", "terraform_state", "tenant",
-			"credentials_secret_name", "creation_timestamp", "deleted", "sub_account_id").
+			"credentials_secret_name", "creation_timestamp", "deleted", "sub_account_id", "active_kyma_config_id").
 		From("cluster").
 		Where(dbr.Eq("cluster.id", runtimeID)).
 		LoadOne(&cluster)
@@ -57,7 +77,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	}
 	cluster.ClusterConfig = providerConfig
 
-	kymaConfig, err := r.getKymaConfig(runtimeID)
+	kymaConfig, err := r.getKymaConfig(runtimeID, cluster.ActiveKymaConfigId)
 	if err != nil {
 		return model.Cluster{}, dberrors.NotFound("Cannot find Kyma config for runtimeID: %s", runtimeID)
 	}
@@ -75,7 +95,7 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 	err := r.session.
 		Select(
 			"cluster.id", "cluster.kubeconfig", "cluster.tenant",
-			"cluster.credentials_secret_name", "cluster.creation_timestamp", "cluster.deleted",
+			"cluster.credentials_secret_name", "cluster.creation_timestamp", "cluster.deleted", "cluster.active_kyma_config_id",
 			"name", "project_name", "kubernetes_version",
 			"volume_size_gb", "disk_type", "machine_type", "provider", "seed",
 			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
@@ -100,7 +120,7 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 	}
 	cluster.ClusterConfig = clusterWithProvider.gardenerConfigRead.GardenerConfig
 
-	kymaConfig, err := r.getKymaConfig(clusterWithProvider.Cluster.ID)
+	kymaConfig, err := r.getKymaConfig(clusterWithProvider.Cluster.ID, cluster.ActiveKymaConfigId)
 	if err != nil {
 		return model.Cluster{}, dberrors.NotFound("Cannot find Kyma config for runtimeID: %s", clusterWithProvider.Cluster.ID)
 	}
@@ -182,7 +202,7 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 	}, nil
 }
 
-func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
+func (r readSession) getKymaConfig(runtimeID, kymaConfigId string) (model.KymaConfig, dberrors.Error) {
 	var kymaConfig kymaConfigDTO
 
 	rowsCount, err := r.session.
@@ -196,7 +216,7 @@ func (r readSession) getKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 		Join("kyma_config", "cluster.id=kyma_config.cluster_id").
 		Join("kyma_component_config", "kyma_config.id=kyma_component_config.kyma_config_id").
 		Join("kyma_release", "kyma_config.release_id=kyma_release.id").
-		Where(dbr.Eq("cluster.id", runtimeID)).
+		Where(dbr.Eq("kyma_config.id", kymaConfigId)).
 		Load(&kymaConfig)
 
 	if err != nil {
@@ -271,11 +291,17 @@ func (r readSession) getProviderConfig(runtimeID string) (model.ProviderConfigur
 	return gcpConfig, nil
 }
 
+var (
+	operationColumns = []string{
+		"id", "type", "start_timestamp", "stage", "end_timestamp", "state", "message", "cluster_id", "last_transition",
+	}
+)
+
 func (r readSession) GetOperation(operationID string) (model.Operation, dberrors.Error) {
 	var operation model.Operation
 
 	err := r.session.
-		Select("id", "type", "start_timestamp", "end_timestamp", "state", "message", "cluster_id").
+		Select(operationColumns...).
 		From("operation").
 		Where(dbr.Eq("id", operationID)).
 		LoadOne(&operation)
@@ -299,7 +325,7 @@ func (r readSession) GetLastOperation(runtimeID string) (model.Operation, dberro
 	var operation model.Operation
 
 	err := r.session.
-		Select("id", "type", "start_timestamp", "end_timestamp", "state", "message", "cluster_id").
+		Select(operationColumns...).
 		From("operation").
 		Where(dbr.Eq("start_timestamp", lastOperationDateSelect)).
 		LoadOne(&operation)
@@ -312,4 +338,42 @@ func (r readSession) GetLastOperation(runtimeID string) (model.Operation, dberro
 	}
 
 	return operation, nil
+}
+
+func (r readSession) ListInProgressOperations() ([]model.Operation, dberrors.Error) {
+	var operations []model.Operation
+
+	_, err := r.session.
+		Select(operationColumns...).
+		From("operation").
+		Where(dbr.Eq("state", model.InProgress)).
+		Load(&operations)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return []model.Operation{}, nil
+		}
+		return nil, dberrors.Internal("Failed to list In Progress operation: %s", err)
+	}
+
+	return operations, nil
+}
+
+func (r readSession) GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade, dberrors.Error) {
+	var runtimeUpgrade model.RuntimeUpgrade
+
+	_, err := r.session.
+		Select("id", "state", "operation_id", "pre_upgrade_kyma_config_id", "post_upgrade_kyma_config_id").
+		From("runtime_upgrade").
+		Where(dbr.Eq("operation_id", operationId)).
+		Load(&runtimeUpgrade)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return model.RuntimeUpgrade{}, dberrors.NotFound("Runtime upgrade not found for operation with %s id", operationId)
+		}
+		return model.RuntimeUpgrade{}, dberrors.Internal("Failed to get Runtime upgrade for operation %s: %s", operationId, err)
+	}
+
+	return runtimeUpgrade, nil
 }

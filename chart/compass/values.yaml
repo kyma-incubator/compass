@@ -71,7 +71,6 @@ global:
 
   tenantConfig:
     useDefaultTenants: true
-    useExternalTenants: false
     dbPool:
       maxOpenConnections: 1
       maxIdleConnections: 1

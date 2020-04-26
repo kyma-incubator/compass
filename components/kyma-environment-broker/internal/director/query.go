@@ -14,10 +14,23 @@ func (qp queryProvider) Runtime(runtimeID string) string {
 }`, runtimeID, runtimeStatusData())
 }
 
+func (qp queryProvider) SetRuntimeLabel(runtimeId, key, value string) string {
+	return fmt.Sprintf(`mutation {
+		result: setRuntimeLabel(runtimeID: "%s", key: "%s", value: "%s") {
+			%s
+		}
+	}`, runtimeId, key, value, labelData())
+}
+
 func runtimeStatusData() string {
 	return fmt.Sprintf(`id
 			labels(key: "%s") 
 			status{
 				condition
 			}`, consoleURLLabelKey)
+}
+
+func labelData() string {
+	return `key
+			value`
 }

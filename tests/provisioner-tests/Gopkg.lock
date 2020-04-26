@@ -53,6 +53,14 @@
   version = "v1.0.3"
 
 [[projects]]
+  digest = "1:49bb655587fa61c5b986d03c0b5b2a7c163683bc5d1379f32927bbb86f461115"
+  name = "github.com/avast/retry-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a8f6dc7e8f46a5d11c01d9da1e887bb5a51fd107"
+  version = "v2.6.0"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -157,22 +165,22 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:d49d6a22b2e920f5090c2553e276fd6644d767ab6171d231f150605dd4935349"
+  digest = "1:457842b436a44b9b0799339356ae6cb91c740b6052e0ed3d5f35dd2df1a6bbfe"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/scalar",
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "fb6306fe65c818e9cf5462a73f9681344ab40438"
+  revision = "b1da4ae4937a331fea6d517bdee91eeee183bb1d"
 
 [[projects]]
-  digest = "1:bde204c6c8dd5169cd05ed5aa9a1e027bc8d2cdd172c5e80b971cb4e14b55e3c"
+  digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
   name = "github.com/kyma-project/kyma"
   packages = ["components/kyma-operator/pkg/apis/installer/v1alpha1"]
   pruneopts = "UT"
-  revision = "119010d0810e5e1e23b78e1058f2b0fbea293ae9"
-  version = "1.9.0"
+  revision = "68742a10ec230206503af278f32b2d60b5a783e2"
+  version = "1.11.1"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -619,6 +627,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/Masterminds/sprig",
+    "github.com/avast/retry-go",
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",

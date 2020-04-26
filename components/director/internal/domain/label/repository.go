@@ -15,9 +15,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-const tableName string = "public.labels"
+const (
+	tableName    string = "public.labels"
+	tenantColumn string = "tenant_id"
+)
 
-var tableColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "key", "value"}
+var tableColumns = []string{"id", tenantColumn, "app_id", "runtime_id", "key", "value"}
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
@@ -27,13 +30,14 @@ type Converter interface {
 
 type repository struct {
 	upserter repo.Upserter
-
-	conv Converter
+	lister   repo.Lister
+	conv     Converter
 }
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		upserter: repo.NewUpserter(tableName, tableColumns, []string{"tenant_id", "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
+		upserter: repo.NewUpserter(tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
+		lister:   repo.NewLister(tableName, tenantColumn, tableColumns),
 		conv:     conv,
 	}
 }
@@ -172,6 +176,49 @@ func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string)
 	}
 
 	return nil
+}
+
+func (r *repository) GetRuntimesIDsByStringLabel(ctx context.Context, tenantID, key, value string) ([]string, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching persistence from context")
+	}
+	query := `SELECT LA.runtime_id FROM LABELS AS LA WHERE LA."key"=$1 AND value ?| array[$2] AND LA.tenant_id=$3 AND LA.runtime_ID IS NOT NULL;`
+
+	var matchedRtmsIDs []string
+	err = persist.Select(&matchedRtmsIDs, query, key, value, tenantID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching runtimes id which match selector")
+	}
+	return matchedRtmsIDs, nil
+}
+
+func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error) {
+	if len(runtimesIDs) == 0 {
+		return nil, errors.New("Cannot execute query without runtimesIDs")
+	}
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("key", model.ScenariosKey),
+		repo.NewInConditionForStringValues("runtime_id", runtimesIDs),
+	}
+
+	var labels Collection
+	err := r.lister.List(ctx, tenantID, &labels, conditions...)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching runtimes scenarios")
+	}
+
+	var labelModels []model.Label
+	for _, label := range labels {
+
+		labelModel, err := r.conv.FromEntity(label)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting label entity to model")
+		}
+		labelModels = append(labelModels, labelModel)
+	}
+	return labelModels, nil
 }
 
 func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error) {

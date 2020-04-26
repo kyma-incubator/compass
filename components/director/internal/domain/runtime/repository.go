@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -72,12 +71,12 @@ func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string,
 
 	additionalConditions := repo.Conditions{repo.NewEqualCondition("id", id)}
 
-	filterSubquery, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
 	if filterSubquery != "" {
-		additionalConditions = append(additionalConditions, repo.NewInCondition("id", filterSubquery))
+		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
 	}
 
 	var runtimeEnt Runtime
@@ -94,14 +93,14 @@ func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string,
 }
 
 func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
-	filterSubquery, err := label.FilterQueryGlobal(model.RuntimeLabelableObject, label.IntersectSet, filter)
+	filterSubquery, args, err := label.FilterQueryGlobal(model.RuntimeLabelableObject, label.IntersectSet, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
 
 	var additionalConditions repo.Conditions
 	if filterSubquery != "" {
-		additionalConditions = append(additionalConditions, repo.NewInCondition("id", filterSubquery))
+		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
 	}
 
 	var runtimeEnt Runtime
@@ -129,16 +128,17 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing tenant as UUID")
 	}
-	filterSubquery, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
-	var additionalConditions []string
+
+	var conditions repo.Conditions
 	if filterSubquery != "" {
-		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, filterSubquery))
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
 	}
 
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "name", &runtimesCollection, additionalConditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "name", &runtimesCollection, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -188,12 +188,12 @@ func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, f
 	}
 
 	var additionalConditions repo.Conditions
-	filterSubquery, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
 	if filterSubquery != "" {
-		additionalConditions = append(additionalConditions, repo.NewInCondition("id", filterSubquery))
+		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
 	}
 
 	orderByParams := repo.OrderByParams{repo.NewAscOrderBy("creation_timestamp")}

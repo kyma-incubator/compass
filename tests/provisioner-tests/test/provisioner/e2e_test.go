@@ -35,7 +35,7 @@ func Test_E2E_Gardener(t *testing.T) {
 
 				// Provisioning runtime
 				// Create provisioning input
-				provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, provider)
+				provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, testSuite.config.Kyma.Version, provider)
 				assertions.RequireNoError(t, err)
 
 				runtimeName := fmt.Sprintf("provisioner-test-%s-%s", strings.ToLower(provider), uuid.New().String()[:4])
@@ -111,10 +111,12 @@ type Logger struct {
 }
 
 func NewLogger(t *testing.T, fields ...string) *Logger {
+	joinedFields := strings.Join(fields, " ")
+
 	return &Logger{
 		t:            t,
 		fields:       fields,
-		joinedFields: strings.Join(fields, " "),
+		joinedFields: joinedFields,
 	}
 }
 

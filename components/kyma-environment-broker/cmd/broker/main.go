@@ -16,7 +16,9 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/deprovisioning"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning"
@@ -28,6 +30,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -74,12 +77,13 @@ type Config struct {
 	KymaVersion                          string
 	EnableOnDemandVersion                bool `envconfig:"default=false"`
 	ManagedRuntimeComponentsYAMLFilePath string
+	DefaultRequestRegion                 string `envconfig:"default=cf-eu10"`
 
 	Broker broker.Config
 
 	Avs avs.Config
-
 	LMS lms.Config
+	IAS ias.Config
 }
 
 func main() {
@@ -138,8 +142,9 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Kiali":  runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"Jaeger": runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
+		"Kiali":   runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
+		"Jaeger":  runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
+		"Tracing": runtime.NewGenericComponentDisabler("tracing", "kyma-system"),
 		// TODO(workaround until #1049): following components should be always disabled and user should not be able to enable them in provisioning request. This implies following components cannot be specified under the plan schema definition.
 		"BackupInt":               runtime.NewGenericComponentDisabler("backup-init", "kyma-system"),
 		"Backup":                  runtime.NewGenericComponentDisabler("backup", "kyma-system"),
@@ -166,12 +171,17 @@ func main() {
 	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled, externalEvalAssistant)
+
+	bundleBuilder := ias.NewBundleBuilder(httpClient, cfg.IAS)
+	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
+
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), logs)
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs)
 
 	// define steps
-	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, directorClient, inputFactory, externalEvalCreator)
+	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
+		provisionerClient, directorClient, inputFactory, externalEvalCreator, iasTypeSetter, cfg.Provisioning.Timeout)
 	provisionManager.InitStep(provisioningInit)
 
 	provisioningSteps := []struct {
@@ -192,6 +202,11 @@ func main() {
 			weight:   1,
 			step:     provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations()),
 			disabled: cfg.LMS.Disabled,
+		},
+		{
+			weight:   1,
+			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
+			disabled: cfg.IAS.Disabled,
 		},
 		{
 			weight: 2,
@@ -224,12 +239,18 @@ func main() {
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient)
 	deprovisionManager.InitStep(deprovisioningInit)
 	deprovisioningSteps := []struct {
-		weight int
-		step   deprovisioning.Step
+		disabled bool
+		weight   int
+		step     deprovisioning.Step
 	}{
 		{
 			weight: 1,
 			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+		},
+		{
+			weight:   1,
+			step:     deprovisioning.NewIASDeregistrationStep(db.Operations(), bundleBuilder),
+			disabled: cfg.IAS.Disabled,
 		},
 		{
 			weight: 10,
@@ -237,7 +258,9 @@ func main() {
 		},
 	}
 	for _, step := range deprovisioningSteps {
-		deprovisionManager.AddStep(step.weight, step.step)
+		if !step.disabled {
+			deprovisionManager.AddStep(step.weight, step.step)
+		}
 	}
 
 	// run queues
@@ -273,30 +296,31 @@ func main() {
 		broker.NewLastBindingOperation(logs),
 	}
 
+	// create server
+	router := mux.NewRouter()
+
 	// create info endpoints
 	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
 	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), respWriter)
+	router.Handle("/info/runtimes", runtimesInfoHandler)
 
-	// create broker credentials
-	brokerCredentials := broker.BrokerCredentials{
+	// create OSB API endpoints
+	basicAuth := &broker.Credentials{
 		Username: cfg.Auth.Username,
 		Password: cfg.Auth.Password,
 	}
+	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
+	for prefix, creds := range map[string]*broker.Credentials{
+		"/":                basicAuth, // legacy basic auth
+		"/oauth/":          nil,       // oauth2 handled by Ory
+		"/oauth/{region}/": nil,       // oauth2 handled by Ory with region
+	} {
+		route := router.PathPrefix(prefix).Subrouter()
+		broker.AttachRoutes(route, kymaEnvBroker, logger, creds)
+	}
 
-	// create and run broker OSB API in 2 modes:
-	// with basic auth
-	// with oauth
-	brokerAPI := broker.New(kymaEnvBroker, logger, nil)
-	brokerBasicAPI := broker.New(kymaEnvBroker, logger, &brokerCredentials)
-
-	sm := http.NewServeMux()
-	sm.Handle("/", brokerBasicAPI)
-	sm.Handle("/oauth/", http.StripPrefix("/oauth", brokerAPI))
-	sm.Handle("/info/runtimes", runtimesInfoHandler)
-
-	r := handlers.LoggingHandler(os.Stdout, sm)
-
-	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, r))
+	svr := handlers.LoggingHandler(os.Stdout, router)
+	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
 }
 
 // queues all in progress provision operations existing in the database

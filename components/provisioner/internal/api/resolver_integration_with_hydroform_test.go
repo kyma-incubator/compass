@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
@@ -88,7 +90,7 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 			KubernetesVersion: "version",
 			VolumeSizeGb:      1024,
 			MachineType:       "n1-standard-1",
-			Region:            "region",
+			Region:            "westeurope",
 			Provider:          "GCP",
 			Seed:              util.StringPtr("gcp-eu1"),
 			TargetSecret:      "secret",
@@ -111,7 +113,7 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 			KubernetesVersion: "version",
 			VolumeSizeGb:      1024,
 			MachineType:       "n1-standard-1",
-			Region:            "region",
+			Region:            "westeurope",
 			Provider:          "Azure",
 			Seed:              util.StringPtr("gcp-eu1"),
 			TargetSecret:      "secret",
@@ -134,7 +136,7 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 			KubernetesVersion: "version",
 			VolumeSizeGb:      1024,
 			MachineType:       "n1-standard-1",
-			Region:            "region",
+			Region:            "westeurope",
 			Provider:          "AWS",
 			Seed:              nil,
 			TargetSecret:      "secret",
@@ -246,8 +248,12 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject)
 			graphQLConverter := provisioning.NewGraphQLConverter()
+
+			installationQueue := queue.CreateInstallationQueue(testProvisioningTimeouts(), dbSessionFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor)
+			installationQueue.Run(ctx.Done())
+
 			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock, runtimeConfigurator)
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator, installationQueue)
 			validator := NewValidator(dbSessionFactory.NewReadSession())
 			provisioner := NewResolver(provisioningService, validator)
 

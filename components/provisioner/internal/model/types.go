@@ -21,6 +21,23 @@ const (
 	ReconnectRuntime OperationType = "RECONNECT_RUNTIME"
 )
 
+type OperationStage string
+
+const (
+	ShootProvisioning      OperationStage = "ShootProvisioning"
+	StartingInstallation   OperationStage = "StartingInstallation"
+	WaitingForInstallation OperationStage = "WaitingForInstallation"
+	ConnectRuntimeAgent    OperationStage = "ConnectRuntimeAgent"
+	WaitForAgentToConnect  OperationStage = "WaitForAgentToConnect"
+
+	StartingUpgrade      OperationStage = "StartingUpgrade"
+	UpdatingUpgradeState OperationStage = "UpdatingUpgradeState"
+
+	FinishedStage OperationStage = "Finished"
+
+	DeprovisioningStage OperationStage = "Deprovisioning"
+)
+
 type Cluster struct {
 	ID             string
 	Kubeconfig     *string
@@ -31,6 +48,7 @@ type Cluster struct {
 	Deleted               bool
 	Tenant                string
 	SubAccountId          string
+	ActiveKymaConfigId    string
 
 	ClusterConfig ProviderConfiguration `db:"-"`
 	KymaConfig    KymaConfig            `db:"-"`
@@ -56,6 +74,8 @@ type Operation struct {
 	State          OperationState
 	Message        string
 	ClusterID      string
+	Stage          OperationStage
+	LastTransition *time.Time
 }
 
 type RuntimeAgentConnectionStatus int

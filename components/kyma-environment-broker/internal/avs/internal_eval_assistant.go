@@ -25,8 +25,8 @@ func NewInternalEvalAssistant(avsConfig Config) *InternalEvalAssistant {
 	}
 }
 
-func (iec *InternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error) {
-	return newBasicEvaluationCreateRequest(operations, iec, iec.avsConfig.GroupId, url)
+func (iec *InternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, configForModel *configForModel, url string) (*BasicEvaluationCreateRequest, error) {
+	return newBasicEvaluationCreateRequest(operations, iec, configForModel, url)
 }
 
 func (iec *InternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64) {

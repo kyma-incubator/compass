@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 
-	proviRuntime "github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 
@@ -20,8 +22,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 
 	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -38,10 +38,9 @@ func NewReconciler(
 	dbsFactory dbsession.Factory,
 	secretsClient v1core.SecretInterface,
 	shootClient v1beta1.ShootInterface,
-	installationService installation.Service,
-	installationTimeout time.Duration,
 	directorClient director.DirectorClient,
-	runtimeConfigurator proviRuntime.Configurator) *Reconciler {
+	installationSvc installation.Service,
+	installQueue queue.OperationQueue) *Reconciler {
 	return &Reconciler{
 		client:     mgr.GetClient(),
 		scheme:     mgr.GetScheme(),
@@ -49,13 +48,12 @@ func NewReconciler(
 		dbsFactory: dbsFactory,
 
 		provisioningOperator: &ProvisioningOperator{
-			dbsFactory:              dbsFactory,
-			secretsClient:           secretsClient,
-			shootClient:             shootClient,
-			installationService:     installationService,
-			kymaInstallationTimeout: installationTimeout,
-			directorClient:          directorClient,
-			runtimeConfigurator:     runtimeConfigurator,
+			dbsFactory:        dbsFactory,
+			secretsClient:     secretsClient,
+			shootClient:       shootClient,
+			directorClient:    directorClient,
+			installationSvc:   installationSvc,
+			installationQueue: installQueue,
 		},
 	}
 }
@@ -70,14 +68,13 @@ type Reconciler struct {
 }
 
 type ProvisioningOperator struct {
-	installationErrorsThreshold int
-	secretsClient               v1core.SecretInterface
-	shootClient                 v1beta1.ShootInterface
-	installationService         installation.Service
-	dbsFactory                  dbsession.Factory
-	kymaInstallationTimeout     time.Duration
-	directorClient              director.DirectorClient
-	runtimeConfigurator         proviRuntime.Configurator
+	secretsClient   v1core.SecretInterface
+	shootClient     v1beta1.ShootInterface
+	dbsFactory      dbsession.Factory
+	directorClient  director.DirectorClient
+	installationSvc installation.Service
+
+	installationQueue queue.OperationQueue
 }
 
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
@@ -96,7 +93,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	shouldReconcile, err := r.shouldReconcileShoot(shoot)
 	if err != nil {
-		log.Errorf("Failed to verify if shoot should be reconciled")
+		log.Errorf("Failed to verify if shoot should be reconciled: %s", err.Error())
 		return ctrl.Result{}, err
 	}
 	if !shouldReconcile {
@@ -122,7 +119,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	if isBeingDeleted(shoot) {
 		// TODO - here we can ensure if last operation for cluster is Deprovision
-		log.Infof("Shoot is being deleted: %s", getProvisioningState(shoot))
+		log.Infof("Shoot is being deleted")
 		return ctrl.Result{}, nil
 	}
 
@@ -131,16 +128,15 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	provisioningStep := getProvisioningStep(shoot)
+	provisioningStep := getProvisioningState(shoot)
 
 	switch provisioningStep {
-	case ProvisioningInProgressStep:
+	case Provisioning:
 		return r.provisioningOperator.ProvisioningInProgress(log, shoot, operationId)
-	case InstallationInProgressStep:
-		return r.provisioningOperator.InstallationInProgress(log, shoot, operationId)
-	case ProvisioningFinishedStep:
-		return r.provisioningOperator.ProvisioningFinished(log, shoot)
-	case DeprovisioningInProgressStep:
+	case Provisioned:
+		log.Debug("Shoot provisioned")
+		return ctrl.Result{}, nil
+	case Deprovisioning:
 		return r.provisioningOperator.DeprovisioningInProgress(log, shoot, operationId)
 	default:
 		log.Warnf("Unknown state of Shoot")
@@ -246,7 +242,12 @@ func (r *ProvisioningOperator) setDeprovisioningFinished(cluster model.Cluster, 
 		return fmt.Errorf("error marking cluster for deletion: %s", dberr.Error())
 	}
 
-	dberr = session.UpdateOperationState(lastOp.ID, "Operation succeeded.", model.Succeeded)
+	dberr = session.TransitionOperation(lastOp.ID, "Deprovisioning finished.", model.FinishedStage, time.Now())
+	if dberr != nil {
+		return fmt.Errorf("error trainsitioning deprovision operation state %s: %s", lastOp.ID, dberr.Error())
+	}
+
+	dberr = session.UpdateOperationState(lastOp.ID, "Operation succeeded.", model.Succeeded, time.Now())
 	if dberr != nil {
 		return fmt.Errorf("error setting deprovisioning operation %s as succeeded: %s", lastOp.ID, dberr.Error())
 	}

@@ -34,7 +34,7 @@ func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
 		Pair("dashboard_url", instance.DashboardURL).
 		Pair("provisioning_parameters", instance.ProvisioningParameters).
 		// in postgres database it will be equal to "0001-01-01 00:00:00+00"
-		Pair("delated_at", time.Time{}).
+		Pair("deleted_at", time.Time{}).
 		Exec()
 
 	if err != nil {

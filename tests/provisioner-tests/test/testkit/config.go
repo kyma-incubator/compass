@@ -23,7 +23,9 @@ type TestConfig struct {
 }
 
 type KymaConfig struct {
-	Version string `envconfig:"default=1.10.0"`
+	Version string `envconfig:"default=1.11.0"`
+	// PreUpgradeVersion is used in upgrade test
+	PreUpgradeVersion string `envconfig:"default=1.10.0"`
 }
 
 type GardenerConfig struct {

@@ -209,7 +209,7 @@ func fixTables() map[string]string {
 			provisioning_parameters text NOT NULL,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-			delated_at TIMESTAMPTZ NOT NULL DEFAULT '0001-01-01 00:00:00+00'
+			deleted_at TIMESTAMPTZ NOT NULL DEFAULT '0001-01-01 00:00:00+00'
 		)`, postsql.InstancesTableName),
 		postsql.OperationTableName: fmt.Sprintf(
 			`CREATE TABLE IF NOT EXISTS %s (

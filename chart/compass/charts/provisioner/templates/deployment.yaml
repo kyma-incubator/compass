@@ -78,36 +78,47 @@ spec:
               value: "{{ .Values.global.provisioner.secrets.integrationSystemCredentials.name }}"
             - name: APP_SKIP_DIRECTOR_CERT_VERIFICATION
               value: "{{ or .Values.global.isLocalEnv .Values.security.skipTLSCertificateVeryfication }}"
-            - name: APP_INSTALLATION_TIMEOUT
+            - name: APP_PROVISIONING_TIMEOUT_INSTALLATION
               value: "{{ .Values.installation.timeout }}"
-            - name: APP_INSTALLATION_ERRORS_COUNT_FAILURE_THRESHOLD
-              value: "{{ .Values.installation.errorsCountFailureThreshold }}"
+            - name: APP_PROVISIONING_TIMEOUT_UPGRADE
+              value: "{{ .Values.installation.timeout }}"
+            - name: APP_PROVISIONING_TIMEOUT_AGENT_CONFIGURATION
+              value: "{{ .Values.runtimeAgent.configurationTimeout }}"
+            - name: APP_PROVISIONING_TIMEOUT_AGENT_CONNECTION
+              value: "{{ .Values.runtimeAgent.connectionTimeout }}"
             - name: APP_GARDENER_PROJECT
               value: {{ .Values.gardener.project }}
             - name: APP_GARDENER_KUBECONFIG_PATH
               value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_GARDENER_AUDIT_LOGS_POLICY_CONFIG_MAP
               value: {{ .Values.gardener.auditLogsPolicyConfigMap }}
-            - name: APP_GARDENER_AUDIT_LOGS_TENANT
-              valueFrom:
-                configMapKeyRef:
-                  optional: true
-                  name: {{ .Values.global.auditlog.configmap.name }}
-                  key: auditlog-tenant
+            - name: APP_GARDENER_AUDIT_LOGS_TENANT_CONFIG_PATH
+              value: {{ .Values.gardener.auditLogTenantConfigPath }}
             - name: APP_PROVISIONER
               value: {{ .Values.provisioner }}
+            - name: APP_LATEST_DOWNLOADED_RELEASES
+              value: "5"
             - name: APP_SUPPORT_ON_DEMAND_RELEASES
               value: "{{ .Values.kymaRelease.onDemand.enabled }}"
             - name: APP_DOWNLOAD_PRE_RELEASES
               value: "{{ .Values.kymaRelease.preReleases.enabled }}"
             - name: APP_LOG_LEVEL
               value: "{{ .Values.logs.level }}"
+            - name: APP_ENQUEUE_IN_PROGRESS_OPERATIONS
+              value: "true"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            - mountPath: /gardener/kubeconfig
-              name: gardener-kubeconfig
-              readOnly: true
+          {{if .Values.gardener.auditLogTenantConfigMapName }}
+          - mountPath: /gardener/tenant
+            name: gardener-audit-log-tenant-config
+            readOnly: true
+          {{- end }}
+          - mountPath: /gardener/kubeconfig
+            name: gardener-kubeconfig
+            readOnly: true
         {{- with .Values.deployment.securityContext }}
-          securityContext:
+        securityContext:
 {{ toYaml . | indent 12 }}
         {{- end }}
 
@@ -125,13 +136,18 @@ spec:
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
-        {{end}}
-      volumes:
-      {{if eq .Values.global.database.embedded.enabled false}}
-      - name: cloudsql-instance-credentials
-        secret:
-          secretName: cloudsql-instance-credentials
-      {{end}}
-      - name: gardener-kubeconfig
-        secret:
-          secretName: {{ .Values.gardener.secretName }}
+  {{end}}
+volumes:
+  {{if eq .Values.global.database.embedded.enabled false}}
+  - name: cloudsql-instance-credentials
+    secret:
+      secretName: cloudsql-instance-credentials
+    {{end}}
+  - name: gardener-kubeconfig
+    secret:
+      secretName: {{ .Values.gardener.secretName }}
+    {{if .Values.gardener.auditLogTenantConfigMapName }}
+  - name: gardener-audit-log-tenant-config
+    configMap:
+      name: {{ .Values.gardener.auditLogTenantConfigMapName }}
+    {{end}}

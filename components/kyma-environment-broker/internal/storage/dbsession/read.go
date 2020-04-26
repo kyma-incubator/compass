@@ -22,7 +22,7 @@ func (r readSession) FindAllInstancesJoinedWithOperation(prct ...predicate.Predi
 
 	join := fmt.Sprintf("%s.instance_id = %s.instance_id", postsql.InstancesTableName, postsql.OperationTableName)
 	stmt := r.session.
-		Select("instances.instance_id, instances.runtime_id, instances.global_account_id, instances.service_id, instances.service_plan_id, instances.dashboard_url, instances.provisioning_parameters, instances.created_at, instances.updated_at, instances.delated_at, instances.sub_account_id, instances.service_name, instances.service_plan_name, operations.state, operations.description, operations.type").
+		Select("instances.instance_id, instances.runtime_id, instances.global_account_id, instances.service_id, instances.service_plan_id, instances.dashboard_url, instances.provisioning_parameters, instances.created_at, instances.updated_at, instances.deleted_at, instances.sub_account_id, instances.service_name, instances.service_plan_name, operations.state, operations.description, operations.type").
 		From(postsql.InstancesTableName).
 		LeftJoin(postsql.OperationTableName, join)
 
