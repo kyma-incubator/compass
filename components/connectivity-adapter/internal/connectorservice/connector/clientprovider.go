@@ -1,8 +1,9 @@
 package connector
 
 import (
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 )
 
 //go:generate mockery -name=ClientProvider -output=automock -outpkg=automock -case=underscore
