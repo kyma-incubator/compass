@@ -1,14 +1,8 @@
 package connector
 
 import (
-	"net/http"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
-)
-
-const (
-	timeout = 30 * time.Second
+	"net/http"
 )
 
 //go:generate mockery -name=ClientProvider -output=automock -outpkg=automock -case=underscore
@@ -29,5 +23,5 @@ func NewClientProvider(connectorURL string) connectorClientProvider {
 func (dcp connectorClientProvider) Client(r *http.Request) Client {
 	gqlClient := gqlcli.NewAuthorizedGraphQLClient(dcp.connectorURL, r)
 
-	return NewClient(gqlClient, timeout)
+	return NewClient(gqlClient)
 }

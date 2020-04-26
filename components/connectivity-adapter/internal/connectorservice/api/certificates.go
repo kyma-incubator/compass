@@ -48,6 +48,8 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	contextLogger.Info("Generating certificate")
+
 	{
 		certificationResult, err := ch.connectorClientProvider.Client(r).SignCSR(certRequest.CSR, authorizationHeaders)
 		if err != nil {

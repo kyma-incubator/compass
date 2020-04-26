@@ -17,7 +17,7 @@ type client struct {
 	timeout       time.Duration
 }
 
-func NewClient(gqlClient *graphql.Client, timeout time.Duration) Client {
+func NewClient(gqlClient *graphql.Client) Client {
 	return client{
 		gqlAPIClient: gqlClient,
 		timeout:      30 * time.Second,
