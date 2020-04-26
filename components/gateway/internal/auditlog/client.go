@@ -87,6 +87,8 @@ func (c *Client) sendAuditLog(req *http.Request) error {
 		log.Println(string(output))
 		return errors.Errorf("Write to auditlog failed with status code: %d", response.StatusCode)
 	}
+
+	log.Printf("Auditlog entry sent succesfully: %d\n", response.StatusCode)
 	return nil
 }
 
