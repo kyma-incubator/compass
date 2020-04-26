@@ -15,6 +15,8 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/pkg/errors"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
@@ -70,13 +72,12 @@ func NewProvisioningService(
 }
 
 func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, error) {
-	// runtimeInput := config.RuntimeInput
+	runtimeInput := config.RuntimeInput
 
-	// runtimeID, err := r.directorService.CreateRuntime(runtimeInput, tenant)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Failed to register Runtime: %s", err.Error())
-	// }
-	runtimeID := r.uuidGenerator.New()
+	runtimeID, err := r.directorService.CreateRuntime(runtimeInput, tenant)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to register Runtime: %s", err.Error())
+	}
 
 	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config, tenant, subAccount)
 	if err != nil {
@@ -113,11 +114,11 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 }
 
 func (r *service) unregisterFailedRuntime(id, tenant string) {
-	// log.Infof("Starting provisioning failed. Unregistering Runtime %s...", id)
-	// err := r.directorService.DeleteRuntime(id, tenant)
-	// if err != nil {
-	// 	log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())
-	// }
+	log.Infof("Starting provisioning failed. Unregistering Runtime %s...", id)
+	err := r.directorService.DeleteRuntime(id, tenant)
+	if err != nil {
+		log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())
+	}
 }
 
 func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {
@@ -210,10 +211,10 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 func (r *service) MarkRuntimeAsDeleted(id, tenant string) (string, error) {
 	session := r.dbSessionFactory.NewWriteSession()
 
-	// err := r.directorService.DeleteRuntime(id, tenant)
-	// if err != nil {
-	// 	log.Warnf("Failed to unregister stale Runtime %s: %s", id, err.Error())
-	// }
+	err := r.directorService.DeleteRuntime(id, tenant)
+	if err != nil {
+		log.Warnf("Failed to unregister stale Runtime %s: %s", id, err.Error())
+	}
 
 	dberr := session.MarkClusterAsDeleted(id)
 	if dberr != nil {
