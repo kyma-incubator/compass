@@ -76,7 +76,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	// if err != nil {
 	// 	return nil, fmt.Errorf("Failed to register Runtime: %s", err.Error())
 	// }
-	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbb"
+	runtimeID := r.uuidGenerator.New()
 
 	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config, tenant, subAccount)
 	if err != nil {
