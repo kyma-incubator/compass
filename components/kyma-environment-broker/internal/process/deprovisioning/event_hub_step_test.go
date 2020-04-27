@@ -35,8 +35,8 @@ func Test_StepsDeprovisionSucceeded(t *testing.T) {
 		wantStates          func(t *testing.T) []wantStateFunction
 	}{
 		{
-			// 1. a ResourceGroup exists before we call the deproviosioning step
-			// 2. resourceGroup is in deletion state during retry wait time before we call the deproviosioning step again
+			// 1. a ResourceGroup exists before we call the deprovisioning step
+			// 2. resourceGroup is in deletion state during retry wait time before we call the deprovisioning step again
 			// 3. expectation is that no new deprovisioning is triggered
 			// 4. after calling step again - expectation is that the deprovisioning succeeded now
 			name:          "ResourceGroupInDeletionMode",
@@ -73,8 +73,8 @@ func Test_StepsDeprovisionSucceeded(t *testing.T) {
 		},
 		{
 			// Idea:
-			// 1. a ResourceGroup exists before we call the deproviosioning step
-			// 2. resourceGroup got deleted during retry wait time before we call the deproviosioning step again
+			// 1. a ResourceGroup exists before we call the deprovisioning step
+			// 2. resourceGroup got deleted during retry wait time before we call the deprovisioning step again
 			// 3. expectation is that the deprovisioning succeeded now
 			name:          "ResourceGroupExists",
 			giveOperation: fixDeprovisioningOperationWithParameters,
@@ -104,13 +104,32 @@ func Test_StepsDeprovisionSucceeded(t *testing.T) {
 		{
 
 			// Idea:
-			// 1. a ResourceGroup does not exist before we call the deproviosioning step
+			// 1. a ResourceGroup does not exist before we call the deprovisioning step
 			// 2. expectation is that the deprovisioning succeeded
-			name: "ResourceGroupDoesNotExist",
+			name:          "ResourceGroupDoesNotExist",
+			giveOperation: fixDeprovisioningOperationWithParameters,
 			giveSteps: func(t *testing.T, memoryStorageOp storage.Operations, instanceStorage storage.Instances, accountProvider *hyperscalerautomock.AccountProvider) []DeprovisionAzureEventHubStep {
 				namespaceClient := azuretesting.NewFakeNamespaceClientResourceGroupDoesNotExist()
 				step := fixEventHubStep(memoryStorageOp, instanceStorage, azuretesting.NewFakeHyperscalerProvider(namespaceClient), accountProvider)
 
+				return []DeprovisionAzureEventHubStep{
+					step,
+				}
+			},
+			wantStates: func(t *testing.T) []wantStateFunction {
+				return []wantStateFunction{
+					func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error, azureClient azuretesting.FakeNamespaceClient) {
+						ensureOperationSuccessful(t, operation, when, err)
+					},
+				}
+			},
+		},
+		{
+			name:          "Operation Event Hub already deleted",
+			giveOperation: fixDeprovisioningOperationWithDeletedEventHub,
+			giveSteps: func(t *testing.T, memoryStorageOp storage.Operations, instanceStorage storage.Instances, accountProvider *hyperscalerautomock.AccountProvider) []DeprovisionAzureEventHubStep {
+				namespaceClient := azuretesting.NewFakeNamespaceClientResourceGroupDoesNotExist()
+				step := fixEventHubStep(memoryStorageOp, instanceStorage, azuretesting.NewFakeHyperscalerProvider(namespaceClient), accountProvider)
 				return []DeprovisionAzureEventHubStep{
 					step,
 				}
@@ -130,8 +149,7 @@ func Test_StepsDeprovisionSucceeded(t *testing.T) {
 			// given
 			memoryStorage := storage.NewMemoryStorage()
 			accountProvider := fixAccountProvider()
-
-			op := fixDeprovisioningOperationWithParameters()
+			op := tt.giveOperation()
 			// this is required to avoid storage retries (without this statement there will be an error => retry)
 			err := memoryStorage.Operations().InsertDeprovisioningOperation(op)
 			require.NoError(t, err)
@@ -319,7 +337,6 @@ func fixInstance() internal.Instance {
 }
 
 func fixInvalidInstance() internal.Instance {
-	// TODO(nachtmaar): share with provisiong test ?
 	return internal.Instance{
 		InstanceID:             fixInstanceID,
 		ProvisioningParameters: `}{INVALID JSON}{`}
@@ -356,6 +373,14 @@ func fixDeprovisioningOperationWithParameters() internal.DeprovisioningOperation
 			ProvisionerOperationID: fixProvisionerOperationID,
 			Description:            "",
 			UpdatedAt:              time.Now(),
+		},
+	}
+}
+
+func fixDeprovisioningOperationWithDeletedEventHub() internal.DeprovisioningOperation {
+	return internal.DeprovisioningOperation{
+		EventHub: internal.EventHub{
+			Deleted: true,
 		},
 	}
 }

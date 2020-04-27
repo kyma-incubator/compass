@@ -43,9 +43,10 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 
 	instance, err := getInstance(s.instanceStorage, operation, log)
 	switch err.(type) {
+	case nil:
 	case instanceNotFoundError:
 		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned")
-	case instanceGetError:
+	default:
 		return operation, 1 * time.Second, nil
 	}
 

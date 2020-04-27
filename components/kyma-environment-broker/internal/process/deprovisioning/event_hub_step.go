@@ -17,6 +17,7 @@ import (
 
 type DeprovisionAzureEventHubStep struct {
 	OperationManager *process.DeprovisionOperationManager
+	operationStorage storage.Operations
 	instanceStorage  storage.Instances
 	processazure.EventHub
 }
@@ -24,6 +25,7 @@ type DeprovisionAzureEventHubStep struct {
 func NewDeprovisionAzureEventHubStep(os storage.Operations, is storage.Instances, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider, ctx context.Context) DeprovisionAzureEventHubStep {
 	return DeprovisionAzureEventHubStep{
 		OperationManager: process.NewDeprovisionOperationManager(os),
+		operationStorage: os,
 		instanceStorage:  is,
 		EventHub: processazure.EventHub{
 			HyperscalerProvider: hyperscalerProvider,
@@ -40,13 +42,22 @@ func (s DeprovisionAzureEventHubStep) Name() string {
 }
 
 func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	if operation.EventHub.Deleted {
+		log.Info("Event Hub is already deprovisioned")
+		return operation, 0, nil
+	}
+
 	hypType := hyperscaler.Azure
 
 	instance, err := getInstance(s.instanceStorage, operation, log)
 	switch err.(type) {
+	case nil:
 	case instanceNotFoundError:
-		return s.OperationManager.OperationSucceeded(operation, "instance already deprovisioned")
-	case instanceGetError:
+		operation.EventHub.Deleted = true
+		updatedOperation, err := s.operationStorage.UpdateDeprovisioningOperation(operation)
+		log.Errorf("while updating the database, error: %v", err)
+		return s.OperationManager.OperationSucceeded(*updatedOperation, "instance already deprovisioned")
+	default:
 		return operation, 1 * time.Second, nil
 	}
 
@@ -59,7 +70,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		log.Errorf(errorMessage)
 		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
-	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
+	log.Infof("HAP lookup for credentials to deprovision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
 	//get hyperscaler credentials from HAP
 	credentials, err := s.EventHub.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
@@ -95,7 +106,12 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 			} else {
 				log.Info("deprovisioning of event hub step succeeded")
 			}
-			return operation, 0, nil
+			operation.EventHub.Deleted = true
+			updatedOperation, err := s.operationStorage.UpdateDeprovisioningOperation(operation)
+			if err != nil {
+				log.Errorf("while updating the database, error: %v", err)
+			}
+			return *updatedOperation, 0, nil
 		}
 		// custom error occurred while getting resource group - try again
 		errorMessage := fmt.Sprintf("error while getting resource group, error: %v", err)
@@ -107,13 +123,13 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		return s.OperationManager.OperationFailed(operation, errorMessage)
 	}
 	deprovisioningState := *resourceGroup.Properties.ProvisioningState
-	if deprovisioningState != azure.AzureFutureOperationDeleting {
+	if deprovisioningState != azure.FutureOperationDeleting {
 		future, err := namespaceClient.DeleteResourceGroup(s.EventHub.Context, tags)
 		if err != nil {
 			errorMessage := fmt.Sprintf("unable to delete Azure resource group: %v", err)
 			return s.OperationManager.RetryOperation(operation, errorMessage, time.Minute, time.Hour, log)
 		}
-		if future.Status() != azure.AzureFutureOperationSucceeded {
+		if future.Status() != azure.FutureOperationSucceeded {
 			var retryAfterDuration time.Duration
 			if retryAfter, retryAfterHeaderExist := future.GetPollingDelay(); retryAfterHeaderExist {
 				retryAfterDuration = retryAfter

@@ -11,7 +11,7 @@ import (
 )
 
 type HyperscalerProvider interface {
-	GetClient(config *Config, logger logrus.FieldLogger) (AzureInterface, error)
+	GetClient(config *Config, logger logrus.FieldLogger) (Interface, error)
 }
 
 var _ HyperscalerProvider = (*azureProvider)(nil)
@@ -23,7 +23,7 @@ func NewAzureProvider() HyperscalerProvider {
 }
 
 // GetClient gets a client for interacting with Azure
-func (ac *azureProvider) GetClient(config *Config, logger logrus.FieldLogger) (AzureInterface, error) {
+func (ac *azureProvider) GetClient(config *Config, logger logrus.FieldLogger) (Interface, error) {
 
 	environment, err := config.Environment()
 	if err != nil {

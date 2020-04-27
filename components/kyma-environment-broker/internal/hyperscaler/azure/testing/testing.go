@@ -15,7 +15,7 @@ import (
 )
 
 // ensure the fake Client is implementing the interface
-var _ azure.AzureInterface = (*FakeNamespaceClient)(nil)
+var _ azure.Interface = (*FakeNamespaceClient)(nil)
 
 /// A fake Client for Azure EventHubs Namespace handling
 type FakeNamespaceClient struct {
@@ -62,19 +62,19 @@ func (nc *FakeNamespaceClient) DeleteResourceGroup(ctx context.Context, tags azu
 	return resources.GroupsDeleteFuture{}, nc.DeleteResourceGroupError
 }
 
-func NewFakeNamespaceClientCreationError() azure.AzureInterface {
+func NewFakeNamespaceClientCreationError() azure.Interface {
 	return &FakeNamespaceClient{PersistEventhubsNamespaceError: fmt.Errorf("error while creating namespace")}
 }
 
-func NewFakeNamespaceClientListError() azure.AzureInterface {
+func NewFakeNamespaceClientListError() azure.Interface {
 	return &FakeNamespaceClient{AccessKeysError: fmt.Errorf("cannot list namespaces")}
 }
 
-func NewFakeNamespaceResourceGroupError() azure.AzureInterface {
+func NewFakeNamespaceResourceGroupError() azure.Interface {
 	return &FakeNamespaceClient{ResourceGroupError: fmt.Errorf("cannot create resource group")}
 }
 
-func NewFakeNamespaceAccessKeysNil() azure.AzureInterface {
+func NewFakeNamespaceAccessKeysNil() azure.Interface {
 	return &FakeNamespaceClient{
 		// no error here
 		AccessKeysError: nil,
@@ -106,8 +106,8 @@ func NewFakeNamespaceClientResourceGroupDeleteError() *FakeNamespaceClient {
 		DeleteResourceGroupError: errors.New("error while trying to delete resource group"),
 		GetResourceGroupReturnValue: resources.Group{
 			Response:   autorest.Response{},
-			Name:       ptr.String("montaro"),
-			Properties: &resources.GroupProperties{ProvisioningState: ptr.String(azure.AzureFutureOperationSucceeded)},
+			Name:       ptr.String("fake-resource-group"),
+			Properties: &resources.GroupProperties{ProvisioningState: ptr.String(azure.FutureOperationSucceeded)},
 		},
 	}
 }
@@ -122,8 +122,8 @@ func NewFakeNamespaceClientResourceGroupInDeletionMode() *FakeNamespaceClient {
 	return &FakeNamespaceClient{
 		GetResourceGroupReturnValue: resources.Group{
 			Response:   autorest.Response{},
-			Name:       ptr.String("montaro"),
-			Properties: &resources.GroupProperties{ProvisioningState: ptr.String(azure.AzureFutureOperationDeleting)},
+			Name:       ptr.String("fake-resource-group"),
+			Properties: &resources.GroupProperties{ProvisioningState: ptr.String(azure.FutureOperationDeleting)},
 		},
 	}
 }
@@ -132,8 +132,8 @@ func NewFakeNamespaceClientResourceGroupExists() *FakeNamespaceClient {
 	return &FakeNamespaceClient{
 		GetResourceGroupReturnValue: resources.Group{
 			Response:   autorest.Response{},
-			Name:       ptr.String("montaro"),
-			Properties: &resources.GroupProperties{ProvisioningState: ptr.String(azure.AzureFutureOperationSucceeded)},
+			Name:       ptr.String("fake-resource-group"),
+			Properties: &resources.GroupProperties{ProvisioningState: ptr.String(azure.FutureOperationSucceeded)},
 		},
 	}
 }
@@ -142,15 +142,15 @@ func NewFakeNamespaceClientResourceGroupExists() *FakeNamespaceClient {
 var _ azure.HyperscalerProvider = (*FakeHyperscalerProvider)(nil)
 
 type FakeHyperscalerProvider struct {
-	Client azure.AzureInterface
+	Client azure.Interface
 	Err    error
 }
 
-func (ac *FakeHyperscalerProvider) GetClient(config *azure.Config, logger logrus.FieldLogger) (azure.AzureInterface, error) {
+func (ac *FakeHyperscalerProvider) GetClient(config *azure.Config, logger logrus.FieldLogger) (azure.Interface, error) {
 	return ac.Client, ac.Err
 }
 
-func NewFakeHyperscalerProvider(client azure.AzureInterface) azure.HyperscalerProvider {
+func NewFakeHyperscalerProvider(client azure.Interface) azure.HyperscalerProvider {
 	return &FakeHyperscalerProvider{
 		Client: client,
 		Err:    nil,

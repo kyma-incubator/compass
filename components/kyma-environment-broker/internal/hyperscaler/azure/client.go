@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	AzureFutureOperationSucceeded string = "Succeeded"
-	AzureFutureOperationDeleting  string = "Deleting"
+	FutureOperationSucceeded string = "Succeeded"
+	FutureOperationDeleting  string = "Deleting"
 )
 
-type AzureInterface interface {
+type Interface interface {
 	GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
 	CreateResourceGroup(ctx context.Context, config *Config, name string, tags Tags) (resources.Group, error)
 	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags Tags) (*eventhub.EHNamespace, error)
@@ -22,9 +22,9 @@ type AzureInterface interface {
 	DeleteResourceGroup(ctx context.Context, tags Tags) (resources.GroupsDeleteFuture, error)
 }
 
-var _ AzureInterface = (*AzureClient)(nil)
+var _ Interface = (*Client)(nil)
 
-type AzureClient struct {
+type Client struct {
 	// the actual azure client
 	eventhubNamespaceClient eventhub.NamespacesClient
 	resourcegroupClient     resources.GroupsClient
@@ -43,33 +43,33 @@ func (e ResourceGroupDoesNotExist) Error() string {
 	return e.errorMessage
 }
 
-func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourcegroupClient resources.GroupsClient, logger logrus.FieldLogger) *AzureClient {
-	return &AzureClient{
+func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourcegroupClient resources.GroupsClient, logger logrus.FieldLogger) *Client {
+	return &Client{
 		eventhubNamespaceClient: namespaceClient,
 		resourcegroupClient:     resourcegroupClient,
 		logger:                  logger,
 	}
 }
 
-func (nc *AzureClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
+func (nc *Client) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
 	return nc.eventhubNamespaceClient.ListKeys(ctx, resourceGroupName, namespaceName, authorizationRuleName)
 }
 
-func (nc *AzureClient) CreateResourceGroup(ctx context.Context, config *Config, name string, tags Tags) (resources.Group, error) {
+func (nc *Client) CreateResourceGroup(ctx context.Context, config *Config, name string, tags Tags) (resources.Group, error) {
 	// we need to use a copy of the location, because the following azure call will modify it
 	locationCopy := config.GetLocation()
 	return nc.resourcegroupClient.CreateOrUpdate(ctx, name, resources.Group{Location: &locationCopy, Tags: tags})
 }
 
-func (nc *AzureClient) CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags Tags) (*eventhub.EHNamespace, error) {
+func (nc *Client) CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags Tags) (*eventhub.EHNamespace, error) {
 	// we need to use a copy of the location, because the following azure call will modify it
 	locationCopy := azureCfg.GetLocation()
 	parameters := eventhub.EHNamespace{Location: &locationCopy, Tags: tags}
-	ehNamespace, err := nc.createAndWaitNamespace(ctx, groupName, namespace, parameters)
+	ehNamespace, err := nc.createNamespaceAndWait(ctx, groupName, namespace, parameters)
 	return &ehNamespace, err
 }
 
-func (nc *AzureClient) DeleteResourceGroup(ctx context.Context, tags Tags) (resources.GroupsDeleteFuture, error) {
+func (nc *Client) DeleteResourceGroup(ctx context.Context, tags Tags) (resources.GroupsDeleteFuture, error) {
 	// get name of resource group
 	resourceGroup, err := nc.GetResourceGroup(ctx, tags)
 	if err != nil {
@@ -87,7 +87,7 @@ func (nc *AzureClient) DeleteResourceGroup(ctx context.Context, tags Tags) (reso
 
 // GetResourceGroup gets the resource group by tags.
 // If more than one resource group is found, it is treated as an error.
-func (nc *AzureClient) GetResourceGroup(ctx context.Context, tags Tags) (resources.Group, error) {
+func (nc *Client) GetResourceGroup(ctx context.Context, tags Tags) (resources.Group, error) {
 	if tags[TagInstanceID] == nil {
 		return resources.Group{}, fmt.Errorf("serviceInstance is nil")
 	}
@@ -112,7 +112,7 @@ func (nc *AzureClient) GetResourceGroup(ctx context.Context, tags Tags) (resourc
 	return resources.Group{}, NewResourceGroupDoesNotExist(fmt.Sprintf("no resource group found for service instance id: %s", serviceInstanceID))
 }
 
-func (nc *AzureClient) createAndWaitNamespace(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
+func (nc *Client) createNamespaceAndWait(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
 	future, err := nc.eventhubNamespaceClient.CreateOrUpdate(ctx, resourceGroupName, namespaceName, parameters)
 	if err != nil {
 		return eventhub.EHNamespace{}, err

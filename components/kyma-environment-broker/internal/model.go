@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
 type ProvisionInputCreator interface {
@@ -44,6 +44,10 @@ type AvsLifecycleData struct {
 	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`
 }
 
+type EventHub struct {
+	Deleted bool `json:"event_hub_deleted"`
+}
+
 type Instance struct {
 	InstanceID      string
 	RuntimeID       string
@@ -67,7 +71,7 @@ func (instance Instance) GetProvisioningParameters() (ProvisioningParameters, er
 
 	err := json.Unmarshal([]byte(instance.ProvisioningParameters), &pp)
 	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+		return pp, errors.Wrap(err, "while unmarshalling provisioning parameters")
 	}
 
 	return pp, nil
@@ -112,6 +116,8 @@ type DeprovisioningOperation struct {
 	Operation `json:"-"`
 
 	Avs AvsLifecycleData `json:"avs"`
+
+	EventHub EventHub `json:"eh"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
