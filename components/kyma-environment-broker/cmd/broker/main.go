@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/health"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/httputil"
@@ -84,6 +85,7 @@ type Config struct {
 	Avs avs.Config
 	LMS lms.Config
 	IAS ias.Config
+	EDP edp.Config
 }
 
 func main() {
@@ -167,6 +169,8 @@ func main() {
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, runtimeProvider, cfg.Provisioning, cfg.KymaVersion)
 	fatalOnError(err)
 
+	edpClient := edp.NewClient(cfg.EDP, logs)
+
 	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
 	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
@@ -209,6 +213,11 @@ func main() {
 			disabled: cfg.IAS.Disabled,
 		},
 		{
+			weight:   1,
+			step:     provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
+			disabled: cfg.EDP.Disabled,
+		},
+		{
 			weight: 2,
 			step:   provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
 		},
@@ -246,6 +255,11 @@ func main() {
 		{
 			weight: 1,
 			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+		},
+		{
+			weight:   1,
+			step:     deprovisioning.NewEDPDeregistrationStep(edpClient, cfg.EDP),
+			disabled: cfg.EDP.Disabled,
 		},
 		{
 			weight:   1,

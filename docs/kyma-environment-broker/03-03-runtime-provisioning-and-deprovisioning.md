@@ -18,6 +18,7 @@ The provisioning process contains the following steps:
 | AVS_Configuration_Step                 | AvS                      | Sets up external and internal monitoring of Kyma Runtime.                                      | @abbi-guarav     |
 | Create_LMS_Tenant                      | LMS                      | Requests a tenant in the LMS system or provides a tenant ID if it was created before.                                                              | @piotrmiskiewicz |
 | IAS_Registration                       | Identity Authentication Service | Registers a new ServiceProvider on IAS, generates client ID and Secret, and inserts them to Grafana overrides. This step is not required and can be disabled. | @jasiu001 |
+| EDP_Registration                       | Event Data Platform      | Registers a SKR on Event Data Platform with the necessary parameters. This step is not required and can be disabled. | @jasiu001 |
 | Provision Azure Event Hubs             | Event Hub                | Creates the Azure Event Hub Namespace which is a managed Kafka cluster for a Kyma Runtime.                                                       | @anishj0shi      |
 | Overrides_From_Secrets_And_Config_Step | Kyma overrides           | Configures default overrides for Kyma.                                                                                                          | @jasiu001        |
 | ServiceManagerOverrides                | Service Manager          | Configures overrides with Service Manager credentials.                                                                                          | @mszostok        |
@@ -37,7 +38,8 @@ The deprovisioning process contains the following steps:
 | Deprovision_Initialization   | Deprovisioning | Done        | Initializes the `DeprovisioningOperation` instance with data fetched from the `ProvisioningOperation`. | @polskikiel |
 | Deprovision Azure Event Hubs | Event Hub      | In progress | Deletes the Azure Event Hub Namespace.                                                  | @montaro  |
 | IAS_Deregistration           | Identity Authentication Service | Done | Removes the ServiceProvider from IAS. | @jasiu001 |
-| Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning of a Runtime in the Runtime Provisioner.                                            | @polskikiel |
+| EDP_Deregistration           | Event Data Platform | Done | Removes all entries about SKR from Event Data Platform. | @jasiu001 |
+| Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning of a Runtime in the Runtime Provisioner. | @polskikiel |
 
 
 ## Add provisioning or deprovisioning step

@@ -144,7 +144,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
-		repeat, err := s.handleDashboardURL(instance)
+		repeat, err := s.handleDashboardURL(instance, log)
 		if err != nil || repeat != 0 {
 			return operation, repeat, err
 		}
@@ -160,9 +160,10 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()))
 }
 
-func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance) (time.Duration, error) {
+func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log logrus.FieldLogger) (time.Duration, error) {
 	dashboardURL, err := s.directorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
 	if kebError.IsTemporaryError(err) {
+		log.Errorf("cannot get console URL from director client: %s", err)
 		return 3 * time.Minute, nil
 	}
 	if err != nil {
@@ -172,6 +173,7 @@ func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance) (ti
 	instance.DashboardURL = dashboardURL
 	err = s.instanceStorage.Update(*instance)
 	if err != nil {
+		log.Errorf("cannot update instance: %s", err)
 		return 10 * time.Second, nil
 	}
 
