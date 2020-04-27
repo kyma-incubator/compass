@@ -44,7 +44,7 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-1201"
+      version: "PR-1196"
     external_services_mock:
       dir:
       version: "PR-1217"
@@ -263,7 +263,7 @@ global:
       maxIdleConnections: 1
 
   auditlog:
-    configmapName: "compass-gateway-auditlog-config"
+    configMapName: "compass-gateway-auditlog-config"
     secretName: "compass-gateway-auditlog-secret"
 
   externalServicesMock:

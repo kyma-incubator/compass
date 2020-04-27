@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.global.auditlog.configmapName }}
+  name: {{ .Values.global.auditlog.configMapName }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}

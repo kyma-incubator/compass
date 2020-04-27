@@ -54,7 +54,7 @@ spec:
             - name: APP_AUDITLOG_TENANT
               valueFrom:
                 configMapKeyRef:
-                  name: {{ .Values.global.auditlog.configmapName }}
+                  name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-tenant
             {{ else if eq .Values.gateway.auditlog.authMode "oauth" }}
             - name: APP_AUDITLOG_AUTH_MODE
@@ -77,41 +77,41 @@ spec:
             - name: APP_AUDITLOG_OAUTH_USER
               valueFrom:
                 configMapKeyRef:
-                  name: {{ .Values.global.auditlog.configmapName }}
+                  name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-oauth-user-var
                   optional: true
             - name: APP_AUDITLOG_OAUTH_TENANT
               valueFrom:
                 configMapKeyRef:
-                  name: {{ .Values.global.auditlog.configmapName }}
+                  name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-oauth-tenant-var
                   optional: true
             {{ end }}
             - name: APP_AUDITLOG_URL
               valueFrom:
                 configMapKeyRef:
-                  name: {{ .Values.global.auditlog.configmapName }}
+                  name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-url
             - name: APP_AUDITLOG_CONFIG_PATH
               valueFrom:
                 configMapKeyRef:
-                  name: {{ .Values.global.auditlog.configmapName }}
+                  name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-config-path
             - name: APP_AUDITLOG_SECURITY_PATH
               valueFrom:
                 configMapKeyRef:
-                  name: {{ .Values.global.auditlog.configmapName }}
+                  name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-security-path
             - name: APP_AUDITLOG_CHANNEL_SIZE
               valueFrom:
                 configMapKeyRef:
-                  name: {{ .Values.global.auditlog.configmapName }}
+                  name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-channel-size
                   optional: true
             - name: APP_AUDITLOG_CHANNEL_TIMEOUT
               valueFrom:
                 configMapKeyRef:
-                  name: {{ .Values.global.auditlog.configmapName }}
+                  name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-channel-timeout
                   optional: true
 {{ end }}

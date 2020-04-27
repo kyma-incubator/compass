@@ -38,7 +38,9 @@ spec:
               - name: http
                 containerPort: {{ .Values.deployment.port }}
                 protocol: TCP
-            {{- with .Values.deployment.securityContext }}
+              resources:
+                {{- toYaml .Values.deployment.resources | nindent 16 }}
+              {{- with .Values.deployment.securityContext }}
               securityContext:
-{{ toYaml . | indent 16 }}
-            {{- end }}
+                {{ toYaml . | nindent 16 }}
+              {{- end }}
