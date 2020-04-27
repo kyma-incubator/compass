@@ -311,6 +311,23 @@ func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchReque
 	}
 }
 
+func fixModelFetchRequestWithCondition(id, url string, timestamp time.Time, condition model.FetchRequestStatusCondition) *model.FetchRequest {
+	return &model.FetchRequest{
+		ID:     id,
+		Tenant: tenantID,
+		URL:    url,
+		Auth:   nil,
+		Mode:   "SINGLE",
+		Filter: nil,
+		Status: &model.FetchRequestStatus{
+			Condition: condition,
+			Timestamp: timestamp,
+		},
+		ObjectType: model.APIFetchRequestReference,
+		ObjectID:   "foo",
+	}
+}
+
 func fixGQLFetchRequest(url string, timestamp time.Time) *graphql.FetchRequest {
 	return &graphql.FetchRequest{
 		Filter: nil,

@@ -299,7 +299,8 @@ func TestService_CreateToPackage(t *testing.T) {
 	timestamp := time.Now()
 	frID := "fr-id"
 	frURL := "foo.bar"
-
+	modelFr := fixModelFetchRequest(frID, frURL, timestamp)
+	modelFrSucceeded := fixModelFetchRequestWithCondition(frID, frURL, timestamp, model.FetchRequestStatusConditionSucceeded)
 	modelInput := model.APIDefinitionInput{
 		Name:      name,
 		TargetURL: targetUrl,
@@ -344,7 +345,9 @@ func TestService_CreateToPackage(t *testing.T) {
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				repo.On("Create", ctx, modelFr).Return(nil).Once()
+				repo.On("Update", ctx, modelFrSucceeded).Return(nil).Once()
+
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -355,7 +358,7 @@ func TestService_CreateToPackage(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("FetchAPISpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				svc.On("FetchAPISpec", fixModelFetchRequest(frID, frURL, timestamp)).Return(nil, nil).Once()
 				return svc
 			},
 			Input:       modelInput,
@@ -393,7 +396,7 @@ func TestService_CreateToPackage(t *testing.T) {
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(testErr).Once()
+				repo.On("Create", ctx, modelFr).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -404,6 +407,35 @@ func TestService_CreateToPackage(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
+				return svc
+			},
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Error - API Update",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
+				repo.On("Update", ctx, modelAPIDefinition).Return(testErr).Once()
+
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("Create", ctx, modelFr).Return(nil).Once()
+				repo.On("Update", ctx, modelFrSucceeded).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				svc.On("Generate").Return(frID).Once()
+				return svc
+			},
+			FetchRequestServiceFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				svc.On("FetchAPISpec", modelFr).Return(nil, nil).Once()
 				return svc
 			},
 			Input:       modelInput,
@@ -482,6 +514,9 @@ func TestService_Update(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID)
 
+	modelFr := fixModelFetchRequest(frID, frURL, timestamp)
+	modelFrSucceeded := fixModelFetchRequestWithCondition(frID, frURL, timestamp, model.FetchRequestStatusConditionSucceeded)
+
 	testCases := []struct {
 		Name                  string
 		RepositoryFn          func() *automock.APIRepository
@@ -503,7 +538,9 @@ func TestService_Update(t *testing.T) {
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
 				repo.On("DeleteByReferenceObjectID", ctx, tenantID, model.APIFetchRequestReference, id).Return(nil).Once()
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				repo.On("Create", ctx, modelFr).Return(nil).Once()
+				repo.On("Update", ctx, modelFrSucceeded).Return(nil).Once()
+
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -513,7 +550,7 @@ func TestService_Update(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("FetchAPISpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				svc.On("FetchAPISpec", modelFr).Return(nil, nil).Once()
 				return svc
 			},
 			InputID:     "foo",
@@ -531,12 +568,14 @@ func TestService_Update(t *testing.T) {
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
 				repo.On("DeleteByReferenceObjectID", ctx, tenantID, model.APIFetchRequestReference, id).Return(nil).Once()
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				repo.On("Create", ctx, modelFr).Return(nil).Once()
+				repo.On("Update", ctx, modelFrSucceeded).Return(nil).Once()
+
 				return repo
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("FetchAPISpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				svc.On("FetchAPISpec", modelFr).Return(nil, nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -582,7 +621,7 @@ func TestService_Update(t *testing.T) {
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
 				repo.On("DeleteByReferenceObjectID", ctx, tenantID, model.APIFetchRequestReference, id).Return(nil).Once()
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(testErr).Once()
+				repo.On("Create", ctx, modelFr).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -748,10 +787,12 @@ func TestService_RefetchAPISpec(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name            string
-		RepositoryFn    func() *automock.APIRepository
-		ExpectedAPISpec *model.APISpec
-		ExpectedErr     error
+		Name               string
+		RepositoryFn       func() *automock.APIRepository
+		FetchRequestRepoFn func() *automock.FetchRequestRepository
+		FetchRequestSvcFn  func() *automock.FetchRequestService
+		ExpectedAPISpec    *model.APISpec
+		ExpectedErr        error
 	}{
 		{
 			Name: "Success",
@@ -759,6 +800,15 @@ func TestService_RefetchAPISpec(t *testing.T) {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, apiID).Return(modelAPIDefinition, nil).Once()
 				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("GetByReferenceObjectID", ctx, tenantID, model.APIFetchRequestReference, apiID).Return(nil, nil)
+				return repo
+			},
+			FetchRequestSvcFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				return svc
 			},
 			ExpectedAPISpec: modelAPISpec,
 			ExpectedErr:     nil,
@@ -770,8 +820,35 @@ func TestService_RefetchAPISpec(t *testing.T) {
 				repo.On("GetByID", ctx, tenantID, apiID).Return(nil, testErr).Once()
 				return repo
 			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				return repo
+			},
+			FetchRequestSvcFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				return svc
+			},
 			ExpectedAPISpec: nil,
 			ExpectedErr:     testErr,
+		},
+		{
+			Name: "Get fetch request error",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", ctx, tenantID, apiID).Return(modelAPIDefinition, nil).Once()
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("GetByReferenceObjectID", ctx, tenantID, model.APIFetchRequestReference, apiID).Return(nil, testErr)
+				return repo
+			},
+			FetchRequestSvcFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				return svc
+			},
+			ExpectedAPISpec: nil,
+			ExpectedErr:     errors.Wrapf(testErr, "while getting FetchRequest by API Definition ID %s", apiID),
 		},
 	}
 
@@ -779,16 +856,21 @@ func TestService_RefetchAPISpec(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
-
-			svc := api.NewService(repo, nil, nil, nil)
+			frRepo := testCase.FetchRequestRepoFn()
+			frSvc := testCase.FetchRequestSvcFn()
+			svc := api.NewService(repo, frRepo, nil, frSvc)
 
 			// when
 			result, err := svc.RefetchAPISpec(ctx, apiID)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPISpec, result)
-			assert.Equal(t, testCase.ExpectedErr, err)
 
+			if testCase.ExpectedErr != nil {
+				assert.Equal(t, testCase.ExpectedErr.Error(), err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
 			repo.AssertExpectations(t)
 		})
 	}

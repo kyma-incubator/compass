@@ -313,6 +313,19 @@ func createPackage(t *testing.T, ctx context.Context, appID, pkgName string) gra
 	return resp
 }
 
+func createPackageWithInput(t *testing.T, ctx context.Context, appID string, input graphql.PackageCreateInput) graphql.PackageExt {
+	in, err := tc.graphqlizer.PackageCreateInputToGQL(input)
+	require.NoError(t, err)
+
+	req := fixAddPackageRequest(appID, in)
+	var resp graphql.PackageExt
+
+	err = tc.RunOperation(ctx, req, &resp)
+	require.NoError(t, err)
+
+	return resp
+}
+
 func getPackage(t *testing.T, ctx context.Context, appID, pkgID string) graphql.PackageExt {
 	req := fixPackageRequest(appID, pkgID)
 	pkg := graphql.ApplicationExt{}

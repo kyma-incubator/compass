@@ -39,14 +39,14 @@ type UIDService interface {
 
 //go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
 type FetchRequestService interface {
-	FetchAPISpec(ctx context.Context, fr *model.FetchRequest) *string
+	FetchAPISpec(fr *model.FetchRequest) (*string, error)
 }
 
 type service struct {
 	repo                APIRepository
 	fetchRequestRepo    FetchRequestRepository
 	uidService          UIDService
-	FetchRequestService FetchRequestService
+	fetchRequestService FetchRequestService
 	timestampGen        timestamp.Generator
 }
 
@@ -54,7 +54,7 @@ func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uid
 	return &service{repo: repo,
 		fetchRequestRepo:    fetchRequestRepo,
 		uidService:          uidService,
-		FetchRequestService: fetchRequestService,
+		fetchRequestService: fetchRequestService,
 		timestampGen:        timestamp.DefaultGenerator(),
 	}
 }
@@ -119,7 +119,8 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
-		api.Spec.Data = s.FetchRequestService.FetchAPISpec(ctx, fr)
+
+		s.fetchAPISpec(ctx, api, fr)
 
 		err = s.repo.Update(ctx, api)
 		if err != nil {
@@ -152,7 +153,9 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		if err != nil {
 			return errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
-		api.Spec.Data = s.FetchRequestService.FetchAPISpec(ctx, fr)
+
+		s.fetchAPISpec(ctx, api, fr)
+
 	}
 
 	err = s.repo.Update(ctx, api)
@@ -186,6 +189,15 @@ func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec
 	api, err := s.repo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return nil, err
+	}
+
+	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.APIFetchRequestReference, id)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return nil, errors.Wrapf(err, "while getting FetchRequest by API Definition ID %s", id)
+	}
+
+	if fetchRequest != nil {
+		s.fetchAPISpec(ctx, api, fetchRequest)
 	}
 
 	return api.Spec, nil
@@ -225,4 +237,15 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in mode
 	}
 
 	return fr, nil
+}
+
+func (s *service) fetchAPISpec(ctx context.Context, api *model.APIDefinition, fr *model.FetchRequest) {
+	var err error
+	api.Spec.Data, err = s.fetchRequestService.FetchAPISpec(fr)
+	if err != nil {
+		fr.Status.Condition = model.FetchRequestStatusConditionFailed
+	} else {
+		fr.Status.Condition = model.FetchRequestStatusConditionSucceeded
+	}
+	_ = s.fetchRequestRepo.Update(ctx, fr)
 }

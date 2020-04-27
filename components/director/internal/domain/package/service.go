@@ -40,6 +40,7 @@ type DocumentRepository interface {
 //go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
 type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
+	Update(ctx context.Context, item *model.FetchRequest) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -49,7 +50,7 @@ type UIDService interface {
 
 //go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
 type FetchRequestService interface {
-	FetchAPISpec(ctx context.Context, fr *model.FetchRequest) *string
+	FetchAPISpec(fr *model.FetchRequest) (*string, error)
 }
 
 type service struct {
@@ -258,7 +259,14 @@ func (s *service) createAPIs(ctx context.Context, packageID, tenant string, apis
 				return errors.Wrap(err, "while creating FetchRequest for application")
 			}
 
-			api.Spec.Data = s.fetchRequestService.FetchAPISpec(ctx, fr)
+			api.Spec.Data, err = s.fetchRequestService.FetchAPISpec(fr)
+			if err != nil {
+				fr.Status.Condition = model.FetchRequestStatusConditionFailed
+			} else {
+				fr.Status.Condition = model.FetchRequestStatusConditionSucceeded
+			}
+			_ = s.fetchRequestRepo.Update(ctx, fr)
+
 			err = s.apiRepo.Update(ctx, api)
 			if err != nil {
 				return errors.Wrap(err, "while updating api with api spec")

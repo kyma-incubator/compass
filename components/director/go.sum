@@ -85,6 +85,7 @@ github.com/kyma-incubator/compass v0.0.0-20200324084605-a9e02034e81a h1:AOJ7nHjd
 github.com/kyma-incubator/compass v0.0.0-20200408122638-cbf308943f93 h1:bZVS5TvBjNdZyoU2lJB+WNsAhxS8gKwFL/a4UXEGpgg=
 github.com/kyma-incubator/compass v0.0.0-20200415114012-a927b9a4d67d h1:pd6OIpd4JDXe/MvkF0Ue5gM8Ala8/XdN+ikoj4dvZbg=
 github.com/kyma-incubator/compass v0.0.0-20200422113159-a267c133e9b9 h1:MNv5UYy+IM5pfcmcDMzvZRn/AcDqW4KuqBNVPNmwRlY=
+github.com/kyma-incubator/compass v0.0.0-20200424090017-9f269bf5d8a5 h1:Z8mPNOtT2v+iU5TLsuoAEZ+L7QEoYiesjkL7MPyCzK8=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979 h1:wnrU/8skRjKqboJrlK1Mw9oQRuGs2sWMTrlIctNa3SQ=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/lestrrat-go/jwx v0.9.0 h1:Fnd0EWzTm0kFrBPzE/PEPp9nzllES5buMkksPMjEKpM=
@@ -111,6 +112,8 @@ github.com/modern-go/reflect2 v1.0.1 h1:9f412s+6RmYXLWZSEzVVgPGK7C2PphHj5RJrvfx9
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852 h1:Yl0tPBa8QPjGmesFh1D0rDy+q1Twx6FyU7VWHi8wZbI=
 github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852/go.mod h1:eqOVx5Vwu4gd2mmMZvVZsgIqNSaW3xxRThUJ0k/TPk4=
+github.com/opencontainers/runc v0.1.1 h1:GlxAyO6x8rfZYN9Tt0Kti5a/cP41iuiO2yYT0IJGY8Y=
+github.com/opencontainers/runc v0.1.1/go.mod h1:qT5XzbpPznkRYVz/mWwUaVBUv2rmF59PVA73FjuZG0U=
 github.com/opentracing/basictracer-go v1.0.0/go.mod h1:QfBfYuafItcjQuMwinw9GhYKwFXS9KnPs5lxoYwgW74=
 github.com/opentracing/opentracing-go v1.0.2/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
