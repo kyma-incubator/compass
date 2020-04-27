@@ -6,12 +6,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/configurationchange"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/oauth"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/configuration"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/health"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
@@ -30,6 +31,7 @@ func main() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "while loading configuration")
+
 	handler := initHTTP(cfg)
 	log.Printf("External Services Mock up and running on address: %s", cfg.Address)
 	err = http.ListenAndServe(cfg.Address, handler)
@@ -45,19 +47,19 @@ func exitOnError(err error, context string) {
 
 func initHTTP(cfg config) http.Handler {
 	logger := logrus.New()
-
 	router := mux.NewRouter()
-	configService := configuration.NewService()
-	configHandler := configuration.NewConfigurationHandler(configService, logger)
+	configChangeSvc := configurationchange.NewService()
 
+	configChangeHandler := configurationchange.NewConfigurationHandler(configChangeSvc, logger)
 	oauthHandler := oauth.NewHandler(cfg.ClientSecret, cfg.ClientID)
 
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
-	configChangeRouter := router.PathPrefix("/auditlog/v2/configuration-changes").Subrouter()
-	configChangeRouter.Use(authMiddleware)
-	configuration.InitConfigurationChangeHandler(configChangeRouter, configHandler)
 
-	router.HandleFunc("/auditlog/v2/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
+	configChangeRouter := router.PathPrefix("/audit-log/v2/configuration-changes").Subrouter()
+	configChangeRouter.Use(authMiddleware)
+	configurationchange.InitConfigurationChangeHandler(configChangeRouter, configChangeHandler)
+
+	router.HandleFunc("/audit-log/v2/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
 	return router
 }
 
@@ -67,7 +69,7 @@ func authMiddleware(next http.Handler) http.Handler {
 		if len(authHeader) == 0 {
 			w.Header().Add("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			_, err := io.WriteString(w, `{"error":"No auth header"}`)
+			_, err := io.WriteString(w, `{"error":"No Authorization header"}`)
 			exitOnError(err, "while writing auth response")
 			return
 		}

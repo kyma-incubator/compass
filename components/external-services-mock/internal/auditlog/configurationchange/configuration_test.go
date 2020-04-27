@@ -1,4 +1,4 @@
-package configuration_test
+package configurationchange_test
 
 import (
 	"bytes"
@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/configuration"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -61,13 +60,13 @@ func TestConfigChangeHandler_Save(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			svc := configuration.NewService()
+			svc := configurationchange.NewService()
 			input := testCase.input
 			testCase.inputManipulation(&input)
 			payload, err := json.Marshal(input)
 			require.NoError(t, err)
 
-			handler := configuration.NewConfigurationHandler(svc, nil)
+			handler := configurationchange.NewConfigurationHandler(svc, nil)
 			req := httptest.NewRequest(http.MethodPost, target, bytes.NewBuffer(payload))
 			w := httptest.NewRecorder()
 
@@ -104,11 +103,11 @@ func TestConfigChangeHandler_Save(t *testing.T) {
 func TestConfigChangeHandler_Delete(t *testing.T) {
 	//GIVEN
 	input := fixConfigurationChange(logID)
-	svc := configuration.NewService()
+	svc := configurationchange.NewService()
 	_, err := svc.Save(input)
 	require.NoError(t, err)
 
-	handler := configuration.NewConfigurationHandler(svc, nil)
+	handler := configurationchange.NewConfigurationHandler(svc, nil)
 
 	endpointPath := path.Join("/", logID)
 	req := httptest.NewRequest(http.MethodDelete, endpointPath, bytes.NewBuffer([]byte{}))
@@ -126,7 +125,7 @@ func TestConfigChangeHandler_Delete(t *testing.T) {
 
 func TestConfigChangeHandler_List(t *testing.T) {
 	//GIVEN
-	svc := configuration.NewService()
+	svc := configurationchange.NewService()
 	input := fixConfigurationChange(logID)
 	_, err := svc.Save(input)
 	require.NoError(t, err)
@@ -135,7 +134,7 @@ func TestConfigChangeHandler_List(t *testing.T) {
 	_, err = svc.Save(input)
 	require.NoError(t, err)
 
-	handler := configuration.NewConfigurationHandler(svc, nil)
+	handler := configurationchange.NewConfigurationHandler(svc, nil)
 	req := httptest.NewRequest(http.MethodGet, "http://localhost", bytes.NewBuffer([]byte{}))
 
 	//WHEN
@@ -148,12 +147,12 @@ func TestConfigChangeHandler_List(t *testing.T) {
 
 func TestConfigChangeHandler_Get(t *testing.T) {
 	//GIVEN
-	svc := configuration.NewService()
+	svc := configurationchange.NewService()
 	input := fixConfigurationChangeWithAttributes(logID)
 	_, err := svc.Save(input)
 	require.NoError(t, err)
 
-	handler := configuration.NewConfigurationHandler(svc, nil)
+	handler := configurationchange.NewConfigurationHandler(svc, nil)
 
 	endpointPath := path.Join("/", logID)
 	req := httptest.NewRequest(http.MethodGet, endpointPath, bytes.NewBuffer([]byte{}))
@@ -174,7 +173,7 @@ func TestConfigChangeHandler_Get(t *testing.T) {
 
 func TestConfigChangeHandler_SearchByString_Success(t *testing.T) {
 	//GIVEN
-	svc := configuration.NewService()
+	svc := configurationchange.NewService()
 	input := fixConfigurationChange(logID)
 	_, err := svc.Save(input)
 	require.NoError(t, err)
@@ -184,7 +183,7 @@ func TestConfigChangeHandler_SearchByString_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	requestURL := path.Join("/search")
-	handler := configuration.NewConfigurationHandler(svc, nil)
+	handler := configurationchange.NewConfigurationHandler(svc, nil)
 	req := httptest.NewRequest(http.MethodGet, requestURL, bytes.NewBuffer([]byte{}))
 	q := req.URL.Query()
 	q.Add("query", searchString)
