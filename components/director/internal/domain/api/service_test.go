@@ -786,6 +786,21 @@ func TestService_RefetchAPISpec(t *testing.T) {
 		Spec: modelAPISpec,
 	}
 
+	timestamp := time.Now()
+	fr := &model.FetchRequest{
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionInitial,
+			Timestamp: timestamp,
+		},
+	}
+
+	frSucceeded := &model.FetchRequest{
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionSucceeded,
+			Timestamp: timestamp,
+		},
+	}
+
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.APIRepository
@@ -808,6 +823,27 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			},
 			FetchRequestSvcFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
+				return svc
+			},
+			ExpectedAPISpec: modelAPISpec,
+			ExpectedErr:     nil,
+		},
+		{
+			Name: "Success - fetched API Spec",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", ctx, tenantID, apiID).Return(modelAPIDefinition, nil).Once()
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("GetByReferenceObjectID", ctx, tenantID, model.APIFetchRequestReference, apiID).Return(fr, nil)
+				repo.On("Update", ctx, frSucceeded).Return(nil)
+				return repo
+			},
+			FetchRequestSvcFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				svc.On("FetchAPISpec", fr).Return(&dataBytes, nil)
 				return svc
 			},
 			ExpectedAPISpec: modelAPISpec,
@@ -858,6 +894,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			frRepo := testCase.FetchRequestRepoFn()
 			frSvc := testCase.FetchRequestSvcFn()
+
 			svc := api.NewService(repo, frRepo, nil, frSvc)
 
 			// when

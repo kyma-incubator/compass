@@ -247,5 +247,5 @@ func (s *service) handleFetchRequest(ctx context.Context, api *model.APIDefiniti
 	} else {
 		fr.Status.Condition = model.FetchRequestStatusConditionSucceeded
 	}
-	_ = s.fetchRequestRepo.Update(ctx, fr)
+	err = s.fetchRequestRepo.Update(ctx, fr)
 }
