@@ -2,6 +2,7 @@ package gardener
 
 import (
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -22,18 +23,21 @@ const (
 	subAccountId      = "sub-account"
 	operationId       = "operationId"
 	clusterName       = "test-cluster"
+	region            = "westeurope"
 
 	auditLogsPolicyCMName = "audit-logs-policy"
-	auditLogsTenant       = "audit-tenant"
 )
 
 func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 	clientset := fake.NewSimpleClientset()
 
+	auditLogsConfigPath := filepath.Join("testdata", "config.json")
+	expectedTenant := "e7382275-e835-4549-94e1-3b1101e3a1fa"
+
 	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{})
 	require.NoError(t, err)
 
-	cluster := newClusterConfig("test-cluster", "", gcpGardenerConfig)
+	cluster := newClusterConfig("test-cluster", "", gcpGardenerConfig, region)
 
 	t.Run("should start provisioning", func(t *testing.T) {
 		// given
@@ -50,51 +54,63 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		require.NoError(t, err)
 		assertAnnotation(t, shoot, operationIdAnnotation, operationId)
 		assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
-		assertAnnotation(t, shoot, provisioningStepAnnotation, ProvisioningInProgressStep.String())
 		assert.Equal(t, "", shoot.Labels[model.SubAccountLabel])
 	})
 
 	for _, testCase := range []struct {
-		description      string
-		clusterName      string
-		subAccountId     string
-		configMapName    string
-		auditLogsTenant  string
-		auditLogsEnabled bool
+		description         string
+		clusterName         string
+		subAccountId        string
+		configMapName       string
+		auditLogsConfigPath string
+		region              string
+		auditLogsEnabled    bool
 	}{
 		{
-			description:      "audit logs enabled",
-			clusterName:      "test-1",
-			subAccountId:     subAccountId,
-			configMapName:    auditLogsPolicyCMName,
-			auditLogsTenant:  auditLogsTenant,
-			auditLogsEnabled: true,
+			description:         "audit logs enabled",
+			clusterName:         "test-1",
+			subAccountId:        subAccountId,
+			configMapName:       auditLogsPolicyCMName,
+			auditLogsConfigPath: auditLogsConfigPath,
+			region:              region,
+			auditLogsEnabled:    true,
 		},
 		{
-			description:      "audit logs disabled when no tenant",
-			clusterName:      "test-2",
-			subAccountId:     "acc",
-			configMapName:    auditLogsPolicyCMName,
-			auditLogsTenant:  "",
-			auditLogsEnabled: false,
+			description:         "audit logs disabled when no config file",
+			clusterName:         "test-2",
+			subAccountId:        "acc",
+			configMapName:       auditLogsPolicyCMName,
+			auditLogsConfigPath: "",
+			region:              region,
+			auditLogsEnabled:    false,
 		},
 		{
-			description:      "audit logs disabled when no CM name",
-			clusterName:      "test-3",
-			subAccountId:     "",
-			configMapName:    "",
-			auditLogsTenant:  auditLogsTenant,
-			auditLogsEnabled: false,
+			description:         "audit logs disabled when no region match",
+			clusterName:         "test-3",
+			subAccountId:        "acc",
+			configMapName:       auditLogsPolicyCMName,
+			auditLogsConfigPath: auditLogsConfigPath,
+			region:              "centralia",
+			auditLogsEnabled:    false,
+		},
+		{
+			description:         "audit logs disabled when no CM name",
+			clusterName:         "test-4",
+			subAccountId:        "",
+			configMapName:       "",
+			auditLogsConfigPath: auditLogsConfigPath,
+			region:              region,
+			auditLogsEnabled:    false,
 		},
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
 			// given
 			shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-			provisionerClient := NewProvisioner(gardenerNamespace, shootClient, testCase.configMapName, testCase.auditLogsTenant)
+			provisionerClient := NewProvisioner(gardenerNamespace, shootClient, testCase.auditLogsConfigPath, testCase.configMapName)
 
 			// when
-			err := provisionerClient.ProvisionCluster(newClusterConfig(testCase.clusterName, testCase.subAccountId, gcpGardenerConfig), operationId)
+			err := provisionerClient.ProvisionCluster(newClusterConfig(testCase.clusterName, testCase.subAccountId, gcpGardenerConfig, testCase.region), operationId)
 			require.NoError(t, err)
 
 			// then
@@ -102,7 +118,6 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 			require.NoError(t, err)
 			assertAnnotation(t, shoot, operationIdAnnotation, operationId)
 			assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
-			assertAnnotation(t, shoot, provisioningStepAnnotation, ProvisioningInProgressStep.String())
 
 			assert.Equal(t, testCase.subAccountId, shoot.Labels[model.SubAccountLabel])
 
@@ -111,7 +126,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 			assert.False(t, *shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
 
 			if testCase.auditLogsEnabled {
-				assertAnnotation(t, shoot, auditLogsAnnotation, auditLogsTenant)
+				assertAnnotation(t, shoot, auditLogsAnnotation, expectedTenant)
 
 				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig)
 				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy)
@@ -125,7 +140,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 
 }
 
-func newClusterConfig(name, subAccountId string, providerConfig model.GardenerProviderConfig) model.Cluster {
+func newClusterConfig(name, subAccountId string, providerConfig model.GardenerProviderConfig, region string) model.Cluster {
 	return model.Cluster{
 		ID:           runtimeId,
 		Tenant:       tenant,
@@ -141,7 +156,7 @@ func newClusterConfig(name, subAccountId string, providerConfig model.GardenerPr
 			MachineType:            "n1-standard-4",
 			Provider:               "gcp",
 			TargetSecret:           "secret",
-			Region:                 "eu",
+			Region:                 region,
 			WorkerCidr:             "10.10.10.10",
 			AutoScalerMin:          1,
 			AutoScalerMax:          5,

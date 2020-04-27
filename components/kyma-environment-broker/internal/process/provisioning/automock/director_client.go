@@ -29,3 +29,17 @@ func (_m *DirectorClient) GetConsoleURL(accountID string, runtimeID string) (str
 
 	return r0, r1
 }
+
+// SetLabel provides a mock function with given fields: accountID, runtimeID, key, value
+func (_m *DirectorClient) SetLabel(accountID string, runtimeID string, key string, value string) error {
+	ret := _m.Called(accountID, runtimeID, key, value)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string, string, string) error); ok {
+		r0 = rf(accountID, runtimeID, key, value)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

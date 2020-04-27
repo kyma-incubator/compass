@@ -11,8 +11,8 @@ type TenantStorageService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, tenantInputs
-func (_m *TenantStorageService) Create(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
+// CreateManyIfNotExists provides a mock function with given fields: ctx, tenantInputs
+func (_m *TenantStorageService) CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
 	ret := _m.Called(ctx, tenantInputs)
 
 	var r0 error

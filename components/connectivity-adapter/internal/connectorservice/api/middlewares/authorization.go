@@ -43,6 +43,7 @@ func extractHeaders(r *http.Request) (map[string]string, error) {
 
 	clientIdFromCertificate := r.Header.Get(oathkeeper.ClientIdFromCertificateHeader)
 	clientCertificateHash := r.Header.Get(oathkeeper.ClientCertificateHashHeader)
+
 	if clientIdFromCertificate != "" && clientCertificateHash != "" {
 		return map[string]string{
 			oathkeeper.ClientIdFromCertificateHeader: clientIdFromCertificate,

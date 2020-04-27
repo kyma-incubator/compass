@@ -14,7 +14,7 @@ type AzureInput struct{}
 func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			KubernetesVersion: "1.15.11",
+			KubernetesVersion: "1.16.9",
 			DiskType:          "Standard_LRS",
 			VolumeSizeGb:      50,
 			MachineType:       "Standard_D8_v3",

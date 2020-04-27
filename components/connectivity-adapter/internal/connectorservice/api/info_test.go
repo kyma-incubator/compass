@@ -43,6 +43,10 @@ func TestHandler_Info(t *testing.T) {
 	t.Run("Should get Signing Request Info", func(t *testing.T) {
 		// given
 		connectorClientMock := &connectorMock.Client{}
+
+		connectorClientProviderMock := &connectorMock.ClientProvider{}
+		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
+
 		directorClientProviderMock := &directorMock.ClientProvider{}
 		directorClientMock := &directorMock.Client{}
 		directorClientMock.On("GetApplication", "myapp").Return(application, nil)
@@ -67,7 +71,7 @@ func TestHandler_Info(t *testing.T) {
 		}
 
 		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
-		csrInfoHandler := NewInfoHandler(connectorClientMock, directorClientProviderMock, logrus.New(), model.NewCSRInfoResponseProvider("www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com"))
+		csrInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewCSRInfoResponseProvider("www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 
@@ -109,8 +113,9 @@ func TestHandler_Info(t *testing.T) {
 
 	t.Run("Should get Management Info", func(t *testing.T) {
 		// given
-		connectorClientMock := &connectorMock.Client{}
+		connectorClientProviderMock := &connectorMock.ClientProvider{}
 		directorClientProviderMock := &directorMock.ClientProvider{}
+		connectorClientMock := &connectorMock.Client{}
 		directorClientMock := &directorMock.Client{}
 
 		newToken := "new_token"
@@ -143,9 +148,10 @@ func TestHandler_Info(t *testing.T) {
 		directorClientMock.On("GetApplication", "myapp").Return(directorApp, nil)
 
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
+		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
 		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
-		mgmtInfoHandler := NewInfoHandler(connectorClientMock, directorClientProviderMock, logrus.New(), model.NewManagementInfoResponseProvider("www.connectivity-adapter-mtls.com"))
+		mgmtInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewManagementInfoResponseProvider("www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 
@@ -190,11 +196,13 @@ func TestHandler_Info(t *testing.T) {
 	t.Run("Should return error when failed to call Compass Director", func(t *testing.T) {
 		// given
 		directorClientProviderMock := &directorMock.ClientProvider{}
+		connectorClientProviderMock := &connectorMock.ClientProvider{}
 		directorClientMock := &directorMock.Client{}
 		directorClientMock.On("GetApplication", mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, apperrors.Internal("error"))
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 
 		connectorClientMock := &connectorMock.Client{}
+		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
 		newToken := "new_token"
 		directorUrl := "www.director.com"
@@ -217,7 +225,7 @@ func TestHandler_Info(t *testing.T) {
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 		r := httptest.NewRecorder()
 
-		handler := NewInfoHandler(connectorClientMock, directorClientProviderMock, logrus.New(), emptyResFunction)
+		handler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), emptyResFunction)
 
 		// when
 		handler.GetInfo(r, req)
@@ -231,6 +239,9 @@ func TestHandler_Info(t *testing.T) {
 		// given
 		connectorClientMock := &connectorMock.Client{}
 		connectorClientMock.On("Configuration", headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
+		connectorClientProviderMock := &connectorMock.ClientProvider{}
+		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
+
 		directorClientProviderMock := &directorMock.ClientProvider{}
 		directorClientMock := &directorMock.Client{}
 		directorClientMock.On("GetApplication", mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, nil)
@@ -240,7 +251,7 @@ func TestHandler_Info(t *testing.T) {
 
 		r := httptest.NewRecorder()
 
-		handler := NewInfoHandler(connectorClientMock, directorClientProviderMock, logrus.New(), emptyResFunction)
+		handler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), emptyResFunction)
 
 		// when
 		handler.GetInfo(r, req)
@@ -254,11 +265,13 @@ func TestHandler_Info(t *testing.T) {
 		// given
 		connectorClientMock := &connectorMock.Client{}
 		directorClientProviderMock := &directorMock.ClientProvider{}
+		connectorClientProviderMock := &connectorMock.ClientProvider{}
+		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
 		r := httptest.NewRecorder()
 		req := newRequestWithContext(strings.NewReader(""), nil)
 
-		handler := NewInfoHandler(connectorClientMock, directorClientProviderMock, logrus.New(), emptyResFunction)
+		handler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), emptyResFunction)
 
 		// when
 		handler.GetInfo(r, req)
@@ -271,6 +284,9 @@ func TestHandler_Info(t *testing.T) {
 		// given
 		connectorClientMock := &connectorMock.Client{}
 		connectorClientMock.On("Configuration", headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
+		connectorClientProviderMock := &connectorMock.ClientProvider{}
+		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
+
 		directorClientProviderMock := &directorMock.ClientProvider{}
 		directorClientMock := &directorMock.Client{}
 		directorClientMock.On("GetApplication", mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, nil)
@@ -284,7 +300,7 @@ func TestHandler_Info(t *testing.T) {
 			return connectorSchema.Configuration{}, errors.New("some error")
 		}
 
-		handler := NewInfoHandler(connectorClientMock, directorClientProviderMock, logrus.New(), errorResFunction)
+		handler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), errorResFunction)
 
 		// when
 		handler.GetInfo(r, req)

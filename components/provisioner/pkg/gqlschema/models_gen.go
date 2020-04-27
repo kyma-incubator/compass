@@ -208,13 +208,8 @@ type RuntimeStatus struct {
 	RuntimeConfiguration    *RuntimeConfig           `json:"runtimeConfiguration"`
 }
 
-type UpgradeClusterInput struct {
-	Version string `json:"version"`
-}
-
 type UpgradeRuntimeInput struct {
-	ClusterConfig *UpgradeClusterInput `json:"clusterConfig"`
-	KymaConfig    *KymaConfigInput     `json:"kymaConfig"`
+	KymaConfig *KymaConfigInput `json:"kymaConfig"`
 }
 
 type OperationState string

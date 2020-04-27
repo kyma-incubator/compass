@@ -94,6 +94,7 @@ func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server)
 		InternalTesterAccessId: 1234,
 		ExternalTesterAccessId: 5678,
 		GroupId:                5555,
+		ParentId:               9101112,
 	}
 }
 

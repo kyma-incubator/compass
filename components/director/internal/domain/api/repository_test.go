@@ -114,11 +114,11 @@ func TestPgRepository_ListForPackage(t *testing.T) {
 	secondApiDefEntity := fixFullEntityAPIDefinition(secondApiDefID, "placeholder")
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."api_definitions" 
-		WHERE tenant_id=\$1 AND package_id = '%s' 
-		ORDER BY id LIMIT %d OFFSET %d`, packageID, ExpectedLimit, ExpectedOffset)
+		WHERE tenant_id = \$1 AND package_id = \$2
+		ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
 
-	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM "public"."api_definitions" 
-		WHERE tenant_id=$1 AND package_id = '%s'`, packageID)
+	rawCountQuery := `SELECT COUNT(*) FROM "public"."api_definitions" 
+		WHERE tenant_id = $1 AND package_id = $2`
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("success", func(t *testing.T) {
@@ -128,11 +128,11 @@ func TestPgRepository_ListForPackage(t *testing.T) {
 			AddRow(fixAPIDefinitionRow(secondApiDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, packageID).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID).
+			WithArgs(tenantID, packageID).
 			WillReturnRows(testdb.RowCount(2))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)

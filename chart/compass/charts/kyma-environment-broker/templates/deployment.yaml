@@ -44,6 +44,8 @@ spec:
               value: "{{ .Values.enablePlans }}"
             - name: APP_PROVISIONING_URL
               value: "{{ .Values.provisioner.URL }}"
+            - name: APP_PROVISIONING_TIMEOUT
+              value: "{{ .Values.provisioner.timeout }}"
             - name: APP_PORT
               value: "{{ .Values.broker.port }}"
             - name: APP_STATUS_PORT
@@ -78,8 +80,41 @@ spec:
             - name: APP_LMS_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: "{{ .Values.lms.secretName}}"
+                  name: "{{ .Values.lms.secretName }}"
                   key: token
+            - name: APP_IAS_URL
+              value: "{{ .Values.ias.url }}"
+            - name: APP_IAS_USER_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.ias.secretName }}"
+                  key: id
+            - name: APP_IAS_USER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.ias.secretName }}"
+                  key: secret
+            - name: APP_IAS_IDENTITY_PROVIDER
+              value: "{{ .Values.ias.identityProvider }}"
+            - name: APP_IAS_DISABLED
+              value: "{{ .Values.ias.disabled }}"
+            - name: APP_EDP_AUTH_URL
+              value: "{{ .Values.edp.authURL }}"
+            - name: APP_EDP_ADMIN_URL
+              value: "{{ .Values.edp.adminURL }}"
+            - name: APP_EDP_NAMESPACE
+              value: "{{ .Values.edp.namespace }}"
+            - name: APP_EDP_ENVIRONMENT
+              value: "{{ .Values.edp.environment }}"
+            - name: APP_EDP_REQUIRED
+              value: "{{ .Values.edp.required }}"
+            - name: APP_EDP_DISABLED
+              value: "{{ .Values.edp.disabled }}"
+            - name: APP_EDP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.edp.secretName }}"
+                  key: secret
             - name: APP_DATABASE_USER
               valueFrom:
                 secretKeyRef:
@@ -130,7 +165,7 @@ spec:
             - name: APP_KYMA_VERSION
               value: {{ .Values.kymaVersion }}
             - name: APP_ENABLE_ON_DEMAND_VERSION
-              value: {{ .Values.kymaVersionOnDemand }}
+              value: "{{ .Values.kymaVersionOnDemand }}"
             - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_FILE_PATH
               value: /config/additionalRuntimeComponents.yaml
             - name: APP_GARDENER_PROJECT
@@ -139,6 +174,8 @@ spec:
               value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_DUMP_PROVISIONER_REQUESTS
               value: "{{ .Values.provisioner.dumpRequests }}"
+            - name: APP_DEFAULT_REQUEST_REGION
+              value: "{{ .Values.broker.defaultRequestRegion }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
@@ -152,7 +189,7 @@ spec:
             timeoutSeconds: 3
             initialDelaySeconds: 20
           resources:
-              {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /gardener/kubeconfig
               name: gardener-kubeconfig

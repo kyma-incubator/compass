@@ -3,7 +3,9 @@ images:
     path: eu.gcr.io/kyma-project
   ui:
     dir:
-    version: 757b7691
+    version: 9cee1c52
+
+statusPort: 6082
 
 ui:
   host: compass
@@ -19,3 +21,4 @@ service:
 deployment:
   image:
     pullPolicy: IfNotPresent
+  resources: {}

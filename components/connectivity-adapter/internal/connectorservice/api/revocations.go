@@ -14,14 +14,14 @@ import (
 )
 
 type revocationsHandler struct {
-	gqlClient connector.Client
-	logger    *log.Logger
+	connectorClientProvider connector.ClientProvider
+	logger                  *log.Logger
 }
 
-func NewRevocationsHandler(client connector.Client, logger *log.Logger) revocationsHandler {
+func NewRevocationsHandler(connectorClientProvider connector.ClientProvider, logger *log.Logger) revocationsHandler {
 	return revocationsHandler{
-		gqlClient: client,
-		logger:    logger,
+		connectorClientProvider: connectorClientProvider,
+		logger:                  logger,
 	}
 }
 
@@ -38,7 +38,8 @@ func (rh *revocationsHandler) RevokeCertificate(w http.ResponseWriter, r *http.R
 
 	contextLogger.Info("Revoke certificate")
 
-	err = rh.gqlClient.Revoke(authorizationHeaders)
+	err = rh.connectorClientProvider.Client(r).Revoke(authorizationHeaders)
+
 	if err != nil {
 		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to revoke certificate"), apperrors.CodeInternal)
 

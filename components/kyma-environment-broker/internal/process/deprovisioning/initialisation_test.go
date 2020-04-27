@@ -81,6 +81,7 @@ func fixProvisioningOperation() internal.ProvisioningOperation {
 			Description:            "",
 			UpdatedAt:              time.Now(),
 		},
+		ProvisioningParameters: `{"ers_context":{"globalaccount_id":"1"}}`,
 	}
 }
 
@@ -92,6 +93,6 @@ func fixInstanceRuntimeStatus() internal.Instance {
 		GlobalAccountID: fixGlobalAccountID,
 		CreatedAt:       time.Time{},
 		UpdatedAt:       time.Time{},
-		DelatedAt:       time.Time{},
+		DeletedAt:       time.Time{},
 	}
 }

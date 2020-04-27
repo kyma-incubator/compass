@@ -24,6 +24,7 @@ const (
 	certPollingTimeout       = 4 * time.Minute
 	tenantReadyRetryInterval = 30 * time.Second
 	lmsTimeout               = 30 * time.Minute
+	kibanaURLLabelKey        = "operator_lmsUrl"
 )
 
 type LmsClient interface {
@@ -77,7 +78,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 	// check if LMS tenant is ready
 	status, err := s.provider.GetTenantStatus(operation.Lms.TenantID)
 	if err != nil {
-		logger.Errorf("Unable to get LMS Tenant status: %s", err.Error())
+		logger.Errorf("Unable to get LMS Tenant (id=%s) status: %s", operation.Lms.TenantID, err.Error())
 		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
 			logger.Error("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
 			return s.failLmsAndUpdate(operation)
@@ -157,8 +158,12 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 		return s.failLmsAndUpdate(operation)
 	}
 
+	operation.InputCreator.SetLabel(kibanaURLLabelKey, fmt.Sprintf("kibana.%s", tenantInfo.DNS))
+
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.conf.Output.forward.enabled", Value: "true"},
+		{Key: "fluent-bit.conf.Output.forward.Match", Value: "kube.*"},
+
 		{Key: "fluent-bit.backend.forward.host", Value: fmt.Sprintf("forward.%s", tenantInfo.DNS)},
 		{Key: "fluent-bit.backend.forward.port", Value: "8443"},
 		{Key: "fluent-bit.backend.forward.tls.enabled", Value: "true"},
@@ -174,7 +179,10 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 		{Key: "fluent-bit.conf.Filter.record_modifier.Match", Value: "*"},
 		{Key: "fluent-bit.conf.Filter.record_modifier.Key", Value: "cluster_name"},
 		{Key: "fluent-bit.conf.Filter.record_modifier.Value", Value: pp.ErsContext.SubAccountID}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
-	})
+		//kubernetes filter should not parse the document to avoid indexing on LMS side
+		{Key: "fluent-bit.conf.Filter.Kubernetes.Merge_Log", Value: "Off"},
+		//input should not conatain dex logs as it contains sensitive data
+		{Key: "fluent-bit.conf.Input.Kubernetes.Exclude_Path", Value: "/var/log/containers/*_dex-*.log"},
 
 	return operation, 0, nil
 }

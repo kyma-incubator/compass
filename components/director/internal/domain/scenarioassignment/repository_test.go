@@ -137,8 +137,8 @@ func TestRepository_ListForSelector(t *testing.T) {
 			{scenario: scenarioName, tenantId: tenantID, selectorKey: "key", selectorValue: "value"},
 			{scenario: "scenario-B", tenantId: tenantID, selectorKey: "key", selectorValue: "value"},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE tenant_id=$1 AND selector_key = 'key' AND selector_value = 'value'`)).
-			WithArgs(tenantID).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE tenant_id = $1 AND selector_key = $2 AND selector_value = $3`)).
+			WithArgs(tenantID, "key", "value").
 			WillReturnRows(rowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -192,11 +192,11 @@ func TestRepository_List(t *testing.T) {
 	mod2 := fixModelWithScenarioName(scenarioName2)
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.automatic_scenario_assignments
-		WHERE tenant_id=\$1
+		WHERE tenant_id = \$1
 		ORDER BY scenario LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
 
 	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM public.automatic_scenario_assignments
-		WHERE tenant_id=$1`)
+		WHERE tenant_id = $1`)
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("Success", func(t *testing.T) {
@@ -333,15 +333,4 @@ func TestRepository_DeleteForScenarioName(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "while deleting from database: some error")
 	})
-}
-
-func mockUpdateQuery(dbMock testdb.DBMock, key, value string) *sqlmock.ExpectedExec {
-	return dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE labels AS l SET value=SCENARIOS.SCENARIOS 
-		FROM (SELECT array_to_json(array_agg(scenario)) AS SCENARIOS FROM automatic_scenario_assignments 
-					WHERE selector_key=$1 AND selector_value=$2 AND tenant_id=$3) AS SCENARIOS
-		WHERE l.runtime_id IN (SELECT runtime_id FROM labels  
-									WHERE key =$1 AND value ?| array[$2] AND runtime_id IS NOT NULL AND tenant_ID=$3) 
-			AND l.key ='scenarios'
-			AND l.tenant_id=$3`)).
-		WithArgs(key, value, tenantID)
 }

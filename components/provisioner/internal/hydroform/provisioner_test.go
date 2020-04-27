@@ -65,7 +65,7 @@ func Test_Provision(t *testing.T) {
 		sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock, nil)
 		writeSessionMock.On("UpdateCluster", runtimeId, kubeconfigFile, []byte("")).Return(nil)
 		installationSvc.On("InstallKyma", runtimeId, kubeconfigFile, kymaRelease, globalConfig, componentsConfig).Return(nil)
-		writeSessionMock.On("UpdateOperationState", operationId, "Operation succeeded.", model.Succeeded).Return(nil)
+		writeSessionMock.On("UpdateOperationState", operationId, "Operation succeeded.", model.Succeeded, mock.AnythingOfType("time.Time")).Return(nil)
 		configurator.On("ConfigureRuntime", cluster, kubeconfigFile).Return(nil)
 
 		hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformMock, installationSvc, sessionFactoryMock, nil, configurator)
@@ -99,7 +99,7 @@ func Test_Provision(t *testing.T) {
 				writeSessionMock.On("UpdateCluster", runtimeId, kubeconfigFile, []byte("")).Return(nil)
 				installationSvc.On("InstallKyma", runtimeId, kubeconfigFile, kymaRelease, globalConfig, componentsConfig).Return(nil)
 				configurator.On("ConfigureRuntime", cluster, kubeconfigFile).Return(errors.New("error"))
-				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed).Return(nil)
+				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed, mock.AnythingOfType("time.Time")).Return(nil)
 
 			},
 		},
@@ -119,7 +119,7 @@ func Test_Provision(t *testing.T) {
 				sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock, nil)
 				writeSessionMock.On("UpdateCluster", runtimeId, kubeconfigFile, []byte("")).Return(nil)
 				installationSvc.On("InstallKyma", runtimeId, kubeconfigFile, kymaRelease, globalConfig, componentsConfig).Return(errors.New("error"))
-				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed).Return(nil)
+				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed, mock.AnythingOfType("time.Time")).Return(nil)
 			},
 		},
 		{
@@ -137,7 +137,7 @@ func Test_Provision(t *testing.T) {
 				)
 				sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock, nil)
 				writeSessionMock.On("UpdateCluster", runtimeId, kubeconfigFile, []byte("")).Return(dberrors.Internal("error"))
-				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed).Return(nil)
+				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed, mock.AnythingOfType("time.Time")).Return(nil)
 
 			},
 		},
@@ -155,7 +155,7 @@ func Test_Provision(t *testing.T) {
 					nil,
 				)
 				sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock, nil)
-				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed).Return(nil)
+				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed, mock.AnythingOfType("time.Time")).Return(nil)
 			},
 		},
 		{
@@ -169,7 +169,7 @@ func Test_Provision(t *testing.T) {
 
 				hydroformMock.On("ProvisionCluster", cluster).Return(hydroform.ClusterInfo{}, errors.New("error"))
 				sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock, nil)
-				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed).Return(nil)
+				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed, mock.AnythingOfType("time.Time")).Return(nil)
 
 			},
 		},
@@ -219,7 +219,7 @@ func Test_Deprovision(t *testing.T) {
 		sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock, nil)
 		writeSessionMock.On("MarkClusterAsDeleted", runtimeId).Return(nil)
 		directorServiceMock.On("DeleteRuntime", runtimeId, tenant).Return(nil)
-		writeSessionMock.On("UpdateOperationState", operationId, "Operation succeeded.", model.Succeeded).Return(nil)
+		writeSessionMock.On("UpdateOperationState", operationId, "Operation succeeded.", model.Succeeded, mock.AnythingOfType("time.Time")).Return(nil)
 
 		hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformMock, nil, sessionFactoryMock, directorServiceMock, nil)
 
@@ -243,7 +243,7 @@ func Test_Deprovision(t *testing.T) {
 				sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock, nil)
 				writeSessionMock.On("MarkClusterAsDeleted", runtimeId).Return(nil)
 				directorServiceMock.On("DeleteRuntime", runtimeId, tenant).Return(errors.New("error"))
-				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed).Return(nil)
+				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed, mock.AnythingOfType("time.Time")).Return(nil)
 			},
 		},
 		{
@@ -252,7 +252,7 @@ func Test_Deprovision(t *testing.T) {
 				hydroformMock.On("DeprovisionCluster", cluster).Return(nil)
 				sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock, nil)
 				writeSessionMock.On("MarkClusterAsDeleted", runtimeId).Return(dberrors.Internal("error"))
-				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed).Return(nil)
+				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed, mock.AnythingOfType("time.Time")).Return(nil)
 			},
 		},
 		{
@@ -260,7 +260,7 @@ func Test_Deprovision(t *testing.T) {
 			mockFunc: func(hydroformMock *mocks.Service, sessionFactoryMock *sessionMocks.Factory, writeSessionMock *sessionMocks.WriteSession, directorServiceMock *directormock.DirectorClient) {
 				hydroformMock.On("DeprovisionCluster", cluster).Return(errors.New("error"))
 				sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock, nil)
-				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed).Return(nil)
+				writeSessionMock.On("UpdateOperationState", operationId, mock.AnythingOfType("string"), model.Failed, mock.AnythingOfType("time.Time")).Return(nil)
 			},
 		},
 	} {

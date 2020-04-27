@@ -15,7 +15,7 @@ import (
 
 type ProvisionInputCreator interface {
 	SetProvisioningParameters(params ProvisioningParametersDTO) ProvisionInputCreator
-	SetRuntimeLabels(instanceID, SubAccountID string) ProvisionInputCreator
+	SetLabel(key, value string) ProvisionInputCreator
 	// Deprecated, use: AppendOverrides
 	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
 	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
@@ -59,7 +59,7 @@ type Instance struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DelatedAt time.Time
+	DeletedAt time.Time
 }
 
 type Operation struct {
@@ -100,7 +100,8 @@ type ProvisioningOperation struct {
 type DeprovisioningOperation struct {
 	Operation `json:"-"`
 
-	Avs AvsLifecycleData `json:"avs"`
+	Avs          AvsLifecycleData `json:"avs"`
+	SubAccountID string           `json:"-"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation

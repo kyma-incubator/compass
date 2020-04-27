@@ -7,13 +7,9 @@ import (
 )
 
 func (r *ProvisioningOperator) DeprovisioningInProgress(log *logrus.Entry, shoot gardener_types.Shoot, operationId string) (ctrl.Result, error) {
-	log.Infof("Shoot is on deprovisioning in progress step")
+	log.Debug("Shoot is on deprovisioning in progress step")
 
-	installationState := getInstallationState(shoot)
-
-	// TODO: consider spliting to two steps with deinstallation
-	if installationState == Uninstalling {
-		// TODO: we can check status here
+	if uninstallTriggered(shoot) {
 		return ctrl.Result{}, nil
 	}
 
@@ -24,14 +20,14 @@ func (r *ProvisioningOperator) DeprovisioningInProgress(log *logrus.Entry, shoot
 		return ctrl.Result{}, err
 	}
 
-	err = r.installationService.TriggerUninstall(k8sConfig)
+	err = r.installationSvc.TriggerUninstall(k8sConfig)
 	if err != nil {
 		log.Errorf("error triggering uninstalling: %s", err.Error())
 		return ctrl.Result{}, err
 	}
 
 	err = r.updateShoot(shoot, func(s *gardener_types.Shoot) {
-		annotate(s, installationAnnotation, Uninstalling.String())
+		annotate(s, uninstallingAnnotation, "true")
 	})
 	if err != nil {
 		log.Errorf("error updating Shoot with retries: %s", err.Error())

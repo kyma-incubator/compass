@@ -10,14 +10,14 @@ type GcpInput struct{}
 func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			KubernetesVersion: "1.15.11",
+			KubernetesVersion: "1.16.9",
 			DiskType:          "pd-standard",
 			VolumeSizeGb:      30,
 			MachineType:       "n1-standard-4",
 			Region:            "europe-west4",
 			Provider:          "gcp",
 			WorkerCidr:        "10.250.0.0/19",
-			AutoScalerMin:     2,
+			AutoScalerMin:     3,
 			AutoScalerMax:     4,
 			MaxSurge:          4,
 			MaxUnavailable:    1,

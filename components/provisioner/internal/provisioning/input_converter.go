@@ -16,6 +16,7 @@ import (
 
 type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, error)
+	KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error)
 }
 
 func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider, gardenerProject string) InputConverter {
@@ -37,7 +38,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 
 	var kymaConfig model.KymaConfig
 	if input.KymaConfig != nil {
-		kymaConfig, err = c.kymaConfigFromInput(runtimeID, *input.KymaConfig)
+		kymaConfig, err = c.KymaConfigFromInput(runtimeID, *input.KymaConfig)
 		if err != nil {
 			return model.Cluster{}, err
 		}
@@ -160,7 +161,7 @@ func (c converter) gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfi
 	}
 }
 
-func (c converter) kymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error) {
+func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error) {
 	kymaRelease, err := c.releaseRepo.GetReleaseByVersion(input.Version)
 	if err != nil {
 		if err.Code() == dberrors.CodeNotFound {

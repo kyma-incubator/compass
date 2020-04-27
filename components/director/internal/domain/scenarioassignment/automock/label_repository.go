@@ -11,6 +11,20 @@ type LabelRepository struct {
 	mock.Mock
 }
 
+// Delete provides a mock function with given fields: ctx, tenant, objectType, objectID, key
+func (_m *LabelRepository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
+	ret := _m.Called(ctx, tenant, objectType, objectID, key)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
+		r0 = rf(ctx, tenant, objectType, objectID, key)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetRuntimeScenariosWhereLabelsMatchSelector provides a mock function with given fields: ctx, tenantID, selectorKey, selectorValue
 func (_m *LabelRepository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID string, selectorKey string, selectorValue string) ([]model.Label, error) {
 	ret := _m.Called(ctx, tenantID, selectorKey, selectorValue)
@@ -34,16 +48,48 @@ func (_m *LabelRepository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx conte
 	return r0, r1
 }
 
-// Upsert provides a mock function with given fields: ctx, label
-func (_m *LabelRepository) Upsert(ctx context.Context, label *model.Label) error {
-	ret := _m.Called(ctx, label)
+// GetRuntimesIDsByStringLabel provides a mock function with given fields: ctx, tenantID, selectorKey, selectorValue
+func (_m *LabelRepository) GetRuntimesIDsByStringLabel(ctx context.Context, tenantID string, selectorKey string, selectorValue string) ([]string, error) {
+	ret := _m.Called(ctx, tenantID, selectorKey, selectorValue)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Label) error); ok {
-		r0 = rf(ctx, label)
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) []string); ok {
+		r0 = rf(ctx, tenantID, selectorKey, selectorValue)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, tenantID, selectorKey, selectorValue)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetScenarioLabelsForRuntimes provides a mock function with given fields: ctx, tenantID, runtimesIDs
+func (_m *LabelRepository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error) {
+	ret := _m.Called(ctx, tenantID, runtimesIDs)
+
+	var r0 []model.Label
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []model.Label); ok {
+		r0 = rf(ctx, tenantID, runtimesIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.Label)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
+		r1 = rf(ctx, tenantID, runtimesIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
