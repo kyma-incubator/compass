@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/configurationchange"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	"github.com/stretchr/testify/assert"
