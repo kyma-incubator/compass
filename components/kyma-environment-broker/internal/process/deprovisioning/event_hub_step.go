@@ -55,8 +55,13 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	case instanceNotFoundError:
 		operation.EventHub.Deleted = true
 		updatedOperation, err := s.operationStorage.UpdateDeprovisioningOperation(operation)
-		log.Errorf("while updating the database, error: %v", err)
-		return s.OperationManager.OperationSucceeded(*updatedOperation, "instance already deprovisioned")
+		if err != nil {
+			log.Errorf("while updating the database for instance %s deprovision operation, error: %v",
+				operation.InstanceID, err)
+			return s.OperationManager.OperationSucceeded(operation, "instance already deprovisioned")
+		} else {
+			return s.OperationManager.OperationSucceeded(*updatedOperation, "instance already deprovisioned")
+		}
 	default:
 		return operation, 1 * time.Second, nil
 	}
@@ -100,7 +105,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	resourceGroup, err := namespaceClient.GetResourceGroup(s.EventHub.Context, tags)
 	if err != nil {
 		// if it doesn't exist anymore, there is nothing to delete - we are done
-		if _, ok := err.(azure.ResourceGroupDoesNotExist); ok {
+		if _, ok := err.(azure.ResourceGroupDoesNotExistError); ok {
 			if &resourceGroup != nil && resourceGroup.Name != nil {
 				log.Infof("deprovisioning of event hub step succeeded, resource group: %v", resourceGroup.Name)
 			} else {

@@ -30,7 +30,7 @@ type FakeNamespaceClient struct {
 	DeleteResourceGroupError       error
 }
 
-func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
+func (nc *FakeNamespaceClient) GetEventhubAccessKeys(context.Context, string, string, string) (result eventhub.AccessKeys, err error) {
 	if nc.AccessKeys != nil {
 		return *nc.AccessKeys, nil
 	}
@@ -46,7 +46,7 @@ func (nc *FakeNamespaceClient) CreateResourceGroup(ctx context.Context, config *
 	}, nc.ResourceGroupError
 }
 
-func (nc *FakeNamespaceClient) GetResourceGroup(ctx context.Context, tags azure.Tags) (resources.Group, error) {
+func (nc *FakeNamespaceClient) GetResourceGroup(context.Context, azure.Tags) (resources.Group, error) {
 	return nc.GetResourceGroupReturnValue, nc.GetResourceGroupError
 }
 
@@ -57,7 +57,7 @@ func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *az
 	}, nc.PersistEventhubsNamespaceError
 }
 
-func (nc *FakeNamespaceClient) DeleteResourceGroup(ctx context.Context, tags azure.Tags) (resources.GroupsDeleteFuture, error) {
+func (nc *FakeNamespaceClient) DeleteResourceGroup(context.Context, azure.Tags) (resources.GroupsDeleteFuture, error) {
 	nc.DeleteResourceGroupCalled = true
 	return resources.GroupsDeleteFuture{}, nc.DeleteResourceGroupError
 }

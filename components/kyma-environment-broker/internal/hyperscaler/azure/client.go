@@ -31,16 +31,16 @@ type Client struct {
 	logger                  logrus.FieldLogger
 }
 
-type ResourceGroupDoesNotExist struct {
-	errorMessage string
+type ResourceGroupDoesNotExistError struct {
+	message string
 }
 
-func NewResourceGroupDoesNotExist(errorMessage string) ResourceGroupDoesNotExist {
-	return ResourceGroupDoesNotExist{errorMessage}
+func NewResourceGroupDoesNotExist(errorMessage string) ResourceGroupDoesNotExistError {
+	return ResourceGroupDoesNotExistError{errorMessage}
 }
 
-func (e ResourceGroupDoesNotExist) Error() string {
-	return e.errorMessage
+func (e ResourceGroupDoesNotExistError) Error() string {
+	return e.message
 }
 
 func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourcegroupClient resources.GroupsClient, logger logrus.FieldLogger) *Client {
