@@ -259,14 +259,7 @@ func (s *service) createAPIs(ctx context.Context, packageID, tenant string, apis
 				return errors.Wrap(err, "while creating FetchRequest for application")
 			}
 
-			api.Spec.Data, err = s.fetchRequestService.FetchAPISpec(fr)
-			if err != nil {
-				fr.Status.Condition = model.FetchRequestStatusConditionFailed
-			} else {
-				fr.Status.Condition = model.FetchRequestStatusConditionSucceeded
-			}
-			_ = s.fetchRequestRepo.Update(ctx, fr)
-
+			s.handleFetchRequest(ctx, api, fr)
 			err = s.apiRepo.Update(ctx, api)
 			if err != nil {
 				return errors.Wrap(err, "while updating api with api spec")
@@ -329,4 +322,15 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in *mod
 	}
 
 	return fr, nil
+}
+
+func (s *service) handleFetchRequest(ctx context.Context, api *model.APIDefinition, fr *model.FetchRequest) {
+	var err error
+	api.Spec.Data, err = s.fetchRequestService.FetchAPISpec(fr)
+	if err != nil {
+		fr.Status.Condition = model.FetchRequestStatusConditionFailed
+	} else {
+		fr.Status.Condition = model.FetchRequestStatusConditionSucceeded
+	}
+	_ = s.fetchRequestRepo.Update(ctx, fr)
 }

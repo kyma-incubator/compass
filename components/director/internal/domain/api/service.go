@@ -120,7 +120,7 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
 
-		s.fetchAPISpec(ctx, api, fr)
+		s.handleFetchRequest(ctx, api, fr)
 
 		err = s.repo.Update(ctx, api)
 		if err != nil {
@@ -154,7 +154,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 			return errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
 
-		s.fetchAPISpec(ctx, api, fr)
+		s.handleFetchRequest(ctx, api, fr)
 
 	}
 
@@ -197,7 +197,7 @@ func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec
 	}
 
 	if fetchRequest != nil {
-		s.fetchAPISpec(ctx, api, fetchRequest)
+		s.handleFetchRequest(ctx, api, fetchRequest)
 	}
 
 	return api.Spec, nil
@@ -239,7 +239,7 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in mode
 	return fr, nil
 }
 
-func (s *service) fetchAPISpec(ctx context.Context, api *model.APIDefinition, fr *model.FetchRequest) {
+func (s *service) handleFetchRequest(ctx context.Context, api *model.APIDefinition, fr *model.FetchRequest) {
 	var err error
 	api.Spec.Data, err = s.fetchRequestService.FetchAPISpec(fr)
 	if err != nil {

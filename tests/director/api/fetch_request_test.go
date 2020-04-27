@@ -11,7 +11,7 @@ import (
 
 const OpenAPISpec = "https://raw.githubusercontent.com/kyma-incubator/github-slack-connectors/master/github-connector/internal/registration/configs/githubopenAPI.json"
 
-func TestFetchRequestAddAPIToPackage(t *testing.T) {
+func Test_FetchRequestAddAPIToPackage(t *testing.T) {
 	ctx := context.Background()
 
 	appName := "app-test-package"
