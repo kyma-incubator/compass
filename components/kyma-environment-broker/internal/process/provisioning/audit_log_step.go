@@ -2,20 +2,21 @@ package provisioning
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"time"
 )
 
 type AuditLogOverrides struct {
 	operationManager *process.ProvisionOperationManager
 }
-
 
 func (alo *AuditLogOverrides) Name() string {
 	return "Audit_Log_Overrides"
@@ -34,22 +35,25 @@ func NewAuditLogOverridesStep(os storage.Operations) *AuditLogOverrides {
 	}
 }
 
-func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger)  (internal.ProvisioningOperation, time.Duration, error){
+func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
 	// fetch the username, url and password
-	alcFile, err := ioutil.ReadFile("audit-log-config")
+	//file, err := os.Open("audit-log-config")
+
+	alcFile, err := readFile("audit-log-config")
 	if err != nil {
 		logger.Errorf("Unable to read audit log config file: %v", err)
 		return operation, 0, err
 	}
-	var   alc []map[string]aduditLogCred
+	var alc []map[string]aduditLogCred
 	err = yaml.Unmarshal(alcFile, &alc)
 	if err != nil {
 		logger.Errorf("Error parsing audit log config file: %v", err)
 		return operation, 0, err
 	}
 
-	luaScript, err := ioutil.ReadFile("audit-config-script")
+	//luaScript, err := ioutil.ReadFile("audit-config-script")
+	luaScript, err := readFile("audit-log-script")
 	if err != nil {
 		logger.Errorf("Unable to read audit config script: %v", err)
 		return operation, 0, nil
@@ -57,11 +61,11 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 
 	// Fetch the region
 	region := "east"
-	var c  aduditLogCred
+	var c aduditLogCred
 	for _, a := range alc {
 		if v, ok := a[region]; ok {
 			c = v
-			break;
+			break
 		} else {
 			logger.Errorf("Unable to find credentials for the audit log for the region: %v", region)
 			return operation, 0, nil
@@ -100,6 +104,14 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         tls.debug        1
 
 `, c.Host, c.HTTPUser, c.HTTPPwd)},
-})
-		return operation, 0, nil
+	})
+	return operation, 0, nil
+}
+
+func readFile(fileName string) ([]byte, error) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	return ioutil.ReadAll(file)
 }
