@@ -11,6 +11,7 @@ type key int
 const TenantContextKey key = iota
 
 var NoTenantError = errors.New("cannot read tenant from context")
+var EmptyTenantError = errors.New("tenant cannot be empty")
 
 func LoadFromContext(ctx context.Context) (string, error) {
 	value := ctx.Value(TenantContextKey)
@@ -19,6 +20,10 @@ func LoadFromContext(ctx context.Context) (string, error) {
 
 	if !ok {
 		return "", NoTenantError
+	}
+
+	if str == "" {
+		return "", EmptyTenantError
 	}
 
 	return str, nil

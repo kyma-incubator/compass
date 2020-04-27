@@ -13,6 +13,7 @@ import (
 
 func TestLoadFromContext(t *testing.T) {
 	value := "foo"
+	emptyValue := ""
 
 	testCases := []struct {
 		Name    string
@@ -28,10 +29,16 @@ func TestLoadFromContext(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name:               "Error",
+			Name:               "Error - cannot read from context",
 			Context:            context.TODO(),
 			ExpectedResult:     "",
 			ExpectedErrMessage: "cannot read tenant from context",
+		},
+		{
+			Name:               "Error - cannot be empty",
+			Context:            context.WithValue(context.TODO(), tenant.TenantContextKey, emptyValue),
+			ExpectedResult:     "",
+			ExpectedErrMessage: "tenant cannot be empty",
 		},
 	}
 
