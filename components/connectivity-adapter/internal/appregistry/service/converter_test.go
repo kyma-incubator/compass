@@ -64,7 +64,10 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 						TargetURL: "http://target.url",
 						Spec: &graphql.APISpecInput{
 							Type:   graphql.APISpecTypeOdata,
-							Format: graphql.SpecFormatYaml,
+							Format: graphql.SpecFormatXML,
+							FetchRequest: &graphql.FetchRequestInput{
+								URL: "http://target.url/$metadata",
+							},
 						},
 					},
 				},

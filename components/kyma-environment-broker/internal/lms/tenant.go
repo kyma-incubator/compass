@@ -56,7 +56,7 @@ func (c *manager) ProvideLMSTenantID(globalAccountID, region string) (string, er
 			GlobalAccountID: globalAccountID,
 		})
 		if err != nil {
-			return "", errors.Wrapf(err, "while creating tenant in lms")
+			return "", errors.Wrapf(err, "while creating tenant name=%s region=%s in lms", name, region)
 		}
 
 		// it is important to save the tenant ID because tenant creation means creation of a cluster.

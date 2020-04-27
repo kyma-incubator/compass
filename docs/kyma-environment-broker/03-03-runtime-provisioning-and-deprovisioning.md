@@ -10,12 +10,15 @@ Both provisioning and deprovisioning operation consist of several steps. Each st
 
 Each provisioning step is responsible for a separate part of preparing Runtime parameters. For example, in a step you can provide tokens, credentials, or URLs to integrate Kyma Runtime with external systems. All data collected in provisioning steps are used in the step called [`create_runtime`](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
 The provisioning process contains the following steps:
+
 | Name                                   | Domain                   | Description                                                                                                                                     | Owner            |
 |----------------------------------------|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
 | Initialisation                         | Provisioning             | Starts the provisioning process and asks the Director for the Dashboard URL if the provisioning in Gardener is finished.                                | @jasiu001        |
 | Resolve_Target_Secret                  | Hyperscaler Account Pool | Provides the name of a Gardener Secret that contains  Hypescaler account credentials used during cluster provisioning.                                | @koala7659       |
 | AVS_Configuration_Step                 | AvS                      | Sets up external and internal monitoring of Kyma Runtime.                                      | @abbi-guarav     |
 | Create_LMS_Tenant                      | LMS                      | Requests a tenant in the LMS system or provides a tenant ID if it was created before.                                                              | @piotrmiskiewicz |
+| IAS_Registration                       | Identity Authentication Service | Registers a new ServiceProvider on IAS, generates client ID and Secret, and inserts them to Grafana overrides. This step is not required and can be disabled. | @jasiu001 |
+| EDP_Registration                       | Event Data Platform      | Registers a SKR on Event Data Platform with the necessary parameters. This step is not required and can be disabled. | @jasiu001 |
 | Provision Azure Event Hubs             | Event Hub                | Creates the Azure Event Hub Namespace which is a managed Kafka cluster for a Kyma Runtime.                                                       | @anishj0shi      |
 | Overrides_From_Secrets_And_Config_Step | Kyma overrides           | Configures default overrides for Kyma.                                                                                                          | @jasiu001        |
 | ServiceManagerOverrides                | Service Manager          | Configures overrides with Service Manager credentials.                                                                                          | @mszostok        |
@@ -29,11 +32,14 @@ Each deprovisioning step is responsible for a separate part of cleaning Runtime 
 Any deprovisioning step shouldn't block the entire deprovisioning operation. Use the `RetryOperationWithoutFail` function from the `DeprovisionOperationManager` struct to skip your step in case of retry timeout. Set at most 5min timeout for retries in your step.
 
 The deprovisioning process contains the following steps:
+
 | Name                         | Domain         | Status      | Description                                                                            | Owner     |
 |------------------------------|----------------|-------------|----------------------------------------------------------------------------------------|-----------|
-| Deprovision_Initialization   | Deprovisioning | Done        | Initialize the `DeprovisioningOperation` instance with data fetched from the `ProvisioningOperation`. | @jasiu001 |
+| Deprovision_Initialization   | Deprovisioning | Done        | Initializes the `DeprovisioningOperation` instance with data fetched from the `ProvisioningOperation`. | @polskikiel |
 | Deprovision Azure Event Hubs | Event Hub      | In progress | Deletes the Azure Event Hub Namespace.                                                  | @montaro  |
-| Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning of a Runtime in the Runtime Provisioner.                                            | @jasiu001 |
+| IAS_Deregistration           | Identity Authentication Service | Done | Removes the ServiceProvider from IAS. | @jasiu001 |
+| EDP_Deregistration           | Event Data Platform | Done | Removes all entries about SKR from Event Data Platform. | @jasiu001 |
+| Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning of a Runtime in the Runtime Provisioner. | @polskikiel |
 
 
 ## Add provisioning or deprovisioning step

@@ -9,32 +9,13 @@ import (
 	"github.com/pivotal-cf/brokerapi/v7/middlewares"
 )
 
-type BrokerCredentials struct {
+type Credentials struct {
 	Username string
 	Password string
 }
 
 // copied from github.com/pivotal-cf/brokerapi/api.go
-func New(serviceBroker domain.ServiceBroker, logger lager.Logger, brokerCredentials *BrokerCredentials) *mux.Router {
-	router := mux.NewRouter()
-
-	AttachRoutes(router, serviceBroker, logger)
-
-	router.Use(middlewares.AddCorrelationIDToContext)
-	if brokerCredentials != nil {
-		authMiddleware := auth.NewWrapper(brokerCredentials.Username, brokerCredentials.Password).Wrap
-		router.Use(authMiddleware)
-	}
-	apiVersionMiddleware := middlewares.APIVersionMiddleware{LoggerFactory: logger}
-
-	router.Use(middlewares.AddOriginatingIdentityToContext)
-	router.Use(apiVersionMiddleware.ValidateAPIVersionHdr)
-	router.Use(middlewares.AddInfoLocationToContext)
-
-	return router
-}
-
-func AttachRoutes(router *mux.Router, serviceBroker domain.ServiceBroker, logger lager.Logger) {
+func AttachRoutes(router *mux.Router, serviceBroker domain.ServiceBroker, logger lager.Logger, brokerCredentials *Credentials) *mux.Router {
 	apiHandler := handlers.NewApiHandler(serviceBroker, logger)
 	router.HandleFunc("/v2/catalog", apiHandler.Catalog).Methods("GET")
 
@@ -49,4 +30,17 @@ func AttachRoutes(router *mux.Router, serviceBroker domain.ServiceBroker, logger
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}", apiHandler.Unbind).Methods("DELETE")
 
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}/last_operation", apiHandler.LastBindingOperation).Methods("GET")
+
+	router.Use(middlewares.AddCorrelationIDToContext)
+	if brokerCredentials != nil {
+		authMiddleware := auth.NewWrapper(brokerCredentials.Username, brokerCredentials.Password).Wrap
+		router.Use(authMiddleware)
+	}
+	apiVersionMiddleware := middlewares.APIVersionMiddleware{LoggerFactory: logger}
+
+	router.Use(middlewares.AddOriginatingIdentityToContext)
+	router.Use(apiVersionMiddleware.ValidateAPIVersionHdr)
+	router.Use(middlewares.AddInfoLocationToContext)
+
+	return router
 }

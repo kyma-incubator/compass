@@ -27,13 +27,13 @@ func TestCreateTenant(t *testing.T) {
 		ClusterType: ClusterTypeSingleNode,
 		Token:       token,
 		Environment: EnvironmentDev,
-		SamlTenant:  "ycloud.accounts.ondemand.com",
+		SamlTenant:  "kymatest.accounts400.ondemand.com",
 		URL:         url,
 	}, logrus.StandardLogger())
 
 	output, err := c.CreateTenant(CreateTenantInput{
 		Region: "eu",
-		Name:   "kymatest32109ooo87675abcdefgh",
+		Name:   "kymatest987",
 	})
 
 	t.Log(err)

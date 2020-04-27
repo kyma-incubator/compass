@@ -91,6 +91,7 @@ func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.Prov
 		input:                     initInput,
 		overrides:                 make(map[string][]*gqlschema.ConfigEntryInput, 0),
 		globalOverrides:           make([]*gqlschema.ConfigEntryInput, 0),
+		labels:                    make(map[string]string),
 		mutex:                     nsync.NewNamedMutex(),
 		hyperscalerInputProvider:  provider,
 		optionalComponentsService: f.optComponentsSvc,

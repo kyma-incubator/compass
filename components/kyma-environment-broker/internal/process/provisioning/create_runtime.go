@@ -17,6 +17,9 @@ import (
 const (
 	// the time after which the operation is marked as expired
 	CreateRuntimeTimeout = 1 * time.Hour
+
+	brokerKeyPrefix = "broker_"
+	globalKeyPrefix = "global_"
 )
 
 type CreateRuntimeStep struct {
@@ -102,7 +105,8 @@ func (s *CreateRuntimeStep) createProvisionInput(operation internal.Provisioning
 	var request gqlschema.ProvisionRuntimeInput
 
 	operation.InputCreator.SetProvisioningParameters(parameters.Parameters)
-	operation.InputCreator.SetRuntimeLabels(operation.InstanceID, parameters.ErsContext.SubAccountID)
+	operation.InputCreator.SetLabel(brokerKeyPrefix+"instance_id", operation.InstanceID)
+	operation.InputCreator.SetLabel(globalKeyPrefix+"subaccount_id", parameters.ErsContext.SubAccountID)
 	request, err := operation.InputCreator.Create()
 	if err != nil {
 		return request, errors.Wrap(err, "while building input for provisioner")
