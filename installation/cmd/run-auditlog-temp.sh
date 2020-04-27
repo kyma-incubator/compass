@@ -23,6 +23,10 @@ kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.he
 kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.helm\.tls\.key']}" | base64 --decode > "$(helm home)/key.pem"
 echo -e "Secrets with Tiller tls client certificates have been created \n"
 
+echo -e "Installing Compass..."
+echo -e "Applying the following overrides:"
+cat ${MINIKUBE_HELM_VALUES}
+
 MINIKUBE_IP=$(eval minikube ip)
 helm install \
 -f=${MINIKUBE_HELM_VALUES} \

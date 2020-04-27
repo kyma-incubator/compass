@@ -4,9 +4,9 @@ global:
     enabled: true
 
 gateway:
-    auditlog:
-        enabled: true
-        authMode: "oauth"
+  auditlog:
+    enabled: true
+    authMode: "oauth"
 
 director:
   deployment:
