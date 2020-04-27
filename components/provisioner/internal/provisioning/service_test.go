@@ -404,8 +404,10 @@ func TestService_MarkRuntimeAsDeleted(t *testing.T) {
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil)
 
 		//when
-		_, err := service.MarkRuntimeAsDeleted(runtimeID, tenant)
+		expectedMsg := "Runtime 184ccdf2-59e4-44b7-b553-6cb296af5ea0 marked as 'deleted'."
+		msg, err := service.MarkRuntimeAsDeleted(runtimeID, tenant)
 		require.NoError(t, err)
+		require.Equal(t, expectedMsg, msg)
 
 		//then
 		sessionFactoryMock.AssertExpectations(t)

@@ -139,12 +139,12 @@ func (r *Resolver) MarkRuntimeAsDeleted(ctx context.Context, id string) (string,
 		return "", err
 	}
 
-	_, err = r.provisioning.MarkRuntimeAsDeleted(id, tenant)
+	msg, err := r.provisioning.MarkRuntimeAsDeleted(id, tenant)
 	if err != nil {
 		log.Errorf("Failed to mark Runtime %s as deleted: %s", id, err)
 		return "", err
 	}
-	return "", nil
+	return msg, nil
 }
 
 func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string, error) {

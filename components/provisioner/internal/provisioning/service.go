@@ -220,7 +220,7 @@ func (r *service) MarkRuntimeAsDeleted(id, tenant string) (string, error) {
 	if dberr != nil {
 		return "", fmt.Errorf("Failed to mark Cluster %s as 'deleted': %s", id, dberr.Error())
 	}
-	return fmt.Sprintf("Cluster %s marked as 'deleted'.", id), nil
+	return fmt.Sprintf("Runtime %s marked as 'deleted'.", id), nil
 }
 
 func (r *service) ReconnectRuntimeAgent(id string) (string, error) {
