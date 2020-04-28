@@ -69,12 +69,12 @@ func authMiddleware(next http.Handler) http.Handler {
 		authHeader := r.Header.Get("Authorization")
 		if len(authHeader) == 0 {
 			w.Header().Add("Content-Type", "application/json")
-			httphelpers.WriteError(w, errors.New(`{"error":"No Authorization header"}`), http.StatusUnauthorized)
+			httphelpers.WriteError(w, errors.New("No Authorization header"), http.StatusUnauthorized)
 			return
 		}
 		if !strings.Contains(authHeader, "Bearer") {
 			w.Header().Add("Content-Type", "application/json")
-			httphelpers.WriteError(w, errors.New(`{"error":"No Bearer token"}`), http.StatusUnauthorized)
+			httphelpers.WriteError(w, errors.New("No Bearer token"), http.StatusUnauthorized)
 			return
 		}
 
