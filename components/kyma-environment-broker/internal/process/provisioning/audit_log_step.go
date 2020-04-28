@@ -1,9 +1,8 @@
 package provisioning
 
 import (
+	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -11,11 +10,13 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v2"
 )
 
 type AuditLogOverrides struct {
 	operationManager *process.ProvisionOperationManager
+	fs               afero.Fs
 }
 
 func (alo *AuditLogOverrides) Name() string {
@@ -29,9 +30,11 @@ type aduditLogCred struct {
 }
 
 func NewAuditLogOverridesStep(os storage.Operations) *AuditLogOverrides {
+	fileSystem := afero.NewOsFs()
 
 	return &AuditLogOverrides{
 		process.NewProvisionOperationManager(os),
+		fileSystem,
 	}
 }
 
@@ -40,7 +43,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 	// fetch the username, url and password
 	//file, err := os.Open("audit-log-config")
 
-	alcFile, err := readFile("audit-log-config")
+	alcFile, err := alo.readFile("audit-log-config")
 	if err != nil {
 		logger.Errorf("Unable to read audit log config file: %v", err)
 		return operation, 0, err
@@ -52,22 +55,25 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		return operation, 0, err
 	}
 
-	//luaScript, err := ioutil.ReadFile("audit-config-script")
-	luaScript, err := readFile("audit-log-script")
+	luaScript, err := alo.readFile("audit-log-script")
 	if err != nil {
 		logger.Errorf("Unable to read audit config script: %v", err)
-		return operation, 0, nil
+		return operation, 0, err
+	}
+	// Fetch the region
+	pp, err := operation.GetProvisioningParameters()
+	if err != nil {
+		logger.Errorf("Unable to get provisioning parameters", err.Error())
+		return operation, 0, errors.New("unable to get provisioning parameters")
 	}
 
-	// Fetch the region
-	region := "east"
 	var c aduditLogCred
 	for _, a := range alc {
-		if v, ok := a[region]; ok {
+		if v, ok := a[pp.PlatformRegion]; ok {
 			c = v
 			break
 		} else {
-			logger.Errorf("Unable to find credentials for the audit log for the region: %v", region)
+			logger.Errorf("Unable to find credentials for the audit log for the region: %v", pp.PlatformRegion)
 			return operation, 0, nil
 		}
 	}
@@ -108,10 +114,6 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 	return operation, 0, nil
 }
 
-func readFile(fileName string) ([]byte, error) {
-	file, err := os.Open(fileName)
-	if err != nil {
-		return nil, err
-	}
-	return ioutil.ReadAll(file)
+func (alo *AuditLogOverrides) readFile(fileName string) ([]byte, error) {
+	return afero.ReadFile(alo.fs, fileName)
 }

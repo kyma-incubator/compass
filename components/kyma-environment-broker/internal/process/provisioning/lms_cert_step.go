@@ -183,7 +183,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 		{Key: "fluent-bit.conf.Filter.Kubernetes.Merge_Log", Value: "Off"},
 		//input should not conatain dex logs as it contains sensitive data
 		{Key: "fluent-bit.conf.Input.Kubernetes.Exclude_Path", Value: "/var/log/containers/*_dex-*.log"},
-
+	})
 	return operation, 0, nil
 }
 
