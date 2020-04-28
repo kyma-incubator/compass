@@ -116,3 +116,26 @@ func TestGetCert(t *testing.T) {
 	t.Log(certUrl)
 	t.Log(err)
 }
+
+// export TENANT_ID=<tenant id>
+//
+// go test -v -tags=lms_integration ./internal/lms/... -run TestGetCACert
+func TestGetCACert(t *testing.T) {
+	tenant := os.Getenv("TENANT_ID")
+
+	url := os.Getenv("URL")
+	token := os.Getenv("TOKEN")
+
+	c := NewClient(Config{
+		ClusterType: ClusterTypeSingleNode,
+		Token:       token,
+		Environment: EnvironmentDev,
+		SamlTenant:  "ycloud.accounts.ondemand.com",
+		URL:         url,
+	}, logrus.StandardLogger())
+
+	signedCert, found, err := c.GetCACertificate(tenant)
+	t.Logf("Found: %v", found)
+	t.Logf(string(signedCert))
+	t.Log(err)
+}

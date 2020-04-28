@@ -144,7 +144,7 @@ func (c *client) CreateTenant(input CreateTenantInput) (o CreateTenantOutput, er
 	}
 
 	url := fmt.Sprintf("%s/tenants", c.url)
-	logrus.Debugf("url: %s", url)
+	c.log.Debugf("url: %s", url)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return CreateTenantOutput{}, errors.Wrapf(err, "while creating request Create Tenant")
@@ -312,7 +312,7 @@ func (c *client) getCertificate(tenantID string, certID string) (cert string, fo
 }
 
 func (c *client) GetCACertificate(tenantID string) (cert string, found bool, err error) {
-	return c.getCertificate(tenantID, "ca")
+	return c.GetCertificateByURL(fmt.Sprintf("%s/tenants/%s/certs/ca", c.url, tenantID))
 }
 
 func (c *client) RequestCertificate(tenantID string, subject pkix.Name) (string, []byte, error) {
@@ -324,9 +324,6 @@ func (c *client) RequestCertificate(tenantID string, subject pkix.Name) (string,
 		CertId int    `json:"certId"`
 		Csr    string `json:"csr"`
 	}
-	// todo: remove certId and get it from LMS after the LMS API is changed
-	//certID := random.New(random.NewSource(time.Now().UnixNano())).Intn(100000)
-	//payload.CertId = certID
 	payload.Csr = string(csr)
 
 	jsonPayload, err := json.Marshal(payload)
@@ -370,8 +367,6 @@ func (c *client) RequestCertificate(tenantID string, subject pkix.Name) (string,
 	if err != nil {
 		return "", []byte{}, errors.Wrapf(err, "while unmarshalling response: %s", string(body))
 	}
-	logrus.Infof("Signed Certificate URL: %s", response.CallbackURL)
-
 	return response.CallbackURL, privateKey, nil
 }
 
