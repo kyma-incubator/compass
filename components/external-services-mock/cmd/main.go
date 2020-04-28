@@ -1,10 +1,11 @@
 package main
 
 import (
-	"io"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/configurationchange"
 
@@ -68,16 +69,12 @@ func authMiddleware(next http.Handler) http.Handler {
 		authHeader := r.Header.Get("Authorization")
 		if len(authHeader) == 0 {
 			w.Header().Add("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_, err := io.WriteString(w, `{"error":"No Authorization header"}`)
-			exitOnError(err, "while writing auth response")
+			httphelpers.WriteError(w, errors.New(`{"error":"No Authorization header"}`), http.StatusUnauthorized)
 			return
 		}
 		if !strings.Contains(authHeader, "Bearer") {
 			w.Header().Add("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_, err := io.WriteString(w, `{"error":"No Bearer token"}`)
-			exitOnError(err, "while writing auth response")
+			httphelpers.WriteError(w, errors.New(`{"error":"No Bearer token"}`), http.StatusUnauthorized)
 			return
 		}
 

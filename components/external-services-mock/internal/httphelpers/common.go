@@ -2,6 +2,7 @@ package httphelpers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
@@ -12,17 +13,16 @@ const (
 	HeaderContentTypeValue = "application/json;charset=UTF-8"
 )
 
-func WriteError(writer http.ResponseWriter, err error, statusCode int) {
+func WriteError(writer http.ResponseWriter, errMsg error, statusCode int) {
 	writer.Header().Set(HeaderContentTypeKey, HeaderContentTypeValue)
 
 	response := model.ErrorResponse{
-		Error: err.Error(),
+		Error: errMsg.Error(),
 	}
 
 	value, err := json.Marshal(&response)
 	if err != nil {
-		//TODO: cleanup
-		panic(err)
+		log.Fatalf("while wriiting error message: %s, while marshalling %s ", errMsg.Error(), err.Error())
 	}
 	http.Error(writer, string(value), statusCode)
 }
