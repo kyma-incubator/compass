@@ -177,7 +177,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 		// record modifier filter
 		{Key: "fluent-bit.conf.Filter.record_modifier.enabled", Value: "true"},
 		{Key: "fluent-bit.conf.Filter.record_modifier.Match", Value: "*"},
-		{Key: "fluent-bit.conf.Filter.record_modifier.Key", Value: "cluster_name"},
+		{Key: "fluent-bit.conf.Filter.record_modifier.Key", Value: "subaccount_id"},
 		{Key: "fluent-bit.conf.Filter.record_modifier.Value", Value: pp.ErsContext.SubAccountID}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
 		//kubernetes filter should not parse the document to avoid indexing on LMS side
 		{Key: "fluent-bit.conf.Filter.Kubernetes.Merge_Log", Value: "Off"},

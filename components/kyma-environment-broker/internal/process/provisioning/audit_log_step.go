@@ -41,8 +41,6 @@ func NewAuditLogOverridesStep(os storage.Operations) *AuditLogOverrides {
 func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
 	// fetch the username, url and password
-	//file, err := os.Open("audit-log-config")
-
 	alcFile, err := alo.readFile("audit-log-config")
 	if err != nil {
 		logger.Errorf("Unable to read audit log config file: %v", err)
