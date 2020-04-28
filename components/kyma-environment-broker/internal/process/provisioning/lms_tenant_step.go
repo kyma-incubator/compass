@@ -50,7 +50,18 @@ func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, log
 	lmsTenantID, err := s.tenantProvider.ProvideLMSTenantID(pp.ErsContext.GlobalAccountID, region)
 	if err != nil {
 		errorMessage := fmt.Sprintf("Unable to request for LMS tenant ID: %s", err.Error())
-		return s.operationManager.RetryOperation(operation, errorMessage, 30*time.Second, 2*time.Minute, logger)
+		op, retry, err := s.operationManager.RetryOperation(operation, errorMessage, 30*time.Second, 3*time.Minute, logger)
+		// if there the retry timeout left - mark LMS failed and go to next steps without failing the provisioning operation
+		if err != nil {
+			op.Lms.Failed = true
+			o, repeat := s.operationManager.UpdateOperation(operation)
+			if repeat != 0 {
+				logger.Errorf("cannot save operation with LMS failed=true")
+				return operation, time.Second, nil
+			}
+			return o, 0, nil
+		}
+		return op, retry, nil
 	}
 
 	operation.Lms.TenantID = lmsTenantID

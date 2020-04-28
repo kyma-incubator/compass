@@ -33,7 +33,7 @@ func TestCreateTenant(t *testing.T) {
 
 	output, err := c.CreateTenant(CreateTenantInput{
 		Region: "eu",
-		Name:   "kymatest987",
+		Name:   "kymatest000",
 	})
 
 	t.Log(err)
@@ -84,21 +84,20 @@ func TestGenerateCsr(t *testing.T) {
 
 	subj := pkix.Name{
 		CommonName:         "fluentbit", // do not modify
-		Organization:       []string{"global-account-id"},
-		OrganizationalUnit: []string{"sub-account-id"},
+		Organization:       []string{"global-account-id1"},
+		OrganizationalUnit: []string{"sub-account-id1"},
 	}
-	id, resp, err := c.RequestCertificate(tID, subj)
-	t.Logf("CERT ID: %s", id)
+	url, resp, err := c.RequestCertificate(tID, subj)
+	t.Logf("CERT URL: %s", url)
 	t.Log(string(resp))
 	t.Log(err)
 }
 
 // export TENANT_ID=<tenant id>
-// export CERT_ID=<cert_id>
+// export CERT_URL=<cert_url>
 // go test -v -tags=lms_integration ./internal/lms/... -run TestGetCert
 func TestGetCert(t *testing.T) {
-	tID := os.Getenv("TENANT_ID")
-	certID := os.Getenv("CERT_ID")
+	certUrl := os.Getenv("CERT_URL")
 
 	url := os.Getenv("URL")
 	token := os.Getenv("TOKEN")
@@ -111,8 +110,9 @@ func TestGetCert(t *testing.T) {
 		URL:         url,
 	}, logrus.StandardLogger())
 
-	signedCert, found, err := c.GetSignedCertificate(tID, certID)
+	signedCert, found, err := c.GetCertificateByURL(certUrl)
 	t.Logf("Found: %v", found)
 	t.Logf(string(signedCert))
+	t.Log(certUrl)
 	t.Log(err)
 }

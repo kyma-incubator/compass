@@ -29,7 +29,7 @@ const (
 
 type LmsClient interface {
 	RequestCertificate(tenantID string, subject pkix.Name) (id string, privateKey []byte, err error)
-	GetSignedCertificate(tenantID string, certID string) (cert string, found bool, err error)
+	GetCertificateByURL(url string) (cert string, found bool, err error)
 	GetCACertificate(tenantID string) (cert string, found bool, err error)
 	GetTenantStatus(tenantID string) (status lms.TenantStatus, err error)
 	GetTenantInfo(tenantID string) (status lms.TenantInfo, err error)
@@ -110,7 +110,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 		Organization:       []string{pp.ErsContext.GlobalAccountID},
 		OrganizationalUnit: []string{pp.ErsContext.SubAccountID},
 	}
-	certId, pKey, err := s.provider.RequestCertificate(operation.Lms.TenantID, subj)
+	certURL, pKey, err := s.provider.RequestCertificate(operation.Lms.TenantID, subj)
 	if err != nil {
 		logger.Errorf("Unable to request LMS Certificates %s", err.Error())
 		return operation, 5 * time.Second, nil
@@ -122,7 +122,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 	// certs cannot be stored so there is a need to poll until certs are ready
 	// get Signed Certificate
 	err = wait.PollImmediate(pollingInterval, certPollingTimeout, func() (done bool, err error) {
-		c, found, err := s.provider.GetSignedCertificate(operation.Lms.TenantID, certId)
+		c, found, err := s.provider.GetCertificateByURL(certURL)
 		if err != nil {
 			logger.Warnf("Unable to get LMS Signed Certificate: %s, retrying", err.Error())
 			return false, nil
