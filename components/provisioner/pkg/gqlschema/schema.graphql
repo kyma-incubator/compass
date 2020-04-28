@@ -132,7 +132,6 @@ input RuntimeInput {
     name: String!           # Name of the Runtime
     description: String     # Runtime description
     labels: Labels
-    statusCondition: RuntimeStatusCondition
 }
 
 input ProvisionRuntimeInput {

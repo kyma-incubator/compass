@@ -27,12 +27,14 @@ func (c *QueryAssertClient) Do(req *graphql.Request, res interface{}) error {
 		c.expectedRequests = c.expectedRequests[1:]
 	}
 
-	if !c.shouldFail && len(c.modifyResponseFunc) > 0 {
+	if len(c.modifyResponseFunc) > 0 {
 		c.modifyResponseFunc[0](c.t, res)
 		if len(c.modifyResponseFunc) > 1 {
 			c.modifyResponseFunc = c.modifyResponseFunc[1:]
 		}
-
+		return nil
+	}
+	if !c.shouldFail {
 		return nil
 	}
 

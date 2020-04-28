@@ -22,7 +22,7 @@ const (
 type DirectorClient interface {
 	CreateRuntime(config *gqlschema.RuntimeInput, tenant string) (string, error)
 	GetRuntime(id, tenant string) (graphql.RuntimeExt, error)
-	UpdateRuntime(id string, config *gqlschema.RuntimeInput, tenant string) error
+	UpdateRuntime(id string, config *graphql.RuntimeInput, tenant string) error
 	DeleteRuntime(id, tenant string) error
 	SetRuntimeStatusCondition(id string, statusCondition gqlschema.RuntimeStatusCondition, tenant string) error
 	GetConnectionToken(id, tenant string) (graphql.OneTimeTokenForRuntimeExt, error)
@@ -110,28 +110,14 @@ func (cc *directorClient) GetRuntime(id, tenant string) (graphql.RuntimeExt, err
 	return *response.Result, nil
 }
 
-func (cc *directorClient) UpdateRuntime(id string, config *gqlschema.RuntimeInput, tenant string) error {
+func (cc *directorClient) UpdateRuntime(id string, directorInput *graphql.RuntimeInput, tenant string) error {
 	log.Infof("Updating Runtime in Director service")
 
-	if config == nil {
+	if directorInput == nil {
 		return errors.New("Cannot update runtime in Director: missing Runtime config")
 	}
-	var labels *graphql.Labels
-	if config.Labels != nil {
-		l := graphql.Labels(*config.Labels)
-		labels = &l
-	}
 
-	statusCondition := (graphql.RuntimeStatusCondition)(*config.StatusCondition)
-
-	directorInput := graphql.RuntimeInput{
-		Name:            config.Name,
-		Description:     config.Description,
-		Labels:          labels,
-		StatusCondition: &statusCondition,
-	}
-
-	runtimeInput, err := cc.graphqlizer.RuntimeInputToGQL(directorInput)
+	runtimeInput, err := cc.graphqlizer.RuntimeInputToGQL(*directorInput)
 	if err != nil {
 		log.Infof("Failed to create graphQLized Runtime input")
 		return err
@@ -185,15 +171,12 @@ func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition g
 		log.Errorf("Failed to get Runtime by ID: %s", err.Error())
 		return errors.Wrap(err, "failed to get runtime by ID")
 	}
-	labels := gqlschema.Labels{}
-	for key, value := range runtime.Labels {
-		labels[key] = value
-	}
-	runtimeInput := &gqlschema.RuntimeInput{
+	runtimeStatusCondition := (graphql.RuntimeStatusCondition)(statusCondition)
+	runtimeInput := &graphql.RuntimeInput{
 		Name:            runtime.Name,
 		Description:     runtime.Description,
-		StatusCondition: &statusCondition,
-		Labels:          &labels,
+		StatusCondition: &runtimeStatusCondition,
+		Labels:          &runtime.Labels,
 	}
 	err = cc.UpdateRuntime(id, runtimeInput, tenant)
 	if err != nil {

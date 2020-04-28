@@ -631,10 +631,10 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 
 	t.Run("should update Runtime", func(t *testing.T) {
 		//given
-		conditionConnectoed := gqlschema.RuntimeStatusConditionConnected
-		runtimeInput := &gqlschema.RuntimeInput{
+		conditionConnectoed := graphql.RuntimeStatusConditionConnected
+		runtimeInput := &graphql.RuntimeInput{
 			Name: runtimeTestingName,
-			Labels: &gqlschema.Labels{
+			Labels: &graphql.Labels{
 				"label1": "something",
 				"label2": "something2",
 			},
@@ -677,10 +677,10 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 			Expiration:  futureExpirationTime,
 		}
 
-		conditionConnectoed := gqlschema.RuntimeStatusConditionConnected
-		runtimeInput := &gqlschema.RuntimeInput{
+		conditionConnectoed := graphql.RuntimeStatusConditionConnected
+		runtimeInput := &graphql.RuntimeInput{
 			Name: runtimeTestingName,
-			Labels: &gqlschema.Labels{
+			Labels: &graphql.Labels{
 				"label1": "something",
 				"label2": "something2",
 			},
@@ -701,10 +701,10 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 
 	t.Run("should return error when Director returns nil response", func(t *testing.T) {
 		//given
-		conditionConnectoed := gqlschema.RuntimeStatusConditionConnected
-		runtimeInput := &gqlschema.RuntimeInput{
+		conditionConnectoed := graphql.RuntimeStatusConditionConnected
+		runtimeInput := &graphql.RuntimeInput{
 			Name: runtimeTestingName,
-			Labels: &gqlschema.Labels{
+			Labels: &graphql.Labels{
 				"label1": "something",
 				"label2": "something2",
 			},

@@ -106,11 +106,11 @@ func (_m *DirectorClient) SetRuntimeStatusCondition(id string, statusCondition g
 }
 
 // UpdateRuntime provides a mock function with given fields: id, config, tenant
-func (_m *DirectorClient) UpdateRuntime(id string, config *gqlschema.RuntimeInput, tenant string) error {
+func (_m *DirectorClient) UpdateRuntime(id string, config *graphql.RuntimeInput, tenant string) error {
 	ret := _m.Called(id, config, tenant)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *gqlschema.RuntimeInput, string) error); ok {
+	if rf, ok := ret.Get(0).(func(string, *graphql.RuntimeInput, string) error); ok {
 		r0 = rf(id, config, tenant)
 	} else {
 		r0 = ret.Error(0)

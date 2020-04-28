@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/fake"
 	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
 	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -22,6 +21,8 @@ import (
 func TestWaitForAgentToConnect(t *testing.T) {
 
 	cluster := model.Cluster{
+		ID:         "someID",
+		Tenant:     "someTenant",
 		Kubeconfig: util.StringPtr(kubeconfig),
 	}
 
@@ -48,7 +49,7 @@ func TestWaitForAgentToConnect(t *testing.T) {
 			})
 
 			directorClient := &directorMocks.DirectorClient{}
-			directorClient.On("SetRuntimeStatusCondition", mock.AnythingOfType("string"), gqlschema.RuntimeStatusConditionConnected, mock.AnythingOfType("string")).Return(nil)
+			directorClient.On("SetRuntimeStatusCondition", cluster.ID, gqlschema.RuntimeStatusConditionConnected, cluster.Tenant).Return(nil)
 
 			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
 
@@ -71,7 +72,7 @@ func TestWaitForAgentToConnect(t *testing.T) {
 			})
 
 			directorClient := &directorMocks.DirectorClient{}
-			directorClient.On("SetRuntimeStatusCondition", mock.AnythingOfType("string"), gqlschema.RuntimeStatusConditionConnected, mock.AnythingOfType("string")).Return(fmt.Errorf("some error"))
+			directorClient.On("SetRuntimeStatusCondition", cluster.ID, gqlschema.RuntimeStatusConditionConnected, cluster.Tenant).Return(fmt.Errorf("some error"))
 
 			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
 
@@ -95,7 +96,7 @@ func TestWaitForAgentToConnect(t *testing.T) {
 		})
 
 		directorClient := &directorMocks.DirectorClient{}
-		directorClient.On("SetRuntimeStatusCondition", mock.AnythingOfType("string"), gqlschema.RuntimeStatusConditionConnected, mock.AnythingOfType("string")).Return(nil)
+		directorClient.On("SetRuntimeStatusCondition", cluster.ID, gqlschema.RuntimeStatusConditionConnected, cluster.Tenant).Return(nil)
 
 		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
 
@@ -118,7 +119,7 @@ func TestWaitForAgentToConnect(t *testing.T) {
 		})
 
 		directorClient := &directorMocks.DirectorClient{}
-		directorClient.On("SetRuntimeStatusCondition", mock.AnythingOfType("string"), gqlschema.RuntimeStatusConditionConnected, mock.AnythingOfType("string")).Return(nil)
+		directorClient.On("SetRuntimeStatusCondition", cluster.ID, gqlschema.RuntimeStatusConditionConnected, cluster.Tenant).Return(nil)
 
 		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
 
@@ -135,7 +136,7 @@ func TestWaitForAgentToConnect(t *testing.T) {
 		// given
 		clientProvider := NewMockClientProvider(&v1alpha12.CompassConnection{})
 		directorClient := &directorMocks.DirectorClient{}
-		directorClient.On("SetRuntimeStatusCondition", mock.AnythingOfType("string"), gqlschema.RuntimeStatusConditionConnected, mock.AnythingOfType("string")).Return(nil)
+		directorClient.On("SetRuntimeStatusCondition", cluster.ID, gqlschema.RuntimeStatusConditionConnected, cluster.Tenant).Return(nil)
 
 		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
 
@@ -158,7 +159,7 @@ func TestWaitForAgentToConnect(t *testing.T) {
 		})
 
 		directorClient := &directorMocks.DirectorClient{}
-		directorClient.On("SetRuntimeStatusCondition", mock.AnythingOfType("string"), gqlschema.RuntimeStatusConditionConnected, mock.AnythingOfType("string")).Return(nil)
+		directorClient.On("SetRuntimeStatusCondition", cluster.ID, gqlschema.RuntimeStatusConditionConnected, cluster.Tenant).Return(nil)
 
 		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
 

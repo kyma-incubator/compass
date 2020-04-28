@@ -826,7 +826,6 @@ input RuntimeInput {
     name: String!           # Name of the Runtime
     description: String     # Runtime description
     labels: Labels
-    statusCondition: RuntimeStatusCondition
 }
 
 input ProvisionRuntimeInput {
@@ -4899,12 +4898,6 @@ func (ec *executionContext) unmarshalInputRuntimeInput(ctx context.Context, obj 
 			if err != nil {
 				return it, err
 			}
-		case "statusCondition":
-			var err error
-			it.StatusCondition, err = ec.unmarshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatusCondition(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -6501,30 +6494,6 @@ func (ec *executionContext) marshalORuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincub
 		return graphql.Null
 	}
 	return ec._RuntimeStatus(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalORuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatusCondition(ctx context.Context, v interface{}) (RuntimeStatusCondition, error) {
-	var res RuntimeStatusCondition
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalORuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatusCondition(ctx context.Context, sel ast.SelectionSet, v RuntimeStatusCondition) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatusCondition(ctx context.Context, v interface{}) (*RuntimeStatusCondition, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalORuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatusCondition(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatusCondition(ctx context.Context, sel ast.SelectionSet, v *RuntimeStatusCondition) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
