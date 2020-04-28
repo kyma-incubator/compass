@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	defaultDelay = 2 * time.Second
+	defaultDelay         = 2 * time.Second
+	backOffDirectorDelay = 1 * time.Second
 )
 
 func NewExecutor(
@@ -76,11 +77,8 @@ func (e *Executor) Execute(operationID string) ProcessingResult {
 				log.Errorf("unrecoverable error occurred while processing operation: %s", err.Error())
 				e.handleOperationFailure(operation, cluster, log)
 				e.updateOperationStatus(log, operation.ID, nonRecoverable.Error(), model.Failed, time.Now())
+				e.setRuntimeStatusCondition(log, cluster.ID, cluster.Tenant)
 
-				if err := e.directorClient.SetRuntimeStatusCondition(cluster.ID, gqlschema.RuntimeStatusConditionFailed, cluster.Tenant); err != nil {
-					log.Errorf("failed to set runtime %s status condition: %s", gqlschema.RuntimeStatusConditionFailed.String(), err.Error())
-					return ProcessingResult{Requeue: true, Delay: defaultDelay}
-				}
 				return ProcessingResult{Requeue: false}
 			}
 
@@ -171,6 +169,15 @@ func (e *Executor) updateOperationStatus(log logrus.FieldLogger, id, message str
 	}, retry.Attempts(5))
 	if err != nil {
 		log.Errorf("Failed to set operation status to %s: %s", state, err.Error())
+	}
+}
+
+func (e *Executor) setRuntimeStatusCondition(log logrus.FieldLogger, id, tenant string) {
+	err := retry.Do(func() error {
+		return e.directorClient.SetRuntimeStatusCondition(id, gqlschema.RuntimeStatusConditionFailed, tenant)
+	}, retry.Attempts(5), retry.Delay(backOffDirectorDelay), retry.DelayType(retry.BackOffDelay))
+	if err != nil {
+		log.Errorf("failed to set runtime %s status condition: %s", gqlschema.RuntimeStatusConditionFailed.String(), err.Error())
 	}
 }
 

@@ -119,7 +119,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		assert.True(t, failureHandler.called)
 	})
 
-	t.Run("should requeue operation and run failure handler if NonRecoverable error occurred but failed to update Director", func(t *testing.T) {
+	t.Run("should not requeue operation and run failure handler if NonRecoverable error occurred but failed to update Director", func(t *testing.T) {
 		// given
 		dbSession := &mocks.ReadWriteSession{}
 		dbSession.On("GetOperation", operationId).Return(operation, nil)
@@ -144,7 +144,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		result := executor.Execute(operationId)
 
 		// then
-		assert.True(t, result.Requeue)
+		assert.False(t, result.Requeue)
 		assert.True(t, mockStage.called)
 		assert.True(t, failureHandler.called)
 	})
