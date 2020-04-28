@@ -72,7 +72,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
-		logger.Errorf("Unable to get provisioning parameters", err.Error())
+		logger.Errorf("Unable to get provisioning parameters: %s", err.Error())
 		return operation, 0, errors.New("unable to get provisioning parameters")
 	}
 
@@ -116,7 +116,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 		logger.Errorf("Unable to request LMS Certificates %s", err.Error())
 		return operation, 5 * time.Second, nil
 	}
-	logger.Info("Signed Certificate URL: %s", certURL)
+	logger.Infof("Signed Certificate URL: %s", certURL)
 
 	var signedCert string
 	var caCert string
