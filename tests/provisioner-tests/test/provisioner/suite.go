@@ -1,9 +1,15 @@
 package provisioner
 
 import (
+	"crypto/tls"
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director"
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director/oauth"
+	gql "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
 	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
 
@@ -20,6 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
+	k8sConfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const (
@@ -33,6 +40,7 @@ const (
 type TestSuite struct {
 	TestId            string
 	ProvisionerClient provisioner.Client
+	DirectorClient    director.Client
 
 	gardenerProviders []string
 
@@ -48,11 +56,29 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 
 	provisionerClient := provisioner.NewProvisionerClient(config.InternalProvisionerURL, config.Tenant, config.QueryLogging)
 
+	kubernetesConfig, err := k8sConfig.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+	cli, err := client.New(kubernetesConfig, client.Options{})
+	if err != nil {
+		return nil, err
+	}
+	httpClient := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+	graphQLClient := gql.NewGraphQLClient(config.DirectorClient.URL, true, true)
+	oauthClient := oauth.NewOauthClient(httpClient, cli, config.DirectorClient.OauthCredentialsSecretName, config.DirectorClient.Namespace)
+	if err := oauthClient.WaitForCredentials(); err != nil {
+		return nil, err
+	}
+	directorClient := director.NewDirectorClient(oauthClient, *graphQLClient, logrus.WithField("service", "director_client"))
+
 	testId := randStringBytes(8)
 
 	return &TestSuite{
-		TestId:            testId,
+		TestId: testId,
+
 		ProvisionerClient: provisionerClient,
+		DirectorClient:    directorClient,
 
 		gardenerProviders: config.Gardener.Providers,
 
@@ -114,9 +140,9 @@ func (ts *TestSuite) KubernetesClientFromRawConfig(t *testing.T, rawConfig strin
 	_, err = tempKubeconfigFile.WriteString(rawConfig)
 	require.NoError(t, err)
 
-	k8sConfig, err := clientcmd.BuildConfigFromFlags("", tempKubeconfigFile.Name())
+	kubernetesConfig, err := clientcmd.BuildConfigFromFlags("", tempKubeconfigFile.Name())
 	require.NoError(t, err)
-	k8sClient, err := kubernetes.NewForConfig(k8sConfig)
+	k8sClient, err := kubernetes.NewForConfig(kubernetesConfig)
 	require.NoError(t, err)
 
 	return k8sClient

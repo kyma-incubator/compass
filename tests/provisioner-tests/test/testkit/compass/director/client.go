@@ -3,14 +3,17 @@ package director
 import (
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director/oauth"
+	gql "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	gql "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
+	"github.com/prometheus/common/log"
+	"github.com/sirupsen/logrus"
 )
 
 const (
-	AuthorizationHeader = "Authorization"
-	TenantHeader        = "Tenant"
+	authorizationHeaderKey = "Authorization"
+	tenantHeaderKey        = "Tenant"
 )
 
 type Client interface {
@@ -18,28 +21,31 @@ type Client interface {
 }
 
 type client struct {
-	graphQLClient *gql.Client
+	graphQLClient gql.Client
+	oauthClient   oauth.Client
 	queryProvider queryProvider
-	tenant        string
-}
-
-func NewClient(endpoint, tenant string, queryLogging bool) Client {
-	return &client{
-		tenant:        tenant,
-		graphQLClient: gql.NewGraphQLClient(endpoint, true, queryLogging),
-		queryProvider: queryProvider{},
-	}
+	token         oauth.Token
+	log           logrus.FieldLogger
 }
 
 type GetRuntimeResponse struct {
 	Result *graphql.RuntimeExt `json:"result"`
 }
 
+func NewDirectorClient(oauthClient oauth.Client, gqlClient gql.Client, log logrus.FieldLogger) Client {
+	return &client{
+		graphQLClient: gqlClient,
+		oauthClient:   oauthClient,
+		queryProvider: queryProvider{},
+		token:         oauth.Token{},
+		log:           log,
+	}
+}
+
 func (dc *client) GetRuntime(id, tenant string) (graphql.RuntimeExt, error) {
 	getRuntimeQuery := dc.queryProvider.getRuntimeQuery(id)
 	var response GetRuntimeResponse
-	err := dc.executeDirectorGraphQLCall(getRuntimeQuery, tenant, &response)
-	if err != nil {
+	if err := dc.executeDirectorGraphQLCall(getRuntimeQuery, tenant, &response); err != nil {
 		return graphql.RuntimeExt{}, errors.Wrap(err, fmt.Sprintf("Failed to get runtime %s from Director", id))
 	}
 	if response.Result == nil {
@@ -51,38 +57,31 @@ func (dc *client) GetRuntime(id, tenant string) (graphql.RuntimeExt, error) {
 	return *response.Result, nil
 }
 
-
-
-func (dc *client) executeDirectorGraphQLCall(query, tenant string, response interface{}) error {
+func (dc *client) executeDirectorGraphQLCall(directorQuery string, tenant string, response interface{}) error {
 	if dc.token.EmptyOrExpired() {
+		log.Infof("Refreshing token to access Director Service")
 		if err := dc.getToken(); err != nil {
 			return err
 		}
 	}
 
-	req := gcli.NewRequest(query)
-	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", dc.token.AccessToken))
-	req.Header.Set(TenantHeader, tenant)
+	req := gcli.NewRequest(directorQuery)
+	req.Header.Set(authorizationHeaderKey, fmt.Sprintf("Bearer %s", dc.token.AccessToken))
+	req.Header.Set(tenantHeaderKey, tenant)
 
-	err := dc.graphQLClient.ExecuteRequest(req, response)
-	if err != nil {
+	if err := dc.graphQLClient.ExecuteRequest(req, response); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to execute GraphQL query with Director"))
 	}
 
 	return nil
 }
 
-
 func (dc *client) getToken() error {
 	token, err := dc.oauthClient.GetAuthorizationToken()
 	if err != nil {
 		return errors.Wrap(err, "Error while obtaining token")
 	}
-
-	if token.EmptyOrExpired() {
-		return errors.New("Obtained empty or expired token")
-	}
-
 	dc.token = token
+
 	return nil
 }
