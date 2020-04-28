@@ -299,6 +299,8 @@ func TestService_CreateToPackage(t *testing.T) {
 	timestamp := time.Now()
 	frID := "fr-id"
 	frURL := "foo.bar"
+	spec := "test"
+
 	modelFr := fixModelFetchRequest(frID, frURL, timestamp)
 	modelFrSucceeded := fixModelFetchRequestWithCondition(frID, frURL, timestamp, model.FetchRequestStatusConditionSucceeded)
 	modelFrFailed := fixModelFetchRequestWithCondition(frID, frURL, timestamp, model.FetchRequestStatusConditionFailed)
@@ -321,6 +323,16 @@ func TestService_CreateToPackage(t *testing.T) {
 		Name:      name,
 		TargetURL: targetUrl,
 		Spec:      &model.APISpec{},
+		Version:   &model.Version{},
+	}
+
+	modelAPIDefinitionWithSpec := &model.APIDefinition{
+		ID:        id,
+		PackageID: packageID,
+		Tenant:    tenantID,
+		Name:      name,
+		TargetURL: targetUrl,
+		Spec:      &model.APISpec{Data: &spec},
 		Version:   &model.Version{},
 	}
 
@@ -361,6 +373,36 @@ func TestService_CreateToPackage(t *testing.T) {
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
 				svc.On("FetchAPISpec", fixModelFetchRequest(frID, frURL, timestamp)).Return(nil, nil).Once()
+				return svc
+			},
+			Input:       modelInput,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Success fetched API Spec",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
+				repo.On("Update", ctx, modelAPIDefinitionWithSpec).Return(nil).Once()
+
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("Create", ctx, modelFr).Return(nil).Once()
+				repo.On("Update", ctx, modelFrSucceeded).Return(nil).Once()
+
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				svc.On("Generate").Return(frID).Once()
+				return svc
+			},
+			FetchRequestServiceFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				svc.On("FetchAPISpec", fixModelFetchRequest(frID, frURL, timestamp)).Return(&spec, nil).Once()
 				return svc
 			},
 			Input:       modelInput,
