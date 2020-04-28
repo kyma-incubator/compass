@@ -36,10 +36,8 @@ func (s *Service) List() []model.ConfigurationChange {
 }
 
 func (s *Service) SearchByString(searchString string) []model.ConfigurationChange {
-	auditLogs := s.List()
 	configurationChangeSet := make(map[string]model.ConfigurationChange)
-
-	for _, auditLog := range auditLogs {
+	for _, auditLog := range s.configLogs {
 		for _, attribute := range auditLog.Attributes {
 			if strings.Contains(attribute.New, searchString) {
 				configurationChangeSet[auditLog.UUID] = auditLog
