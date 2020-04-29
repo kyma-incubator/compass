@@ -70,7 +70,7 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	if err := oauthClient.WaitForCredentials(); err != nil {
 		return nil, err
 	}
-	directorClient := director.NewDirectorClient(oauthClient, *graphQLClient, logrus.WithField("service", "director_client"))
+	directorClient := director.NewDirectorClient(oauthClient, *graphQLClient, config.Tenant, logrus.WithField("service", "director_client"))
 
 	testId := randStringBytes(8)
 

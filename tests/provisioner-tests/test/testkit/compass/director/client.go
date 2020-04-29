@@ -17,7 +17,7 @@ const (
 )
 
 type Client interface {
-	GetRuntime(id, tenant string) (graphql.RuntimeExt, error)
+	GetRuntime(id string) (graphql.RuntimeExt, error)
 }
 
 type client struct {
@@ -25,6 +25,7 @@ type client struct {
 	oauthClient   oauth.Client
 	queryProvider queryProvider
 	token         oauth.Token
+	tenant        string
 	log           logrus.FieldLogger
 }
 
@@ -32,20 +33,21 @@ type GetRuntimeResponse struct {
 	Result *graphql.RuntimeExt `json:"result"`
 }
 
-func NewDirectorClient(oauthClient oauth.Client, gqlClient gql.Client, log logrus.FieldLogger) Client {
+func NewDirectorClient(oauthClient oauth.Client, gqlClient gql.Client, tenant string, log logrus.FieldLogger) Client {
 	return &client{
 		graphQLClient: gqlClient,
 		oauthClient:   oauthClient,
 		queryProvider: queryProvider{},
 		token:         oauth.Token{},
+		tenant:        tenant,
 		log:           log,
 	}
 }
 
-func (dc *client) GetRuntime(id, tenant string) (graphql.RuntimeExt, error) {
+func (dc *client) GetRuntime(id string) (graphql.RuntimeExt, error) {
 	getRuntimeQuery := dc.queryProvider.getRuntimeQuery(id)
 	var response GetRuntimeResponse
-	if err := dc.executeDirectorGraphQLCall(getRuntimeQuery, tenant, &response); err != nil {
+	if err := dc.executeDirectorGraphQLCall(getRuntimeQuery, dc.tenant, &response); err != nil {
 		return graphql.RuntimeExt{}, errors.Wrap(err, fmt.Sprintf("Failed to get runtime %s from Director", id))
 	}
 	if response.Result == nil {
