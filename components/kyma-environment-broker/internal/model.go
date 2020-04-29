@@ -115,9 +115,10 @@ type ProvisioningOperation struct {
 type DeprovisioningOperation struct {
 	Operation `json:"-"`
 
-	Avs          AvsLifecycleData `json:"avs"`
-	EventHub     EventHub         `json:"eh"`
-	SubAccountID string           `json:"-"`
+	ProvisioningParameters string           `json:"provisioning_parameters"`
+	Avs                    AvsLifecycleData `json:"avs"`
+	EventHub               EventHub         `json:"eh"`
+	SubAccountID           string           `json:"-"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
@@ -179,6 +180,27 @@ func (po *ProvisioningOperation) SetProvisioningParameters(parameters Provisioni
 	}
 
 	po.ProvisioningParameters = string(params)
+	return nil
+}
+
+func (do *DeprovisioningOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
+	var pp ProvisioningParameters
+
+	err := json.Unmarshal([]byte(do.ProvisioningParameters), &pp)
+	if err != nil {
+		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+	}
+
+	return pp, nil
+}
+
+func (do *DeprovisioningOperation) SetProvisioningParameters(parameters ProvisioningParameters) error {
+	params, err := json.Marshal(parameters)
+	if err != nil {
+		return errors.Wrap(err, "while marshaling provisioning parameters")
+	}
+
+	do.ProvisioningParameters = string(params)
 	return nil
 }
 

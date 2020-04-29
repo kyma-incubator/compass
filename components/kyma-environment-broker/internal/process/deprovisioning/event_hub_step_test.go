@@ -184,8 +184,8 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		wantRepeatOperation bool
 	}{
 		{
-			name:          "Instance provision parameter errors",
-			giveOperation: fixDeprovisioningOperationWithParameters,
+			name:          "Operation provision parameter errors",
+			giveOperation: fixDeprovisioningOperationWithDeletedEventHub,
 			giveInstance:  fixInvalidInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
@@ -366,7 +366,7 @@ func fixLogger() logrus.FieldLogger {
 }
 
 func fixDeprovisioningOperationWithParameters() internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
+	pp := internal.DeprovisioningOperation{
 		Operation: internal.Operation{
 			ID:                     fixOperationID,
 			InstanceID:             fixInstanceID,
@@ -375,6 +375,14 @@ func fixDeprovisioningOperationWithParameters() internal.DeprovisioningOperation
 			UpdatedAt:              time.Now(),
 		},
 	}
+	_ = pp.SetProvisioningParameters(internal.ProvisioningParameters{
+		PlanID:         "",
+		ServiceID:      "",
+		ErsContext:     internal.ERSContext{},
+		Parameters:     internal.ProvisioningParametersDTO{},
+		PlatformRegion: "",
+	})
+	return pp
 }
 
 func fixDeprovisioningOperationWithDeletedEventHub() internal.DeprovisioningOperation {
@@ -398,7 +406,7 @@ func ensureOperationIsRepeated(t *testing.T, op internal.DeprovisioningOperation
 
 func ensureOperationIsNotRepeated(t *testing.T, err error) {
 	t.Helper()
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 }
 
 func ensureOperationSuccessful(t *testing.T, op internal.DeprovisioningOperation, when time.Duration, err error) {

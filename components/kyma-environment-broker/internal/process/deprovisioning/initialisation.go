@@ -24,7 +24,7 @@ const (
 
 type InitialisationStep struct {
 	operationManager  *process.DeprovisionOperationManager
-	operationStorage  storage.Provisioning
+	operationStorage  storage.Operations
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
 }
@@ -61,6 +61,12 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 		return s.operationManager.OperationFailed(operation, "cannot get provisioning parameters from operation")
 	}
 	operation.SubAccountID = parameters.ErsContext.SubAccountID
+
+	err = operation.SetProvisioningParameters(parameters)
+	if err != nil {
+		log.Error("Aborting after failing to save provisioning parameters for operation")
+		return s.operationManager.OperationFailed(operation, err.Error())
+	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
