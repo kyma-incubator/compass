@@ -392,7 +392,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:b1088526fcb0be1a92ae8feb398260cdab4e648b6e541f1de28bb0f7590cd815"
+  digest = "1:214f5740cc8aea0c3825d4fc7457dcb909e54d6c985164f239035e8628d9fde6"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -401,6 +401,10 @@
     "components/director/pkg/jsonschema",
     "components/director/pkg/pagination",
     "components/director/pkg/scalar",
+    "components/gateway/internal/auditlog",
+    "components/gateway/internal/auditlog/model",
+    "components/gateway/pkg/httpcommon",
+    "components/gateway/pkg/proxy",
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
@@ -1103,6 +1107,7 @@
     "github.com/hashicorp/go-multierror",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/director/pkg/jsonschema",
+    "github.com/kyma-incubator/compass/components/gateway/internal/auditlog",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",

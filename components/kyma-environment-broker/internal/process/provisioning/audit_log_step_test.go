@@ -105,6 +105,7 @@ func TestAuditLog_HappyPath(t *testing.T) {
 
 	fileScript := `
 func myScript() {
+foo: sub_account_id
 return "fooBar"
 }
 `
@@ -158,10 +159,16 @@ return "fooBar"
         tls.debug        1
 
 `
+	expectedFileScript := `
+func myScript() {
+foo: 1234567890
+return "fooBar"
+}
+`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
 			Key:   "fluent-bit.conf.script",
-			Value: fileScript,
+			Value: expectedFileScript,
 		},
 		{
 			Key:   "fluent-bit.conf.extra",
@@ -171,7 +178,7 @@ return "fooBar"
 
 	operation := internal.ProvisioningOperation{
 		InputCreator:           inputCreatorMock,
-		ProvisioningParameters: `{"platform_region": "east"}`,
+		ProvisioningParameters: `{"platform_region": "east", "ers_context": {"subaccount_id": "1234567890"}}`,
 	}
 	repo.InsertProvisioningOperation(operation)
 	// when

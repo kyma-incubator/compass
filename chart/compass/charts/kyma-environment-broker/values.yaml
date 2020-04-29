@@ -105,6 +105,10 @@ edp:
   secret: "TBD"
   secretName: "edp-creds"
 
+audit-logs:
+  secretName: "audt-log-config"
+  scriptName: "audit-log-script"
+
 e2e:
   azure:
     configName: "e2e-runtime-config-azure"

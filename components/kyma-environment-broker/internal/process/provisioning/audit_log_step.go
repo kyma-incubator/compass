@@ -3,12 +3,15 @@ package provisioning
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v2"
@@ -17,6 +20,7 @@ import (
 type AuditLogOverrides struct {
 	operationManager *process.ProvisionOperationManager
 	fs               afero.Fs
+	auditLogConfig  auditlog.Config
 }
 
 func (alo *AuditLogOverrides) Name() string {
@@ -53,17 +57,19 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		return operation, 0, err
 	}
 
-	luaScript, err := alo.readFile("audit-log-script")
-	if err != nil {
-		logger.Errorf("Unable to read audit config script: %v", err)
-		return operation, 0, err
-	}
 	// Fetch the region
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
 		logger.Errorf("Unable to get provisioning parameters", err.Error())
 		return operation, 0, errors.New("unable to get provisioning parameters")
 	}
+	luaScript, err := alo.readFile("audit-log-script")
+	if err != nil {
+		logger.Errorf("Unable to read audit config script: %v", err)
+		return operation, 0, err
+	}
+
+	replacedScript := strings.Replace(string(luaScript), "sub_account_id", pp.ErsContext.SubAccountID, -1)
 
 	var c aduditLogCred
 	for _, a := range alc {
@@ -77,7 +83,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 	}
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
-		{Key: "fluent-bit.conf.script", Value: string(luaScript)},
+		{Key: "fluent-bit.conf.script", Value: replacedScript},
 		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
 [FILTER]
 		Name    lua

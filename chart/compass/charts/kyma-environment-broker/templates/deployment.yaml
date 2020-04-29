@@ -196,6 +196,10 @@ spec:
               readOnly: true
             - mountPath: /config
               name: config-volume
+            - mountPath: /audit-log-script
+              name: audit-log-script
+            - mountPath: /audit-log-config
+              name: audit-log-config
           {{if eq .Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
@@ -229,3 +233,9 @@ spec:
       - name: gardener-kubeconfig
         secret:
           secretName: {{ .Values.gardener.secretName }}
+      - name: audit-log-config
+        secret:
+          secretName: {{ .Values.audit-logs.secretName }}
+      - name: audit-log-script
+        configMap:
+          name: {{ .Values.audit-logs.scriptName }}
