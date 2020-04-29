@@ -99,10 +99,8 @@ func TestClient_GetCACertificate(t *testing.T) {
 }
 
 func TestClient_GetSignedCertificate(t *testing.T) {
-	const certID = "cert-id"
 	called := false
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, fmt.Sprintf("/tenants/%s/certs/%s", tenantID, certID), r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
 		assert.Equal(t, r.Header.Get("X-LMS-Token"), token)
 		called = true
@@ -115,7 +113,7 @@ func TestClient_GetSignedCertificate(t *testing.T) {
 	client := createClient(ts.URL)
 
 	// when
-	cert, found, err := client.GetSignedCertificate(tenantID, certID)
+	cert, found, err := client.GetCertificateByURL(ts.URL)
 
 	// then
 	require.NoError(t, err)
@@ -133,7 +131,7 @@ func TestClient_RequestCertificate(t *testing.T) {
 		called = true
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(fmt.Sprintf(`{"id": "%s","dns": "%s"}`, tenantID, host)))
+		w.Write([]byte(`{"callbackURL": "https://url.to.cert"}`))
 	}))
 	defer ts.Close()
 
@@ -145,11 +143,11 @@ func TestClient_RequestCertificate(t *testing.T) {
 		Organization:       []string{"global-account-id"},
 		OrganizationalUnit: []string{"sub-account-id"},
 	}
-	certID, pkey, err := client.RequestCertificate(tenantID, subj)
+	certURL, pkey, err := client.RequestCertificate(tenantID, subj)
 
 	// then
 	require.NoError(t, err)
-	assert.NotEmpty(t, certID)
+	assert.NotEmpty(t, certURL)
 	assert.NotEmpty(t, pkey)
 	assert.True(t, called)
 }

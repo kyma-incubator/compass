@@ -10,10 +10,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	random "math/rand"
 	"net/http"
-
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/iosafety"
@@ -27,7 +24,7 @@ type Client interface {
 	GetTenantInfo(tenantID string) (status TenantInfo, err error)
 
 	GetCACertificate(tenantID string) (cert string, found bool, err error)
-	GetSignedCertificate(tenantID string, certID string) (cert string, found bool, err error)
+	GetCertificateByURL(url string) (cert string, found bool, err error)
 	RequestCertificate(tenantID string, subject pkix.Name) (string, []byte, error)
 }
 
@@ -147,7 +144,7 @@ func (c *client) CreateTenant(input CreateTenantInput) (o CreateTenantOutput, er
 	}
 
 	url := fmt.Sprintf("%s/tenants", c.url)
-	logrus.Debugf("url: %s", url)
+	c.log.Debugf("url: %s", url)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return CreateTenantOutput{}, errors.Wrapf(err, "while creating request Create Tenant")
@@ -266,16 +263,16 @@ func (c *client) GetTenantInfo(tenantID string) (status TenantInfo, err error) {
 	return response, nil
 }
 
-func (c *client) getCertificate(tenantID string, certID string) (cert string, found bool, err error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/tenants/%s/certs/%s", c.url, tenantID, certID), nil)
+func (c *client) GetCertificateByURL(url string) (cert string, found bool, err error) {
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return "", false, errors.Wrapf(err, "while calling Get Signed Certificate request")
+		return "", false, errors.Wrapf(err, "while creating Get Certificate request (%s)", url)
 	}
 	req.Header.Add("X-LMS-Token", c.token)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", false, errors.Wrapf(err, "while calling Get Signed Certificate endpoint")
+		return "", false, errors.Wrapf(err, "while calling Get Certificate endpoint (%s)", url)
 	}
 	defer func() {
 		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
@@ -292,11 +289,6 @@ func (c *client) getCertificate(tenantID string, certID string) (cert string, fo
 		Cert string `json:"cert"`
 	}
 
-	err = json.Unmarshal(body, &certResponse)
-	if err != nil {
-		return "", false, errors.Wrapf(err, "while unmarshalling response: %s", string(body))
-	}
-
 	if resp.StatusCode == http.StatusNotFound {
 		return "", false, nil
 	}
@@ -307,15 +299,20 @@ func (c *client) getCertificate(tenantID string, certID string) (cert string, fo
 			resp.StatusCode, body)
 	}
 
+	err = json.Unmarshal(body, &certResponse)
+	if err != nil {
+		return "", false, errors.Wrapf(err, "while unmarshalling response: %s", string(body))
+	}
+
 	return certResponse.Cert, true, nil
 }
 
-func (c *client) GetCACertificate(tenantID string) (cert string, found bool, err error) {
-	return c.getCertificate(tenantID, "ca")
+func (c *client) getCertificate(tenantID string, certID string) (cert string, found bool, err error) {
+	return c.GetCertificateByURL(fmt.Sprintf("%s/tenants/%s/certs/%s", c.url, tenantID, certID))
 }
 
-func (c *client) GetSignedCertificate(tenantID string, certID string) (cert string, found bool, err error) {
-	return c.getCertificate(tenantID, certID)
+func (c *client) GetCACertificate(tenantID string) (cert string, found bool, err error) {
+	return c.GetCertificateByURL(fmt.Sprintf("%s/tenants/%s/certs/ca", c.url, tenantID))
 }
 
 func (c *client) RequestCertificate(tenantID string, subject pkix.Name) (string, []byte, error) {
@@ -327,9 +324,6 @@ func (c *client) RequestCertificate(tenantID string, subject pkix.Name) (string,
 		CertId int    `json:"certId"`
 		Csr    string `json:"csr"`
 	}
-	// todo: remove certId and get it from LMS after the LMS API is changed
-	certID := random.New(random.NewSource(time.Now().UnixNano())).Intn(100000)
-	payload.CertId = certID
 	payload.Csr = string(csr)
 
 	jsonPayload, err := json.Marshal(payload)
@@ -358,17 +352,22 @@ func (c *client) RequestCertificate(tenantID string, subject pkix.Name) (string,
 		}
 	}()
 
-	if resp.StatusCode >= 400 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return "", privateKey, errors.Errorf("got HTTP status code %d, message: %s", resp.StatusCode, body)
+	body, err := ioutil.ReadAll(resp.Body)
+	var response struct {
+		CallbackURL string `json:"callbackUrl"`
 	}
 
-	body, _ := ioutil.ReadAll(resp.Body)
-	// todo: handle resp
-	logrus.Infof("got %s", body)
+	if resp.StatusCode >= 400 {
+		return "", []byte{}, errors.Errorf("error when calling request cert endpoint,"+
+			" status code: %d, body: %s",
+			resp.StatusCode, body)
+	}
 
-	// todo: read certId returned from LMS
-	return fmt.Sprintf("%d", certID), privateKey, nil
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return "", []byte{}, errors.Wrapf(err, "while unmarshalling response: %s", string(body))
+	}
+	return response.CallbackURL, privateKey, nil
 }
 
 func (c *client) generateCSR(subject pkix.Name) (csr []byte, privateKey []byte, err error) {

@@ -11,6 +11,7 @@ import (
 
 	"encoding/base64"
 
+	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -29,7 +30,7 @@ const (
 
 type LmsClient interface {
 	RequestCertificate(tenantID string, subject pkix.Name) (id string, privateKey []byte, err error)
-	GetSignedCertificate(tenantID string, certID string) (cert string, found bool, err error)
+	GetCertificateByURL(url string) (cert string, found bool, err error)
 	GetCACertificate(tenantID string) (cert string, found bool, err error)
 	GetTenantStatus(tenantID string) (status lms.TenantStatus, err error)
 	GetTenantInfo(tenantID string) (status lms.TenantInfo, err error)
@@ -58,11 +59,12 @@ func (s *lmsCertStep) Name() string {
 // 1. check if the tenant is ready
 // 2. request certificates
 // 3. poll CA and signed certificates
-func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if operation.Lms.Failed {
-		logger.Info("LMS has failed, skipping")
+		l.Info("LMS has failed, skipping")
 		return operation, 0, nil
 	}
+	logger := l.WithField("LMSTenant", operation.Lms.TenantID)
 
 	if operation.Lms.TenantID == "" {
 		logger.Error("Create LMS Tenant step must be run before")
@@ -71,16 +73,16 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
-		logger.Errorf("Unable to get provisioning parameters", err.Error())
+		logger.Errorf("Unable to get provisioning parameters: %s", err.Error())
 		return operation, 0, errors.New("unable to get provisioning parameters")
 	}
 
 	// check if LMS tenant is ready
 	status, err := s.provider.GetTenantStatus(operation.Lms.TenantID)
 	if err != nil {
-		logger.Errorf("Unable to get LMS Tenant (id=%s) status: %s", operation.Lms.TenantID, err.Error())
+		logger.Errorf("Unable to get LMS Tenant status: %s", err.Error())
 		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
-			logger.Error("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
+			logger.Errorf("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
 			return s.failLmsAndUpdate(operation)
 		}
 		return operation, tenantReadyRetryInterval, nil
@@ -98,7 +100,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 	if err != nil {
 		logger.Errorf("Unable to get LMS Tenant info: %s", err.Error())
 		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
-			logger.Error("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
+			logger.Errorf("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
 			return s.failLmsAndUpdate(operation)
 		}
 		return operation, tenantReadyRetryInterval, nil
@@ -108,13 +110,14 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 	subj := pkix.Name{
 		CommonName:         "fluentbit", // do not modify
 		Organization:       []string{pp.ErsContext.GlobalAccountID},
-		OrganizationalUnit: []string{pp.ErsContext.SubAccountID},
+		OrganizationalUnit: []string{uuid.New().String()},
 	}
-	certId, pKey, err := s.provider.RequestCertificate(operation.Lms.TenantID, subj)
+	certURL, pKey, err := s.provider.RequestCertificate(operation.Lms.TenantID, subj)
 	if err != nil {
 		logger.Errorf("Unable to request LMS Certificates %s", err.Error())
 		return operation, 5 * time.Second, nil
 	}
+	logger.Infof("Signed Certificate URL: %s", certURL)
 
 	var signedCert string
 	var caCert string
@@ -122,7 +125,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 	// certs cannot be stored so there is a need to poll until certs are ready
 	// get Signed Certificate
 	err = wait.PollImmediate(pollingInterval, certPollingTimeout, func() (done bool, err error) {
-		c, found, err := s.provider.GetSignedCertificate(operation.Lms.TenantID, certId)
+		c, found, err := s.provider.GetCertificateByURL(certURL)
 		if err != nil {
 			logger.Warnf("Unable to get LMS Signed Certificate: %s, retrying", err.Error())
 			return false, nil
@@ -158,7 +161,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 		return s.failLmsAndUpdate(operation)
 	}
 
-	operation.InputCreator.SetLabel(kibanaURLLabelKey, fmt.Sprintf("kibana.%s", tenantInfo.DNS))
+	operation.InputCreator.SetLabel(kibanaURLLabelKey, fmt.Sprintf("https://kibana.%s", tenantInfo.DNS))
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.conf.Output.forward.enabled", Value: "true"},
