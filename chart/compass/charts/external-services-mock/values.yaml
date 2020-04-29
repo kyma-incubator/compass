@@ -1,5 +1,5 @@
 deployment:
-  replicaCount: 1
+  port: 8080
   image:
     pullPolicy: IfNotPresent
   resources: {}
@@ -7,9 +7,5 @@ deployment:
     runAsUser: 2000
     allowPrivilegeEscalation: false
 
-gateway:
-  enabled: true
-  manageCerts: true
-  auditlog:
-    enabled: false
-    authMode: "basic"
+service:
+  port: 8080
