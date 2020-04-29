@@ -59,8 +59,8 @@ The Director binary allows to override some configuration parameters. You can sp
 | **APP_API_ENDPOINT**                         | `/graphql`                      | The endpoint for GraphQL API                                       |
 | **APP_PLAYGROUND_API_ENDPOINT**              | `/graphql`                      | The endpoint of GraphQL API for the Playground                     |
 | **APP_TENANT_MAPPING_ENDPOINT**              | `/tenant-mapping`               | The endpoint of Tenant Mapping Service                             |
-| **APP_SCOPES_CONFIGURATION_FILE**            | None                            | The path for scopes configuration file                             |
-| **APP_SCOPES_CONFIGURATION_FILE_RELOAD**     | `1m`                            | The period when the scopes configuration file is reloaded          |
+| **APP_CONFIGURATION_FILE**                   | None                            | The path for configuration file                                    |
+| **APP_CONFIGURATION_FILE_RELOAD**            | `1m`                            | The period when the configuration file is reloaded                 |
 | **APP_JWKS_ENDPOINT**                        | `file://hack/default-jwks.json` | The path for JWKS                                                  |
 | **APP_JWKS_SYNC_PERIOD**                     | `5m`                            | The period when the JWKS is synced                                 |
 | **APP_ONE_TIME_TOKEN_URL**                   | None                            | The endpoint for fetching a one-time token                         |

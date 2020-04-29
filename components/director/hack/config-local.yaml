@@ -95,3 +95,8 @@ clientCredentialsRegistrationScopes:
     - "label_definition:write"
     - "automatic_scenario_assignment:read" 
     - "automatic_scenario_assignment:write"
+
+applicationHideSelectors:
+  applicationType:
+    - "Test/App"
+    - "Work In Progress"

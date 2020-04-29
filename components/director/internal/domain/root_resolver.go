@@ -5,47 +5,38 @@ import (
 	"net/http"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
-	"github.com/kyma-incubator/compass/components/director/internal/features"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/viewer"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
-	"github.com/kyma-incubator/compass/components/director/pkg/scope"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/healthcheck"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationsystem"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
+	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/viewer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/graphql_client"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}
@@ -72,7 +63,7 @@ type RootResolver struct {
 	scenarioAssignment  *scenarioassignment.Resolver
 }
 
-func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, pairingAdaptersMapping map[string]string, featuresConfig features.Config) *RootResolver {
+func NewRootResolver(transact persistence.Transactioner, cfgProvider *configprovider.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, pairingAdaptersMapping map[string]string, featuresConfig features.Config) *RootResolver {
 	authConverter := auth.NewConverter()
 	runtimeConverter := runtime.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
@@ -130,7 +121,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, scenariosSvc, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
-	oAuth20Svc := oauth20.NewService(scopeCfgProvider, uidSvc, oAuth20Cfg)
+	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
 	packageSvc := mp_package.NewService(packageRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
