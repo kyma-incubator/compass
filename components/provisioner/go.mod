@@ -20,6 +20,7 @@ require (
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200422062252-6074323197a6
 	github.com/lib/pq v1.2.0
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0

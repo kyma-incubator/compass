@@ -175,6 +175,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	auditLogsConfigPath := filepath.Join("testdata", "config.json")
 
+	maintenanceWindowConfigPath := filepath.Join("testdata", "maintwindow.json")
+
 	shootInterface := newFakeShootsInterface(t, cfg)
 	secretsInterface := setupSecretsClient(t, cfg)
 	dbsFactory := dbsession.NewFactory(connection)
@@ -217,7 +219,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock.On("SetRuntimeStatusCondition", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 			uuidGenerator := uuid.NewUUIDGenerator()
-			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName)
+			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName, maintenanceWindowConfigPath)
 
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 
