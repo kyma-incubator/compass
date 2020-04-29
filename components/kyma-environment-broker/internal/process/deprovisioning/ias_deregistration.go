@@ -35,8 +35,8 @@ func (s *IASDeregistrationStep) Run(operation internal.DeprovisioningOperation, 
 	err := spb.DeleteServiceProvider()
 	if err != nil {
 		msg := fmt.Sprintf("cannot delete ServiceProvider %s", spb.ServiceProviderName())
-		log.Errorf(msg)
-		return s.operationManager.RetryOperation(operation, msg, 5*time.Second, 10*time.Minute, log)
+		log.Errorf("%s: %s", msg, err)
+		return s.operationManager.RetryOperationWithoutFail(operation, msg, 5*time.Second, 5*time.Minute, log)
 	}
 
 	return operation, 0, nil
