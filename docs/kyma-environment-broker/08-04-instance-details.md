@@ -1,10 +1,10 @@
-# Check instance details
+# Check SKR instance details
 
-This tutorial shows how to get the instance details.
+This tutorial shows how to get the SKR instance details.
 
 ## Steps
 
-1. Export the instance ID that you set during [provisioning](./08-01-provisioning-kyma-environment.md).
+1. Export the instance ID that you set during [provisioning](./08-01-provisioning-kyma-environment.md):
 
 ```bash
 export INSTANCE_ID={SET_INSTANCE_ID}
@@ -12,7 +12,7 @@ export INSTANCE_ID={SET_INSTANCE_ID}
 
 > **NOTE:** Ensure that the BROKER_URL and INSTANCE_ID environment variables are exported as well before you proceed.
 
-2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](./03-05-authorization.md) to verify that provisioning/deprovisioning succeeded.
+2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](./03-05-authorization.md) to verify that provisioning/deprovisioning succeeded:
 
 ```bash
 curl --request GET "https://$BROKER_URL/v2/service_instances/$INSTANCE_ID \
@@ -43,6 +43,6 @@ A successful call returns the instance details:
 }
 ```
 
-Fields under the parameters field can differ depends on the provisioning input.
-
 >**NOTE:** field `dashboard_url` is only available if Runtime was provisioned successfully and compass agent registered runtime in the Director.
+
+>**NOTE:** The **dashboard_url** field is available only if the Runtime was provisioned successfully and the Runtime Agent registered the Runtime in the Director. Fields under the **parameters** field can differ depending on the provisioning input.
