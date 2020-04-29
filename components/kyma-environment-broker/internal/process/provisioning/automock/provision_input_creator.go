@@ -96,13 +96,13 @@ func (_m *ProvisionInputCreator) SetProvisioningParameters(params internal.Provi
 	return r0
 }
 
-// SetRuntimeLabels provides a mock function with given fields: instanceID, SubAccountID
-func (_m *ProvisionInputCreator) SetRuntimeLabels(instanceID string, SubAccountID string) internal.ProvisionInputCreator {
-	ret := _m.Called(instanceID, SubAccountID)
+// SetLabel provides a mock function with given fields: instanceID, SubAccountID
+func (_m *ProvisionInputCreator) SetLabel(k string, v string) internal.ProvisionInputCreator {
+	ret := _m.Called(k, v)
 
 	var r0 internal.ProvisionInputCreator
 	if rf, ok := ret.Get(0).(func(string, string) internal.ProvisionInputCreator); ok {
-		r0 = rf(instanceID, SubAccountID)
+		r0 = rf(k, v)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(internal.ProvisionInputCreator)

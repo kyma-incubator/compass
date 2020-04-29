@@ -11,7 +11,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
 
-	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
+	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 
 	"github.com/pkg/errors"
 )
