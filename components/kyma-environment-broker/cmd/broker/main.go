@@ -209,11 +209,6 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
-			disabled: cfg.IAS.Disabled,
-		},
-		{
-			weight:   1,
 			step:     provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
 		},
@@ -233,6 +228,11 @@ func main() {
 			weight:   4,
 			step:     provisioning.NewLmsCertificatesStep(lmsClient, db.Operations()),
 			disabled: cfg.LMS.Disabled,
+		},
+		{
+			weight:   5,
+			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
+			disabled: cfg.IAS.Disabled,
 		},
 		{
 			weight: 10,
