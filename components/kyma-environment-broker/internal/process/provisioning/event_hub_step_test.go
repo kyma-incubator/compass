@@ -76,6 +76,14 @@ func (nc *FakeNamespaceClient) CheckNamespaceAvailability(ctx context.Context, n
 	return nc.uniqueNamespace, nil
 }
 
+func (nc *FakeNamespaceClient) NamespaceExists(ctx context.Context, resourceGroupName string, namespaceName string, tags azure.Tags) (bool, error) {
+	return false, nil
+}
+
+func (nc *FakeNamespaceClient) ResourceGroupExists(ctx context.Context, name string, tags azure.Tags) (bool, error) {
+	return false, nil
+}
+
 func NewFakeNamespaceClientCreationError() azure.AzureInterface {
 	return &FakeNamespaceClient{
 		persistEventhubsNamespaceError: fmt.Errorf("error while creating namespace"),
