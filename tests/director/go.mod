@@ -10,11 +10,12 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/huandu/xstrings v1.3.0 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200410141028-a232fdab77f4
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20200429083609-7d80a85180c6
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.5.1
 	github.com/vektah/gqlparser v1.3.1 // indirect
 	github.com/vrischmann/envconfig v1.2.0
 	golang.org/x/crypto v0.0.0-20200210222208-86ce3cb69678 // indirect
