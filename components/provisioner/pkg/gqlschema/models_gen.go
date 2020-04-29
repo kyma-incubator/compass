@@ -33,13 +33,15 @@ type AWSProviderConfigInput struct {
 }
 
 type AzureProviderConfig struct {
-	VnetCidr *string `json:"vnetCidr"`
+	VnetCidr *string   `json:"vnetCidr"`
+	Zones    []*string `json:"zones"`
 }
 
 func (AzureProviderConfig) IsProviderSpecificConfig() {}
 
 type AzureProviderConfigInput struct {
-	VnetCidr string `json:"vnetCidr"`
+	VnetCidr string   `json:"vnetCidr"`
+	Zones    []string `json:"zones"`
 }
 
 type ClusterConfigInput struct {
@@ -106,13 +108,13 @@ type GCPConfigInput struct {
 }
 
 type GCPProviderConfig struct {
-	Zone *string `json:"zone"`
+	Zones []*string `json:"zones"`
 }
 
 func (GCPProviderConfig) IsProviderSpecificConfig() {}
 
 type GCPProviderConfigInput struct {
-	Zone string `json:"zone"`
+	Zones []string `json:"zones"`
 }
 
 type GardenerConfig struct {
