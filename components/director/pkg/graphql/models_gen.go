@@ -285,6 +285,7 @@ type FetchRequestInput struct {
 
 type FetchRequestStatus struct {
 	Condition FetchRequestStatusCondition `json:"condition"`
+	Message   *string                     `json:"message"`
 	Timestamp Timestamp                   `json:"timestamp"`
 }
 

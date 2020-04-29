@@ -15,7 +15,7 @@ const apiDefIDColumn = "api_def_id"
 const eventAPIDefIDColumn = "event_api_def_id"
 
 var (
-	fetchRequestColumns = []string{"id", "tenant_id", apiDefIDColumn, eventAPIDefIDColumn, documentIDColumn, "url", "auth", "mode", "filter", "status_condition", "status_timestamp"}
+	fetchRequestColumns = []string{"id", "tenant_id", apiDefIDColumn, eventAPIDefIDColumn, documentIDColumn, "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp"}
 	tenantColumn        = "tenant_id"
 )
 

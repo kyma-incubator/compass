@@ -16,5 +16,6 @@ type Entity struct {
 	Auth            sql.NullString `db:"auth"`
 	Filter          sql.NullString `db:"filter"`
 	StatusCondition string         `db:"status_condition"`
+	StatusMessage   sql.NullString `db:"status_message"`
 	StatusTimestamp time.Time      `db:"status_timestamp"`
 }

@@ -712,6 +712,7 @@ type FetchRequest {
 
 type FetchRequestStatus {
 	condition: FetchRequestStatusCondition!
+	message: String
 	timestamp: Timestamp!
 }
 

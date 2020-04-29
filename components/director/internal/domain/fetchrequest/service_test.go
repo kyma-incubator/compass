@@ -51,12 +51,14 @@ func TestService_FetchAPISpec(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name           string
-		RoundTripFn    func() RoundTripFunc
-		Input          model.FetchRequest
-		ExpectedOutput *string
-		ExpectedError  error
-		ExpectedLog    *string
+		Name                    string
+		RoundTripFn             func() RoundTripFunc
+		Input                   model.FetchRequest
+		ExpectedOutput          *string
+		ExpectedError           error
+		ExpectedStatusCondition model.FetchRequestStatusCondition
+		ExpectedStatusMessage   *string
+		ExpectedLog             *string
 	}{
 		{
 			Name: "Success",
@@ -68,9 +70,11 @@ func TestService_FetchAPISpec(t *testing.T) {
 					}
 				}
 			},
-			Input:          modelInput,
-			ExpectedOutput: &mockSpec,
-			ExpectedLog:    nil,
+			Input:                   modelInput,
+			ExpectedOutput:          &mockSpec,
+			ExpectedStatusCondition: model.FetchRequestStatusConditionSucceeded,
+			ExpectedStatusMessage:   str.Ptr(""),
+			ExpectedLog:             nil,
 		},
 		{
 			Name: "Nil when mode is Package",
@@ -79,9 +83,11 @@ func TestService_FetchAPISpec(t *testing.T) {
 					return &http.Response{}
 				}
 			},
-			Input:          modelInputPackage,
-			ExpectedOutput: nil,
-			ExpectedLog:    nil,
+			Input:                   modelInputPackage,
+			ExpectedOutput:          nil,
+			ExpectedStatusCondition: model.FetchRequestStatusConditionInitial,
+			ExpectedStatusMessage:   str.Ptr("Unsupported fetch mode: PACKAGE"),
+			ExpectedLog:             str.Ptr("Unsupported fetch mode: PACKAGE"),
 		},
 		{
 			Name: "Error when fetching",
@@ -92,9 +98,11 @@ func TestService_FetchAPISpec(t *testing.T) {
 					}
 				}
 			},
-			Input:          modelInput,
-			ExpectedOutput: nil,
-			ExpectedLog:    str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", http.StatusInternalServerError)),
+			Input:                   modelInput,
+			ExpectedOutput:          nil,
+			ExpectedStatusCondition: model.FetchRequestStatusConditionFailed,
+			ExpectedStatusMessage:   str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", http.StatusInternalServerError)),
+			ExpectedLog:             str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", http.StatusInternalServerError)),
 		},
 	}
 	for _, testCase := range testCases {
@@ -110,16 +118,19 @@ func TestService_FetchAPISpec(t *testing.T) {
 			svc := fetchrequest.NewService(client, logger)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			spec, err := svc.FetchAPISpec(&testCase.Input)
+			spec, status, err := svc.FetchAPISpec(&testCase.Input)
 
 			if testCase.ExpectedLog != nil {
 				expectedLog := fmt.Sprintf("level=error msg=\"%s\"\n", *testCase.ExpectedLog)
 				assert.Equal(t, expectedLog, actualLog.String())
 			}
+			assert.Equal(t, testCase.ExpectedStatusCondition, status.Condition)
+			assert.Equal(t, testCase.ExpectedStatusMessage, status.Message)
 
 			if testCase.ExpectedError != nil {
 				assert.EqualError(t, err, testCase.ExpectedError.Error())
 			}
+
 			assert.Equal(t, testCase.ExpectedOutput, spec)
 
 		})

@@ -34,13 +34,11 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
-	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.4.0
 	github.com/vektah/gqlparser v1.2.0
-	github.com/vektra/mockery v0.0.0-20181123154057-e78b021dcbb5 // indirect
 	github.com/vrischmann/envconfig v1.2.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.1.1-0.20190912152152-6a016cf16650
