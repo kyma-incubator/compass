@@ -32,4 +32,4 @@ A successful call returns the operation ID:
 }
 ```
 
-4. Check the operation status as described [here](./08-03-keb-operation-state.md).
+4. Check the operation status as described [here](08-03-operation-status.md).
