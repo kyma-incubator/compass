@@ -9,11 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
+	restclient "k8s.io/client-go/rest"
+
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director"
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director/oauth"
 	gql "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -27,7 +28,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
-	k8sConfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const (
@@ -56,22 +56,10 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	time.Sleep(15 * time.Second)
 
 	provisionerClient := provisioner.NewProvisionerClient(config.InternalProvisionerURL, config.Tenant, config.QueryLogging)
-
-	kubernetesConfig, err := k8sConfig.GetConfig()
+	directorClient, err := newDirectorClient(config)
 	if err != nil {
 		return nil, err
 	}
-	cli, err := client.New(kubernetesConfig, client.Options{})
-	if err != nil {
-		return nil, err
-	}
-	httpClient := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
-	graphQLClient := gql.NewGraphQLClient(config.DirectorClient.URL, true, true)
-	oauthClient := oauth.NewOauthClient(httpClient, cli, config.DirectorClient.OauthCredentialsSecretName, config.DirectorClient.Namespace)
-	if err := oauthClient.WaitForCredentials(); err != nil {
-		return nil, err
-	}
-	directorClient := director.NewDirectorClient(oauthClient, *graphQLClient, config.Tenant, logrus.WithField("service", "director_client"))
 
 	testId := randStringBytes(8)
 
@@ -85,6 +73,25 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 
 		config: config,
 	}, nil
+}
+
+func newDirectorClient(config testkit.TestConfig) (director.Client, error) {
+	k8sConfig, err := restclient.InClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get in cluster config")
+	}
+	coreClientset, err := kubernetes.NewForConfig(k8sConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create core clientset")
+	}
+	secretClient := coreClientset.CoreV1().Secrets(config.DirectorClient.Namespace)
+	httpClient := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+	graphQLClient := gql.NewGraphQLClient(config.DirectorClient.URL, true, true)
+	oauthClient := oauth.NewOauthClient(httpClient, secretClient, config.DirectorClient.OauthCredentialsSecretName)
+	if err := oauthClient.WaitForCredentials(); err != nil {
+		return nil, errors.Wrap(err, "timeout waiting for credentials")
+	}
+	return director.NewDirectorClient(oauthClient, *graphQLClient, config.Tenant, logrus.WithField("service", "director_client")), nil
 }
 
 func (ts *TestSuite) Setup() error {

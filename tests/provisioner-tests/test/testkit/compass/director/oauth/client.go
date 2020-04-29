@@ -1,7 +1,6 @@
 package oauth
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -10,11 +9,12 @@ import (
 	"strings"
 	"time"
 
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Client interface {
@@ -22,19 +22,21 @@ type Client interface {
 	WaitForCredentials() error
 }
 
-type oauthClient struct {
-	httpClient      *http.Client
-	k8sClient       client.Client
-	secretName      string
-	secretNamespace string
+type SecretInterface interface {
+	Get(name string, options metav1.GetOptions) (*v1.Secret, error)
 }
 
-func NewOauthClient(httpClient *http.Client, k8sClient client.Client, secretName, secretNamespace string) Client {
+type oauthClient struct {
+	httpClient   *http.Client
+	secretClient SecretInterface
+	secretName   string
+}
+
+func NewOauthClient(httpClient *http.Client, secretClient SecretInterface, secretName string) Client {
 	return &oauthClient{
-		httpClient:      httpClient,
-		k8sClient:       k8sClient,
-		secretName:      secretName,
-		secretNamespace: secretNamespace,
+		httpClient:   httpClient,
+		secretClient: secretClient,
+		secretName:   secretName,
 	}
 }
 
@@ -49,12 +51,7 @@ func (c *oauthClient) GetAuthorizationToken() (Token, error) {
 
 func (c *oauthClient) WaitForCredentials() error {
 	err := wait.Poll(time.Second, time.Minute*3, func() (bool, error) {
-		secret := &v1.Secret{}
-		err := c.k8sClient.Get(context.Background(), client.ObjectKey{
-			Namespace: c.secretNamespace,
-			Name:      c.secretName,
-		}, secret)
-		// it fails on connection-refused error on first call and it restarts our application.
+		_, err := c.secretClient.Get(c.secretName, metav1.GetOptions{})
 		if err != nil {
 			log.Warnf("secret %s not found with error: %v", c.secretName, err)
 			return false, nil
@@ -66,11 +63,7 @@ func (c *oauthClient) WaitForCredentials() error {
 }
 
 func (c *oauthClient) getCredentials() (credentials, error) {
-	secret := &v1.Secret{}
-	err := c.k8sClient.Get(context.Background(), client.ObjectKey{
-		Namespace: c.secretNamespace,
-		Name:      c.secretName,
-	}, secret)
+	secret, err := c.secretClient.Get(c.secretName, metav1.GetOptions{})
 	if err != nil {
 		return credentials{}, err
 	}
