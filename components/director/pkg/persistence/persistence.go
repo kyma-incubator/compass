@@ -105,9 +105,11 @@ func waitForPersistance(logger *logrus.Logger, conf DatabaseConfig, retryCount i
 			logger.Infof("Got error on pinging DB: %v", err)
 			continue
 		}
-		logger.Infof("Configuring MaxOpenConnections: [%d] and MaxIdleConnections: [%d]", conf.MaxOpenConnections, conf.MaxIdleConnections)
+
+		logger.Infof("Configuring MaxOpenConnections: [%d], MaxIdleConnections: [%d] and ConnectionMaxLifetime: [%s]", conf.MaxOpenConnections, conf.MaxIdleConnections, conf.ConnMaxLifetime.String())
 		sqlxDB.SetMaxOpenConns(conf.MaxOpenConnections)
 		sqlxDB.SetMaxIdleConns(conf.MaxIdleConnections)
+		sqlxDB.SetConnMaxLifetime(conf.ConnMaxLifetime)
 		return &db{sqlDB: sqlxDB, logger: logger}, sqlxDB.Close, nil
 
 	}
