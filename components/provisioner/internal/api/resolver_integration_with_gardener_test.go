@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s/mocks"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,7 +18,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
-	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
 	compass_connection_fake "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/fake"
 	"k8s.io/client-go/kubernetes/fake"
 
@@ -31,7 +31,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
-	runtimeConfigrtr "github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	runtimeConfig "github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/hydroform/install/installation"
@@ -165,10 +165,10 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	clusterConfigurations := getTestClusterConfigurations()
 	directorServiceMock := &directormock.DirectorClient{}
 
-	cmClientBuilder := &mocks2.ConfigMapClientBuilder{}
-	configMapClient := fake.NewSimpleClientset().CoreV1().ConfigMaps(compassSystemNamespace)
-	cmClientBuilder.On("CreateK8SConfigMapClient", mockedKubeconfig, compassSystemNamespace).Return(configMapClient, nil)
-	runtimeConfigurator := runtimeConfigrtr.NewRuntimeConfigurator(cmClientBuilder, directorServiceMock)
+	mockK8sClientProvider := &mocks.K8sClientProvider{}
+	fakeK8sClient := fake.NewSimpleClientset()
+	mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
+	runtimeConfigurator := runtimeConfig.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
 	auditLogsConfigPath := filepath.Join("testdata", "config.json")
 
@@ -193,7 +193,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	for _, config := range clusterConfigurations {
 		t.Run(config.description, func(t *testing.T) {
-			configMapClient.Delete(runtimeConfigrtr.ConfigMapName, &metav1.DeleteOptions{})
+			fakeK8sClient.CoreV1().Secrets(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
+			fakeK8sClient.CoreV1().ConfigMaps(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
 
 			directorServiceMock.Calls = nil
 			directorServiceMock.ExpectedCalls = nil
