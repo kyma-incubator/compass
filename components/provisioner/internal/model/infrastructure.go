@@ -30,13 +30,13 @@ func NewGCPInfrastructure(workerCIDR string) *gcp.InfrastructureConfig {
 	}
 }
 
-func NewGCPControlPlane(zone string) *gcp.ControlPlaneConfig {
+func NewGCPControlPlane(zones []string) *gcp.ControlPlaneConfig {
 	return &gcp.ControlPlaneConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       controlPlaneConfigKind,
 			APIVersion: gcpAPIVersion,
 		},
-		Zone: zone,
+		Zones: zones,
 	}
 }
 

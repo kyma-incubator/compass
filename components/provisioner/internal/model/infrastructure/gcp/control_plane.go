@@ -9,7 +9,7 @@ type ControlPlaneConfig struct {
 	metav1.TypeMeta
 
 	// Zone is the GCP zone.
-	Zone string `json:"zone"`
+	Zones []string `json:"zones"`
 
 	// CloudControllerManager contains configuration settings for the cloud-controller-manager.
 	CloudControllerManager *CloudControllerManagerConfig `json:"cloudControllerManager,omitempty"`

@@ -185,18 +185,18 @@ func (c *GCPGardenerConfig) AsMap() (map[string]interface{}, error) {
 	}
 
 	return map[string]interface{}{
-		"zone": c.input.Zone,
+		"zones": c.input.Zones,
 	}, nil
 }
 
 func (c GCPGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
-	return gqlschema.GCPProviderConfig{Zone: &c.input.Zone}
+	return gqlschema.GCPProviderConfig{Zones: &c.input.Zones}
 }
 
 func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 	shoot.Spec.CloudProfileName = "gcp"
 
-	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, []string{c.input.Zone})}
+	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
 
 	gcpInfra := NewGCPInfrastructure(gardenerConfig.WorkerCidr)
 	jsonData, err := json.Marshal(gcpInfra)
@@ -204,7 +204,7 @@ func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
 	}
 
-	gcpControlPlane := NewGCPControlPlane(c.input.Zone)
+	gcpControlPlane := NewGCPControlPlane(c.input.Zones)
 	jsonCPData, err := json.Marshal(gcpControlPlane)
 	if err != nil {
 		return fmt.Errorf("error encoding control plane config: %s", err.Error())
@@ -365,5 +365,11 @@ func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_typ
 		Maximum: int32(gardenerConfig.AutoScalerMax),
 		Minimum: int32(gardenerConfig.AutoScalerMin),
 		Zones:   zones,
+	}
+}
+
+func getPointersSlice(strings []string) []*string {
+	for _, v := range strings {
+
 	}
 }
