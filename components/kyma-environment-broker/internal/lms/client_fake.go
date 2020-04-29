@@ -83,10 +83,7 @@ func (f *FakeClient) GetCACertificate(tenantID string) (cert string, found bool,
 	return FakeCaCertificate, true, nil
 }
 
-func (f *FakeClient) GetSignedCertificate(tenantID string, certID string) (cert string, found bool, err error) {
-	if !f.IsCertRequestedForTenant(tenantID) {
-		return "", false, errors.New("certificate not requested")
-	}
+func (f *FakeClient) GetCertificateByURL(url string) (cert string, found bool, err error) {
 	return FakeSignedCertificate, true, nil
 }
 

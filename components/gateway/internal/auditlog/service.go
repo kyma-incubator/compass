@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/model"
+	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/pkg/errors"
 )
