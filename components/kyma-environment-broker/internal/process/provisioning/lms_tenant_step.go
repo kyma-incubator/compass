@@ -104,12 +104,3 @@ func (s *provideLmsTenantStep) provideRegion(r *string) string {
 	return region
 }
 
-func (s *provideLmsTenantStep) failLmsAndUpdate(operation internal.ProvisioningOperation) (internal.ProvisioningOperation, time.Duration, error) {
-	operation.Lms.Failed = true
-	modifiedOp, err := s.operationManager.UpdateOperation(operation)
-	if err != nil {
-		// update has failed - retry after 0.5 sec
-		return operation, 500 * time.Millisecond, nil
-	}
-	return *modifiedOp, 0, nil
-}
