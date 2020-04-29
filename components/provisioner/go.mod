@@ -54,5 +54,3 @@ replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66
 replace github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 
 replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
-
-replace github.com/kyma-incubator/compass/components/provisioner/internal/provisioning => github.com/rafalpotempa/compass/components/provisioner/internal/provisioning v0.0.0-20200427075758-4bbb71f218aa
