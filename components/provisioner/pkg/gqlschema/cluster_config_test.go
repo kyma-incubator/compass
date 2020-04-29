@@ -40,9 +40,9 @@ func TestRuntimeConfig_UnmarshalJSON(t *testing.T) {
 		MaxUnavailable:    util.IntPtr(2),
 	}
 	azureProviderCfg := &AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/25")}
-	gcpProviderCfg := &GCPProviderConfig{Zone: util.StringPtr("zone")}
+	gcpProviderCfg := &GCPProviderConfig{Zone: util.StringPtr("zone")} //TODO
 	awsProviderCfg := &AWSProviderConfig{
-		Zone:         util.StringPtr("aws zone"),
+		Zone:         util.StringPtr("aws zone"), //TODO
 		VpcCidr:      util.StringPtr("10.10.10.11/25"),
 		PublicCidr:   util.StringPtr("10.10.10.12/25"),
 		InternalCidr: util.StringPtr("10.10.10.13/25"),
