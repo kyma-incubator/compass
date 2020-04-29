@@ -2,4 +2,4 @@ package config
 
 import "github.com/pkg/errors"
 
-var PathNotFoundError = errors.New("specified path not found in configuration")
+var ValueNotFoundError = errors.New("value under specified path not found in configuration")

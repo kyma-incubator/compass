@@ -9,7 +9,7 @@ import (
 func (p *Provider) GetRequiredScopes(path string) ([]string, error) {
 	val, err := p.getValueForJSONPath(path)
 	if err != nil {
-		if err == PathNotFoundError {
+		if err == ValueNotFoundError {
 			return nil, scope.RequiredScopesNotDefinedError
 		}
 		return nil, err

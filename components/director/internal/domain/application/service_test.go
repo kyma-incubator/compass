@@ -526,7 +526,7 @@ func TestService_Create(t *testing.T) {
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			pkgSvc := testCase.PackageServiceFn()
-			svc := application.NewService(appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, pkgSvc, uidSvc)
+			svc := application.NewService(nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, pkgSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -551,7 +551,7 @@ func TestService_Create(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.Equal(t, tenant.NoTenantError, err)
@@ -764,7 +764,7 @@ func TestService_Update(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			lblUpsrtSvc := testCase.LabelUpsertSvcFn()
-			svc := application.NewService(appRepo, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, nil)
+			svc := application.NewService(nil, appRepo, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, nil)
 			svc.SetTimestampGen(timestampGenFunc)
 
 			// when
@@ -833,7 +833,7 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
-			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -905,7 +905,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.Get(ctx, testCase.InputID)
@@ -1010,7 +1010,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, after)
@@ -1044,6 +1044,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 		Key:   model.ScenariosKey,
 		Value: scenarios,
 	}
+	var nilMap map[string][]string
 
 	applications := []*model.Application{
 		fixModelApplication("test1", "tenant-foo", "test1", "test1"),
@@ -1061,6 +1062,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 		RuntimeRepositoryFn func() *automock.RuntimeRepository
 		LabelRepositoryFn   func() *automock.LabelRepository
 		AppRepositoryFn     func() *automock.ApplicationRepository
+		ConfigProviderFn    func() *automock.ApplicationHideCfgProvider
 		ExpectedResult      *model.ApplicationPage
 		ExpectedError       error
 	}{
@@ -1081,9 +1083,14 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), first, cursor).
+				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), first, cursor, nilMap).
 					Return(applicationPage, nil).Once()
 				return appRepository
+			},
+			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
+				cfgProvider := &automock.ApplicationHideCfgProvider{}
+				cfgProvider.On("GetApplicationHideSelectors").Return(nil, nil).Once()
+				return cfgProvider
 			},
 			ExpectedError:  nil,
 			ExpectedResult: applicationPage,
@@ -1106,6 +1113,10 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
 				return appRepository
+			},
+			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
+				cfgProvider := &automock.ApplicationHideCfgProvider{}
+				return cfgProvider
 			},
 			ExpectedError: nil,
 			ExpectedResult: &model.ApplicationPage{
@@ -1131,6 +1142,10 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				appRepository := &automock.ApplicationRepository{}
 				return appRepository
 			},
+			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
+				cfgProvider := &automock.ApplicationHideCfgProvider{}
+				return cfgProvider
+			},
 			ExpectedError:  testError,
 			ExpectedResult: nil,
 		},
@@ -1150,6 +1165,10 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
 				return appRepository
+			},
+			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
+				cfgProvider := &automock.ApplicationHideCfgProvider{}
+				return cfgProvider
 			},
 			ExpectedError:  errors.New("runtime does not exist"),
 			ExpectedResult: nil,
@@ -1173,6 +1192,10 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				appRepository := &automock.ApplicationRepository{}
 				return appRepository
 			},
+			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
+				cfgProvider := &automock.ApplicationHideCfgProvider{}
+				return cfgProvider
+			},
 			ExpectedError:  testError,
 			ExpectedResult: nil,
 		},
@@ -1193,9 +1216,14 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), first, cursor).
+				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), first, cursor, nilMap).
 					Return(nil, testError).Once()
 				return appRepository
+			},
+			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
+				cfgProvider := &automock.ApplicationHideCfgProvider{}
+				cfgProvider.On("GetApplicationHideSelectors").Return(nil, nil).Once()
+				return cfgProvider
 			},
 			ExpectedError:  testError,
 			ExpectedResult: nil,
@@ -1219,6 +1247,10 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				appRepository := &automock.ApplicationRepository{}
 				return appRepository
 			},
+			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
+				cfgProvider := &automock.ApplicationHideCfgProvider{}
+				return cfgProvider
+			},
 			ExpectedError:  nil,
 			ExpectedResult: &emptyPage,
 		},
@@ -1230,7 +1262,8 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			runtimeRepository := testCase.RuntimeRepositoryFn()
 			labelRepository := testCase.LabelRepositoryFn()
 			appRepository := testCase.AppRepositoryFn()
-			svc := application.NewService(appRepository, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, nil)
+			cfgProvider := testCase.ConfigProviderFn()
+			svc := application.NewService(cfgProvider, appRepository, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, nil)
 
 			//WHEN
 			results, err := svc.ListByRuntimeID(ctx, testCase.Input, first, cursor)
@@ -1247,6 +1280,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			runtimeRepository.AssertExpectations(t)
 			labelRepository.AssertExpectations(t)
 			appRepository.AssertExpectations(t)
+			cfgProvider.AssertExpectations(t)
 		})
 	}
 }
@@ -1305,7 +1339,7 @@ func TestService_Exist(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			appRepo := testCase.RepositoryFn()
-			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			value, err := svc.Exist(ctx, testCase.InputApplicationID)
@@ -1405,7 +1439,7 @@ func TestService_SetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelSvc := testCase.LabelServiceFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, labelSvc, nil, nil, nil)
+			svc := application.NewService(nil, repo, nil, nil, nil, nil, labelSvc, nil, nil, nil)
 
 			// when
 			err := svc.SetLabel(ctx, testCase.InputLabel)
@@ -1517,7 +1551,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
 			// when
 			l, err := svc.GetLabel(ctx, testCase.InputApplicationID, testCase.InputLabel.Key)
@@ -1631,7 +1665,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
 			// when
 			l, err := svc.ListLabels(ctx, testCase.InputApplicationID)
@@ -1723,7 +1757,7 @@ func TestService_DeleteLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey)

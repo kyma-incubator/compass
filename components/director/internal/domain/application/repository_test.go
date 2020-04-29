@@ -421,7 +421,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 			//WHEN
-			page, err := repository.ListByScenarios(ctx, tenantID, runtimeScenarios, pageSize, cursor)
+			page, err := repository.ListByScenarios(ctx, tenantID, runtimeScenarios, pageSize, cursor, nil)
 
 			//THEN
 			if testCase.ExpectedError != nil {

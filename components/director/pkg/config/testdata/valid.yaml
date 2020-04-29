@@ -27,3 +27,5 @@ applicationHideSelectors:
   applicationType:
     - "Test/App"
     - "Work In Progress"
+  second:
+    - "Single"

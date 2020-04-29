@@ -16,6 +16,7 @@ type SetCombination string
 
 const (
 	IntersectSet           SetCombination = "INTERSECT"
+	ExceptSet              SetCombination = "EXCEPT"
 	UnionSet               SetCombination = "UNION"
 	scenariosLabelKey      string         = "SCENARIOS"
 	stmtPrefixFormat       string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND "tenant_id" = ?`
@@ -37,7 +38,25 @@ func FilterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 	var stmtPrefixArgs []interface{}
 	stmtPrefixArgs = append(stmtPrefixArgs, tenant)
 
-	return buildFilterQuery(stmtPrefix, stmtPrefixArgs, setCombination, filter)
+	return buildFilterQuery(stmtPrefix, stmtPrefixArgs, setCombination, filter, false)
+}
+
+// FilterSubquery builds select sub query for given filters that can be appended to other query
+//
+// It supports querying defined by `queryFor` parameter. All queries are created
+// in the context of given tenant
+func FilterSubquery(queryFor model.LabelableObject, setCombination SetCombination, tenant uuid.UUID, filter []*labelfilter.LabelFilter) (string, []interface{}, error) {
+	if filter == nil {
+		return "", nil, nil
+	}
+
+	objectField := labelableObjectField(queryFor)
+
+	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, objectField, tableName, objectField)
+	var stmtPrefixArgs []interface{}
+	stmtPrefixArgs = append(stmtPrefixArgs, tenant)
+
+	return buildFilterQuery(stmtPrefix, stmtPrefixArgs, setCombination, filter, true)
 }
 
 // FilterQueryGlobal builds select query for given filters
@@ -53,15 +72,15 @@ func FilterQueryGlobal(queryFor model.LabelableObject, setCombination SetCombina
 
 	stmtPrefix := fmt.Sprintf(stmtPrefixGlobalFormat, objectField, tableName, objectField)
 
-	return buildFilterQuery(stmtPrefix, nil, setCombination, filter)
+	return buildFilterQuery(stmtPrefix, nil, setCombination, filter, false)
 }
 
-func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombination SetCombination, filter []*labelfilter.LabelFilter) (string, []interface{}, error) {
+func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombination SetCombination, filter []*labelfilter.LabelFilter, isSubQuery bool) (string, []interface{}, error) {
 	var queryBuilder strings.Builder
 
 	var args []interface{}
 	for idx, lblFilter := range filter {
-		if idx > 0 {
+		if idx > 0 || isSubQuery {
 			queryBuilder.WriteString(fmt.Sprintf(` %s `, setCombination))
 		}
 

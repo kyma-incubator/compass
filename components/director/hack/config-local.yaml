@@ -100,3 +100,5 @@ applicationHideSelectors:
   applicationType:
     - "Test/App"
     - "Work In Progress"
+  secondKey:
+    - "Value"

@@ -1,0 +1,4 @@
+applicationHideSelectors:
+  applicationType:
+    - "Test/App"
+    - 10

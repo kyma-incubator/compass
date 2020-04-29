@@ -47,7 +47,7 @@ func (p *Provider) getValueForJSONPath(path string) (interface{}, error) {
 	}
 
 	if res == nil {
-		return nil, PathNotFoundError
+		return nil, ValueNotFoundError
 	}
 
 	return res, nil
