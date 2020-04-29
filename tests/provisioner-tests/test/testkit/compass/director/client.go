@@ -2,6 +2,7 @@ package director
 
 import (
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director/oauth"
 	gql "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"

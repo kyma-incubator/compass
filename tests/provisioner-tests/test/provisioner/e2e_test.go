@@ -2,10 +2,11 @@ package provisioner
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/stretchr/testify/require"
 

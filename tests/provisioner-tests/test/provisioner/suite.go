@@ -2,16 +2,17 @@ package provisioner
 
 import (
 	"crypto/tls"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director/oauth"
-	gql "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director"
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director/oauth"
+	gql "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/stretchr/testify/require"
 
