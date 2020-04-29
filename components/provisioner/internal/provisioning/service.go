@@ -144,11 +144,6 @@ func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {
 		return "", fmt.Errorf("Failed to insert operation to database: %s", dberr.Error())
 	}
 
-	dberr = session.MarkClusterAsDeleted(id)
-	if dberr != nil {
-		return "", fmt.Errorf("Failed to mark Cluster %s as 'deleted': %s", id, dberr.Error())
-	}
-
 	return operation.ID, nil
 }
 

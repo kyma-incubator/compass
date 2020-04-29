@@ -283,7 +283,6 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
-		readWriteSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil)
 
@@ -383,36 +382,6 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		assert.Contains(t, err.Error(), "Failed to get last operation")
 		sessionFactoryMock.AssertExpectations(t)
 		readWriteSession.AssertExpectations(t)
-	})
-}
-
-func TestService_MarkRuntimeAsDeleted(t *testing.T) {
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), nil, gardenerProject)
-	graphQLConverter := NewGraphQLConverter()
-
-	t.Run("Should delete runtime from director and mark it as deleted", func(t *testing.T) {
-		//given
-		sessionFactoryMock := &sessionMocks.Factory{}
-		writeSession := &sessionMocks.WriteSession{}
-		provisioner := &mocks2.Provisioner{}
-		directorServiceMock := &directormock.DirectorClient{}
-
-		sessionFactoryMock.On("NewWriteSession").Return(writeSession)
-		directorServiceMock.On("DeleteRuntime", runtimeID, tenant).Return(nil)
-		writeSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
-
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil)
-
-		//when
-		expectedMsg := "Runtime 184ccdf2-59e4-44b7-b553-6cb296af5ea0 marked as 'deleted'."
-		msg, err := service.MarkRuntimeAsDeleted(runtimeID, tenant)
-		require.NoError(t, err)
-		require.Equal(t, expectedMsg, msg)
-
-		//then
-		sessionFactoryMock.AssertExpectations(t)
-		writeSession.AssertExpectations(t)
-		directorServiceMock.AssertExpectations(t)
 	})
 }
 

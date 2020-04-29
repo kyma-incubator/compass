@@ -14,13 +14,21 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 )
 
-func NewProvisioner(namespace string, shootClient gardener_apis.ShootInterface, auditLogTenantConfigPath string, auditLogsCMName string) *GardenerProvisioner {
+func NewProvisioner(
+	namespace string,
+	shootClient gardener_apis.ShootInterface,
+	factory dbsession.Factory,
+	auditLogTenantConfigPath string,
+	auditLogsCMName string) *GardenerProvisioner {
 	return &GardenerProvisioner{
 		namespace:                namespace,
 		shootClient:              shootClient,
+		dbSessionFactory:         factory,
 		auditLogTenantConfigPath: auditLogTenantConfigPath,
 		auditLogsConfigMapName:   auditLogsCMName,
 	}
@@ -29,6 +37,8 @@ func NewProvisioner(namespace string, shootClient gardener_apis.ShootInterface, 
 type GardenerProvisioner struct {
 	namespace                string
 	shootClient              gardener_apis.ShootInterface
+	dbSessionFactory         dbsession.Factory
+	directorService          director.DirectorClient
 	auditLogsConfigMapName   string
 	auditLogTenantConfigPath string
 }
@@ -60,6 +70,8 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 }
 
 func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error) {
+	session := g.dbSessionFactory.NewReadWriteSession()
+
 	gardenerCfg, ok := cluster.GardenerConfig()
 	if !ok {
 		return model.Operation{}, fmt.Errorf("cluster does not have Gardener configuration")
@@ -69,6 +81,11 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	if err != nil {
 		if errors.IsNotFound(err) {
 			message := fmt.Sprintf("Cluster %s does not exist. Nothing to deprovision.", cluster.ID)
+
+			dberr := session.MarkClusterAsDeleted(cluster.ID)
+			if dberr != nil {
+				return newDeprovisionOperation(operationId, cluster.ID, message, model.Failed, model.FinishedStage, time.Now()), dberr
+			}
 			return newDeprovisionOperation(operationId, cluster.ID, message, model.Succeeded, model.FinishedStage, time.Now()), nil
 		}
 	}

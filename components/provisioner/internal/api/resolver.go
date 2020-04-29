@@ -130,23 +130,6 @@ func (r *Resolver) RollBackUpgradeOperation(ctx context.Context, runtimeID strin
 	return runtimeStatus, nil
 }
 
-func (r *Resolver) MarkRuntimeAsDeleted(ctx context.Context, id string) (string, error) {
-	log.Infof("Requested marking Runtime %s as 'deleted'.", id)
-
-	tenant, err := r.getAndValidateTenant(ctx, id)
-	if err != nil {
-		log.Errorf("Failed to mark Runtime %s as deleted: %s", id, err)
-		return "", err
-	}
-
-	msg, err := r.provisioning.MarkRuntimeAsDeleted(id, tenant)
-	if err != nil {
-		log.Errorf("Failed to mark Runtime %s as deleted: %s", id, err)
-		return "", err
-	}
-	return msg, nil
-}
-
 func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string, error) {
 	return "", nil
 }
