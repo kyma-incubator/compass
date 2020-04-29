@@ -116,14 +116,18 @@ func (f *InputBuilderFactory) initInput(provider HyperscalerInputProvider, kymaV
 		components = f.fullComponentsList
 	}
 
-	return gqlschema.ProvisionRuntimeInput{
+	provisionInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput:  &gqlschema.RuntimeInput{},
 		ClusterConfig: provider.Defaults(),
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version:    version,
 			Components: components.DeepCopy(),
 		},
-	}, nil
+	}
+
+	provisionInput.ClusterConfig.GardenerConfig.KubernetesVersion = f.config.KubernetesVersion
+
+	return provisionInput, nil
 }
 
 func mapToGQLComponentConfigurationInput(kymaComponents []v1alpha1.KymaComponent) internal.ComponentConfigurationInputList {
