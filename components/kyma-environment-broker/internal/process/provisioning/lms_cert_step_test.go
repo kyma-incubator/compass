@@ -153,7 +153,7 @@ func TestLmsStepsHappyPath(t *testing.T) {
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
 		Key: "fluent-bit.backend.forward.tls.key", Value: "cHJpdmF0ZS1rZXk="})
 
-	inputCreator.AssertLabel(t, "operator_lmsUrl", fmt.Sprintf("kibana.%s", lms.FakeLmsHost))
+	inputCreator.AssertLabel(t, "operator_lmsUrl", fmt.Sprintf("http://kibana.%s", lms.FakeLmsHost))
 }
 
 func newFakeClientWithTenant(timeToReady time.Duration) (*lms.FakeClient, string) {
