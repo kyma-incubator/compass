@@ -24,7 +24,7 @@ type DirectorClient interface {
 	GetRuntime(id, tenant string) (graphql.RuntimeExt, error)
 	UpdateRuntime(id string, config *graphql.RuntimeInput, tenant string) error
 	DeleteRuntime(id, tenant string) error
-	SetRuntimeStatusCondition(id string, statusCondition gqlschema.RuntimeStatusCondition, tenant string) error
+	SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) error
 	GetConnectionToken(id, tenant string) (graphql.OneTimeTokenForRuntimeExt, error)
 }
 
@@ -162,7 +162,7 @@ func (cc *directorClient) DeleteRuntime(id, tenant string) error {
 	return nil
 }
 
-func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition gqlschema.RuntimeStatusCondition, tenant string) error {
+func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) error {
 	// TODO: Set StatusCondition without getting the Runtime
 	//       It'll be possible after this issue implementation:
 	//       - https://github.com/kyma-incubator/compass/issues/1186
@@ -171,11 +171,10 @@ func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition g
 		log.Errorf("Failed to get Runtime by ID: %s", err.Error())
 		return errors.Wrap(err, "failed to get runtime by ID")
 	}
-	runtimeStatusCondition := (graphql.RuntimeStatusCondition)(statusCondition)
 	runtimeInput := &graphql.RuntimeInput{
 		Name:            runtime.Name,
 		Description:     runtime.Description,
-		StatusCondition: &runtimeStatusCondition,
+		StatusCondition: &statusCondition,
 		Labels:          &runtime.Labels,
 	}
 	err = cc.UpdateRuntime(id, runtimeInput, tenant)

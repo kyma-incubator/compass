@@ -805,13 +805,6 @@ enum OperationState {
     Failed
 }
 
-enum RuntimeStatusCondition {
-    INITIAL
-    PROVISIONING
-    CONNECTED
-    FAILED
-}
-
 enum RuntimeAgentConnectionStatus {
     Pending
     Connected

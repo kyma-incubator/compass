@@ -4,7 +4,6 @@ go 1.13
 
 require (
 	github.com/99designs/gqlgen v0.9.3
-	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/avast/retry-go v2.6.0+incompatible
 	github.com/gardener/gardener v0.33.7
@@ -55,3 +54,5 @@ replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66
 replace github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 
 replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
+
+replace github.com/kyma-incubator/compass/components/director => github.com/franpog859/compass/components/director v0.0.0-20200428110352-170fa17a9834

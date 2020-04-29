@@ -92,11 +92,11 @@ func (_m *DirectorClient) GetRuntime(id string, tenant string) (graphql.RuntimeE
 }
 
 // SetRuntimeStatusCondition provides a mock function with given fields: id, statusCondition, tenant
-func (_m *DirectorClient) SetRuntimeStatusCondition(id string, statusCondition gqlschema.RuntimeStatusCondition, tenant string) error {
+func (_m *DirectorClient) SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) error {
 	ret := _m.Called(id, statusCondition, tenant)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, gqlschema.RuntimeStatusCondition, string) error); ok {
+	if rf, ok := ret.Get(0).(func(string, graphql.RuntimeStatusCondition, string) error); ok {
 		r0 = rf(id, statusCondition, tenant)
 	} else {
 		r0 = ret.Error(0)

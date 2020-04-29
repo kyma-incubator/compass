@@ -6,7 +6,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -66,7 +65,7 @@ func (r *ProvisioningOperator) prepareProvisioningUpdateRuntimeInput(
 	}
 	runtime.Labels["gardenerClusterName"] = shoot.ObjectMeta.Name
 	runtime.Labels["gardenerClusterDomain"] = *shoot.Spec.DNS.Domain
-	statusCondition := (graphql.RuntimeStatusCondition)(gqlschema.RuntimeStatusConditionProvisioning)
+	statusCondition := graphql.RuntimeStatusConditionProvisioning
 
 	runtimeInput := &graphql.RuntimeInput{
 		Name:            runtime.Name,

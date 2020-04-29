@@ -741,7 +741,7 @@ func TestDirectorClient_SetRuntimeStatusCondition(t *testing.T) {
 	expectedFirstRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
 	expectedFirstRequest.Header.Set(TenantHeader, tenantValue)
 
-	statusCondition := gqlschema.RuntimeStatusConditionConnected
+	statusCondition := graphql.RuntimeStatusConditionConnected
 
 	expectedSecondRequest := gcli.NewRequest(expectedUpdateMutation)
 	expectedSecondRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))

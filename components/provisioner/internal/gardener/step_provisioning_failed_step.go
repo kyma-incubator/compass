@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -22,8 +23,8 @@ func (r *ProvisioningOperator) ProceedToFailedStep(log *logrus.Entry, shoot gard
 	if dberr != nil {
 		return errors.Wrap(dberr, "failed to get Gardener cluster by name")
 	}
-	if err := r.directorClient.SetRuntimeStatusCondition(runtimeId, gqlschema.RuntimeStatusConditionFailed, tenant); err != nil {
-		return errors.Wrap(dberr, fmt.Sprintf("failed to set runtime %s status condition", gqlschema.RuntimeStatusConditionFailed.String()))
+	if err := r.directorClient.SetRuntimeStatusCondition(runtimeId, graphql.RuntimeStatusConditionFailed, tenant); err != nil {
+		return errors.Wrap(dberr, fmt.Sprintf("failed to set runtime %s status condition", graphql.RuntimeStatusConditionFailed.String()))
 	}
 
 	err := r.updateShoot(shoot, func(s *gardener_types.Shoot) {

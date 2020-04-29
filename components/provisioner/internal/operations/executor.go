@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 )
 
@@ -174,10 +175,10 @@ func (e *Executor) updateOperationStatus(log logrus.FieldLogger, id, message str
 
 func (e *Executor) setRuntimeStatusCondition(log logrus.FieldLogger, id, tenant string) {
 	err := retry.Do(func() error {
-		return e.directorClient.SetRuntimeStatusCondition(id, gqlschema.RuntimeStatusConditionFailed, tenant)
+		return e.directorClient.SetRuntimeStatusCondition(id, graphql.RuntimeStatusConditionFailed, tenant)
 	}, retry.Attempts(5), retry.Delay(backOffDirectorDelay), retry.DelayType(retry.BackOffDelay))
 	if err != nil {
-		log.Errorf("failed to set runtime %s status condition: %s", gqlschema.RuntimeStatusConditionFailed.String(), err.Error())
+		log.Errorf("failed to set runtime %s status condition: %s", graphql.RuntimeStatusConditionFailed.String(), err.Error())
 	}
 }
 

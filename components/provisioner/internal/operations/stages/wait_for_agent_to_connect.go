@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
 	compass_conn_clientset "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
 	"github.com/sirupsen/logrus"
@@ -105,17 +105,12 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 		return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Second}, nil
 	}
 
-	if err := s.directorClient.SetRuntimeStatusCondition(cluster.ID, gqlschema.RuntimeStatusConditionConnected, cluster.Tenant); err != nil {
-		logger.Errorf("Failed to set runtime %s status condition: %s", gqlschema.RuntimeStatusConditionConnected.String(), err.Error())
-		return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Second}, nil
-	}
-
 	return s.setConnectedRuntimeStatusCondition(cluster, logger), nil
 }
 
 func (s *WaitForAgentToConnectStep) setConnectedRuntimeStatusCondition(cluster model.Cluster, logger logrus.FieldLogger) operations.StageResult {
-	if err := s.directorClient.SetRuntimeStatusCondition(cluster.ID, gqlschema.RuntimeStatusConditionConnected, cluster.Tenant); err != nil {
-		logger.Errorf("Failed to set runtime %s status condition: %s", gqlschema.RuntimeStatusConditionConnected.String(), err.Error())
+	if err := s.directorClient.SetRuntimeStatusCondition(cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant); err != nil {
+		logger.Errorf("Failed to set runtime %s status condition: %s", graphql.RuntimeStatusConditionConnected.String(), err.Error())
 		return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Second}
 	}
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}
