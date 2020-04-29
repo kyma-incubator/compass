@@ -160,7 +160,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 		return s.failLmsAndUpdate(operation)
 	}
 
-	operation.InputCreator.SetLabel(kibanaURLLabelKey, fmt.Sprintf("kibana.%s", tenantInfo.DNS))
+	operation.InputCreator.SetLabel(kibanaURLLabelKey, fmt.Sprintf("https://kibana.%s", tenantInfo.DNS))
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.conf.Output.forward.enabled", Value: "true"},
