@@ -11,6 +11,7 @@ import (
 
 	"encoding/base64"
 
+	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -109,7 +110,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 	subj := pkix.Name{
 		CommonName:         "fluentbit", // do not modify
 		Organization:       []string{pp.ErsContext.GlobalAccountID},
-		OrganizationalUnit: []string{pp.ErsContext.SubAccountID},
+		OrganizationalUnit: []string{uuid.New().String()},
 	}
 	certURL, pKey, err := s.provider.RequestCertificate(operation.Lms.TenantID, subj)
 	if err != nil {
