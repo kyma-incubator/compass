@@ -194,14 +194,14 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 			})
 
 		sessionFactoryMock := &sessionMocks.Factory{}
-		session := &sessionMocks.ReadWriteSession{}
+		session := &sessionMocks.WriteSession{}
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
 		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, "", "")
 
 		// when
-		sessionFactoryMock.On("NewReadWriteSession").Return(session)
+		sessionFactoryMock.On("NewWriteSession").Return(session)
 
 		operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
 		require.NoError(t, err)
@@ -222,14 +222,14 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		clientset := fake.NewSimpleClientset()
 
 		sessionFactoryMock := &sessionMocks.Factory{}
-		session := &sessionMocks.ReadWriteSession{}
+		session := &sessionMocks.WriteSession{}
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
 		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, "", "")
 
 		// when
-		sessionFactoryMock.On("NewReadWriteSession").Return(session)
+		sessionFactoryMock.On("NewWriteSession").Return(session)
 		session.On("MarkClusterAsDeleted", cluster.ID).Return(nil)
 
 		operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
@@ -251,14 +251,14 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		clientset := fake.NewSimpleClientset()
 
 		sessionFactoryMock := &sessionMocks.Factory{}
-		session := &sessionMocks.ReadWriteSession{}
+		session := &sessionMocks.WriteSession{}
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
 		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, "", "")
 
 		// when
-		sessionFactoryMock.On("NewReadWriteSession").Return(session)
+		sessionFactoryMock.On("NewWriteSession").Return(session)
 		session.On("MarkClusterAsDeleted", cluster.ID).Return(dberrors.Internal("some db error"))
 
 		operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)

@@ -70,7 +70,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 }
 
 func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error) {
-	session := g.dbSessionFactory.NewReadWriteSession()
+	session := g.dbSessionFactory.NewWriteSession()
 
 	gardenerCfg, ok := cluster.GardenerConfig()
 	if !ok {
