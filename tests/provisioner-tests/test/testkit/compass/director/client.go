@@ -8,7 +8,6 @@ import (
 	gql "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
 )
 
@@ -62,7 +61,7 @@ func (dc *client) GetRuntime(id string) (graphql.RuntimeExt, error) {
 
 func (dc *client) executeDirectorGraphQLCall(directorQuery string, tenant string, response interface{}) error {
 	if dc.token.EmptyOrExpired() {
-		log.Infof("Refreshing token to access Director Service")
+		dc.log.Infof("Refreshing token to access Director Service")
 		if err := dc.getToken(); err != nil {
 			return err
 		}
