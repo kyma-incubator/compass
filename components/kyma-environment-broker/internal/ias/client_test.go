@@ -51,7 +51,7 @@ func TestClient_CreateServiceProvider(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestClient_SetType(t *testing.T) {
+func TestClient_SetOIDCConfiguration(t *testing.T) {
 	// given
 	server := fixHTTPServer(t)
 	defer server.Close()
@@ -59,7 +59,7 @@ func TestClient_SetType(t *testing.T) {
 	client := NewClient(server.Client(), ClientConfig{URL: server.URL, ID: "admin", Secret: "admin123"})
 
 	// when
-	iasType := Type{
+	iasType := OIDCType{
 		SsoType:             "openID",
 		ServiceProviderName: "example.com",
 		OpenIDConnectConfig: OpenIDConnectConfig{
@@ -67,7 +67,7 @@ func TestClient_SetType(t *testing.T) {
 			PostLogoutRedirectURIs: nil,
 		},
 	}
-	err := client.SetType(serviceProviderID, iasType)
+	err := client.SetOIDCConfiguration(serviceProviderID, iasType)
 
 	// then
 	assert.NoError(t, err)
@@ -75,13 +75,49 @@ func TestClient_SetType(t *testing.T) {
 	response, err := server.Client().Get(fmt.Sprintf("%s/get", server.URL))
 	assert.NoError(t, err)
 
-	var conf Type
+	var conf OIDCType
 	err = json.NewDecoder(response.Body).Decode(&conf)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "openID", conf.SsoType)
 	assert.Equal(t, "example.com", conf.ServiceProviderName)
 	assert.Equal(t, "https://example.com", conf.OpenIDConnectConfig.RedirectURIs[0])
+}
+
+func TestClient_SetSAMLConfiguration(t *testing.T) {
+	// given
+	server := fixHTTPServer(t)
+	defer server.Close()
+
+	client := NewClient(server.Client(), ClientConfig{URL: server.URL, ID: "admin", Secret: "admin123"})
+
+	// when
+	iasType := SAMLType{
+		ServiceProviderName: "example.com",
+		ACSEndpoints: []ACSEndpoint{
+			{
+				Location:  "https://example.com",
+				Index:     0,
+				IsDefault: "true",
+			},
+		},
+	}
+	err := client.SetSAMLConfiguration(serviceProviderID, iasType)
+
+	// then
+	assert.NoError(t, err)
+
+	response, err := server.Client().Get(fmt.Sprintf("%s/get", server.URL))
+	assert.NoError(t, err)
+
+	var conf SAMLType
+	err = json.NewDecoder(response.Body).Decode(&conf)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "example.com", conf.ServiceProviderName)
+	assert.Equal(t, "https://example.com", conf.ACSEndpoints[0].Location)
+	assert.Equal(t, int32(0), conf.ACSEndpoints[0].Index)
+	assert.Equal(t, "true", conf.ACSEndpoints[0].IsDefault)
 }
 
 func TestClient_SetAssertionAttribute(t *testing.T) {

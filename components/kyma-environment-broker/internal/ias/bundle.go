@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 )
 
@@ -27,31 +28,34 @@ type IASCLient interface {
 	DeleteServiceProvider(string) error
 	GenerateServiceProviderSecret(SecretConfiguration) (*ServiceProviderSecret, error)
 	AuthenticationURL(ProviderID) string
-	SetType(string, Type) error
+	SetOIDCConfiguration(string, OIDCType) error
+	SetSAMLConfiguration(string, SAMLType) error
 	SetAssertionAttribute(string, PostAssertionAttributes) error
 	SetSubjectNameIdentifier(string, SubjectNameIdentifier) error
 	SetAuthenticationAndAccess(string, AuthenticationAndAccess) error
 }
 
 type ServiceProviderBundle struct {
-	client               IASCLient
-	config               Config
-	serviceProvider      ServiceProvider
-	serviceProviderExist bool
-	serviceProviderName  string
-	providerID           ProviderID
-	organization         string
-	ssoType              string
+	client                IASCLient
+	config                Config
+	serviceProvider       ServiceProvider
+	serviceProviderExist  bool
+	serviceProviderName   string
+	serviceProviderParams ServiceProviderParam
+	serviceProviderSecret *ServiceProviderSecret
+	serviceProviderDNS    string
+	providerID            ProviderID
+	organization          string
 }
 
 // NewServiceProviderBundle returns pointer to new ServiceProviderBundle
-func NewServiceProviderBundle(bundleIdentifier string, c IASCLient, cfg Config) *ServiceProviderBundle {
+func NewServiceProviderBundle(bundleIdentifier string, spParams ServiceProviderParam, c IASCLient, cfg Config) *ServiceProviderBundle {
 	return &ServiceProviderBundle{
-		client:              c,
-		config:              cfg,
-		serviceProviderName: fmt.Sprintf("KymaRuntime (instanceID: %s)", bundleIdentifier),
-		organization:        "global",
-		ssoType:             "openIdConnect",
+		client:                c,
+		config:                cfg,
+		serviceProviderParams: spParams,
+		serviceProviderName:   fmt.Sprintf("SKR %s (instanceID: %s)", strings.Title(spParams.Domain), bundleIdentifier),
+		organization:          "global",
 	}
 }
 
@@ -124,22 +128,51 @@ func (b *ServiceProviderBundle) DeleteServiceProvider() error {
 	return nil
 }
 
+func (b *ServiceProviderBundle) configureServiceProviderOIDCType(redirectURI string) error {
+	iasType := OIDCType{
+		ServiceProviderName: b.serviceProviderDNS,
+		SsoType:             b.serviceProviderParams.ssoType,
+		OpenIDConnectConfig: OpenIDConnectConfig{
+			RedirectURIs: []string{redirectURI},
+		},
+	}
+
+	return b.client.SetOIDCConfiguration(b.serviceProvider.ID, iasType)
+}
+
+func (b *ServiceProviderBundle) configureServiceProviderSAMLType(redirectURI string) error {
+	iasType := SAMLType{
+		ServiceProviderName: b.serviceProviderDNS,
+		ACSEndpoints: []ACSEndpoint{
+			ACSEndpoint{
+				Location:  redirectURI,
+				Index:     0,
+				IsDefault: "true",
+			},
+		},
+	}
+
+	return b.client.SetSAMLConfiguration(b.serviceProvider.ID, iasType)
+}
+
 // ConfigureServiceProviderType sets SSO type, name and URLs based on provided URL for ServiceProvider
 func (b *ServiceProviderBundle) ConfigureServiceProviderType(consolePath string) error {
 	u, err := url.ParseRequestURI(consolePath)
 	if err != nil {
 		return errors.Wrap(err, "while parsing path for IAS Type")
 	}
-	path := strings.Replace(u.Host, "console.", "grafana.", 1)
+	b.serviceProviderDNS = strings.Replace(u.Host, "console.", fmt.Sprintf("%s.", b.serviceProviderParams.Domain), 1)
+	redirectURI := fmt.Sprintf("%s://%s%s", u.Scheme, b.serviceProviderDNS, b.serviceProviderParams.redirectPath)
 
-	iasType := Type{
-		ServiceProviderName: path,
-		SsoType:             b.ssoType,
-		OpenIDConnectConfig: OpenIDConnectConfig{
-			RedirectURIs: []string{fmt.Sprintf("%s://%s/login/generic_oauth", u.Scheme, path)},
-		},
+	switch b.serviceProviderParams.ssoType {
+	case "saml2":
+		err = b.configureServiceProviderSAMLType(redirectURI)
+	case "openIdConnect":
+		err = b.configureServiceProviderOIDCType(redirectURI)
+	default:
+		err = errors.Errorf("Unrecognized ssoType: %s", b.serviceProviderParams.ssoType)
 	}
-	err = b.client.SetType(b.serviceProvider.ID, iasType)
+
 	if err != nil {
 		return errors.Wrap(err, "while configuring IAS Type")
 	}
@@ -170,35 +203,40 @@ func (b *ServiceProviderBundle) ConfigureServiceProvider() error {
 	}
 
 	// set "AuthenticationAndAccess"
-	authenticationAndAccess := AuthenticationAndAccess{
-		ServiceProviderAccess: ServiceProviderAccess{
-			RBAConfig: RBAConfig{
-				RBARules: []RBARules{
-					{
-						Action:    "Allow",
-						Group:     "skr-monitoring-admin",
-						GroupType: "Cloud",
-					},
-					{
-						Action:    "Allow",
-						Group:     "skr-monitoring-viewer",
-						GroupType: "Cloud",
-					},
+	if len(b.serviceProviderParams.allowedGroups) > 0 {
+		authenticationAndAccess := AuthenticationAndAccess{
+			ServiceProviderAccess: ServiceProviderAccess{
+				RBAConfig: RBAConfig{
+					RBARules:      make([]RBARules, len(b.serviceProviderParams.allowedGroups)),
+					DefaultAction: "Deny",
 				},
-				DefaultAction: "Allow",
 			},
-		},
+		}
+		for i, group := range b.serviceProviderParams.allowedGroups {
+			authenticationAndAccess.ServiceProviderAccess.RBAConfig.RBARules[i] = RBARules{
+				Action:    "Allow",
+				Group:     group,
+				GroupType: "Cloud",
+			}
+		}
+		err = b.client.SetAuthenticationAndAccess(b.serviceProvider.ID, authenticationAndAccess)
+		if err != nil {
+			return errors.Wrap(err, "while configuring AuthenticationAndAccess")
+		}
 	}
-	err = b.client.SetAuthenticationAndAccess(b.serviceProvider.ID, authenticationAndAccess)
-	if err != nil {
-		return errors.Wrap(err, "while configuring AuthenticationAndAccess")
+
+	if b.serviceProviderParams.ssoType == "openIdConnect" {
+		b.serviceProviderSecret, err = b.generateSecret()
+		if err != nil {
+			return errors.Wrap(err, "creating secret for IAS ServiceProvider failed")
+		}
 	}
 
 	return nil
 }
 
-// GenerateSecret generates new ID and Secret for ServiceProvider
-func (b *ServiceProviderBundle) GenerateSecret() (*ServiceProviderSecret, error) {
+// generateSecret generates new ID and Secret for ServiceProvider
+func (b *ServiceProviderBundle) generateSecret() (*ServiceProviderSecret, error) {
 	secretCfg := SecretConfiguration{
 		Organization:   b.organization,
 		ID:             b.serviceProvider.ID,
@@ -215,4 +253,11 @@ func (b *ServiceProviderBundle) GenerateSecret() (*ServiceProviderSecret, error)
 	}
 
 	return sps, nil
+}
+
+func (b *ServiceProviderBundle) GetProvisioningOverrides() (string, []*gqlschema.ConfigEntryInput) {
+	if b.serviceProviderParams.overrides != nil {
+		return b.serviceProviderParams.overrides(b)
+	}
+	return "", nil
 }

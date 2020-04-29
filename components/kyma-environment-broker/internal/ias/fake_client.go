@@ -5,8 +5,10 @@ import "fmt"
 const (
 	FakeIdentityProviderName = "IdentityProviderName"
 	FakeIdentityProviderID   = "0dbae593-ab1d-4774-97c1-5118ea22ea2d"
-	FakeProviderName         = "ProviderName"
-	FakeProviderID           = "eebb54dd-e4d5-43a1-929a-e98ea2831342"
+	FakeGrafanaName          = "GrafanaName"
+	FakeGrafanaID            = "eebb54dd-e4d5-43a1-929a-e98ea2831342"
+	FakeDexName              = "DexName"
+	FakeDexID                = "dd70d82e-0a30-4931-9171-3a55a0725512"
 	FakeClientID             = "cid"
 	FakeClientSecret         = "csc"
 )
@@ -19,8 +21,18 @@ func NewFakeClient() *FakeClient {
 	return &FakeClient{
 		serviceProviders: []*ServiceProvider{
 			{
-				ID:          FakeProviderID,
-				DisplayName: fmt.Sprintf("KymaRuntime (instanceID: %s)", FakeProviderName),
+				ID:          FakeGrafanaID,
+				DisplayName: fmt.Sprintf("SKR Grafana (instanceID: %s)", FakeGrafanaName),
+				AssertionAttributes: []AssertionAttribute{
+					{
+						AssertionAttribute: "test",
+						UserAttribute:      "test",
+					},
+				},
+			},
+			{
+				ID:          FakeDexID,
+				DisplayName: fmt.Sprintf("SKR Dex (instanceID: %s)", FakeDexName),
 				AssertionAttributes: []AssertionAttribute{
 					{
 						AssertionAttribute: "test",
@@ -81,7 +93,7 @@ func (f FakeClient) AuthenticationURL(id ProviderID) string {
 	return fmt.Sprintf("https://authentication.com/%s", id)
 }
 
-func (f *FakeClient) SetType(id string, iasType Type) error {
+func (f *FakeClient) SetOIDCConfiguration(id string, iasType OIDCType) error {
 	serviceProvider, err := f.GetServiceProvider(id)
 	if err != nil {
 		return err
@@ -90,6 +102,18 @@ func (f *FakeClient) SetType(id string, iasType Type) error {
 	serviceProvider.SsoType = iasType.SsoType
 	serviceProvider.DisplayName = iasType.ServiceProviderName
 	serviceProvider.RedirectURIs = iasType.OpenIDConnectConfig.RedirectURIs
+
+	return nil
+}
+
+func (f *FakeClient) SetSAMLConfiguration(id string, iasType SAMLType) error {
+	serviceProvider, err := f.GetServiceProvider(id)
+	if err != nil {
+		return err
+	}
+
+	serviceProvider.SsoType = "saml2"
+	serviceProvider.ACSEndpoints = iasType.ACSEndpoints
 
 	return nil
 }

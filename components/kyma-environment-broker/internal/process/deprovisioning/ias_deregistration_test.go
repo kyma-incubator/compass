@@ -18,14 +18,18 @@ func TestIASDeregistration_Run(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
 
-	bundle := &automock.Bundle{}
-	defer bundle.AssertExpectations(t)
-	bundle.On("DeleteServiceProvider").Return(nil).Once()
-
+	bundles := map[string]*automock.Bundle{
+		"dex":     &automock.Bundle{},
+		"grafana": &automock.Bundle{},
+	}
 	bundleBuilder := &automock.BundleBuilder{}
 	defer bundleBuilder.AssertExpectations(t)
-	bundleBuilder.On("NewBundle", iasInstanceID).Return(bundle).Once()
-
+	for inputID, bundle := range bundles {
+		defer bundle.AssertExpectations(t)
+		bundle.On("DeleteServiceProvider").Return(nil).Once()
+		bundle.On("ServiceProviderName").Return(inputID)
+		bundleBuilder.On("NewBundle", iasInstanceID, inputID).Return(bundle, nil).Once()
+	}
 	operation := internal.DeprovisioningOperation{
 		Operation: internal.Operation{
 			InstanceID: iasInstanceID,
