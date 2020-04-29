@@ -43,6 +43,5 @@ A successful call returns the instance details:
 }
 ```
 
->**NOTE:** field `dashboard_url` is only available if Runtime was provisioned successfully and compass agent registered runtime in the Director.
 
 >**NOTE:** The **dashboard_url** field is available only if the Runtime was provisioned successfully and the Runtime Agent registered the Runtime in the Director. Fields under the **parameters** field can differ depending on the provisioning input.
