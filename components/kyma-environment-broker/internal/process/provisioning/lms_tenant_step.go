@@ -21,12 +21,14 @@ type LmsTenantProvider interface {
 type provideLmsTenantStep struct {
 	tenantProvider   LmsTenantProvider
 	operationManager *process.ProvisionOperationManager
+	regionOverride   string
 }
 
-func NewProvideLmsTenantStep(tp LmsTenantProvider, repo storage.Operations) *provideLmsTenantStep {
+func NewProvideLmsTenantStep(tp LmsTenantProvider, repo storage.Operations, regionOverride string) *provideLmsTenantStep {
 	return &provideLmsTenantStep{
 		tenantProvider:   tp,
 		operationManager: process.NewProvisionOperationManager(repo),
+		regionOverride:   regionOverride,
 	}
 }
 
@@ -96,6 +98,9 @@ var lmsRegionsMap = map[string]string{
 }
 
 func (s *provideLmsTenantStep) provideRegion(r *string) string {
+	if s.regionOverride != "" {
+		return s.regionOverride
+	}
 	if r == nil {
 		return "eu"
 	}
