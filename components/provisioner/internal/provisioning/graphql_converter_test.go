@@ -140,7 +140,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		disk := "standard"
 		machine := "machine"
 		region := "region"
-		zone := "zone"
+		zones := []string{"fix-gcp-zone-1","fix-gcp-zone-2"}
 		volume := 256
 		kubeversion := "kubeversion"
 		kubeconfig := "kubeconfig"
@@ -154,7 +154,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		unavailable := 1
 		secretName := "secretName"
 
-		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"Zone":"zone"}`)
+		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
 		require.NoError(t, err)
 
 		runtimeStatus := model.RuntimeStatus{
@@ -223,7 +223,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxSurge:          &surge,
 					MaxUnavailable:    &unavailable,
 					ProviderSpecificConfig: gqlschema.GCPProviderConfig{
-						Zone: &zone,
+						Zones: zones,
 					},
 				},
 				KymaConfig: fixKymaGraphQLConfig(),

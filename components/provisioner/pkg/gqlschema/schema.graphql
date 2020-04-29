@@ -29,12 +29,12 @@ type GardenerConfig {
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
 
 type GCPProviderConfig {
-    zones: [String]
+    zones: [String!]
 }
 
 type AzureProviderConfig {
     vnetCidr: String
-    zones: [String]
+    zones: [String!]
 }
 
 type AWSProviderConfig {

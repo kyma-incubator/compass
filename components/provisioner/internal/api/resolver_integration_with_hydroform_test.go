@@ -102,7 +102,7 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 			MaxUnavailable:    2,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
-					Zone: "zone",
+					Zones: []string{"fix-gcp-zone1", "fix-gcp-zone-2"},
 				},
 			},
 		},
@@ -126,6 +126,7 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "cidr",
+					Zones:    []string{"fix-az-zone-1", "fix-az-zone-2"},
 				},
 			},
 		},
