@@ -171,7 +171,7 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
 		  {{- range . }}
 		  {
 			key: "{{ .Key }}",
-			value: "{{ .Value }}",
+			value: {{ .Value | strQuote }},
 			{{- if .Secret }}
 			secret: true,
 			{{- end }}

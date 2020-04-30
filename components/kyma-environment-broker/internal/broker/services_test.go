@@ -20,7 +20,7 @@ func TestServices_Services(t *testing.T) {
 	optComponentsProviderMock := &automock.OptionalComponentNamesProvider{}
 	defer optComponentsProviderMock.AssertExpectations(t)
 
-	optComponentsNames := []string{"kiali", "jaeger"}
+	optComponentsNames := []string{"kiali", "tracing"}
 	optComponentsProviderMock.On("GetAllOptionalComponentsNames").Return(optComponentsNames)
 
 	servicesEndpoint := broker.NewServices(

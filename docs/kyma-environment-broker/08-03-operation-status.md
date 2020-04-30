@@ -1,6 +1,6 @@
-# Check Kyma Environment Broker operation status using Kyma Environment Broker
+# Check operation status
 
-This tutorial shows how to check the Kyma Environment Broker operation status for the provisioning and deprovisioning operations.
+This tutorial shows how to check the operation status for the provisioning and deprovisioning operations.
 
 ## Steps
 

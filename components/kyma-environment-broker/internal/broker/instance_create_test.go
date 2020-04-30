@@ -197,7 +197,7 @@ func TestProvision_Provision(t *testing.T) {
 		}, true)
 
 		// then
-		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Jaeger"`)
+		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Tracing"`)
 		assert.False(t, response.IsAsync)
 		assert.Empty(t, response.OperationData)
 	})
@@ -282,7 +282,7 @@ func TestProvision_Provision(t *testing.T) {
 		}, true)
 
 		// then
-		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Jaeger", components: No additional items allowed on array`)
+		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Tracing", components: No additional items allowed on array`)
 		assert.False(t, response.IsAsync)
 		assert.Empty(t, response.OperationData)
 	})
