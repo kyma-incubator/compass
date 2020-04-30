@@ -5,90 +5,39 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/automock"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/stretchr/testify/assert"
-	"sigs.k8s.io/yaml"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-//func TestAuditLog_ConfigFileDoesNotExist(t *testing.T) {
-//	// given
-//
-//	memoryStorage := storage.NewMemoryStorage()
-//	cfg := auditlog.Config{
-//		URL:      "host1",
-//		User:     "aaaa",
-//		Password: "aaaa",
-//		Tenant:   "tenant",
-//	}
-//	svc := NewAuditLogOverridesStep(memoryStorage.Operations(), cfg)
-//	svc.fs = afero.NewMemMapFs()
-//
-//	operation := internal.ProvisioningOperation{}
-//
-//	// when
-//	_, _, err := svc.Run(operation, NewLogDummy())
-//	//then
-//	require.Error(t, err)
-//	require.EqualError(t, err, "open audit-log-config: file does not exist")
-//
-//}
 
 func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 	// given
 	mm := afero.NewMemMapFs()
-	_, err := mm.Create("audit-log-config")
-	if err != nil {
-		t.Fatalf("Unable to create file: audit-log-config!!: %v", err)
-	}
-	fileData := `[
-   {
-      "east": {
-         "host": "host",
-         "http-user": "aaaa",
-         "http-pwd": "aaaa"
-      }
-   },
-   {
-      "west": {
-         "host": "host",
-         "http-user": "bbbb",
-         "http-pwd": "bbbb"
-      }
-   }
-]`
 
-	fYaml, err := yaml.JSONToYAML([]byte(fileData))
-	if err != nil {
-		t.Fatalf("Unable to convert to yaml: %v", err)
-	}
-	err = afero.WriteFile(mm, "audit-log-config", fYaml, 0755)
-	if err != nil {
-		t.Fatalf("Unable to write contents to file: audit-log-config!!: %v", err)
-	}
-
-	memoryStorage := storage.NewMemoryStorage()
+	repo := storage.NewMemoryStorage().Operations()
 	cfg := auditlog.Config{
 		URL:      "host1",
 		User:     "aaaa",
 		Password: "aaaa",
 		Tenant:   "tenant",
 	}
-	svc := NewAuditLogOverridesStep(memoryStorage.Operations(),cfg)
+	svc := NewAuditLogOverridesStep(repo,cfg)
 	svc.fs = mm
 
-	operation := internal.ProvisioningOperation{}
+	operation := internal.ProvisioningOperation{
+		ProvisioningParameters: `{"ers_context": {"subaccount_id": "1234567890"}}`,
+	}
+	repo.InsertProvisioningOperation(operation)
 
 	// when
-	_, _, err = svc.Run(operation, NewLogDummy())
+	_, _, err := svc.Run(operation, NewLogDummy())
 	//then
 	require.Error(t, err)
-	require.EqualError(t, err, "open audit-log-script: file does not exist")
+	require.EqualError(t, err, "open /audit-log-script/script: file does not exist")
 
 }
 
@@ -123,33 +72,32 @@ return "fooBar"
 	defer inputCreatorMock.AssertExpectations(t)
 	expectedOverride := `
 [FILTER]
-		Name    lua
+        Name    lua
         Match   dex.*
         script  script.lua
         call    reformat
 
 [FILTER]
-		Name    lua
+        Name    lua
         Match   dex.*
         script  script.lua
-        call    append_uuid
+        call    reformat
 [OUTPUT]
-		Name    stdout
+        Name    stdout
         Match   dex.*
 [OUTPUT]
-		Name             http
+        Name             http
         Match            dex.*
         Host             host1
         Port             8081
         URI              /audit-log/v2/security-events
-        Header           content-type    application/json 
+        Header           content-type    application/json
         Header           Content-Type    text/plain
         HTTP_User        aaaa
         HTTP_Passwd      aaaa
         Format           json_stream
         tls              on
         tls.debug        1
-
 `
 	expectedFileScript := `
 func myScript() {
@@ -171,7 +119,7 @@ return "fooBar"
 
 	operation := internal.ProvisioningOperation{
 		InputCreator:           inputCreatorMock,
-		ProvisioningParameters: `{"platform_region": "east", "ers_context": {"subaccount_id": "1234567890"}}`,
+		ProvisioningParameters: `{"ers_context": {"subaccount_id": "1234567890"}}`,
 	}
 	repo.InsertProvisioningOperation(operation)
 	// when

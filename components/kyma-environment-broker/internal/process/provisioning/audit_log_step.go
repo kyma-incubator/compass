@@ -56,33 +56,32 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		{Key: "fluent-bit.conf.script", Value: replaceTenantID},
 		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
 [FILTER]
-		Name    lua
+        Name    lua
         Match   dex.*
         script  script.lua
         call    reformat
 
 [FILTER]
-		Name    lua
+        Name    lua
         Match   dex.*
         script  script.lua
-        call    append_uuid
+        call    reformat
 [OUTPUT]
-		Name    stdout
+        Name    stdout
         Match   dex.*
 [OUTPUT]
-		Name             http
+        Name             http
         Match            dex.*
         Host             %s
         Port             8081
         URI              /audit-log/v2/security-events
-        Header           content-type    application/json 
+        Header           content-type    application/json
         Header           Content-Type    text/plain
         HTTP_User        %s
         HTTP_Passwd      %s
         Format           json_stream
         tls              on
         tls.debug        1
-
 `, alo.auditLogConfig.URL, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
 	})
 	return operation, 0, nil
