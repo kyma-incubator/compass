@@ -41,6 +41,7 @@ type (
 		Path    string
 		Body    io.Reader
 		Headers map[string]string
+		Delete  bool
 	}
 )
 
@@ -113,6 +114,7 @@ func (c *Client) DeleteServiceProvider(spID string) (err error) {
 	request := &Request{
 		Method: http.MethodPut,
 		Path:   fmt.Sprintf("%s?sp_id=%s", PathDelete, spID),
+		Delete: true,
 	}
 	response, err := c.do(request)
 	defer func() {
@@ -209,6 +211,8 @@ func (c *Client) do(sciReq *Request) (*http.Response, error) {
 
 	switch {
 	case response.StatusCode == http.StatusOK || response.StatusCode == http.StatusCreated:
+		return response, nil
+	case sciReq.Delete && response.StatusCode == http.StatusNotFound:
 		return response, nil
 	case response.StatusCode == http.StatusRequestTimeout:
 		return response, kebError.NewTemporaryError(c.responseErrorMessage(response))

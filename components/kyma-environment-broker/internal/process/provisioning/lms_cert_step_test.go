@@ -114,7 +114,7 @@ func TestLmsStepsHappyPath(t *testing.T) {
 	tRepo := storage.NewMemoryStorage().LMSTenants()
 	certStep := NewLmsCertificatesStep(lmsClient, opRepo)
 	tManager := lms.NewTenantManager(tRepo, lmsClient, fixLogger())
-	tenantStep := NewProvideLmsTenantStep(tManager, opRepo)
+	tenantStep := NewProvideLmsTenantStep(tManager, opRepo, "eu")
 
 	inputCreator := newInputCreator()
 	operation := internal.ProvisioningOperation{

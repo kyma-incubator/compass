@@ -176,7 +176,7 @@ func main() {
 	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
 	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
-	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled, externalEvalAssistant)
+	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 
 	bundleBuilder := ias.NewBundleBuilder(httpClient, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
@@ -201,12 +201,12 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewInternalEvaluationStep(cfg.Avs, avsDel, internalEvalAssistant),
+			step:     provisioning.NewInternalEvaluationStep(avsDel, internalEvalAssistant),
 			disabled: cfg.Avs.Disabled,
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations()),
+			step:     provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region),
 			disabled: cfg.LMS.Disabled,
 		},
 		{
