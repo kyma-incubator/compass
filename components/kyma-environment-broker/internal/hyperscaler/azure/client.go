@@ -15,6 +15,7 @@ type AzureInterface interface {
 	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags Tags) (*eventhub.EHNamespace, error)
 	// CheckNamespaceAvailability check an Event Hubs namespace name availability
 	CheckNamespaceAvailability(ctx context.Context, name string) (bool, error)
+	CheckResourceGroupAvailability(ctx context.Context, name string) (bool, error)
 	NamespaceExists(ctx context.Context, resourceGroupName string, namespaceName string, tags Tags) (bool, error)
 	ResourceGroupExists(ctx context.Context, name string, tags Tags) (bool, error)
 }
@@ -66,13 +67,45 @@ func (nc *AzureClient) CheckNamespaceAvailability(ctx context.Context, name stri
 	return *res.NameAvailable, nil
 }
 
+func (nc *AzureClient) CheckResourceGroupAvailability(ctx context.Context, name string) (bool, error) {
+	var available bool
+	if name == "" {
+		return false, errors.New("Resource group name cannot be empty")
+	}
+	group, err := nc.resourcegroupClient.CheckExistence(ctx, name)
+	if err != nil {
+		return false, errors.Wrapf(err, "Failed to check Azure resource group availability with name: %s. Error " +
+			"while using Azure client.", name)
+	}
+	switch group.StatusCode{
+	case 404:
+		available = true
+	case 204:
+		available = false
+	default:
+		return false, errors.Errorf("Failed to check Azure resource group availability with name: %s." +
+			" Unexpected API response code %d", name, group.StatusCode)
+	}
+	return available , nil
+}
+
 func (nc *AzureClient) NamespaceExists(ctx context.Context, resourceGroupName string, namespaceName string, tags Tags) (bool, error) {
+	exists := false
 	if namespaceName == "" {
 		return false, errors.New("Namespace name cannot be empty")
 	}
 	if resourceGroupName == "" {
 		return false, errors.New("Resource group name cannot be empty")
 	}
+	exists, err := nc.CheckResourceGroupAvailability(ctx, resourceGroupName)
+
+	if err != nil {
+		return false, errors.Wrapf(err, "Failed to check Azure Event Hubs namespace availability with name: %s.", namespaceName)
+	}
+	if ! exists {
+		return false, nil
+	}
+
 	res, err := nc.eventhubNamespaceClient.ListByResourceGroup(ctx, resourceGroupName)
 	if err != nil {
 		return false, errors.Errorf("Failed to check Event Hubs namespace availability with name: %s in resource" +
@@ -83,7 +116,6 @@ func (nc *AzureClient) NamespaceExists(ctx context.Context, resourceGroupName st
 			"group %s. Unexpected API response code. Expected 2XX but received %d", namespaceName, resourceGroupName,
 			res.Response().StatusCode)
 	}
-	exists := false
 	for res.NotDone() {
 		namespaces := res.Values()
 		for _, ns := range namespaces{
@@ -102,12 +134,22 @@ func (nc *AzureClient) ResourceGroupExists(ctx context.Context, name string, tag
 	if name == "" {
 		return false, errors.New("Resource group name cannot be empty")
 	}
+	// Will not return an error if resource group does not exist
+	exists, err := nc.CheckResourceGroupAvailability(ctx, name)
+	if err != nil {
+		return false, errors.Wrapf(err, "Failed to check Azure resource group availability with name: %s.", name)
+	}
+	if ! exists {
+		return false, nil
+	}
+	// Now we are safe to assume resource group exists, so any errors returned are not related to resource group not
+	// existing
 	group, err := nc.resourcegroupClient.Get(ctx, name)
 	if err != nil {
-		return false, errors.Errorf("Failed to check Azure resource group availability with name: %s. Error " +
-			"while using Azure client. %v", name, err)
+		return false, errors.Wrapf(err, "Failed to check Azure resource group availability with name: %s. Error " +
+			"while using Azure client.", name)
 	}
-	if group.StatusCode != 200 && group.StatusCode != 201 {
+	if group.StatusCode != 200 {
 		return false, errors.Errorf("Failed to check Azure resource group availability with name: %s." +
 			" Unexpected API response code. Expected 2XX but received %d", name, group.StatusCode)
 	}
@@ -115,16 +157,19 @@ func (nc *AzureClient) ResourceGroupExists(ctx context.Context, name string, tag
 }
 
 func matchWithTags(nameA string, tagsA Tags, nameB string, tagsB Tags) bool {
-	matches := nameA == nameB
 	for k, v := range tagsA {
 		if t, ok := tagsB[k]; ok {
-			matches = t == v
-		} else {
-			matches = false
-			break
+			if v != t {
+				// same value
+				return false
+			}
+			// values are different
+			continue
 		}
+		// tag does not exist
+		return false
 	}
-	return matches
+	return nameA == nameB
 }
 
 func (nc *AzureClient) createAndWait(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {

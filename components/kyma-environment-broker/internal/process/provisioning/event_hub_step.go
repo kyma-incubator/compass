@@ -73,12 +73,14 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	if err != nil {
 		// retrying might solve the issue, the HAP could be temporarily unavailable
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
+		log.Info(errorMessage)
 		return p.operationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
 	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, pp)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure config: %v", err)
+		log.Info(errorMessage)
 		return p.operationManager.OperationFailed(operation, errorMessage)
 	}
 
@@ -87,6 +89,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
+		log.Info(errorMessage)
 		return p.operationManager.OperationFailed(operation, errorMessage)
 	}
 
@@ -96,11 +99,12 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		azure.TagInstanceID:   &operation.InstanceID,
 		azure.TagOperationID:  &operation.ID,
 	}
-	resourcesName := operation.ID
+
+	resourcesName := fmt.Sprintf("skr-%s", operation.ID)
 	exists, err := p.resourcesExist(resourcesName, tags, azureClient)
 
 	if err != nil {
-		return p.operationManager.RetryOperation(operation, fmt.Sprintf("Ceching Event Hubs resources failed"+
+		return p.operationManager.RetryOperation(operation, fmt.Sprintf("Checking Event Hubs resources failed"+
 			". Error:%v", err), time.Minute, time.Minute*30, log)
 	}
 
@@ -141,9 +145,11 @@ func (p *ProvisionAzureEventHubStep) resourcesExist( resourcesName string, tags 
 		return false, errors.Wrapf(err,"Can't check Azure resource group %s.", resourcesName)
 	}
 	// we are using the same name for resource group and namespace name
-	exists, err = azureClient.NamespaceExists(p.context, resourcesName, resourcesName, tags)
-	if err != nil {
-		return false,errors.Wrapf(err, "Can't check Azure Event Hubs namespace %s.", resourcesName)
+	if exists {
+		exists, err = azureClient.NamespaceExists(p.context, resourcesName, resourcesName, tags)
+		if err != nil {
+			return false,errors.Wrapf(err, "Can't check Azure Event Hubs namespace %s.", resourcesName)
+		}
 	}
 	return exists, nil
 }
@@ -186,7 +192,15 @@ func (p *ProvisionAzureEventHubStep) getUniqueNSName(azureClient azure.AzureInte
 			return "", errors.Errorf(msg, err)
 		}
 		if available {
-			return uniqueName, nil
+			available, err := azureClient.CheckResourceGroupAvailability(p.context, uniqueName)
+			if err != nil {
+				msg := "Error while calling Azure Event Hubs client. Can't check resource group availability. Error: %v"
+				log.Errorf(msg, err)
+				return "", errors.Errorf(msg, err)
+			}
+			if available {
+				return uniqueName, nil
+			}
 		}
 		log.Info("Namespace %s already exists.", uniqueName)
 	}
