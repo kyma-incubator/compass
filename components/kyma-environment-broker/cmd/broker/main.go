@@ -203,7 +203,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations()),
+			step:     provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region),
 			disabled: cfg.LMS.Disabled,
 		},
 		{

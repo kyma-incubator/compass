@@ -63,6 +63,7 @@ type Config struct {
 
 	Token      string
 	SamlTenant string
+	Region     string `envconfig:"optional"`
 
 	Disabled bool
 }
@@ -128,7 +129,7 @@ type TenantInfo struct {
 func (c *client) CreateTenant(input CreateTenantInput) (o CreateTenantOutput, err error) {
 	payload := createTenantPayload{
 		Name:        input.Name,
-		Region:      c.provideRegion(input.Region),
+		Region:      input.Region,
 		SamlGroups:  []string{"skr-logging-viewer"},
 		ClusterType: string(c.clusterType),
 		DataCenter:  "all",
@@ -389,12 +390,4 @@ func (c *client) generateCSR(subject pkix.Name) (csr []byte, privateKey []byte, 
 	}
 
 	return csrBuf.Bytes(), pkBuf.Bytes(), nil
-}
-
-func (c *client) provideRegion(r string) string {
-	// for "dev" Environment override the region by "na" value
-	if c.environment == EnvironmentDev {
-		return "na"
-	}
-	return r
 }
