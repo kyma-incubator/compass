@@ -97,12 +97,12 @@ func (nc *AzureClient) NamespaceExists(ctx context.Context, resourceGroupName st
 	if resourceGroupName == "" {
 		return false, errors.New("Resource group name cannot be empty")
 	}
-	exists, err := nc.CheckResourceGroupAvailability(ctx, resourceGroupName)
+	available, err := nc.CheckResourceGroupAvailability(ctx, resourceGroupName)
 
 	if err != nil {
 		return false, errors.Wrapf(err, "Failed to check Azure Event Hubs namespace availability with name: %s.", namespaceName)
 	}
-	if !exists {
+	if available {
 		return false, nil
 	}
 
@@ -135,11 +135,11 @@ func (nc *AzureClient) ResourceGroupExists(ctx context.Context, name string, tag
 		return false, errors.New("Resource group name cannot be empty")
 	}
 	// Will not return an error if resource group does not exist
-	exists, err := nc.CheckResourceGroupAvailability(ctx, name)
+	available, err := nc.CheckResourceGroupAvailability(ctx, name)
 	if err != nil {
 		return false, errors.Wrapf(err, "Failed to check Azure resource group availability with name: %s.", name)
 	}
-	if !exists {
+	if available {
 		return false, nil
 	}
 	// Now we are safe to assume resource group exists, so any errors returned are not related to resource group not
