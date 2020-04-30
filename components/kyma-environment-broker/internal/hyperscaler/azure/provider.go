@@ -7,10 +7,11 @@ import (
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type HyperscalerProvider interface {
-	GetClient(config *Config) (AzureInterface, error)
+	GetClient(config *Config, logger logrus.FieldLogger) (Interface, error)
 }
 
 var _ HyperscalerProvider = (*azureProvider)(nil)
@@ -22,7 +23,7 @@ func NewAzureProvider() HyperscalerProvider {
 }
 
 // GetClient gets a client for interacting with Azure
-func (ac *azureProvider) GetClient(config *Config) (AzureInterface, error) {
+func (ac *azureProvider) GetClient(config *Config, logger logrus.FieldLogger) (Interface, error) {
 
 	environment, err := config.Environment()
 	if err != nil {
@@ -47,7 +48,7 @@ func (ac *azureProvider) GetClient(config *Config) (AzureInterface, error) {
 	}
 
 	// create azure client
-	return NewAzureClient(nsClient, resourcegroupClient), nil
+	return NewAzureClient(nsClient, resourcegroupClient, logger), nil
 }
 
 // getGroupsClient gets a client for handling of Azure Namespaces

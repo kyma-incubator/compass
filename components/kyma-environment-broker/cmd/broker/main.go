@@ -256,6 +256,10 @@ func main() {
 			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
 		},
 		{
+			weight: 1,
+			step:   deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
+		},
+		{
 			weight:   1,
 			step:     deprovisioning.NewEDPDeregistrationStep(edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
