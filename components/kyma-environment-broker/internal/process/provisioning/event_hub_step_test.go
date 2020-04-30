@@ -83,7 +83,7 @@ func (nc *FakeNamespaceClient) NamespaceExists(ctx context.Context, resourceGrou
 func (nc *FakeNamespaceClient) ResourceGroupExists(ctx context.Context, name string, tags azure.Tags) (bool, error) {
 	return false, nil
 }
-func (nc *FakeNamespaceClient)  CheckResourceGroupAvailability(ctx context.Context, name string) (bool, error) {
+func (nc *FakeNamespaceClient) CheckResourceGroupAvailability(ctx context.Context, name string) (bool, error) {
 	return true, nil
 }
 

@@ -139,22 +139,22 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	return operation, 0, nil
 }
 
-func (p *ProvisionAzureEventHubStep) resourcesExist( resourcesName string, tags azure.Tags, azureClient azure.AzureInterface) (bool, error) {
+func (p *ProvisionAzureEventHubStep) resourcesExist(resourcesName string, tags azure.Tags, azureClient azure.AzureInterface) (bool, error) {
 	exists, err := azureClient.ResourceGroupExists(p.context, resourcesName, tags)
 	if err != nil {
-		return false, errors.Wrapf(err,"Can't check Azure resource group %s.", resourcesName)
+		return false, errors.Wrapf(err, "Can't check Azure resource group %s.", resourcesName)
 	}
 	// we are using the same name for resource group and namespace name
 	if exists {
 		exists, err = azureClient.NamespaceExists(p.context, resourcesName, resourcesName, tags)
 		if err != nil {
-			return false,errors.Wrapf(err, "Can't check Azure Event Hubs namespace %s.", resourcesName)
+			return false, errors.Wrapf(err, "Can't check Azure Event Hubs namespace %s.", resourcesName)
 		}
 	}
 	return exists, nil
 }
 
-func (p *ProvisionAzureEventHubStep) createEHResources( azureClient azure.AzureInterface, azureCfg *azure.Config, tags azure.Tags, log logrus.FieldLogger) (string, error) {
+func (p *ProvisionAzureEventHubStep) createEHResources(azureClient azure.AzureInterface, azureCfg *azure.Config, tags azure.Tags, log logrus.FieldLogger) (string, error) {
 	uniqueName, err := p.getUniqueNSName(azureClient, log)
 	if err != nil {
 		return "", errors.Errorf("Can't find a unique name for Event "+
@@ -165,7 +165,7 @@ func (p *ProvisionAzureEventHubStep) createEHResources( azureClient azure.AzureI
 	groupName := uniqueName
 	if _, err = azureClient.CreateResourceGroup(p.context, azureCfg, groupName, tags); err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
-		return "", errors.Errorf( "Failed to create Azure Resource Group [%s] with error: %v", groupName, err)
+		return "", errors.Errorf("Failed to create Azure Resource Group [%s] with error: %v", groupName, err)
 	}
 	log.Info("created Azure Resource Group [%s]", groupName)
 

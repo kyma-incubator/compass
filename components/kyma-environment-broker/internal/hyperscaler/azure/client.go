@@ -74,19 +74,19 @@ func (nc *AzureClient) CheckResourceGroupAvailability(ctx context.Context, name 
 	}
 	group, err := nc.resourcegroupClient.CheckExistence(ctx, name)
 	if err != nil {
-		return false, errors.Wrapf(err, "Failed to check Azure resource group availability with name: %s. Error " +
+		return false, errors.Wrapf(err, "Failed to check Azure resource group availability with name: %s. Error "+
 			"while using Azure client.", name)
 	}
-	switch group.StatusCode{
+	switch group.StatusCode {
 	case 404:
 		available = true
 	case 204:
 		available = false
 	default:
-		return false, errors.Errorf("Failed to check Azure resource group availability with name: %s." +
+		return false, errors.Errorf("Failed to check Azure resource group availability with name: %s."+
 			" Unexpected API response code %d", name, group.StatusCode)
 	}
-	return available , nil
+	return available, nil
 }
 
 func (nc *AzureClient) NamespaceExists(ctx context.Context, resourceGroupName string, namespaceName string, tags Tags) (bool, error) {
@@ -102,28 +102,28 @@ func (nc *AzureClient) NamespaceExists(ctx context.Context, resourceGroupName st
 	if err != nil {
 		return false, errors.Wrapf(err, "Failed to check Azure Event Hubs namespace availability with name: %s.", namespaceName)
 	}
-	if ! exists {
+	if !exists {
 		return false, nil
 	}
 
 	res, err := nc.eventhubNamespaceClient.ListByResourceGroup(ctx, resourceGroupName)
 	if err != nil {
-		return false, errors.Errorf("Failed to check Event Hubs namespace availability with name: %s in resource" +
+		return false, errors.Errorf("Failed to check Event Hubs namespace availability with name: %s in resource"+
 			"group %s. Error while using Azure client. %v", namespaceName, resourceGroupName, err)
 	}
 	if res.Response().StatusCode != 200 && res.Response().StatusCode != 201 {
-		return false, errors.Errorf("Failed to check Event Hubs namespace availability with name: %s in resource" +
+		return false, errors.Errorf("Failed to check Event Hubs namespace availability with name: %s in resource"+
 			"group %s. Unexpected API response code. Expected 2XX but received %d", namespaceName, resourceGroupName,
 			res.Response().StatusCode)
 	}
 	for res.NotDone() {
 		namespaces := res.Values()
-		for _, ns := range namespaces{
+		for _, ns := range namespaces {
 			exists = matchWithTags(namespaceName, tags, *ns.Name, ns.Tags)
 		}
 		err := res.NextWithContext(ctx)
 		if err != nil {
-			return false, errors.Errorf("Failed to check Event Hubs namespace availability with name: %s in resource" +
+			return false, errors.Errorf("Failed to check Event Hubs namespace availability with name: %s in resource"+
 				"group %s. Error while listing namespaces. %v", namespaceName, resourceGroupName, err)
 		}
 	}
@@ -139,18 +139,18 @@ func (nc *AzureClient) ResourceGroupExists(ctx context.Context, name string, tag
 	if err != nil {
 		return false, errors.Wrapf(err, "Failed to check Azure resource group availability with name: %s.", name)
 	}
-	if ! exists {
+	if !exists {
 		return false, nil
 	}
 	// Now we are safe to assume resource group exists, so any errors returned are not related to resource group not
 	// existing
 	group, err := nc.resourcegroupClient.Get(ctx, name)
 	if err != nil {
-		return false, errors.Wrapf(err, "Failed to check Azure resource group availability with name: %s. Error " +
+		return false, errors.Wrapf(err, "Failed to check Azure resource group availability with name: %s. Error "+
 			"while using Azure client.", name)
 	}
 	if group.StatusCode != 200 {
-		return false, errors.Errorf("Failed to check Azure resource group availability with name: %s." +
+		return false, errors.Errorf("Failed to check Azure resource group availability with name: %s."+
 			" Unexpected API response code. Expected 2XX but received %d", name, group.StatusCode)
 	}
 	return matchWithTags(name, tags, *group.Name, group.Tags), nil
