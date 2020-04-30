@@ -90,7 +90,7 @@ func (c *Client) DeleteDataTenant(name, env string) error {
 		return errors.Wrap(err, "while requesting about delete dataTenant")
 	}
 
-	return c.processResponse(response)
+	return c.processResponse(response, true)
 }
 
 func (c *Client) CreateMetadataTenant(name, env string, data MetadataTenantPayload) error {
@@ -114,7 +114,7 @@ func (c *Client) DeleteMetadataTenant(name, env, key string) error {
 		return errors.Wrap(err, "while requesting about delete metadata")
 	}
 
-	return c.processResponse(response)
+	return c.processResponse(response, true)
 }
 
 func (c *Client) GetMetadataTenant(name, env string) (_ []MetadataItem, err error) {
@@ -144,10 +144,10 @@ func (c *Client) post(URL string, data []byte) (err error) {
 		err = multierror.Append(err, errors.Wrap(c.closeResponseBody(response), "while trying to close body reader")).ErrorOrNil()
 	}()
 
-	return c.processResponse(response)
+	return c.processResponse(response, false)
 }
 
-func (c *Client) processResponse(response *http.Response) error {
+func (c *Client) processResponse(response *http.Response, allowNotFound bool) error {
 	byteBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return errors.Wrapf(err, "while reading response body (status code %d)", response.StatusCode)
@@ -164,6 +164,13 @@ func (c *Client) processResponse(response *http.Response) error {
 	case http.StatusNoContent:
 		c.log.Infof("Action executed correctly: %s", responseLog(response))
 		return nil
+	case http.StatusNotFound:
+		c.log.Infof("Resource not found: %s", responseLog(response))
+		if allowNotFound {
+			return nil
+		}
+		c.log.Errorf("Body content: %s", body)
+		return errors.Errorf("Not Found: %s", responseLog(response))
 	case http.StatusRequestTimeout:
 		c.log.Errorf("Request timeout %s: %s", responseLog(response), body)
 		return kebError.NewTemporaryError("Request timeout: %s", responseLog(response))
