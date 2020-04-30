@@ -12,7 +12,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages"
 
-	"github.com/avast/retry-go"
+	retry "github.com/avast/retry-go"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"

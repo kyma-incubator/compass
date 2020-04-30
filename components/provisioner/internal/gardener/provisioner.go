@@ -3,9 +3,10 @@ package gardener
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"os"
 	"time"
+
+	"github.com/mitchellh/mapstructure"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/sirupsen/logrus"

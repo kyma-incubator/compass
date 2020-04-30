@@ -126,30 +126,30 @@ spec:
             readOnly: true
         {{- with .Values.deployment.securityContext }}
         securityContext:
-{{ toYaml . | indent 12 }}
-        {{- end }}
+  {{ toYaml . | indent 12 }}
+  {{- end }}
 
-        {{if eq .Values.global.database.embedded.enabled false}}
-        - name: cloudsql-proxy
-          image: gcr.io/cloudsql-docker/gce-proxy:1.11
-          command: ["/cloud_sql_proxy",
-                    "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
-                    "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
-                {{- with .Values.deployment.securityContext }}
-          securityContext:
-{{ toYaml . | indent 12 }}
-                {{- end }}
-          volumeMounts:
-            - name: cloudsql-instance-credentials
-              mountPath: /secrets/cloudsql-instance-credentials
-              readOnly: true
+  {{if eq .Values.global.database.embedded.enabled false}}
+- name: cloudsql-proxy
+  image: gcr.io/cloudsql-docker/gce-proxy:1.11
+  command: ["/cloud_sql_proxy",
+            "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+            "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
+    {{- with .Values.deployment.securityContext }}
+  securityContext:
+  {{ toYaml . | indent 12 }}
+  {{- end }}
+volumeMounts:
+  - name: cloudsql-instance-credentials
+    mountPath: /secrets/cloudsql-instance-credentials
+    readOnly: true
   {{end}}
 volumes:
   {{if eq .Values.global.database.embedded.enabled false}}
   - name: cloudsql-instance-credentials
     secret:
       secretName: cloudsql-instance-credentials
-    {{end}}
+  {{end}}
   - name: gardener-kubeconfig
     secret:
       secretName: {{ .Values.gardener.secretName }}
@@ -162,5 +162,4 @@ volumes:
   - name: gardener-maintenance-config
     configMap:
       name: {{ .Values.gardener.maintenanceWindowConfigMapName }}
-      optional: true
     {{end}}
