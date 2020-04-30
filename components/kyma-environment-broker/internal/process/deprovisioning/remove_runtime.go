@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 )
 
 const (
@@ -41,16 +42,16 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", RemoveRuntimeTimeout))
 	}
 
-	instance, err := getInstance(s.instanceStorage, operation, log)
-	switch err.(type) {
-	case nil:
-	case instanceNotFoundError:
+	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
+	switch {
+	case err == nil:
+	case dberr.IsNotFound(err):
 		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned")
 	default:
+		log.Errorf("unable to get instance from storage: %s", err)
 		return operation, 1 * time.Second, nil
 	}
 
-	// instance being nil is protected by the previous switch case
 	if instance.RuntimeID == "" {
 		log.Warn("Runtime not exist")
 		return s.operationManager.OperationSucceeded(operation, "runtime was never provisioned")
