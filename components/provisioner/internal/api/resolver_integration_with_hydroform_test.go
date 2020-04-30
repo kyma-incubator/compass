@@ -2,9 +2,10 @@ package api
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s/mocks"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 

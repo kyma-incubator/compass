@@ -3,9 +3,10 @@ package runtime
 import (
 	"errors"
 	"fmt"
+	"testing"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"

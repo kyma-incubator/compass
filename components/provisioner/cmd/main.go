@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages"
 
