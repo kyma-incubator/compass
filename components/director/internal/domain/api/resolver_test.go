@@ -494,17 +494,9 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 		Data: &dataBytes,
 	}
 
-	modelAPIDefinition := &model.APIDefinition{
-		Spec: modelAPISpec,
-	}
-
 	clob := graphql.CLOB(dataBytes)
 	gqlAPISpec := &graphql.APISpec{
 		Data: &clob,
-	}
-
-	gqlAPIDefinition := &graphql.APIDefinition{
-		Spec: gqlAPISpec,
 	}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -527,7 +519,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			},
 			ConvFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
+				conv.On("SpecToGraphQL", apiID, modelAPISpec).Return(gqlAPISpec).Once()
 				return conv
 			},
 			ExpectedAPISpec: gqlAPISpec,

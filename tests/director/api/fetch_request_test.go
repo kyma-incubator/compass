@@ -106,5 +106,5 @@ func TestRefetchAPISPec(t *testing.T) {
 	err := tc.RunOperation(ctx, req, &refetchedSpec)
 	require.NoError(t, err)
 
-	assert.Equal(t, spec, refetchedSpec)
+	assert.Equal(t, spec, refetchedSpec.Data)
 }
