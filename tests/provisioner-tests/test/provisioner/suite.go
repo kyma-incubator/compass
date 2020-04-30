@@ -86,7 +86,7 @@ func newDirectorClient(config testkit.TestConfig) (director.Client, error) {
 	}
 	secretClient := coreClientset.CoreV1().Secrets(config.DirectorClient.Namespace)
 	httpClient := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
-	graphQLClient := gql.NewGraphQLClient(config.DirectorClient.URL, true, true)
+	graphQLClient := gql.NewGraphQLClient(config.DirectorClient.URL, true, config.QueryLogging)
 	oauthClient := oauth.NewOauthClient(httpClient, secretClient, config.DirectorClient.OauthCredentialsSecretName)
 	if err := oauthClient.WaitForCredentials(); err != nil {
 		return nil, errors.Wrap(err, "timeout waiting for credentials")

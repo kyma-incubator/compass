@@ -51,10 +51,10 @@ func (dc *client) GetRuntime(id string) (graphql.RuntimeExt, error) {
 		return graphql.RuntimeExt{}, errors.Wrap(err, fmt.Sprintf("Failed to get runtime %s from Director", id))
 	}
 	if response.Result == nil {
-		return graphql.RuntimeExt{}, errors.Errorf("Failed to get runtime %s get Director: received nil response.", id)
+		return graphql.RuntimeExt{}, errors.Errorf("Failed to get runtime %s from Director: received nil response.", id)
 	}
 	if response.Result.ID != id {
-		return graphql.RuntimeExt{}, errors.Errorf("Failed to get correctly runtime %s in Director: Received wrong Runtime in the response", id)
+		return graphql.RuntimeExt{}, errors.Errorf("Failed to get correct runtime %s from Director: received wrong Runtime in the response", id)
 	}
 	return *response.Result, nil
 }
