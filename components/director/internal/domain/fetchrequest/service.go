@@ -2,11 +2,9 @@ package fetchrequest
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 
@@ -34,21 +32,17 @@ func NewService(client *http.Client, logger *log.Logger) *service {
 	}
 }
 
-func (s *service) SetTimestampGen(timestampGen func() time.Time) {
-	s.timestampGen = timestampGen
-}
-
-func (s *service) FetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchRequestStatus, error) {
+func (s *service) FetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchRequestStatus) {
 
 	valid, msg := s.validateFetchRequest(fr)
 	if !valid {
-		return nil, s.fixStatus(model.FetchRequestStatusConditionInitial, msg), nil
+		return nil, s.fixStatus(model.FetchRequestStatusConditionInitial, msg)
 	}
 
 	resp, err := s.client.Get(fr.URL)
 	if err != nil {
 		s.logger.Errorf("While fetching API Spec: %s", err.Error())
-		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, fmt.Sprintf("While fetching API Spec: %s", err.Error())), err
+		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, fmt.Sprintf("While fetching API Spec: %s", err.Error()))
 	}
 
 	defer func() {
@@ -62,17 +56,17 @@ func (s *service) FetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchReq
 
 	if resp.StatusCode != http.StatusOK {
 		s.logger.Errorf("While fetching API Spec status code: %d", resp.StatusCode)
-		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, fmt.Sprintf("While fetching API Spec status code: %d", resp.StatusCode)), errors.New("")
+		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, fmt.Sprintf("While fetching API Spec status code: %d", resp.StatusCode))
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		s.logger.Errorf("While reading API Spec: %s", err.Error())
-		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, fmt.Sprintf("While reading API Spec: %s", err.Error())), err
+		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, fmt.Sprintf("While reading API Spec: %s", err.Error()))
 	}
 
 	spec := string(body)
-	return &spec, s.fixStatus(model.FetchRequestStatusConditionSucceeded, ""), nil
+	return &spec, s.fixStatus(model.FetchRequestStatusConditionSucceeded, "")
 }
 
 func (s *service) validateFetchRequest(fr *model.FetchRequest) (bool, string) {

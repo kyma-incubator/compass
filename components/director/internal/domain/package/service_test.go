@@ -124,7 +124,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("FetchAPISpec", modelFr).Return(nil, nil)
+				svc.On("FetchAPISpec", modelFr).Return(nil, modelFrSucceeded.Status)
 				return svc
 			},
 			Input:       modelInput,
@@ -238,7 +238,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("FetchAPISpec", modelFr).Return(nil, nil)
+				svc.On("FetchAPISpec", modelFr).Return(nil, modelFrSucceeded.Status)
 				return svc
 			},
 			Input:       modelInput,
@@ -278,7 +278,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("FetchAPISpec", modelFr).Return(nil, nil)
+				svc.On("FetchAPISpec", modelFr).Return(nil, modelFrSucceeded.Status)
 				return svc
 			},
 			Input:       modelInput,
@@ -324,7 +324,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("FetchAPISpec", modelFr).Return(nil, nil)
+				svc.On("FetchAPISpec", modelFr).Return(nil, modelFrSucceeded.Status)
 				return svc
 			},
 			Input:       modelInput,
@@ -370,7 +370,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("FetchAPISpec", modelFr).Return(nil, testErr)
+				svc.On("FetchAPISpec", modelFr).Return(nil, modelFrFailed.Status)
 				return svc
 			},
 			Input:       modelInput,
@@ -416,7 +416,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("FetchAPISpec", modelFr).Return(&spec, nil)
+				svc.On("FetchAPISpec", modelFr).Return(&spec, modelFrSucceeded.Status)
 				return svc
 			},
 			Input:       modelInput,

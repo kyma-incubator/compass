@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -67,4 +69,42 @@ func TestFetchRequestAddPackage(t *testing.T) {
 
 	assert.NotNil(t, pkg.APIDefinitions.Data[0].Spec.Data)
 	assert.Equal(t, graphql.FetchRequestStatusConditionSucceeded, pkg.APIDefinitions.Data[0].Spec.FetchRequest.Status.Condition)
+}
+
+func TestRefetchAPISPec(t *testing.T) {
+	ctx := context.Background()
+
+	appName := "app-test-package"
+	application := registerApplication(t, ctx, appName)
+	defer unregisterApplication(t, application.ID)
+
+	pkgName := "test-package"
+	pkgInput := graphql.PackageCreateInput{
+		Name: pkgName,
+		APIDefinitions: []*graphql.APIDefinitionInput{{
+			Name:      "test",
+			TargetURL: "https://target.url",
+			Spec: &graphql.APISpecInput{
+				Format: graphql.SpecFormatJSON,
+				Type:   graphql.APISpecTypeOpenAPI,
+				FetchRequest: &graphql.FetchRequestInput{
+					URL: OpenAPISpec,
+				},
+			},
+		},
+		},
+	}
+
+	pkg := createPackageWithInput(t, ctx, application.ID, pkgInput)
+	defer deletePackage(t, ctx, pkg.ID)
+
+	spec := pkg.APIDefinitions.Data[0].Spec.Data
+
+	var refetchedSpec graphql.APISpecExt
+	req := fixRefetchAPISpecRequest(pkg.APIDefinitions.Data[0].ID)
+
+	err := tc.RunOperation(ctx, req, &refetchedSpec)
+	require.NoError(t, err)
+
+	assert.Equal(t, spec, refetchedSpec)
 }

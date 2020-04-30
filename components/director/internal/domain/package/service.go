@@ -50,7 +50,7 @@ type UIDService interface {
 
 //go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
 type FetchRequestService interface {
-	FetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchRequestStatus, error)
+	FetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchRequestStatus)
 }
 
 type service struct {
@@ -325,8 +325,7 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in *mod
 }
 
 func (s *service) handleFetchRequest(ctx context.Context, api *model.APIDefinition, fr *model.FetchRequest) {
-	var _ error
-	api.Spec.Data, fr.Status, _ = s.fetchRequestService.FetchAPISpec(fr)
+	api.Spec.Data, fr.Status = s.fetchRequestService.FetchAPISpec(fr)
 
 	_ = s.fetchRequestRepo.Update(ctx, fr)
 }

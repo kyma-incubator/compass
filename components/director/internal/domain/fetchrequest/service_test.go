@@ -55,7 +55,6 @@ func TestService_FetchAPISpec(t *testing.T) {
 		RoundTripFn             func() RoundTripFunc
 		Input                   model.FetchRequest
 		ExpectedOutput          *string
-		ExpectedError           error
 		ExpectedStatusCondition model.FetchRequestStatusCondition
 		ExpectedStatusMessage   *string
 		ExpectedLog             *string
@@ -118,7 +117,7 @@ func TestService_FetchAPISpec(t *testing.T) {
 			svc := fetchrequest.NewService(client, logger)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			spec, status, err := svc.FetchAPISpec(&testCase.Input)
+			spec, status := svc.FetchAPISpec(&testCase.Input)
 
 			if testCase.ExpectedLog != nil {
 				expectedLog := fmt.Sprintf("level=error msg=\"%s\"\n", *testCase.ExpectedLog)
@@ -126,10 +125,6 @@ func TestService_FetchAPISpec(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedStatusCondition, status.Condition)
 			assert.Equal(t, testCase.ExpectedStatusMessage, status.Message)
-
-			if testCase.ExpectedError != nil {
-				assert.EqualError(t, err, testCase.ExpectedError.Error())
-			}
 
 			assert.Equal(t, testCase.ExpectedOutput, spec)
 

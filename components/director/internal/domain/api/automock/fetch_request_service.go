@@ -13,7 +13,7 @@ type FetchRequestService struct {
 }
 
 // FetchAPISpec provides a mock function with given fields: fr
-func (_m *FetchRequestService) FetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchRequestStatus, error) {
+func (_m *FetchRequestService) FetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchRequestStatus) {
 	ret := _m.Called(fr)
 
 	var r0 *string
@@ -34,12 +34,5 @@ func (_m *FetchRequestService) FetchAPISpec(fr *model.FetchRequest) (*string, *m
 		}
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(*model.FetchRequest) error); ok {
-		r2 = rf(fr)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
