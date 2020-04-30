@@ -258,7 +258,7 @@ func main() {
 		},
 		{
 			weight: 1,
-			step:   deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), db.Instances(), azure.NewAzureProvider(), accountProvider, ctx),
+			step:   deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
 		},
 		{
 			weight:   1,

@@ -17,18 +17,14 @@ import (
 
 type DeprovisionAzureEventHubStep struct {
 	OperationManager *process.DeprovisionOperationManager
-	operationStorage storage.Operations
-	instanceStorage  storage.Instances
 	processazure.EventHub
 }
 
-func NewDeprovisionAzureEventHubStep(os storage.Operations, is storage.Instances,
-	hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider,
+func NewDeprovisionAzureEventHubStep(os storage.Operations, hyperscalerProvider azure.HyperscalerProvider,
+	accountProvider hyperscaler.AccountProvider,
 	ctx context.Context) DeprovisionAzureEventHubStep {
 	return DeprovisionAzureEventHubStep{
 		OperationManager: process.NewDeprovisionOperationManager(os),
-		operationStorage: os,
-		instanceStorage:  is,
 		EventHub: processazure.EventHub{
 			HyperscalerProvider: hyperscalerProvider,
 			AccountProvider:     accountProvider,
@@ -59,6 +55,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		errorMessage := fmt.Sprintf("aborting deprovisioning after failing to get valid operation provisioning"+
 			" parameters: %v", err)
 		log.Errorf(errorMessage)
+		return operation, 0, nil
 	}
 	log.Infof("HAP lookup for credentials to deprovision cluster for global account ID %s on Hyperscaler %s",
 		pp.ErsContext.GlobalAccountID, hypType)

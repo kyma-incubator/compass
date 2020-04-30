@@ -24,7 +24,7 @@ const (
 
 type InitialisationStep struct {
 	operationManager  *process.DeprovisionOperationManager
-	operationStorage  storage.Operations
+	operationStorage  storage.Provisioning
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
 }

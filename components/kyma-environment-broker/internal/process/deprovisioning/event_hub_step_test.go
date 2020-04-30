@@ -24,7 +24,8 @@ const (
 	fixSubAccountID = "test-sub-account-id"
 )
 
-type wantStateFunction = func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error, azureClient azuretesting.FakeNamespaceClient)
+type wantStateFunction = func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error,
+	azureClient azuretesting.FakeNamespaceClient)
 
 func Test_StepsDeprovisionSucceeded(t *testing.T) {
 	tests := []struct {
@@ -184,8 +185,18 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		wantRepeatOperation bool
 	}{
 		{
-			name:          "Operation provision parameter errors",
+			name:          "Operation already deprovisioned eventhub",
 			giveOperation: fixDeprovisioningOperationWithDeletedEventHub,
+			giveInstance:  fixInvalidInstance,
+			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
+				accountProvider := fixAccountProvider()
+				return fixEventHubStep(storage.Operations(), storage.Instances(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
+			},
+			wantRepeatOperation: false,
+		},
+		{
+			name:          "Operation provision parameter errors",
+			giveOperation: fixDeprovisioningOperation,
 			giveInstance:  fixInvalidInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
@@ -209,7 +220,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			giveInstance:  fixInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProviderGardenerCredentialsError()
-				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+				return NewDeprovisionAzureEventHubStep(storage.Operations(),
 					// ups ... namespace cannot get listed
 					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientListError()),
 					accountProvider,
@@ -220,11 +231,11 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		},
 		{
 			name:          "Error while getting config from Credentials",
-			giveOperation: fixDeprovisioningOperation,
+			giveOperation: fixDeprovisioningOperationWithParameters,
 			giveInstance:  fixInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProviderGardenerCredentialsHAPError()
-				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+				return NewDeprovisionAzureEventHubStep(storage.Operations(),
 					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceAccessKeysNil()),
 					accountProvider,
 					context.Background(),
@@ -234,11 +245,11 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		},
 		{
 			name:          "Error while getting client from HAP",
-			giveOperation: fixDeprovisioningOperation,
+			giveOperation: fixDeprovisioningOperationWithParameters,
 			giveInstance:  fixInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
-				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+				return NewDeprovisionAzureEventHubStep(storage.Operations(),
 					// ups ... client cannot be created
 					azuretesting.NewFakeHyperscalerProviderError(),
 					accountProvider,
@@ -249,11 +260,11 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		},
 		{
 			name:          "Error while getting resource group",
-			giveOperation: fixDeprovisioningOperation,
+			giveOperation: fixDeprovisioningOperationWithParameters,
 			giveInstance:  fixInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
-				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+				return NewDeprovisionAzureEventHubStep(storage.Operations(),
 					// ups ... can't get resource group
 					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientResourceGroupConnectionError()),
 					accountProvider,
@@ -264,11 +275,11 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		},
 		{
 			name:          "Error while deleting resource group",
-			giveOperation: fixDeprovisioningOperation,
+			giveOperation: fixDeprovisioningOperationWithParameters,
 			giveInstance:  fixInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
-				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+				return NewDeprovisionAzureEventHubStep(storage.Operations(),
 					// ups ... can't delete resource group
 					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientResourceGroupDeleteError()),
 					accountProvider,
@@ -279,11 +290,11 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		},
 		{
 			name:          "Resource group properties is Nil",
-			giveOperation: fixDeprovisioningOperation,
+			giveOperation: fixDeprovisioningOperationWithParameters,
 			giveInstance:  fixInstance,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
-				return NewDeprovisionAzureEventHubStep(storage.Operations(), storage.Instances(),
+				return NewDeprovisionAzureEventHubStep(storage.Operations(),
 					// ups ... can't delete resource group
 					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientResourceGroupPropertiesError()),
 					accountProvider,
@@ -358,7 +369,7 @@ func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 
 func fixEventHubStep(memoryStorageOp storage.Operations, instanceStorage storage.Instances, hyperscalerProvider azure.HyperscalerProvider,
 	accountProvider *hyperscalerautomock.AccountProvider) DeprovisionAzureEventHubStep {
-	return NewDeprovisionAzureEventHubStep(memoryStorageOp, instanceStorage, hyperscalerProvider, accountProvider, context.Background())
+	return NewDeprovisionAzureEventHubStep(memoryStorageOp, hyperscalerProvider, accountProvider, context.Background())
 }
 
 func fixLogger() logrus.FieldLogger {
