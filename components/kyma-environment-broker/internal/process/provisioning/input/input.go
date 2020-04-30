@@ -10,8 +10,9 @@ import (
 )
 
 type Config struct {
-	URL     string
-	Timeout time.Duration `envconfig:"default=12h"`
+	URL               string
+	Timeout           time.Duration `envconfig:"default=12h"`
+	KubernetesVersion string        `envconfig:"default=1.16.9"`
 }
 
 type RuntimeInput struct {
