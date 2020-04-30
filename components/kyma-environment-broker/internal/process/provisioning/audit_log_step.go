@@ -3,6 +3,7 @@ package provisioning
 import (
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/auditlog"
 	"strings"
 	"time"
 
@@ -10,52 +11,31 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog"
-
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"gopkg.in/yaml.v2"
 )
 
 type AuditLogOverrides struct {
 	operationManager *process.ProvisionOperationManager
 	fs               afero.Fs
-	auditLogConfig  auditlog.Config
+	auditLogConfig   auditlog.Config
 }
 
 func (alo *AuditLogOverrides) Name() string {
 	return "Audit_Log_Overrides"
 }
 
-type aduditLogCred struct {
-	Host     string `yaml:"host"`
-	HTTPUser string `yaml:"http-user"`
-	HTTPPwd  string `yaml:"http-pwd"`
-}
-
-func NewAuditLogOverridesStep(os storage.Operations) *AuditLogOverrides {
+func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config) *AuditLogOverrides {
 	fileSystem := afero.NewOsFs()
 
 	return &AuditLogOverrides{
 		process.NewProvisionOperationManager(os),
 		fileSystem,
+		cfg,
 	}
 }
 
 func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-
-	// fetch the username, url and password
-	alcFile, err := alo.readFile("audit-log-config")
-	if err != nil {
-		logger.Errorf("Unable to read audit log config file: %v", err)
-		return operation, 0, err
-	}
-	var alc []map[string]aduditLogCred
-	err = yaml.Unmarshal(alcFile, &alc)
-	if err != nil {
-		logger.Errorf("Error parsing audit log config file: %v", err)
-		return operation, 0, err
-	}
 
 	// Fetch the region
 	pp, err := operation.GetProvisioningParameters()
@@ -63,27 +43,17 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		logger.Errorf("Unable to get provisioning parameters", err.Error())
 		return operation, 0, errors.New("unable to get provisioning parameters")
 	}
-	luaScript, err := alo.readFile("audit-log-script")
+	luaScript, err := alo.readFile("/audit-log-script/script")
 	if err != nil {
 		logger.Errorf("Unable to read audit config script: %v", err)
 		return operation, 0, err
 	}
 
-	replacedScript := strings.Replace(string(luaScript), "sub_account_id", pp.ErsContext.SubAccountID, -1)
-
-	var c aduditLogCred
-	for _, a := range alc {
-		if v, ok := a[pp.PlatformRegion]; ok {
-			c = v
-			break
-		} else {
-			logger.Errorf("Unable to find credentials for the audit log for the region: %v", pp.PlatformRegion)
-			return operation, 0, nil
-		}
-	}
+	replaceSubAccountID := strings.Replace(string(luaScript), "sub_account_id", pp.ErsContext.SubAccountID, -1)
+	replaceTenantID := strings.Replace(replaceSubAccountID, "tenant_id", alo.auditLogConfig.Tenant, -1)
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
-		{Key: "fluent-bit.conf.script", Value: replacedScript},
+		{Key: "fluent-bit.conf.script", Value: replaceTenantID},
 		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
 [FILTER]
 		Name    lua
@@ -113,7 +83,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         tls              on
         tls.debug        1
 
-`, c.Host, c.HTTPUser, c.HTTPPwd)},
+`, alo.auditLogConfig.URL, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
 	})
 	return operation, 0, nil
 }

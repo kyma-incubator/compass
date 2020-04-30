@@ -176,6 +176,26 @@ spec:
               value: "{{ .Values.provisioner.dumpRequests }}"
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
+            - name: APP_AUDITLOG_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.global.auditlog.configMapName }}
+                  key: auditlog-url
+            - name: APP_AUDITLOG_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secretName }}
+                  key: auditlog-user
+            - name: APP_AUDITLOG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secretName }}
+                  key: auditlog-password
+            - name: APP_AUDITLOG_TENANT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.global.auditlog.configMapName }}
+                  key: auditlog-tenant
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
@@ -198,8 +218,6 @@ spec:
               name: config-volume
             - mountPath: /audit-log-script
               name: audit-log-script
-            - mountPath: /audit-log-config
-              name: audit-log-config
           {{if eq .Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
@@ -233,9 +251,6 @@ spec:
       - name: gardener-kubeconfig
         secret:
           secretName: {{ .Values.gardener.secretName }}
-      - name: audit-log-config
-        secret:
-          secretName: {{ .Values.audit-logs.secretName }}
       - name: audit-log-script
         configMap:
           name: {{ .Values.audit-logs.scriptName }}

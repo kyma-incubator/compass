@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/auditlog"
 	"testing"
 	"time"
 
@@ -15,22 +16,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAuditLog_ConfigFileDoesNotExist(t *testing.T) {
-	// given
-
-	memoryStorage := storage.NewMemoryStorage()
-	svc := NewAuditLogOverridesStep(memoryStorage.Operations())
-	svc.fs = afero.NewMemMapFs()
-
-	operation := internal.ProvisioningOperation{}
-
-	// when
-	_, _, err := svc.Run(operation, NewLogDummy())
-	//then
-	require.Error(t, err)
-	require.EqualError(t, err, "open audit-log-config: file does not exist")
-
-}
+//func TestAuditLog_ConfigFileDoesNotExist(t *testing.T) {
+//	// given
+//
+//	memoryStorage := storage.NewMemoryStorage()
+//	cfg := auditlog.Config{
+//		URL:      "host1",
+//		User:     "aaaa",
+//		Password: "aaaa",
+//		Tenant:   "tenant",
+//	}
+//	svc := NewAuditLogOverridesStep(memoryStorage.Operations(), cfg)
+//	svc.fs = afero.NewMemMapFs()
+//
+//	operation := internal.ProvisioningOperation{}
+//
+//	// when
+//	_, _, err := svc.Run(operation, NewLogDummy())
+//	//then
+//	require.Error(t, err)
+//	require.EqualError(t, err, "open audit-log-config: file does not exist")
+//
+//}
 
 func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 	// given
@@ -66,7 +73,13 @@ func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 	}
 
 	memoryStorage := storage.NewMemoryStorage()
-	svc := NewAuditLogOverridesStep(memoryStorage.Operations())
+	cfg := auditlog.Config{
+		URL:      "host1",
+		User:     "aaaa",
+		Password: "aaaa",
+		Tenant:   "tenant",
+	}
+	svc := NewAuditLogOverridesStep(memoryStorage.Operations(),cfg)
 	svc.fs = mm
 
 	operation := internal.ProvisioningOperation{}
@@ -82,49 +95,28 @@ func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 func TestAuditLog_HappyPath(t *testing.T) {
 	// given
 	mm := afero.NewMemMapFs()
-	_, err := mm.Create("audit-log-config")
-	if err != nil {
-		t.Fatalf("Unable to create file: audit-log-config!!: %v", err)
-	}
-	fileData := `[
-   {
-      "east": {
-         "host": "host1",
-         "http-user": "aaaa",
-         "http-pwd": "aaaa"
-      }
-   },
-   {
-      "west": {
-         "host": "host2",
-         "http-user": "bbbb",
-         "http-pwd": "bbbb"
-      }
-   }
-]`
 
 	fileScript := `
 func myScript() {
 foo: sub_account_id
+bar: tenant_id
 return "fooBar"
 }
 `
-	fyaml, err := yaml.JSONToYAML([]byte(fileData))
-	if err != nil {
-		t.Fatalf("Unable to convert to yaml: %v", err)
-	}
-	err = afero.WriteFile(mm, "audit-log-config", fyaml, 0755)
-	if err != nil {
-		t.Fatalf("Unable to write contents to file: audit-log-config!!: %v", err)
-	}
 
-	err = afero.WriteFile(mm, "audit-log-script", []byte(fileScript), 0755)
+	err := afero.WriteFile(mm, "/audit-log-script/script", []byte(fileScript), 0755)
 	if err != nil {
 		t.Fatalf("Unable to write contents to file: audit-log-script!!: %v", err)
 	}
 
 	repo := storage.NewMemoryStorage().Operations()
-	svc := NewAuditLogOverridesStep(repo)
+	cfg := auditlog.Config{
+		URL:      "host1",
+		User:     "aaaa",
+		Password: "aaaa",
+		Tenant:   "tenant",
+	}
+	svc := NewAuditLogOverridesStep(repo, cfg)
 	svc.fs = mm
 
 	inputCreatorMock := &automock.ProvisionInputCreator{}
@@ -162,6 +154,7 @@ return "fooBar"
 	expectedFileScript := `
 func myScript() {
 foo: 1234567890
+bar: tenant
 return "fooBar"
 }
 `
