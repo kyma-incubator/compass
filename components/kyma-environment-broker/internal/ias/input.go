@@ -1,45 +1,45 @@
 package ias
 
-import (
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+import "github.com/pkg/errors"
+
+type SPInputID int
+
+const ( // enum SPInputID
+	SPDexID     = 1
+	SPGrafanaID = 2
 )
 
-type OverridesGetter func(*ServiceProviderBundle) (string, []*gqlschema.ConfigEntryInput)
+const ( // enum SsoType
+	OIDC = "openIdConnect"
+	SAML = "saml2"
+)
+
 type ServiceProviderParam struct {
-	Domain        string
+	domain        string
 	ssoType       string
 	redirectPath  string
 	allowedGroups []string
-	overrides     OverridesGetter
 }
 
-var ServiceProviderInputs = map[string]ServiceProviderParam{
-	"dex": {
-		Domain:        "dex",
-		ssoType:       "saml2",
+var ServiceProviderInputs = map[SPInputID]ServiceProviderParam{
+	SPDexID: {
+		domain:        "dex",
+		ssoType:       SAML,
 		redirectPath:  "/callback",
 		allowedGroups: []string{"runtimeOperator", "runtimeAdmin"},
-		overrides:     nil,
 	},
-	"grafana": {
-		Domain:        "grafana",
-		ssoType:       "openIdConnect",
+	SPGrafanaID: {
+		domain:        "grafana",
+		ssoType:       OIDC,
 		redirectPath:  "/login/generic_oauth",
 		allowedGroups: []string{"skr-monitoring-admin", "skr-monitoring-viewer"},
-		overrides: func(b *ServiceProviderBundle) (string, []*gqlschema.ConfigEntryInput) {
-			return "monitoring", []*gqlschema.ConfigEntryInput{
-				{
-					Key:    "grafana.env.GF_AUTH_GENERIC_OAUTH_CLIENT_ID",
-					Value:  b.serviceProviderSecret.ClientID,
-					Secret: ptr.Bool(true),
-				},
-				{
-					Key:    "grafana.env.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET",
-					Value:  b.serviceProviderSecret.ClientSecret,
-					Secret: ptr.Bool(true),
-				},
-			}
-		},
 	},
+}
+
+func (id SPInputID) isValid() error {
+	switch id {
+	case SPGrafanaID, SPDexID:
+		return nil
+	}
+	return errors.Errorf("Invalid Service Provider input ID: %d", id)
 }

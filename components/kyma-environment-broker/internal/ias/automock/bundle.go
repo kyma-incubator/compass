@@ -3,8 +3,7 @@
 package automock
 
 import (
-	gqlschema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-
+	ias "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -83,24 +82,24 @@ func (_m *Bundle) FetchServiceProviderData() error {
 	return r0
 }
 
-// GetProvisioningOverrides provides a mock function with given fields:
-func (_m *Bundle) GetProvisioningOverrides() (string, []*gqlschema.ConfigEntryInput) {
+// GenerateSecret provides a mock function with given fields:
+func (_m *Bundle) GenerateSecret() (*ias.ServiceProviderSecret, error) {
 	ret := _m.Called()
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
+	var r0 *ias.ServiceProviderSecret
+	if rf, ok := ret.Get(0).(func() *ias.ServiceProviderSecret); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*ias.ServiceProviderSecret)
+		}
 	}
 
-	var r1 []*gqlschema.ConfigEntryInput
-	if rf, ok := ret.Get(1).(func() []*gqlschema.ConfigEntryInput); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
 		r1 = rf()
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).([]*gqlschema.ConfigEntryInput)
-		}
+		r1 = ret.Error(1)
 	}
 
 	return r0, r1
@@ -122,6 +121,20 @@ func (_m *Bundle) ServiceProviderExist() bool {
 
 // ServiceProviderName provides a mock function with given fields:
 func (_m *Bundle) ServiceProviderName() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// ServiceProviderType provides a mock function with given fields:
+func (_m *Bundle) ServiceProviderType() string {
 	ret := _m.Called()
 
 	var r0 string

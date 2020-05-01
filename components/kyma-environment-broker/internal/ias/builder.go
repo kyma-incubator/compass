@@ -2,27 +2,25 @@ package ias
 
 import (
 	"net/http"
-
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=BundleBuilder -output=automock -outpkg=automock -case=underscore
 //go:generate mockery -name=Bundle -output=automock -outpkg=automock -case=underscore
 type (
 	BundleBuilder interface {
-		NewBundle(identifier string, inputID string) (Bundle, error)
+		NewBundle(identifier string, inputID SPInputID) (Bundle, error)
 	}
 
 	Bundle interface {
 		FetchServiceProviderData() error
 		ServiceProviderName() string
+		ServiceProviderType() string
 		ServiceProviderExist() bool
 		CreateServiceProvider() error
 		DeleteServiceProvider() error
 		ConfigureServiceProvider() error
 		ConfigureServiceProviderType(path string) error
-		GetProvisioningOverrides() (string, []*gqlschema.ConfigEntryInput)
+		GenerateSecret() (*ServiceProviderSecret, error)
 	}
 )
 
@@ -44,10 +42,9 @@ func NewBundleBuilder(httpClient *http.Client, config Config) BundleBuilder {
 	}
 }
 
-func (b *Builder) NewBundle(identifier string, inputID string) (Bundle, error) {
-	spParams, exist := ServiceProviderInputs[inputID]
-	if !exist {
-		return nil, errors.Errorf("Invalid Service Provider input ID: %s", inputID)
+func (b *Builder) NewBundle(identifier string, inputID SPInputID) (Bundle, error) {
+	if err := inputID.isValid(); err != nil {
+		return nil, err
 	}
-	return NewServiceProviderBundle(identifier, spParams, b.iasClient, b.config), nil
+	return NewServiceProviderBundle(identifier, ServiceProviderInputs[inputID], b.iasClient, b.config), nil
 }

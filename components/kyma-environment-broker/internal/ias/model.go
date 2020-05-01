@@ -58,13 +58,13 @@ type OIDCType struct {
 }
 
 type SAMLType struct {
-	ServiceProviderName string        `json:"sp_name,omitempty"`
-	ACSEndpoints        []ACSEndpoint `json:"acs_endpoints,omitempty"`
+	ServiceProviderName string        `json:"sp_name"`
+	ACSEndpoints        []ACSEndpoint `json:"acs_endpoints"`
 }
 
 type ACSEndpoint struct {
-	Location  string `json:"location,omitempty"`
-	IsDefault string `json:"isDefault,omitempty"`
+	Location  string `json:"location"`
+	IsDefault bool   `json:"isDefault,omitempty"`
 	Index     int32  `json:"index"`
 }
 

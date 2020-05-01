@@ -38,7 +38,8 @@ func (s *IASType) ConfigureType(operation internal.ProvisioningOperation, runtim
 	for spID := range ias.ServiceProviderInputs {
 		spb, err := s.bundleBuilder.NewBundle(operation.InstanceID, spID)
 		if err != nil {
-			return s.handleError(operation, err, log, "failed to create ServiceProvider Bundle")
+			log.Errorf("%s: %s", "Failed to create ServiceProvider Bundle", err)
+			return 0, nil
 		}
 		err = spb.FetchServiceProviderData()
 		if err != nil {

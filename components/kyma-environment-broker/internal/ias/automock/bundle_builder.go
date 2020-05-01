@@ -13,11 +13,11 @@ type BundleBuilder struct {
 }
 
 // NewBundle provides a mock function with given fields: identifier, inputID
-func (_m *BundleBuilder) NewBundle(identifier string, inputID string) (ias.Bundle, error) {
+func (_m *BundleBuilder) NewBundle(identifier string, inputID ias.SPInputID) (ias.Bundle, error) {
 	ret := _m.Called(identifier, inputID)
 
 	var r0 ias.Bundle
-	if rf, ok := ret.Get(0).(func(string, string) ias.Bundle); ok {
+	if rf, ok := ret.Get(0).(func(string, ias.SPInputID) ias.Bundle); ok {
 		r0 = rf(identifier, inputID)
 	} else {
 		if ret.Get(0) != nil {
@@ -26,7 +26,7 @@ func (_m *BundleBuilder) NewBundle(identifier string, inputID string) (ias.Bundl
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(string, ias.SPInputID) error); ok {
 		r1 = rf(identifier, inputID)
 	} else {
 		r1 = ret.Error(1)

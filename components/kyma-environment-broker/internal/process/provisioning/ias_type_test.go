@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/logger"
 
@@ -18,16 +19,14 @@ const (
 
 func TestIASType_ConfigureType(t *testing.T) {
 	// given
-	bundles := map[string]*automock.Bundle{
-		"dex":     &automock.Bundle{},
-		"grafana": &automock.Bundle{},
-	}
 	bundleBuilder := &automock.BundleBuilder{}
 	defer bundleBuilder.AssertExpectations(t)
-	for inputID, bundle := range bundles {
+
+	for inputID := range ias.ServiceProviderInputs {
+		bundle := &automock.Bundle{}
 		defer bundle.AssertExpectations(t)
 		bundle.On("FetchServiceProviderData").Return(nil).Once()
-		bundle.On("ServiceProviderName").Return(inputID)
+		bundle.On("ServiceProviderName").Return("MockProviderName")
 		bundle.On("ConfigureServiceProviderType", iasTypeURLDashboard).Return(nil).Once()
 		bundleBuilder.On("NewBundle", iasTypeInstanceID, inputID).Return(bundle, nil).Once()
 	}

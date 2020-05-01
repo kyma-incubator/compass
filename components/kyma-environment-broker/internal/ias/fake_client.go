@@ -100,7 +100,6 @@ func (f *FakeClient) SetOIDCConfiguration(id string, iasType OIDCType) error {
 	}
 
 	serviceProvider.SsoType = iasType.SsoType
-	serviceProvider.DisplayName = iasType.ServiceProviderName
 	serviceProvider.RedirectURIs = iasType.OpenIDConnectConfig.RedirectURIs
 
 	return nil

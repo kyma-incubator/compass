@@ -32,7 +32,8 @@ func (s *IASDeregistrationStep) Run(operation internal.DeprovisioningOperation, 
 	for spID := range ias.ServiceProviderInputs {
 		spb, err := s.bundleBuilder.NewBundle(operation.InstanceID, spID)
 		if err != nil {
-			return s.operationManager.OperationFailed(operation, "failed to create new ServiceProvider Bundle")
+			log.Errorf("%s: %s", "Failed to create ServiceProvider Bundle", err)
+			return operation, 0, nil
 		}
 
 		log.Infof("Removing ServiceProvider %q from IAS", spb.ServiceProviderName())

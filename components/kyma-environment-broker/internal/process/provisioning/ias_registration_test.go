@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/logger"
 	provisioningAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/automock"
@@ -24,7 +25,34 @@ const (
 func TestIASRegistration_Run(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
-	grafanaOverrides := []*gqlschema.ConfigEntryInput{
+
+	bundleBuilder := &automock.BundleBuilder{}
+	defer bundleBuilder.AssertExpectations(t)
+
+	for inputID := range ias.ServiceProviderInputs {
+		bundle := &automock.Bundle{}
+		defer bundle.AssertExpectations(t)
+		bundle.On("ServiceProviderName").Return("MockServiceProvider")
+		bundle.On("FetchServiceProviderData").Return(nil).Once()
+		bundle.On("ServiceProviderExist").Return(false).Once()
+		bundle.On("CreateServiceProvider").Return(nil).Once()
+		bundle.On("ConfigureServiceProvider").Return(nil).Once()
+		switch inputID {
+		case ias.SPGrafanaID:
+			bundle.On("ServiceProviderType").Return(ias.OIDC)
+			bundle.On("GenerateSecret").Return(&ias.ServiceProviderSecret{
+				ClientID:     iasClentID,
+				ClientSecret: iasClientSecret,
+			}, nil).Once()
+		default:
+			bundle.On("ServiceProviderType").Return(ias.SAML)
+		}
+		bundleBuilder.On("NewBundle", iasInstanceID, inputID).Return(bundle, nil).Once()
+	}
+
+	inputCreatorMock := &provisioningAutomock.ProvisionInputCreator{}
+	defer inputCreatorMock.AssertExpectations(t)
+	inputCreatorMock.On("AppendOverrides", "monitoring", []*gqlschema.ConfigEntryInput{
 		{
 			Key:    "grafana.env.GF_AUTH_GENERIC_OAUTH_CLIENT_ID",
 			Value:  iasClentID,
@@ -35,30 +63,7 @@ func TestIASRegistration_Run(t *testing.T) {
 			Value:  iasClientSecret,
 			Secret: ptr.Bool(true),
 		},
-	}
-	bundles := map[string]*automock.Bundle{
-		"dex":     &automock.Bundle{},
-		"grafana": &automock.Bundle{},
-	}
-
-	bundleBuilder := &automock.BundleBuilder{}
-	defer bundleBuilder.AssertExpectations(t)
-
-	for inputID, bundle := range bundles {
-		defer bundle.AssertExpectations(t)
-		bundle.On("ServiceProviderName").Return(inputID)
-		bundle.On("FetchServiceProviderData").Return(nil).Once()
-		bundle.On("ServiceProviderExist").Return(false).Once()
-		bundle.On("CreateServiceProvider").Return(nil).Once()
-		bundle.On("ConfigureServiceProvider").Return(nil).Once()
-		bundleBuilder.On("NewBundle", iasInstanceID, inputID).Return(bundle, nil).Once()
-	}
-	bundles["grafana"].On("GetProvisioningOverrides").Return("monitoring", grafanaOverrides).Once()
-	bundles["dex"].On("GetProvisioningOverrides").Return("", nil).Once()
-
-	inputCreatorMock := &provisioningAutomock.ProvisionInputCreator{}
-	defer inputCreatorMock.AssertExpectations(t)
-	inputCreatorMock.On("AppendOverrides", "monitoring", grafanaOverrides).Return(nil).Once()
+	}).Return(nil).Once()
 	operation := internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			InstanceID: iasInstanceID,

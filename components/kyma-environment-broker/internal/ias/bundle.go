@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 )
 
@@ -42,8 +41,6 @@ type ServiceProviderBundle struct {
 	serviceProviderExist  bool
 	serviceProviderName   string
 	serviceProviderParams ServiceProviderParam
-	serviceProviderSecret *ServiceProviderSecret
-	serviceProviderDNS    string
 	providerID            ProviderID
 	organization          string
 }
@@ -54,7 +51,7 @@ func NewServiceProviderBundle(bundleIdentifier string, spParams ServiceProviderP
 		client:                c,
 		config:                cfg,
 		serviceProviderParams: spParams,
-		serviceProviderName:   fmt.Sprintf("SKR %s (instanceID: %s)", strings.Title(spParams.Domain), bundleIdentifier),
+		serviceProviderName:   fmt.Sprintf("SKR %s (instanceID: %s)", strings.Title(spParams.domain), bundleIdentifier),
 		organization:          "global",
 	}
 }
@@ -62,6 +59,11 @@ func NewServiceProviderBundle(bundleIdentifier string, spParams ServiceProviderP
 // ServiceProviderName returns SP name which includes instance ID
 func (b *ServiceProviderBundle) ServiceProviderName() string {
 	return b.serviceProviderName
+}
+
+// ServiceProviserType returns SSO type (SAML or OIDC)
+func (b *ServiceProviderBundle) ServiceProviderType() string {
+	return b.serviceProviderParams.ssoType
 }
 
 // FetchServiceProviderData fetches all ServiceProviders and IdentityProviders for company
@@ -128,9 +130,9 @@ func (b *ServiceProviderBundle) DeleteServiceProvider() error {
 	return nil
 }
 
-func (b *ServiceProviderBundle) configureServiceProviderOIDCType(redirectURI string) error {
+func (b *ServiceProviderBundle) configureServiceProviderOIDCType(serviceProviderName string, redirectURI string) error {
 	iasType := OIDCType{
-		ServiceProviderName: b.serviceProviderDNS,
+		ServiceProviderName: serviceProviderName,
 		SsoType:             b.serviceProviderParams.ssoType,
 		OpenIDConnectConfig: OpenIDConnectConfig{
 			RedirectURIs: []string{redirectURI},
@@ -140,14 +142,14 @@ func (b *ServiceProviderBundle) configureServiceProviderOIDCType(redirectURI str
 	return b.client.SetOIDCConfiguration(b.serviceProvider.ID, iasType)
 }
 
-func (b *ServiceProviderBundle) configureServiceProviderSAMLType(redirectURI string) error {
+func (b *ServiceProviderBundle) configureServiceProviderSAMLType(serviceProviderName string, redirectURI string) error {
 	iasType := SAMLType{
-		ServiceProviderName: b.serviceProviderDNS,
+		ServiceProviderName: serviceProviderName,
 		ACSEndpoints: []ACSEndpoint{
-			ACSEndpoint{
+			{
 				Location:  redirectURI,
 				Index:     0,
-				IsDefault: "true",
+				IsDefault: true,
 			},
 		},
 	}
@@ -161,14 +163,14 @@ func (b *ServiceProviderBundle) ConfigureServiceProviderType(consolePath string)
 	if err != nil {
 		return errors.Wrap(err, "while parsing path for IAS Type")
 	}
-	b.serviceProviderDNS = strings.Replace(u.Host, "console.", fmt.Sprintf("%s.", b.serviceProviderParams.Domain), 1)
-	redirectURI := fmt.Sprintf("%s://%s%s", u.Scheme, b.serviceProviderDNS, b.serviceProviderParams.redirectPath)
+	serviceProviderDNS := strings.Replace(u.Host, "console.", fmt.Sprintf("%s.", b.serviceProviderParams.domain), 1)
+	redirectURI := fmt.Sprintf("%s://%s%s", u.Scheme, serviceProviderDNS, b.serviceProviderParams.redirectPath)
 
 	switch b.serviceProviderParams.ssoType {
-	case "saml2":
-		err = b.configureServiceProviderSAMLType(redirectURI)
-	case "openIdConnect":
-		err = b.configureServiceProviderOIDCType(redirectURI)
+	case SAML:
+		err = b.configureServiceProviderSAMLType(serviceProviderDNS, redirectURI)
+	case OIDC:
+		err = b.configureServiceProviderOIDCType(serviceProviderDNS, redirectURI)
 	default:
 		err = errors.Errorf("Unrecognized ssoType: %s", b.serviceProviderParams.ssoType)
 	}
@@ -225,18 +227,11 @@ func (b *ServiceProviderBundle) ConfigureServiceProvider() error {
 		}
 	}
 
-	if b.serviceProviderParams.ssoType == "openIdConnect" {
-		b.serviceProviderSecret, err = b.generateSecret()
-		if err != nil {
-			return errors.Wrap(err, "creating secret for IAS ServiceProvider failed")
-		}
-	}
-
 	return nil
 }
 
 // generateSecret generates new ID and Secret for ServiceProvider
-func (b *ServiceProviderBundle) generateSecret() (*ServiceProviderSecret, error) {
+func (b *ServiceProviderBundle) GenerateSecret() (*ServiceProviderSecret, error) {
 	secretCfg := SecretConfiguration{
 		Organization:   b.organization,
 		ID:             b.serviceProvider.ID,
@@ -253,11 +248,4 @@ func (b *ServiceProviderBundle) generateSecret() (*ServiceProviderSecret, error)
 	}
 
 	return sps, nil
-}
-
-func (b *ServiceProviderBundle) GetProvisioningOverrides() (string, []*gqlschema.ConfigEntryInput) {
-	if b.serviceProviderParams.overrides != nil {
-		return b.serviceProviderParams.overrides(b)
-	}
-	return "", nil
 }

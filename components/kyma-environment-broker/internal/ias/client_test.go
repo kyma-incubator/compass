@@ -98,7 +98,7 @@ func TestClient_SetSAMLConfiguration(t *testing.T) {
 			{
 				Location:  "https://example.com",
 				Index:     0,
-				IsDefault: "true",
+				IsDefault: true,
 			},
 		},
 	}
@@ -117,7 +117,7 @@ func TestClient_SetSAMLConfiguration(t *testing.T) {
 	assert.Equal(t, "example.com", conf.ServiceProviderName)
 	assert.Equal(t, "https://example.com", conf.ACSEndpoints[0].Location)
 	assert.Equal(t, int32(0), conf.ACSEndpoints[0].Index)
-	assert.Equal(t, "true", conf.ACSEndpoints[0].IsDefault)
+	assert.Equal(t, true, conf.ACSEndpoints[0].IsDefault)
 }
 
 func TestClient_SetAssertionAttribute(t *testing.T) {
