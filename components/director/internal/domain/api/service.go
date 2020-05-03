@@ -29,7 +29,6 @@ type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error
-	Update(ctx context.Context, item *model.FetchRequest) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -39,7 +38,7 @@ type UIDService interface {
 
 //go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
 type FetchRequestService interface {
-	FetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchRequestStatus)
+	HandleAPISpec(ctx context.Context, fr *model.FetchRequest) *string
 }
 
 type service struct {
@@ -120,7 +119,7 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
 
-		s.handleFetchRequest(ctx, api, fr)
+		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fr)
 
 		err = s.repo.Update(ctx, api)
 		if err != nil {
@@ -154,7 +153,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 			return errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
 
-		s.handleFetchRequest(ctx, api, fr)
+		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fr)
 
 	}
 
@@ -197,7 +196,7 @@ func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec
 	}
 
 	if fetchRequest != nil {
-		s.handleFetchRequest(ctx, api, fetchRequest)
+		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fetchRequest)
 	}
 
 	return api.Spec, nil
@@ -237,11 +236,4 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in mode
 	}
 
 	return fr, nil
-}
-
-func (s *service) handleFetchRequest(ctx context.Context, api *model.APIDefinition, fr *model.FetchRequest) {
-
-	api.Spec.Data, fr.Status = s.fetchRequestService.FetchAPISpec(fr)
-
-	_ = s.fetchRequestRepo.Update(ctx, fr)
 }

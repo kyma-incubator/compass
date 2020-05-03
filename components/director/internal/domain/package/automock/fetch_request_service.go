@@ -3,6 +3,8 @@
 package automock
 
 import (
+	context "context"
+
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -12,27 +14,18 @@ type FetchRequestService struct {
 	mock.Mock
 }
 
-// FetchAPISpec provides a mock function with given fields: fr
-func (_m *FetchRequestService) FetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchRequestStatus) {
-	ret := _m.Called(fr)
+// HandleAPISpec provides a mock function with given fields: ctx, fr
+func (_m *FetchRequestService) HandleAPISpec(ctx context.Context, fr *model.FetchRequest) *string {
+	ret := _m.Called(ctx, fr)
 
 	var r0 *string
-	if rf, ok := ret.Get(0).(func(*model.FetchRequest) *string); ok {
-		r0 = rf(fr)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FetchRequest) *string); ok {
+		r0 = rf(ctx, fr)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*string)
 		}
 	}
 
-	var r1 *model.FetchRequestStatus
-	if rf, ok := ret.Get(1).(func(*model.FetchRequest) *model.FetchRequestStatus); ok {
-		r1 = rf(fr)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*model.FetchRequestStatus)
-		}
-	}
-
-	return r0, r1
+	return r0
 }

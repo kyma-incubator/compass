@@ -2,9 +2,12 @@ package fetchrequest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 
@@ -14,6 +17,7 @@ import (
 )
 
 type service struct {
+	repo         FetchRequestRepository
 	client       *http.Client
 	logger       *log.Logger
 	timestampGen timestamp.Generator
@@ -24,25 +28,39 @@ type FetchRequestRepository interface {
 	Update(ctx context.Context, item *model.FetchRequest) error
 }
 
-func NewService(client *http.Client, logger *log.Logger) *service {
+func NewService(repo FetchRequestRepository, client *http.Client, logger *log.Logger) *service {
 	return &service{
+		repo:         repo,
 		client:       client,
 		logger:       logger,
 		timestampGen: timestamp.DefaultGenerator(),
 	}
 }
 
-func (s *service) FetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchRequestStatus) {
+func (s *service) HandleAPISpec(ctx context.Context, fr *model.FetchRequest) *string {
+	var data *string
+	data, fr.Status = s.fetchAPISpec(fr)
 
-	valid, msg := s.validateFetchRequest(fr)
-	if !valid {
-		return nil, s.fixStatus(model.FetchRequestStatusConditionInitial, msg)
+	err := s.repo.Update(ctx, fr)
+	if err != nil {
+		s.logger.Errorf("While updating fetch request status: %s", err)
+		return nil
+	}
+
+	return data
+}
+
+func (s *service) fetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchRequestStatus) {
+
+	err := s.validateFetchRequest(fr)
+	if err != nil {
+		return nil, s.fixStatus(model.FetchRequestStatusConditionInitial, str.Ptr(err.Error()))
 	}
 
 	resp, err := s.client.Get(fr.URL)
 	if err != nil {
 		s.logger.Errorf("While fetching API Spec: %s", err.Error())
-		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, fmt.Sprintf("While fetching API Spec: %s", err.Error()))
+		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Spec: %s", err.Error())))
 	}
 
 	defer func() {
@@ -56,41 +74,44 @@ func (s *service) FetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchReq
 
 	if resp.StatusCode != http.StatusOK {
 		s.logger.Errorf("While fetching API Spec status code: %d", resp.StatusCode)
-		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, fmt.Sprintf("While fetching API Spec status code: %d", resp.StatusCode))
+		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", resp.StatusCode)))
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		s.logger.Errorf("While reading API Spec: %s", err.Error())
-		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, fmt.Sprintf("While reading API Spec: %s", err.Error()))
+		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While reading API Spec: %s", err.Error())))
 	}
 
 	spec := string(body)
-	return &spec, s.fixStatus(model.FetchRequestStatusConditionSucceeded, "")
+	return &spec, s.fixStatus(model.FetchRequestStatusConditionSucceeded, nil)
 }
 
-func (s *service) validateFetchRequest(fr *model.FetchRequest) (bool, string) {
+func (s *service) validateFetchRequest(fr *model.FetchRequest) error {
 	if fr.Mode != model.FetchModeSingle {
-		s.logger.Errorf("Unsupported fetch mode: %s", fr.Mode)
-		return false, fmt.Sprintf("Unsupported fetch mode: %s", fr.Mode)
+		err := errors.New(fmt.Sprintf("Unsupported fetch mode: %s", fr.Mode))
+		s.logger.Error(err)
+		return err
 	}
 
 	if fr.Auth != nil {
-		s.logger.Error("Fetch Request Auth was provided")
-		return false, "Fetch Request Auth was provided"
+		err := errors.New("fetch Request Auth was provided, currently it's unsupported")
+		s.logger.Error(err)
+		return err
 	}
 
 	if fr.Filter != nil {
-		s.logger.Error("Fetch Request Filter was provided")
-		return false, "Fetch Request Filter was provided"
+		err := errors.New("fetch Request Filter was provided, currently it's unsupported")
+		s.logger.Error(err)
+		return err
 	}
-	return true, ""
+	return nil
 }
 
-func (s *service) fixStatus(condition model.FetchRequestStatusCondition, message string) *model.FetchRequestStatus {
+func (s *service) fixStatus(condition model.FetchRequestStatusCondition, message *string) *model.FetchRequestStatus {
 	return &model.FetchRequestStatus{
 		Condition: condition,
-		Message:   &message,
+		Message:   message,
 		Timestamp: s.timestampGen(),
 	}
 }

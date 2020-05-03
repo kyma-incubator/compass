@@ -64,17 +64,3 @@ func (_m *FetchRequestRepository) GetByReferenceObjectID(ctx context.Context, te
 
 	return r0, r1
 }
-
-// Update provides a mock function with given fields: ctx, item
-func (_m *FetchRequestRepository) Update(ctx context.Context, item *model.FetchRequest) error {
-	ret := _m.Called(ctx, item)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.FetchRequest) error); ok {
-		r0 = rf(ctx, item)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}

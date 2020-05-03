@@ -118,7 +118,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
 	httpClient := getHttpClient()
-	fetchRequestSvc := fetchrequest.NewService(httpClient, log.StandardLogger())
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, log.StandardLogger())
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
