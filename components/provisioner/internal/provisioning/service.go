@@ -26,7 +26,6 @@ type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, error)
 	UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error)
 	DeprovisionRuntime(id, tenant string) (string, error)
-	MarkRuntimeAsDeleted(id, tenant string) (string, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error)
@@ -201,21 +200,6 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 	r.upgradeQueue.Add(operation.ID)
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
-}
-
-func (r *service) MarkRuntimeAsDeleted(id, tenant string) (string, error) {
-	session := r.dbSessionFactory.NewWriteSession()
-
-	err := r.directorService.DeleteRuntime(id, tenant)
-	if err != nil {
-		log.Warnf("Failed to unregister stale Runtime %s: %s", id, err.Error())
-	}
-
-	dberr := session.MarkClusterAsDeleted(id)
-	if dberr != nil {
-		return "", fmt.Errorf("Failed to mark Cluster %s as 'deleted': %s", id, dberr.Error())
-	}
-	return fmt.Sprintf("Runtime %s marked as 'deleted'.", id), nil
 }
 
 func (r *service) ReconnectRuntimeAgent(id string) (string, error) {

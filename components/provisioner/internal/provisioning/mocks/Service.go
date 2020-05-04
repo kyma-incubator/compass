@@ -33,27 +33,6 @@ func (_m *Service) DeprovisionRuntime(id string, tenant string) (string, error) 
 	return r0, r1
 }
 
-// MarkRuntimeAsDeleted provides a mock function with given fields: id, tenant
-func (_m *Service) MarkRuntimeAsDeleted(id string, tenant string) (string, error) {
-	ret := _m.Called(id, tenant)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(id, tenant)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(id, tenant)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ProvisionRuntime provides a mock function with given fields: config, tenant, subAccount
 func (_m *Service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string, subAccount string) (*gqlschema.OperationStatus, error) {
 	ret := _m.Called(config, tenant, subAccount)
