@@ -125,7 +125,7 @@ func (c *client) CreateTenant(input CreateTenantInput) (o CreateTenantOutput, er
 		ClusterType: string(c.clusterType),
 		DataCenter:  "all",
 		Environment: string(c.environment),
-		Project:     "lms", // the tenant will use always the same project
+		Project:     "kyma", // the tenant will use always the same project
 		SamlTenant:  c.samlTenant,
 		Costcenter:  0,
 	}
