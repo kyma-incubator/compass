@@ -3,9 +3,10 @@ package installation
 import (
 	"context"
 	"errors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 

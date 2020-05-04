@@ -2,9 +2,10 @@ package gardener
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"path/filepath"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 

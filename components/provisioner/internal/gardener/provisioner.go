@@ -3,9 +3,10 @@ package gardener
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/sirupsen/logrus"
