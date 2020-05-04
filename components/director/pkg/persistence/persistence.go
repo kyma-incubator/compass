@@ -4,12 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
 	// Importing the database driver (postgresql)
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v4/stdlib"
+	//_ "github.com/lib/pq"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -94,7 +97,7 @@ func waitForPersistance(logger *logrus.Logger, conf DatabaseConfig, retryCount i
 		}
 		logger.Info("Trying to connect to DB...")
 
-		sqlxDB, err = sqlx.Open("postgres", conf.GetConnString())
+		sqlxDB, err = sqlx.Open("pgx", conf.GetConnString())
 		if err != nil {
 			return nil, nil, err
 		}
@@ -105,6 +108,8 @@ func waitForPersistance(logger *logrus.Logger, conf DatabaseConfig, retryCount i
 			logger.Infof("Got error on pinging DB: %v", err)
 			continue
 		}
+
+		fmt.Printf("Current PostgreSQL driver in use: %+v\n", reflect.TypeOf(sqlxDB.Driver()))
 		logger.Infof("Configuring MaxOpenConnections: [%d] and MaxIdleConnections: [%d]", conf.MaxOpenConnections, conf.MaxIdleConnections)
 		sqlxDB.SetMaxOpenConns(conf.MaxOpenConnections)
 		sqlxDB.SetMaxIdleConns(conf.MaxIdleConnections)

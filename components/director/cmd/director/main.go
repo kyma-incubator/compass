@@ -80,7 +80,6 @@ func main() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
-
 	configureLogger()
 
 	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), cfg.Database)
