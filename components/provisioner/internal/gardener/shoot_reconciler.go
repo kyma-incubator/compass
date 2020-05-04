@@ -102,6 +102,14 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	seed := getSeed(shoot)
+	if seed != "" {
+		err := r.enableAuditLogs(&shoot, r.auditLogsCMName, seed)
+		if err != nil {
+			log.Errorf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
+		}
+	}
+
 	shouldReconcile, err := r.shouldReconcileShoot(shoot)
 	if err != nil {
 		log.Errorf("Failed to verify if shoot should be reconciled: %s", err.Error())
@@ -140,14 +148,6 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	provisioningStep := getProvisioningState(shoot)
-
-	seed := getSeed(shoot)
-	if seed != "" {
-		err = r.enableAuditLogs(&shoot, r.auditLogsCMName, seed)
-		if err != nil {
-			log.Errorf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
-		}
-	}
 
 	switch provisioningStep {
 	case Provisioning:
@@ -301,13 +301,17 @@ func setAuditConfig(shoot *gardener_types.Shoot, policyConfigMapName, subAccount
 func (r *Reconciler) enableAuditLogs(shoot *gardener_types.Shoot, policyConfigMapName, seed string) error {
 	logrus.Info("Enabling audit logs")
 	tenant, err := r.getAuditLogTenant(seed)
-
 	if err != nil {
 		return err
 	}
 
 	if tenant != "" {
-		setAuditConfig(shoot, policyConfigMapName, tenant)
+		err := r.provisioningOperator.updateShoot(*shoot, func(s *gardener_types.Shoot) {
+			setAuditConfig(s, policyConfigMapName, tenant)
+		})
+		if err != nil {
+			return err
+		}
 	} else {
 		logrus.Warnf("Cannot enable audit logs. Tenant for region %s is empty", seed)
 	}

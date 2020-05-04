@@ -33,9 +33,6 @@ const (
 func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 	clientset := fake.NewSimpleClientset()
 
-	//auditLogsConfigPath := filepath.Join("testdata", "config.json")
-	//expectedTenant := "e7382275-e835-4549-94e1-3b1101e3a1fa"
-
 	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{})
 	require.NoError(t, err)
 
@@ -58,88 +55,6 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
 		assert.Equal(t, "", shoot.Labels[model.SubAccountLabel])
 	})
-
-	//for _, testCase := range []struct {
-	//	description         string
-	//	clusterName         string
-	//	subAccountId        string
-	//	configMapName       string
-	//	auditLogsConfigPath string
-	//	region              string
-	//	auditLogsEnabled    bool
-	//}{
-	//	{
-	//		description:         "audit logs enabled",
-	//		clusterName:         "test-1",
-	//		subAccountId:        subAccountId,
-	//		configMapName:       auditLogsPolicyCMName,
-	//		auditLogsConfigPath: auditLogsConfigPath,
-	//		region:              region,
-	//		auditLogsEnabled:    true,
-	//	},
-	//	{
-	//		description:         "audit logs disabled when no config file",
-	//		clusterName:         "test-2",
-	//		subAccountId:        "acc",
-	//		configMapName:       auditLogsPolicyCMName,
-	//		auditLogsConfigPath: "",
-	//		region:              region,
-	//		auditLogsEnabled:    false,
-	//	},
-	//	{
-	//		description:         "audit logs disabled when no region match",
-	//		clusterName:         "test-3",
-	//		subAccountId:        "acc",
-	//		configMapName:       auditLogsPolicyCMName,
-	//		auditLogsConfigPath: auditLogsConfigPath,
-	//		region:              "centralia",
-	//		auditLogsEnabled:    false,
-	//	},
-	//	{
-	//		description:         "audit logs disabled when no CM name",
-	//		clusterName:         "test-4",
-	//		subAccountId:        "",
-	//		configMapName:       "",
-	//		auditLogsConfigPath: auditLogsConfigPath,
-	//		region:              region,
-	//		auditLogsEnabled:    false,
-	//	},
-	//} {
-	//	t.Run(testCase.description, func(t *testing.T) {
-	//		// given
-	//		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
-	//
-	//		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, nil)
-	//
-	//		// when
-	//		err := provisionerClient.ProvisionCluster(newClusterConfig(testCase.clusterName, testCase.subAccountId, gcpGardenerConfig, testCase.region), operationId)
-	//		require.NoError(t, err)
-	//
-	//		// then
-	//		shoot, err := shootClient.Get(testCase.clusterName, v1.GetOptions{})
-	//		require.NoError(t, err)
-	//		assertAnnotation(t, shoot, operationIdAnnotation, operationId)
-	//		assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
-	//
-	//		assert.Equal(t, testCase.subAccountId, shoot.Labels[model.SubAccountLabel])
-	//
-	//		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer)
-	//		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
-	//		assert.False(t, *shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
-	//
-	//		if testCase.auditLogsEnabled {
-	//			assertAnnotation(t, shoot, auditLogsAnnotation, expectedTenant)
-	//
-	//			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig)
-	//			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy)
-	//			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef)
-	//			assert.Equal(t, auditLogsPolicyCMName, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef.Name)
-	//		} else {
-	//			assertNoAnnotation(t, shoot, auditLogsAnnotation)
-	//		}
-	//	})
-	//}
-
 }
 
 func newClusterConfig(name, subAccountId string, providerConfig model.GardenerProviderConfig, region string) model.Cluster {

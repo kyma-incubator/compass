@@ -242,6 +242,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
 			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
 			assert.Equal(t, "provisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
+			assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
 
 			simmulateSuccessfullClusterProvisioning(t, shootInterface, secretsInterface, shoot)
 
@@ -396,6 +397,9 @@ func (f fakeShootsInterface) Create(shoot *gardener_types.Shoot) (*gardener_type
 	addTypeMeta(shoot)
 
 	shoot.SetFinalizers([]string{"finalizer"})
+
+	seedName := "az-us2"
+	shoot.Spec.SeedName = &seedName
 
 	unstructuredShoot, err := toUnstructured(shoot)
 
