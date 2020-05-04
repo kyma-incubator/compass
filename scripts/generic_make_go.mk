@@ -180,7 +180,7 @@ exec:
     		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
     		$(DOCKER_CREATE_OPTS) bash
 
-# Redeploys component in Minikube cluster by replacing old deployment with the newly built one
+# Sets locally built image for a given component in Minikube cluster 
 deploy-on-minikube: build-to-minikube
 	kubectl set image -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME) $(COMPONENT_NAME)=$(DEPLOYMENT_NAME):latest
 	kubectl rollout restart -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME)
