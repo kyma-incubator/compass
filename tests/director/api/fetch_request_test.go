@@ -40,7 +40,7 @@ func Test_FetchRequestAddAPIToPackage(t *testing.T) {
 	assert.Equal(t, graphql.FetchRequestStatusConditionSucceeded, api.Spec.FetchRequest.Status.Condition)
 }
 
-func TestFetchRequestAddPackage(t *testing.T) {
+func TestFetchRequestAddPackageWithAPI(t *testing.T) {
 	ctx := context.Background()
 
 	appName := "app-test-package"
@@ -71,7 +71,7 @@ func TestFetchRequestAddPackage(t *testing.T) {
 	assert.Equal(t, graphql.FetchRequestStatusConditionSucceeded, pkg.APIDefinitions.Data[0].Spec.FetchRequest.Status.Condition)
 }
 
-func TestRefetchAPISPec(t *testing.T) {
+func TestRefetchAPISpec(t *testing.T) {
 	ctx := context.Background()
 
 	appName := "app-test-package"

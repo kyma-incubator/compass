@@ -95,13 +95,13 @@ func (s *service) validateFetchRequest(fr *model.FetchRequest) error {
 	}
 
 	if fr.Auth != nil {
-		err := errors.New("fetch Request Auth was provided, currently it's unsupported")
+		err := errors.New("Auth for Fetch Request was provided, currently it's unsupported")
 		s.logger.Error(err)
 		return err
 	}
 
 	if fr.Filter != nil {
-		err := errors.New("fetch Request Filter was provided, currently it's unsupported")
+		err := errors.New("Filter for Fetch Request was provided, currently it's unsupported")
 		s.logger.Error(err)
 		return err
 	}
