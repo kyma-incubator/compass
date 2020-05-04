@@ -183,7 +183,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
-	controler, err := gardener.NewShootController(mgr, shootInterface, secretsInterface, dbsFactory, directorServiceMock, installationServiceMock, installationQueue)
+	controler, err := gardener.NewShootController(mgr, shootInterface, secretsInterface, dbsFactory, directorServiceMock, installationServiceMock, installationQueue, auditLogsConfigPath, auditLogCMName)
 	require.NoError(t, err)
 
 	go func() {
@@ -203,7 +203,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
 			uuidGenerator := uuid.NewUUIDGenerator()
-			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogsConfigPath, auditLogCMName)
+			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory)
 
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 
@@ -240,7 +240,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			//then
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
 			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
-			assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
 			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
 			assert.Equal(t, "provisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
 

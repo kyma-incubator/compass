@@ -1,14 +1,8 @@
 package gardener
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"time"
-
-	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/sirupsen/logrus"
-	v12 "k8s.io/api/core/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,39 +16,25 @@ import (
 func NewProvisioner(
 	namespace string,
 	shootClient gardener_apis.ShootInterface,
-	factory dbsession.Factory,
-	auditLogTenantConfigPath string,
-	auditLogsCMName string) *GardenerProvisioner {
+	factory dbsession.Factory) *GardenerProvisioner {
 	return &GardenerProvisioner{
-		namespace:                namespace,
-		shootClient:              shootClient,
-		dbSessionFactory:         factory,
-		auditLogTenantConfigPath: auditLogTenantConfigPath,
-		auditLogsConfigMapName:   auditLogsCMName,
+		namespace:        namespace,
+		shootClient:      shootClient,
+		dbSessionFactory: factory,
 	}
 }
 
 type GardenerProvisioner struct {
-	namespace                string
-	shootClient              gardener_apis.ShootInterface
-	dbSessionFactory         dbsession.Factory
-	directorService          director.DirectorClient
-	auditLogsConfigMapName   string
-	auditLogTenantConfigPath string
+	namespace        string
+	shootClient      gardener_apis.ShootInterface
+	dbSessionFactory dbsession.Factory
+	directorService  director.DirectorClient
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) error {
 	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace, cluster.Tenant, cluster.SubAccountId)
 	if err != nil {
 		return fmt.Errorf("failed to convert cluster config to Shoot template")
-	}
-
-	region := getRegion(cluster)
-
-	if g.shouldEnableAuditLogs() {
-		if err := g.enableAuditLogs(shootTemplate, g.auditLogsConfigMapName, region); err != nil {
-			return fmt.Errorf("error enabling audit logs for %s cluster: %s", cluster.ID, err.Error())
-		}
 	}
 
 	annotate(shootTemplate, operationIdAnnotation, operationId)
@@ -110,10 +90,6 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeprovisioningStage, deletionTime), nil
 }
 
-func (g *GardenerProvisioner) shouldEnableAuditLogs() bool {
-	return g.auditLogsConfigMapName != "" && g.auditLogTenantConfigPath != ""
-}
-
 func newDeprovisionOperation(id, runtimeId, message string, state model.OperationState, stage model.OperationStage, startTime time.Time) model.Operation {
 	return model.Operation{
 		ID:             id,
@@ -124,59 +100,4 @@ func newDeprovisionOperation(id, runtimeId, message string, state model.Operatio
 		Message:        message,
 		ClusterID:      runtimeId,
 	}
-}
-
-func (g *GardenerProvisioner) enableAuditLogs(shoot *gardener_types.Shoot, policyConfigMapName, region string) error {
-	logrus.Info("Enabling audit logs")
-	tenant, err := g.getAuditLogTenant(region)
-
-	if err != nil {
-		return err
-	}
-
-	if tenant != "" {
-		setAuditConfig(shoot, policyConfigMapName, tenant)
-	} else {
-		logrus.Warnf("Cannot enable audit logs. Tenant for region %s is empty", region)
-	}
-
-	return nil
-}
-
-func (g *GardenerProvisioner) getAuditLogTenant(region string) (string, error) {
-	file, err := os.Open(g.auditLogTenantConfigPath)
-
-	if err != nil {
-		return "", err
-	}
-
-	defer file.Close()
-
-	var data map[string]string
-	if err := json.NewDecoder(file).Decode(&data); err != nil {
-		return "", err
-	}
-	return data[region], nil
-}
-
-func setAuditConfig(shoot *gardener_types.Shoot, policyConfigMapName, subAccountId string) {
-	if shoot.Spec.Kubernetes.KubeAPIServer == nil {
-		shoot.Spec.Kubernetes.KubeAPIServer = &gardener_types.KubeAPIServerConfig{}
-	}
-
-	shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig = &gardener_types.AuditConfig{
-		AuditPolicy: &gardener_types.AuditPolicy{
-			ConfigMapRef: &v12.ObjectReference{Name: policyConfigMapName},
-		},
-	}
-
-	annotate(shoot, auditLogsAnnotation, subAccountId)
-}
-
-func getRegion(cluster model.Cluster) string {
-	config, ok := cluster.GardenerConfig()
-	if ok {
-		return config.Region
-	}
-	return ""
 }

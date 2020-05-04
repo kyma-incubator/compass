@@ -2,7 +2,10 @@ package gardener
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	v12 "k8s.io/api/core/v1"
+	"os"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
@@ -40,12 +43,17 @@ func NewReconciler(
 	shootClient v1beta1.ShootInterface,
 	directorClient director.DirectorClient,
 	installationSvc installation.Service,
-	installQueue queue.OperationQueue) *Reconciler {
+	installQueue queue.OperationQueue,
+	auditLogTenantConfigPath string,
+	auditLogsCMName string) *Reconciler {
 	return &Reconciler{
 		client:     mgr.GetClient(),
 		scheme:     mgr.GetScheme(),
 		log:        logrus.WithField("Component", "ShootReconciler"),
 		dbsFactory: dbsFactory,
+
+		auditLogTenantConfigPath: auditLogTenantConfigPath,
+		auditLogsCMName:          auditLogsCMName,
 
 		provisioningOperator: &ProvisioningOperator{
 			dbsFactory:        dbsFactory,
@@ -65,6 +73,9 @@ type Reconciler struct {
 
 	log                  *logrus.Entry
 	provisioningOperator *ProvisioningOperator
+
+	auditLogTenantConfigPath string
+	auditLogsCMName          string
 }
 
 type ProvisioningOperator struct {
@@ -129,6 +140,14 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	provisioningStep := getProvisioningState(shoot)
+
+	seed := getSeed(shoot)
+	if seed != "" {
+		err = r.enableAuditLogs(&shoot, r.auditLogsCMName, seed)
+		if err != nil {
+			log.Errorf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
+		}
+	}
 
 	switch provisioningStep {
 	case Provisioning:
@@ -263,4 +282,59 @@ func (r *ProvisioningOperator) setDeprovisioningFinished(cluster model.Cluster, 
 	}
 
 	return nil
+}
+
+func setAuditConfig(shoot *gardener_types.Shoot, policyConfigMapName, subAccountId string) {
+	if shoot.Spec.Kubernetes.KubeAPIServer == nil {
+		shoot.Spec.Kubernetes.KubeAPIServer = &gardener_types.KubeAPIServerConfig{}
+	}
+
+	shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig = &gardener_types.AuditConfig{
+		AuditPolicy: &gardener_types.AuditPolicy{
+			ConfigMapRef: &v12.ObjectReference{Name: policyConfigMapName},
+		},
+	}
+
+	annotate(shoot, auditLogsAnnotation, subAccountId)
+}
+
+func (r *Reconciler) enableAuditLogs(shoot *gardener_types.Shoot, policyConfigMapName, seed string) error {
+	logrus.Info("Enabling audit logs")
+	tenant, err := r.getAuditLogTenant(seed)
+
+	if err != nil {
+		return err
+	}
+
+	if tenant != "" {
+		setAuditConfig(shoot, policyConfigMapName, tenant)
+	} else {
+		logrus.Warnf("Cannot enable audit logs. Tenant for region %s is empty", seed)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) getAuditLogTenant(seed string) (string, error) {
+	file, err := os.Open(r.auditLogTenantConfigPath)
+
+	if err != nil {
+		return "", err
+	}
+
+	defer file.Close()
+
+	var data map[string]string
+	if err := json.NewDecoder(file).Decode(&data); err != nil {
+		return "", err
+	}
+	return data[seed], nil
+}
+
+func getSeed(shoot gardener_types.Shoot) string {
+	if shoot.Spec.SeedName != nil {
+		return *shoot.Spec.SeedName
+	}
+
+	return ""
 }
