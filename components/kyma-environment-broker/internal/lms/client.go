@@ -28,8 +28,6 @@ type Client interface {
 	RequestCertificate(tenantID string, subject pkix.Name) (string, []byte, error)
 }
 
-type Environment string
-
 // ClusterType can be ha or single-node
 type ClusterType string
 
@@ -38,7 +36,7 @@ type client struct {
 
 	// tenant predefined values
 	clusterType ClusterType
-	environment Environment
+	environment string
 
 	token      string
 	samlTenant string
@@ -47,9 +45,6 @@ type client struct {
 }
 
 const (
-	EnvironmentDev  Environment = "dev"
-	EnvironmentProd Environment = "prod"
-
 	ClusterTypeHA         ClusterType = "ha"
 	ClusterTypeSingleNode ClusterType = "single-node"
 )
@@ -59,7 +54,7 @@ type Config struct {
 
 	// tenant predefined values
 	ClusterType ClusterType // ha or single-node
-	Environment Environment
+	Environment string
 
 	Token      string
 	SamlTenant string
@@ -71,10 +66,6 @@ type Config struct {
 func (c Config) Validate() error {
 	if c.ClusterType != ClusterTypeSingleNode && c.ClusterType != ClusterTypeHA {
 		return fmt.Errorf("unknown cluster type '%s'", c.ClusterType)
-	}
-
-	if c.Environment != EnvironmentProd && c.Environment != EnvironmentDev {
-		return fmt.Errorf("unknown environment '%s'", c.Environment)
 	}
 	return nil
 }
@@ -134,7 +125,7 @@ func (c *client) CreateTenant(input CreateTenantInput) (o CreateTenantOutput, er
 		ClusterType: string(c.clusterType),
 		DataCenter:  "all",
 		Environment: string(c.environment),
-		Project:     "lms", // the tenant will use always the same project
+		Project:     "kyma", // the tenant will use always the same project
 		SamlTenant:  c.samlTenant,
 		Costcenter:  0,
 	}
