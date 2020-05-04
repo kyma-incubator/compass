@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	v12 "k8s.io/api/core/v1"
 	"os"
 	"time"
+
+	v12 "k8s.io/api/core/v1"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 
