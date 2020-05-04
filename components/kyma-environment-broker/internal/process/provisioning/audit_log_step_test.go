@@ -106,6 +106,11 @@ bar: tenant
 return "fooBar"
 }
 `
+
+	expectedPorts:= `
+         - number: 8081
+           name: https
+           protocol: TLS`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
 			Key:   "fluent-bit.conf.script",
@@ -114,6 +119,18 @@ return "fooBar"
 		{
 			Key:   "fluent-bit.conf.extra",
 			Value: expectedOverride,
+		},
+		{
+			Key: "fluent-bit.externalServiceEntry.resolution",
+			Value: "DNS",
+		},
+		{
+			Key: "fluent-bit.externalServiceEntry.hosts",
+			Value: "host1",
+		},
+		{
+			Key: "fluent-bit.externalServiceEntry.ports",
+			Value: expectedPorts,
 		},
 	}).Return(nil).Once()
 

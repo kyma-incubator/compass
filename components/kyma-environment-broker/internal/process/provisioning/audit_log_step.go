@@ -83,6 +83,13 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         tls              on
         tls.debug        1
 `, alo.auditLogConfig.URL, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
+		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
+		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf("%s",alo.auditLogConfig.URL)},
+		{Key: "fluent-bit.externalServiceEntry.ports", Value: `
+         - number: 8081
+           name: https
+           protocol: TLS`},
+
 	})
 	return operation, 0, nil
 }
