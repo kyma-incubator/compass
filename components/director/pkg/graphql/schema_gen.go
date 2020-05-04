@@ -3163,10 +3163,17 @@ input FetchRequestInput {
 	**Validation:** valid URL, max=256
 	"""
 	url: String!
+	"""
+	Currently unsupported, providing it will result in a failure
+	"""
 	auth: AuthInput
+	"""
+	Currently unsupported, providing it will result in a failure
+	"""
 	mode: FetchMode = SINGLE
 	"""
 	**Validation:** max=256
+	Currently unsupported, providing it will result in a failure
 	"""
 	filter: String
 }
