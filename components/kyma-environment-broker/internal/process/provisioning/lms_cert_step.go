@@ -22,7 +22,7 @@ import (
 
 const (
 	pollingInterval          = 15 * time.Second
-	certPollingTimeout       = 4 * time.Minute
+	certPollingTimeout       = 5 * time.Minute
 	tenantReadyRetryInterval = 30 * time.Second
 	lmsTimeout               = 30 * time.Minute
 	kibanaURLLabelKey        = "operator_lmsUrl"
@@ -37,16 +37,18 @@ type LmsClient interface {
 }
 
 type lmsCertStep struct {
+	LmsStep
 	provider            LmsClient
-	repo                storage.Operations
 	normalizationRegexp *regexp.Regexp
 }
 
-func NewLmsCertificatesStep(certProvider LmsClient, os storage.Operations) *lmsCertStep {
-
+func NewLmsCertificatesStep(certProvider LmsClient, os storage.Operations, isMandatory bool) *lmsCertStep {
 	return &lmsCertStep{
+		LmsStep: LmsStep{
+			repo:        os,
+			isMandatory: isMandatory,
+		},
 		provider:            certProvider,
-		repo:                os,
 		normalizationRegexp: regexp.MustCompile("[^a-zA-Z0-9]+"),
 	}
 }
@@ -193,8 +195,16 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 	return operation, 0, nil
 }
 
-func (s *lmsCertStep) failLmsAndUpdate(operation internal.ProvisioningOperation) (internal.ProvisioningOperation, time.Duration, error) {
+type LmsStep struct {
+	repo        storage.Operations
+	isMandatory bool
+}
+
+func (s *LmsStep) failLmsAndUpdate(operation internal.ProvisioningOperation) (internal.ProvisioningOperation, time.Duration, error) {
 	operation.Lms.Failed = true
+	if s.isMandatory {
+		operation.State
+	}
 	modifiedOp, err := s.repo.UpdateProvisioningOperation(operation)
 	if err != nil {
 		// update has failed - retry after 0.5 sec

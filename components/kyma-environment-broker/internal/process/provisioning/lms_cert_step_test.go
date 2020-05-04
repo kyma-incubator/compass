@@ -17,7 +17,7 @@ import (
 func TestCertStep_RunFreshOperation(t *testing.T) {
 	// given
 	repo := storage.NewMemoryStorage().Operations()
-	svc := NewLmsCertificatesStep(nil, repo)
+	svc := NewLmsCertificatesStep(nil, repo, false)
 	// a fresh operation
 	operation := internal.ProvisioningOperation{
 		Lms: internal.LMS{},
@@ -34,7 +34,7 @@ func TestCertStep_Run(t *testing.T) {
 	// given
 	cli, tID := newFakeClientWithTenant(0)
 	repo := storage.NewMemoryStorage().Operations()
-	svc := NewLmsCertificatesStep(cli, repo)
+	svc := NewLmsCertificatesStep(cli, repo, false)
 	operation := internal.ProvisioningOperation{
 		Lms: internal.LMS{
 			TenantID: tID,
@@ -59,7 +59,7 @@ func TestCertStep_TenantNotReady(t *testing.T) {
 	// given
 	cli, tID := newFakeClientWithTenant(time.Hour)
 	repo := storage.NewMemoryStorage().Operations()
-	svc := NewLmsCertificatesStep(cli, repo)
+	svc := NewLmsCertificatesStep(cli, repo, false)
 	operation := internal.ProvisioningOperation{
 		Lms: internal.LMS{
 			TenantID:    tID,
@@ -85,7 +85,7 @@ func TestCertStep_TenantNotReadyTimeout(t *testing.T) {
 	// given
 	cli, tID := newFakeClientWithTenant(time.Hour)
 	repo := storage.NewMemoryStorage().Operations()
-	svc := NewLmsCertificatesStep(cli, repo)
+	svc := NewLmsCertificatesStep(cli, repo, false)
 	operation := internal.ProvisioningOperation{
 		Lms: internal.LMS{
 			TenantID:    tID,
@@ -107,14 +107,70 @@ func TestCertStep_TenantNotReadyTimeout(t *testing.T) {
 	assert.False(t, cli.IsCertRequestedForTenant(tID))
 }
 
+func TestCertStep_TenantNotReadyTimeout_Mandatory(t *testing.T) {
+
+	for _, tc := range []struct {
+		name string
+		isMandatory bool
+	} {
+{name: "step mandatory", isMandatory: true},
+{name: "step optional", isMandatory: false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			// given
+			cli, tID := newFakeClientWithTenant(time.Hour)
+			repo := storage.NewMemoryStorage().Operations()
+			svc := NewLmsCertificatesStep(cli, repo, tc.isMandatory)
+			operation := internal.ProvisioningOperation{
+				Lms: internal.LMS{
+					TenantID:    tID,
+					RequestedAt: time.Now().Add(-10 * time.Hour), // very old
+				},
+				ProvisioningParameters: `{"name": "awesome"}`,
+			}
+			repo.InsertProvisioningOperation(operation)
+
+			// when
+			op, duration, err := svc.Run(operation, fixLogger())
+
+			// then
+			if tc.isMandatory {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Zero(t, duration.Seconds())
+			assert.True(t, op.Lms.Failed)
+
+			// do not expect call to LMS
+			assert.False(t, cli.IsCertRequestedForTenant(tID))
+		})
+
+	}
+
+
+}
+
+func assertLmsMarkedFailed(t *testing.T, operation internal.ProvisioningOperation, duration time.Duration, err error) {
+	assert.NoError(t, err)
+	assert.Zero(t, duration.Seconds())
+	assert.True(t, operation.Lms.Failed)
+}
+
+func assertOperationFailed(t *testing.T, operation internal.ProvisioningOperation, duration time.Duration, err error) {
+	assert.Error(t, err)
+	assert.Zero(t, duration.Seconds())
+	assert.True(t, operation.Lms.Failed)
+}
+
 func TestLmsStepsHappyPath(t *testing.T) {
 	// given
 	lmsClient := lms.NewFakeClient(0)
 	opRepo := storage.NewMemoryStorage().Operations()
 	tRepo := storage.NewMemoryStorage().LMSTenants()
-	certStep := NewLmsCertificatesStep(lmsClient, opRepo)
+	certStep := NewLmsCertificatesStep(lmsClient, opRepo, false)
 	tManager := lms.NewTenantManager(tRepo, lmsClient, fixLogger())
-	tenantStep := NewProvideLmsTenantStep(tManager, opRepo, "eu")
+	tenantStep := NewProvideLmsTenantStep(tManager, opRepo, "eu", false)
 
 	inputCreator := newInputCreator()
 	operation := internal.ProvisioningOperation{
