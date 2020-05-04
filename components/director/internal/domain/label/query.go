@@ -28,17 +28,7 @@ const (
 // It supports querying defined by `queryFor` parameter. All queries are created
 // in the context of given tenant
 func FilterQuery(queryFor model.LabelableObject, setCombination SetCombination, tenant uuid.UUID, filter []*labelfilter.LabelFilter) (string, []interface{}, error) {
-	if filter == nil {
-		return "", nil, nil
-	}
-
-	objectField := labelableObjectField(queryFor)
-
-	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, objectField, tableName, objectField)
-	var stmtPrefixArgs []interface{}
-	stmtPrefixArgs = append(stmtPrefixArgs, tenant)
-
-	return buildFilterQuery(stmtPrefix, stmtPrefixArgs, setCombination, filter, false)
+	return filterQuery(queryFor, setCombination, tenant, filter, false)
 }
 
 // FilterSubquery builds select sub query for given filters that can be appended to other query
@@ -46,17 +36,7 @@ func FilterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 // It supports querying defined by `queryFor` parameter. All queries are created
 // in the context of given tenant
 func FilterSubquery(queryFor model.LabelableObject, setCombination SetCombination, tenant uuid.UUID, filter []*labelfilter.LabelFilter) (string, []interface{}, error) {
-	if filter == nil {
-		return "", nil, nil
-	}
-
-	objectField := labelableObjectField(queryFor)
-
-	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, objectField, tableName, objectField)
-	var stmtPrefixArgs []interface{}
-	stmtPrefixArgs = append(stmtPrefixArgs, tenant)
-
-	return buildFilterQuery(stmtPrefix, stmtPrefixArgs, setCombination, filter, true)
+	return filterQuery(queryFor, setCombination, tenant, filter, true)
 }
 
 // FilterQueryGlobal builds select query for given filters
@@ -73,6 +53,20 @@ func FilterQueryGlobal(queryFor model.LabelableObject, setCombination SetCombina
 	stmtPrefix := fmt.Sprintf(stmtPrefixGlobalFormat, objectField, tableName, objectField)
 
 	return buildFilterQuery(stmtPrefix, nil, setCombination, filter, false)
+}
+
+func filterQuery(queryFor model.LabelableObject, setCombination SetCombination, tenant uuid.UUID, filter []*labelfilter.LabelFilter, isSubQuery bool) (string, []interface{}, error) {
+	if filter == nil {
+		return "", nil, nil
+	}
+
+	objectField := labelableObjectField(queryFor)
+
+	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, objectField, tableName, objectField)
+	var stmtPrefixArgs []interface{}
+	stmtPrefixArgs = append(stmtPrefixArgs, tenant)
+
+	return buildFilterQuery(stmtPrefix, stmtPrefixArgs, setCombination, filter, isSubQuery)
 }
 
 func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombination SetCombination, filter []*labelfilter.LabelFilter, isSubQuery bool) (string, []interface{}, error) {
