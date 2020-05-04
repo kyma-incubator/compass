@@ -2,6 +2,7 @@ package gardener
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"path/filepath"
 	"testing"
 
@@ -40,7 +41,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{})
 	require.NoError(t, err)
 
-	cluster := newClusterConfig("test-cluster", "", gcpGardenerConfig, region)
+	cluster := newClusterConfig("test-cluster", nil, gcpGardenerConfig, region)
 
 	t.Run("should start provisioning", func(t *testing.T) {
 		// given
@@ -63,7 +64,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 	for _, testCase := range []struct {
 		description         string
 		clusterName         string
-		subAccountId        string
+		subAccountId        *string
 		configMapName       string
 		auditLogsConfigPath string
 		region              string
@@ -72,7 +73,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		{
 			description:         "audit logs enabled",
 			clusterName:         "test-1",
-			subAccountId:        subAccountId,
+			subAccountId:        util.StringPtr(subAccountId),
 			configMapName:       auditLogsPolicyCMName,
 			auditLogsConfigPath: auditLogsConfigPath,
 			region:              region,
@@ -81,7 +82,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		{
 			description:         "audit logs disabled when no config file",
 			clusterName:         "test-2",
-			subAccountId:        "acc",
+			subAccountId:        util.StringPtr("acc"),
 			configMapName:       auditLogsPolicyCMName,
 			auditLogsConfigPath: "",
 			region:              region,
@@ -90,7 +91,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		{
 			description:         "audit logs disabled when no region match",
 			clusterName:         "test-3",
-			subAccountId:        "acc",
+			subAccountId:        util.StringPtr("acc"),
 			configMapName:       auditLogsPolicyCMName,
 			auditLogsConfigPath: auditLogsConfigPath,
 			region:              "centralia",
@@ -99,7 +100,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		{
 			description:         "audit logs disabled when no CM name",
 			clusterName:         "test-4",
-			subAccountId:        "",
+			subAccountId:        nil,
 			configMapName:       "",
 			auditLogsConfigPath: auditLogsConfigPath,
 			region:              region,
@@ -122,7 +123,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 			assertAnnotation(t, shoot, operationIdAnnotation, operationId)
 			assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
 
-			assert.Equal(t, testCase.subAccountId, shoot.Labels[model.SubAccountLabel])
+			assert.Equal(t, util.UnwrapStr(testCase.subAccountId), shoot.Labels[model.SubAccountLabel])
 
 			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer)
 			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
@@ -143,7 +144,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 
 }
 
-func newClusterConfig(name, subAccountId string, providerConfig model.GardenerProviderConfig, region string) model.Cluster {
+func newClusterConfig(name string, subAccountId *string, providerConfig model.GardenerProviderConfig, region string) model.Cluster {
 	return model.Cluster{
 		ID:           runtimeId,
 		Tenant:       tenant,

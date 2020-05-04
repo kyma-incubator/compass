@@ -82,7 +82,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			KymaConfig:            fixKymaConfig(),
 			CredentialsSecretName: "",
 			Tenant:                tenant,
-			SubAccountId:          subAccountId,
+			SubAccountId:          util.StringPtr(subAccountId),
 		}
 	}
 
@@ -149,7 +149,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		KymaConfig:            fixKymaConfig(),
 		CredentialsSecretName: "",
 		Tenant:                tenant,
-		SubAccountId:          subAccountId,
+		SubAccountId:          util.StringPtr(subAccountId),
 	}
 
 	azureGardenerProvider := &gqlschema.AzureProviderConfigInput{VnetCidr: "cidr"}
@@ -214,7 +214,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		KymaConfig:            fixKymaConfig(),
 		CredentialsSecretName: "",
 		Tenant:                tenant,
-		SubAccountId:          subAccountId,
+		SubAccountId:          util.StringPtr(subAccountId),
 	}
 
 	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
@@ -285,7 +285,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		KymaConfig:            fixKymaConfig(),
 		CredentialsSecretName: "",
 		Tenant:                tenant,
-		SubAccountId:          subAccountId,
+		SubAccountId:          util.StringPtr(subAccountId),
 	}
 
 	zone := "zone"

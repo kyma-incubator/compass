@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
@@ -191,7 +192,7 @@ func GetInstallationCRModificationFunc(componentsConfig []model.KymaComponentCon
 			components = append(components, v1alpha1.KymaComponent{
 				Name:      string(cc.Component),
 				Namespace: cc.Namespace,
-				Source:    toKymaComponentSource(cc.SourceURL),
+				Source:    toKymaComponentSource(util.UnwrapStr(cc.SourceURL)),
 			})
 		}
 

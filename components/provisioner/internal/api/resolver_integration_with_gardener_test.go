@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"os"
 	"path/filepath"
 	"testing"
@@ -325,7 +326,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			runtimeFromDb, err = readSession.GetCluster(config.runtimeID)
 			require.NoError(t, err)
 			assert.Equal(t, tenant, runtimeFromDb.Tenant)
-			assert.Equal(t, subAccountId, runtimeFromDb.SubAccountId)
+			assert.Equal(t, subAccountId, util.UnwrapStr(runtimeFromDb.SubAccountId))
 			assert.Equal(t, true, runtimeFromDb.Deleted)
 		})
 	}

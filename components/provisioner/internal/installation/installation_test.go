@@ -3,6 +3,7 @@ package installation
 import (
 	"context"
 	"errors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"testing"
 	"time"
 
@@ -453,7 +454,7 @@ func fixComponentsConfig() []model.KymaComponentConfig {
 			KymaConfigID:  "id",
 			Component:     "rafter",
 			Namespace:     kymaSystemNamespace,
-			SourceURL:     rafterSourceURL,
+			SourceURL:     util.StringPtr(rafterSourceURL),
 			Configuration: model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
 		},
 		{
