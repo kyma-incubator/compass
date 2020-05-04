@@ -154,7 +154,6 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		}
 
 		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fr)
-
 	}
 
 	err = s.repo.Update(ctx, api)

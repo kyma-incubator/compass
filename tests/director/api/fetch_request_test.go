@@ -11,7 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const OpenAPISpec = "https://raw.githubusercontent.com/kyma-incubator/github-slack-connectors/master/github-connector/internal/registration/configs/githubopenAPI.json"
+const OpenAPISpec = "https://raw.githubusercontent.com/kyma-incubator/github-slack-connectors/beb8e5b6d8f3a644b8380e667a9376bc353e54dd/github-connector/internal/registration/configs/githubopenAPI.json"
 
 func Test_FetchRequestAddAPIToPackage(t *testing.T) {
 	ctx := context.Background()

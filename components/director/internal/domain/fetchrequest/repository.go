@@ -38,7 +38,7 @@ func NewRepository(conv Converter) *repository {
 		creator:      repo.NewCreator(fetchRequestTable, fetchRequestColumns),
 		singleGetter: repo.NewSingleGetter(fetchRequestTable, tenantColumn, fetchRequestColumns),
 		deleter:      repo.NewDeleter(fetchRequestTable, tenantColumn),
-		updater:      repo.NewUpdater(fetchRequestTable, []string{"status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
+		updater:      repo.NewUpdater(fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, tenantColumn, []string{"id"}),
 		conv:         conv,
 	}
 }
