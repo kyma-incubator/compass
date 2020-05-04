@@ -56,20 +56,6 @@ func (_m *APIRepository) Delete(ctx context.Context, tenantID string, id string)
 	return r0
 }
 
-// DeleteAllByApplicationID provides a mock function with given fields: ctx, tenantID, id
-func (_m *APIRepository) DeleteAllByApplicationID(ctx context.Context, tenantID string, id string) error {
-	ret := _m.Called(ctx, tenantID, id)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, tenantID, id)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Exists provides a mock function with given fields: ctx, tenant, id
 func (_m *APIRepository) Exists(ctx context.Context, tenant string, id string) (bool, error) {
 	ret := _m.Called(ctx, tenant, id)
@@ -114,29 +100,6 @@ func (_m *APIRepository) GetByID(ctx context.Context, tenantID string, id string
 	return r0, r1
 }
 
-// GetForApplication provides a mock function with given fields: ctx, tenant, id, applicationID
-func (_m *APIRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.APIDefinition, error) {
-	ret := _m.Called(ctx, tenant, id, applicationID)
-
-	var r0 *model.APIDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.APIDefinition); ok {
-		r0 = rf(ctx, tenant, id, applicationID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.APIDefinition)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, tenant, id, applicationID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetForPackage provides a mock function with given fields: ctx, tenant, id, packageID
 func (_m *APIRepository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.APIDefinition, error) {
 	ret := _m.Called(ctx, tenant, id, packageID)
@@ -153,29 +116,6 @@ func (_m *APIRepository) GetForPackage(ctx context.Context, tenant string, id st
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, id, packageID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ListForApplication provides a mock function with given fields: ctx, tenantID, applicationID, pageSize, cursor
-func (_m *APIRepository) ListForApplication(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
-	ret := _m.Called(ctx, tenantID, applicationID, pageSize, cursor)
-
-	var r0 *model.APIDefinitionPage
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.APIDefinitionPage); ok {
-		r0 = rf(ctx, tenantID, applicationID, pageSize, cursor)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.APIDefinitionPage)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
-		r1 = rf(ctx, tenantID, applicationID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}
