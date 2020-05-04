@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
-	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
 	hyperscalerautomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
+	azuretesting "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure/testing"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
 	inputAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
@@ -37,101 +38,13 @@ func fixLogger() logrus.FieldLogger {
 	return logrus.StandardLogger()
 }
 
-// ensure the fake client is implementing the interface
-var _ azure.AzureInterface = (*FakeNamespaceClient)(nil)
-
-/// A fake client for Azure EventHubs Namespace handling
-type FakeNamespaceClient struct {
-	persistEventhubsNamespaceError error
-	resourceGroupError             error
-	accessKeysError                error
-	accessKeys                     *eventhub.AccessKeys
-	tags                           azure.Tags
-}
-
-func (nc *FakeNamespaceClient) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
-	if nc.accessKeys != nil {
-		return *nc.accessKeys, nil
-	}
-	return eventhub.AccessKeys{
-		PrimaryConnectionString: ptr.String("Endpoint=sb://name/;"),
-	}, nc.accessKeysError
-}
-
-func (nc *FakeNamespaceClient) CreateResourceGroup(ctx context.Context, config *azure.Config, name string, tags azure.Tags) (resources.Group, error) {
-	nc.tags = tags
-	return resources.Group{
-		Name: ptr.String("my-resourcegroup"),
-	}, nc.resourceGroupError
-}
-
-func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *azure.Config, groupName, namespace string, tags azure.Tags) (*eventhub.EHNamespace, error) {
-	nc.tags = tags
-	return &eventhub.EHNamespace{
-		Name: ptr.String(namespace),
-	}, nc.persistEventhubsNamespaceError
-}
-
-func NewFakeNamespaceClientCreationError() azure.AzureInterface {
-	return &FakeNamespaceClient{persistEventhubsNamespaceError: fmt.Errorf("error while creating namespace")}
-}
-
-func NewFakeNamespaceClientListError() azure.AzureInterface {
-	return &FakeNamespaceClient{accessKeysError: fmt.Errorf("cannot list namespaces")}
-}
-
-func NewFakeNamespaceResourceGroupError() azure.AzureInterface {
-	return &FakeNamespaceClient{resourceGroupError: fmt.Errorf("cannot create resource group")}
-}
-
-func NewFakeNamespaceAccessKeysNil() azure.AzureInterface {
-	return &FakeNamespaceClient{
-		// no error here
-		accessKeysError: nil,
-		accessKeys: &eventhub.AccessKeys{
-			// ups .. we got an AccessKeys with nil connection string even though there was no error
-			PrimaryConnectionString: nil,
-		},
-	}
-}
-
-func NewFakeNamespaceClientHappyPath() *FakeNamespaceClient {
-	return &FakeNamespaceClient{}
-}
-
-// ensure the fake client is implementing the interface
-var _ azure.HyperscalerProvider = (*fakeHyperscalerProvider)(nil)
-
-type fakeHyperscalerProvider struct {
-	client azure.AzureInterface
-	err    error
-}
-
-func (ac *fakeHyperscalerProvider) GetClient(config *azure.Config) (azure.AzureInterface, error) {
-	return ac.client, ac.err
-}
-
-func NewFakeHyperscalerProvider(client azure.AzureInterface) azure.HyperscalerProvider {
-	return &fakeHyperscalerProvider{
-		client: client,
-		err:    nil,
-	}
-}
-
-func NewFakeHyperscalerProviderError() azure.HyperscalerProvider {
-	return &fakeHyperscalerProvider{
-		client: nil,
-		err:    fmt.Errorf("ups ... hyperscaler provider could not provide a hyperscaler client"),
-	}
-}
-
 func Test_HappyPath(t *testing.T) {
 	// given
 	tags := fixTags()
 	memoryStorage := storage.NewMemoryStorage()
 	accountProvider := fixAccountProvider()
-	namespaceClient := NewFakeNamespaceClientHappyPath()
-	step := fixEventHubStep(memoryStorage.Operations(), NewFakeHyperscalerProvider(namespaceClient), accountProvider)
+	namespaceClient := azuretesting.NewFakeNamespaceClientHappyPath()
+	step := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClient), accountProvider)
 	op := fixProvisioningOperation(t)
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
 	err := memoryStorage.Operations().InsertProvisioningOperation(op)
@@ -139,16 +52,17 @@ func Test_HappyPath(t *testing.T) {
 
 	// when
 	op.UpdatedAt = time.Now()
-	op, _, err = step.Run(op, fixLogger())
+	op, when, err := step.Run(op, fixLogger())
 	require.NoError(t, err)
 	provisionRuntimeInput, err := op.InputCreator.Create()
 	require.NoError(t, err)
 
 	// then
+	ensureOperationSuccessful(t, op, when, err)
 	allOverridesFound := ensureOverrides(t, provisionRuntimeInput)
 	assert.True(t, allOverridesFound[componentNameKnativeEventing], "overrides for %s were not found", componentNameKnativeEventing)
 	assert.True(t, allOverridesFound[componentNameKnativeEventingKafka], "overrides for %s were not found", componentNameKnativeEventingKafka)
-	assert.Equal(t, namespaceClient.tags, tags)
+	assert.Equal(t, namespaceClient.Tags, tags)
 }
 
 func Test_StepsUnhappyPath(t *testing.T) {
@@ -163,7 +77,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			giveOperation: fixInvalidProvisioningOperation,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
-				return *fixEventHubStep(storage.Operations(), NewFakeHyperscalerProvider(NewFakeNamespaceClientHappyPath()), accountProvider)
+				return *fixEventHubStep(storage.Operations(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
 			},
 			wantRepeatOperation: false,
 		},
@@ -172,7 +86,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			giveOperation: fixProvisioningOperation,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
 				accountProvider := fixAccountProviderGardenerCredentialsError()
-				return *fixEventHubStep(storage.Operations(), NewFakeHyperscalerProvider(NewFakeNamespaceClientHappyPath()), accountProvider)
+				return *fixEventHubStep(storage.Operations(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
 			},
 			wantRepeatOperation: true,
 		},
@@ -183,8 +97,8 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				accountProvider := fixAccountProvider()
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... namespace cannot get created
-					NewFakeHyperscalerProvider(NewFakeNamespaceClientCreationError()),
-					&accountProvider,
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientCreationError()),
+					accountProvider,
 					context.Background(),
 				)
 			},
@@ -197,8 +111,8 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				accountProvider := fixAccountProvider()
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... namespace cannot get listed
-					NewFakeHyperscalerProvider(NewFakeNamespaceClientListError()),
-					&accountProvider,
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientListError()),
+					accountProvider,
 					context.Background(),
 				)
 			},
@@ -211,8 +125,8 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				accountProvider := fixAccountProvider()
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... PrimaryConnectionString is nil
-					NewFakeHyperscalerProvider(NewFakeNamespaceAccessKeysNil()),
-					&accountProvider,
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceAccessKeysNil()),
+					accountProvider,
 					context.Background(),
 				)
 			},
@@ -225,8 +139,8 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				accountProvider := fixAccountProvider()
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... client cannot be created
-					NewFakeHyperscalerProviderError(),
-					&accountProvider,
+					azuretesting.NewFakeHyperscalerProviderError(),
+					accountProvider,
 					context.Background(),
 				)
 			},
@@ -239,8 +153,8 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				accountProvider := fixAccountProvider()
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... resource group cannot be created
-					NewFakeHyperscalerProvider(NewFakeNamespaceResourceGroupError()),
-					&accountProvider,
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceResourceGroupError()),
+					accountProvider,
 					context.Background(),
 				)
 			},
@@ -408,7 +322,7 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	return creator
 }
 
-func fixAccountProvider() hyperscalerautomock.AccountProvider {
+func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 	accountProvider := hyperscalerautomock.AccountProvider{}
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
 		HyperscalerType: hyperscaler.Azure,
@@ -419,21 +333,21 @@ func fixAccountProvider() hyperscalerautomock.AccountProvider {
 			"tenantID":       []byte("tenantID"),
 		},
 	}, nil)
-	return accountProvider
+	return &accountProvider
 }
 
-func fixAccountProviderGardenerCredentialsError() hyperscalerautomock.AccountProvider {
+func fixAccountProviderGardenerCredentialsError() *hyperscalerautomock.AccountProvider {
 	accountProvider := hyperscalerautomock.AccountProvider{}
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
 		HyperscalerType: hyperscaler.Azure,
 		CredentialData:  map[string][]byte{},
 	}, fmt.Errorf("ups ... gardener credentials could not be retrieved"))
-	return accountProvider
+	return &accountProvider
 }
 
 func fixEventHubStep(memoryStorageOp storage.Operations, hyperscalerProvider azure.HyperscalerProvider,
-	accountProvider hyperscalerautomock.AccountProvider) *ProvisionAzureEventHubStep {
-	return NewProvisionAzureEventHubStep(memoryStorageOp, hyperscalerProvider, &accountProvider, context.Background())
+	accountProvider *hyperscalerautomock.AccountProvider) *ProvisionAzureEventHubStep {
+	return NewProvisionAzureEventHubStep(memoryStorageOp, hyperscalerProvider, accountProvider, context.Background())
 }
 
 func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
@@ -476,4 +390,11 @@ func fixTags() azure.Tags {
 		azure.TagOperationID:  ptr.String(fixOperationID),
 		azure.TagInstanceID:   ptr.String(fixInstanceID),
 	}
+}
+
+func ensureOperationSuccessful(t *testing.T, op internal.ProvisioningOperation, when time.Duration, err error) {
+	t.Helper()
+	assert.Equal(t, when, time.Duration(0))
+	assert.Equal(t, op.Operation.State, domain.LastOperationState(""))
+	assert.Nil(t, err)
 }

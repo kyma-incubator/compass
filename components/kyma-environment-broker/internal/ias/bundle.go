@@ -121,6 +121,9 @@ func (b *ServiceProviderBundle) DeleteServiceProvider() error {
 	if err != nil {
 		return errors.Wrap(err, "while fetching ServiceProvider before deleting")
 	}
+	if !b.serviceProviderExist {
+		return nil
+	}
 
 	err = b.client.DeleteServiceProvider(b.serviceProvider.ID)
 	if err != nil {

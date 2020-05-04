@@ -145,7 +145,6 @@ func main() {
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
 		"Kiali":   runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"Jaeger":  runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
 		"Tracing": runtime.NewGenericComponentDisabler("tracing", "kyma-system"),
 		// TODO(workaround until #1049): following components should be always disabled and user should not be able to enable them in provisioning request. This implies following components cannot be specified under the plan schema definition.
 		"BackupInt":               runtime.NewGenericComponentDisabler("backup-init", "kyma-system"),
@@ -174,7 +173,7 @@ func main() {
 	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
 	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
-	externalEvalCreator := provisioning.NewExternalEvalCreator(cfg.Avs, avsDel, cfg.Avs.Disabled, externalEvalAssistant)
+	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 
 	bundleBuilder := ias.NewBundleBuilder(httpClient, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
@@ -199,12 +198,12 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewInternalEvaluationStep(cfg.Avs, avsDel, internalEvalAssistant),
+			step:     provisioning.NewInternalEvaluationStep(avsDel, internalEvalAssistant),
 			disabled: cfg.Avs.Disabled,
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations()),
+			step:     provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region),
 			disabled: cfg.LMS.Disabled,
 		},
 		{
@@ -255,6 +254,10 @@ func main() {
 		{
 			weight: 1,
 			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+		},
+		{
+			weight: 1,
+			step:   deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
 		},
 		{
 			weight:   1,

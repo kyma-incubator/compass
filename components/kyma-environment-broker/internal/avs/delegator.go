@@ -11,12 +11,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/sirupsen/logrus"
 )
 
 type Delegator struct {

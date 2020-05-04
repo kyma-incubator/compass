@@ -21,6 +21,7 @@ import (
 
 const (
 	kymaVersion            = "1.10"
+	k8sVersion             = "1.16.9"
 	instanceID             = "58f8c703-1756-48ab-9299-a847974d1fee"
 	operationID            = "fd5cee4d-0eeb-40d0-a7a7-0708e5eba470"
 	globalAccountID        = "80ac17bd-33e8-4ffa-8d56-1d5367755723"
@@ -57,7 +58,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				KubernetesVersion: "1.16.9",
+				KubernetesVersion: k8sVersion,
 				DiskType:          "pd-standard",
 				VolumeSizeGb:      30,
 				MachineType:       "n1-standard-4",
@@ -210,7 +211,9 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{}, kymaVersion)
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{
+		KubernetesVersion: k8sVersion,
+	}, kymaVersion)
 	assert.NoError(t, err)
 
 	creator, err := ibf.ForPlan(broker.GCPPlanID, "")

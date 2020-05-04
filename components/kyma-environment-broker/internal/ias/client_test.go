@@ -49,6 +49,13 @@ func TestClient_CreateServiceProvider(t *testing.T) {
 
 	// then
 	assert.NoError(t, err)
+
+	response, err := server.Client().Get(fmt.Sprintf("%s/getSP", server.URL))
+	assert.NoError(t, err)
+
+	body, err := ioutil.ReadAll(response.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, "someName", string(body))
 }
 
 func TestClient_SetOIDCConfiguration(t *testing.T) {
@@ -250,8 +257,24 @@ func TestClient_DeleteServiceProvider(t *testing.T) {
 
 	client := NewClient(server.Client(), ClientConfig{URL: server.URL, ID: "admin", Secret: "admin123"})
 
+	err := client.CreateServiceProvider(serviceProviderID, companyID)
+	assert.NoError(t, err)
+
 	// when
-	err := client.DeleteServiceProvider(serviceProviderID)
+	err = client.DeleteServiceProvider(serviceProviderID)
+
+	// then
+	assert.NoError(t, err)
+
+	response, err := server.Client().Get(fmt.Sprintf("%s/getSP", server.URL))
+	assert.NoError(t, err)
+
+	body, err := ioutil.ReadAll(response.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, "", string(body))
+
+	// when
+	err = client.DeleteServiceProvider(serviceProviderID)
 
 	// then
 	assert.NoError(t, err)
@@ -282,7 +305,8 @@ var companies = `{
 type server struct {
 	t *testing.T
 
-	configuration []byte
+	serviceProvider []byte
+	configuration   []byte
 }
 
 func fixHTTPServer(t *testing.T) *httptest.Server {
@@ -296,6 +320,7 @@ func fixHTTPServer(t *testing.T) *httptest.Server {
 	r.HandleFunc("/service/sps/{spID}", s.authorized(s.configureSP)).Methods(http.MethodPut)
 	r.HandleFunc("/service/sps/{spID}/rba", s.authorized(s.configureSP)).Methods(http.MethodPut)
 
+	r.HandleFunc("/getSP", s.getServiceProvider).Methods(http.MethodGet)
 	r.HandleFunc("/get", s.getConfiguration).Methods(http.MethodGet)
 
 	return httptest.NewServer(r)
@@ -339,6 +364,8 @@ func (s *server) createSP(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("company_id") != companyID {
 		w.WriteHeader(http.StatusForbidden)
 	}
+
+	s.serviceProvider = []byte(r.FormValue("sp_name"))
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -406,6 +433,22 @@ func (s *server) deleteSP(w http.ResponseWriter, r *http.Request) {
 	}
 	if keys[0] != serviceProviderID {
 		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if string(s.serviceProvider) != serviceProviderID {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	s.serviceProvider = []byte{}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *server) getServiceProvider(w http.ResponseWriter, r *http.Request) {
+	_, err := w.Write(s.serviceProvider)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		s.t.Errorf("test server cannot write response body: %s", err)
 		return
 	}
 	w.WriteHeader(http.StatusOK)

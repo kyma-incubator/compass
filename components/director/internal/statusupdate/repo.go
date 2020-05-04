@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 
@@ -20,10 +19,6 @@ const (
 
 type repository struct {
 	timestampGen timestamp.Generator
-}
-
-func (r *repository) SetTimestampGen(timestampGen func() time.Time) {
-	r.timestampGen = timestampGen
 }
 
 func NewRepository() *repository {

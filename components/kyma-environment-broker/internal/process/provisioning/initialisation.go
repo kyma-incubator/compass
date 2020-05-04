@@ -182,7 +182,7 @@ func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log
 
 func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	// action #1
-	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL)
+	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
 	if err != nil || repeat != 0 {
 		return operation, repeat, nil
 	}

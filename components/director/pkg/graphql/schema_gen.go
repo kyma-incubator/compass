@@ -207,6 +207,7 @@ type ComplexityRoot struct {
 
 	FetchRequestStatus struct {
 		Condition func(childComplexity int) int
+		Message   func(childComplexity int) int
 		Timestamp func(childComplexity int) int
 	}
 
@@ -1221,6 +1222,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FetchRequestStatus.Condition(childComplexity), true
+
+	case "FetchRequestStatus.message":
+		if e.complexity.FetchRequestStatus.Message == nil {
+			break
+		}
+
+		return e.complexity.FetchRequestStatus.Message(childComplexity), true
 
 	case "FetchRequestStatus.timestamp":
 		if e.complexity.FetchRequestStatus.Timestamp == nil {
@@ -3155,10 +3163,17 @@ input FetchRequestInput {
 	**Validation:** valid URL, max=256
 	"""
 	url: String!
+	"""
+	Currently unsupported, providing it will result in a failure
+	"""
 	auth: AuthInput
+	"""
+	Currently unsupported, providing it will result in a failure
+	"""
 	mode: FetchMode = SINGLE
 	"""
 	**Validation:** max=256
+	Currently unsupported, providing it will result in a failure
 	"""
 	filter: String
 }
@@ -3514,6 +3529,7 @@ type FetchRequest {
 
 type FetchRequestStatus {
 	condition: FetchRequestStatusCondition!
+	message: String
 	timestamp: Timestamp!
 }
 
@@ -8964,6 +8980,40 @@ func (ec *executionContext) _FetchRequestStatus_condition(ctx context.Context, f
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNFetchRequestStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestStatusCondition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FetchRequestStatus_message(ctx context.Context, field graphql.CollectedField, obj *FetchRequestStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "FetchRequestStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FetchRequestStatus_timestamp(ctx context.Context, field graphql.CollectedField, obj *FetchRequestStatus) (ret graphql.Marshaler) {
@@ -20051,6 +20101,8 @@ func (ec *executionContext) _FetchRequestStatus(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "message":
+			out.Values[i] = ec._FetchRequestStatus_message(ctx, field, obj)
 		case "timestamp":
 			out.Values[i] = ec._FetchRequestStatus_timestamp(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
