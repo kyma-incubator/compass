@@ -99,7 +99,7 @@ docker-create-opts:
 MOUNT_TARGETS = build resolve ensure dep-status check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen
 $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
 
-# Builds new docker image inside Minikube's Docker Registry
+# Builds new Docker image into Minikube's Docker Registry
 build-to-minikube: pull-licenses
 	@eval $$(minikube docker-env) && docker build -t $(IMG_NAME) .
 
