@@ -387,6 +387,99 @@ func TestApplicationsForRuntime(t *testing.T) {
 	assert.ElementsMatch(t, tenantApplications, applicationPage.Data)
 }
 
+func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
+	//GIVEN
+	ctx := context.Background()
+	tenantID := testTenants.GetIDByName(t, "TestApplicationsForRuntimeWithHiddenApps")
+	expectedApplications := []*graphql.Application{}
+	defaultValue := "DEFAULT"
+	scenarios := []string{defaultValue, "test-scenario"}
+
+	applicationHideSelectorKey := "applicationHideSelectorKey"
+	applicationHideSelectorValue := "applicationHideSelectorValue"
+
+	jsonSchema := map[string]interface{}{
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+		"items": map[string]interface{}{
+			"type": "string",
+			"enum": scenarios,
+		},
+	}
+	var schema interface{} = jsonSchema
+
+	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
+
+	applications := []struct {
+		ApplicationName string
+		Scenarios       []string
+		Hidden          bool
+	}{
+		{
+			ApplicationName: "first",
+			Scenarios:       []string{defaultValue},
+			Hidden:          false,
+		},
+		{
+			ApplicationName: "second",
+			Scenarios:       []string{"test-scenario"},
+			Hidden:          false,
+		},
+		{
+			ApplicationName: "third",
+			Scenarios:       []string{"test-scenario"},
+			Hidden:          true,
+		},
+	}
+
+	for _, testApp := range applications {
+		applicationInput := fixSampleApplicationRegisterInput(testApp.ApplicationName)
+		applicationInput.Labels = &graphql.Labels{scenariosLabel: testApp.Scenarios}
+		if testApp.Hidden {
+			(*applicationInput.Labels)[applicationHideSelectorKey] = applicationHideSelectorValue
+		}
+		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
+		require.NoError(t, err)
+
+		createApplicationReq := fixRegisterApplicationRequest(appInputGQL)
+		application := graphql.Application{}
+
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, createApplicationReq, &application)
+
+		require.NoError(t, err)
+		require.NotEmpty(t, application.ID)
+
+		defer unregisterApplicationInTenant(t, application.ID, tenantID)
+		if !testApp.Hidden {
+			expectedApplications = append(expectedApplications, &application)
+		}
+	}
+
+	//create runtime
+	runtimeInput := fixRuntimeInput("runtime")
+	(*runtimeInput.Labels)[scenariosLabel] = scenarios
+	runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
+	require.NoError(t, err)
+	registerRuntimeRequest := fixRegisterRuntimeRequest(runtimeInputGQL)
+	runtime := graphql.Runtime{}
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerRuntimeRequest, &runtime)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
+	defer unregisterRuntimeWithinTenant(t, runtime.ID, tenantID)
+
+	//WHEN
+	request := fixApplicationForRuntimeRequest(runtime.ID)
+	applicationPage := graphql.ApplicationPage{}
+
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+
+	//THEN
+	require.NoError(t, err)
+	require.Len(t, applicationPage.Data, len(expectedApplications))
+	assert.ElementsMatch(t, expectedApplications, applicationPage.Data)
+}
+
 func TestQueryRuntimesWithPagination(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()

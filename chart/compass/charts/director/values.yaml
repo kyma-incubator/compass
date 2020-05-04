@@ -25,3 +25,5 @@ staticGroupNames:
   - "runtimeNamespaceAdmin"
 
 applicationHideSelectors:
+  applicationHideSelectorKey:
+    - "applicationHideSelectorValue"
