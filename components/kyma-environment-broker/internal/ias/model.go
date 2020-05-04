@@ -80,8 +80,13 @@ type SubjectNameIdentifier struct {
 type SecretConfiguration struct {
 	Organization        string              `json:"organization"`
 	ID                  string              `json:"id"`
-	DefaultAuthIDp      string              `json:"default_auth_idp"`
 	RestAPIClientSecret RestAPIClientSecret `json:"rest_api_client_secret"`
+}
+
+type DefaultAuthIDPConfig struct {
+	Organization   string `json:"organization"`
+	ID             string `json:"id"`
+	DefaultAuthIDP string `json:"default_auth_idp"`
 }
 
 type RestAPIClientSecret struct {

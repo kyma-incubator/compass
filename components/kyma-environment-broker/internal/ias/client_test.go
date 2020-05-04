@@ -225,6 +225,35 @@ func TestClient_SetAuthenticationAndAccess(t *testing.T) {
 	assert.Equal(t, "cloud", conf.ServiceProviderAccess.RBAConfig.RBARules[0].GroupType)
 }
 
+func TestClient_SetDefaultAuthenticatingIDP(t *testing.T) {
+	// given
+	server := fixHTTPServer(t)
+	defer server.Close()
+
+	client := NewClient(server.Client(), ClientConfig{URL: server.URL, ID: "admin", Secret: "admin123"})
+
+	// when
+	authIDP := DefaultAuthIDPConfig{
+		Organization:   companyID,
+		ID:             serviceProviderID,
+		DefaultAuthIDP: "http://example.com",
+	}
+	err := client.SetDefaultAuthenticatingIDP(authIDP)
+
+	// then
+	assert.NoError(t, err)
+	response, err := server.Client().Get(fmt.Sprintf("%s/get", server.URL))
+	assert.NoError(t, err)
+
+	var conf DefaultAuthIDPConfig
+	err = json.NewDecoder(response.Body).Decode(&conf)
+	assert.NoError(t, err)
+
+	assert.Equal(t, companyID, conf.Organization)
+	assert.Equal(t, serviceProviderID, conf.ID)
+	assert.Equal(t, "http://example.com", conf.DefaultAuthIDP)
+}
+
 func TestClient_GenerateServiceProviderSecret(t *testing.T) {
 	// given
 	server := fixHTTPServer(t)
@@ -234,9 +263,8 @@ func TestClient_GenerateServiceProviderSecret(t *testing.T) {
 
 	// when
 	sc := SecretConfiguration{
-		Organization:   companyID,
-		ID:             serviceProviderID,
-		DefaultAuthIDp: "http://example.com",
+		Organization: companyID,
+		ID:           serviceProviderID,
 		RestAPIClientSecret: RestAPIClientSecret{
 			Description: "test",
 			Scopes:      []string{"OAuth"},
@@ -315,7 +343,7 @@ func fixHTTPServer(t *testing.T) *httptest.Server {
 	r := mux.NewRouter()
 	r.HandleFunc("/service/company/global", s.authorized(s.companies)).Methods(http.MethodGet)
 	r.HandleFunc("/service/sps", s.authorized(s.createSP)).Methods(http.MethodPost)
-	r.HandleFunc("/service/sps", s.authorized(s.createSPSecret)).Methods(http.MethodPut)
+	r.HandleFunc("/service/sps", s.authorized(s.configureSPBody)).Methods(http.MethodPut)
 	r.HandleFunc("/service/sps/delete", s.authorized(s.deleteSP)).Methods(http.MethodPut)
 	r.HandleFunc("/service/sps/{spID}", s.authorized(s.configureSP)).Methods(http.MethodPut)
 	r.HandleFunc("/service/sps/{spID}/rba", s.authorized(s.configureSP)).Methods(http.MethodPut)
@@ -391,37 +419,53 @@ func (s *server) configureSP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *server) createSPSecret(w http.ResponseWriter, r *http.Request) {
+func (s *server) configureSPBody(w http.ResponseWriter, r *http.Request) {
 	var sc SecretConfiguration
-	err := json.NewDecoder(r.Body).Decode(&sc)
+	var authIDP DefaultAuthIDPConfig
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		s.t.Errorf("test server cannot decode request body: %s", err)
+		s.t.Errorf("test server cannot read request body: %s", err)
 		return
 	}
 
-	if sc.ID != serviceProviderID || sc.Organization != companyID {
+	err = json.Unmarshal(body, &authIDP)
+	err2 := json.Unmarshal(body, &sc)
+	if err != nil || err2 != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		s.t.Errorf("test server cannot decode request body: (%s;%s)", err, err2)
+		return
+	}
+
+	if authIDP.ID != serviceProviderID || authIDP.Organization != companyID {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	secret := ServiceProviderSecret{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-	}
-	rawSecret, err := json.Marshal(secret)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		s.t.Errorf("test server cannot marshal secret struct: %s", err)
-		return
-	}
+	if authIDP.DefaultAuthIDP != "" {
+		s.configuration = body
+		w.WriteHeader(http.StatusOK)
+	} else if sc.RestAPIClientSecret.Description != "" {
 
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(rawSecret)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		s.t.Errorf("test server cannot write response body: %s", err)
-		return
+		secret := ServiceProviderSecret{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+		}
+		rawSecret, err := json.Marshal(secret)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			s.t.Errorf("test server cannot marshal secret struct: %s", err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, err = w.Write(rawSecret)
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			s.t.Errorf("test server cannot write response body: %s", err)
+			return
+		}
 	}
 }
 

@@ -74,6 +74,10 @@ func (c *Client) SetAuthenticationAndAccess(spID string, payload AuthenticationA
 	return c.call(pathAccess, payload)
 }
 
+func (c *Client) SetDefaultAuthenticatingIDP(payload DefaultAuthIDPConfig) error {
+	return c.call(PathServiceProviders, payload)
+}
+
 func (c *Client) GetCompany() (_ *Company, err error) {
 	company := &Company{}
 	request := &Request{Method: http.MethodGet, Path: PathCompanyGlobal}

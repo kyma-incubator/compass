@@ -116,6 +116,9 @@ func TestServiceProviderBundle_ConfigureServiceProvider(t *testing.T) {
 
 	assert.Equal(t, "mail", provider.NameIDAttribute)
 
+	assert.Equal(t, FakeIdentityProviderID, provider.AuthenticatingIdp.ID)
+	assert.Equal(t, FakeIdentityProviderName, provider.AuthenticatingIdp.Name)
+
 	assert.Len(t, provider.RBAConfig.RBARules, 2)
 	assert.ElementsMatch(t, []RBARules{
 		{Action: "Allow", Group: "skr-monitoring-admin", GroupType: "Cloud"},
@@ -145,9 +148,6 @@ func TestServiceProviderBundle_GenerateSecret(t *testing.T) {
 	assert.Equal(t, FakeClientID, provider.Secret[0].SecretID)
 	assert.Equal(t, "SAP Kyma Runtime Secret", provider.Secret[0].Description)
 	assert.ElementsMatch(t, []string{"ManageApp", "ManageUsers", "OAuth"}, provider.Secret[0].Scopes)
-
-	assert.Equal(t, FakeIdentityProviderID, provider.AuthenticatingIdp.ID)
-	assert.Equal(t, FakeIdentityProviderName, provider.AuthenticatingIdp.Name)
 }
 
 func TestServiceProviderBundle_DeleteServiceProvider(t *testing.T) {

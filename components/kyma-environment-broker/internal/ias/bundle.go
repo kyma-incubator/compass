@@ -32,6 +32,7 @@ type IASCLient interface {
 	SetAssertionAttribute(string, PostAssertionAttributes) error
 	SetSubjectNameIdentifier(string, SubjectNameIdentifier) error
 	SetAuthenticationAndAccess(string, AuthenticationAndAccess) error
+	SetDefaultAuthenticatingIDP(DefaultAuthIDPConfig) error
 }
 
 type ServiceProviderBundle struct {
@@ -207,6 +208,17 @@ func (b *ServiceProviderBundle) ConfigureServiceProvider() error {
 		return errors.Wrap(err, "while configuring SubjectNameIdentifier")
 	}
 
+	// set "DefaultAuthenticatingIDP"
+	defaultAuthIDP := DefaultAuthIDPConfig{
+		Organization:   b.organization,
+		ID:             b.serviceProvider.ID,
+		DefaultAuthIDP: b.client.AuthenticationURL(b.providerID),
+	}
+	err = b.client.SetDefaultAuthenticatingIDP(defaultAuthIDP)
+	if err != nil {
+		return errors.Wrap(err, "while configuring DefaultAuthenticatingIDP")
+	}
+
 	// set "AuthenticationAndAccess"
 	if len(b.serviceProviderParams.allowedGroups) > 0 {
 		authenticationAndAccess := AuthenticationAndAccess{
@@ -236,9 +248,8 @@ func (b *ServiceProviderBundle) ConfigureServiceProvider() error {
 // generateSecret generates new ID and Secret for ServiceProvider
 func (b *ServiceProviderBundle) GenerateSecret() (*ServiceProviderSecret, error) {
 	secretCfg := SecretConfiguration{
-		Organization:   b.organization,
-		ID:             b.serviceProvider.ID,
-		DefaultAuthIDp: b.client.AuthenticationURL(b.providerID),
+		Organization: b.organization,
+		ID:           b.serviceProvider.ID,
 		RestAPIClientSecret: RestAPIClientSecret{
 			Description: "SAP Kyma Runtime Secret",
 			Scopes:      []string{"ManageApp", "ManageUsers", "OAuth"},

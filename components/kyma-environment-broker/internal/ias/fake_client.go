@@ -69,6 +69,18 @@ func (f *FakeClient) CreateServiceProvider(name string, _ string) error {
 	return nil
 }
 
+func (f *FakeClient) SetDefaultAuthenticatingIDP(config DefaultAuthIDPConfig) error {
+	serviceProvider, err := f.GetServiceProvider(config.ID)
+	if err != nil {
+		return err
+	}
+
+	serviceProvider.AuthenticatingIdp.ID = FakeIdentityProviderID
+	serviceProvider.AuthenticatingIdp.Name = FakeIdentityProviderName
+
+	return nil
+}
+
 func (f FakeClient) GenerateServiceProviderSecret(ss SecretConfiguration) (*ServiceProviderSecret, error) {
 	serviceProvider, err := f.GetServiceProvider(ss.ID)
 	if err != nil {
@@ -80,8 +92,6 @@ func (f FakeClient) GenerateServiceProviderSecret(ss SecretConfiguration) (*Serv
 		Description: ss.RestAPIClientSecret.Description,
 		Scopes:      ss.RestAPIClientSecret.Scopes,
 	})
-	serviceProvider.AuthenticatingIdp.ID = FakeIdentityProviderID
-	serviceProvider.AuthenticatingIdp.Name = FakeIdentityProviderName
 
 	return &ServiceProviderSecret{
 		ClientID:     FakeClientID,
