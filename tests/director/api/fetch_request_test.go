@@ -13,6 +13,36 @@ import (
 
 const OpenAPISpec = "https://raw.githubusercontent.com/kyma-incubator/github-slack-connectors/beb8e5b6d8f3a644b8380e667a9376bc353e54dd/github-connector/internal/registration/configs/githubopenAPI.json"
 
+func Test_FetchRequestAddApplicationWithAPI(t *testing.T) {
+	ctx := context.Background()
+
+	appInput := graphql.ApplicationRegisterInput{
+		Name: "test",
+		Packages: []*graphql.PackageCreateInput{{
+			Name: "test",
+			APIDefinitions: []*graphql.APIDefinitionInput{{
+				Name:      "test",
+				TargetURL: "https://target.url",
+				Spec: &graphql.APISpecInput{
+					Format: graphql.SpecFormatJSON,
+					Type:   graphql.APISpecTypeOpenAPI,
+					FetchRequest: &graphql.FetchRequestInput{
+						URL: OpenAPISpec,
+					},
+				},
+			}},
+		}},
+	}
+
+	app := registerApplicationFromInput(t, ctx, appInput)
+	defer unregisterApplication(t, app.ID)
+
+	api := app.Packages.Data[0].APIDefinitions.Data[0]
+
+	assert.NotNil(t, api.Spec.Data)
+	assert.Equal(t, graphql.FetchRequestStatusConditionSucceeded, api.Spec.FetchRequest.Status.Condition)
+}
+
 func Test_FetchRequestAddAPIToPackage(t *testing.T) {
 	ctx := context.Background()
 

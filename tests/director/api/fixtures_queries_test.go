@@ -36,6 +36,10 @@ func registerApplicationFromInputWithinTenant(t *testing.T, ctx context.Context,
 	return app
 }
 
+func registerApplicationFromInput(t *testing.T, ctx context.Context, in graphql.ApplicationRegisterInput) graphql.ApplicationExt {
+	return registerApplicationFromInputWithinTenant(t, ctx, in, testTenants.GetDefaultTenantID())
+}
+
 func deleteApplicationLabel(t *testing.T, ctx context.Context, applicationID, labelKey string) {
 	deleteRequest := fixDeleteApplicationLabelRequest(applicationID, labelKey)
 
