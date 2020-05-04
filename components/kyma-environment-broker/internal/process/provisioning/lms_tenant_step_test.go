@@ -2,12 +2,13 @@ package provisioning
 
 import (
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestProvideLmsTenantStep_TenantProviderWithRetry(t *testing.T) {
