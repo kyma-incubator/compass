@@ -56,111 +56,87 @@ func TestCertStep_Run(t *testing.T) {
 }
 
 func TestCertStep_TenantNotReady(t *testing.T) {
-	// given
-	cli, tID := newFakeClientWithTenant(time.Hour)
-	repo := storage.NewMemoryStorage().Operations()
-	svc := NewLmsCertificatesStep(cli, repo, false)
-	operation := internal.ProvisioningOperation{
-		Lms: internal.LMS{
-			TenantID:    tID,
-			RequestedAt: time.Now(),
-		},
-		ProvisioningParameters: "{}",
-	}
-	repo.InsertProvisioningOperation(operation)
+	runForOptionalAndMandatory(t, func(t *testing.T, isMandatory bool, a asserter) {
+		// given
+		cli, tID := newFakeClientWithTenant(time.Hour)
+		repo := storage.NewMemoryStorage().Operations()
+		svc := NewLmsCertificatesStep(cli, repo, isMandatory)
+		operation := internal.ProvisioningOperation{
+			Lms: internal.LMS{
+				TenantID:    tID,
+				RequestedAt: time.Now(),
+			},
+			ProvisioningParameters: "{}",
+		}
+		repo.InsertProvisioningOperation(operation)
 
-	// when
-	op, duration, err := svc.Run(operation, fixLogger())
+		// when
+		op, duration, err := svc.Run(operation, fixLogger())
 
-	// then
-	require.NoError(t, err)
-	assert.NotZero(t, duration.Seconds())
-	assert.False(t, op.Lms.Failed)
+		// then
+		require.NoError(t, err)
+		assert.NotZero(t, duration.Seconds())
+		assert.False(t, op.Lms.Failed)
 
-	// do not expect call to LMS
-	assert.False(t, cli.IsCertRequestedForTenant(tID))
+		// do not expect call to LMS
+		assert.False(t, cli.IsCertRequestedForTenant(tID))
+	})
 }
 
 func TestCertStep_TenantNotReadyTimeout(t *testing.T) {
-	// given
-	cli, tID := newFakeClientWithTenant(time.Hour)
-	repo := storage.NewMemoryStorage().Operations()
-	svc := NewLmsCertificatesStep(cli, repo, false)
-	operation := internal.ProvisioningOperation{
-		Lms: internal.LMS{
-			TenantID:    tID,
-			RequestedAt: time.Now().Add(-10 * time.Hour), // very old
-		},
-		ProvisioningParameters: `{"name": "awesome"}`,
-	}
-	repo.InsertProvisioningOperation(operation)
+	runForOptionalAndMandatory(t, func(t *testing.T, isMandatory bool, a asserter) {
+		// given
+		cli, tID := newFakeClientWithTenant(time.Hour)
+		repo := storage.NewMemoryStorage().Operations()
+		svc := NewLmsCertificatesStep(cli, repo, isMandatory)
+		operation := internal.ProvisioningOperation{
+			Lms: internal.LMS{
+				TenantID:    tID,
+				RequestedAt: time.Now().Add(-10 * time.Hour), // very old
+			},
+			ProvisioningParameters: `{"name": "awesome"}`,
+		}
+		repo.InsertProvisioningOperation(operation)
 
-	// when
-	op, duration, err := svc.Run(operation, fixLogger())
+		// when
+		op, duration, err := svc.Run(operation, fixLogger())
 
-	// then
-	require.NoError(t, err)
-	assert.Zero(t, duration.Seconds())
-	assert.True(t, op.Lms.Failed)
+		// then
+		a.AssertError(t, err)
+		assert.Zero(t, duration.Seconds())
+		assert.True(t, op.Lms.Failed)
 
-	// do not expect call to LMS
-	assert.False(t, cli.IsCertRequestedForTenant(tID))
+		// do not expect call to LMS
+		assert.False(t, cli.IsCertRequestedForTenant(tID))
+	})
 }
 
 func TestCertStep_TenantNotReadyTimeout_Mandatory(t *testing.T) {
+	runForOptionalAndMandatory(t, func(t *testing.T, isMandatory bool, a asserter) {
+		// given
+		cli, tID := newFakeClientWithTenant(time.Hour)
+		repo := storage.NewMemoryStorage().Operations()
+		svc := NewLmsCertificatesStep(cli, repo, isMandatory)
+		operation := internal.ProvisioningOperation{
+			Lms: internal.LMS{
+				TenantID:    tID,
+				RequestedAt: time.Now().Add(-10 * time.Hour), // very old
+			},
+			ProvisioningParameters: `{"name": "awesome"}`,
+		}
+		repo.InsertProvisioningOperation(operation)
 
-	for _, tc := range []struct {
-		name string
-		isMandatory bool
-	} {
-{name: "step mandatory", isMandatory: true},
-{name: "step optional", isMandatory: false},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			// given
-			cli, tID := newFakeClientWithTenant(time.Hour)
-			repo := storage.NewMemoryStorage().Operations()
-			svc := NewLmsCertificatesStep(cli, repo, tc.isMandatory)
-			operation := internal.ProvisioningOperation{
-				Lms: internal.LMS{
-					TenantID:    tID,
-					RequestedAt: time.Now().Add(-10 * time.Hour), // very old
-				},
-				ProvisioningParameters: `{"name": "awesome"}`,
-			}
-			repo.InsertProvisioningOperation(operation)
+		// when
+		op, duration, err := svc.Run(operation, fixLogger())
 
-			// when
-			op, duration, err := svc.Run(operation, fixLogger())
+		// then
+		a.AssertError(t, err)
+		assert.Zero(t, duration.Seconds())
+		assert.True(t, op.Lms.Failed)
 
-			// then
-			if tc.isMandatory {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-			assert.Zero(t, duration.Seconds())
-			assert.True(t, op.Lms.Failed)
-
-			// do not expect call to LMS
-			assert.False(t, cli.IsCertRequestedForTenant(tID))
-		})
-
-	}
-
-
-}
-
-func assertLmsMarkedFailed(t *testing.T, operation internal.ProvisioningOperation, duration time.Duration, err error) {
-	assert.NoError(t, err)
-	assert.Zero(t, duration.Seconds())
-	assert.True(t, operation.Lms.Failed)
-}
-
-func assertOperationFailed(t *testing.T, operation internal.ProvisioningOperation, duration time.Duration, err error) {
-	assert.Error(t, err)
-	assert.Zero(t, duration.Seconds())
-	assert.True(t, operation.Lms.Failed)
+		// do not expect call to LMS
+		assert.False(t, cli.IsCertRequestedForTenant(tID))
+	})
 }
 
 func TestLmsStepsHappyPath(t *testing.T) {
@@ -276,4 +252,44 @@ func (c *simpleInputCreator) AssertLabel(t *testing.T, key, expectedValue string
 	value, found := c.labels[key]
 	require.True(t, found)
 	assert.Equal(t, expectedValue, value)
+}
+
+type asserter interface {
+	AssertError(t *testing.T, err error)
+}
+
+type asserterForOptional struct {
+}
+
+func (asserterForOptional) AssertError(t *testing.T, err error) {
+	assert.NoError(t, err)
+}
+
+type asserterForMandatory struct {
+}
+
+func (asserterForMandatory) AssertError(t *testing.T, err error) {
+	assert.Error(t, err)
+}
+
+func errorAsserter(isMandatory bool) asserter {
+	if isMandatory {
+		return asserterForMandatory{}
+	} else {
+		return asserterForOptional{}
+	}
+}
+
+func runForOptionalAndMandatory(t *testing.T, fn func(t *testing.T, isMandatory bool, a asserter)) {
+	for _, tc := range []struct {
+		name        string
+		isMandatory bool
+	}{
+		{name: "step mandatory", isMandatory: true},
+		{name: "step optional", isMandatory: false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fn(t, tc.isMandatory, errorAsserter(tc.isMandatory))
+		})
+	}
 }

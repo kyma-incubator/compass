@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
@@ -45,8 +46,8 @@ type lmsCertStep struct {
 func NewLmsCertificatesStep(certProvider LmsClient, os storage.Operations, isMandatory bool) *lmsCertStep {
 	return &lmsCertStep{
 		LmsStep: LmsStep{
-			repo:        os,
-			isMandatory: isMandatory,
+			operationManager: process.NewProvisionOperationManager(os),
+			isMandatory:      isMandatory,
 		},
 		provider:            certProvider,
 		normalizationRegexp: regexp.MustCompile("[^a-zA-Z0-9]+"),
@@ -85,7 +86,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 		logger.Errorf("Unable to get LMS Tenant status: %s", err.Error())
 		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
 			logger.Errorf("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
-			return s.failLmsAndUpdate(operation)
+			return s.failLmsAndUpdate(operation, "Getting LMS Tenant status failed")
 		}
 		return operation, tenantReadyRetryInterval, nil
 	}
@@ -93,7 +94,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 		logger.Infof("LMS tenant not ready: elasticDNS=%v, kibanaDNS=%v", status.ElasticsearchDNSResolves, status.KibanaDNSResolves)
 		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
 			logger.Error("Setting LMS operation failed - tenant provisioning timed out")
-			return s.failLmsAndUpdate(operation)
+			return s.failLmsAndUpdate(operation, "LMS Tenant provisioning timeout")
 		}
 		return operation, tenantReadyRetryInterval, nil
 	}
@@ -103,7 +104,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 		logger.Errorf("Unable to get LMS Tenant info: %s", err.Error())
 		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
 			logger.Errorf("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
-			return s.failLmsAndUpdate(operation)
+			return s.failLmsAndUpdate(operation, "LMS Tenant provisioning timeout")
 		}
 		return operation, tenantReadyRetryInterval, nil
 	}
@@ -141,7 +142,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 	})
 	if err != nil {
 		logger.Errorf("Setting LMS operation failed: %s", err.Error())
-		return s.failLmsAndUpdate(operation)
+		return s.failLmsAndUpdate(operation, "Getting LMS Signed Certificate timeout")
 	}
 
 	// get CA cert
@@ -160,7 +161,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 	})
 	if err != nil {
 		logger.Errorf("Setting LMS operation failed: %s", err.Error())
-		return s.failLmsAndUpdate(operation)
+		return s.failLmsAndUpdate(operation, "getting LMS CA certificate timeout")
 	}
 
 	operation.InputCreator.SetLabel(kibanaURLLabelKey, fmt.Sprintf("https://kibana.%s", tenantInfo.DNS))
@@ -196,19 +197,15 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 }
 
 type LmsStep struct {
-	repo        storage.Operations
-	isMandatory bool
+	operationManager *process.ProvisionOperationManager
+	isMandatory      bool
 }
 
-func (s *LmsStep) failLmsAndUpdate(operation internal.ProvisioningOperation) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *LmsStep) failLmsAndUpdate(operation internal.ProvisioningOperation, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	operation.Lms.Failed = true
 	if s.isMandatory {
-		operation.State
+		return s.operationManager.OperationFailed(operation, msg)
 	}
-	modifiedOp, err := s.repo.UpdateProvisioningOperation(operation)
-	if err != nil {
-		// update has failed - retry after 0.5 sec
-		return operation, 500 * time.Millisecond, nil
-	}
-	return *modifiedOp, 0, nil
+	modifiedOp, retry := s.operationManager.UpdateOperation(operation)
+	return modifiedOp, retry, nil
 }

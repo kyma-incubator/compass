@@ -28,11 +28,11 @@ type provideLmsTenantStep struct {
 func NewProvideLmsTenantStep(tp LmsTenantProvider, repo storage.Operations, regionOverride string, isMandatory bool) *provideLmsTenantStep {
 	return &provideLmsTenantStep{
 		LmsStep: LmsStep{
-			repo:        repo,
-			isMandatory: isMandatory,
+			operationManager: process.NewProvisionOperationManager(repo),
+			isMandatory:      isMandatory,
 		},
-		tenantProvider:   tp,
 		operationManager: process.NewProvisionOperationManager(repo),
+		tenantProvider:   tp,
 		regionOverride:   regionOverride,
 	}
 }
@@ -61,8 +61,7 @@ func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, log
 		if since < 3*time.Minute {
 			return operation, 30 * time.Second, nil
 		}
-
-		return s.failLmsAndUpdate(operation)
+		return s.failLmsAndUpdate(operation, "getting LMS tenant failed")
 	}
 
 	operation.Lms.TenantID = lmsTenantID

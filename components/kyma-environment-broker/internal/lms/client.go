@@ -59,6 +59,7 @@ type Config struct {
 	Token      string
 	SamlTenant string
 	Region     string `envconfig:"optional"`
+	Mandatory  bool   `envconfig:"default=true"`
 
 	Disabled bool
 }
