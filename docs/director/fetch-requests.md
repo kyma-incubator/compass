@@ -1,10 +1,10 @@
 # Fetch Requests
 
-Packages API supports providing documentation for API Definitions, Event Definitions. User can provide the documentation
-during the call to Director or use a Fetch Request. If a Fetch Request is specified Director will call the specified URL
-and download the specification.
+API Packages support providing documentation for API and Event Definitions. You can provide the documentation
+during the call to the Director or use a Fetch Request. If a Fetch Request is specified, the Director calls the specified URL
+and downloads the specification.
 
-User can specify these three fields. 
+You can specify the following fields:
 
 | Name   	| Meaning                                                             	|
 |--------	|---------------------------------------------------------------------	|
@@ -14,7 +14,7 @@ User can specify these three fields.
 
     >**NOTE:** Currently all of these fields are not supported
 
-Information if the call has been successful, can be found in the `Status` field. It contains the condition of the 
+You can find information on whether the call is successful in the `Status` field. It contains the condition of the 
 Fetch Request, timestamp, and a message stating if something went wrong.
 
-In case the specification has to be fetched again, user can use one of the `refetchSpec` mutations to update the specification.
+In case the specification must be fetched again, you can use one of the `refetchSpec` mutations to update the specification.
