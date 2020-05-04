@@ -8,7 +8,7 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 type ControlPlaneConfig struct {
 	metav1.TypeMeta
 
-	// Zone is the GCP zone.
+	// Zones are the GCP zones.
 	Zones []string `json:"zones"`
 
 	// CloudControllerManager contains configuration settings for the cloud-controller-manager.

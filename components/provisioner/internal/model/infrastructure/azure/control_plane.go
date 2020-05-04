@@ -8,8 +8,8 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 type ControlPlaneConfig struct {
 	metav1.TypeMeta
 
-	// Zone is the Azure zone.
-	Zones []string `json:"zones"`
+	// Zones are the Azure zones.
+	Zones []string `json:"zones,omitempty"`
 
 	// CloudControllerManager contains configuration settings for the cloud-controller-manager.
 	// +optional
