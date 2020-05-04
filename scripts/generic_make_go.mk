@@ -36,8 +36,6 @@ DIRS_TO_IGNORE = go list ./... | grep "$(VERIFY_IGNORE)"
 DEPLOYMENT_NAME="compass-"$(COMPONENT_NAME)
 # NAMESPACE defines the namespace into which the component is deployed
 NAMESPACE="compass-system"
-# TEMP_FILE_PATH is used to store the old deployment resource state during redeployment of said deployment
-TEMP_FILE_PATH=$(COMPONENT_DIR)/$(COMPONENT_NAME)-tmp.yml
 
 # Base docker configuration
 DOCKER_CREATE_OPTS := -v $(LOCAL_DIR):$(WORKSPACE_LOCAL_DIR):delegated --rm -w $(WORKSPACE_COMPONENT_DIR) $(BUILDPACK)
@@ -102,7 +100,7 @@ MOUNT_TARGETS = build resolve ensure dep-status check-imports imports check-fmt 
 $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
 
 # Builds new docker image inside Minikube's Docker Registry
-build-image-minikube: pull-licenses
+build-to-minikube: pull-licenses
 	@eval $$(minikube docker-env) && docker build -t $(IMG_NAME) .
 
 build-local:
@@ -183,9 +181,6 @@ exec:
     		$(DOCKER_CREATE_OPTS) bash
 
 # Redeploys component in Minikube cluster by replacing old deployment with the newly built one
-redeploy: build-image-minikube
-	kubectl patch deployment $(DEPLOYMENT_NAME) -p '{"spec": {"template": {"spec": {"containers": [{"name": "'$(COMPONENT_NAME)'", "image": "'$(DEPLOYMENT_NAME)'"}]}}}}' -n $(NAMESPACE)
-	kubectl get deployment $(DEPLOYMENT_NAME) -o yaml -n $(NAMESPACE) >> $(TEMP_FILE_PATH)
-	kubectl delete deployment $(DEPLOYMENT_NAME) -n $(NAMESPACE)
-	kubectl apply -f $(TEMP_FILE_PATH)
-	rm $(TEMP_FILE_PATH)
+deploy-on-minikube: build-to-minikube
+	kubectl set image -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME) $(COMPONENT_NAME)=$(DEPLOYMENT_NAME):latest
+	kubectl rollout restart -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME)
