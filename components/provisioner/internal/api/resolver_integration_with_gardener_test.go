@@ -203,7 +203,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
 			uuidGenerator := uuid.NewUUIDGenerator()
-			provisioner := gardener.NewProvisioner(namespace, shootInterface, auditLogsConfigPath, auditLogCMName)
+			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogsConfigPath, auditLogCMName)
 
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 
