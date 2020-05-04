@@ -48,6 +48,9 @@ global:
     external_services_mock:
       dir:
       version: "PR-1217"
+    metris:
+      dir:
+      version: "PR-1241"
     tests:
       director:
         dir:
@@ -267,6 +270,9 @@ global:
     secretName: "compass-gateway-auditlog-secret"
 
   externalServicesMock:
+    enabled: false
+
+  metris:
     enabled: false
 
 pairing-adapter:
