@@ -29,7 +29,7 @@ type DeprovisionEndpoint struct {
 
 func NewDeprovision(instancesStorage storage.Instances, operationsStorage storage.Operations, q Queue, log logrus.FieldLogger) *DeprovisionEndpoint {
 	return &DeprovisionEndpoint{
-		log:               log,
+		log:               log.WithField("service", "DeprovisionEndpoint"),
 		instancesStorage:  instancesStorage,
 		operationsStorage: operationsStorage,
 
@@ -57,6 +57,8 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponse(fmt.Errorf("unable to get instance from the storage"), http.StatusInternalServerError, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
 	}
 
+	logger = logger.WithFields(logrus.Fields{"runtimeID": instance.RuntimeID, "globalAccountID": instance.GlobalAccountID})
+
 	// check if operation with the same instance ID is already created
 	existingOperation, errStorage := b.operationsStorage.GetDeprovisioningOperationByInstanceID(instanceID)
 	switch {
@@ -71,7 +73,9 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 			if err != nil {
 				return domain.DeprovisionServiceSpec{}, errors.New("cannot update existing operation")
 			}
-			logger.Infof("Reprocessing failed deprovisioning of runtime: runtimeID=%s, globalAccountID=%s", instance.RuntimeID, instance.GlobalAccountID)
+
+			logger.Info("Reprocessing failed deprovisioning of runtime")
+
 			b.queue.Add(operationID)
 		}
 		// return existing operation
@@ -92,8 +96,7 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		return domain.DeprovisionServiceSpec{}, errors.New("cannot save operation")
 	}
 
-	logger.Infof("Deprovisioning runtime: runtimeID=%s, globalAccountID=%s", instance.RuntimeID, instance.GlobalAccountID)
-
+	logger.Info("Adding operation to deprovisioning queue")
 	b.queue.Add(operationID)
 
 	return domain.DeprovisionServiceSpec{

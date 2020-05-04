@@ -88,7 +88,8 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 		return operation, tenantReadyRetryInterval, nil
 	}
 	if !(status.ElasticsearchDNSResolves && status.KibanaDNSResolves) {
-		logger.Infof("LMS tenant not ready: elasticDNS=%v, kibanaDNS=%v", status.ElasticsearchDNSResolves, status.KibanaDNSResolves)
+		logger = logger.WithFields(logrus.Fields{"elasticDNS": status.ElasticsearchDNSResolves, "kibanaDNS": status.KibanaDNSResolves})
+		logger.Info("LMS tenant not ready")
 		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
 			logger.Error("Setting LMS operation failed - tenant provisioning timed out")
 			return s.failLmsAndUpdate(operation)

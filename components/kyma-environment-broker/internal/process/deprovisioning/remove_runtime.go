@@ -74,7 +74,7 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 		}
 	}
 
-	log.Infof("runtime deletion process initiated successfully, RuntimeID=%s", instance.RuntimeID)
+	log.WithField("runtimeID", instance.RuntimeID).Infof("runtime deletion process initiated successfully")
 	// return repeat mode (1 sec) to start the initialization step which will now check the runtime status
 	return operation, 1 * time.Second, nil
 }

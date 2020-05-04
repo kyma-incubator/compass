@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
 
 	"github.com/gocraft/dbr"
@@ -109,7 +111,7 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 }
 
 func InitTestDBTables(t *testing.T, connectionURL string) error {
-	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10)
+	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10, logrus.New())
 	if err != nil {
 		t.Logf("Cannot connect to database with URL %s", connectionURL)
 		return err
