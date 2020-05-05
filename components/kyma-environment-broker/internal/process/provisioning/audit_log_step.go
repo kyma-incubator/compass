@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/auditlog"
+	"net"
+	"net/url"
 	"strings"
 	"time"
 
@@ -52,6 +54,17 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 	replaceSubAccountID := strings.Replace(string(luaScript), "sub_account_id", pp.ErsContext.SubAccountID, -1)
 	replaceTenantID := strings.Replace(replaceSubAccountID, "tenant_id", alo.auditLogConfig.Tenant, -1)
 
+	u, err := url.Parse(alo.auditLogConfig.URL)
+	if err != nil {
+		logger.Errorf("Unable to get URL: %v", err.Error())
+		return operation, 0, err
+	}
+	auditLogHost, auditLogPort, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		logger.Errorf("Unable to split URL: %v", err.Error())
+		return operation, 0, err
+	}
+
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.conf.script", Value: replaceTenantID},
 		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
@@ -73,7 +86,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         Name             http
         Match            dex.*
         Host             %s
-        Port             8081
+        Port             %s
         URI              /audit-log/v2/security-events
         Header           content-type    application/json
         Header           Content-Type    text/plain
@@ -82,14 +95,13 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         Format           json_stream
         tls              on
         tls.debug        1
-`, alo.auditLogConfig.URL, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
+`, auditLogHost,auditLogPort, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
-		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf("%s",alo.auditLogConfig.URL)},
-		{Key: "fluent-bit.externalServiceEntry.ports", Value: `
-         - number: 8081
-           name: https
-           protocol: TLS`},
-
+		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`
+- %s`,auditLogHost)},
+		{Key: "fluent-bit.externalServiceEntry.ports", Value: `- number: 8081
+  name: https
+  protocol: TLS`},
 	})
 	return operation, 0, nil
 }

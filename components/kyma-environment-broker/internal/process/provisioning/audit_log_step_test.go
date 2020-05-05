@@ -60,7 +60,7 @@ return "fooBar"
 
 	repo := storage.NewMemoryStorage().Operations()
 	cfg := auditlog.Config{
-		URL:      "host1",
+		URL:      "https://host1:8081/aaa/v2",
 		User:     "aaaa",
 		Password: "aaaa",
 		Tenant:   "tenant",
@@ -126,7 +126,7 @@ return "fooBar"
 		},
 		{
 			Key: "fluent-bit.externalServiceEntry.hosts",
-			Value: "host1",
+			Value: "- host1",
 		},
 		{
 			Key: "fluent-bit.externalServiceEntry.ports",
