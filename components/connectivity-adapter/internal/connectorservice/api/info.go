@@ -3,10 +3,11 @@ package api
 import (
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
@@ -20,7 +21,7 @@ const (
 )
 
 type infoHandler struct {
-	connectorClient                connector.Client
+	connectorClientProvider        connector.ClientProvider
 	directorClientProvider         director.ClientProvider
 	makeResponseFunc               model.InfoProviderFunc
 	connectivityAdapterBaseURL     string
@@ -29,16 +30,16 @@ type infoHandler struct {
 }
 
 func NewInfoHandler(
-	connectorClient connector.Client,
+	connectorClientProvider connector.ClientProvider,
 	directorClientProvider director.ClientProvider,
 	logger *log.Logger,
 	makeResponseFunc model.InfoProviderFunc) infoHandler {
 
 	return infoHandler{
-		connectorClient:        connectorClient,
-		directorClientProvider: directorClientProvider,
-		makeResponseFunc:       makeResponseFunc,
-		logger:                 logger,
+		connectorClientProvider: connectorClientProvider,
+		directorClientProvider:  directorClientProvider,
+		makeResponseFunc:        makeResponseFunc,
+		logger:                  logger,
 	}
 }
 
@@ -62,7 +63,7 @@ func (ih *infoHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	configuration, err := ih.connectorClient.Configuration(authorizationHeaders)
+	configuration, err := ih.connectorClientProvider.Client(r).Configuration(authorizationHeaders)
 	if err != nil {
 		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to get configuration from Connector"), apperrors.CodeInternal)
 

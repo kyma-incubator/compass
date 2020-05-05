@@ -451,3 +451,20 @@ func fixFetchRequest(url string, objectType model.FetchRequestReferenceObjectTyp
 		ObjectID:   "foo",
 	}
 }
+
+func fixFetchRequestWithCondition(url string, objectType model.FetchRequestReferenceObjectType, timestamp time.Time, condition model.FetchRequestStatusCondition) *model.FetchRequest {
+	return &model.FetchRequest{
+		ID:     "foo",
+		Tenant: tenantID,
+		URL:    url,
+		Auth:   nil,
+		Mode:   "SINGLE",
+		Filter: nil,
+		Status: &model.FetchRequestStatus{
+			Condition: condition,
+			Timestamp: timestamp,
+		},
+		ObjectType: objectType,
+		ObjectID:   "foo",
+	}
+}

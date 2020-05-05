@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
 type ProvisionInputCreator interface {
 	SetProvisioningParameters(params ProvisioningParametersDTO) ProvisionInputCreator
-	SetRuntimeLabels(instanceID, SubAccountID string) ProvisionInputCreator
+	SetLabel(key, value string) ProvisionInputCreator
 	// Deprecated, use: AppendOverrides
 	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
 	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
@@ -44,6 +44,10 @@ type AvsLifecycleData struct {
 	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`
 }
 
+type EventHub struct {
+	Deleted bool `json:"event_hub_deleted"`
+}
+
 type Instance struct {
 	InstanceID      string
 	RuntimeID       string
@@ -60,6 +64,17 @@ type Instance struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
+}
+
+func (instance Instance) GetProvisioningParameters() (ProvisioningParameters, error) {
+	var pp ProvisioningParameters
+
+	err := json.Unmarshal([]byte(instance.ProvisioningParameters), &pp)
+	if err != nil {
+		return pp, errors.Wrap(err, "while unmarshalling provisioning parameters")
+	}
+
+	return pp, nil
 }
 
 type Operation struct {
@@ -100,7 +115,10 @@ type ProvisioningOperation struct {
 type DeprovisioningOperation struct {
 	Operation `json:"-"`
 
-	Avs AvsLifecycleData `json:"avs"`
+	ProvisioningParameters string           `json:"provisioning_parameters"`
+	Avs                    AvsLifecycleData `json:"avs"`
+	EventHub               EventHub         `json:"eh"`
+	SubAccountID           string           `json:"-"`
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
@@ -162,6 +180,27 @@ func (po *ProvisioningOperation) SetProvisioningParameters(parameters Provisioni
 	}
 
 	po.ProvisioningParameters = string(params)
+	return nil
+}
+
+func (do *DeprovisioningOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
+	var pp ProvisioningParameters
+
+	err := json.Unmarshal([]byte(do.ProvisioningParameters), &pp)
+	if err != nil {
+		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+	}
+
+	return pp, nil
+}
+
+func (do *DeprovisioningOperation) SetProvisioningParameters(parameters ProvisioningParameters) error {
+	params, err := json.Marshal(parameters)
+	if err != nil {
+		return errors.Wrap(err, "while marshaling provisioning parameters")
+	}
+
+	do.ProvisioningParameters = string(params)
 	return nil
 }
 

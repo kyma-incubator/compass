@@ -10,14 +10,15 @@
    * `managed-offering-components.yaml` file with additional managed components that are added at the end of the base components list
 
 2. The user provisions a Runtime and selects optional components that they want to install.
-   
+
 3. KEB composes the final list of components by removing components that were not selected by the user. It also adds the proper global and components overrides and sends the whole provisioning information to the Runtime Provisioner.
 
 ## Optional components
 
 This section presents how to add or remove the possibility to disable components, which makes them either optional or required during the Kyma installation. Currently, the optional components are as follows:
-- Kiali
-- Jaeger
+
+* Kiali
+* Tracing
 
 ### Add the option to disable components
 
@@ -50,7 +51,7 @@ This interface allows you to easily register the disabler in the [`cmd/broker/ma
 // Using map is intentional - we ensure that component name is not duplicated.
 optionalComponentsDisablers := runtime.ComponentsDisablers{
 		"Kiali":      runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"Jaeger":     runtime.NewGenericComponentDisabler("jaeger", "kyma-system"),
+		"Tracing":     runtime.NewGenericComponentDisabler("tracing", "kyma-system"),
 }
 ```
 

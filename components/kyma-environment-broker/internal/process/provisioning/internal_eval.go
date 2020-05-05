@@ -14,7 +14,7 @@ type InternalEvaluationStep struct {
 	iec       *avs.InternalEvalAssistant
 }
 
-func NewInternalEvaluationStep(avsConfig avs.Config, delegator *avs.Delegator, assistant *avs.InternalEvalAssistant) *InternalEvaluationStep {
+func NewInternalEvaluationStep(delegator *avs.Delegator, assistant *avs.InternalEvalAssistant) *InternalEvaluationStep {
 	return &InternalEvaluationStep{
 		delegator: delegator,
 		iec:       assistant,
@@ -22,7 +22,7 @@ func NewInternalEvaluationStep(avsConfig avs.Config, delegator *avs.Delegator, a
 }
 
 func (ies *InternalEvaluationStep) Name() string {
-	return "AVS_Configuration_Step"
+	return "AVS_Create_Internal_Eval_Step"
 }
 
 func (ies *InternalEvaluationStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {

@@ -106,6 +106,8 @@ spec:
               value: "{{ .Values.logs.level }}"
             - name: APP_ENQUEUE_IN_PROGRESS_OPERATIONS
               value: "true"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
           {{if .Values.gardener.auditLogTenantConfigMapName }}
           - mountPath: /gardener/tenant

@@ -21,6 +21,8 @@ const (
 
 	// amount of request attempt to director service
 	reqAttempt = 3
+
+	authorizationKey = "Authorization"
 )
 
 //go:generate mockery -name=GraphQLClient -output=automock
@@ -40,9 +42,15 @@ type Client struct {
 	token         oauth.Token
 }
 
-type successResponse struct {
-	Result graphql.RuntimeExt `json:"result"`
-}
+type (
+	getURLResponse struct {
+		Result graphql.RuntimeExt `json:"result"`
+	}
+
+	runtimeLabelResponse struct {
+		Result *graphql.Label `json:"result"`
+	}
+)
 
 var lock sync.Mutex
 
@@ -58,27 +66,43 @@ func NewDirectorClient(oauthClient OauthClient, gqlClient GraphQLClient) *Client
 
 // GetConsoleURL fetches, validates and returns console URL from director component based on runtime ID
 func (dc *Client) GetConsoleURL(accountID, runtimeID string) (string, error) {
-	log.Info("DirectorClient: Create request to director service")
 	query := dc.queryProvider.Runtime(runtimeID)
 	req := machineGraph.NewRequest(query)
 	req.Header.Add(accountIDKey, accountID)
 
 	log.Info("DirectorClient: Send request to director")
-	response, err := dc.callDirector(req)
+	response, err := dc.fetchURLFromDirector(req)
 	if err != nil {
-		// do not wrap error, because type of error (TemporaryError) is important
-		return "", err
+		return "", errors.Wrap(err, "while making call to director")
 	}
 
 	log.Info("DirectorClient: Extract the URL from the response")
 	return dc.getURLFromRuntime(&response.Result)
 }
 
-func (dc *Client) callDirector(req *machineGraph.Request) (*successResponse, error) {
-	var response *successResponse
+func (dc *Client) SetLabel(accountID, runtimeID, key, value string) error {
+	query := dc.queryProvider.SetRuntimeLabel(runtimeID, key, value)
+	req := machineGraph.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
+
+	log.Info("DirectorClient: Setup label in director")
+	response, err := dc.setLabelsInDirector(req)
+	if err != nil {
+		return errors.Wrapf(err, "while setting %s Runtime label to value %s", key, value)
+	}
+
+	if response.Result == nil {
+		return errors.Errorf("failed to set %s Runtime label to value %s. Received nil response.", key, value)
+	}
+
+	log.Infof("DirectorClient: Label %s:%s set correctly", response.Result.Key, response.Result.Value)
+	return nil
+}
+
+func (dc *Client) fetchURLFromDirector(req *machineGraph.Request) (*getURLResponse, error) {
+	var response getURLResponse
 	var lastError error
 	var success bool
-	authorizationKey := "Authorization"
 
 	for i := 0; i < reqAttempt; i++ {
 		err := dc.setToken()
@@ -88,9 +112,9 @@ func (dc *Client) callDirector(req *machineGraph.Request) (*successResponse, err
 			continue
 		}
 		req.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", dc.token.AccessToken))
-		response, err = dc.call(req)
+		err = dc.graphQLClient.Run(context.Background(), req, &response)
 		if err != nil {
-			lastError = err
+			lastError = kebError.AsTemporaryError(err, "while requesting to director client")
 			dc.token.AccessToken = ""
 			req.Header.Del(authorizationKey)
 			log.Errorf("call to director failed (attempt %d): %s", i, err)
@@ -101,18 +125,41 @@ func (dc *Client) callDirector(req *machineGraph.Request) (*successResponse, err
 	}
 
 	if !success {
-		return &successResponse{}, lastError
+		return &getURLResponse{}, lastError
 	}
 
-	return response, nil
+	return &response, nil
 }
 
-func (dc *Client) call(req *machineGraph.Request) (*successResponse, error) {
-	var response successResponse
-	err := dc.graphQLClient.Run(context.Background(), req, &response)
-	if err != nil {
-		return nil, kebError.AsTemporaryError(err, "while requesting to director client")
+func (dc *Client) setLabelsInDirector(req *machineGraph.Request) (*runtimeLabelResponse, error) {
+	var response runtimeLabelResponse
+	var lastError error
+	var success bool
+
+	for i := 0; i < reqAttempt; i++ {
+		err := dc.setToken()
+		if err != nil {
+			lastError = err
+			log.Errorf("cannot set token to director client (attempt %d): %s", i, err)
+			continue
+		}
+		req.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", dc.token.AccessToken))
+		err = dc.graphQLClient.Run(context.Background(), req, &response)
+		if err != nil {
+			lastError = kebError.AsTemporaryError(err, "while requesting to director client")
+			dc.token.AccessToken = ""
+			req.Header.Del(authorizationKey)
+			log.Errorf("call to director failed (attempt %d): %s", i, err)
+			continue
+		}
+		success = true
+		break
 	}
+
+	if !success {
+		return &runtimeLabelResponse{}, lastError
+	}
+
 	return &response, nil
 }
 

@@ -31,7 +31,7 @@ type Config struct {
 	Runtime  runtime.Config
 	Director director.Config
 
-	TenantID             string `default:"3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
+	TenantID             string `default:"d9994f8f-7e46-42a8-b2c1-1bfff8d2fe05"`
 	SkipCertVerification bool   `envconfig:"default=true"`
 
 	ProvisionTimeout   time.Duration `default:"3h"`

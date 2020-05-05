@@ -56,6 +56,18 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 
 	setAvsIds(&operation, op, log)
 
+	parameters, err := op.GetProvisioningParameters()
+	if err != nil {
+		return s.operationManager.OperationFailed(operation, "cannot get provisioning parameters from operation")
+	}
+	operation.SubAccountID = parameters.ErsContext.SubAccountID
+
+	err = operation.SetProvisioningParameters(parameters)
+	if err != nil {
+		log.Error("Aborting after failing to save provisioning parameters for operation")
+		return s.operationManager.OperationFailed(operation, err.Error())
+	}
+
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:

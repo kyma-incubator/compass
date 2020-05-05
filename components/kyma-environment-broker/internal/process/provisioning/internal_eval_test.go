@@ -35,7 +35,7 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
 	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
 	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
-	ies := NewInternalEvaluationStep(avsConfig, avsDel, internalEvalAssistant)
+	ies := NewInternalEvaluationStep(avsDel, internalEvalAssistant)
 
 	// when
 	logger := log.WithFields(logrus.Fields{"step": "TEST"})

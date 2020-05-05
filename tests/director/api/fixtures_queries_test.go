@@ -36,6 +36,10 @@ func registerApplicationFromInputWithinTenant(t *testing.T, ctx context.Context,
 	return app
 }
 
+func registerApplicationFromInput(t *testing.T, ctx context.Context, in graphql.ApplicationRegisterInput) graphql.ApplicationExt {
+	return registerApplicationFromInputWithinTenant(t, ctx, in, testTenants.GetDefaultTenantID())
+}
+
 func deleteApplicationLabel(t *testing.T, ctx context.Context, applicationID, labelKey string) {
 	deleteRequest := fixDeleteApplicationLabelRequest(applicationID, labelKey)
 
@@ -302,6 +306,19 @@ func setDefaultEventingForApplication(t *testing.T, ctx context.Context, appID s
 
 func createPackage(t *testing.T, ctx context.Context, appID, pkgName string) graphql.PackageExt {
 	in, err := tc.graphqlizer.PackageCreateInputToGQL(fixPackageCreateInput(pkgName))
+	require.NoError(t, err)
+
+	req := fixAddPackageRequest(appID, in)
+	var resp graphql.PackageExt
+
+	err = tc.RunOperation(ctx, req, &resp)
+	require.NoError(t, err)
+
+	return resp
+}
+
+func createPackageWithInput(t *testing.T, ctx context.Context, appID string, input graphql.PackageCreateInput) graphql.PackageExt {
+	in, err := tc.graphqlizer.PackageCreateInputToGQL(input)
 	require.NoError(t, err)
 
 	req := fixAddPackageRequest(appID, in)

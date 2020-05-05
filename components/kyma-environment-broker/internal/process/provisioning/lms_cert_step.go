@@ -11,6 +11,7 @@ import (
 
 	"encoding/base64"
 
+	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -24,11 +25,12 @@ const (
 	certPollingTimeout       = 4 * time.Minute
 	tenantReadyRetryInterval = 30 * time.Second
 	lmsTimeout               = 30 * time.Minute
+	kibanaURLLabelKey        = "operator_lmsUrl"
 )
 
 type LmsClient interface {
 	RequestCertificate(tenantID string, subject pkix.Name) (id string, privateKey []byte, err error)
-	GetSignedCertificate(tenantID string, certID string) (cert string, found bool, err error)
+	GetCertificateByURL(url string) (cert string, found bool, err error)
 	GetCACertificate(tenantID string) (cert string, found bool, err error)
 	GetTenantStatus(tenantID string) (status lms.TenantStatus, err error)
 	GetTenantInfo(tenantID string) (status lms.TenantInfo, err error)
@@ -57,11 +59,12 @@ func (s *lmsCertStep) Name() string {
 // 1. check if the tenant is ready
 // 2. request certificates
 // 3. poll CA and signed certificates
-func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if operation.Lms.Failed {
-		logger.Info("LMS has failed, skipping")
+		l.Info("LMS has failed, skipping")
 		return operation, 0, nil
 	}
+	logger := l.WithField("LMSTenant", operation.Lms.TenantID)
 
 	if operation.Lms.TenantID == "" {
 		logger.Error("Create LMS Tenant step must be run before")
@@ -70,7 +73,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
-		logger.Errorf("Unable to get provisioning parameters", err.Error())
+		logger.Errorf("Unable to get provisioning parameters: %s", err.Error())
 		return operation, 0, errors.New("unable to get provisioning parameters")
 	}
 
@@ -79,7 +82,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 	if err != nil {
 		logger.Errorf("Unable to get LMS Tenant status: %s", err.Error())
 		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
-			logger.Error("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
+			logger.Errorf("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
 			return s.failLmsAndUpdate(operation)
 		}
 		return operation, tenantReadyRetryInterval, nil
@@ -97,7 +100,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 	if err != nil {
 		logger.Errorf("Unable to get LMS Tenant info: %s", err.Error())
 		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
-			logger.Error("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
+			logger.Errorf("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
 			return s.failLmsAndUpdate(operation)
 		}
 		return operation, tenantReadyRetryInterval, nil
@@ -107,13 +110,14 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 	subj := pkix.Name{
 		CommonName:         "fluentbit", // do not modify
 		Organization:       []string{pp.ErsContext.GlobalAccountID},
-		OrganizationalUnit: []string{pp.ErsContext.SubAccountID},
+		OrganizationalUnit: []string{uuid.New().String()},
 	}
-	certId, pKey, err := s.provider.RequestCertificate(operation.Lms.TenantID, subj)
+	certURL, pKey, err := s.provider.RequestCertificate(operation.Lms.TenantID, subj)
 	if err != nil {
 		logger.Errorf("Unable to request LMS Certificates %s", err.Error())
 		return operation, 5 * time.Second, nil
 	}
+	logger.Infof("Signed Certificate URL: %s", certURL)
 
 	var signedCert string
 	var caCert string
@@ -121,7 +125,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 	// certs cannot be stored so there is a need to poll until certs are ready
 	// get Signed Certificate
 	err = wait.PollImmediate(pollingInterval, certPollingTimeout, func() (done bool, err error) {
-		c, found, err := s.provider.GetSignedCertificate(operation.Lms.TenantID, certId)
+		c, found, err := s.provider.GetCertificateByURL(certURL)
 		if err != nil {
 			logger.Warnf("Unable to get LMS Signed Certificate: %s, retrying", err.Error())
 			return false, nil
@@ -157,8 +161,12 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 		return s.failLmsAndUpdate(operation)
 	}
 
+	operation.InputCreator.SetLabel(kibanaURLLabelKey, fmt.Sprintf("https://kibana.%s", tenantInfo.DNS))
+
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.conf.Output.forward.enabled", Value: "true"},
+		{Key: "fluent-bit.conf.Output.forward.Match", Value: "kube.*"},
+
 		{Key: "fluent-bit.backend.forward.host", Value: fmt.Sprintf("forward.%s", tenantInfo.DNS)},
 		{Key: "fluent-bit.backend.forward.port", Value: "8443"},
 		{Key: "fluent-bit.backend.forward.tls.enabled", Value: "true"},
@@ -169,11 +177,16 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, logger logru
 		{Key: "fluent-bit.backend.forward.tls.cert", Value: base64.StdEncoding.EncodeToString([]byte(signedCert))},
 		{Key: "fluent-bit.backend.forward.tls.key", Value: base64.StdEncoding.EncodeToString(pKey)},
 
+		//kubernetes filter should not parse the document to avoid indexing on LMS side
+		{Key: "fluent-bit.conf.Filter.Kubernetes.Merge_Log", Value: "Off"},
+		//input should not conatain dex logs as it contains sensitive data
+		{Key: "fluent-bit.conf.Input.Kubernetes.Exclude_Path", Value: "/var/log/containers/*_dex-*.log"},
+
 		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
 [FILTER]
         Name record_modifier
         Match *
-        Record cluster_name %s
+        Record subaccount_id %s
 `, pp.ErsContext.SubAccountID)}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
 	})
 

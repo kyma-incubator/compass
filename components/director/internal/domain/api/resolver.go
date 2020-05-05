@@ -31,6 +31,7 @@ type APIConverter interface {
 	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
 	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput
 	InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APIDefinitionInput
+	SpecToGraphQL(definitionID string, in *model.APISpec) *graphql.APISpec
 }
 
 //go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
@@ -185,8 +186,8 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 		return nil, err
 	}
 
-	convertedOut := r.converter.ToGraphQL(&model.APIDefinition{Spec: spec})
-	return convertedOut.Spec, nil
+	converted := r.converter.SpecToGraphQL(apiID, spec)
+	return converted, nil
 }
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {

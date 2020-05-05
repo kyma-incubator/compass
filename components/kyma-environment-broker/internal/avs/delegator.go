@@ -11,12 +11,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/sirupsen/logrus"
 )
 
 type Delegator struct {
@@ -138,6 +137,7 @@ func responseBody(resp *http.Response) string {
 func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger, assistant EvalAssistant) (internal.DeprovisioningOperation, error) {
 	if assistant.IsAlreadyDeleted(deProvisioningOperation.Avs) {
 		logger.Infof("Evaluations have been deleted previously")
+		return deProvisioningOperation, nil
 	}
 
 	if err := del.tryDeleting(assistant, deProvisioningOperation.Avs, logger); err != nil {

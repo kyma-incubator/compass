@@ -114,7 +114,7 @@ func TestLmsStepsHappyPath(t *testing.T) {
 	tRepo := storage.NewMemoryStorage().LMSTenants()
 	certStep := NewLmsCertificatesStep(lmsClient, opRepo)
 	tManager := lms.NewTenantManager(tRepo, lmsClient, fixLogger())
-	tenantStep := NewProvideLmsTenantStep(tManager, opRepo)
+	tenantStep := NewProvideLmsTenantStep(tManager, opRepo, "eu")
 
 	inputCreator := newInputCreator()
 	operation := internal.ProvisioningOperation{
@@ -153,6 +153,7 @@ func TestLmsStepsHappyPath(t *testing.T) {
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
 		Key: "fluent-bit.backend.forward.tls.key", Value: "cHJpdmF0ZS1rZXk="})
 
+	inputCreator.AssertLabel(t, "operator_lmsUrl", fmt.Sprintf("https://kibana.%s", lms.FakeLmsHost))
 }
 
 func newFakeClientWithTenant(timeToReady time.Duration) (*lms.FakeClient, string) {
@@ -167,14 +168,17 @@ func newFakeClientWithTenant(timeToReady time.Duration) (*lms.FakeClient, string
 func newInputCreator() *simpleInputCreator {
 	return &simpleInputCreator{
 		overrides: make(map[string][]*gqlschema.ConfigEntryInput, 0),
+		labels:    make(map[string]string),
 	}
 }
 
 type simpleInputCreator struct {
 	overrides map[string][]*gqlschema.ConfigEntryInput
+	labels    map[string]string
 }
 
-func (c *simpleInputCreator) SetRuntimeLabels(instanceID, SubAccountID string) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) SetLabel(key, val string) internal.ProvisionInputCreator {
+	c.labels[key] = val
 	return c
 }
 
@@ -210,4 +214,10 @@ func (c *simpleInputCreator) AssertOverride(t *testing.T, component string, cei 
 		}
 	}
 	assert.Failf(t, "Overrides assert failed", "Expected component override not found: %+v", cei)
+}
+
+func (c *simpleInputCreator) AssertLabel(t *testing.T, key, expectedValue string) {
+	value, found := c.labels[key]
+	require.True(t, found)
+	assert.Equal(t, expectedValue, value)
 }

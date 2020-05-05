@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 
@@ -74,13 +75,21 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
 	}
 
-	provisioningParameters := internal.ProvisioningParameters{
-		PlanID:     details.PlanID,
-		ServiceID:  details.ServiceID,
-		ErsContext: ersContext,
-		Parameters: parameters,
+	region, found := middleware.RegionFromContext(ctx)
+	if !found {
+		err := errors.New("No region specified in request.")
+		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusInternalServerError, "provisioning")
 	}
-	logger.Infof("Starting provisioning runtime: Name=%s, GlobalAccountID=%s, SubAccountID=%s", parameters.Name, ersContext.GlobalAccountID, ersContext.SubAccountID)
+
+	provisioningParameters := internal.ProvisioningParameters{
+		PlanID:         details.PlanID,
+		ServiceID:      details.ServiceID,
+		ErsContext:     ersContext,
+		Parameters:     parameters,
+		PlatformRegion: region,
+	}
+
+	logger.Infof("Starting provisioning runtime: Name=%s, GlobalAccountID=%s, SubAccountID=%s PlatformRegion=%s", parameters.Name, ersContext.GlobalAccountID, ersContext.SubAccountID, region)
 	logger.Infof("Runtime parameters: %+v", parameters)
 
 	// check if operation with instance ID already created
@@ -177,10 +186,13 @@ func (b *ProvisionEndpoint) extractERSContext(details domain.ProvisionDetails) (
 	err := json.Unmarshal(details.RawContext, &ersContext)
 	if err != nil {
 		return ersContext, errors.Wrap(err, "while decoding context")
-
 	}
+
 	if ersContext.GlobalAccountID == "" {
 		return ersContext, errors.New("global accountID parameter cannot be empty")
+	}
+	if ersContext.SubAccountID == "" {
+		return ersContext, errors.New("subAccountID parameter cannot be empty")
 	}
 
 	return ersContext, nil

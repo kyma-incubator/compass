@@ -210,7 +210,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock.On("SetRuntimeStatusCondition", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 			uuidGenerator := uuid.NewUUIDGenerator()
-			provisioner := gardener.NewProvisioner(namespace, shootInterface, auditLogsConfigPath, auditLogCMName)
+			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogsConfigPath, auditLogCMName)
 
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 
