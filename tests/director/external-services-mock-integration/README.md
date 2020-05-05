@@ -4,7 +4,7 @@ External Services Mock tests check a contract between Compass and external servi
 
 ## Auditlog test scenario
 - Register an application through Compass Gateway
-- Get an auditlog from the mock service based on the application's name
+2. Get an audit log from the mock service based on the application's name
 - Compare the auditlog with the request for registering the application
 
 ## Development
