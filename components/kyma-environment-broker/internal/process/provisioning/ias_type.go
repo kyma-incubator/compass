@@ -35,16 +35,22 @@ func (s *IASType) ConfigureType(operation internal.ProvisioningOperation, runtim
 		return 0, nil
 	}
 
-	spb := s.bundleBuilder.NewBundle(operation.InstanceID)
-	err := spb.FetchServiceProviderData()
-	if err != nil {
-		return s.handleError(operation, err, log, "fetching ServiceProvider data failed")
-	}
+	for spID := range ias.ServiceProviderInputs {
+		spb, err := s.bundleBuilder.NewBundle(operation.InstanceID, spID)
+		if err != nil {
+			log.Errorf("%s: %s", "Failed to create ServiceProvider Bundle", err)
+			return 0, nil
+		}
+		err = spb.FetchServiceProviderData()
+		if err != nil {
+			return s.handleError(operation, err, log, "fetching ServiceProvider data failed")
+		}
 
-	log.Infof("Configure SSO Type for ServiceProvider with RuntimeURL: %s", runtimeURL)
-	err = spb.ConfigureServiceProviderType(runtimeURL)
-	if err != nil {
-		return s.handleError(operation, err, log, "setting SSO Type failed")
+		log.Infof("Configure SSO Type for ServiceProvider %q with RuntimeURL: %s", spb.ServiceProviderName(), runtimeURL)
+		err = spb.ConfigureServiceProviderType(runtimeURL)
+		if err != nil {
+			return s.handleError(operation, err, log, "setting SSO Type failed")
+		}
 	}
 
 	return 0, nil
