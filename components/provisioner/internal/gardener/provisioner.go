@@ -47,7 +47,9 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	annotate(shootTemplate, provisioningAnnotation, Provisioning.String())
 	annotate(shootTemplate, runtimeIdAnnotation, cluster.ID)
 
-	g.applyAuditConfig(shootTemplate)
+	if g.policyConfigMapName != "" {
+		g.applyAuditConfig(shootTemplate)
+	}
 
 	_, err = g.shootClient.Create(shootTemplate)
 	if err != nil {

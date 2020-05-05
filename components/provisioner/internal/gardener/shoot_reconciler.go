@@ -72,7 +72,6 @@ type Reconciler struct {
 	provisioningOperator *ProvisioningOperator
 
 	auditLogTenantConfigPath string
-	auditLogsCMName          string
 }
 
 type ProvisioningOperator struct {
@@ -113,7 +112,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	seed := getSeed(shoot)
 	if seed != "" {
-		err := r.enableAuditLogs(&shoot, r.auditLogsCMName, seed)
+		err := r.enableAuditLogs(&shoot, seed)
 		if err != nil {
 			log.Errorf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
 		}
@@ -281,7 +280,7 @@ func (r *ProvisioningOperator) setDeprovisioningFinished(cluster model.Cluster, 
 	return nil
 }
 
-func (r *Reconciler) enableAuditLogs(shoot *gardener_types.Shoot, policyConfigMapName, seed string) error {
+func (r *Reconciler) enableAuditLogs(shoot *gardener_types.Shoot, seed string) error {
 	logrus.Info("Enabling audit logs")
 	tenant, err := r.getAuditLogTenant(seed)
 	if err != nil {
