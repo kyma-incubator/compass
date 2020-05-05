@@ -28,7 +28,7 @@ matchNames=$(cat <<-END
         namespace: compass-system
       - name: compass-director-gateway-integration
         namespace: kyma-system
-      - name: compass-external-services-mock
+      - name: compass-gateway-auditlog
         namespace: kyma-system
       - name: compass-connector-tests
         namespace: compass-system
