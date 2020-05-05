@@ -7,8 +7,6 @@ import (
 	"os"
 	"time"
 
-	v12 "k8s.io/api/core/v1"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
@@ -45,8 +43,7 @@ func NewReconciler(
 	directorClient director.DirectorClient,
 	installationSvc installation.Service,
 	installQueue queue.OperationQueue,
-	auditLogTenantConfigPath string,
-	auditLogsCMName string) *Reconciler {
+	auditLogTenantConfigPath string) *Reconciler {
 	return &Reconciler{
 		client:     mgr.GetClient(),
 		scheme:     mgr.GetScheme(),
@@ -54,7 +51,6 @@ func NewReconciler(
 		dbsFactory: dbsFactory,
 
 		auditLogTenantConfigPath: auditLogTenantConfigPath,
-		auditLogsCMName:          auditLogsCMName,
 
 		provisioningOperator: &ProvisioningOperator{
 			dbsFactory:        dbsFactory,
@@ -285,20 +281,6 @@ func (r *ProvisioningOperator) setDeprovisioningFinished(cluster model.Cluster, 
 	return nil
 }
 
-func setAuditConfig(shoot *gardener_types.Shoot, policyConfigMapName, subAccountId string) {
-	if shoot.Spec.Kubernetes.KubeAPIServer == nil {
-		shoot.Spec.Kubernetes.KubeAPIServer = &gardener_types.KubeAPIServerConfig{}
-	}
-
-	shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig = &gardener_types.AuditConfig{
-		AuditPolicy: &gardener_types.AuditPolicy{
-			ConfigMapRef: &v12.ObjectReference{Name: policyConfigMapName},
-		},
-	}
-
-	annotate(shoot, auditLogsAnnotation, subAccountId)
-}
-
 func (r *Reconciler) enableAuditLogs(shoot *gardener_types.Shoot, policyConfigMapName, seed string) error {
 	logrus.Info("Enabling audit logs")
 	tenant, err := r.getAuditLogTenant(seed)
@@ -317,7 +299,7 @@ func (r *Reconciler) enableAuditLogs(shoot *gardener_types.Shoot, policyConfigMa
 	logrus.Infof("Modifying Audit Log Tenant for shoot %s", shoot.Name)
 
 	return r.provisioningOperator.updateShoot(*shoot, func(s *gardener_types.Shoot) {
-		setAuditConfig(s, policyConfigMapName, tenant)
+		annotate(s, auditLogsAnnotation, tenant)
 	})
 }
 

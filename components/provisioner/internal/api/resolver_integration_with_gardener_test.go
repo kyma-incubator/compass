@@ -183,7 +183,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
-	controler, err := gardener.NewShootController(mgr, shootInterface, secretsInterface, dbsFactory, directorServiceMock, installationServiceMock, installationQueue, auditLogsConfigPath, auditLogCMName)
+	controler, err := gardener.NewShootController(mgr, shootInterface, secretsInterface, dbsFactory, directorServiceMock, installationServiceMock, installationQueue, auditLogsConfigPath, auditLogsConfigPath)
 	require.NoError(t, err)
 
 	go func() {
@@ -203,7 +203,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
 			uuidGenerator := uuid.NewUUIDGenerator()
-			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory)
+			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogCMName)
 
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 

@@ -42,7 +42,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		// given
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, nil)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, nil, auditLogsPolicyCMName)
 
 		// when
 		err := provisionerClient.ProvisionCluster(cluster, operationId)
@@ -54,6 +54,11 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		assertAnnotation(t, shoot, operationIdAnnotation, operationId)
 		assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
 		assert.Equal(t, "", shoot.Labels[model.SubAccountLabel])
+
+		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig)
+		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy)
+		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef)
+		assert.Equal(t, auditLogsPolicyCMName, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef.Name)
 	})
 }
 
@@ -112,7 +117,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName)
 
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)
@@ -140,7 +145,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName)
 
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)
@@ -169,7 +174,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName)
 
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)

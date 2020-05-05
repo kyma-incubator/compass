@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	v12 "k8s.io/api/core/v1"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -16,19 +19,22 @@ import (
 func NewProvisioner(
 	namespace string,
 	shootClient gardener_apis.ShootInterface,
-	factory dbsession.Factory) *GardenerProvisioner {
+	factory dbsession.Factory,
+	policyConfigMapName string) *GardenerProvisioner {
 	return &GardenerProvisioner{
-		namespace:        namespace,
-		shootClient:      shootClient,
-		dbSessionFactory: factory,
+		namespace:           namespace,
+		shootClient:         shootClient,
+		dbSessionFactory:    factory,
+		policyConfigMapName: policyConfigMapName,
 	}
 }
 
 type GardenerProvisioner struct {
-	namespace        string
-	shootClient      gardener_apis.ShootInterface
-	dbSessionFactory dbsession.Factory
-	directorService  director.DirectorClient
+	namespace           string
+	shootClient         gardener_apis.ShootInterface
+	dbSessionFactory    dbsession.Factory
+	directorService     director.DirectorClient
+	policyConfigMapName string
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) error {
@@ -40,6 +46,8 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	annotate(shootTemplate, operationIdAnnotation, operationId)
 	annotate(shootTemplate, provisioningAnnotation, Provisioning.String())
 	annotate(shootTemplate, runtimeIdAnnotation, cluster.ID)
+
+	g.applyAuditConfig(shootTemplate)
 
 	_, err = g.shootClient.Create(shootTemplate)
 	if err != nil {
@@ -99,5 +107,17 @@ func newDeprovisionOperation(id, runtimeId, message string, state model.Operatio
 		Stage:          stage,
 		Message:        message,
 		ClusterID:      runtimeId,
+	}
+}
+
+func (g *GardenerProvisioner) applyAuditConfig(template *gardener_types.Shoot) {
+	if template.Spec.Kubernetes.KubeAPIServer == nil {
+		template.Spec.Kubernetes.KubeAPIServer = &gardener_types.KubeAPIServerConfig{}
+	}
+
+	template.Spec.Kubernetes.KubeAPIServer.AuditConfig = &gardener_types.AuditConfig{
+		AuditPolicy: &gardener_types.AuditPolicy{
+			ConfigMapRef: &v12.ObjectReference{Name: g.policyConfigMapName},
+		},
 	}
 }
