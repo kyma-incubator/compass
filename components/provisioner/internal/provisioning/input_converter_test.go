@@ -176,7 +176,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 					ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 						AzureConfig: &gqlschema.AzureProviderConfigInput{
 							VnetCidr: "cidr",
-							Zones: zones,
+							Zones:    zones,
 						},
 					},
 				},
@@ -190,7 +190,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	expectedGardenerAzureRuntimeConfig := func(zones []string) model.Cluster {
 
-		expectedAzureProviderCfg, err := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{VnetCidr: "cidr",  Zones:zones})
+		expectedAzureProviderCfg, err := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{VnetCidr: "cidr", Zones: zones})
 		require.NoError(t, err)
 
 		return model.Cluster{
@@ -295,7 +295,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	}
 
 	zone := "zone"
-	gardenerZones := []string {"fix-az-zone-1", "fix-az-zone-2"}
+	gardenerZones := []string{"fix-az-zone-1", "fix-az-zone-2"}
 
 	configurations := []struct {
 		input       gqlschema.ProvisionRuntimeInput

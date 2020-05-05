@@ -328,7 +328,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:    &unavailable,
 					ProviderSpecificConfig: gqlschema.AzureProviderConfig{
 						VnetCidr: util.StringPtr("10.10.11.11/255"),
-						Zones: nil, // Expected empty when no zones specified in input.
+						Zones:    nil, // Expected empty when no zones specified in input.
 					},
 				},
 				KymaConfig: fixKymaGraphQLConfig(),

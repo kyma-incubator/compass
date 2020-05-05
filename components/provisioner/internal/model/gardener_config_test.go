@@ -42,7 +42,7 @@ func TestGardenerConfig_ToHydroformConfiguration(t *testing.T) {
 		}
 	}
 
-	zones := []string {"fix-zone-1", "fix-zone-2"}
+	zones := []string{"fix-zone-1", "fix-zone-2"}
 
 	gcpGardenerProvider, err := NewGCPGardenerConfig(fixGCPGardenerInput(zones))
 	require.NoError(t, err)
@@ -188,9 +188,9 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 			jsonData:    azureConfigJSON,
 			expectedConfig: &AzureGardenerConfig{
 				ProviderSpecificConfig: ProviderSpecificConfig(azureConfigJSON),
-				input:                  &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones:[]string{"fix-az-zone-1", "fix-az-zone-2"}},
+				input:                  &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones: []string{"fix-az-zone-1", "fix-az-zone-2"}},
 			},
-			expectedProviderSpecificConfig: gqlschema.AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/255"), Zones:[]string{"fix-az-zone-1", "fix-az-zone-2"}},
+			expectedProviderSpecificConfig: gqlschema.AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/255"), Zones: []string{"fix-az-zone-1", "fix-az-zone-2"}},
 		},
 		{
 			description: "should create Azure Gardener config when no zones passed",
@@ -268,10 +268,9 @@ func Test_AsMap_Error(t *testing.T) {
 	}
 }
 
-
 func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 
-	zones := []string {"fix-zone-1", "fix-zone-2"}
+	zones := []string{"fix-zone-1", "fix-zone-2"}
 
 	gcpGardenerProvider, err := NewGCPGardenerConfig(fixGCPGardenerInput(zones))
 	require.NoError(t, err)
