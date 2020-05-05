@@ -3,11 +3,12 @@ package provisioning
 import (
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/auditlog"
 	"net"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/auditlog"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
@@ -95,10 +96,10 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         Format           json_stream
         tls              on
         tls.debug        1
-`, auditLogHost,auditLogPort, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
+`, auditLogHost, auditLogPort, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`
-- %s`,auditLogHost)},
+- %s`, auditLogHost)},
 		{Key: "fluent-bit.externalServiceEntry.ports", Value: `- number: 8081
   name: https
   protocol: TLS`},

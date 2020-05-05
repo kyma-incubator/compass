@@ -1,9 +1,10 @@
 package provisioning
 
 import (
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/auditlog"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/auditlog"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/automock"
@@ -25,7 +26,7 @@ func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 		Password: "aaaa",
 		Tenant:   "tenant",
 	}
-	svc := NewAuditLogOverridesStep(repo,cfg)
+	svc := NewAuditLogOverridesStep(repo, cfg)
 	svc.fs = mm
 
 	operation := internal.ProvisioningOperation{
@@ -107,7 +108,7 @@ return "fooBar"
 }
 `
 
-	expectedPorts:= `
+	expectedPorts := `
          - number: 8081
            name: https
            protocol: TLS`
@@ -121,15 +122,15 @@ return "fooBar"
 			Value: expectedOverride,
 		},
 		{
-			Key: "fluent-bit.externalServiceEntry.resolution",
+			Key:   "fluent-bit.externalServiceEntry.resolution",
 			Value: "DNS",
 		},
 		{
-			Key: "fluent-bit.externalServiceEntry.hosts",
+			Key:   "fluent-bit.externalServiceEntry.hosts",
 			Value: "- host1",
 		},
 		{
-			Key: "fluent-bit.externalServiceEntry.ports",
+			Key:   "fluent-bit.externalServiceEntry.ports",
 			Value: expectedPorts,
 		},
 	}).Return(nil).Once()
