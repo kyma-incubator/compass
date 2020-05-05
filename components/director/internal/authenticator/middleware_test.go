@@ -99,6 +99,26 @@ func TestAuthenticator_Handler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
+	t.Run("Success - when tenant is empty", func(t *testing.T) {
+		//given
+		tnt := ""
+		middleware := createMiddleware(t, true)
+		handler := testHandler(t, tnt, scopes)
+		rr := httptest.NewRecorder()
+		req := fixEmptyRequest(t)
+
+		token := createNotSingedToken(t, tnt, scopes)
+		require.NoError(t, err)
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, "OK", rr.Body.String())
+		assert.Equal(t, http.StatusOK, rr.Code)
+	})
+
 	t.Run("Success - retry parsing token with synchronizing JWKS", func(t *testing.T) {
 		//given
 		auth := authenticator.New(PublicJWKSURL, false)
@@ -125,26 +145,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 		//then
 		assert.Equal(t, "OK", rr.Body.String())
 		assert.Equal(t, http.StatusOK, rr.Code)
-	})
-
-	t.Run("Error - when tenant is empty", func(t *testing.T) {
-		//given
-		tnt := ""
-		middleware := createMiddleware(t, true)
-		handler := testHandler(t, tnt, scopes)
-		rr := httptest.NewRecorder()
-		req := fixEmptyRequest(t)
-
-		token := createNotSingedToken(t, tnt, scopes)
-		require.NoError(t, err)
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-
-		//when
-		middleware(handler).ServeHTTP(rr, req)
-
-		//then
-		assert.Equal(t, "tenant cannot be empty", rr.Body.String())
-		//assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
 	t.Run("Error - retry parsing token with failing synchronizing JWKS", func(t *testing.T) {
