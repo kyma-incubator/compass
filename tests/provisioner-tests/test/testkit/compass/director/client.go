@@ -29,10 +29,6 @@ type client struct {
 	log           logrus.FieldLogger
 }
 
-type GetRuntimeResponse struct {
-	Result *graphql.RuntimeExt `json:"result"`
-}
-
 func NewDirectorClient(oauthClient oauth.Client, gqlClient gql.Client, tenant string, log logrus.FieldLogger) Client {
 	return &client{
 		graphQLClient: gqlClient,
@@ -46,17 +42,17 @@ func NewDirectorClient(oauthClient oauth.Client, gqlClient gql.Client, tenant st
 
 func (dc *client) GetRuntime(id string) (graphql.RuntimeExt, error) {
 	getRuntimeQuery := dc.queryProvider.getRuntimeQuery(id)
-	var response GetRuntimeResponse
+	var response *graphql.RuntimeExt
 	if err := dc.executeDirectorGraphQLCall(getRuntimeQuery, dc.tenant, &response); err != nil {
 		return graphql.RuntimeExt{}, errors.Wrap(err, fmt.Sprintf("Failed to get runtime %s from Director", id))
 	}
-	if response.Result == nil {
+	if response == nil {
 		return graphql.RuntimeExt{}, errors.Errorf("Failed to get runtime %s from Director: received nil response.", id)
 	}
-	if response.Result.ID != id {
+	if response.ID != id {
 		return graphql.RuntimeExt{}, errors.Errorf("Failed to get correct runtime %s from Director: received wrong Runtime in the response", id)
 	}
-	return *response.Result, nil
+	return *response, nil
 }
 
 func (dc *client) executeDirectorGraphQLCall(directorQuery string, tenant string, response interface{}) error {
