@@ -288,14 +288,14 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_
 	}
 
 	if tenant == "" {
-		logger.Warnf("Cannot enable audit logs. Tenant for region %s is empty", seed)
+		logger.Warnf("Cannot enable audit logs. Tenant for seed %s is empty", seed)
 		return nil
 	} else if tenant == shoot.Annotations[auditLogsAnnotation] {
-		logger.Debugf("Seed for cluster %s did not change, skipping annotating with Audit Log Tenant", shoot.Name)
+		logger.Debugf("Seed for cluster did not change, skipping annotating with Audit Log Tenant")
 		return nil
 	}
 
-	logger.Infof("Modifying Audit Log Tenant for shoot %s", shoot.Name)
+	logger.Infof("Modifying Audit Log Tenant")
 
 	return r.provisioningOperator.updateShoot(*shoot, func(s *gardener_types.Shoot) {
 		annotate(s, auditLogsAnnotation, tenant)
