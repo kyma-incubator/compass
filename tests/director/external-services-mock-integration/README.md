@@ -14,7 +14,7 @@ The audit log test performs the following operations:
 To run the test locally, set these environment variables:
 
 | Environment variable   |      Description      |  Default value |
-|----------|:-------------:|------:|
+|----------|-------------|:------:|
 | **DIRECTOR_URL** |  URL to the Director | `https://compass-gateway.kyma.local/director` |
 | **USER_EMAIL** |    Dex static user email   |   `admin@kyma.cx` |
 | **USER_PASSWORD** |    Dex static user password   |  None |
