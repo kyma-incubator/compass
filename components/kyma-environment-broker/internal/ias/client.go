@@ -52,7 +52,11 @@ func NewClient(cli *http.Client, cfg ClientConfig) *Client {
 	}
 }
 
-func (c *Client) SetType(spID string, payload Type) error {
+func (c *Client) SetOIDCConfiguration(spID string, payload OIDCType) error {
+	return c.call(c.serviceProviderPath(spID), payload)
+}
+
+func (c *Client) SetSAMLConfiguration(spID string, payload SAMLType) error {
 	return c.call(c.serviceProviderPath(spID), payload)
 }
 
@@ -68,6 +72,10 @@ func (c *Client) SetAuthenticationAndAccess(spID string, payload AuthenticationA
 	pathAccess := fmt.Sprintf(PathAccess, spID)
 
 	return c.call(pathAccess, payload)
+}
+
+func (c *Client) SetDefaultAuthenticatingIDP(payload DefaultAuthIDPConfig) error {
+	return c.call(PathServiceProviders, payload)
 }
 
 func (c *Client) GetCompany() (_ *Company, err error) {

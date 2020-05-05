@@ -30,7 +30,8 @@ func NewShootController(
 	dbsFactory dbsession.Factory,
 	directorClient director.DirectorClient,
 	installationSvc installation.Service,
-	installQueue queue.OperationQueue) (*ShootController, error) {
+	installQueue queue.OperationQueue,
+	auditLogTenantConfigPath string) (*ShootController, error) {
 
 	err := gardener_types.AddToScheme(mgr.GetScheme())
 	if err != nil {
@@ -39,7 +40,7 @@ func NewShootController(
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&gardener_types.Shoot{}).
-		Complete(NewReconciler(mgr, dbsFactory, secretsClient, shootClient, directorClient, installationSvc, installQueue))
+		Complete(NewReconciler(mgr, dbsFactory, secretsClient, shootClient, directorClient, installationSvc, installQueue, auditLogTenantConfigPath))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create controller: %w", err)
 	}
