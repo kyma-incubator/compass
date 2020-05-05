@@ -30,15 +30,15 @@ The Directors API offers a mutation that allows for deleting the assignment of t
 
 ### Application eventingConfiguration returns empty defaultURL
 
-It is possible for the Director to return empty `defaultURL` property for the Application eventing configuration in certain circumstances:
-- the Application does not have a scenario assigned
-- the Application have scenario assigned, but the scenario does not have any Runtimes assigned
-- the default Runtime determined by the assignment is not fully provisioned or connected to the Compass
-- the Runtime does not have the label for event service URL assigned or the label value is empty
-
+It is possible for the Director to return empty `defaultURL` property for the Application eventing configuration in the following circumstances:
+- Application does not have a Scenario assigned.
+- Application has a Scenario assigned, but the Scenario does not have any Runtimes assigned.
+- Default Runtime determined by the assignment is not fully provisioned or connected to Compass.
+- Runtime does not have the label for event service URL assigned or the label value is empty.
+Whenever the Application eventingConfiguration returns the empty `defaultURL`, check the following:
 1. Verify the Application.
 
-The following GraphQL snippet queries the application by its ID. The response contains application `id`, `name`, `labels` collection, and `defaultURL` for eventing. Please ensure that the Application belongs to at least one scenario which also has runtime assigned.
+The following GraphQL snippet queries the Application by its ID. The response contains Application `id`, `name`, `labels` collection, and `defaultURL` for eventing. Ensure that the Application belongs to at least one Scenario which also has a Runtime assigned.
 
 ```graphql
 query {
@@ -55,7 +55,7 @@ query {
 
 2. Verify the default Runtime assigned for Application eventing configuration
 
-The following GraphQL snippet queries the runtimes using the label filter to return the runtimes with the label `{APPLICATION_ID}_defaultEventing`. There should be only one runtime returned. The eventing configuration for the runtime should return `defaultURL` property with the URL pointing to the runtime. If the `defaultURL` property is empty, ensure that the runtime is fully provisioned and connected to the Compass.
+The following GraphQL snippet queries the Runtimes using the label filter to return the Runtimes with the `{APPLICATION_ID}_defaultEventing` label. There should be only one Runtime returned. The eventing configuration for the Runtime should return the `defaultURL` property with the URL pointing to the Runtime. If the `defaultURL` property is empty, ensure that the Runtime is fully provisioned and connected to Compass.
 
 ```graphql
 query {
@@ -71,9 +71,9 @@ query {
 }
 ```
 
-3. Verify that the Application scenarios have Runtimes assigned.
+3. Verify that the Application Scenarios have Runtimes assigned.
 
-The following GraphQL snippet queries the runtimes using the label filter for a given scenario. The response contains the list of runtimes returning `id`, `name`, and `defaultURL` for eventing.
+The following GraphQL snippet queries the Runtimes using the label filter for a given Scenario. The response contains the list of Runtimes returning `id`, `name`, and `defaultURL` for eventing.
 
 ```graphql
 query {
