@@ -103,14 +103,6 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	seed := getSeed(shoot)
-	if seed != "" {
-		err := r.enableAuditLogs(&shoot, r.auditLogsCMName, seed)
-		if err != nil {
-			log.Errorf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
-		}
-	}
-
 	shouldReconcile, err := r.shouldReconcileShoot(shoot)
 	if err != nil {
 		log.Errorf("Failed to verify if shoot should be reconciled: %s", err.Error())
@@ -122,6 +114,14 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 	runtimeId := getRuntimeId(shoot)
 	log = log.WithField("RuntimeId", runtimeId)
+
+	seed := getSeed(shoot)
+	if seed != "" {
+		err := r.enableAuditLogs(&shoot, r.auditLogsCMName, seed)
+		if err != nil {
+			log.Errorf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
+		}
+	}
 
 	// Get operationId from annotation
 	operationId := getOperationId(shoot)
@@ -306,18 +306,19 @@ func (r *Reconciler) enableAuditLogs(shoot *gardener_types.Shoot, policyConfigMa
 		return err
 	}
 
-	if tenant != "" {
-		err := r.provisioningOperator.updateShoot(*shoot, func(s *gardener_types.Shoot) {
-			setAuditConfig(s, policyConfigMapName, tenant)
-		})
-		if err != nil {
-			return err
-		}
-	} else {
+	if tenant == "" {
 		logrus.Warnf("Cannot enable audit logs. Tenant for region %s is empty", seed)
+		return nil
+	} else if tenant == shoot.Annotations[auditLogsAnnotation] {
+		logrus.Debugf("Seed for cluster %s did not change, skipping annotating with Audit Log Tenant", shoot.Name)
+		return nil
 	}
 
-	return nil
+	logrus.Infof("Modifying Audit Log Tenant for shoot %s", shoot.Name)
+
+	return r.provisioningOperator.updateShoot(*shoot, func(s *gardener_types.Shoot) {
+		setAuditConfig(s, policyConfigMapName, tenant)
+	})
 }
 
 func (r *Reconciler) getAuditLogTenant(seed string) (string, error) {
