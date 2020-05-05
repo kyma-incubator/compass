@@ -14,12 +14,10 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type Client interface {
 	GetAuthorizationToken() (Token, error)
-	WaitForCredentials() error
 }
 
 type SecretInterface interface {
@@ -47,19 +45,6 @@ func (c *oauthClient) GetAuthorizationToken() (Token, error) {
 	}
 
 	return c.getAuthorizationToken(credentials)
-}
-
-func (c *oauthClient) WaitForCredentials() error {
-	err := wait.Poll(time.Second, time.Minute*3, func() (bool, error) {
-		_, err := c.secretClient.Get(c.secretName, metav1.GetOptions{})
-		if err != nil {
-			log.Warnf("secret %s not found with error: %v", c.secretName, err)
-			return false, nil
-		}
-		return true, nil
-	})
-
-	return errors.Wrapf(err, "while waiting for secret %s", c.secretName)
 }
 
 func (c *oauthClient) getCredentials() (credentials, error) {
@@ -96,7 +81,7 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 	}
 	defer func() {
 		if err := response.Body.Close(); err != nil {
-			log.Warnf("Cannot close connection body inside oauth client")
+			log.Warnf("Cannot close response body inside oauth client")
 		}
 	}()
 

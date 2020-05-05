@@ -51,9 +51,11 @@ type DirectorClientConfig struct {
 
 func (c TestConfig) String() string {
 	return fmt.Sprintf("InternalProvisionerURL=%s, QueryLogging=%v, "+
-		"GardenerProviders=%v GardenerAzureSecret=%v, GardenerGCPSecret=%v",
+		"GardenerProviders=%v GardenerAzureSecret=%v, GardenerGCPSecret=%v, "+
+		"DirectorClientURL=%s, DirectorClientNamespace=%s, DirectorClientOauthCredentialsSecretName=%s",
 		c.InternalProvisionerURL, c.QueryLogging,
-		c.Gardener.Providers, c.Gardener.AzureSecret, c.Gardener.GCPSecret)
+		c.Gardener.Providers, c.Gardener.AzureSecret, c.Gardener.GCPSecret,
+		c.DirectorClient.URL, c.DirectorClient.Namespace, c.DirectorClient.OauthCredentialsSecretName)
 }
 
 func ReadConfig() (TestConfig, error) {

@@ -88,9 +88,7 @@ func newDirectorClient(config testkit.TestConfig) (director.Client, error) {
 	httpClient := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 	graphQLClient := gql.NewGraphQLClient(config.DirectorClient.URL, true, config.QueryLogging)
 	oauthClient := oauth.NewOauthClient(httpClient, secretClient, config.DirectorClient.OauthCredentialsSecretName)
-	if err := oauthClient.WaitForCredentials(); err != nil {
-		return nil, errors.Wrap(err, "timeout waiting for credentials")
-	}
+
 	return director.NewDirectorClient(oauthClient, *graphQLClient, config.Tenant, logrus.WithField("service", "director_client")), nil
 }
 
