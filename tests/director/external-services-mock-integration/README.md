@@ -8,6 +8,7 @@ External Services Mock tests check a contract between Compass and external servi
 3. Compare the audit log with the request for registering the application.
 
 ## Development
+
 To run the test locally, set these environment variables:
 
 | Environment variable   |      Description      |  Default value |
