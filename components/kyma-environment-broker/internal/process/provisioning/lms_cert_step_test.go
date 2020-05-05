@@ -111,34 +111,6 @@ func TestCertStep_TenantNotReadyTimeout(t *testing.T) {
 	})
 }
 
-func TestCertStep_TenantNotReadyTimeout_Mandatory(t *testing.T) {
-	runForOptionalAndMandatory(t, func(t *testing.T, isMandatory bool, a asserter) {
-		// given
-		cli, tID := newFakeClientWithTenant(time.Hour)
-		repo := storage.NewMemoryStorage().Operations()
-		svc := NewLmsCertificatesStep(cli, repo, isMandatory)
-		operation := internal.ProvisioningOperation{
-			Lms: internal.LMS{
-				TenantID:    tID,
-				RequestedAt: time.Now().Add(-10 * time.Hour), // very old
-			},
-			ProvisioningParameters: `{"name": "awesome"}`,
-		}
-		repo.InsertProvisioningOperation(operation)
-
-		// when
-		op, duration, err := svc.Run(operation, fixLogger())
-
-		// then
-		a.AssertError(t, err)
-		assert.Zero(t, duration.Seconds())
-		assert.True(t, op.Lms.Failed)
-
-		// do not expect call to LMS
-		assert.False(t, cli.IsCertRequestedForTenant(tID))
-	})
-}
-
 func TestLmsStepsHappyPath(t *testing.T) {
 	// given
 	lmsClient := lms.NewFakeClient(0)
