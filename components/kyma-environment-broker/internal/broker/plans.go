@@ -15,7 +15,13 @@ const (
 
 func AzureRegions() []string {
 	return []string{
+		"centralus",
+		"eastus",
 		"westus2",
+		"northeurope",
+		"uksouth",
+		"japaneast",
+		"southeastasia",
 		"westeurope",
 	}
 }
