@@ -140,7 +140,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		disk := "standard"
 		machine := "machine"
 		region := "region"
-		zones := []string{"fix-gcp-zone-1","fix-gcp-zone-2"}
+		zones := []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}
 		volume := 256
 		kubeversion := "kubeversion"
 		kubeconfig := "kubeconfig"

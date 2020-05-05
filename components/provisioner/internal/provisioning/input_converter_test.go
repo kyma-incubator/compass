@@ -86,7 +86,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		}
 	}
 
-	gcpGardenerProvider := &gqlschema.GCPProviderConfigInput{Zones: []string{"fix-gcp-zone-1","fix-gcp-zone-2"}}
+	gcpGardenerProvider := &gqlschema.GCPProviderConfigInput{Zones: []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}}
 
 	gardenerGCPGQLInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
