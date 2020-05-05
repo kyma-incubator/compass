@@ -557,7 +557,7 @@
   version = "kubernetes-1.15.2"
 
 [[projects]]
-  digest = "1:1304b9511f1a15f79fa127582e6f4df732368d88f38eae1daad33acfbd198540"
+  digest = "1:df8b3b712dc49ec8cd3293a1b0badaf17eadb974a0492688922bf3cef1deb284"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -595,7 +595,6 @@
     "pkg/util/strategicpatch",
     "pkg/util/validation",
     "pkg/util/validation/field",
-    "pkg/util/wait",
     "pkg/util/yaml",
     "pkg/version",
     "pkg/watch",
@@ -770,7 +769,6 @@
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/runtime",
-    "k8s.io/apimachinery/pkg/util/wait",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/fake",
     "k8s.io/client-go/kubernetes/typed/core/v1",
