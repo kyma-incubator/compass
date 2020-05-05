@@ -88,6 +88,10 @@ func (h *ConfigChangeHandler) Get(writer http.ResponseWriter, req *http.Request)
 
 func (h *ConfigChangeHandler) List(writer http.ResponseWriter, req *http.Request) {
 	values := h.service.List()
+	if len(values) == 0 {
+		http.Error(writer, "", http.StatusNotFound)
+		return
+	}
 
 	err := json.NewEncoder(writer).Encode(&values)
 	if err != nil {
@@ -115,6 +119,11 @@ func (h *ConfigChangeHandler) SearchByString(writer http.ResponseWriter, req *ht
 	}
 
 	values := h.service.SearchByString(searchString)
+	if len(values) == 0 {
+		http.Error(writer, "", http.StatusNotFound)
+		return
+	}
+
 	err := json.NewEncoder(writer).Encode(&values)
 	if err != nil {
 		httphelpers.WriteError(writer, errors.New("error while encoding response"), http.StatusInternalServerError)
