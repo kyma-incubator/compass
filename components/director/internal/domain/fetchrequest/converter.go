@@ -69,7 +69,7 @@ func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 	}
 
 	filter := repo.NewNullableString(in.Filter)
-
+	message := repo.NewNullableString(in.Status.Message)
 	refID := repo.NewValidNullableString(in.ObjectID)
 	var apiDefID sql.NullString
 	var eventAPIDefID sql.NullString
@@ -94,6 +94,7 @@ func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 		Mode:            string(in.Mode),
 		Filter:          filter,
 		StatusCondition: string(in.Status.Condition),
+		StatusMessage:   message,
 		StatusTimestamp: in.Status.Timestamp,
 	}, nil
 }
@@ -116,6 +117,7 @@ func (c *converter) FromEntity(in Entity) (model.FetchRequest, error) {
 		ObjectType: objectType,
 		Status: &model.FetchRequestStatus{
 			Timestamp: in.StatusTimestamp,
+			Message:   repo.StringPtrFromNullableString(in.StatusMessage),
 			Condition: model.FetchRequestStatusCondition(in.StatusCondition),
 		},
 		URL:    in.URL,
@@ -146,6 +148,7 @@ func (c *converter) statusToGraphQL(in *model.FetchRequestStatus) *graphql.Fetch
 
 	return &graphql.FetchRequestStatus{
 		Condition: condition,
+		Message:   in.Message,
 		Timestamp: graphql.Timestamp(in.Timestamp),
 	}
 }

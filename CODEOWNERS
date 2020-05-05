@@ -25,5 +25,9 @@
 # Compass UI
 /chart/compass/charts/cockpit @kwiatekus @dariadomagala @parostatkiem @akucharska @sjanota @Wawrzyn321
 
+# Metris
+/chart/compass/charts/metris @maksd
+/components/metris @maksd
+
 # All .md files
 *.md @klaudiagrz @kazydek @tomekpapiernik @bszwarc @mmitoraj @majakurcius @alexandra-simeonova

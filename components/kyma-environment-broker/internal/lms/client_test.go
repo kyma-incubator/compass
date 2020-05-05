@@ -188,7 +188,7 @@ func createClient(url string) Client {
 	return NewClient(Config{
 		URL:         url,
 		ClusterType: ClusterTypeSingleNode,
-		Environment: EnvironmentProd,
+		Environment: "stage",
 		SamlTenant:  samlTenant,
 		Token:       token,
 	}, logrus.StandardLogger())

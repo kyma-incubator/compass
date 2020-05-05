@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias/automock"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -18,14 +19,16 @@ func TestIASDeregistration_Run(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
 
-	bundle := &automock.Bundle{}
-	defer bundle.AssertExpectations(t)
-	bundle.On("DeleteServiceProvider").Return(nil).Once()
-
 	bundleBuilder := &automock.BundleBuilder{}
 	defer bundleBuilder.AssertExpectations(t)
-	bundleBuilder.On("NewBundle", iasInstanceID).Return(bundle).Once()
 
+	for inputID := range ias.ServiceProviderInputs {
+		bundle := &automock.Bundle{}
+		defer bundle.AssertExpectations(t)
+		bundle.On("DeleteServiceProvider").Return(nil).Once()
+		bundle.On("ServiceProviderName").Return("MockServiceProvider")
+		bundleBuilder.On("NewBundle", iasInstanceID, inputID).Return(bundle, nil).Once()
+	}
 	operation := internal.DeprovisioningOperation{
 		Operation: internal.Operation{
 			InstanceID: iasInstanceID,

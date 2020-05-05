@@ -2,13 +2,15 @@ package gardener
 
 import (
 	"fmt"
-	"path/filepath"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	sessionMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +22,6 @@ const (
 	gardenerNamespace = "default"
 	runtimeId         = "runtimeId"
 	tenant            = "tenant"
-	subAccountId      = "sub-account"
 	operationId       = "operationId"
 	clusterName       = "test-cluster"
 	region            = "westeurope"
@@ -31,9 +32,6 @@ const (
 func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 	clientset := fake.NewSimpleClientset()
 
-	auditLogsConfigPath := filepath.Join("testdata", "config.json")
-	expectedTenant := "e7382275-e835-4549-94e1-3b1101e3a1fa"
-
 	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{})
 	require.NoError(t, err)
 
@@ -43,7 +41,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		// given
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, "", "")
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, nil, auditLogsPolicyCMName)
 
 		// when
 		err := provisionerClient.ProvisionCluster(cluster, operationId)
@@ -55,89 +53,12 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		assertAnnotation(t, shoot, operationIdAnnotation, operationId)
 		assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
 		assert.Equal(t, "", shoot.Labels[model.SubAccountLabel])
+
+		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig)
+		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy)
+		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef)
+		assert.Equal(t, auditLogsPolicyCMName, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef.Name)
 	})
-
-	for _, testCase := range []struct {
-		description         string
-		clusterName         string
-		subAccountId        string
-		configMapName       string
-		auditLogsConfigPath string
-		region              string
-		auditLogsEnabled    bool
-	}{
-		{
-			description:         "audit logs enabled",
-			clusterName:         "test-1",
-			subAccountId:        subAccountId,
-			configMapName:       auditLogsPolicyCMName,
-			auditLogsConfigPath: auditLogsConfigPath,
-			region:              region,
-			auditLogsEnabled:    true,
-		},
-		{
-			description:         "audit logs disabled when no config file",
-			clusterName:         "test-2",
-			subAccountId:        "acc",
-			configMapName:       auditLogsPolicyCMName,
-			auditLogsConfigPath: "",
-			region:              region,
-			auditLogsEnabled:    false,
-		},
-		{
-			description:         "audit logs disabled when no region match",
-			clusterName:         "test-3",
-			subAccountId:        "acc",
-			configMapName:       auditLogsPolicyCMName,
-			auditLogsConfigPath: auditLogsConfigPath,
-			region:              "centralia",
-			auditLogsEnabled:    false,
-		},
-		{
-			description:         "audit logs disabled when no CM name",
-			clusterName:         "test-4",
-			subAccountId:        "",
-			configMapName:       "",
-			auditLogsConfigPath: auditLogsConfigPath,
-			region:              region,
-			auditLogsEnabled:    false,
-		},
-	} {
-		t.Run(testCase.description, func(t *testing.T) {
-			// given
-			shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
-
-			provisionerClient := NewProvisioner(gardenerNamespace, shootClient, testCase.auditLogsConfigPath, testCase.configMapName)
-
-			// when
-			err := provisionerClient.ProvisionCluster(newClusterConfig(testCase.clusterName, testCase.subAccountId, gcpGardenerConfig, testCase.region), operationId)
-			require.NoError(t, err)
-
-			// then
-			shoot, err := shootClient.Get(testCase.clusterName, v1.GetOptions{})
-			require.NoError(t, err)
-			assertAnnotation(t, shoot, operationIdAnnotation, operationId)
-			assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
-
-			assert.Equal(t, testCase.subAccountId, shoot.Labels[model.SubAccountLabel])
-
-			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer)
-			require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
-			assert.False(t, *shoot.Spec.Kubernetes.KubeAPIServer.EnableBasicAuthentication)
-
-			if testCase.auditLogsEnabled {
-				assertAnnotation(t, shoot, auditLogsAnnotation, expectedTenant)
-
-				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig)
-				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy)
-				require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef)
-				assert.Equal(t, auditLogsPolicyCMName, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef.Name)
-			} else {
-				assertNoAnnotation(t, shoot, auditLogsAnnotation)
-			}
-		})
-	}
-
 }
 
 func newClusterConfig(name, subAccountId string, providerConfig model.GardenerProviderConfig, region string) model.Cluster {
@@ -190,11 +111,16 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{Name: clusterName, Namespace: gardenerNamespace, Finalizers: []string{"test"}},
 			})
 
+		sessionFactoryMock := &sessionMocks.Factory{}
+		session := &sessionMocks.WriteSession{}
+
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, "", "")
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName)
 
 		// when
+		sessionFactoryMock.On("NewWriteSession").Return(session)
+
 		operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
 		require.NoError(t, err)
 
@@ -209,20 +135,55 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		assert.True(t, errors.IsNotFound(err))
 	})
 
-	t.Run("should set operation success if shoot does not exist", func(t *testing.T) {
+	t.Run("should set operation success and mark shoot as deleted if shoot does not exist", func(t *testing.T) {
 		// given
 		clientset := fake.NewSimpleClientset()
 
+		sessionFactoryMock := &sessionMocks.Factory{}
+		session := &sessionMocks.WriteSession{}
+
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, "", "")
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName)
 
 		// when
+		sessionFactoryMock.On("NewWriteSession").Return(session)
+		session.On("MarkClusterAsDeleted", cluster.ID).Return(nil)
+
 		operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
 		require.NoError(t, err)
 
 		// then
 		assert.Equal(t, model.Succeeded, operation.State)
+		assert.Equal(t, operationId, operation.ID)
+		assert.Equal(t, runtimeId, operation.ClusterID)
+		assert.Equal(t, model.Deprovision, operation.Type)
+
+		_, err = shootClient.Get(clusterName, v1.GetOptions{})
+		assert.Error(t, err)
+		assert.True(t, errors.IsNotFound(err))
+	})
+
+	t.Run("should set operation failed if shoot does not exist and making it as deleted fails", func(t *testing.T) {
+		// given
+		clientset := fake.NewSimpleClientset()
+
+		sessionFactoryMock := &sessionMocks.Factory{}
+		session := &sessionMocks.WriteSession{}
+
+		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName)
+
+		// when
+		sessionFactoryMock.On("NewWriteSession").Return(session)
+		session.On("MarkClusterAsDeleted", cluster.ID).Return(dberrors.Internal("some db error"))
+
+		operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
+		require.Error(t, err)
+
+		// then
+		assert.Equal(t, model.Failed, operation.State)
 		assert.Equal(t, operationId, operation.ID)
 		assert.Equal(t, runtimeId, operation.ClusterID)
 		assert.Equal(t, model.Deprovision, operation.Type)

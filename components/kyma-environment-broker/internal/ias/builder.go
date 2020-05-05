@@ -8,12 +8,13 @@ import (
 //go:generate mockery -name=Bundle -output=automock -outpkg=automock -case=underscore
 type (
 	BundleBuilder interface {
-		NewBundle(identifier string) Bundle
+		NewBundle(identifier string, inputID SPInputID) (Bundle, error)
 	}
 
 	Bundle interface {
 		FetchServiceProviderData() error
 		ServiceProviderName() string
+		ServiceProviderType() string
 		ServiceProviderExist() bool
 		CreateServiceProvider() error
 		DeleteServiceProvider() error
@@ -41,6 +42,9 @@ func NewBundleBuilder(httpClient *http.Client, config Config) BundleBuilder {
 	}
 }
 
-func (b *Builder) NewBundle(identifier string) Bundle {
-	return NewServiceProviderBundle(identifier, b.iasClient, b.config)
+func (b *Builder) NewBundle(identifier string, inputID SPInputID) (Bundle, error) {
+	if err := inputID.isValid(); err != nil {
+		return nil, err
+	}
+	return NewServiceProviderBundle(identifier, ServiceProviderInputs[inputID], b.iasClient, b.config), nil
 }
