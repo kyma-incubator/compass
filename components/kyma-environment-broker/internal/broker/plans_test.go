@@ -48,7 +48,7 @@ func TestSchemaGenerator(t *testing.T) {
 		},
 			"region": {
 			"type": "string",
-			"enum": [ "centralus", "eastus", "westus2", "northeurope", "uksouth", "japaneast" "southeastasia", "westeurope" ]
+			"enum": [ "centralus", "eastus", "westus2", "northeurope", "uksouth", "japaneast", "southeastasia", "westeurope" ]
 		},
 			"zone": {
 			"type": "string"
