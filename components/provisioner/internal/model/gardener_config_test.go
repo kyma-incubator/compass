@@ -42,15 +42,22 @@ func TestGardenerConfig_ToHydroformConfiguration(t *testing.T) {
 		}
 	}
 
-	gcpGardenerProvider, err := NewGCPGardenerConfig(fixGCPGardenerInput())
-	require.NoError(t, err)
-	assert.Equal(t, `{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`, gcpGardenerProvider.RawJSON())
-	assert.Equal(t, fixGCPGardenerInput(), gcpGardenerProvider.input)
+	zones := []string {"fix-zone-1", "fix-zone-2"}
 
-	azureGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput())
+	gcpGardenerProvider, err := NewGCPGardenerConfig(fixGCPGardenerInput(zones))
 	require.NoError(t, err)
-	assert.Equal(t, `{"vnetCidr":"10.10.11.11/255","zones":["fix-az-zone-1","fix-az-zone-2"]}`, azureGardenerProvider.RawJSON())
-	assert.Equal(t, fixAzureGardenerInput(), azureGardenerProvider.input)
+	assert.Equal(t, `{"zones":["fix-zone-1","fix-zone-2"]}`, gcpGardenerProvider.RawJSON())
+	assert.Equal(t, fixGCPGardenerInput(zones), gcpGardenerProvider.input)
+
+	azureGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput(zones))
+	require.NoError(t, err)
+	assert.Equal(t, `{"vnetCidr":"10.10.11.11/255","zones":["fix-zone-1","fix-zone-2"]}`, azureGardenerProvider.RawJSON())
+	assert.Equal(t, fixAzureGardenerInput(zones), azureGardenerProvider.input)
+
+	azureNoZonesGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput(nil))
+	require.NoError(t, err)
+	assert.Equal(t, `{"vnetCidr":"10.10.11.11/255","zones":null}`, azureNoZonesGardenerProvider.RawJSON()) //TODO: fix once this issue has been resolved: https://github.com/99designs/gqlgen/issues/789
+	assert.Equal(t, fixAzureGardenerInput(nil), azureNoZonesGardenerProvider.input)
 
 	awsGardenerProvider, err := NewAWSGardenerConfig(fixAWSGardenerInput())
 	require.NoError(t, err)
@@ -78,7 +85,7 @@ func TestGardenerConfig_ToHydroformConfiguration(t *testing.T) {
 				"autoscaler_max":  3,
 				"max_surge":       30,
 				"max_unavailable": 1,
-				"zones":           []string{"fix-gcp-zone-1", "fix-gcp-zone-2"},
+				"zones":           []string{"fix-zone-1", "fix-zone-2"},
 			},
 		},
 		{
@@ -96,7 +103,24 @@ func TestGardenerConfig_ToHydroformConfiguration(t *testing.T) {
 				"max_surge":       30,
 				"max_unavailable": 1,
 				"vnetcidr":        "10.10.11.11/255",
-				"zones":           []string{"fix-az-zone-1", "fix-az-zone-2"},
+				"zones":           []string{"fix-zone-1", "fix-zone-2"},
+			},
+		},
+		{
+			description:    "should convert to Hydroform config with Azure provider when no zones passed",
+			provider:       "azure",
+			providerConfig: azureNoZonesGardenerProvider,
+			expectedProviderCustomConfig: map[string]interface{}{
+				"target_provider": "azure",
+				"target_seed":     "eu",
+				"target_secret":   "gardener-secret",
+				"disk_type":       "SSD",
+				"workercidr":      "10.10.10.10/255",
+				"autoscaler_min":  1,
+				"autoscaler_max":  3,
+				"max_surge":       30,
+				"max_unavailable": 1,
+				"vnetcidr":        "10.10.11.11/255",
 			},
 		},
 		{
@@ -140,7 +164,8 @@ func TestGardenerConfig_ToHydroformConfiguration(t *testing.T) {
 func Test_NewGardenerConfigFromJSON(t *testing.T) {
 
 	gcpConfigJSON := `{"zones":["fix-gcp-zone-1", "fix-gcp-zone-2"]}`
-	azureConfigJSON := `{"vnetCidr":"10.10.11.11/255"}`
+	azureConfigJSON := `{"vnetCidr":"10.10.11.11/255", "zones":["fix-az-zone-1", "fix-az-zone-2"]}`
+	azureNoZonesConfigJSON := `{"vnetCidr":"10.10.11.11/255"}`
 	awsConfigJSON := `{"zone":"zone","vpcCidr":"10.10.11.11/255","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255"}`
 
 	for _, testCase := range []struct {
@@ -159,10 +184,19 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 			expectedProviderSpecificConfig: gqlschema.GCPProviderConfig{Zones: []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}},
 		},
 		{
-			description: "should create Azure Gardener config",
+			description: "should create Azure Gardener config when zones passed",
 			jsonData:    azureConfigJSON,
 			expectedConfig: &AzureGardenerConfig{
 				ProviderSpecificConfig: ProviderSpecificConfig(azureConfigJSON),
+				input:                  &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones:[]string{"fix-az-zone-1", "fix-az-zone-2"}},
+			},
+			expectedProviderSpecificConfig: gqlschema.AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/255"), Zones:[]string{"fix-az-zone-1", "fix-az-zone-2"}},
+		},
+		{
+			description: "should create Azure Gardener config when no zones passed",
+			jsonData:    azureNoZonesConfigJSON,
+			expectedConfig: &AzureGardenerConfig{
+				ProviderSpecificConfig: ProviderSpecificConfig(azureNoZonesConfigJSON),
 				input:                  &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255"},
 			},
 			expectedProviderSpecificConfig: gqlschema.AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/255")},
@@ -220,7 +254,7 @@ func Test_AsMap_Error(t *testing.T) {
 			gardenerProviderConfig: &AzureGardenerConfig{ProviderSpecificConfig: ProviderSpecificConfig("invalid json")},
 		},
 		{
-			description:            "azure gardener config",
+			description:            "aws gardener config",
 			gardenerProviderConfig: &AWSGardenerConfig{ProviderSpecificConfig: ProviderSpecificConfig("invalid json")},
 		},
 	} {
@@ -234,12 +268,18 @@ func Test_AsMap_Error(t *testing.T) {
 	}
 }
 
+
 func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 
-	gcpGardenerProvider, err := NewGCPGardenerConfig(fixGCPGardenerInput())
+	zones := []string {"fix-zone-1", "fix-zone-2"}
+
+	gcpGardenerProvider, err := NewGCPGardenerConfig(fixGCPGardenerInput(zones))
 	require.NoError(t, err)
 
-	azureGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput())
+	azureGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput(zones))
+	require.NoError(t, err)
+
+	azureNoZonesGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput(nil))
 	require.NoError(t, err)
 
 	awsGardenerProvider, err := NewAWSGardenerConfig(fixAWSGardenerInput())
@@ -277,7 +317,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Type: "gcp",
 						ControlPlaneConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)},
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","zones":["fix-zone-1","fix-zone-2"]}`)},
 						},
 						InfrastructureConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
@@ -285,7 +325,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							},
 						},
 						Workers: []gardener_types.Worker{
-							fixWorker([]string{"fix-gcp-zone-1", "fix-gcp-zone-2"}),
+							fixWorker([]string{"fix-zone-1", "fix-zone-2"}),
 						},
 					},
 					Kubernetes: gardener_types.Kubernetes{
@@ -300,7 +340,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			},
 		},
 		{
-			description:    "should convert to Shoot template with Azure provider",
+			description:    "should convert to Shoot template with Azure provider when zones passed",
 			provider:       "az",
 			providerConfig: azureGardenerProvider,
 			expectedShootTemplate: &gardener_types.Shoot{
@@ -325,7 +365,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Type: "azure",
 						ControlPlaneConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","zones":["fix-az-zone-1","fix-az-zone-2"]}`)},
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","zones":["fix-zone-1","fix-zone-2"]}`)},
 						},
 						InfrastructureConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
@@ -333,7 +373,55 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							},
 						},
 						Workers: []gardener_types.Worker{
-							fixWorker([]string{"fix-az-zone-1", "fix-az-zone-2"}),
+							fixWorker([]string{"fix-zone-1", "fix-zone-2"}),
+						},
+					},
+					Kubernetes: gardener_types.Kubernetes{
+						AllowPrivilegedContainers: util.BoolPtr(true),
+						Version:                   "1.15",
+						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
+							EnableBasicAuthentication: util.BoolPtr(false),
+						},
+					},
+					Maintenance: &gardener_types.Maintenance{},
+				},
+			},
+		},
+		{
+			description:    "should convert to Shoot template with Azure provider with no zones passed",
+			provider:       "az",
+			providerConfig: azureNoZonesGardenerProvider,
+			expectedShootTemplate: &gardener_types.Shoot{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "cluster",
+					Namespace: "gardener-namespace",
+					Labels: map[string]string{
+						"account":    "account",
+						"subaccount": "sub-account",
+					},
+				},
+				Spec: gardener_types.ShootSpec{
+					CloudProfileName: "az",
+					Networking: gardener_types.Networking{
+						Type:  "calico",
+						Nodes: "10.250.0.0/19",
+					},
+					SeedName:          util.StringPtr("eu"),
+					SecretBindingName: "gardener-secret",
+					Region:            "eu",
+					Provider: gardener_types.Provider{
+						Type: "azure",
+						ControlPlaneConfig: &gardener_types.ProviderConfig{
+							RawExtension: apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`)},
+						},
+						InfrastructureConfig: &gardener_types.ProviderConfig{
+							RawExtension: apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"workers":"10.10.10.10/255"},"zoned":false}`),
+							},
+						},
+						Workers: []gardener_types.Worker{
+							fixWorker(nil),
 						},
 					},
 					Kubernetes: gardener_types.Kubernetes{
@@ -443,12 +531,12 @@ func fixAWSGardenerInput() *gqlschema.AWSProviderConfigInput {
 	}
 }
 
-func fixGCPGardenerInput() *gqlschema.GCPProviderConfigInput {
-	return &gqlschema.GCPProviderConfigInput{Zones: []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}}
+func fixGCPGardenerInput(zones []string) *gqlschema.GCPProviderConfigInput {
+	return &gqlschema.GCPProviderConfigInput{Zones: zones}
 }
 
-func fixAzureGardenerInput() *gqlschema.AzureProviderConfigInput {
-	return &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones: []string{"fix-az-zone-1", "fix-az-zone-2"}}
+func fixAzureGardenerInput(zones []string) *gqlschema.AzureProviderConfigInput {
+	return &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones: zones}
 }
 
 func fixWorker(zones []string) gardener_types.Worker {

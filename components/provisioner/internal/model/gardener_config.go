@@ -134,7 +134,7 @@ type GardenerProviderConfig interface {
 	ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error
 }
 
-func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig, error) {
+func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig, error) { //TODO: change to detect Provider correctly
 	var gcpProviderConfig gqlschema.GCPProviderConfigInput
 	err := util.DecodeJson(jsonData, &gcpProviderConfig)
 	if err == nil {
@@ -242,10 +242,14 @@ func (c *AzureGardenerConfig) AsMap() (map[string]interface{}, error) {
 		}
 	}
 
-	return map[string]interface{}{
+	cfg := map[string]interface{}{
 		"vnetcidr": c.input.VnetCidr,
-		"zones":    c.input.Zones,
-	}, nil
+	}
+	if c.input.Zones != nil {
+		cfg["zones"] = c.input.Zones
+	}
+
+	return cfg, nil
 }
 
 func (c AzureGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {

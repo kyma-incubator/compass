@@ -23,6 +23,7 @@ func TestRuntimeConfig_UnmarshalJSON(t *testing.T) {
 		Zone:              util.StringPtr("zone"),
 	}
 
+	azureProviderCfgNoZones := &AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/25")}
 	azureProviderCfg := &AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/25"), Zones: []string{"az-zone-1", "az-zone-2"}}
 	gcpProviderCfg := &GCPProviderConfig{Zones: []string{"gcp-zone-1", "gcp-zone-2"}}
 	awsProviderCfg := &AWSProviderConfig{
@@ -36,6 +37,14 @@ func TestRuntimeConfig_UnmarshalJSON(t *testing.T) {
 		description string
 		runtimeCfg  RuntimeConfig
 	}{
+		{
+			description: "gardener cluster with Azure with no zones passed",
+			runtimeCfg: RuntimeConfig{
+				ClusterConfig: newGardenerClusterCfg(fixGardenerConfig("azure"), azureProviderCfgNoZones),
+				KymaConfig:    &KymaConfig{Version: util.StringPtr("my precious")},
+				Kubeconfig:    util.StringPtr("kubeconfig"),
+			},
+		},
 		{
 			description: "gardener cluster with Azure",
 			runtimeCfg: RuntimeConfig{
