@@ -29,7 +29,7 @@ type GardenerConfig {
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
 
 type GCPProviderConfig {
-    zones: [String!]
+    zones: [String!]!
 }
 
 type AzureProviderConfig {
@@ -168,7 +168,7 @@ input ProviderSpecificInput {
 }
 
 input GCPProviderConfigInput {
-    zones: [String!]      # Zones in which to create the cluster
+    zones: [String!]!      # Zones in which to create the cluster
 }
 
 input AzureProviderConfigInput {
