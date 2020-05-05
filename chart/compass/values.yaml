@@ -60,7 +60,7 @@ global:
         version: "PR-1156"
       provisioner:
         dir:
-        version: "e1ccb801"
+        version: "PR-1193"
       e2e_provisioning:
         dir:
         version: "PR-1226"
