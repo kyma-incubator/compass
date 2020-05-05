@@ -108,10 +108,9 @@ return "fooBar"
 }
 `
 
-	expectedPorts := `
-         - number: 8081
-           name: https
-           protocol: TLS`
+	expectedPorts := `- number: 8081
+  name: https
+  protocol: TLS`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
 			Key:   "fluent-bit.conf.script",
