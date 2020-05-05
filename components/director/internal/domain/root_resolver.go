@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"time"
 
@@ -118,7 +119,11 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
 	httpClient := getHttpClient()
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, log.StandardLogger())
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, client, log.StandardLogger())
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
