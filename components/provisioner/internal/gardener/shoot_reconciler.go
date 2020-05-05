@@ -112,7 +112,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	seed := getSeed(shoot)
 	if seed != "" {
-		err := r.enableAuditLogs(&shoot, seed)
+		err := r.enableAuditLogs(log, &shoot, seed)
 		if err != nil {
 			log.Errorf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
 		}
@@ -280,22 +280,22 @@ func (r *ProvisioningOperator) setDeprovisioningFinished(cluster model.Cluster, 
 	return nil
 }
 
-func (r *Reconciler) enableAuditLogs(shoot *gardener_types.Shoot, seed string) error {
-	logrus.Info("Enabling audit logs")
+func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_types.Shoot, seed string) error {
+	logger.Info("Enabling audit logs")
 	tenant, err := r.getAuditLogTenant(seed)
 	if err != nil {
 		return err
 	}
 
 	if tenant == "" {
-		logrus.Warnf("Cannot enable audit logs. Tenant for region %s is empty", seed)
+		logger.Warnf("Cannot enable audit logs. Tenant for region %s is empty", seed)
 		return nil
 	} else if tenant == shoot.Annotations[auditLogsAnnotation] {
-		logrus.Debugf("Seed for cluster %s did not change, skipping annotating with Audit Log Tenant", shoot.Name)
+		logger.Debugf("Seed for cluster %s did not change, skipping annotating with Audit Log Tenant", shoot.Name)
 		return nil
 	}
 
-	logrus.Infof("Modifying Audit Log Tenant for shoot %s", shoot.Name)
+	logger.Infof("Modifying Audit Log Tenant for shoot %s", shoot.Name)
 
 	return r.provisioningOperator.updateShoot(*shoot, func(s *gardener_types.Shoot) {
 		annotate(s, auditLogsAnnotation, tenant)
