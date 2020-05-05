@@ -22,7 +22,6 @@ const (
 	gardenerNamespace = "default"
 	runtimeId         = "runtimeId"
 	tenant            = "tenant"
-	subAccountId      = "sub-account"
 	operationId       = "operationId"
 	clusterName       = "test-cluster"
 	region            = "westeurope"

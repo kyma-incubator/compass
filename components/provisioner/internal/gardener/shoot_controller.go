@@ -31,8 +31,7 @@ func NewShootController(
 	directorClient director.DirectorClient,
 	installationSvc installation.Service,
 	installQueue queue.OperationQueue,
-	auditLogTenantConfigPath string,
-	auditLogsCMName string) (*ShootController, error) {
+	auditLogTenantConfigPath string) (*ShootController, error) {
 
 	err := gardener_types.AddToScheme(mgr.GetScheme())
 	if err != nil {
