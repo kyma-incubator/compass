@@ -36,7 +36,7 @@ func NewGCPControlPlane(zones []string) *gcp.ControlPlaneConfig {
 			Kind:       controlPlaneConfigKind,
 			APIVersion: gcpAPIVersion,
 		},
-		Zones: zones,
+		Zone: zones[0],
 	}
 }
 
@@ -63,7 +63,6 @@ func NewAzureControlPlane(zones []string) *azure.ControlPlaneConfig {
 			Kind:       controlPlaneConfigKind,
 			APIVersion: azureAPIVersion,
 		},
-		Zones: zones,
 	}
 }
 

@@ -316,7 +316,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Type: "gcp",
 						ControlPlaneConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","zones":["fix-zone-1","fix-zone-2"]}`)},
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","zone":"fix-zone-1"}`)},
 						},
 						InfrastructureConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
@@ -364,7 +364,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Type: "azure",
 						ControlPlaneConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","zones":["fix-zone-1","fix-zone-2"]}`)},
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`)},
 						},
 						InfrastructureConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
