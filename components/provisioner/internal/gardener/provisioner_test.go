@@ -32,7 +32,9 @@ const (
 func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 	clientset := fake.NewSimpleClientset()
 
-	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{})
+	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{
+		Zones: []string{"zone-1"},
+	})
 	require.NoError(t, err)
 
 	cluster := newClusterConfig("test-cluster", "", gcpGardenerConfig, region)
