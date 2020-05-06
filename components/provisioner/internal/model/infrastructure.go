@@ -30,17 +30,18 @@ func NewGCPInfrastructure(workerCIDR string) *gcp.InfrastructureConfig {
 	}
 }
 
-func NewGCPControlPlane(zone string) *gcp.ControlPlaneConfig {
+func NewGCPControlPlane(zones []string) *gcp.ControlPlaneConfig {
 	return &gcp.ControlPlaneConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       controlPlaneConfigKind,
 			APIVersion: gcpAPIVersion,
 		},
-		Zone: zone,
+		Zone: zones[0],
 	}
 }
 
 func NewAzureInfrastructure(workerCIDR string, azConfig AzureGardenerConfig) *azure.InfrastructureConfig {
+	isZoned := len(azConfig.input.Zones) > 0
 	return &azure.InfrastructureConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       infrastructureConfigKind,
@@ -52,10 +53,11 @@ func NewAzureInfrastructure(workerCIDR string, azConfig AzureGardenerConfig) *az
 				CIDR: &azConfig.input.VnetCidr,
 			},
 		},
+		Zoned: isZoned,
 	}
 }
 
-func NewAzureControlPlane() *azure.ControlPlaneConfig {
+func NewAzureControlPlane(zones []string) *azure.ControlPlaneConfig {
 	return &azure.ControlPlaneConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       controlPlaneConfigKind,

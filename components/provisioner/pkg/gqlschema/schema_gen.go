@@ -51,6 +51,7 @@ type ComplexityRoot struct {
 
 	AzureProviderConfig struct {
 		VnetCidr func(childComplexity int) int
+		Zones    func(childComplexity int) int
 	}
 
 	ComponentConfiguration struct {
@@ -82,7 +83,7 @@ type ComplexityRoot struct {
 	}
 
 	GCPProviderConfig struct {
-		Zone func(childComplexity int) int
+		Zones func(childComplexity int) int
 	}
 
 	GardenerConfig struct {
@@ -210,6 +211,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AzureProviderConfig.VnetCidr(childComplexity), true
 
+	case "AzureProviderConfig.zones":
+		if e.complexity.AzureProviderConfig.Zones == nil {
+			break
+		}
+
+		return e.complexity.AzureProviderConfig.Zones(childComplexity), true
+
 	case "ComponentConfiguration.component":
 		if e.complexity.ComponentConfiguration.Component == nil {
 			break
@@ -322,12 +330,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GCPConfig.Zone(childComplexity), true
 
-	case "GCPProviderConfig.zone":
-		if e.complexity.GCPProviderConfig.Zone == nil {
+	case "GCPProviderConfig.zones":
+		if e.complexity.GCPProviderConfig.Zones == nil {
 			break
 		}
 
-		return e.complexity.GCPProviderConfig.Zone(childComplexity), true
+		return e.complexity.GCPProviderConfig.Zones(childComplexity), true
 
 	case "GardenerConfig.autoScalerMax":
 		if e.complexity.GardenerConfig.AutoScalerMax == nil {
@@ -723,11 +731,12 @@ type GardenerConfig {
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
 
 type GCPProviderConfig {
-    zone: String
+    zones: [String!]!
 }
 
 type AzureProviderConfig {
     vnetCidr: String
+    zones: [String!]
 }
 
 type AWSProviderConfig {
@@ -861,11 +870,12 @@ input ProviderSpecificInput {
 }
 
 input GCPProviderConfigInput {
-    zone: String!      # Zone in which to create the cluster
+    zones: [String!]!      # Zones in which to create the cluster
 }
 
 input AzureProviderConfigInput {
     vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
+    zones: [String!]      # Zones in which to create the cluster
 }
 
 input AWSProviderConfigInput {
@@ -1261,6 +1271,40 @@ func (ec *executionContext) _AzureProviderConfig_vnetCidr(ctx context.Context, f
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AzureProviderConfig_zones(ctx context.Context, field graphql.CollectedField, obj *AzureProviderConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "AzureProviderConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Zones, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ComponentConfiguration_component(ctx context.Context, field graphql.CollectedField, obj *ComponentConfiguration) (ret graphql.Marshaler) {
@@ -1819,7 +1863,7 @@ func (ec *executionContext) _GCPConfig_zone(ctx context.Context, field graphql.C
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GCPProviderConfig_zone(ctx context.Context, field graphql.CollectedField, obj *GCPProviderConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _GCPProviderConfig_zones(ctx context.Context, field graphql.CollectedField, obj *GCPProviderConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1838,19 +1882,22 @@ func (ec *executionContext) _GCPProviderConfig_zone(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Zone, nil
+		return obj.Zones, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.([]string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _GardenerConfig_name(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
@@ -4483,6 +4530,12 @@ func (ec *executionContext) unmarshalInputAzureProviderConfigInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "zones":
+			var err error
+			it.Zones, err = ec.unmarshalOString2ᚕstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -4663,9 +4716,9 @@ func (ec *executionContext) unmarshalInputGCPProviderConfigInput(ctx context.Con
 
 	for k, v := range asMap {
 		switch k {
-		case "zone":
+		case "zones":
 			var err error
-			it.Zone, err = ec.unmarshalNString2string(ctx, v)
+			it.Zones, err = ec.unmarshalNString2ᚕstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5004,6 +5057,8 @@ func (ec *executionContext) _AzureProviderConfig(ctx context.Context, sel ast.Se
 			out.Values[i] = graphql.MarshalString("AzureProviderConfig")
 		case "vnetCidr":
 			out.Values[i] = ec._AzureProviderConfig_vnetCidr(ctx, field, obj)
+		case "zones":
+			out.Values[i] = ec._AzureProviderConfig_zones(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5158,8 +5213,11 @@ func (ec *executionContext) _GCPProviderConfig(ctx context.Context, sel ast.Sele
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("GCPProviderConfig")
-		case "zone":
-			out.Values[i] = ec._GCPProviderConfig_zone(ctx, field, obj)
+		case "zones":
+			out.Values[i] = ec._GCPProviderConfig_zones(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5868,6 +5926,35 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
+func (ec *executionContext) unmarshalNString2ᚕstring(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstring(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNUpgradeRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx context.Context, v interface{}) (UpgradeRuntimeInput, error) {
 	return ec.unmarshalInputUpgradeRuntimeInput(ctx, v)
 }
@@ -6495,6 +6582,38 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstring(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstring(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

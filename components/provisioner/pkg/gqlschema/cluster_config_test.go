@@ -23,24 +23,9 @@ func TestRuntimeConfig_UnmarshalJSON(t *testing.T) {
 		Zone:              util.StringPtr("zone"),
 	}
 
-	gardenerClusterConfig := GardenerConfig{
-		Name:              util.StringPtr("name"),
-		KubernetesVersion: util.StringPtr("1.16"),
-		VolumeSizeGb:      util.IntPtr(50),
-		MachineType:       util.StringPtr("machine"),
-		Region:            util.StringPtr("region"),
-		Provider:          util.StringPtr("provider"),
-		Seed:              util.StringPtr("seed"),
-		TargetSecret:      util.StringPtr("secret"),
-		DiskType:          util.StringPtr("disk"),
-		WorkerCidr:        util.StringPtr("10.10.10.10/25"),
-		AutoScalerMin:     util.IntPtr(1),
-		AutoScalerMax:     util.IntPtr(4),
-		MaxSurge:          util.IntPtr(25),
-		MaxUnavailable:    util.IntPtr(2),
-	}
-	azureProviderCfg := &AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/25")}
-	gcpProviderCfg := &GCPProviderConfig{Zone: util.StringPtr("zone")}
+	azureProviderCfgNoZones := &AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/25")}
+	azureProviderCfg := &AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/25"), Zones: []string{"az-zone-1", "az-zone-2"}}
+	gcpProviderCfg := &GCPProviderConfig{Zones: []string{"gcp-zone-1", "gcp-zone-2"}}
 	awsProviderCfg := &AWSProviderConfig{
 		Zone:         util.StringPtr("aws zone"),
 		VpcCidr:      util.StringPtr("10.10.10.11/25"),
@@ -53,9 +38,17 @@ func TestRuntimeConfig_UnmarshalJSON(t *testing.T) {
 		runtimeCfg  RuntimeConfig
 	}{
 		{
+			description: "gardener cluster with Azure with no zones passed",
+			runtimeCfg: RuntimeConfig{
+				ClusterConfig: newGardenerClusterCfg(fixGardenerConfig("azure"), azureProviderCfgNoZones),
+				KymaConfig:    &KymaConfig{Version: util.StringPtr("my precious")},
+				Kubeconfig:    util.StringPtr("kubeconfig"),
+			},
+		},
+		{
 			description: "gardener cluster with Azure",
 			runtimeCfg: RuntimeConfig{
-				ClusterConfig: newGardenerClusterCfg(gardenerClusterConfig, azureProviderCfg),
+				ClusterConfig: newGardenerClusterCfg(fixGardenerConfig("azure"), azureProviderCfg),
 				KymaConfig:    &KymaConfig{Version: util.StringPtr("my favourite")},
 				Kubeconfig:    util.StringPtr("kubeconfig"),
 			},
@@ -63,7 +56,7 @@ func TestRuntimeConfig_UnmarshalJSON(t *testing.T) {
 		{
 			description: "gardener cluster with GCP",
 			runtimeCfg: RuntimeConfig{
-				ClusterConfig: newGardenerClusterCfg(gardenerClusterConfig, gcpProviderCfg),
+				ClusterConfig: newGardenerClusterCfg(fixGardenerConfig("gcp"), gcpProviderCfg),
 				KymaConfig:    &KymaConfig{Version: util.StringPtr("my favourite")},
 				Kubeconfig:    util.StringPtr("kubeconfig"),
 			},
@@ -71,7 +64,7 @@ func TestRuntimeConfig_UnmarshalJSON(t *testing.T) {
 		{
 			description: "gardener cluster with AWS",
 			runtimeCfg: RuntimeConfig{
-				ClusterConfig: newGardenerClusterCfg(gardenerClusterConfig, awsProviderCfg),
+				ClusterConfig: newGardenerClusterCfg(fixGardenerConfig("aws"), awsProviderCfg),
 				KymaConfig:    &KymaConfig{Version: util.StringPtr("my favourite")},
 				Kubeconfig:    util.StringPtr("kubeconfig"),
 			},
@@ -107,4 +100,23 @@ func newGardenerClusterCfg(gardenerCfg GardenerConfig, providerCfg ProviderSpeci
 	gardenerCfg.ProviderSpecificConfig = providerCfg
 
 	return &gardenerCfg
+}
+
+func fixGardenerConfig(providerName string) GardenerConfig {
+	return GardenerConfig{
+		Name:              util.StringPtr("name"),
+		KubernetesVersion: util.StringPtr("1.16"),
+		VolumeSizeGb:      util.IntPtr(50),
+		MachineType:       util.StringPtr("machine"),
+		Region:            util.StringPtr("region"),
+		Provider:          util.StringPtr(providerName),
+		Seed:              util.StringPtr("seed"),
+		TargetSecret:      util.StringPtr("secret"),
+		DiskType:          util.StringPtr("disk"),
+		WorkerCidr:        util.StringPtr("10.10.10.10/25"),
+		AutoScalerMin:     util.IntPtr(1),
+		AutoScalerMax:     util.IntPtr(4),
+		MaxSurge:          util.IntPtr(25),
+		MaxUnavailable:    util.IntPtr(2),
+	}
 }

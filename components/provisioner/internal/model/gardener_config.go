@@ -5,17 +5,14 @@ import (
 	"errors"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
-
 	"github.com/kyma-incubator/hydroform/types"
-
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -137,7 +134,7 @@ type GardenerProviderConfig interface {
 	ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error
 }
 
-func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig, error) {
+func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig, error) { //TODO: change to detect Provider correctly
 	var gcpProviderConfig gqlschema.GCPProviderConfigInput
 	err := util.DecodeJson(jsonData, &gcpProviderConfig)
 	if err == nil {
@@ -185,18 +182,18 @@ func (c *GCPGardenerConfig) AsMap() (map[string]interface{}, error) {
 	}
 
 	return map[string]interface{}{
-		"zone": c.input.Zone,
+		"zones": c.input.Zones,
 	}, nil
 }
 
 func (c GCPGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
-	return gqlschema.GCPProviderConfig{Zone: &c.input.Zone}
+	return gqlschema.GCPProviderConfig{Zones: c.input.Zones}
 }
 
 func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 	shoot.Spec.CloudProfileName = "gcp"
 
-	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, []string{c.input.Zone})}
+	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
 
 	gcpInfra := NewGCPInfrastructure(gardenerConfig.WorkerCidr)
 	jsonData, err := json.Marshal(gcpInfra)
@@ -204,7 +201,7 @@ func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
 	}
 
-	gcpControlPlane := NewGCPControlPlane(c.input.Zone)
+	gcpControlPlane := NewGCPControlPlane(c.input.Zones)
 	jsonCPData, err := json.Marshal(gcpControlPlane)
 	if err != nil {
 		return fmt.Errorf("error encoding control plane config: %s", err.Error())
@@ -245,13 +242,18 @@ func (c *AzureGardenerConfig) AsMap() (map[string]interface{}, error) {
 		}
 	}
 
-	return map[string]interface{}{
+	cfg := map[string]interface{}{
 		"vnetcidr": c.input.VnetCidr,
-	}, nil
+	}
+	if c.input.Zones != nil {
+		cfg["zones"] = c.input.Zones
+	}
+
+	return cfg, nil
 }
 
 func (c AzureGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
-	return gqlschema.AzureProviderConfig{VnetCidr: &c.input.VnetCidr}
+	return gqlschema.AzureProviderConfig{VnetCidr: &c.input.VnetCidr, Zones: c.input.Zones}
 }
 
 type AWSGardenerConfig struct {
@@ -262,7 +264,7 @@ type AWSGardenerConfig struct {
 func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 	shoot.Spec.CloudProfileName = "az"
 
-	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, nil)}
+	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
 
 	azInfra := NewAzureInfrastructure(gardenerConfig.WorkerCidr, c)
 	jsonData, err := json.Marshal(azInfra)
@@ -270,7 +272,7 @@ func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, sh
 		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
 	}
 
-	azureControlPlane := NewAzureControlPlane()
+	azureControlPlane := NewAzureControlPlane(c.input.Zones)
 	jsonCPData, err := json.Marshal(azureControlPlane)
 	if err != nil {
 		return fmt.Errorf("error encoding control plane config: %s", err.Error())
