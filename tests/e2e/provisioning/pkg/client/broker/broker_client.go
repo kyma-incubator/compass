@@ -6,14 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/thanhpk/randstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -31,19 +29,22 @@ type Client struct {
 	clusterName     string
 	instanceID      string
 	globalAccountID string
+	subAccountID    string
 
 	client *http.Client
 	log    logrus.FieldLogger
 }
 
-func NewClient(config Config, globalAccountID, instanceID string, clientHttp http.Client, log logrus.FieldLogger) *Client {
+func NewClient(config Config, globalAccountID, instanceID, subAccountID string, clientHttp http.Client, log logrus.FieldLogger) *Client {
 	return &Client{
-		brokerConfig:    config,
-		instanceID:      instanceID,
-		clusterName:     fmt.Sprintf("%s-%s", "e2e-provisioning", strings.ToLower(randstr.String(10))),
+		brokerConfig: config,
+		instanceID:   instanceID,
+		//clusterName:     fmt.Sprintf("%s-%s", "e2e-provisioning", strings.ToLower(randstr.String(10))),
+		clusterName:     "e2e-provisioning-mkdjaacgtpasd",
 		globalAccountID: globalAccountID,
 		client:          &clientHttp,
 		log:             log,
+		subAccountID:    subAccountID,
 	}
 }
 
@@ -132,6 +133,18 @@ func (c *Client) DeprovisionRuntime() (string, error) {
 	return response.Operation, nil
 }
 
+func (c *Client) GlobalAccountID() string {
+	return c.globalAccountID
+}
+
+func (c *Client) InstanceID() string {
+	return c.instanceID
+}
+
+func (c *Client) SubAccountID() string {
+	return c.subAccountID
+}
+
 func (c *Client) AwaitOperationSucceeded(operationID string, timeout time.Duration) error {
 	lastOperationURL := fmt.Sprintf("%s%s/%s/last_operation?operation=%s", c.brokerConfig.URL, instancesURL, c.instanceID, operationID)
 	c.log.Infof("Waiting for operation at most %s", timeout.String())
@@ -199,7 +212,7 @@ func (c *Client) prepareProvisionDetails() ([]byte, error) {
 	}
 	context := inputContext{
 		TenantID:        "1eba80dd-8ff6-54ee-be4d-77944d17b10b",
-		SubAccountID:    "39ba9a66-2c1a-4fe4-a28e-6e5db434084e",
+		SubAccountID:    c.subAccountID,
 		GlobalAccountID: c.globalAccountID,
 	}
 	rawParameters, err := json.Marshal(parameters)
@@ -261,4 +274,8 @@ func (c *Client) warnOnError(do func() error) {
 	if err := do(); err != nil {
 		c.log.Warn(err.Error())
 	}
+}
+
+func (c *Client) GetClusterName() string {
+	return c.clusterName
 }

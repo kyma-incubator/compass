@@ -72,5 +72,6 @@ You can configure the test execution by using the following environment variable
 | **APP_SKIP_CERT_VERIFICATION** | Specifies whether TLS checks the presented certificates. | `false` |
 | **APP_DUMMY_TEST** | Specifies if test should success without any action. | `false` |
 | **APP_CLEANUP_PHASE** | Specifies if the test executes the cleanup phase. | `false` |
+| **APP_TEST_AZURE_EVENTHUBS_ENABLED** | Specifies if the test should test the infrastructure in Azure Event Hubs. | `true` |
 | **APP_CONFIG_NAME** | Specifies the name of the ConfigMap and Secret created in the test. | `e2e-runtime-config` |
 | **APP_DEPLOY_NAMESPACE** | Specifies the Namespace of the ConfigMap and Secret created in the test. | `compass-system` |
