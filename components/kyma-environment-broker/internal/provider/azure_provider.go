@@ -27,6 +27,7 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
+					Zones:    []string{"1", "2", "3"},
 				},
 			},
 		},
@@ -34,4 +35,5 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *AzureInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
+	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, params.Zones)
 }

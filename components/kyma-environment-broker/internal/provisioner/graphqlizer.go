@@ -34,17 +34,6 @@ func (g *Graphqlizer) ProvisionRuntimeInputToGraphQL(in gqlschema.ProvisionRunti
 	}`)
 }
 
-func (g *Graphqlizer) UpgradeRuntimeInputToGraphQL(in gqlschema.UpgradeRuntimeInput) (string, error) {
-	return g.genericToGraphQL(in, `{
-		{{- if .ClusterConfig }}
-		clusterConfig: {{ UpgradeClusterConfigToGraphQL .ClusterConfig }},
-		{{- end }}
-		{{- if .KymaConfig }}
-		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }},
-		{{- end }}
-	}`)
-}
-
 func (g *Graphqlizer) RuntimeInputToGraphQL(in gqlschema.RuntimeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		name: "{{.Name}}",
@@ -98,11 +87,16 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 }
 
 func (g *Graphqlizer) AzureProviderConfigInputToGraphQL(in gqlschema.AzureProviderConfigInput) (string, error) {
-	return fmt.Sprintf(`{ vnetCidr: "%s" }`, in.VnetCidr), nil
+	return g.genericToGraphQL(in, `{
+		vnetCidr: "{{.VnetCidr}}",
+		{{- if .Zones }}
+		zones: {{.Zones | marshal }},
+		{{- end }}
+	}`)
 }
 
 func (g *Graphqlizer) GCPProviderConfigInputToGraphQL(in gqlschema.GCPProviderConfigInput) (string, error) {
-	return fmt.Sprintf(`{ zone: "%s" }`, in.Zone), nil
+	return fmt.Sprintf(`{ zones: %s }`, g.marshal(in.Zones)), nil
 }
 
 func (g *Graphqlizer) AWSProviderConfigInputToGraphQL(in gqlschema.AWSProviderConfigInput) (string, error) {
@@ -125,14 +119,6 @@ func (g *Graphqlizer) GCPConfigInputToGraphQL(in gqlschema.GCPConfigInput) (stri
 		region: "{{.Region}}",
 		{{- if .Zone }}
 		zone: "{{.Zone}}",
-		{{- end }}
-	}`)
-}
-
-func (g *Graphqlizer) UpgradeClusterConfigToGraphQL(in gqlschema.UpgradeClusterInput) (string, error) {
-	return g.genericToGraphQL(in, `{
-		{{- if .Version }}
-		version: "{{.Version}}",
 		{{- end }}
 	}`)
 }
@@ -220,7 +206,6 @@ func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["RuntimeInputToGraphQL"] = g.RuntimeInputToGraphQL
 	fm["ClusterConfigToGraphQL"] = g.ClusterConfigToGraphQL
 	fm["KymaConfigToGraphQL"] = g.KymaConfigToGraphQL
-	fm["UpgradeClusterConfigToGraphQL"] = g.UpgradeClusterConfigToGraphQL
 	fm["GardenerConfigInputToGraphQL"] = g.GardenerConfigInputToGraphQL
 	fm["GCPConfigInputToGraphQL"] = g.GCPConfigInputToGraphQL
 	fm["AzureProviderConfigInputToGraphQL"] = g.AzureProviderConfigInputToGraphQL

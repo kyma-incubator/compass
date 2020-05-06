@@ -5,3 +5,9 @@ func updateString(toUpdate *string, value *string) {
 		*toUpdate = *value
 	}
 }
+
+func updateSlice(toUpdate *[]string, value []string) {
+	if value != nil {
+		*toUpdate = value
+	}
+}
