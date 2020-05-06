@@ -1,7 +1,7 @@
 APP_NAME = compass-provisioner
 APP_PATH = components/provisioner
 ENTRYPOINT = cmd/main.go
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20200423-1d9d6590
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/pr/buildpack-golang-kubebuilder2:PR-2326
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 DOCKER_SOCKET = /var/run/docker.sock
 TESTING_DB_NETWORK = test_network
