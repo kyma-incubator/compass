@@ -89,14 +89,8 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		PlatformRegion: region,
 	}
 
-	logger.WithFields(logrus.Fields{
-		"Name":            parameters.Name,
-		"GlobalAccountID": ersContext.GlobalAccountID,
-		"SubAccountID":    ersContext.SubAccountID,
-		"PlatformRegion":  region,
-	}).Infof("Starting provisioning runtime")
-
-	logger.WithField("parameters", parameters).Info("Runtime parameters")
+	logger.Infof("Starting provisioning runtime: Name=%s, GlobalAccountID=%s, SubAccountID=%s PlatformRegion=%s", parameters.Name, ersContext.GlobalAccountID, ersContext.SubAccountID, region)
+	logger.Infof("Runtime parameters: %+v", parameters)
 
 	// check if operation with instance ID already created
 	existingOperation, errStorage := b.operationsStorage.GetProvisioningOperationByInstanceID(instanceID)
