@@ -4,16 +4,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
+	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
+	compass_conn_clientset "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
 	"github.com/sirupsen/logrus"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
-
-	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
-	compass_conn_clientset "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
 )
 
 const (
@@ -33,13 +34,20 @@ func NewCompassConnectionClient(k8sConfig *rest.Config) (compass_conn_clientset.
 
 type WaitForAgentToConnectStep struct {
 	newCompassConnectionClient CompassConnectionClientConstructor
+	directorClient             director.DirectorClient
 	nextStep                   model.OperationStage
 	timeLimit                  time.Duration
 }
 
-func NewWaitForAgentToConnectStep(ccClientProvider CompassConnectionClientConstructor, nextStep model.OperationStage, timeLimit time.Duration) *WaitForAgentToConnectStep {
+func NewWaitForAgentToConnectStep(
+	ccClientProvider CompassConnectionClientConstructor,
+	nextStep model.OperationStage,
+	timeLimit time.Duration,
+	directorClient director.DirectorClient) *WaitForAgentToConnectStep {
+
 	return &WaitForAgentToConnectStep{
 		newCompassConnectionClient: ccClientProvider,
+		directorClient:             directorClient,
 		nextStep:                   nextStep,
 		timeLimit:                  timeLimit,
 	}
@@ -86,16 +94,24 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 	if compassConnCR.Status.State != v1alpha1.Synchronized {
 		if compassConnCR.Status.State == v1alpha1.SynchronizationFailed {
 			logger.Warnf("Runtime Agent Connected but resource synchronization failed state: %s", compassConnCR.Status.State)
-			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+			return s.setConnectedRuntimeStatusCondition(cluster, logger), nil
 		}
 		if compassConnCR.Status.State == v1alpha1.MetadataUpdateFailed {
 			logger.Warnf("Runtime Agent Connected but metadata update failed: %s", compassConnCR.Status.State)
-			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+			return s.setConnectedRuntimeStatusCondition(cluster, logger), nil
 		}
 
 		logger.Infof("Compass Connection not yet in Synchronized state, current state: %s", compassConnCR.Status.State)
 		return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Second}, nil
 	}
 
-	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+	return s.setConnectedRuntimeStatusCondition(cluster, logger), nil
+}
+
+func (s *WaitForAgentToConnectStep) setConnectedRuntimeStatusCondition(cluster model.Cluster, logger logrus.FieldLogger) operations.StageResult {
+	if err := s.directorClient.SetRuntimeStatusCondition(cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant); err != nil {
+		logger.Errorf("Failed to set runtime %s status condition: %s", graphql.RuntimeStatusConditionConnected.String(), err.Error())
+		return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Second}
+	}
+	return operations.StageResult{Stage: s.nextStep, Delay: 0}
 }

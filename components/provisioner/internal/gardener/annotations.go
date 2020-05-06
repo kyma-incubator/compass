@@ -22,6 +22,7 @@ const (
 	UnknownProvisioningState ProvisioningState = ""
 	Provisioned              ProvisioningState = "provisioned"
 	Provisioning             ProvisioningState = "provisioning"
+	Initial                  ProvisioningState = "initial"
 	Deprovisioning           ProvisioningState = "deprovisioning"
 	ProvisioningFailed       ProvisioningState = "failed"
 )
@@ -82,7 +83,7 @@ func getProvisioningState(shoot gardener_types.Shoot) ProvisioningState {
 	}
 
 	switch ProvisioningState(provisioningState) {
-	case Provisioning, Provisioned, Deprovisioning, ProvisioningFailed:
+	case Initial, Provisioning, Provisioned, Deprovisioning, ProvisioningFailed:
 		return ProvisioningState(provisioningState)
 	default:
 		return UnknownProvisioningState

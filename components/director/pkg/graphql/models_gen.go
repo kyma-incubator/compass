@@ -1061,20 +1061,22 @@ func (e PackageInstanceAuthStatusCondition) MarshalGQL(w io.Writer) {
 type RuntimeStatusCondition string
 
 const (
-	RuntimeStatusConditionInitial   RuntimeStatusCondition = "INITIAL"
-	RuntimeStatusConditionConnected RuntimeStatusCondition = "CONNECTED"
-	RuntimeStatusConditionFailed    RuntimeStatusCondition = "FAILED"
+	RuntimeStatusConditionInitial      RuntimeStatusCondition = "INITIAL"
+	RuntimeStatusConditionProvisioning RuntimeStatusCondition = "PROVISIONING"
+	RuntimeStatusConditionConnected    RuntimeStatusCondition = "CONNECTED"
+	RuntimeStatusConditionFailed       RuntimeStatusCondition = "FAILED"
 )
 
 var AllRuntimeStatusCondition = []RuntimeStatusCondition{
 	RuntimeStatusConditionInitial,
+	RuntimeStatusConditionProvisioning,
 	RuntimeStatusConditionConnected,
 	RuntimeStatusConditionFailed,
 }
 
 func (e RuntimeStatusCondition) IsValid() bool {
 	switch e {
-	case RuntimeStatusConditionInitial, RuntimeStatusConditionConnected, RuntimeStatusConditionFailed:
+	case RuntimeStatusConditionInitial, RuntimeStatusConditionProvisioning, RuntimeStatusConditionConnected, RuntimeStatusConditionFailed:
 		return true
 	}
 	return false

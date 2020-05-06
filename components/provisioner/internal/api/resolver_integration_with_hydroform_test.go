@@ -249,7 +249,7 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			installationQueue := queue.CreateInstallationQueue(testProvisioningTimeouts(), dbSessionFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor)
+			installationQueue := queue.CreateInstallationQueue(testProvisioningTimeouts(), dbSessionFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock)
 			installationQueue.Run(ctx.Done())
 
 			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock, runtimeConfigurator)

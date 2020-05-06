@@ -44,7 +44,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	}
 
 	annotate(shootTemplate, operationIdAnnotation, operationId)
-	annotate(shootTemplate, provisioningAnnotation, Provisioning.String())
+	annotate(shootTemplate, provisioningAnnotation, Initial.String())
 	annotate(shootTemplate, runtimeIdAnnotation, cluster.ID)
 
 	if g.policyConfigMapName != "" {
