@@ -167,4 +167,4 @@ You can pass additional input parameters when provisioning a new ServiceInstance
 
 ## Registering Package API without credentials
 
-In order to register API that does not require credentials you must specify not empty `defaultInstanceAuth` with `credential` property set to null.
+In order to register API that does not require credentials, you must set the **defaultInstanceAuth.credential** property to `null`.
