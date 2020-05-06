@@ -75,7 +75,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 			return s.initializeRuntimeInputRequest(operation, log)
 		}
 		log.Info("runtimeID exist, check instance status")
-		return s.checkRuntimeStatus(operation, log)
+		return s.checkRuntimeStatus(operation, log.WithField("runtimeID", inst.RuntimeID))
 	case dberr.IsNotFound(err):
 		log.Info("instance not exist")
 		return s.operationManager.OperationFailed(operation, "instance was not created")
