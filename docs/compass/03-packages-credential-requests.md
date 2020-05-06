@@ -164,3 +164,7 @@ type Mutation {
 ## Passing additional input parameters
 
 You can pass additional input parameters when provisioning a new ServiceInstance from a Package. Input parameters are validated against input JSON schema provided in the **instanceAuthRequestInputSchema** field by the Application or Integration System. The parameters, as well as the input JSON schema, are completely optional. As there is no trusted connection between an Integration System and Runtime, additional input parameters have to be passed to the Application or Integration System through the Director.
+
+## Registering Package API without credentials
+
+In order to register API that does not require credentials you must specify not empty `defaultInstanceAuth` with `credential` property set to null.
