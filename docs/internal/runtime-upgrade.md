@@ -196,7 +196,7 @@ mutation {
                 maxUnavailable 
                 kubernetesVersion 
                 providerSpecificConfig { 
-                __typename ... on GCPProviderConfig { zones } 
+                __typename ... on GCPProviderConfig { zone } 
                     ... on AzureProviderConfig {vnetCidr}
                 ... on AWSProviderConfig {zone internalCidr vpcCidr publicCidr}      
             }
