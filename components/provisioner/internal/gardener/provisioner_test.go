@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
