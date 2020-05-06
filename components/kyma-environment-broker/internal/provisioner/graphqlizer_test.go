@@ -123,6 +123,14 @@ func TestKymaConfigToGraphQLOnlyKymaVersion(t *testing.T) {
 	assert.Equal(t, expRender, gotRender)
 }
 
+//func TestAzureProviderConfigInputToGraphQL(t *testing.T) {
+//	// given
+//	fixInput := gqlschema.AzureProviderConfig{
+//		VnetCidr: nil,
+//		Zones:    nil,
+//	}
+//}
+
 func Test_LabelsToGQL(t *testing.T) {
 
 	sut := Graphqlizer{}
@@ -163,4 +171,61 @@ func Test_LabelsToGQL(t *testing.T) {
 			assert.Equal(t, testCase.expected, render)
 		})
 	}
+}
+
+func TestAzureProviderConfigInputToGraphQL(t *testing.T) {
+	tests := []struct {
+		name       string
+		givenInput gqlschema.AzureProviderConfigInput
+		expected   string
+	}{
+		{
+			name: "Azure will all parameters",
+			givenInput: gqlschema.AzureProviderConfigInput{
+				VnetCidr: "8.8.8.8",
+				Zones:    []string{"fix-az-zone-1", "fix-az-zone-2"},
+			},
+			expected: `{
+		vnetCidr: "8.8.8.8",
+		zones: ["fix-az-zone-1","fix-az-zone-2"],
+	}`,
+		},
+		{
+			name: "Azure with no zones passed",
+			givenInput: gqlschema.AzureProviderConfigInput{
+				VnetCidr: "8.8.8.8",
+			},
+			expected: `{
+		vnetCidr: "8.8.8.8",
+	}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := &Graphqlizer{}
+
+			// when
+			got, err := g.AzureProviderConfigInputToGraphQL(tt.givenInput)
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
+
+func TestGCPProviderConfigInputToGraphQL(t *testing.T) {
+	// given
+	fixInput := gqlschema.GCPProviderConfigInput{
+		Zones: []string{"fix-gcp-zone-1", "fix-gcp-zone-2"},
+	}
+	expected := `{ zones: ["fix-gcp-zone-1","fix-gcp-zone-2"] }`
+	g := &Graphqlizer{}
+
+	// when
+	got, err := g.GCPProviderConfigInputToGraphQL(fixInput)
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, expected, got)
 }

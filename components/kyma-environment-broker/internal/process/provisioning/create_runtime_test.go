@@ -72,7 +72,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				TargetSecret:      "",
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					GcpConfig: &gqlschema.GCPProviderConfigInput{
-						Zone: "europe-west4-b",
+						Zones: []string{"europe-west4-b", "europe-west4-c"},
 					},
 				},
 				Seed: nil,
@@ -163,6 +163,7 @@ func fixProvisioningParameters(t *testing.T) string {
 		Parameters: internal.ProvisioningParametersDTO{
 			Region: ptr.String("europe-west4-a"),
 			Name:   "dummy",
+			Zones:  []string{"europe-west4-b", "europe-west4-c"},
 		},
 	}
 
