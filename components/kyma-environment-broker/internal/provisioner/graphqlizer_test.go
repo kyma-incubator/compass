@@ -123,14 +123,6 @@ func TestKymaConfigToGraphQLOnlyKymaVersion(t *testing.T) {
 	assert.Equal(t, expRender, gotRender)
 }
 
-//func TestAzureProviderConfigInputToGraphQL(t *testing.T) {
-//	// given
-//	fixInput := gqlschema.AzureProviderConfig{
-//		VnetCidr: nil,
-//		Zones:    nil,
-//	}
-//}
-
 func Test_LabelsToGQL(t *testing.T) {
 
 	sut := Graphqlizer{}
