@@ -883,3 +883,13 @@ func fixAutomaticScenarioAssignmentForScenarioRequest(scenarioName string) *gcli
 				}`,
 			scenarioName, tc.gqlFieldsProvider.ForAutomaticScenarioAssignment()))
 }
+
+func fixRefetchAPISpecRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: refetchAPISpec(apiID: "%s") {
+						%s
+					}
+				}`,
+			id, tc.gqlFieldsProvider.ForApiSpec()))
+}

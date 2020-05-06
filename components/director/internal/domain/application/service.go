@@ -51,11 +51,6 @@ type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
-//go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
-type FetchRequestRepository interface {
-	Create(ctx context.Context, item *model.FetchRequest) error
-}
-
 //go:generate mockery -name=IntegrationSystemRepository -output=automock -outpkg=automock -case=underscore
 type IntegrationSystemRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
@@ -79,12 +74,11 @@ type UIDService interface {
 }
 
 type service struct {
-	appRepo          ApplicationRepository
-	webhookRepo      WebhookRepository
-	labelRepo        LabelRepository
-	runtimeRepo      RuntimeRepository
-	fetchRequestRepo FetchRequestRepository
-	intSystemRepo    IntegrationSystemRepository
+	appRepo       ApplicationRepository
+	webhookRepo   WebhookRepository
+	labelRepo     LabelRepository
+	runtimeRepo   RuntimeRepository
+	intSystemRepo IntegrationSystemRepository
 
 	labelUpsertService LabelUpsertService
 	scenariosService   ScenariosService
@@ -93,7 +87,7 @@ type service struct {
 	timestampGen       timestamp.Generator
 }
 
-func NewService(app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, fetchRequestRepo FetchRequestRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService PackageService, uidService UIDService) *service {
+func NewService(app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService PackageService, uidService UIDService) *service {
 	return &service{
 		appRepo:            app,
 		webhookRepo:        webhook,
@@ -104,7 +98,6 @@ func NewService(app ApplicationRepository, webhook WebhookRepository, runtimeRep
 		scenariosService:   scenariosService,
 		pkgService:         pkgService,
 		uidService:         uidService,
-		fetchRequestRepo:   fetchRequestRepo,
 		timestampGen:       timestamp.DefaultGenerator(),
 	}
 }
@@ -415,22 +408,6 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 
 	return nil
 }
-
-func (s *service) createFetchRequest(ctx context.Context, tenant string, in *model.FetchRequestInput, objectType model.FetchRequestReferenceObjectType, objectID string) (*string, error) {
-	if in == nil {
-		return nil, nil
-	}
-
-	id := s.uidService.Generate()
-	fr := in.ToFetchRequest(s.timestampGen(), id, tenant, objectType, objectID)
-	err := s.fetchRequestRepo.Create(ctx, fr)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while creating FetchRequest for %s with ID %s", objectType, objectID)
-	}
-
-	return &id, nil
-}
-
 func createLabel(key string, value string, objectID string) *model.LabelInput {
 	return &model.LabelInput{
 		Key:        key,

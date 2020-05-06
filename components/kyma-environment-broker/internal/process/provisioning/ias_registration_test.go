@@ -26,20 +26,29 @@ func TestIASRegistration_Run(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
 
-	bundle := &automock.Bundle{}
-	defer bundle.AssertExpectations(t)
-	bundle.On("FetchServiceProviderData").Return(nil).Once()
-	bundle.On("ServiceProviderExist").Return(false).Once()
-	bundle.On("CreateServiceProvider").Return(nil).Once()
-	bundle.On("ConfigureServiceProvider").Return(nil).Once()
-	bundle.On("GenerateSecret").Return(&ias.ServiceProviderSecret{
-		ClientID:     iasClentID,
-		ClientSecret: iasClientSecret,
-	}, nil).Once()
-
 	bundleBuilder := &automock.BundleBuilder{}
 	defer bundleBuilder.AssertExpectations(t)
-	bundleBuilder.On("NewBundle", iasInstanceID).Return(bundle).Once()
+
+	for inputID := range ias.ServiceProviderInputs {
+		bundle := &automock.Bundle{}
+		defer bundle.AssertExpectations(t)
+		bundle.On("ServiceProviderName").Return("MockServiceProvider")
+		bundle.On("FetchServiceProviderData").Return(nil).Once()
+		bundle.On("ServiceProviderExist").Return(false).Once()
+		bundle.On("CreateServiceProvider").Return(nil).Once()
+		bundle.On("ConfigureServiceProvider").Return(nil).Once()
+		switch inputID {
+		case ias.SPGrafanaID:
+			bundle.On("ServiceProviderType").Return(ias.OIDC)
+			bundle.On("GenerateSecret").Return(&ias.ServiceProviderSecret{
+				ClientID:     iasClentID,
+				ClientSecret: iasClientSecret,
+			}, nil).Once()
+		default:
+			bundle.On("ServiceProviderType").Return(ias.SAML)
+		}
+		bundleBuilder.On("NewBundle", iasInstanceID, inputID).Return(bundle, nil).Once()
+	}
 
 	inputCreatorMock := &provisioningAutomock.ProvisionInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)

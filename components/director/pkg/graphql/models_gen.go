@@ -276,15 +276,19 @@ type FetchRequest struct {
 
 type FetchRequestInput struct {
 	// **Validation:** valid URL, max=256
-	URL  string     `json:"url"`
+	URL string `json:"url"`
+	// Currently unsupported, providing it will result in a failure
 	Auth *AuthInput `json:"auth"`
+	// Currently unsupported, providing it will result in a failure
 	Mode *FetchMode `json:"mode"`
 	// **Validation:** max=256
+	// Currently unsupported, providing it will result in a failure
 	Filter *string `json:"filter"`
 }
 
 type FetchRequestStatus struct {
 	Condition FetchRequestStatusCondition `json:"condition"`
+	Message   *string                     `json:"message"`
 	Timestamp Timestamp                   `json:"timestamp"`
 }
 
