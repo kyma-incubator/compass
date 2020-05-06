@@ -3,8 +3,9 @@ package scope
 import (
 	"context"
 
-	"github.com/99designs/gqlgen/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/pkg/errors"
 )
 
@@ -34,7 +35,7 @@ func (d *directive) VerifyScopes(ctx context.Context, obj interface{}, next grap
 	}
 
 	if !d.matches(actualScopes, requiredScopes) {
-		return nil, InsufficientScopesError(requiredScopes, actualScopes)
+		return nil, apperrors.NewInsufficientScopesError(requiredScopes, actualScopes)
 	}
 	return next(ctx)
 }

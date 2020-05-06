@@ -3,8 +3,9 @@ package config_test
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
-	"github.com/kyma-incubator/compass/components/director/pkg/scope"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,7 +41,7 @@ func TestProvider_GetRequiredScopes(t *testing.T) {
 		// WHEN
 		_, err := sut.GetRequiredScopes("graphql.mutation.empty")
 		// THEN
-		require.Equal(t, scope.RequiredScopesNotDefinedError, err)
+		require.True(t, apperrors.IsRequiredScopesNotDefined(err))
 	})
 
 	t.Run("returns error if path not found", func(t *testing.T) {

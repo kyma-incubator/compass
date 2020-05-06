@@ -3,14 +3,14 @@ package config
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/scope"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
 func (p *Provider) GetRequiredScopes(path string) ([]string, error) {
 	val, err := p.getValueForJSONPath(path)
 	if err != nil {
-		if err == ValueNotFoundError {
-			return nil, scope.RequiredScopesNotDefinedError
+		if apperrors.IsValueNotFoundInConfiguration(err) {
+			return nil, apperrors.NewRequiredScopesNotDefinedError()
 		}
 		return nil, err
 	}

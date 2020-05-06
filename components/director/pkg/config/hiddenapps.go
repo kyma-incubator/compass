@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
 const applicationHideSelectorsPath = "applicationHideSelectors"
@@ -9,7 +11,7 @@ const applicationHideSelectorsPath = "applicationHideSelectors"
 func (p *Provider) GetApplicationHideSelectors() (map[string][]string, error) {
 	val, err := p.getValueForJSONPath(applicationHideSelectorsPath)
 	if err != nil {
-		if err == ValueNotFoundError {
+		if apperrors.IsValueNotFoundInConfiguration(err) {
 			return nil, nil
 		}
 		return nil, err

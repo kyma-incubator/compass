@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/oliveagle/jsonpath"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/ghodss/yaml"
+	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
 )
 
@@ -47,7 +48,7 @@ func (p *Provider) getValueForJSONPath(path string) (interface{}, error) {
 	}
 
 	if res == nil {
-		return nil, ValueNotFoundError
+		return nil, apperrors.NewValueNotFoundInConfigurationError()
 	}
 
 	return res, nil
