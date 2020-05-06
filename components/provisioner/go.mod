@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/hil v0.0.0-20190212132231-97b3a9cdfa93 // indirect
 	github.com/hashicorp/terraform v0.12.16
 	github.com/kubernetes/client-go v11.0.0+incompatible
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200421071627-8604d53a20a2
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283
 	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
 	github.com/kyma-incubator/hydroform/install v0.0.0-20200414071650-35d4d6f8c53e
 	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442
@@ -54,5 +54,3 @@ replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66
 replace github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 
 replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
-
-replace github.com/kyma-incubator/compass/components/director => github.com/franpog859/compass/components/director v0.0.0-20200428110352-170fa17a9834
