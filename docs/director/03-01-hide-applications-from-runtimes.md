@@ -18,6 +18,6 @@ applicationHideSelectors:
     - "WIP"
   applicationVersion:
     - "alpha"  
-
+```
 
 In this example, all Applications with the `applicationType: "Test Application"`, `applicationType: "WIP"`, or `applicationVersion: "alpha"` label are not visible for Runtimes.
