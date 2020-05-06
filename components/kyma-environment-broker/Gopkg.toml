@@ -46,8 +46,8 @@
   version = "1.4.2"
 
 [[constraint]]
-  #revision = "b43e05d8331a01c557eb7be4822dd17d24faf97f"
-  branch = "mm-availability-zones"
+  revision = "40531347ecb8deaac9e51326832bf258cfc0195c"
+  #branch = "mm-availability-zones"
   source = "github.com/majakurcius/compass"
   name = "github.com/kyma-incubator/compass"
 
