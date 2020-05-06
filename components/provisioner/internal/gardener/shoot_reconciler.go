@@ -146,8 +146,10 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	provisioningStep := getProvisioningState(shoot)
 
 	switch provisioningStep {
+	case Initial:
+		return r.provisioningOperator.ProvisioningInitial(log, shoot, operationId, runtimeId)
 	case Provisioning:
-		return r.provisioningOperator.ProvisioningInProgress(log, shoot, operationId)
+		return r.provisioningOperator.ProvisioningInProgress(log, shoot, operationId, runtimeId)
 	case Provisioned:
 		log.Debug("Shoot provisioned")
 		return ctrl.Result{}, nil

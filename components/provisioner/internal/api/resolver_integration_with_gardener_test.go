@@ -8,35 +8,29 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
-
-	v1alpha12 "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
-	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
-	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
-	compass_connection_fake "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/fake"
-	"k8s.io/client-go/kubernetes/fake"
-
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	runtimeConfigrtr "github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/hydroform/install/installation"
+	v1alpha12 "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
+	compass_connection_fake "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/fake"
+	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -49,6 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes/fake"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -180,9 +175,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	installationQueue := queue.CreateInstallationQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor)
+	installationQueue := queue.CreateInstallationQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock)
 	installationQueue.Run(queueCtx.Done())
-	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock)
+	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
 	controler, err := gardener.NewShootController(mgr, shootInterface, secretsInterface, dbsFactory, directorServiceMock, installationServiceMock, installationQueue, auditLogsConfigPath)
@@ -203,6 +198,16 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(config.runtimeID, nil)
 			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
 			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
+
+			directorServiceMock.On("GetRuntime", mock.Anything, mock.Anything).Return(graphql.RuntimeExt{
+				Runtime: graphql.Runtime{
+					ID:          config.runtimeID,
+					Name:        config.runtimeInput.Name,
+					Description: config.runtimeInput.Description,
+				},
+			}, nil)
+			directorServiceMock.On("UpdateRuntime", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			directorServiceMock.On("SetRuntimeStatusCondition", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 			uuidGenerator := uuid.NewUUIDGenerator()
 			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName)
@@ -243,10 +248,10 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
 			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
 			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
-			assert.Equal(t, "provisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
+			assert.Equal(t, "initial", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
 			assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
 
-			simmulateSuccessfullClusterProvisioning(t, shootInterface, secretsInterface, shoot)
+			simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot)
 
 			//when
 			//wait for Shoot to update
@@ -479,12 +484,17 @@ func (f *fakeShootsInterface) Patch(_ string, pt types.PatchType, _ []byte, _ ..
 	return nil, nil
 }
 
-func simmulateSuccessfullClusterProvisioning(t *testing.T, f gardener_apis.ShootInterface, s v1core.SecretInterface, shoot *gardener_types.Shoot) {
-	setShootStatusToSuccessfull(t, f, shoot)
+func simulateSuccessfulClusterProvisioning(t *testing.T, f gardener_apis.ShootInterface, s v1core.SecretInterface, shoot *gardener_types.Shoot) {
+	simulateDNSAdmissionPluginRun(shoot)
+	setShootStatusToSuccessful(t, f, shoot)
 	createKubeconfigSecret(t, s, shoot.Name)
 }
 
-func setShootStatusToSuccessfull(t *testing.T, f gardener_apis.ShootInterface, shoot *gardener_types.Shoot) {
+func simulateDNSAdmissionPluginRun(shoot *gardener_types.Shoot) {
+	shoot.Spec.DNS = &gardener_types.DNS{Domain: util.StringPtr("domain")}
+}
+
+func setShootStatusToSuccessful(t *testing.T, f gardener_apis.ShootInterface, shoot *gardener_types.Shoot) {
 	shoot.Status.LastOperation = &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded}
 
 	_, err := f.Update(shoot)

@@ -14,6 +14,8 @@ type TestConfig struct {
 
 	Gardener GardenerConfig
 
+	DirectorClient DirectorClientConfig
+
 	// Currently Provisioner do not support standalone GCP
 	GCP GCPConfig
 
@@ -41,11 +43,19 @@ type GCPConfig struct {
 	ProjectName string `envconfig:"default=''"`
 }
 
+type DirectorClientConfig struct {
+	URL                        string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
+	Namespace                  string `envconfig:"default=compass-system"`
+	OauthCredentialsSecretName string `envconfig:"default=compass-provisioner-credentials"`
+}
+
 func (c TestConfig) String() string {
 	return fmt.Sprintf("InternalProvisionerURL=%s, QueryLogging=%v, "+
-		"GardenerProviders=%v GardenerAzureSecret=%v, GardenerGCPSecret=%v",
+		"GardenerProviders=%v GardenerAzureSecret=%v, GardenerGCPSecret=%v, "+
+		"DirectorClientURL=%s, DirectorClientNamespace=%s, DirectorClientOauthCredentialsSecretName=%s",
 		c.InternalProvisionerURL, c.QueryLogging,
-		c.Gardener.Providers, c.Gardener.AzureSecret, c.Gardener.GCPSecret)
+		c.Gardener.Providers, c.Gardener.AzureSecret, c.Gardener.GCPSecret,
+		c.DirectorClient.URL, c.DirectorClient.Namespace, c.DirectorClient.OauthCredentialsSecretName)
 }
 
 func ReadConfig() (TestConfig, error) {

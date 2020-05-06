@@ -6,6 +6,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
@@ -71,6 +73,12 @@ func Test_E2E_Gardener(t *testing.T) {
 				// Asserting Gardener Configuration
 				log.Log("Verifying configuration...")
 				assertGardenerRuntimeConfiguration(t, provisioningInput, runtimeStatus)
+
+				// Check Runtime labels and status in Director
+				log.Log("Checking Runtime labels and status in Director...")
+				runtime, err := testSuite.DirectorClient.GetRuntime(runtimeID)
+				assertions.RequireNoError(t, err)
+				assertRuntimeFromDirector(t, runtime)
 
 				log.Log("Preparing K8s client...")
 				k8sClient := testSuite.KubernetesClientFromRawConfig(t, *runtimeStatus.RuntimeConfiguration.Kubeconfig)
@@ -212,6 +220,21 @@ func verifyProviderConfig(t *testing.T, input gqlschema.ProviderSpecificInput, c
 
 		assertions.AssertNotNilAndEqualString(t, input.GcpConfig.Zone, gcpConfig.Zone)
 	}
+}
+
+func assertRuntimeFromDirector(t *testing.T, runtime graphql.RuntimeExt) {
+	assert.NotEmpty(t, runtime)
+
+	require.NotNil(t, runtime.Status)
+	assert.Equal(t, graphql.RuntimeStatusConditionConnected, runtime.Status.Condition)
+
+	require.NotNil(t, runtime.Labels)
+	gardenerName, ok := runtime.Labels["gardenerClusterName"]
+	require.True(t, ok)
+	assert.NotEmpty(t, gardenerName)
+	gardenerDomain, ok := runtime.Labels["gardenerClusterDomain"]
+	require.True(t, ok)
+	assert.NotEmpty(t, gardenerDomain)
 }
 
 func unwrapString(str *string) string {

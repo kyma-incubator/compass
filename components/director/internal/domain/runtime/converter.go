@@ -66,6 +66,8 @@ func (c *converter) statusToGraphQL(in *model.RuntimeStatus) *graphql.RuntimeSta
 	switch in.Condition {
 	case model.RuntimeStatusConditionInitial:
 		condition = graphql.RuntimeStatusConditionInitial
+	case model.RuntimeStatusConditionProvisioning:
+		condition = graphql.RuntimeStatusConditionProvisioning
 	case model.RuntimeStatusConditionFailed:
 		condition = graphql.RuntimeStatusConditionFailed
 	case model.RuntimeStatusConditionConnected:
@@ -97,6 +99,8 @@ func (c *converter) statusConditionToModel(in *graphql.RuntimeStatusCondition) *
 		condition = model.RuntimeStatusConditionConnected
 	case graphql.RuntimeStatusConditionFailed:
 		condition = model.RuntimeStatusConditionFailed
+	case graphql.RuntimeStatusConditionProvisioning:
+		condition = model.RuntimeStatusConditionProvisioning
 	case graphql.RuntimeStatusConditionInitial:
 		fallthrough
 	default:
