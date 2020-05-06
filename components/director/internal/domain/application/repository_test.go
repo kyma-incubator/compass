@@ -373,7 +373,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 	applicationScenarioQuery := regexp.QuoteMeta(scenariosQuery)
 
 	applicationScenarioQueryWithHidingSelectors := regexp.QuoteMeta(
-		fmt.Sprintf(`%s EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND "tenant_id" = $11 AND "key" = $12 AND "value" @> $13 EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND "tenant_id" = $14 AND "key" = $15 AND "value" @> $16 EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND "tenant_id" = $17 AND "key" = $18 AND "value" @> $19`, scenariosQuery),
+		fmt.Sprintf(`%s EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND "tenant_id" = $11 AND "key" = $12 AND "value" @> $13 EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND "tenant_id" = $14 AND "key" = $15 AND "value" @> $16`, scenariosQuery),
 	)
 
 	pageableQueryRegex := `SELECT (.+) FROM public\.applications WHERE tenant_id = \$1 AND id IN \(%s\) ORDER BY id LIMIT %d OFFSET %d`
@@ -419,12 +419,11 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 		{
 			Name: "Success with hiding selectors",
 			InputHidingSelectors: map[string][]string{
-				"foo":  {"bar", "baz"},
-				"test": {"example"},
+				"foo": {"bar", "baz"},
 			},
 			ExpectedPageableQuery:    pageableQueryWithHidingSelectors,
 			ExpectedCountQuery:       countQueryWithHidingSelectors,
-			ExpectedQueriesInputArgs: []driver.Value{tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir", tenantID, "foo", strconv.Quote("bar"), tenantID, "foo", strconv.Quote("baz"), tenantID, "test", strconv.Quote("example")},
+			ExpectedQueriesInputArgs: []driver.Value{tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir", tenantID, "foo", strconv.Quote("bar"), tenantID, "foo", strconv.Quote("baz")},
 			ExpectedApplicationRows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id"}).
 				AddRow(app1ID, tenantID, "App ABC", "Description for application ABC", "INITIAL", timestamp, "http://domain.local/app1", intSysID).
 				AddRow(app2ID, tenantID, "App XYZ", "Description for application XYZ", "INITIAL", timestamp, "http://domain.local/app2", intSysID),
