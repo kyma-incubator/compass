@@ -108,9 +108,6 @@ edp:
   secret: "TBD"
   secretName: "edp-creds"
 
-audit-logs:
-  scriptName: "audit-log-script"
-
 e2e:
   tenant:
     id: "d9994f8f-7e46-42a8-b2c1-1bfff8d2fe05"

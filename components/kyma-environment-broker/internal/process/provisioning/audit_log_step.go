@@ -46,7 +46,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		logger.Errorf("Unable to get provisioning parameters", err.Error())
 		return operation, 0, errors.New("unable to get provisioning parameters")
 	}
-	luaScript, err := alo.readFile("/audit-log-script/script")
+	luaScript, err := alo.readFile("/auditlog-script/script")
 	if err != nil {
 		logger.Errorf("Unable to read audit config script: %v", err)
 		return operation, 0, err
@@ -57,13 +57,17 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 
 	u, err := url.Parse(alo.auditLogConfig.URL)
 	if err != nil {
-		logger.Errorf("Unable to get URL: %v", err.Error())
+		logger.Errorf("Unable to parse the URL: %v", err.Error())
 		return operation, 0, err
 	}
 	auditLogHost, auditLogPort, err := net.SplitHostPort(u.Host)
 	if err != nil {
 		logger.Errorf("Unable to split URL: %v", err.Error())
 		return operation, 0, err
+	}
+	if auditLogPort == "" {
+		logger.Errorf("There is no Port passed in the URL")
+		return operation, 0, errors.New("there is no Port passed in the URL")
 	}
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
@@ -89,19 +93,17 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         Host             %s
         Port             %s
         URI              /audit-log/v2/security-events
-        Header           content-type    application/json
-        Header           Content-Type    text/plain
+        Header           Content-Type application/json
         HTTP_User        %s
         HTTP_Passwd      %s
         Format           json_stream
         tls              on
-        tls.debug        1
 `, auditLogHost, auditLogPort, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`- %s`, auditLogHost)},
-		{Key: "fluent-bit.externalServiceEntry.ports", Value: `- number: 8081
+		{Key: "fluent-bit.externalServiceEntry.ports", Value: fmt.Sprintf(`- number: %s
   name: https
-  protocol: TLS`},
+  protocol: TLS`, auditLogPort)},
 	})
 	return operation, 0, nil
 }

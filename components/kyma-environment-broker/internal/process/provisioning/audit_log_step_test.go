@@ -38,7 +38,7 @@ func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 	_, _, err := svc.Run(operation, NewLogDummy())
 	//then
 	require.Error(t, err)
-	require.EqualError(t, err, "open /audit-log-script/script: file does not exist")
+	require.EqualError(t, err, "open /auditlog-script/script: file does not exist")
 
 }
 
@@ -54,14 +54,14 @@ return "fooBar"
 }
 `
 
-	err := afero.WriteFile(mm, "/audit-log-script/script", []byte(fileScript), 0755)
+	err := afero.WriteFile(mm, "/auditlog-script/script", []byte(fileScript), 0755)
 	if err != nil {
 		t.Fatalf("Unable to write contents to file: audit-log-script!!: %v", err)
 	}
 
 	repo := storage.NewMemoryStorage().Operations()
 	cfg := auditlog.Config{
-		URL:      "https://host1:8081/aaa/v2",
+		URL:      "https://host1:8080/aaa/v2",
 		User:     "aaaa",
 		Password: "aaaa",
 		Tenant:   "tenant",
@@ -72,33 +72,31 @@ return "fooBar"
 	inputCreatorMock := &automock.ProvisionInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
 	expectedOverride := `
+[INPUT]
+        Name              tail
+        Tag               dex.*
+        Path              /var/log/containers/*_dex-*.log
+        DB                /var/log/flb_kube_dex.db
+        parser            docker
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+        Refresh_Interval  10
 [FILTER]
         Name    lua
         Match   dex.*
         script  script.lua
         call    reformat
-
-[FILTER]
-        Name    lua
-        Match   dex.*
-        script  script.lua
-        call    reformat
-[OUTPUT]
-        Name    stdout
-        Match   dex.*
 [OUTPUT]
         Name             http
         Match            dex.*
         Host             host1
-        Port             8081
-        URI              /audit-log/v2/security-events
-        Header           content-type    application/json
-        Header           Content-Type    text/plain
+        Port             8080
+        URI              /aaa/v2
+        Header           Content-Type application/json
         HTTP_User        aaaa
         HTTP_Passwd      aaaa
         Format           json_stream
         tls              on
-        tls.debug        1
 `
 	expectedFileScript := `
 func myScript() {
@@ -108,7 +106,7 @@ return "fooBar"
 }
 `
 
-	expectedPorts := `- number: 8081
+	expectedPorts := `- number: 8080
   name: https
   protocol: TLS`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
