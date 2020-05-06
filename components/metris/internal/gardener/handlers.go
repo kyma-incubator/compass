@@ -76,7 +76,7 @@ func (c *Controller) shootDeleteHandlerFunc(obj interface{}) {
 
 	c.logger.Warnf("shoot '%s' is being remove from the provider accounts", shootname)
 
-	c.accountsChan <- &Account{Name: shootname}
+	c.accountsChan <- &Account{Name: shootname, TechnicalID: shoot.Status.TechnicalID}
 }
 
 func (c *Controller) shootAddHandlerFunc(obj interface{}) {
@@ -92,6 +92,11 @@ func (c *Controller) shootAddHandlerFunc(obj interface{}) {
 	}
 
 	if strings.EqualFold(c.providertype, pname) {
+		if shoot.Status.TechnicalID == "" {
+			c.logger.Warnf("could not find technical id in Shoot '%s', skipping", shoot.Name)
+			return
+		}
+
 		accountid, ok := shoot.GetLabels()[labelAccountID]
 		if !ok || accountid == "" {
 			c.logger.Warnf("could not find label '%s' in Shoot '%s', skipping", labelAccountID, shoot.Name)
@@ -115,15 +120,16 @@ func (c *Controller) shootAddHandlerFunc(obj interface{}) {
 			c.logger.Warnf("could not find label '%s' in secret '%s'", labelTenantName, secret.Name)
 		}
 
-		shootname := fmt.Sprintf("%s--%s", shoot.Namespace, shoot.Name)
+		shootName := fmt.Sprintf("%s--%s", shoot.Namespace, shoot.Name)
+		shootTechnicalID := shoot.Status.TechnicalID
 
-		c.logger.With("account", subaccountid).Debug("sending account to provider")
+		c.logger.With("account", shootTechnicalID).Debug("sending account to provider")
 		c.accountsChan <- &Account{
-			Name:           shootname,
+			Name:           shootName,
 			ProviderType:   c.providertype,
 			AccountID:      accountid,
 			SubAccountID:   subaccountid,
-			TechnicalID:    shoot.Status.TechnicalID,
+			TechnicalID:    shootTechnicalID,
 			TenantName:     tenantName,
 			CredentialName: secret.Name,
 			CredentialData: secret.Data,

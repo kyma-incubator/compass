@@ -19,6 +19,8 @@ resources: {}
 securityContext:
   runAsUser: 1001
 
+podAnnotations: {}
+
 loglevel: info
 port: 8080
 serviceAccount:

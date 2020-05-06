@@ -34,7 +34,7 @@ type Provider interface {
 }
 
 // NewProvider Create a new provider from the name.
-func NewProvider(config *Config, accountsChannel <-chan *gardener.Account, eventsChannel chan<- *[]byte, logger *zap.SugaredLogger) (Provider, error) {
+func NewProvider(config *Config, accountsChannel chan *gardener.Account, eventsChannel chan<- *[]byte, logger *zap.SugaredLogger) (Provider, error) {
 	logger = logger.With("component", config.Type)
 
 	switch strings.ToLower(config.Type) {

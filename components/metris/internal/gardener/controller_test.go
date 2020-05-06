@@ -48,6 +48,9 @@ var (
 			CloudProfileName:  "az",
 			SecretBindingName: "test-secret",
 		},
+		Status: gcorev1beta1.ShootStatus{
+			TechnicalID: "technicalid-test",
+		},
 	}
 )
 

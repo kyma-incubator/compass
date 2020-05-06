@@ -24,6 +24,19 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 {{- end -}}
 
+{{/* Create chart name and version as used by the chart label. */}}
+{{- define "metris.chartref" -}}
+{{- replace "+" "_" .Chart.Version | printf "%s-%s" .Chart.Name -}}
+{{- end }}
+
+{{/* Generate basic labels */}}
+{{- define "metris.labels" -}}
+chart: {{ template "metris.chartref" . }}
+release: {{ .Release.Name | quote }}
+heritage: {{ .Release.Service | quote }}
+{{- end }}
+
+
 {{- define "metris.imagePullSecrets" -}}
 {{- if .Values.global }}
 {{- if .Values.global.imagePullSecrets }}

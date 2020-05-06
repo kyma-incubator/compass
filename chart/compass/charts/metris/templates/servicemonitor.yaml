@@ -10,7 +10,7 @@ metadata:
   {{- end }}
   labels:
     app: {{ .Chart.Name }}
-    release: {{ .Release.Name }}
+{{ include "metris.labels" . | indent 4 }}
     {{- if .Values.metrics.serviceMonitor.additionalLabels }}
 {{ toYaml .Values.metrics.serviceMonitor.additionalLabels | indent 4 }}
     {{- end }}

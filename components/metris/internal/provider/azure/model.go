@@ -18,7 +18,7 @@ type Provider struct {
 	mu               sync.RWMutex
 	workers          int
 	pollinterval     time.Duration
-	accountsChannel  <-chan *gardener.Account
+	accountsChannel  chan *gardener.Account
 	eventsChannel    chan<- *[]byte
 	queue            workqueue.DelayingInterface
 	clients          map[string]*Client
