@@ -3,12 +3,12 @@
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
 for var in APP_GARDENER_AZURE_SECRET; do
-    if [ -z "${!var}" ] ; then
+    if [[ -z "${!var}" ]] ; then
         echo "ERROR: $var is not set"
         discoverUnsetVar=true
     fi
 done
-if [ "${discoverUnsetVar}" = true ] ; then
+if [[ "${discoverUnsetVar}" = true ]] ; then
     exit 1
 fi
 

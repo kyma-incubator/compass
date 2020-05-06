@@ -1,12 +1,20 @@
 package provisioner
 
 import (
+	"crypto/tls"
 	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
+	restclient "k8s.io/client-go/rest"
+
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director"
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director/oauth"
+	gql "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -33,6 +41,7 @@ const (
 type TestSuite struct {
 	TestId            string
 	ProvisionerClient provisioner.Client
+	DirectorClient    director.Client
 
 	gardenerProviders []string
 
@@ -47,17 +56,40 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	time.Sleep(15 * time.Second)
 
 	provisionerClient := provisioner.NewProvisionerClient(config.InternalProvisionerURL, config.Tenant, config.QueryLogging)
+	directorClient, err := newDirectorClient(config)
+	if err != nil {
+		return nil, err
+	}
 
 	testId := randStringBytes(8)
 
 	return &TestSuite{
-		TestId:            testId,
+		TestId: testId,
+
 		ProvisionerClient: provisionerClient,
+		DirectorClient:    directorClient,
 
 		gardenerProviders: config.Gardener.Providers,
 
 		config: config,
 	}, nil
+}
+
+func newDirectorClient(config testkit.TestConfig) (director.Client, error) {
+	k8sConfig, err := restclient.InClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get in cluster config")
+	}
+	coreClientset, err := kubernetes.NewForConfig(k8sConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create core clientset")
+	}
+	secretClient := coreClientset.CoreV1().Secrets(config.DirectorClient.Namespace)
+	httpClient := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+	graphQLClient := gql.NewGraphQLClient(config.DirectorClient.URL, true, config.QueryLogging)
+	oauthClient := oauth.NewOauthClient(httpClient, secretClient, config.DirectorClient.OauthCredentialsSecretName)
+
+	return director.NewDirectorClient(oauthClient, *graphQLClient, config.Tenant, logrus.WithField("service", "director_client")), nil
 }
 
 func (ts *TestSuite) Setup() error {
@@ -114,9 +146,9 @@ func (ts *TestSuite) KubernetesClientFromRawConfig(t *testing.T, rawConfig strin
 	_, err = tempKubeconfigFile.WriteString(rawConfig)
 	require.NoError(t, err)
 
-	k8sConfig, err := clientcmd.BuildConfigFromFlags("", tempKubeconfigFile.Name())
+	kubernetesConfig, err := clientcmd.BuildConfigFromFlags("", tempKubeconfigFile.Name())
 	require.NoError(t, err)
-	k8sClient, err := kubernetes.NewForConfig(k8sConfig)
+	k8sClient, err := kubernetes.NewForConfig(kubernetesConfig)
 	require.NoError(t, err)
 
 	return k8sClient
