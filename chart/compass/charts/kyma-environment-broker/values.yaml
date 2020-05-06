@@ -90,7 +90,7 @@ lms:
   # if set - always use this region, if empty - region is mapped from the OSB API request
   region: ""
   # if false - failing LMS step does not break provisioning
-  mandatory: false
+  mandatory: true
 
 ias:
   secretName: "ias-creds"
