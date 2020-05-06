@@ -19,9 +19,9 @@ spec:
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e_provisioning.dir }}e2e-provisioning-test:{{ .Values.global.images.tests.e2e_provisioning.version }}
           imagePullPolicy: IfNotPresent
           volumeMounts:
-          - mountPath: /gardener/kubeconfig
-            name: gardener-kubeconfig
-            readOnly: true
+            - mountPath: /gardener/kubeconfig
+              name: gardener-kubeconfig
+              readOnly: true
           env:
             - name: APP_PROVISION_TIMEOUT
               value: "105m"
@@ -39,8 +39,6 @@ spec:
               value: "false"
             - name: APP_CLEANUP_PHASE
               value: "false"
-            - name: APP_TEST_AZURE_EVENTHUBS_ENABLED
-              value: "true"
             - name: APP_BROKER_URL
               value: 'https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}'
             - name: APP_BROKER_PROVISION_GCP
@@ -76,6 +74,11 @@ spec:
               value: "true"
           command: ["/bin/sh"]
           args: ["-c", "echo 'Starting e2e-provisioning test on Azure. Waiting 20s for api server...'; sleep 20; ./test.test; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          volumes:
+            - name: gardener-kubeconfig
+              secret:
+                defaultMode: 420
+                secretName: gardener-credentials
 
 ---
 apiVersion: "testing.kyma-project.io/v1alpha1"
@@ -93,6 +96,10 @@ spec:
         - name: tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e_provisioning.dir }}e2e-provisioning-test:{{ .Values.global.images.tests.e2e_provisioning.version }}
           imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /gardener/kubeconfig
+              name: gardener-kubeconfig
+              readOnly: true
           env:
             - name: APP_PROVISION_TIMEOUT
               value: "105m"
@@ -133,5 +140,16 @@ spec:
               value: "compass-system"
             - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
               value: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
+            - name: APP_GARDENER_PROJECT
+              value: "kyma-dev"
+            - name: APP_GARDENER_KUBECONFIG_PATH
+              value: "/gardener/kubeconfig/kubeconfig"
+            - name: APP_TEST_AZURE_EVENT_HUBS_ENABLED
+              value: "true"
           command: ["/bin/sh"]
           args: ["-c", "echo 'Starting e2e-provisioning cleanup test on Azure. Waiting 20s for api server...'; sleep 20; ./test.test; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          volumes:
+            - name: gardener-kubeconfig
+              secret:
+                defaultMode: 420
+                secretName: gardener-credentials

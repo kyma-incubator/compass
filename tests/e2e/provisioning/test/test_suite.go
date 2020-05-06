@@ -61,7 +61,6 @@ type Suite struct {
 	configMapClient v1_client.ConfigMaps
 	accountProvider hyperscaler.AccountProvider
 	azureClient     *azure.AzureInterface
-	//azureConfig     *azure.Config
 
 	dashboardChecker *runtime.DashboardChecker
 
@@ -80,17 +79,15 @@ type Suite struct {
 }
 
 const (
-	instanceIdKey      = "instanceId"
-	dashboardUrlKey    = "dashboardUrl"
-	kubeconfigKey      = "config"
-	subAccountID       = "39ba9a66-2c1a-4fe4-a28e-6e5db434084e"
-	DefaultAzureRegion = "westeurope" //TODO use env vars
+	instanceIdKey        = "instanceId"
+	dashboardUrlKey      = "dashboardUrl"
+	kubeconfigKey        = "config"
+	subAccountID         = "39ba9a66-2c1a-4fe4-a28e-6e5db434084e"
+	DefaultAzureEHRegion = "westeurope"
 )
 
 func newTestSuite(t *testing.T) *Suite {
 	var azureClient azure.AzureInterface
-	hypType := hyperscaler.Azure
-
 	cfg := &Config{}
 	err := envconfig.InitWithPrefix(cfg, "APP")
 	require.NoError(t, err)
@@ -136,6 +133,8 @@ func newTestSuite(t *testing.T) *Suite {
 	dashboardChecker := runtime.NewDashboardChecker(*httpClient, log.WithField("service", "dashboard_checker"))
 
 	if cfg.TestAzureEventHubsEnabled {
+		hypType := hyperscaler.Azure
+
 		hyperscalerProvider := azure.NewAzureProvider()
 
 		gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
@@ -145,12 +144,13 @@ func newTestSuite(t *testing.T) *Suite {
 		require.NoError(t, err)
 
 		gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
+
 		accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
+
 		credentials, err := accountProvider.GardenerCredentials(hypType, brokerClient.GlobalAccountID())
 		assert.NoError(t, err)
 
-		// get Azure credentials from HAP
-		azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, DefaultAzureRegion)
+		azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, DefaultAzureEHRegion)
 		assert.NoError(t, err)
 
 		azureClient, err = hyperscalerProvider.GetClient(azureCfg)
@@ -202,8 +202,6 @@ func (ts *Suite) Cleanup() {
 		assert.NoError(ts.t, err)
 		assert.Equal(ts.t, http.StatusNotFound, namespace.Response.StatusCode, "HTTP GET for EH Namespace should return response code 404")
 	}
-
-	ts.log.Fatalf("Cleanup Test ends")
 }
 
 // cleanupResources removes secret and config map used to store data about the test

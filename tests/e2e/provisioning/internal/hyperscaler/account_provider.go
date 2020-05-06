@@ -15,7 +15,6 @@ type accountProvider struct {
 
 // NewAccountProvider returns a new AccountProvider
 func NewAccountProvider(compassPool AccountPool, gardenerPool AccountPool) AccountProvider {
-
 	return &accountProvider{
 		compassPool:  compassPool,
 		gardenerPool: gardenerPool,
@@ -24,7 +23,6 @@ func NewAccountProvider(compassPool AccountPool, gardenerPool AccountPool) Accou
 
 // GardenerCredentials returns credentials for Gardener account
 func (p *accountProvider) GardenerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
-
 	if p.gardenerPool == nil {
 		return Credentials{}, fmt.Errorf("failed to get Gardener Credentials. Gardener Account pool is not configured for tenant: %s", tenantName)
 	}

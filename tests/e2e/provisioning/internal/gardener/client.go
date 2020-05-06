@@ -2,8 +2,9 @@ package gardener
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
+
+	"github.com/pkg/errors"
 
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -15,7 +16,7 @@ import (
 func NewGardenerClusterConfig(kubeconfigPath string) (*restclient.Config, error) {
 	rawKubeconfig, err := ioutil.ReadFile(kubeconfigPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read Gardener Kubeconfig from path %s: %s", kubeconfigPath, err.Error())
+		return nil, errors.Wrapf(err, "failed to read Gardener Kubeconfig from path: %s", kubeconfigPath)
 	}
 
 	gardenerClusterConfig, err := RESTConfig(rawKubeconfig)
@@ -31,7 +32,7 @@ func NewGardenerSecretsInterface(gardenerClusterCfg *restclient.Config, gardener
 	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProjectName)
 	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to fetch gardener cluster clienset")
 	}
 
 	return gardenerClusterClient.CoreV1().Secrets(gardenerNamespace), nil

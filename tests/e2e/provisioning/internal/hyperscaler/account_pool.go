@@ -19,8 +19,8 @@ const (
 
 type Credentials struct {
 	CredentialName  string
-	HyperscalerType HyperscalerType
 	TenantName      string
+	HyperscalerType HyperscalerType
 	CredentialData  map[string][]byte
 }
 
@@ -28,16 +28,16 @@ type AccountPool interface {
 	Credentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
 }
 
+type secretsAccountPool struct {
+	secretsClient corev1.SecretInterface
+	mux           sync.Mutex
+}
+
 // NewAccountPool returns a new AccountPool
 func NewAccountPool(secretsClient corev1.SecretInterface) AccountPool {
 	return &secretsAccountPool{
 		secretsClient: secretsClient,
 	}
-}
-
-type secretsAccountPool struct {
-	secretsClient corev1.SecretInterface
-	mux           sync.Mutex
 }
 
 // Credentials returns the hyperscaler secret from k8s secret
@@ -93,8 +93,8 @@ func getK8SSecret(secretsClient corev1.SecretInterface, labelSelector string) (*
 func credentialsFromSecret(secret *apiv1.Secret, hyperscalerType HyperscalerType, tenantName string) Credentials {
 	return Credentials{
 		CredentialName:  secret.Name,
-		HyperscalerType: hyperscalerType,
 		TenantName:      tenantName,
+		HyperscalerType: hyperscalerType,
 		CredentialData:  secret.Data,
 	}
 }

@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/thanhpk/randstr"
+
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -37,10 +40,9 @@ type Client struct {
 
 func NewClient(config Config, globalAccountID, instanceID, subAccountID string, clientHttp http.Client, log logrus.FieldLogger) *Client {
 	return &Client{
-		brokerConfig: config,
-		instanceID:   instanceID,
-		//clusterName:     fmt.Sprintf("%s-%s", "e2e-provisioning", strings.ToLower(randstr.String(10))),
-		clusterName:     "e2e-provisioning-mkdjaacgtpasd",
+		brokerConfig:    config,
+		instanceID:      instanceID,
+		clusterName:     fmt.Sprintf("%s-%s", "e2e-provisioning", strings.ToLower(randstr.String(10))),
 		globalAccountID: globalAccountID,
 		client:          &clientHttp,
 		log:             log,
@@ -143,6 +145,10 @@ func (c *Client) InstanceID() string {
 
 func (c *Client) SubAccountID() string {
 	return c.subAccountID
+}
+
+func (c *Client) GetClusterName() string {
+	return c.clusterName
 }
 
 func (c *Client) AwaitOperationSucceeded(operationID string, timeout time.Duration) error {
@@ -274,8 +280,4 @@ func (c *Client) warnOnError(do func() error) {
 	if err := do(); err != nil {
 		c.log.Warn(err.Error())
 	}
-}
-
-func (c *Client) GetClusterName() string {
-	return c.clusterName
 }
