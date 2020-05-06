@@ -8,9 +8,9 @@ To configure the list of selectors used to filter the list of returned Applicati
 
 The **applicationHideSelectors** parameter is a map that contains the lists of **strings**, where map keys represent label keys, and strings represent label values that are used to filter the returned Applications.
 
-Each label key can have multiple values assigned, if an Application is labeled with that key and any of the specified values, it will not be returned in `applicationsForRuntime` query. Multiple label keys can be configured.
+You can configure multiple label keys. Each label key can have multiple values assigned. If an Application is labeled with that key and any of the specified values, it is not returned in the `applicationsForRuntime` query.
 
-See the example of the labels specified in the **applicationHideSelectors** parameter:
+See the example of labels specified in the **applicationHideSelectors** parameter:
 ```yaml
 applicationHideSelectors:
   applicationType:
