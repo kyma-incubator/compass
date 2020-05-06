@@ -392,8 +392,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "mm-availability-zones"
-  digest = "1:67bbd18ac9dff15a6594316c92060378bb0c9ae5285c406504da4095dbd5e434"
+  digest = "1:7104890b67c4b703b6c80f612886bedf6bc182be563da09a3173df4b871e8142"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -405,8 +404,7 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "eb9f5ffe433f5ef14ef25060fbada1e9773d7633"
-  source = "github.com/majakurcius/compass"
+  revision = "3f19fcd363a5a9fd5d3c99dcd9b855718f820efb"
 
 [[projects]]
   digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
