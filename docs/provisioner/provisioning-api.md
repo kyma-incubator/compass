@@ -66,7 +66,7 @@ These are the basic assumptions for the API design:
   - Name
   - Size
   - Memory
-  - Region and zone(s)
+  - Region and zone
   - Credentials
   - Version
   - Infrastructure provider (e.g. GKE, AKS)
