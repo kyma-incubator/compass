@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	tillerWaitTime = 5 * time.Minute
+	tillerWaitTime = 10 * time.Minute
 
 	installAction = "installation"
 	upgradeAction = "upgrade"
