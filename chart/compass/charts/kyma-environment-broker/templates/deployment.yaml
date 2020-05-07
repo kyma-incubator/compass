@@ -257,4 +257,4 @@ spec:
           secretName: {{ .Values.gardener.secretName }}
       - name: auditlog-script
         configMap:
-          name: {{ .Values.global.auditlog.script.ConfigMapName }}
+          name: {{ .Values.global.auditlog.script.configMapName }}
