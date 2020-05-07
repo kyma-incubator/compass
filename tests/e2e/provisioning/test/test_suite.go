@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -151,8 +152,9 @@ func newTestSuite(t *testing.T) *Suite {
 		SubAccountID:       subAccountID,
 		ProvisionTimeout:   cfg.ProvisionTimeout,
 		DeprovisionTimeout: cfg.DeprovisionTimeout,
-		ConfigName:         cfg.ConfigName,
-		DeployNamespace:    cfg.DeployNamespace,
+
+		ConfigName:      cfg.ConfigName,
+		DeployNamespace: cfg.DeployNamespace,
 
 		IsDummyTest:                 cfg.DummyTest,
 		IsCleanupPhase:              cfg.CleanupPhase,
@@ -173,14 +175,18 @@ func (ts *Suite) Cleanup() {
 	assert.NoError(ts.t, err)
 
 	if ts.IsTestAzureEventHubsEnabled {
-		resourceGroup, err := (*ts.azureClient).GetResourceGroup(context.TODO(), ts.brokerClient.GetClusterName())
-		assert.NoError(ts.t, err)
-		assert.Equal(ts.t, http.StatusNotFound, resourceGroup.Response.StatusCode, "HTTP GET for ResourceGroup should return response code 404")
-
-		namespace, err := (*ts.azureClient).GetEHNamespace(context.TODO(), ts.brokerClient.GetClusterName(), ts.brokerClient.GetClusterName())
-		assert.NoError(ts.t, err)
-		assert.Equal(ts.t, http.StatusNotFound, namespace.Response.StatusCode, "HTTP GET for EH Namespace should return response code 404")
+		ts.ensureAzureResourceGroupRemoved()
 	}
+}
+
+// ensureAzureResourceGroupRemoved ensures ResourceGroup is removed which also means EventHub is removed
+func (ts *Suite) ensureAzureResourceGroupRemoved() {
+	filter := fmt.Sprintf("tagName eq 'InstanceID' and tagValue eq '%s'", ts.InstanceID)
+	groupListResultPage, err := (*ts.azureClient).ListResourceGroup(context.TODO(), filter, nil)
+
+	assert.NoError(ts.t, err)
+	assert.Equal(ts.t, http.StatusOK, groupListResultPage.Response().StatusCode, "HTTP GET fails for ListResourceGroup")
+	assert.Equal(ts.t, 0, len(groupListResultPage.Values()), "groupListResultPage should return 0 ResourceGroup")
 }
 
 // cleanupResources removes secret and config map used to store data about the test

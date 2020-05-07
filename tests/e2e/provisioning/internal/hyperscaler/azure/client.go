@@ -8,8 +8,8 @@ import (
 )
 
 type AzureInterface interface {
-	GetResourceGroup(ctx context.Context, name string) (resources.Group, error)
-	GetEHNamespace(ctx context.Context, resourceGroupName, namespaceName string) (eventhub.EHNamespace, error)
+	ListResourceGroup(ctx context.Context, filter string, top *int32) (resources.GroupListResultPage, error)
+	ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error)
 }
 
 var _ AzureInterface = (*AzureClient)(nil)
@@ -26,10 +26,10 @@ func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourcegroupClie
 	}
 }
 
-func (nc *AzureClient) GetResourceGroup(ctx context.Context, name string) (resources.Group, error) {
-	return nc.resourcegroupClient.Get(ctx, name)
+func (nc *AzureClient) ListResourceGroup(ctx context.Context, filter string, top *int32) (resources.GroupListResultPage, error) {
+	return nc.resourcegroupClient.List(ctx, filter, top)
 }
 
-func (nc *AzureClient) GetEHNamespace(ctx context.Context, resourceGroupName, namespaceName string) (eventhub.EHNamespace, error) {
-	return nc.eventhubNamespaceClient.Get(ctx, resourceGroupName, namespaceName)
+func (nc *AzureClient) ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error) {
+	return nc.eventhubNamespaceClient.ListByResourceGroup(ctx, resourceGroupName)
 }
