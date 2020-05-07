@@ -12,7 +12,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages"
 
-	"github.com/avast/retry-go"
+	retry "github.com/avast/retry-go"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
@@ -71,10 +71,11 @@ type config struct {
 	ProvisioningTimeout queue.ProvisioningTimeouts
 
 	Gardener struct {
-		Project                   string `envconfig:"default=gardenerProject"`
-		KubeconfigPath            string `envconfig:"default=./dev/kubeconfig.yaml"`
-		AuditLogsPolicyConfigMap  string `envconfig:"optional"`
-		AuditLogsTenantConfigPath string `envconfig:"optional"`
+		Project                     string `envconfig:"default=gardenerProject"`
+		KubeconfigPath              string `envconfig:"default=./dev/kubeconfig.yaml"`
+		AuditLogsPolicyConfigMap    string `envconfig:"optional"`
+		AuditLogsTenantConfigPath   string `envconfig:"optional"`
+		MaintenanceWindowConfigPath string `envconfig:"optional"`
 	}
 
 	Provisioner string `envconfig:"default=gardener"`
@@ -172,7 +173,7 @@ func main() {
 		hydroformSvc := hydroform.NewHydroformService(client.NewHydroformClient(), cfg.Gardener.KubeconfigPath)
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
-		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap)
+		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
 		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, directorClient, installationService, installationQueue, cfg.Gardener.AuditLogsTenantConfigPath)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {
