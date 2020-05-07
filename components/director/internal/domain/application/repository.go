@@ -100,23 +100,41 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		PageInfo:   page}, nil
 }
 
-func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, scenarios []string, pageSize int, cursor string) (*model.ApplicationPage, error) {
+func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error) {
 	var appsCollection EntityCollection
 
-	var scenariosFilers []*labelfilter.LabelFilter
+	// Scenarios query part
+	var scenariosFilters []*labelfilter.LabelFilter
 	for _, scenarioValue := range scenarios {
 		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
-		scenariosFilers = append(scenariosFilers, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
+		scenariosFilters = append(scenariosFilters, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
 	}
 
-	scenariosSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenant, scenariosFilers)
+	scenariosSubquery, scenariosArgs, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenant, scenariosFilters)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating scenarios filter query")
 	}
 
+	// Application Hide query part
+	var appHideFilters []*labelfilter.LabelFilter
+	for key, values := range hidingSelectors {
+		for _, value := range values {
+			appHideFilters = append(appHideFilters, labelfilter.NewForKeyWithQuery(key, fmt.Sprintf(`"%s"`, value)))
+		}
+	}
+
+	appHideSubquery, appHideArgs, err := label.FilterSubquery(model.ApplicationLabelableObject, label.ExceptSet, tenant, appHideFilters)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating scenarios filter query")
+	}
+
+	// Combining both queries
+	combinedQuery := scenariosSubquery + appHideSubquery
+	combinedArgs := append(scenariosArgs, appHideArgs...)
+
 	var conditions repo.Conditions
-	if scenariosSubquery != "" {
-		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery, args))
+	if combinedQuery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", combinedQuery, combinedArgs))
 	}
 
 	page, totalCount, err := r.pageableQuerier.List(ctx, tenant.String(), pageSize, cursor, "id", &appsCollection, conditions...)

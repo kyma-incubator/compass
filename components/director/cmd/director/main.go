@@ -7,58 +7,49 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/features"
-	"github.com/kyma-incubator/compass/components/director/internal/statusupdate"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
+	"github.com/kyma-incubator/compass/components/director/internal/domain"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
-
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/features"
+	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/runtimemapping"
+	"github.com/kyma-incubator/compass/components/director/internal/statusupdate"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
-
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
-	"github.com/kyma-project/kyma/components/console-backend-service/pkg/executor"
-	"github.com/kyma-project/kyma/components/console-backend-service/pkg/signal"
-
+	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	log "github.com/sirupsen/logrus"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain"
-	"github.com/kyma-incubator/compass/components/director/internal/healthz"
-
-	"github.com/pkg/errors"
+	"github.com/kyma-project/kyma/components/console-backend-service/pkg/executor"
+	"github.com/kyma-project/kyma/components/console-backend-service/pkg/signal"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 )
 
 type config struct {
-	Address                       string `envconfig:"default=127.0.0.1:3000"`
-	Database                      persistence.DatabaseConfig
-	APIEndpoint                   string `envconfig:"default=/graphql"`
-	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
-	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
-	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
-	ScopesConfigurationFile       string
-	ScopesConfigurationFileReload time.Duration `envconfig:"default=1m"`
+	Address                 string `envconfig:"default=127.0.0.1:3000"`
+	Database                persistence.DatabaseConfig
+	APIEndpoint             string `envconfig:"default=/graphql"`
+	TenantMappingEndpoint   string `envconfig:"default=/tenant-mapping"`
+	RuntimeMappingEndpoint  string `envconfig:"default=/runtime-mapping"`
+	PlaygroundAPIEndpoint   string `envconfig:"default=/graphql"`
+	ConfigurationFile       string
+	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
 	JWKSEndpoint        string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
@@ -92,14 +83,14 @@ func main() {
 	}()
 
 	stopCh := signal.SetupChannel()
-	scopeCfgProvider := createAndRunScopeConfigProvider(stopCh, cfg)
+	cfgProvider := createAndRunConfigProvider(stopCh, cfg)
 
 	pairingAdapters, err := getPairingAdaptersMapping(cfg.PairingAdapterSrc)
 	exitOnError(err, "Error while reading Pairing Adapters Configuration")
 	gqlCfg := graphql.Config{
-		Resolvers: domain.NewRootResolver(transact, scopeCfgProvider, cfg.OneTimeToken, cfg.OAuth20, pairingAdapters, cfg.Features),
+		Resolvers: domain.NewRootResolver(transact, cfgProvider, cfg.OneTimeToken, cfg.OAuth20, pairingAdapters, cfg.Features),
 		Directives: graphql.DirectiveRoot{
-			HasScopes: scope.NewDirective(scopeCfgProvider).VerifyScopes,
+			HasScopes: scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:  inputvalidation.NewDirective().Validate,
 		},
 	}
@@ -132,7 +123,7 @@ func main() {
 	gqlAPIRouter.HandleFunc("", handler.GraphQL(executableSchema))
 
 	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHanderFunc(transact, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, scopeCfgProvider)
+	tenantMappingHandlerFunc, err := getTenantMappingHanderFunc(transact, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
@@ -193,15 +184,15 @@ func getPairingAdaptersMapping(filePath string) (map[string]string, error) {
 	return out, nil
 }
 
-func createAndRunScopeConfigProvider(stopCh <-chan struct{}, cfg config) *scope.Provider {
-	provider := scope.NewProvider(cfg.ScopesConfigurationFile)
+func createAndRunConfigProvider(stopCh <-chan struct{}, cfg config) *configprovider.Provider {
+	provider := configprovider.NewProvider(cfg.ConfigurationFile)
 	err := provider.Load()
-	exitOnError(err, "Error on loading scopes config file")
-	executor.NewPeriodic(cfg.ScopesConfigurationFileReload, func(stopCh <-chan struct{}) {
+	exitOnError(err, "Error on loading configuration file")
+	executor.NewPeriodic(cfg.ConfigurationFileReload, func(stopCh <-chan struct{}) {
 		if err := provider.Load(); err != nil {
 			exitOnError(err, "Error from Reloader watch")
 		}
-		log.Infof("Successfully reloaded scopes configuration")
+		log.Infof("Successfully reloaded configuration file")
 
 	}).Run(stopCh)
 
@@ -222,7 +213,7 @@ func configureLogger() {
 	log.SetReportCaller(true)
 }
 
-func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersSrc string, staticGroupsSrc string, scopeProvider *scope.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -242,7 +233,7 @@ func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersS
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
 	mapperForUser := tenantmapping.NewMapperForUser(staticUsersRepo, staticGroupsRepo, tenantRepo)
-	mapperForSystemAuth := tenantmapping.NewMapperForSystemAuth(systemAuthSvc, scopeProvider, tenantRepo)
+	mapperForSystemAuth := tenantmapping.NewMapperForSystemAuth(systemAuthSvc, cfgProvider, tenantRepo)
 
 	reqDataParser := oathkeeper.NewReqDataParser()
 

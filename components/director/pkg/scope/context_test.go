@@ -4,7 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,7 +26,7 @@ func TestScopesContext(t *testing.T) {
 		// WHEN
 		_, err := scope.LoadFromContext(context.TODO())
 		// THEN
-		assert.Equal(t, scope.NoScopesInContextError, err)
+		assert.True(t, apperrors.IsNoScopesInContext(err))
 	})
 
 	t.Run("cannot override scopes accidentally", func(t *testing.T) {

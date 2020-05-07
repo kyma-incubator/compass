@@ -95,3 +95,7 @@ clientCredentialsRegistrationScopes:
     - "label_definition:write"
     - "automatic_scenario_assignment:read" 
     - "automatic_scenario_assignment:write"
+
+applicationHideSelectors:
+  applicationHideSelectorKey:
+    - "applicationHideSelectorValue"

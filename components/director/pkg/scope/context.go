@@ -2,6 +2,8 @@ package scope
 
 import (
 	"context"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
 type key int
@@ -12,7 +14,7 @@ func LoadFromContext(ctx context.Context) ([]string, error) {
 	value := ctx.Value(ScopesContextKey)
 	scopes, ok := value.([]string)
 	if !ok {
-		return nil, NoScopesInContextError
+		return nil, apperrors.NewNoScopesInContextError()
 	}
 	return scopes, nil
 }

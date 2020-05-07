@@ -151,3 +151,117 @@ func IsKeyDoesNotExist(err error) bool {
 	_, ok := err.(KeyDoesNotExist)
 	return ok
 }
+
+// ValueNotFoundInConfiguration
+
+type ValueNotFoundInConfiguration interface {
+	ValueNotFoundInConfiguration()
+}
+
+type valueNotFoundInConfigurationError struct{}
+
+func NewValueNotFoundInConfigurationError() *valueNotFoundInConfigurationError {
+	return &valueNotFoundInConfigurationError{}
+}
+
+func (e *valueNotFoundInConfigurationError) Error() string {
+	return "value under specified path not found in configuration"
+}
+
+func (valueNotFoundInConfigurationError) ValueNotFoundInConfiguration() {}
+
+func IsValueNotFoundInConfiguration(err error) bool {
+	if cause := errors.Cause(err); cause != nil {
+		err = cause
+	}
+
+	_, ok := err.(ValueNotFoundInConfiguration)
+	return ok
+}
+
+// NoScopesInContextError
+
+type NoScopesInContext interface {
+	NoScopesInContext()
+}
+
+type noScopesInContextError struct{}
+
+func NewNoScopesInContextError() *noScopesInContextError {
+	return &noScopesInContextError{}
+}
+
+func (e *noScopesInContextError) Error() string {
+	return "cannot read scopes from context"
+}
+
+func (noScopesInContextError) NoScopesInContext() {}
+
+func IsNoScopesInContext(err error) bool {
+	if cause := errors.Cause(err); cause != nil {
+		err = cause
+	}
+
+	_, ok := err.(NoScopesInContext)
+	return ok
+}
+
+// RequiredScopesNotDefinedError
+
+type RequiredScopesNotDefined interface {
+	RequiredScopesNotDefined()
+}
+
+type requiredScopesNotDefinedError struct{}
+
+func NewRequiredScopesNotDefinedError() *requiredScopesNotDefinedError {
+	return &requiredScopesNotDefinedError{}
+}
+
+func (e *requiredScopesNotDefinedError) Error() string {
+	return "required scopes are not defined"
+}
+
+func (requiredScopesNotDefinedError) RequiredScopesNotDefined() {}
+
+func IsRequiredScopesNotDefined(err error) bool {
+	if cause := errors.Cause(err); cause != nil {
+		err = cause
+	}
+
+	_, ok := err.(RequiredScopesNotDefined)
+	return ok
+}
+
+// InsufficientScopesError
+
+type InsufficientScopes interface {
+	InsufficientScopes()
+}
+
+type insufficientScopesError struct {
+	required []string
+	actual   []string
+}
+
+func NewInsufficientScopesError(requiredScopes, actualScopes []string) *insufficientScopesError {
+	return &insufficientScopesError{
+		required: requiredScopes,
+		actual:   actualScopes,
+	}
+}
+
+func (e *insufficientScopesError) Error() string {
+	return fmt.Sprintf("insufficient scopes provided, required: %v, actual: %v", e.required, e.actual)
+}
+
+func (insufficientScopesError) InsufficientScopes() {}
+
+func IsInsufficientScopes(err error) bool {
+	if cause := errors.Cause(err); cause != nil {
+		err = cause
+	}
+
+	_, ok := err.(InsufficientScopes)
+	return ok
+}

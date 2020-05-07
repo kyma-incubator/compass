@@ -108,13 +108,13 @@ func (_m *ApplicationRepository) List(ctx context.Context, tenant string, filter
 	return r0, r1
 }
 
-// ListByScenarios provides a mock function with given fields: ctx, tenantID, scenarios, pageSize, cursor
-func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string) (*model.ApplicationPage, error) {
-	ret := _m.Called(ctx, tenantID, scenarios, pageSize, cursor)
+// ListByScenarios provides a mock function with given fields: ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors
+func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error) {
+	ret := _m.Called(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
 
 	var r0 *model.ApplicationPage
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []string, int, string) *model.ApplicationPage); ok {
-		r0 = rf(ctx, tenantID, scenarios, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []string, int, string, map[string][]string) *model.ApplicationPage); ok {
+		r0 = rf(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.ApplicationPage)
@@ -122,8 +122,8 @@ func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID u
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, []string, int, string) error); ok {
-		r1 = rf(ctx, tenantID, scenarios, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, []string, int, string, map[string][]string) error); ok {
+		r1 = rf(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
 	} else {
 		r1 = ret.Error(1)
 	}
