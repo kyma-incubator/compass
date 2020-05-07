@@ -70,8 +70,8 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		return operation, 0, err
 	}
 	if auditLogPort == "" {
-		logger.Errorf("There is no Port passed in the URL")
-		return operation, 0, errors.New("there is no Port passed in the URL")
+		auditLogPort = "443"
+		logger.Infof("There is no Port passed in the URL. Setting default to 443")
 	}
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
