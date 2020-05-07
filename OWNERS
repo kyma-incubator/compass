@@ -1,8 +1,8 @@
+# TODO: Synchronize OWNERS file with CODEOWNERS
 filters:
   ".*":
     approvers:
      - PK85 
-     - aszecowka 
      - crabtree 
      - pkosiec 
      - kfurgol 
@@ -13,7 +13,7 @@ filters:
      - Szymongib 
      - franpog859 
      - Maladie 
-     - KarolJaksik
+     - kjaksik
      - koala7659
   '\.md$|/docs/|^milv\.config\.yaml$':
     approvers:
