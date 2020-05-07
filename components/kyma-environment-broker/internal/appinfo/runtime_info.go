@@ -10,6 +10,8 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/predicate"
+
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=InstanceFinder -output=automock -outpkg=automock -case=underscore
@@ -25,14 +27,16 @@ type (
 )
 
 type RuntimeInfoHandler struct {
-	instanceFinder InstanceFinder
-	respWriter     ResponseWriter
+	instanceFinder          InstanceFinder
+	respWriter              ResponseWriter
+	defaultSubaccountRegion string
 }
 
-func NewRuntimeInfoHandler(instanceFinder InstanceFinder, respWriter ResponseWriter) *RuntimeInfoHandler {
+func NewRuntimeInfoHandler(instanceFinder InstanceFinder, region string, respWriter ResponseWriter) *RuntimeInfoHandler {
 	return &RuntimeInfoHandler{
-		instanceFinder: instanceFinder,
-		respWriter:     respWriter,
+		instanceFinder:          instanceFinder,
+		respWriter:              respWriter,
+		defaultSubaccountRegion: region,
 	}
 }
 
@@ -43,23 +47,33 @@ func (h *RuntimeInfoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dto := h.mapToDTO(allInstances)
+	dto, err := h.mapToDTO(allInstances)
+	if err != nil {
+		h.respWriter.InternalServerError(w, r, err, "while mapping instance model to dto")
+	}
+
 	if err := httputil.JSONEncode(w, dto); err != nil {
 		h.respWriter.InternalServerError(w, r, err, "while encoding response to JSON")
 		return
 	}
 }
 
-func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation) []*RuntimeDTO {
+func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation) ([]*RuntimeDTO, error) {
 	items := make([]*RuntimeDTO, 0, len(instances))
 	indexer := map[string]int{}
 
 	for _, inst := range instances {
+		region, err := h.getRegionOrDefault(inst)
+		if err != nil {
+			return nil, errors.Wrap(err, "while getting region")
+		}
+
 		idx, found := indexer[inst.InstanceID]
 		if !found {
 			items = append(items, &RuntimeDTO{
 				RuntimeID:         inst.RuntimeID,
 				SubAccountID:      inst.SubAccountID,
+				SubAccountRegion:  region,
 				ServiceInstanceID: inst.InstanceID,
 				GlobalAccountID:   inst.GlobalAccountID,
 				ServiceClassID:    inst.ServiceID,
@@ -89,7 +103,19 @@ func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation
 		}
 	}
 
-	return items
+	return items, nil
+}
+
+func (h *RuntimeInfoHandler) getRegionOrDefault(inst internal.InstanceWithOperation) (string, error) {
+	pp, err := inst.GetProvisioningParameters()
+	if err != nil {
+		return "", errors.Wrap(err, "while getting provisioning parameters")
+	}
+
+	if pp.PlatformRegion == "" {
+		return h.defaultSubaccountRegion, nil
+	}
+	return pp.PlatformRegion, nil
 }
 
 func svcNameOrDefault(inst internal.InstanceWithOperation) string {

@@ -16,7 +16,8 @@
       },
       "updatedAt": "2020-04-21T00:01:23.000000042Z"
     },
-    "subaccountId": "SubAccountID field. IDX: 1"
+    "subaccountId": "SubAccountID field. IDX: 1",
+    "subaccountRegion": "region-value-idx-1"
   },
   {
     "globalAccountId": "GlobalAccountID field. IDX: 2",
@@ -35,7 +36,8 @@
       },
       "updatedAt": "2020-04-21T00:02:23.000000042Z"
     },
-    "subaccountId": "SubAccountID field. IDX: 2"
+    "subaccountId": "SubAccountID field. IDX: 2",
+    "subaccountRegion": "region-value-idx-2"
   },
   {
     "globalAccountId": "GlobalAccountID field. IDX: 3",
@@ -50,6 +52,7 @@
       "deletedAt": "2020-04-21T03:00:23.000000042Z",
       "updatedAt": "2020-04-21T00:03:23.000000042Z"
     },
-    "subaccountId": "SubAccountID field. IDX: 3"
+    "subaccountId": "SubAccountID field. IDX: 3",
+    "subaccountRegion": "region-value-idx-3"
   }
 ]
