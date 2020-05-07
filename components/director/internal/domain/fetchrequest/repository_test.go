@@ -33,8 +33,8 @@ func TestRepository_Create(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.fetch_requests ( id, tenant_id, api_def_id, event_api_def_id, document_id, url, auth, mode, filter, status_condition, status_timestamp ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")).
-			WithArgs(givenID(), givenTenant(), sql.NullString{}, sql.NullString{}, "documentID", "foo.bar", frEntity.Auth, frEntity.Mode, frEntity.Filter, frEntity.StatusCondition, frEntity.StatusTimestamp).
+		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.fetch_requests ( id, tenant_id, api_def_id, event_api_def_id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")).
+			WithArgs(givenID(), givenTenant(), sql.NullString{}, sql.NullString{}, "documentID", "foo.bar", frEntity.Auth, frEntity.Mode, frEntity.Filter, frEntity.StatusCondition, frEntity.StatusMessage, frEntity.StatusTimestamp).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -111,10 +111,10 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 			repo := fetchrequest.NewRepository(mockConverter)
 			db, dbMock := testdb.MockDatabase(t)
 
-			rows := sqlmock.NewRows([]string{"id", "tenant_id", "api_def_id", "event_api_def_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_timestamp"}).
-				AddRow(givenID(), givenTenant(), testCase.APIDefID, testCase.EventAPIDefID, testCase.DocumentID, "foo.bar", frEntity.Auth, frEntity.Mode, frEntity.Filter, frEntity.StatusCondition, frEntity.StatusTimestamp)
+			rows := sqlmock.NewRows([]string{"id", "tenant_id", "api_def_id", "event_api_def_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp"}).
+				AddRow(givenID(), givenTenant(), testCase.APIDefID, testCase.EventAPIDefID, testCase.DocumentID, "foo.bar", frEntity.Auth, frEntity.Mode, frEntity.Filter, frEntity.StatusCondition, frEntity.StatusMessage, frEntity.StatusTimestamp)
 
-			query := fmt.Sprintf("SELECT id, tenant_id, api_def_id, event_api_def_id, document_id, url, auth, mode, filter, status_condition, status_timestamp FROM public.fetch_requests WHERE tenant_id = $1 AND %s = $2", testCase.FieldName)
+			query := fmt.Sprintf("SELECT id, tenant_id, api_def_id, event_api_def_id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp FROM public.fetch_requests WHERE tenant_id = $1 AND %s = $2", testCase.FieldName)
 			dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 				WithArgs(givenTenant(), givenID()).WillReturnRows(rows)
 
@@ -144,8 +144,8 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "api_def_id", "event_api_def_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_timestamp"}).
-			AddRow(givenID(), givenTenant(), sql.NullString{}, sql.NullString{}, "documentID", "foo.bar", frEntity.Auth, frEntity.Mode, frEntity.Filter, frEntity.StatusCondition, frEntity.StatusTimestamp)
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "api_def_id", "event_api_def_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp"}).
+			AddRow(givenID(), givenTenant(), sql.NullString{}, sql.NullString{}, "documentID", "foo.bar", frEntity.Auth, frEntity.Mode, frEntity.Filter, frEntity.StatusCondition, frEntity.StatusMessage, frEntity.StatusTimestamp)
 
 		dbMock.ExpectQuery("SELECT .*").
 			WithArgs(givenTenant(), givenID()).WillReturnRows(rows)

@@ -30,7 +30,7 @@ func runTests(m *testing.M) int {
 	var err error
 	testSuite, err = NewTestSuite(config)
 	if err != nil {
-		logrus.Errorf("Failed to setup tests environment: %s", err.Error())
+		logrus.Errorf("Failed to create new test suite: %s", err.Error())
 		return 1
 	}
 	defer testSuite.Cleanup()

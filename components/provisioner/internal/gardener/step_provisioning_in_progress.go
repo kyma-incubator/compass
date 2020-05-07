@@ -11,7 +11,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *ProvisioningOperator) ProvisioningInProgress(log *logrus.Entry, shoot gardener_types.Shoot, operationId string) (ctrl.Result, error) {
+func (r *ProvisioningOperator) ProvisioningInProgress(log *logrus.Entry, shoot gardener_types.Shoot, operationId, runtimeId string) (ctrl.Result, error) {
 	lastOperation := shoot.Status.LastOperation
 
 	if lastOperation.State == gardencorev1alpha1.LastOperationStateSucceeded {
@@ -26,7 +26,7 @@ func (r *ProvisioningOperator) ProvisioningInProgress(log *logrus.Entry, shoot g
 
 	if isShootFailed(shoot) {
 		log.Infof("Provisioning failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
-		err := r.ProceedToFailedStep(log, shoot, operationId, "Provisioning failed.")
+		err := r.ProceedToFailedStep(log, shoot, operationId, runtimeId, "Provisioning failed.")
 		if err != nil {
 			log.Errorf("error proceeding to provisioning failed step: %s", err.Error())
 			return ctrl.Result{}, err

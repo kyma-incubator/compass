@@ -137,6 +137,11 @@ func TestConverter_InputFromGraphQL_StatusCondition(t *testing.T) {
 			CondtionGQL:    graphql.RuntimeStatusConditionInitial,
 			ConditionModel: model.RuntimeStatusConditionInitial,
 		},
+		{
+			Name:           "When status condition is PROVISIONING",
+			CondtionGQL:    graphql.RuntimeStatusConditionProvisioning,
+			ConditionModel: model.RuntimeStatusConditionProvisioning,
+		},
 	}
 
 	for _, testCase := range testCases {

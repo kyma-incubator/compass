@@ -17,6 +17,7 @@ type ServiceProvider struct {
 	RBAConfig           RBAConfig            `json:"rba_config"`
 	AuthenticatingIdp   AuthenticatingIdp    `json:"authenticatingIdp"`
 	Secret              []SPSecret           `json:"clientSecrets"`
+	ACSEndpoints        []ACSEndpoint        `json:"acs_endpoints"`
 }
 
 type AuthenticatingIdp struct {
@@ -50,10 +51,21 @@ type IdentityProvider struct {
 	ID   string `json:"id"`
 }
 
-type Type struct {
+type OIDCType struct {
 	SsoType             string              `json:"ssoType"`
 	ServiceProviderName string              `json:"sp_name"`
 	OpenIDConnectConfig OpenIDConnectConfig `json:"openId_connect_configuration"`
+}
+
+type SAMLType struct {
+	ServiceProviderName string        `json:"sp_name"`
+	ACSEndpoints        []ACSEndpoint `json:"acs_endpoints"`
+}
+
+type ACSEndpoint struct {
+	Location  string `json:"location"`
+	IsDefault bool   `json:"isDefault,omitempty"`
+	Index     int32  `json:"index"`
 }
 
 type OpenIDConnectConfig struct {
@@ -68,8 +80,13 @@ type SubjectNameIdentifier struct {
 type SecretConfiguration struct {
 	Organization        string              `json:"organization"`
 	ID                  string              `json:"id"`
-	DefaultAuthIDp      string              `json:"default_auth_idp"`
 	RestAPIClientSecret RestAPIClientSecret `json:"rest_api_client_secret"`
+}
+
+type DefaultAuthIDPConfig struct {
+	Organization   string `json:"organization"`
+	ID             string `json:"id"`
+	DefaultAuthIDP string `json:"default_auth_idp"`
 }
 
 type RestAPIClientSecret struct {

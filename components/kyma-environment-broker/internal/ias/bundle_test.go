@@ -7,10 +7,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestServiceProviderBundle_ServiceProviderType(t *testing.T) {
+	// given
+	client := NewFakeClient()
+	bundle := NewServiceProviderBundle(FakeGrafanaName, ServiceProviderInputs[SPGrafanaID], client, Config{IdentityProvider: FakeIdentityProviderName})
+
+	// when
+	ssoType := bundle.ServiceProviderType()
+
+	// then
+	assert.Equal(t, OIDC, ssoType)
+}
+
 func TestServiceProviderBundle_FetchServiceProviderData(t *testing.T) {
 	// given
 	client := NewFakeClient()
-	bundle := NewServiceProviderBundle(FakeProviderName, client, Config{IdentityProvider: FakeIdentityProviderName})
+	bundle := NewServiceProviderBundle(FakeGrafanaName, ServiceProviderInputs[SPGrafanaID], client, Config{IdentityProvider: FakeIdentityProviderName})
 
 	// when
 	err := bundle.FetchServiceProviderData()
@@ -24,7 +36,7 @@ func TestServiceProviderBundle_FetchServiceProviderData(t *testing.T) {
 func TestServiceProviderBundle_CreateServiceProvider(t *testing.T) {
 	// given
 	client := NewFakeClient()
-	bundle := NewServiceProviderBundle("sp", client, Config{IdentityProvider: FakeIdentityProviderName})
+	bundle := NewServiceProviderBundle("sp", ServiceProviderInputs[SPGrafanaID], client, Config{IdentityProvider: FakeIdentityProviderName})
 
 	// when
 	err := bundle.CreateServiceProvider()
@@ -37,10 +49,10 @@ func TestServiceProviderBundle_CreateServiceProvider(t *testing.T) {
 	assert.True(t, bundle.ServiceProviderExist())
 }
 
-func TestServiceProviderBundle_ConfigureServiceProviderType(t *testing.T) {
+func TestServiceProviderBundle_ConfigureServiceProviderType_OIDC(t *testing.T) {
 	// given
 	client := NewFakeClient()
-	bundle := NewServiceProviderBundle(FakeProviderName, client, Config{IdentityProvider: FakeIdentityProviderName})
+	bundle := NewServiceProviderBundle(FakeGrafanaName, ServiceProviderInputs[SPGrafanaID], client, Config{IdentityProvider: FakeIdentityProviderName})
 
 	err := bundle.FetchServiceProviderData()
 	assert.NoError(t, err)
@@ -50,17 +62,38 @@ func TestServiceProviderBundle_ConfigureServiceProviderType(t *testing.T) {
 
 	// then
 	assert.NoError(t, err)
-	provider, err := client.GetServiceProvider(FakeProviderID)
+	provider, err := client.GetServiceProvider(FakeGrafanaID)
 	assert.NoError(t, err)
-	assert.Equal(t, "grafana.example.com", provider.DisplayName)
+	assert.Equal(t, fmt.Sprintf("SKR Grafana (instanceID: %s)", FakeGrafanaName), provider.DisplayName)
 	assert.Equal(t, "openIdConnect", provider.SsoType)
 	assert.Equal(t, "https://grafana.example.com/login/generic_oauth", provider.RedirectURIs[0])
+}
+
+func TestServiceProviderBundle_ConfigureServiceProviderType_SAML(t *testing.T) {
+	// given
+	client := NewFakeClient()
+	bundle := NewServiceProviderBundle(FakeDexName, ServiceProviderInputs[SPDexID], client, Config{IdentityProvider: FakeIdentityProviderName})
+
+	err := bundle.FetchServiceProviderData()
+	assert.NoError(t, err)
+
+	// when
+	err = bundle.ConfigureServiceProviderType("https://console.example.com")
+
+	// then
+	assert.NoError(t, err)
+	provider, err := client.GetServiceProvider(FakeDexID)
+	assert.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("SKR Dex (instanceID: %s)", FakeDexName), provider.DisplayName)
+	assert.Equal(t, "https://dex.example.com/callback", provider.ACSEndpoints[0].Location)
+	assert.Equal(t, int32(0), provider.ACSEndpoints[0].Index)
+	assert.Equal(t, true, provider.ACSEndpoints[0].IsDefault)
 }
 
 func TestServiceProviderBundle_ConfigureServiceProvider(t *testing.T) {
 	// given
 	client := NewFakeClient()
-	bundle := NewServiceProviderBundle(FakeProviderName, client, Config{IdentityProvider: FakeIdentityProviderName})
+	bundle := NewServiceProviderBundle(FakeGrafanaName, ServiceProviderInputs[SPGrafanaID], client, Config{IdentityProvider: FakeIdentityProviderName})
 
 	err := bundle.FetchServiceProviderData()
 	assert.NoError(t, err)
@@ -70,7 +103,7 @@ func TestServiceProviderBundle_ConfigureServiceProvider(t *testing.T) {
 
 	// then
 	assert.NoError(t, err)
-	provider, err := client.GetServiceProvider(FakeProviderID)
+	provider, err := client.GetServiceProvider(FakeGrafanaID)
 	assert.NoError(t, err)
 
 	assert.Len(t, provider.AssertionAttributes, 4)
@@ -83,18 +116,21 @@ func TestServiceProviderBundle_ConfigureServiceProvider(t *testing.T) {
 
 	assert.Equal(t, "mail", provider.NameIDAttribute)
 
+	assert.Equal(t, FakeIdentityProviderID, provider.AuthenticatingIdp.ID)
+	assert.Equal(t, FakeIdentityProviderName, provider.AuthenticatingIdp.Name)
+
 	assert.Len(t, provider.RBAConfig.RBARules, 2)
 	assert.ElementsMatch(t, []RBARules{
 		{Action: "Allow", Group: "skr-monitoring-admin", GroupType: "Cloud"},
 		{Action: "Allow", Group: "skr-monitoring-viewer", GroupType: "Cloud"},
 	}, provider.RBAConfig.RBARules)
-	assert.Equal(t, "Allow", provider.RBAConfig.DefaultAction)
+	assert.Equal(t, "Deny", provider.RBAConfig.DefaultAction)
 }
 
 func TestServiceProviderBundle_GenerateSecret(t *testing.T) {
 	// given
 	client := NewFakeClient()
-	bundle := NewServiceProviderBundle(FakeProviderName, client, Config{IdentityProvider: FakeIdentityProviderName})
+	bundle := NewServiceProviderBundle(FakeGrafanaName, ServiceProviderInputs[SPGrafanaID], client, Config{IdentityProvider: FakeIdentityProviderName})
 
 	err := bundle.FetchServiceProviderData()
 	assert.NoError(t, err)
@@ -107,28 +143,25 @@ func TestServiceProviderBundle_GenerateSecret(t *testing.T) {
 	assert.Equal(t, FakeClientID, secret.ClientID)
 	assert.Equal(t, FakeClientSecret, secret.ClientSecret)
 
-	provider, err := client.GetServiceProvider(FakeProviderID)
+	provider, err := client.GetServiceProvider(FakeGrafanaID)
 	assert.NoError(t, err)
 	assert.Equal(t, FakeClientID, provider.Secret[0].SecretID)
 	assert.Equal(t, "SAP Kyma Runtime Secret", provider.Secret[0].Description)
 	assert.ElementsMatch(t, []string{"ManageApp", "ManageUsers", "OAuth"}, provider.Secret[0].Scopes)
-
-	assert.Equal(t, FakeIdentityProviderID, provider.AuthenticatingIdp.ID)
-	assert.Equal(t, FakeIdentityProviderName, provider.AuthenticatingIdp.Name)
 }
 
 func TestServiceProviderBundle_DeleteServiceProvider(t *testing.T) {
 	// given
 	client := NewFakeClient()
-	bundle := NewServiceProviderBundle(FakeProviderName, client, Config{IdentityProvider: FakeIdentityProviderName})
+	bundle := NewServiceProviderBundle(FakeGrafanaName, ServiceProviderInputs[SPGrafanaID], client, Config{IdentityProvider: FakeIdentityProviderName})
 
 	// when
 	err := bundle.DeleteServiceProvider()
 
 	// then
 	assert.NoError(t, err)
-	provider, err := client.GetServiceProvider(FakeProviderID)
+	provider, err := client.GetServiceProvider(FakeGrafanaID)
 	assert.Error(t, err)
-	assert.EqualError(t, err, fmt.Sprintf("cannot find ServiceProvider with ID: %s", FakeProviderID))
+	assert.EqualError(t, err, fmt.Sprintf("cannot find ServiceProvider with ID: %s", FakeGrafanaID))
 	assert.Nil(t, provider)
 }

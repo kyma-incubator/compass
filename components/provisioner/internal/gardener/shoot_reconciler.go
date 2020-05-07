@@ -2,7 +2,9 @@ package gardener
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
@@ -40,12 +42,15 @@ func NewReconciler(
 	shootClient v1beta1.ShootInterface,
 	directorClient director.DirectorClient,
 	installationSvc installation.Service,
-	installQueue queue.OperationQueue) *Reconciler {
+	installQueue queue.OperationQueue,
+	auditLogTenantConfigPath string) *Reconciler {
 	return &Reconciler{
 		client:     mgr.GetClient(),
 		scheme:     mgr.GetScheme(),
 		log:        logrus.WithField("Component", "ShootReconciler"),
 		dbsFactory: dbsFactory,
+
+		auditLogTenantConfigPath: auditLogTenantConfigPath,
 
 		provisioningOperator: &ProvisioningOperator{
 			dbsFactory:        dbsFactory,
@@ -65,6 +70,8 @@ type Reconciler struct {
 
 	log                  *logrus.Entry
 	provisioningOperator *ProvisioningOperator
+
+	auditLogTenantConfigPath string
 }
 
 type ProvisioningOperator struct {
@@ -103,6 +110,14 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	runtimeId := getRuntimeId(shoot)
 	log = log.WithField("RuntimeId", runtimeId)
 
+	seed := getSeed(shoot)
+	if seed != "" {
+		err := r.enableAuditLogs(log, &shoot, seed)
+		if err != nil {
+			log.Errorf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
+		}
+	}
+
 	// Get operationId from annotation
 	operationId := getOperationId(shoot)
 	if operationId == "" {
@@ -131,8 +146,10 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	provisioningStep := getProvisioningState(shoot)
 
 	switch provisioningStep {
+	case Initial:
+		return r.provisioningOperator.ProvisioningInitial(log, shoot, operationId, runtimeId)
 	case Provisioning:
-		return r.provisioningOperator.ProvisioningInProgress(log, shoot, operationId)
+		return r.provisioningOperator.ProvisioningInProgress(log, shoot, operationId, runtimeId)
 	case Provisioned:
 		log.Debug("Shoot provisioned")
 		return ctrl.Result{}, nil
@@ -263,4 +280,50 @@ func (r *ProvisioningOperator) setDeprovisioningFinished(cluster model.Cluster, 
 	}
 
 	return nil
+}
+
+func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_types.Shoot, seed string) error {
+	logger.Info("Enabling audit logs")
+	tenant, err := r.getAuditLogTenant(seed)
+	if err != nil {
+		return err
+	}
+
+	if tenant == "" {
+		logger.Warnf("Cannot enable audit logs. Tenant for seed %s is empty", seed)
+		return nil
+	} else if tenant == shoot.Annotations[auditLogsAnnotation] {
+		logger.Debugf("Seed for cluster did not change, skipping annotating with Audit Log Tenant")
+		return nil
+	}
+
+	logger.Infof("Modifying Audit Log Tenant")
+
+	return r.provisioningOperator.updateShoot(*shoot, func(s *gardener_types.Shoot) {
+		annotate(s, auditLogsAnnotation, tenant)
+	})
+}
+
+func (r *Reconciler) getAuditLogTenant(seed string) (string, error) {
+	file, err := os.Open(r.auditLogTenantConfigPath)
+
+	if err != nil {
+		return "", err
+	}
+
+	defer file.Close()
+
+	var data map[string]string
+	if err := json.NewDecoder(file).Decode(&data); err != nil {
+		return "", err
+	}
+	return data[seed], nil
+}
+
+func getSeed(shoot gardener_types.Shoot) string {
+	if shoot.Spec.SeedName != nil {
+		return *shoot.Spec.SeedName
+	}
+
+	return ""
 }

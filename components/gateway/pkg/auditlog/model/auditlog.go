@@ -2,6 +2,10 @@ package model
 
 import "net"
 
+const (
+	LogFormatDate = "2006-01-02T15:04:05.999Z"
+)
+
 type ConfigurationChange struct {
 	User       string      `json:"user"`
 	Object     Object      `json:"object"`

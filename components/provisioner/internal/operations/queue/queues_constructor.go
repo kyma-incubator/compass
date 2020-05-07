@@ -3,6 +3,7 @@ package queue
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
@@ -24,9 +25,10 @@ func CreateInstallationQueue(
 	factory dbsession.Factory,
 	installationClient installation.Service,
 	configurator runtime.Configurator,
-	ccClientConstructor stages.CompassConnectionClientConstructor) OperationQueue {
+	ccClientConstructor stages.CompassConnectionClientConstructor,
+	directorClient director.DirectorClient) OperationQueue {
 
-	waitForAgentToConnectStep := stages.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, timeouts.AgentConnection)
+	waitForAgentToConnectStep := stages.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, timeouts.AgentConnection, directorClient)
 	configureAgentStep := stages.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
 	waitForInstallStep := stages.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation)
 	installStep := stages.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 20*time.Minute)
@@ -38,7 +40,13 @@ func CreateInstallationQueue(
 		model.StartingInstallation:   installStep,
 	}
 
-	installationExecutor := operations.NewExecutor(factory.NewReadWriteSession(), model.Provision, installSteps, failure.NewNoopFailureHandler())
+	installationExecutor := operations.NewExecutor(
+		factory.NewReadWriteSession(),
+		model.Provision,
+		installSteps,
+		failure.NewNoopFailureHandler(),
+		directorClient,
+	)
 
 	return NewQueue(installationExecutor)
 }
@@ -46,6 +54,7 @@ func CreateInstallationQueue(
 func CreateUpgradeQueue(
 	timeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
+	directorClient director.DirectorClient,
 	installationClient installation.Service) OperationQueue {
 
 	updatingUpgradeStep := stages.NewUpdateUpgradeStateStep(factory.NewWriteSession(), model.FinishedStage, 5*time.Minute)
@@ -62,6 +71,7 @@ func CreateUpgradeQueue(
 		model.Upgrade,
 		upgradeSteps,
 		failure.NewUpgradeFailureHandler(factory.NewWriteSession()),
+		directorClient,
 	)
 
 	return NewQueue(upgradeExecutor)

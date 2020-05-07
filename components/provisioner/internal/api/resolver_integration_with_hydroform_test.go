@@ -103,33 +103,36 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 			MaxUnavailable:    2,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
-					Zone: "zone",
+					Zones: []string{"fix-gcp-zone1", "fix-gcp-zone-2"},
 				},
 			},
 		},
 	}
 
-	clusterConfigForGardenerWithAzure := &gqlschema.ClusterConfigInput{
-		GardenerConfig: &gqlschema.GardenerConfigInput{
-			KubernetesVersion: "version",
-			VolumeSizeGb:      1024,
-			MachineType:       "n1-standard-1",
-			Region:            "westeurope",
-			Provider:          "Azure",
-			Seed:              util.StringPtr("gcp-eu1"),
-			TargetSecret:      "secret",
-			DiskType:          "ssd",
-			WorkerCidr:        "cidr",
-			AutoScalerMin:     1,
-			AutoScalerMax:     5,
-			MaxSurge:          1,
-			MaxUnavailable:    2,
-			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr: "cidr",
+	clusterConfigForGardenerWithAzure := func(zones []string) *gqlschema.ClusterConfigInput {
+		return &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				KubernetesVersion: "version",
+				VolumeSizeGb:      1024,
+				MachineType:       "n1-standard-1",
+				Region:            "westeurope",
+				Provider:          "Azure",
+				Seed:              util.StringPtr("gcp-eu1"),
+				TargetSecret:      "secret",
+				DiskType:          "ssd",
+				WorkerCidr:        "cidr",
+				AutoScalerMin:     1,
+				AutoScalerMax:     5,
+				MaxSurge:          1,
+				MaxUnavailable:    2,
+				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+					AzureConfig: &gqlschema.AzureProviderConfigInput{
+						VnetCidr: "cidr",
+						Zones:    zones,
+					},
 				},
 			},
-		},
+		}
 	}
 
 	clusterConfigForGardenerWithAWS := &gqlschema.ClusterConfigInput{
@@ -158,20 +161,27 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 		},
 	}
 
+	zones := []string{"fix-az-zone-1", "fix-az-zone-2"}
+
 	testConfig := []provisionerTestConfig{
 		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bbb", config: clusterConfigForGardenerWithGCP, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with GCP configuration 1",
 			runtimeInput: &gqlschema.RuntimeInput{
 				Name:        "test runtime1",
 				Description: new(string),
 			}},
-		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb4", config: clusterConfigForGardenerWithAzure, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with Azure configuration",
+		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb4", config: clusterConfigForGardenerWithAzure(zones), description: "Should provision and deprovision a runtime with happy flow using correct Gardener with Azure configuration when zones passed",
 			runtimeInput: &gqlschema.RuntimeInput{
 				Name:        "test runtime2",
 				Description: new(string),
 			}},
-		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb5", config: clusterConfigForGardenerWithAWS, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with AWS configuration",
+		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb1", config: clusterConfigForGardenerWithAzure(nil), description: "Should provision and deprovision a runtime with happy flow using correct Gardener with Azure configuration when no zones passed",
 			runtimeInput: &gqlschema.RuntimeInput{
 				Name:        "test runtime3",
+				Description: new(string),
+			}},
+		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb5", config: clusterConfigForGardenerWithAWS, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with AWS configuration",
+			runtimeInput: &gqlschema.RuntimeInput{
+				Name:        "test runtime4",
 				Description: new(string),
 			}},
 	}
@@ -249,7 +259,7 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			installationQueue := queue.CreateInstallationQueue(testProvisioningTimeouts(), dbSessionFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor)
+			installationQueue := queue.CreateInstallationQueue(testProvisioningTimeouts(), dbSessionFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock)
 			installationQueue.Run(ctx.Done())
 
 			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock, runtimeConfigurator)

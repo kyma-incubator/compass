@@ -1,5 +1,10 @@
 # Default configuration
+ifneq ($(strip $(DOCKER_PUSH_REPOSITORY)),)
 IMG_NAME := $(DOCKER_PUSH_REPOSITORY)$(DOCKER_PUSH_DIRECTORY)/$(APP_NAME)
+else
+IMG_NAME := $(APP_NAME)
+endif
+
 TAG := $(DOCKER_TAG)
 # BASE_PKG is a root packge of the component
 BASE_PKG := github.com/kyma-incubator/compass
@@ -15,6 +20,8 @@ VERIFY_IGNORE := /vendor\|/automock
 LOCAL_DIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 # COMPONENT_DIR is a local path to commponent
 COMPONENT_DIR = $(shell pwd)
+# COMPONENT_NAME is equivalent to the name of the component as defined in it's helm chart
+COMPONENT_NAME = $(shell basename $(COMPONENT_DIR))
 # WORKSPACE_LOCAL_DIR is a path to the scripts folder in the container
 WORKSPACE_LOCAL_DIR = $(IMG_GOPATH)/src/$(BASE_PKG)/scripts
 # WORKSPACE_COMPONENT_DIR is a path to commponent in hte container
@@ -25,6 +32,10 @@ FILES_TO_CHECK = find . -type f -name "*.go" | grep -v "$(VERIFY_IGNORE)"
 DIRS_TO_CHECK = go list ./... | grep -v "$(VERIFY_IGNORE)"
 # DIRS_TO_IGNORE is a command used to determine which directories should not be verified
 DIRS_TO_IGNORE = go list ./... | grep "$(VERIFY_IGNORE)"
+# DEPLOYMENT_NAME matches the component's deployment name in the cluster
+DEPLOYMENT_NAME="compass-"$(COMPONENT_NAME)
+# NAMESPACE defines the namespace into which the component is deployed
+NAMESPACE="compass-system"
 
 # Base docker configuration
 DOCKER_CREATE_OPTS := -v $(LOCAL_DIR):$(WORKSPACE_LOCAL_DIR):delegated --rm -w $(WORKSPACE_COMPONENT_DIR) $(BUILDPACK)
@@ -87,6 +98,10 @@ docker-create-opts:
 # Targets mounting sources to buildpack
 MOUNT_TARGETS = build resolve ensure dep-status check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen
 $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
+
+# Builds new Docker image into Minikube's Docker Registry
+build-to-minikube: pull-licenses
+	@eval $$(minikube docker-env) && docker build -t $(IMG_NAME) .
 
 build-local:
 	env CGO_ENABLED=0 go build -o $(APP_NAME) ./$(ENTRYPOINT)
@@ -164,3 +179,8 @@ exec:
 	@docker run $(DOCKER_INTERACTIVE) \
     		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
     		$(DOCKER_CREATE_OPTS) bash
+
+# Sets locally built image for a given component in Minikube cluster 
+deploy-on-minikube: build-to-minikube
+	kubectl set image -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME) $(COMPONENT_NAME)=$(DEPLOYMENT_NAME):latest
+	kubectl rollout restart -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME)

@@ -1,5 +1,5 @@
 # Build image
-FROM golang:1.13.8-alpine3.11 AS build
+FROM golang:1.14.2-alpine3.11 AS build
 
 WORKDIR /go/src/github.com/kyma-incubator/compass/components/kyma-environment-broker
 

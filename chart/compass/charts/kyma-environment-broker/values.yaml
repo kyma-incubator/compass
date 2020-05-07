@@ -68,6 +68,7 @@ gardener:
   project: "kyma-dev" # Gardener project connected to SA for HAP credentials lookup
   kubeconfigPath: "/gardener/kubeconfig/kubeconfig"
   secretName: "gardener-credentials"
+  kubernetesVersion: "1.16.9"
 
 # It is used to provide own creds for Service Manager instead of using the one provided by external system
 # who execute provision call on Kyma Environment Broker. You can define `overrideMode` to be one of: Always, WhenNotSentInRequest, Never
@@ -86,6 +87,10 @@ lms:
   environment: "dev"
   samlTenant: "TBD"
   disabled: false
+  # if set - always use this region, if empty - region is mapped from the OSB API request
+  region: ""
+  # if false - failing LMS step does not break provisioning
+  mandatory: true
 
 ias:
   secretName: "ias-creds"
@@ -106,6 +111,8 @@ edp:
   secretName: "edp-creds"
 
 e2e:
+  tenant:
+    id: "d9994f8f-7e46-42a8-b2c1-1bfff8d2fe05"
   azure:
     configName: "e2e-runtime-config-azure"
   gcp:

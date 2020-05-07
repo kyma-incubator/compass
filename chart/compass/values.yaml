@@ -8,33 +8,35 @@ global:
     - name: bar
       id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
 
+  enableCompassDefaultScenarioAssignment: true
+
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1162"
+      version: "PR-1270"
     connectivity_adapter:
       dir:
-      version: "PR-1208"
+      version: "PR-1270"
     pairing_adapter:
       dir:
-      version: "PR-1156"
+      version: "PR-1270"
     director:
       dir:
-      version: "PR-1187"
+      version: "PR-1270"
     gateway:
       dir:
-      version: "PR-1208"
+      version: "PR-1270"
     healthchecker:
       dir: pr/
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-1153"
+      version: "PR-1270"
     provisioner:
       dir:
-      version: "PR-1153"
+      version: "PR-1270"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -42,23 +44,29 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-1196"
+      version: "PR-1274"
+    external_services_mock:
+      dir:
+      version: "PR-1270"
+    metris:
+      dir:
+      version: "PR-1270"
     tests:
       director:
         dir:
-        version: "PR-1182"
+        version: "PR-1270"
       connector:
         dir:
-        version: "PR-1156"
+        version: "PR-1270"
       provisioner:
         dir:
-        version: "PR-1193"
+        version: "PR-1270"
       e2e_provisioning:
         dir:
-        version: "PR-1139"
+        version: "PR-1270"
       connectivity_adapter:
         dir:
-        version: "PR-1156"
+        version: "PR-1270"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -257,7 +265,15 @@ global:
       maxOpenConnections: 1
       maxIdleConnections: 1
 
-  enableCompassDefaultScenarioAssignment: true
+  auditlog:
+    configMapName: "compass-gateway-auditlog-config"
+    secretName: "compass-gateway-auditlog-secret"
+
+  externalServicesMock:
+    enabled: false
+
+  metris:
+    enabled: false
 
 pairing-adapter:
   enabled: false

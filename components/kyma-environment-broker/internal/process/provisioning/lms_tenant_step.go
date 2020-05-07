@@ -19,14 +19,21 @@ type LmsTenantProvider interface {
 // provideLmsTenantStep creates (if not exists) LMS tenant and provides its ID.
 // The step does not breaks the provisioning flow.
 type provideLmsTenantStep struct {
+	LmsStep
 	tenantProvider   LmsTenantProvider
 	operationManager *process.ProvisionOperationManager
+	regionOverride   string
 }
 
-func NewProvideLmsTenantStep(tp LmsTenantProvider, repo storage.Operations) *provideLmsTenantStep {
+func NewProvideLmsTenantStep(tp LmsTenantProvider, repo storage.Operations, regionOverride string, isMandatory bool) *provideLmsTenantStep {
 	return &provideLmsTenantStep{
-		tenantProvider:   tp,
+		LmsStep: LmsStep{
+			operationManager: process.NewProvisionOperationManager(repo),
+			isMandatory:      isMandatory,
+		},
 		operationManager: process.NewProvisionOperationManager(repo),
+		tenantProvider:   tp,
+		regionOverride:   regionOverride,
 	}
 }
 
@@ -49,8 +56,12 @@ func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, log
 
 	lmsTenantID, err := s.tenantProvider.ProvideLMSTenantID(pp.ErsContext.GlobalAccountID, region)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Unable to request for LMS tenant ID: %s", err.Error())
-		return s.operationManager.RetryOperation(operation, errorMessage, 30*time.Second, 2*time.Minute, logger)
+		logger.Warnf("Unable to get tenant for GlobalaccountID/region %s/%s: %s", pp.ErsContext.GlobalAccountID, region, err.Error())
+		since := time.Since(operation.UpdatedAt)
+		if since < 3*time.Minute {
+			return operation, 30 * time.Second, nil
+		}
+		return s.failLmsAndUpdate(operation, "getting LMS tenant failed")
 	}
 
 	operation.Lms.TenantID = lmsTenantID
@@ -83,6 +94,9 @@ var lmsRegionsMap = map[string]string{
 }
 
 func (s *provideLmsTenantStep) provideRegion(r *string) string {
+	if s.regionOverride != "" {
+		return s.regionOverride
+	}
 	if r == nil {
 		return "eu"
 	}

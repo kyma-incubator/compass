@@ -3,6 +3,8 @@ package gqlschema
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 )
 
 // UnmarshalJSON is used to handle unmarshalling ClusterConfig interface properly
@@ -55,76 +57,38 @@ func (a *RuntimeConfig) unmarshalGCP(data []byte) error {
 	return nil
 }
 
-// UnmarshalJSON is used to handle unmarshalling ProviderSpecificConfig interface properly
+// UnmarshalJSON is used to handle unmarshaling ProviderSpecificConfig interface properly
 func (g *GardenerConfig) UnmarshalJSON(data []byte) error {
-	err := g.unmarshalAzure(data)
-	if err != nil {
-		err := g.unmarshalGCP(data)
-		if err != nil {
-			return g.unmarshalAWS(data)
-		}
-		return nil
-	}
-
-	return nil
-}
-
-func (g *GardenerConfig) unmarshalAzure(data []byte) error {
 	type Alias GardenerConfig
 
 	temp := &struct {
 		*Alias
-		ProviderSpecificConfig *AzureProviderConfig `json:"providerSpecificConfig"`
+		ProviderSpecificConfig json.RawMessage `json:"providerSpecificConfig"`
 	}{
 		Alias: (*Alias)(g),
 	}
-
 	decoder := newDecoder(data)
 	if err := decoder.Decode(&temp); err != nil {
 		return err
 	}
-
-	g.ProviderSpecificConfig = temp.ProviderSpecificConfig
-
-	return nil
-}
-
-func (g *GardenerConfig) unmarshalGCP(data []byte) error {
-	type Alias GardenerConfig
-
-	temp := &struct {
-		*Alias
-		ProviderSpecificConfig *GCPProviderConfig `json:"providerSpecificConfig"`
-	}{
-		Alias: (*Alias)(g),
+	if temp.Provider == nil {
+		return errors.New("provider field is required")
 	}
 
-	decoder := newDecoder(data)
-	if err := decoder.Decode(&temp); err != nil {
+	switch *temp.Provider {
+	case "azure": // TODO to enum which will be validated
+		g.ProviderSpecificConfig = &AzureProviderConfig{}
+	case "gcp": // TODO to enum which will be validated
+		g.ProviderSpecificConfig = &GCPProviderConfig{}
+	case "aws": // TODO to enum which will be validated
+		g.ProviderSpecificConfig = &AWSProviderConfig{}
+	default:
+		return fmt.Errorf("got unknown provider type %q", *temp.Provider)
+	}
+
+	if err := json.Unmarshal(temp.ProviderSpecificConfig, g.ProviderSpecificConfig); err != nil {
 		return err
 	}
-
-	g.ProviderSpecificConfig = temp.ProviderSpecificConfig
-
-	return nil
-}
-
-func (g *GardenerConfig) unmarshalAWS(data []byte) error {
-	type Alias GardenerConfig
-
-	temp := &struct {
-		*Alias
-		ProviderSpecificConfig *AWSProviderConfig `json:"providerSpecificConfig"`
-	}{
-		Alias: (*Alias)(g),
-	}
-
-	decoder := newDecoder(data)
-	if err := decoder.Decode(&temp); err != nil {
-		return err
-	}
-
-	g.ProviderSpecificConfig = temp.ProviderSpecificConfig
 
 	return nil
 }

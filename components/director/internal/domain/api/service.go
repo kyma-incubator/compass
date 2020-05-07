@@ -36,18 +36,25 @@ type UIDService interface {
 	Generate() string
 }
 
-type service struct {
-	repo             APIRepository
-	fetchRequestRepo FetchRequestRepository
-	uidService       UIDService
-	timestampGen     timestamp.Generator
+//go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
+type FetchRequestService interface {
+	HandleAPISpec(ctx context.Context, fr *model.FetchRequest) *string
 }
 
-func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService) *service {
+type service struct {
+	repo                APIRepository
+	fetchRequestRepo    FetchRequestRepository
+	uidService          UIDService
+	fetchRequestService FetchRequestService
+	timestampGen        timestamp.Generator
+}
+
+func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
 	return &service{repo: repo,
-		fetchRequestRepo: fetchRequestRepo,
-		uidService:       uidService,
-		timestampGen:     timestamp.DefaultGenerator(),
+		fetchRequestRepo:    fetchRequestRepo,
+		uidService:          uidService,
+		fetchRequestService: fetchRequestService,
+		timestampGen:        timestamp.DefaultGenerator(),
 	}
 }
 
@@ -99,17 +106,24 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 	}
 
 	id := s.uidService.Generate()
-
 	api := in.ToAPIDefinitionWithinPackage(id, packageID, tnt)
+
 	err = s.repo.Create(ctx, api)
 	if err != nil {
 		return "", err
 	}
 
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		_, err = s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
+		fr, err := s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
+		}
+
+		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fr)
+
+		err = s.repo.Update(ctx, api)
+		if err != nil {
+			return "", errors.Wrap(err, "while updating api with api spec")
 		}
 	}
 
@@ -131,14 +145,16 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		return errors.Wrapf(err, "while deleting FetchRequest for APIDefinition %s", id)
 	}
 
+	api = in.ToAPIDefinitionWithinPackage(id, api.PackageID, tnt)
+
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		_, err = s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
+		fr, err := s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
 		if err != nil {
 			return errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
-	}
 
-	api = in.ToAPIDefinitionWithinPackage(id, api.PackageID, tnt)
+		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fr)
+	}
 
 	err = s.repo.Update(ctx, api)
 	if err != nil {
@@ -173,6 +189,15 @@ func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec
 		return nil, err
 	}
 
+	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.APIFetchRequestReference, id)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return nil, errors.Wrapf(err, "while getting FetchRequest by API Definition ID %s", id)
+	}
+
+	if fetchRequest != nil {
+		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fetchRequest)
+	}
+
 	return api.Spec, nil
 }
 
@@ -201,7 +226,7 @@ func (s *service) GetFetchRequest(ctx context.Context, apiDefID string) (*model.
 	return fetchRequest, nil
 }
 
-func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string) (*string, error) {
+func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string) (*model.FetchRequest, error) {
 	id := s.uidService.Generate()
 	fr := in.ToFetchRequest(s.timestampGen(), id, tenant, model.APIFetchRequestReference, parentObjectID)
 	err := s.fetchRequestRepo.Create(ctx, fr)
@@ -209,5 +234,5 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in mode
 		return nil, errors.Wrapf(err, "while creating FetchRequest for %s with ID %s", model.APIFetchRequestReference, parentObjectID)
 	}
 
-	return &id, nil
+	return fr, nil
 }

@@ -27,6 +27,7 @@ const (
 
 type FetchRequestStatus struct {
 	Condition FetchRequestStatusCondition
+	Message   *string
 	Timestamp time.Time
 }
 

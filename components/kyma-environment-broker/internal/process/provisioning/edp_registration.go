@@ -3,6 +3,7 @@ package provisioning
 import (
 	"encoding/base64"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -43,24 +44,25 @@ func (s *EDPRegistrationStep) Run(operation internal.ProvisioningOperation, log 
 	if err != nil {
 		return s.handleError(operation, err, log, "invalid operation provisioning parameters")
 	}
+	subAccountID := parameters.ErsContext.SubAccountID
 
-	log.Info("Create DataTenant")
+	log.Infof("Create DataTenant for %s subaccount", subAccountID)
 	err = s.client.CreateDataTenant(edp.DataTenantPayload{
-		Name:        parameters.ErsContext.SubAccountID,
+		Name:        subAccountID,
 		Environment: s.config.Environment,
-		Secret:      s.generateSecret(parameters.ErsContext.SubAccountID, s.config.Environment),
+		Secret:      s.generateSecret(subAccountID, s.config.Environment),
 	})
 	if err != nil {
 		return s.handleError(operation, err, log, "cannot create DataTenant")
 	}
 
-	log.Info("Create DataTenant metadata")
+	log.Infof("Create DataTenant metadata for %s subaccount", subAccountID)
 	for key, value := range map[string]string{
-		edp.MaasConsumerEnvironmentKey: "KUBERNETES",
+		edp.MaasConsumerEnvironmentKey: s.selectEnvironmentKey(parameters.PlatformRegion, log),
 		edp.MaasConsumerRegionKey:      parameters.PlatformRegion,
-		edp.MaasConsumerSubAccountKey:  parameters.ErsContext.SubAccountID,
+		edp.MaasConsumerSubAccountKey:  subAccountID,
 	} {
-		err = s.client.CreateMetadataTenant(parameters.ErsContext.SubAccountID, s.config.Environment, edp.MetadataTenantPayload{
+		err = s.client.CreateMetadataTenant(subAccountID, s.config.Environment, edp.MetadataTenantPayload{
 			Key:   key,
 			Value: value,
 		})
@@ -89,6 +91,21 @@ func (s *EDPRegistrationStep) handleError(operation internal.ProvisioningOperati
 	}
 
 	return s.operationManager.OperationFailed(operation, msg)
+}
+
+func (s *EDPRegistrationStep) selectEnvironmentKey(region string, log logrus.FieldLogger) string {
+	parts := strings.Split(region, "-")
+	switch parts[0] {
+	case "cf":
+		return "CF"
+	case "k8s":
+		return "KUBERNETES"
+	case "neo":
+		return "NEO"
+	default:
+		log.Warnf("region %s does not fit any of the options, default CF is used", region)
+		return "CF"
+	}
 }
 
 // generateSecret generates secret during dataTenant creation, at this moment the secret is not needed

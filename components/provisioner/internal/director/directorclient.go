@@ -3,10 +3,8 @@ package director
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	gql "github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -23,7 +21,10 @@ const (
 //go:generate mockery -name=DirectorClient
 type DirectorClient interface {
 	CreateRuntime(config *gqlschema.RuntimeInput, tenant string) (string, error)
+	GetRuntime(id, tenant string) (graphql.RuntimeExt, error)
+	UpdateRuntime(id string, config *graphql.RuntimeInput, tenant string) error
 	DeleteRuntime(id, tenant string) error
+	SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) error
 	GetConnectionToken(id, tenant string) (graphql.OneTimeTokenForRuntimeExt, error)
 }
 
@@ -88,6 +89,57 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput, tenant s
 	return response.Result.ID, nil
 }
 
+func (cc *directorClient) GetRuntime(id, tenant string) (graphql.RuntimeExt, error) {
+	log.Infof("Getting Runtime from Director service")
+
+	runtimeQuery := cc.queryProvider.getRuntimeQuery(id)
+
+	var response GetRuntimeResponse
+	err := cc.executeDirectorGraphQLCall(runtimeQuery, tenant, &response)
+	if err != nil {
+		return graphql.RuntimeExt{}, errors.Wrap(err, fmt.Sprintf("Failed to get runtime %s from Director", id))
+	}
+	if response.Result == nil {
+		return graphql.RuntimeExt{}, errors.Errorf("Failed to get runtime %s get Director: received nil response.", id)
+	}
+	if response.Result.ID != id {
+		return graphql.RuntimeExt{}, errors.Errorf("Failed to get correctly runtime %s in Director: Received wrong Runtime in the response", id)
+	}
+
+	log.Infof("Successfully got Runtime %s from Director for tenant %s", id, tenant)
+	return *response.Result, nil
+}
+
+func (cc *directorClient) UpdateRuntime(id string, directorInput *graphql.RuntimeInput, tenant string) error {
+	log.Infof("Updating Runtime in Director service")
+
+	if directorInput == nil {
+		return errors.New("Cannot update runtime in Director: missing Runtime config")
+	}
+
+	runtimeInput, err := cc.graphqlizer.RuntimeInputToGQL(*directorInput)
+	if err != nil {
+		log.Infof("Failed to create graphQLized Runtime input")
+		return err
+	}
+	runtimeQuery := cc.queryProvider.updateRuntimeMutation(id, runtimeInput)
+
+	var response UpdateRuntimeResponse
+	err = cc.executeDirectorGraphQLCall(runtimeQuery, tenant, &response)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Failed to update runtime %s in Director", id))
+	}
+	if response.Result == nil {
+		return errors.Errorf("Failed to update runtime %s in Director: received nil response.", id)
+	}
+	if response.Result.ID != id {
+		return errors.Errorf("Failed to update correctly the runtime %s in Director: Received bad Runtime id in response", id)
+	}
+
+	log.Infof("Successfully updated Runtime %s in Director for tenant %s", id, tenant)
+	return nil
+}
+
 func (cc *directorClient) DeleteRuntime(id, tenant string) error {
 	runtimeQuery := cc.queryProvider.deleteRuntimeMutation(id)
 
@@ -98,7 +150,7 @@ func (cc *directorClient) DeleteRuntime(id, tenant string) error {
 	}
 	// Nil check is necessary due to GraphQL client not checking response code
 	if response.Result == nil {
-		return errors.Errorf("Failed to register unregister runtime %s in Director: received nil response.", id)
+		return errors.Errorf("Failed to unregister runtime %s in Director: received nil response.", id)
 	}
 
 	if response.Result.ID != id {
@@ -107,6 +159,29 @@ func (cc *directorClient) DeleteRuntime(id, tenant string) error {
 
 	log.Infof("Successfully unregistered Runtime %s in Director for tenant %s", id, tenant)
 
+	return nil
+}
+
+func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) error {
+	// TODO: Set StatusCondition without getting the Runtime
+	//       It'll be possible after this issue implementation:
+	//       - https://github.com/kyma-incubator/compass/issues/1186
+	runtime, err := cc.GetRuntime(id, tenant)
+	if err != nil {
+		log.Errorf("Failed to get Runtime by ID: %s", err.Error())
+		return errors.Wrap(err, "failed to get runtime by ID")
+	}
+	runtimeInput := &graphql.RuntimeInput{
+		Name:            runtime.Name,
+		Description:     runtime.Description,
+		StatusCondition: &statusCondition,
+		Labels:          &runtime.Labels,
+	}
+	err = cc.UpdateRuntime(id, runtimeInput, tenant)
+	if err != nil {
+		log.Errorf("Failed to update Runtime in Director: %s", err.Error())
+		return errors.Wrap(err, "failed to update runtime in Director")
+	}
 	return nil
 }
 

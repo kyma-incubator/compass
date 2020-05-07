@@ -24,6 +24,7 @@ type PackageRepository interface {
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
 type APIRepository interface {
 	Create(ctx context.Context, item *model.APIDefinition) error
+	Update(ctx context.Context, item *model.APIDefinition) error
 }
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
@@ -46,6 +47,11 @@ type UIDService interface {
 	Generate() string
 }
 
+//go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
+type FetchRequestService interface {
+	HandleAPISpec(ctx context.Context, fr *model.FetchRequest) *string
+}
+
 type service struct {
 	pkgRepo          PackageRepository
 	apiRepo          APIRepository
@@ -53,19 +59,21 @@ type service struct {
 	documentRepo     DocumentRepository
 	fetchRequestRepo FetchRequestRepository
 
-	uidService   UIDService
-	timestampGen timestamp.Generator
+	uidService          UIDService
+	fetchRequestService FetchRequestService
+	timestampGen        timestamp.Generator
 }
 
-func NewService(pkgRepo PackageRepository, apiRepo APIRepository, eventAPIRepo EventAPIRepository, documentRepo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService) *service {
+func NewService(pkgRepo PackageRepository, apiRepo APIRepository, eventAPIRepo EventAPIRepository, documentRepo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
 	return &service{
-		pkgRepo:          pkgRepo,
-		apiRepo:          apiRepo,
-		eventAPIRepo:     eventAPIRepo,
-		documentRepo:     documentRepo,
-		fetchRequestRepo: fetchRequestRepo,
-		uidService:       uidService,
-		timestampGen:     timestamp.DefaultGenerator(),
+		pkgRepo:             pkgRepo,
+		apiRepo:             apiRepo,
+		eventAPIRepo:        eventAPIRepo,
+		documentRepo:        documentRepo,
+		fetchRequestRepo:    fetchRequestRepo,
+		uidService:          uidService,
+		fetchRequestService: fetchRequestService,
+		timestampGen:        timestamp.DefaultGenerator(),
 	}
 }
 
@@ -236,18 +244,29 @@ func (s *service) createAPIs(ctx context.Context, packageID, tenant string, apis
 	var err error
 	for _, item := range apis {
 		apiDefID := s.uidService.Generate()
-		err = s.apiRepo.Create(ctx, item.ToAPIDefinitionWithinPackage(apiDefID, packageID, tenant))
+
+		api := item.ToAPIDefinitionWithinPackage(apiDefID, packageID, tenant)
+
+		err = s.apiRepo.Create(ctx, api)
 		if err != nil {
 			return errors.Wrap(err, "while creating API for application")
 		}
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
-			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
+			fr, err := s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
 			if err != nil {
 				return errors.Wrap(err, "while creating FetchRequest for application")
 			}
+
+			api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fr)
+			err = s.apiRepo.Update(ctx, api)
+			if err != nil {
+				return errors.Wrap(err, "while updating api with api spec")
+			}
 		}
+
 	}
+
 	return nil
 }
 
@@ -289,7 +308,7 @@ func (s *service) createDocuments(ctx context.Context, packageID, tenant string,
 	return nil
 }
 
-func (s *service) createFetchRequest(ctx context.Context, tenant string, in *model.FetchRequestInput, objectType model.FetchRequestReferenceObjectType, objectID string) (*string, error) {
+func (s *service) createFetchRequest(ctx context.Context, tenant string, in *model.FetchRequestInput, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error) {
 	if in == nil {
 		return nil, nil
 	}
@@ -301,5 +320,5 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in *mod
 		return nil, errors.Wrapf(err, "while creating FetchRequest for %s with ID %s", objectType, objectID)
 	}
 
-	return &id, nil
+	return fr, nil
 }

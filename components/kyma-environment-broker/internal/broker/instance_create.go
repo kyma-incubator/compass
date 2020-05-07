@@ -186,10 +186,13 @@ func (b *ProvisionEndpoint) extractERSContext(details domain.ProvisionDetails) (
 	err := json.Unmarshal(details.RawContext, &ersContext)
 	if err != nil {
 		return ersContext, errors.Wrap(err, "while decoding context")
-
 	}
+
 	if ersContext.GlobalAccountID == "" {
 		return ersContext, errors.New("global accountID parameter cannot be empty")
+	}
+	if ersContext.SubAccountID == "" {
+		return ersContext, errors.New("subAccountID parameter cannot be empty")
 	}
 
 	return ersContext, nil
