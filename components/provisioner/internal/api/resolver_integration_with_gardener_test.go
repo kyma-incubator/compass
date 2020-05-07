@@ -8,29 +8,35 @@ import (
 	"testing"
 	"time"
 
-	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s/mocks"
+
+	v1alpha12 "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
+	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
+
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
-	runtimeConfigrtr "github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
-	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
+	runtimeConfig "github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/hydroform/install/installation"
-	v1alpha12 "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
 	compass_connection_fake "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/fake"
-	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -162,10 +168,10 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	clusterConfigurations := getTestClusterConfigurations()
 	directorServiceMock := &directormock.DirectorClient{}
 
-	cmClientBuilder := &mocks2.ConfigMapClientBuilder{}
-	configMapClient := fake.NewSimpleClientset().CoreV1().ConfigMaps(compassSystemNamespace)
-	cmClientBuilder.On("CreateK8SConfigMapClient", mockedKubeconfig, compassSystemNamespace).Return(configMapClient, nil)
-	runtimeConfigurator := runtimeConfigrtr.NewRuntimeConfigurator(cmClientBuilder, directorServiceMock)
+	mockK8sClientProvider := &mocks.K8sClientProvider{}
+	fakeK8sClient := fake.NewSimpleClientset()
+	mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
+	runtimeConfigurator := runtimeConfig.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
 	auditLogsConfigPath := filepath.Join("testdata", "config.json")
 
@@ -190,7 +196,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	for _, config := range clusterConfigurations {
 		t.Run(config.description, func(t *testing.T) {
-			configMapClient.Delete(runtimeConfigrtr.ConfigMapName, &metav1.DeleteOptions{})
+			fakeK8sClient.CoreV1().Secrets(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
+			fakeK8sClient.CoreV1().ConfigMaps(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
 
 			directorServiceMock.Calls = nil
 			directorServiceMock.ExpectedCalls = nil

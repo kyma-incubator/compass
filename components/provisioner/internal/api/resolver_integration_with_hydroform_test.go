@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s/mocks"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
-	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
 	"k8s.io/client-go/kubernetes/fake"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
@@ -191,11 +192,10 @@ var providerCredentials = &gqlschema.CredentialsInput{SecretName: "secret_1"}
 
 func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 
-	mockedKubeConfigValue := "test config value"
 	mockedTerraformState := []byte(`{"test_key": "test_value"}`)
 
 	hydroformServiceMock := &hydroformmocks.Service{}
-	hydroformServiceMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: mockedKubeConfigValue, State: mockedTerraformState}, nil).
+	hydroformServiceMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: mockedKubeconfig, State: mockedTerraformState}, nil).
 		Run(func(args mock.Arguments) {
 			time.Sleep(1 * time.Second)
 		})
@@ -247,10 +247,10 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
 			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
-			cmClientBuilder := &mocks2.ConfigMapClientBuilder{}
-			configMapClient := fake.NewSimpleClientset().CoreV1().ConfigMaps(compassSystemNamespace)
-			cmClientBuilder.On("CreateK8SConfigMapClient", mockedKubeConfigValue, compassSystemNamespace).Return(configMapClient, nil)
-			runtimeConfigurator := runtime.NewRuntimeConfigurator(cmClientBuilder, directorServiceMock)
+			mockK8sClientProvider := &mocks.K8sClientProvider{}
+			fakeK8sClient := fake.NewSimpleClientset()
+			mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
+			runtimeConfigurator := runtime.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: cfg.runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
@@ -318,7 +318,7 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 			require.NotNil(t, clusterData)
 			require.NotNil(t, clusterData.Kubeconfig)
 			assert.Equal(t, mockedTerraformState, clusterData.TerraformState)
-			assert.Equal(t, mockedKubeConfigValue, *clusterData.Kubeconfig)
+			assert.Equal(t, mockedKubeconfig, *clusterData.Kubeconfig)
 
 			deprovisionID, err := provisioner.DeprovisionRuntime(ctx, cfg.runtimeID)
 			require.NoError(t, err)
