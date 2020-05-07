@@ -60,6 +60,10 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		logger.Errorf("Unable to parse the URL: %v", err.Error())
 		return operation, 0, err
 	}
+	if u.Path == "" {
+		logger.Errorf("There is no Path passed in the URL")
+		return operation, 0, errors.New("there is no Path passed in the URL")
+	}
 	auditLogHost, auditLogPort, err := net.SplitHostPort(u.Host)
 	if err != nil {
 		logger.Errorf("Unable to split URL: %v", err.Error())
@@ -90,15 +94,16 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 [OUTPUT]
         Name             http
         Match            dex.*
+        Retry_Limit      False
         Host             %s
         Port             %s
-        URI              /audit-log/v2/security-events
+        URI              %ssecurity-events
         Header           Content-Type application/json
         HTTP_User        %s
         HTTP_Passwd      %s
         Format           json_stream
         tls              on
-`, auditLogHost, auditLogPort, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
+`, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`- %s`, auditLogHost)},
 		{Key: "fluent-bit.externalServiceEntry.ports", Value: fmt.Sprintf(`- number: %s

@@ -61,7 +61,7 @@ return "fooBar"
 
 	repo := storage.NewMemoryStorage().Operations()
 	cfg := auditlog.Config{
-		URL:      "https://host1:8080/aaa/v2",
+		URL:      "https://host1:8080/aaa/v2/",
 		User:     "aaaa",
 		Password: "aaaa",
 		Tenant:   "tenant",
@@ -89,9 +89,10 @@ return "fooBar"
 [OUTPUT]
         Name             http
         Match            dex.*
+        Retry_Limit      False
         Host             host1
         Port             8080
-        URI              /aaa/v2
+        URI              /aaa/v2/security-events
         Header           Content-Type application/json
         HTTP_User        aaaa
         HTTP_Passwd      aaaa
