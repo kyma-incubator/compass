@@ -198,6 +198,11 @@ func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec
 		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fetchRequest)
 	}
 
+	err = s.repo.Update(ctx, api)
+	if err != nil {
+		return nil, errors.Wrap(err, "while updating api with api spec")
+	}
+
 	return api.Spec, nil
 }
 
