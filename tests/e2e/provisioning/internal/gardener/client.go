@@ -21,7 +21,7 @@ func NewGardenerClusterConfig(kubeconfigPath string) (*restclient.Config, error)
 
 	gardenerClusterConfig, err := RESTConfig(rawKubeconfig)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get the REST config from Kubeconfig")
+		return nil, errors.Wrap(err, "failed to get the REST config from Kubeconfig")
 	}
 
 	return gardenerClusterConfig, nil
@@ -32,7 +32,7 @@ func NewGardenerSecretsInterface(gardenerClusterCfg *restclient.Config, gardener
 	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProjectName)
 	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch gardener cluster clienset")
+		return nil, errors.Wrap(err, "failed to fetch gardener cluster clienset")
 	}
 
 	return gardenerClusterClient.CoreV1().Secrets(gardenerNamespace), nil

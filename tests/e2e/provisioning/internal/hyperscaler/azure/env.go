@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/hyperscaler"
 )
 
+// GetConfig returns Azure config
 func GetConfig(clientID, clientSecret, tenantID, subscriptionID, location string) (*Config, error) {
 	config := NewDefaultConfig()
 	azureEnv, err := autorestazure.EnvironmentFromName("AzurePublicCloud") // shouldn't fail
@@ -22,6 +23,7 @@ func GetConfig(clientID, clientSecret, tenantID, subscriptionID, location string
 	return config, nil
 }
 
+// GetConfigFromHAPCredentialsAndProvisioningParams returns Azure config from HAPCredentials
 func GetConfigFromHAPCredentialsAndProvisioningParams(credentials hyperscaler.Credentials, region string) (*Config, error) {
 	subscriptionID := string(credentials.CredentialData["subscriptionID"])
 	clientID := string(credentials.CredentialData["clientID"])

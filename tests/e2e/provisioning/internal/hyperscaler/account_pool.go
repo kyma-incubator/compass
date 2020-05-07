@@ -59,7 +59,7 @@ func (p *secretsAccountPool) Credentials(hyperscalerType HyperscalerType, tenant
 	secret, err = getK8SSecret(p.secretsClient, labelSelector)
 
 	if err != nil {
-		return Credentials{}, errors.Wrapf(err, "failed to fetch k8s secret")
+		return Credentials{}, errors.Wrap(err, "failed to fetch k8s secret")
 	}
 	if secret != nil {
 		secret.Labels["tenantName"] = tenantName
@@ -70,7 +70,7 @@ func (p *secretsAccountPool) Credentials(hyperscalerType HyperscalerType, tenant
 		return credentialsFromSecret(updatedSecret, hyperscalerType, tenantName), nil
 	}
 
-	return Credentials{}, errors.Errorf("accountPool failed to find unassigned secret for hyperscalerType: %s",
+	return Credentials{}, fmt.Errorf("accountPool failed to find unassigned secret for hyperscalerType: %s",
 		hyperscalerType)
 
 }

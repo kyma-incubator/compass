@@ -87,7 +87,7 @@ const (
 )
 
 func newTestSuite(t *testing.T) *Suite {
-	var azureClient azure.AzureInterface
+	var azureClient *azure.AzureInterface
 	cfg := &Config{}
 	err := envconfig.InitWithPrefix(cfg, "APP")
 	require.NoError(t, err)
@@ -133,28 +133,7 @@ func newTestSuite(t *testing.T) *Suite {
 	dashboardChecker := runtime.NewDashboardChecker(*httpClient, log.WithField("service", "dashboard_checker"))
 
 	if cfg.TestAzureEventHubsEnabled {
-		hypType := hyperscaler.Azure
-
-		hyperscalerProvider := azure.NewAzureProvider()
-
-		gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
-		require.NoError(t, err)
-
-		gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
-		require.NoError(t, err)
-
-		gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
-
-		accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
-
-		credentials, err := accountProvider.GardenerCredentials(hypType, brokerClient.GlobalAccountID())
-		assert.NoError(t, err)
-
-		azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, DefaultAzureEHRegion)
-		assert.NoError(t, err)
-
-		azureClient, err = hyperscalerProvider.GetClient(azureCfg)
-		assert.NoError(t, err)
+		azureClient = newAzureClient(t, cfg, brokerClient.GlobalAccountID())
 	}
 
 	return &Suite{
@@ -166,7 +145,7 @@ func newTestSuite(t *testing.T) *Suite {
 		runtimeClient:    runtimeClient,
 		secretClient:     secretClient,
 		configMapClient:  configMapClient,
-		azureClient:      &azureClient,
+		azureClient:      azureClient,
 
 		InstanceID:         instanceID,
 		SubAccountID:       subAccountID,
@@ -262,4 +241,31 @@ func newHTTPClient(insecureSkipVerify bool) *http.Client {
 			},
 		},
 	}
+}
+
+func newAzureClient(t *testing.T, cfg *Config, globalAccountID string) *azure.AzureInterface {
+	hypType := hyperscaler.Azure
+
+	hyperscalerProvider := azure.NewAzureProvider()
+
+	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
+	require.NoError(t, err)
+
+	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
+	require.NoError(t, err)
+
+	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
+
+	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
+
+	credentials, err := accountProvider.GardenerCredentials(hypType, globalAccountID)
+	assert.NoError(t, err)
+
+	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, DefaultAzureEHRegion)
+	assert.NoError(t, err)
+
+	azureClient, err := hyperscalerProvider.GetClient(azureCfg)
+	assert.NoError(t, err)
+
+	return &azureClient
 }
