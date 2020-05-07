@@ -268,7 +268,7 @@ global:
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     secretName: "compass-gateway-auditlog-secret"
-    script.ConfigMapName: "auditlog-script"
+    script.configMapName: "auditlog-script"
 
   externalServicesMock:
     enabled: false
