@@ -1,3 +1,5 @@
+BEGIN;
+
 ALTER TABLE runtimes
     ALTER COLUMN status_condition TYPE VARCHAR(255);
 
@@ -26,3 +28,5 @@ ALTER TABLE runtimes
     SET DEFAULT 'INITIAL' ::runtime_status_condition;
 
 DROP TYPE runtime_status_condition_old;
+
+COMMIT;
