@@ -129,7 +129,7 @@ func (dc *Client) setToken() error {
 }
 
 func (dc *Client) getIDFromRuntime(response *graphql.RuntimePageExt) (string, error) {
-	if response.Data == nil || len(response.Data) == 0 {
+	if response.Data == nil || response.Data[0] == nil {
 		return "", errors.New("got empty data from director response")
 	}
 	if len(response.Data) > 1 {
