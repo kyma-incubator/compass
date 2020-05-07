@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -336,8 +337,10 @@ func main() {
 		route := router.PathPrefix(prefix).Subrouter()
 		broker.AttachRoutes(route, kymaEnvBroker, logger, creds)
 	}
+	svr := handlers.CustomLoggingHandler(os.Stdout, router, func(writer io.Writer, params handlers.LogFormatterParams) {
+		logs.Infof("Call handled: url=%s statusCode=%d size=%d", params.URL.Path, params.StatusCode, params.Size)
+	})
 
-	svr := handlers.LoggingHandler(os.Stdout, router)
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
 }
 
