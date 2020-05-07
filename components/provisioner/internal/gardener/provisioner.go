@@ -27,20 +27,20 @@ func NewProvisioner(
 	factory dbsession.Factory,
 	policyConfigMapName string, maintenanceWindowConfigPath string) *GardenerProvisioner {
 	return &GardenerProvisioner{
-		namespace:           namespace,
-		shootClient:         shootClient,
-		dbSessionFactory:    factory,
-		policyConfigMapName: policyConfigMapName,
+		namespace:                   namespace,
+		shootClient:                 shootClient,
+		dbSessionFactory:            factory,
+		policyConfigMapName:         policyConfigMapName,
 		maintenanceWindowConfigPath: maintenanceWindowConfigPath,
 	}
 }
 
 type GardenerProvisioner struct {
-	namespace           string
-	shootClient         gardener_apis.ShootInterface
-	dbSessionFactory    dbsession.Factory
-	directorService     director.DirectorClient
-	policyConfigMapName    string
+	namespace                   string
+	shootClient                 gardener_apis.ShootInterface
+	dbSessionFactory            dbsession.Factory
+	directorService             director.DirectorClient
+	policyConfigMapName         string
 	maintenanceWindowConfigPath string
 }
 
