@@ -7,6 +7,7 @@ type (
 		RuntimeID         string    `json:"runtimeId"`
 		GlobalAccountID   string    `json:"globalAccountId"`
 		SubAccountID      string    `json:"subaccountId"`
+		SubAccountRegion  string    `json:"subaccountRegion"`
 		ServiceInstanceID string    `json:"serviceInstanceId"`
 		ServiceClassID    string    `json:"serviceClassId"`
 		ServiceClassName  string    `json:"serviceClassName"`
