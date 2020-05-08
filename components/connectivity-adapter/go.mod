@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.3
 	github.com/huandu/xstrings v1.3.0 // indirect
+	github.com/json-iterator/go v1.1.9
 	github.com/kyma-incubator/compass v0.0.0-20200423121118-ddae913f3e98
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200423121118-ddae913f3e98
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
