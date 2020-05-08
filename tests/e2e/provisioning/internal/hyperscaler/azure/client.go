@@ -15,21 +15,21 @@ type AzureInterface interface {
 var _ AzureInterface = (*AzureClient)(nil)
 
 type AzureClient struct {
-	eventhubNamespaceClient eventhub.NamespacesClient
-	resourcegroupClient     resources.GroupsClient
+	eventHubNamespaceClient eventhub.NamespacesClient
+	resourceGroupClient     resources.GroupsClient
 }
 
-func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourcegroupClient resources.GroupsClient) *AzureClient {
+func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourceGroupClient resources.GroupsClient) *AzureClient {
 	return &AzureClient{
-		eventhubNamespaceClient: namespaceClient,
-		resourcegroupClient:     resourcegroupClient,
+		eventHubNamespaceClient: namespaceClient,
+		resourceGroupClient:     resourceGroupClient,
 	}
 }
 
 func (nc *AzureClient) ListResourceGroup(ctx context.Context, filter string, top *int32) (resources.GroupListResultPage, error) {
-	return nc.resourcegroupClient.List(ctx, filter, top)
+	return nc.resourceGroupClient.List(ctx, filter, top)
 }
 
 func (nc *AzureClient) ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error) {
-	return nc.eventhubNamespaceClient.ListByResourceGroup(ctx, resourceGroupName)
+	return nc.eventHubNamespaceClient.ListByResourceGroup(ctx, resourceGroupName)
 }
