@@ -2,6 +2,9 @@ package provisioner
 
 import (
 	"bytes"
+	"encoding/json"
+	"github.com/sirupsen/logrus"
+	"reflect"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -96,13 +99,16 @@ func (g *graphqlizer) ProviderSpecificInputToGraphQL(in *gqlschema.ProviderSpeci
 
 func (g *graphqlizer) AzureProviderConfigInputToGraphQL(in *gqlschema.AzureProviderConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-		vnetCidr: "{{ .VnetCidr }}"
+		vnetCidr: "{{.VnetCidr}}",
+		{{- if .Zones }}
+		zones: {{.Zones | marshal }},
+		{{- end }}
 	}`)
 }
 
 func (g *graphqlizer) GcpProviderConfigInputToGraphQL(in *gqlschema.GCPProviderConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-		zone: "{{ .Zone }}"
+		zones: "{{ .Zones | marshal }}"
 	}`)
 }
 
@@ -170,8 +176,41 @@ func (g *graphqlizer) ConfigEntryInputToGQL(in gqlschema.ConfigEntryInput) (stri
 	}`)
 }
 
+func (g *graphqlizer) marshal(obj interface{}) string {
+	var out string
+
+	val := reflect.ValueOf(obj)
+
+	switch val.Kind() {
+	case reflect.Map:
+		s, err := g.genericToGraphQL(obj, `{ {{- range $k, $v := . }}{{ $k }}:{{ marshal $v }},{{ end -}} }`)
+		if err != nil {
+			logrus.Warnf("failed to marshal labels: %s", err.Error())
+			return ""
+		}
+		out = s
+	case reflect.Slice, reflect.Array:
+		s, err := g.genericToGraphQL(obj, `[{{ range $i, $e := . }}{{ if $i }},{{ end }}{{ marshal $e }}{{ end }}]`)
+		if err != nil {
+			logrus.Warnf("failed to marshal labels: %s", err.Error())
+			return ""
+		}
+		out = s
+	default:
+		marshalled, err := json.Marshal(obj)
+		if err != nil {
+			logrus.Warnf("failed to marshal labels: %s", err.Error())
+			return ""
+		}
+		out = string(marshalled)
+	}
+
+	return out
+}
+
 func (g *graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
+	fm["marshal"] = g.marshal
 	fm["RuntimeInputToGraphQL"] = g.RuntimeInputToGraphQL
 	fm["ComponentConfigurationInputToGQL"] = g.ComponentConfigurationInputToGQL
 	fm["ConfigEntryInputToGQL"] = g.ConfigEntryInputToGQL
