@@ -1,6 +1,6 @@
 module github.com/kyma-incubator/compass/tests/director
 
-go 1.13
+go 1.14
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect
@@ -9,7 +9,7 @@ require (
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/huandu/xstrings v1.3.0 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200410141028-a232fdab77f4
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200508132218-b3adcb9448b9
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20200429083609-7d80a85180c6
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.3.0 // indirect
@@ -25,5 +25,3 @@ require (
 )
 
 replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
-
-replace github.com/kyma-incubator/compass/components/director => github.com/kjaksik/compass/components/director v0.0.0-20200416093031-2b6856caab79

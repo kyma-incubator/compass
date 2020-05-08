@@ -51,6 +51,7 @@ mutation {
         filter
         status {
           condition
+          message
           timestamp
         }
       }

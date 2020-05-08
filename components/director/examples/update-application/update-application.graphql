@@ -190,6 +190,7 @@ mutation {
                 filter
                 status {
                   condition
+                  message
                   timestamp
                 }
               }
@@ -259,6 +260,7 @@ mutation {
                 filter
                 status {
                   condition
+                  message
                   timestamp
                 }
               }
@@ -325,6 +327,7 @@ mutation {
               filter
               status {
                 condition
+                message
                 timestamp
               }
             }
