@@ -67,9 +67,9 @@ spec:
             - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
               value: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
             - name: APP_GARDENER_PROJECT
-              value: "kyma-dev"
+              value: {{ .Values.gardener.project }}
             - name: APP_GARDENER_KUBECONFIG_PATH
-              value: "/gardener/kubeconfig/kubeconfig"
+              value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_TEST_AZURE_EVENT_HUBS_ENABLED
               value: "true"
           command: ["/bin/sh"]
@@ -78,7 +78,7 @@ spec:
             - name: gardener-kubeconfig
               secret:
                 defaultMode: 420
-                secretName: gardener-credentials
+                secretName: {{ .Values.gardener.secretName }}
 
 ---
 apiVersion: "testing.kyma-project.io/v1alpha1"
@@ -141,9 +141,9 @@ spec:
             - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
               value: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
             - name: APP_GARDENER_PROJECT
-              value: "kyma-dev"
+              value: {{ .Values.gardener.project }}
             - name: APP_GARDENER_KUBECONFIG_PATH
-              value: "/gardener/kubeconfig/kubeconfig"
+              value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_TEST_AZURE_EVENT_HUBS_ENABLED
               value: "true"
           command: ["/bin/sh"]
@@ -152,4 +152,4 @@ spec:
             - name: gardener-kubeconfig
               secret:
                 defaultMode: 420
-                secretName: gardener-credentials
+                secretName: {{ .Values.gardener.secretName }}
