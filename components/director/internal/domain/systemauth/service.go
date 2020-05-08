@@ -3,6 +3,8 @@ package systemauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/pkg/errors"
 
@@ -110,7 +112,9 @@ func (s *service) GetGlobal(ctx context.Context, id string) (*model.SystemAuth, 
 func (s *service) ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return nil, err
+		if !apperrors.IsEmptyTenant(err) {
+			return nil, err
+		}
 	}
 
 	var systemAuths []model.SystemAuth
