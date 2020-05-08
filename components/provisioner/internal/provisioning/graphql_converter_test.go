@@ -133,14 +133,14 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		assert.Equal(t, expectedRuntimeStatus, gqlStatus)
 	})
 
-	t.Run("Should create proper runtime status struct for gardener config", func(t *testing.T) {
+	t.Run("Should create proper runtime status struct for gardener config with zones", func(t *testing.T) {
 		//given
 		clusterName := "Something"
 		project := "Project"
 		disk := "standard"
 		machine := "machine"
 		region := "region"
-		zone := "zone"
+		zones := []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}
 		volume := 256
 		kubeversion := "kubeversion"
 		kubeconfig := "kubeconfig"
@@ -154,7 +154,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		unavailable := 1
 		secretName := "secretName"
 
-		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"Zone":"zone"}`)
+		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
 		require.NoError(t, err)
 
 		runtimeStatus := model.RuntimeStatus{
@@ -223,7 +223,112 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxSurge:          &surge,
 					MaxUnavailable:    &unavailable,
 					ProviderSpecificConfig: gqlschema.GCPProviderConfig{
-						Zone: &zone,
+						Zones: zones,
+					},
+				},
+				KymaConfig: fixKymaGraphQLConfig(),
+				Kubeconfig: &kubeconfig,
+			},
+		}
+
+		//when
+		gqlStatus := graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus)
+
+		//then
+		assert.Equal(t, expectedRuntimeStatus, gqlStatus)
+	})
+
+	t.Run("Should create proper runtime status struct for gardener config without zones", func(t *testing.T) {
+		//given
+		clusterName := "Something"
+		project := "Project"
+		disk := "standard"
+		machine := "machine"
+		region := "region"
+		volume := 256
+		kubeversion := "kubeversion"
+		kubeconfig := "kubeconfig"
+		provider := "Azure"
+		seed := "az-eu1"
+		secret := "secret"
+		cidr := "cidr"
+		autoScMax := 2
+		autoScMin := 2
+		surge := 1
+		unavailable := 1
+		secretName := "secretName"
+
+		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"vnetCidr":"10.10.11.11/255"}`)
+		require.NoError(t, err)
+
+		runtimeStatus := model.RuntimeStatus{
+			LastOperationStatus: model.Operation{
+				ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
+				Type:      model.Deprovision,
+				State:     model.Failed,
+				Message:   "Some message",
+				ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
+			},
+			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
+			RuntimeConfiguration: model.Cluster{
+				ClusterConfig: model.GardenerConfig{
+					Name:                   clusterName,
+					ProjectName:            project,
+					KubernetesVersion:      kubeversion,
+					VolumeSizeGB:           volume,
+					DiskType:               disk,
+					MachineType:            machine,
+					Provider:               provider,
+					Seed:                   seed,
+					TargetSecret:           secret,
+					Region:                 region,
+					WorkerCidr:             cidr,
+					AutoScalerMin:          autoScMin,
+					AutoScalerMax:          autoScMax,
+					MaxSurge:               surge,
+					MaxUnavailable:         unavailable,
+					GardenerProviderConfig: gardenerProviderConfig,
+				},
+				Kubeconfig:            &kubeconfig,
+				KymaConfig:            fixKymaConfig(),
+				CredentialsSecretName: secretName,
+			},
+		}
+
+		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
+		message := "Some message"
+		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
+
+		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
+			LastOperationStatus: &gqlschema.OperationStatus{
+				ID:        &operationID,
+				Operation: gqlschema.OperationTypeDeprovision,
+				State:     gqlschema.OperationStateFailed,
+				Message:   &message,
+				RuntimeID: &runtimeID,
+			},
+			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
+				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
+			},
+			RuntimeConfiguration: &gqlschema.RuntimeConfig{
+				ClusterConfig: gqlschema.GardenerConfig{
+					Name:              &clusterName,
+					DiskType:          &disk,
+					MachineType:       &machine,
+					Region:            &region,
+					VolumeSizeGb:      &volume,
+					KubernetesVersion: &kubeversion,
+					Provider:          &provider,
+					Seed:              &seed,
+					TargetSecret:      &secret,
+					WorkerCidr:        &cidr,
+					AutoScalerMax:     &autoScMax,
+					AutoScalerMin:     &autoScMin,
+					MaxSurge:          &surge,
+					MaxUnavailable:    &unavailable,
+					ProviderSpecificConfig: gqlschema.AzureProviderConfig{
+						VnetCidr: util.StringPtr("10.10.11.11/255"),
+						Zones:    nil, // Expected empty when no zones specified in input.
 					},
 				},
 				KymaConfig: fixKymaGraphQLConfig(),

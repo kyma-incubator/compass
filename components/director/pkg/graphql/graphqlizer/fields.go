@@ -107,7 +107,7 @@ func (fp *GqlFieldsProvider) ForFetchRequest() string {
 		auth {%s}
 		mode
 		filter
-		status {condition timestamp}`, fp.ForAuth())
+		status {condition message timestamp}`, fp.ForAuth())
 }
 
 func (fp *GqlFieldsProvider) ForAPIRuntimeAuth() string {

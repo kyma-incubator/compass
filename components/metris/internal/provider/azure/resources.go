@@ -29,17 +29,6 @@ func (c *Client) getResourceGroupList(ctx context.Context, filter string) ([]res
 	return results, nil
 }
 
-func (c *Client) getResourceGroup(ctx context.Context, rgname string) (resources.Group, error) {
-	rgClient := c.getGroupClient()
-
-	result, err := rgClient.Get(ctx, rgname)
-	if err != nil {
-		return resources.Group{}, err
-	}
-
-	return result, nil
-}
-
 func (c *Client) initVirtualMachineCapabilities(ctx context.Context) error {
 	ResourceSkusList.mu.Lock()
 	defer ResourceSkusList.mu.Unlock()
@@ -118,15 +107,14 @@ func (c *Client) getDiskList(ctx context.Context, resourceGroupName string) ([]c
 
 	diskClient := c.getDisksClient()
 
-	for diskList, err := diskClient.ListByResourceGroup(ctx, resourceGroupName); diskList.NotDone(); err = diskList.NextWithContext(ctx) {
+	for diskList, err := diskClient.ListByResourceGroupComplete(ctx, resourceGroupName); diskList.NotDone(); err = diskList.NextWithContext(ctx) {
 		if err != nil {
 			return result, err
 		}
 
-		for _, disk := range diskList.Values() {
-			if len(disk.DiskProperties.OsType) == 0 {
-				result = append(result, disk)
-			}
+		disk := diskList.Value()
+		if len(disk.DiskProperties.OsType) == 0 {
+			result = append(result, disk)
 		}
 	}
 

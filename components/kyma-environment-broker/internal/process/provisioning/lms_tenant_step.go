@@ -19,15 +19,20 @@ type LmsTenantProvider interface {
 // provideLmsTenantStep creates (if not exists) LMS tenant and provides its ID.
 // The step does not breaks the provisioning flow.
 type provideLmsTenantStep struct {
+	LmsStep
 	tenantProvider   LmsTenantProvider
 	operationManager *process.ProvisionOperationManager
 	regionOverride   string
 }
 
-func NewProvideLmsTenantStep(tp LmsTenantProvider, repo storage.Operations, regionOverride string) *provideLmsTenantStep {
+func NewProvideLmsTenantStep(tp LmsTenantProvider, repo storage.Operations, regionOverride string, isMandatory bool) *provideLmsTenantStep {
 	return &provideLmsTenantStep{
-		tenantProvider:   tp,
+		LmsStep: LmsStep{
+			operationManager: process.NewProvisionOperationManager(repo),
+			isMandatory:      isMandatory,
+		},
 		operationManager: process.NewProvisionOperationManager(repo),
+		tenantProvider:   tp,
 		regionOverride:   regionOverride,
 	}
 }
@@ -56,16 +61,7 @@ func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, log
 		if since < 3*time.Minute {
 			return operation, 30 * time.Second, nil
 		}
-
-		logger.Errorf("Unable to get tenant, setting LMS failed")
-		// if it is not possible to request tenant - set LMS failed and process next steps
-		operation.Lms.Failed = true
-		modifiedOp, repeat := s.operationManager.UpdateOperation(operation)
-		if repeat != 0 {
-			logger.Errorf("cannot save operation")
-			return operation, time.Second, nil
-		}
-		return modifiedOp, 0, nil
+		return s.failLmsAndUpdate(operation, "getting LMS tenant failed")
 	}
 
 	operation.Lms.TenantID = lmsTenantID

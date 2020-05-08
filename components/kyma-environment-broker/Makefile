@@ -1,7 +1,7 @@
 APP_NAME = kyma-environment-broker
 APP_PATH = components/kyma-environment-broker
 ENTRYPOINT = cmd/broker/main.go
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20200117-d3885041
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20200423-1d9d6590
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 DOCKER_SOCKET = /var/run/docker.sock
 TESTING_DB_NETWORK = test_network

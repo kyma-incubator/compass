@@ -27,7 +27,7 @@ type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
-	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
@@ -73,7 +73,14 @@ type UIDService interface {
 	Generate() string
 }
 
+//go:generate mockery -name=ApplicationHideCfgProvider -output=automock -outpkg=automock -case=underscore
+type ApplicationHideCfgProvider interface {
+	GetApplicationHideSelectors() (map[string][]string, error)
+}
+
 type service struct {
+	appHideCfgProvider ApplicationHideCfgProvider
+
 	appRepo       ApplicationRepository
 	webhookRepo   WebhookRepository
 	labelRepo     LabelRepository
@@ -87,8 +94,9 @@ type service struct {
 	timestampGen       timestamp.Generator
 }
 
-func NewService(app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService PackageService, uidService UIDService) *service {
+func NewService(appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService PackageService, uidService UIDService) *service {
 	return &service{
+		appHideCfgProvider: appHideCfgProvider,
 		appRepo:            app,
 		webhookRepo:        webhook,
 		runtimeRepo:        runtimeRepo,
@@ -164,7 +172,12 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		}, nil
 	}
 
-	return s.appRepo.ListByScenarios(ctx, tenantUUID, scenarios, pageSize, cursor)
+	hidingSelectors, err := s.appHideCfgProvider.GetApplicationHideSelectors()
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting application hide selectors from config")
+	}
+
+	return s.appRepo.ListByScenarios(ctx, tenantUUID, scenarios, pageSize, cursor, hidingSelectors)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {

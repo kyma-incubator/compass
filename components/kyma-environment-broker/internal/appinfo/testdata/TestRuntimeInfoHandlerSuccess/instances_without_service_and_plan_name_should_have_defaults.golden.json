@@ -12,6 +12,7 @@
       "deletedAt": "2020-04-21T01:00:23.000000042Z",
       "updatedAt": "2020-04-21T00:01:23.000000042Z"
     },
-    "subaccountId": "SubAccountID field. IDX: 1"
+    "subaccountId": "SubAccountID field. IDX: 1",
+    "subaccountRegion": "region-value-idx-1"
   }
 ]

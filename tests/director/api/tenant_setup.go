@@ -116,6 +116,13 @@ func (mgr *TestTenantsManager) InitializeDB(transact persistence.Transactioner) 
 			ProviderName:   testProvider,
 			Status:         Active,
 		},
+		"TestApplicationsForRuntimeWithHiddenApps": {
+			ID:             "7e1f2df8-36dc-4e40-8be3-d1555d50c91c",
+			Name:           "TestApplicationsForRuntimeWithHiddenApps",
+			ExternalTenant: "7e1f2df8-36dc-4e40-8be3-d1555d50c91c",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
 	}
 
 	tx, err := transact.Begin()

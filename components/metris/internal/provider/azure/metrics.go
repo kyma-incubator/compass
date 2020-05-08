@@ -24,6 +24,8 @@ const (
 	capvCPUs    = "vCPUs"
 
 	diskSizeFactor float64 = 32
+
+	intervalPT5M = 5 * time.Minute
 )
 
 // gatherMetrics - collect results from different Azure API and create edp events.
@@ -31,17 +33,13 @@ func (a *Provider) gatherMetrics(ctx context.Context, workerlogger *zap.SugaredL
 	defer utils.TrackTime("gatherMetrics", time.Now(), workerlogger)
 
 	a.mu.RLock()
-	if len(a.clients) == 0 {
-		workerlogger.Info("no Azure client configured yet")
-		return
-	}
-
 	client, ok := a.clients[shootname]
+	a.mu.RUnlock()
+
 	if !ok {
 		workerlogger.Error("client config not found")
 		return
 	}
-	a.mu.RUnlock()
 
 	var (
 		subaccountid              = client.Account.SubAccountID
@@ -218,10 +216,15 @@ func (a *Provider) getEventHubMetrics(ctx context.Context, client *Client, resou
 
 	result.NumberNamespaces = uint32(len(ehns))
 
+	interval := "PT1M"
+	if a.pollinterval == intervalPT5M {
+		interval = "PT5M"
+	}
+
 	for _, ns := range ehns {
 		resourceURI := *ns.ID
 
-		nsmetric, errs := client.getMetricValuesList(ctx, resourceURI, "PT1M", []string{"IncomingBytes", "OutgoingBytes", "IncomingMessages"}, []string{string(insights.Maximum)})
+		nsmetric, errs := client.getMetricValuesList(ctx, resourceURI, interval, []string{"IncomingBytes", "OutgoingBytes", "IncomingMessages"}, []string{string(insights.Maximum)})
 		if len(errs) > 0 {
 			for _, err := range errs {
 				logger.Warnf("eventhub metric error: %s", err)
@@ -230,9 +233,15 @@ func (a *Provider) getEventHubMetrics(ctx context.Context, client *Client, resou
 			continue
 		}
 
-		result.IncomingRequestsPT1M += *nsmetric["IncomingMessages"].Maximum
-		result.MaxIncomingBytesPT1M += *nsmetric["IncomingBytes"].Maximum
-		result.MaxOutgoingBytesPT1M += *nsmetric["OutgoingBytes"].Maximum
+		if interval == "PT5M" {
+			result.IncomingRequestsPT5M += *nsmetric["IncomingMessages"].Maximum
+			result.MaxIncomingBytesPT5M += *nsmetric["IncomingBytes"].Maximum
+			result.MaxOutgoingBytesPT5M += *nsmetric["OutgoingBytes"].Maximum
+		} else {
+			result.IncomingRequestsPT1M += *nsmetric["IncomingMessages"].Maximum
+			result.MaxIncomingBytesPT1M += *nsmetric["IncomingBytes"].Maximum
+			result.MaxOutgoingBytesPT1M += *nsmetric["OutgoingBytes"].Maximum
+		}
 	}
 
 	return result

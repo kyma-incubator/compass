@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s/mocks"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
-	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder/mocks"
 	"k8s.io/client-go/kubernetes/fake"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
@@ -102,33 +103,36 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 			MaxUnavailable:    2,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
-					Zone: "zone",
+					Zones: []string{"fix-gcp-zone1", "fix-gcp-zone-2"},
 				},
 			},
 		},
 	}
 
-	clusterConfigForGardenerWithAzure := &gqlschema.ClusterConfigInput{
-		GardenerConfig: &gqlschema.GardenerConfigInput{
-			KubernetesVersion: "version",
-			VolumeSizeGb:      1024,
-			MachineType:       "n1-standard-1",
-			Region:            "westeurope",
-			Provider:          "Azure",
-			Seed:              util.StringPtr("gcp-eu1"),
-			TargetSecret:      "secret",
-			DiskType:          "ssd",
-			WorkerCidr:        "cidr",
-			AutoScalerMin:     1,
-			AutoScalerMax:     5,
-			MaxSurge:          1,
-			MaxUnavailable:    2,
-			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr: "cidr",
+	clusterConfigForGardenerWithAzure := func(zones []string) *gqlschema.ClusterConfigInput {
+		return &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				KubernetesVersion: "version",
+				VolumeSizeGb:      1024,
+				MachineType:       "n1-standard-1",
+				Region:            "westeurope",
+				Provider:          "Azure",
+				Seed:              util.StringPtr("gcp-eu1"),
+				TargetSecret:      "secret",
+				DiskType:          "ssd",
+				WorkerCidr:        "cidr",
+				AutoScalerMin:     1,
+				AutoScalerMax:     5,
+				MaxSurge:          1,
+				MaxUnavailable:    2,
+				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+					AzureConfig: &gqlschema.AzureProviderConfigInput{
+						VnetCidr: "cidr",
+						Zones:    zones,
+					},
 				},
 			},
-		},
+		}
 	}
 
 	clusterConfigForGardenerWithAWS := &gqlschema.ClusterConfigInput{
@@ -157,20 +161,27 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 		},
 	}
 
+	zones := []string{"fix-az-zone-1", "fix-az-zone-2"}
+
 	testConfig := []provisionerTestConfig{
 		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bbb", config: clusterConfigForGardenerWithGCP, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with GCP configuration 1",
 			runtimeInput: &gqlschema.RuntimeInput{
 				Name:        "test runtime1",
 				Description: new(string),
 			}},
-		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb4", config: clusterConfigForGardenerWithAzure, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with Azure configuration",
+		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb4", config: clusterConfigForGardenerWithAzure(zones), description: "Should provision and deprovision a runtime with happy flow using correct Gardener with Azure configuration when zones passed",
 			runtimeInput: &gqlschema.RuntimeInput{
 				Name:        "test runtime2",
 				Description: new(string),
 			}},
-		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb5", config: clusterConfigForGardenerWithAWS, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with AWS configuration",
+		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb1", config: clusterConfigForGardenerWithAzure(nil), description: "Should provision and deprovision a runtime with happy flow using correct Gardener with Azure configuration when no zones passed",
 			runtimeInput: &gqlschema.RuntimeInput{
 				Name:        "test runtime3",
+				Description: new(string),
+			}},
+		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb5", config: clusterConfigForGardenerWithAWS, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with AWS configuration",
+			runtimeInput: &gqlschema.RuntimeInput{
+				Name:        "test runtime4",
 				Description: new(string),
 			}},
 	}
@@ -181,11 +192,10 @@ var providerCredentials = &gqlschema.CredentialsInput{SecretName: "secret_1"}
 
 func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 
-	mockedKubeConfigValue := "test config value"
 	mockedTerraformState := []byte(`{"test_key": "test_value"}`)
 
 	hydroformServiceMock := &hydroformmocks.Service{}
-	hydroformServiceMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: mockedKubeConfigValue, State: mockedTerraformState}, nil).
+	hydroformServiceMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: mockedKubeconfig, State: mockedTerraformState}, nil).
 		Run(func(args mock.Arguments) {
 			time.Sleep(1 * time.Second)
 		})
@@ -237,10 +247,10 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
 			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
-			cmClientBuilder := &mocks2.ConfigMapClientBuilder{}
-			configMapClient := fake.NewSimpleClientset().CoreV1().ConfigMaps(compassSystemNamespace)
-			cmClientBuilder.On("CreateK8SConfigMapClient", mockedKubeConfigValue, compassSystemNamespace).Return(configMapClient, nil)
-			runtimeConfigurator := runtime.NewRuntimeConfigurator(cmClientBuilder, directorServiceMock)
+			mockK8sClientProvider := &mocks.K8sClientProvider{}
+			fakeK8sClient := fake.NewSimpleClientset()
+			mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
+			runtimeConfigurator := runtime.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: cfg.runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
@@ -308,7 +318,7 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 			require.NotNil(t, clusterData)
 			require.NotNil(t, clusterData.Kubeconfig)
 			assert.Equal(t, mockedTerraformState, clusterData.TerraformState)
-			assert.Equal(t, mockedKubeConfigValue, *clusterData.Kubeconfig)
+			assert.Equal(t, mockedKubeconfig, *clusterData.Kubeconfig)
 
 			deprovisionID, err := provisioner.DeprovisionRuntime(ctx, cfg.runtimeID)
 			require.NoError(t, err)

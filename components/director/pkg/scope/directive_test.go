@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pkg/errors"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope/automock"
+
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -49,7 +50,7 @@ func TestHasScope(t *testing.T) {
 		// WHEN
 		_, err := sut.VerifyScopes(context.TODO(), nil, nil, fixScopesDefinition())
 		// THEN
-		assert.Equal(t, scope.NoScopesInContextError, err)
+		assert.True(t, apperrors.IsNoScopesInContext(err))
 
 	})
 

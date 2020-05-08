@@ -13,6 +13,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/kyma-incubator/compass/components/metris/internal/gardener"
+	"github.com/kyma-incubator/compass/components/metris/internal/metrics"
 	"github.com/mitchellh/mapstructure"
 	"go.uber.org/zap"
 	"k8s.io/client-go/util/workqueue"
@@ -22,6 +23,7 @@ const (
 	azureUserAgent = "metris"
 
 	maxPollingDuration = 1 * time.Minute
+	retryDuration      = 5 * time.Minute
 )
 
 var (
@@ -29,10 +31,13 @@ var (
 )
 
 // NewAzureProvider create new azure provider.
-func NewAzureProvider(workers int, pollinterval time.Duration, accountsChannel <-chan *gardener.Account, eventsChannel chan<- *[]byte, logger *zap.SugaredLogger, tracelevel int) *Provider {
+func NewAzureProvider(workers int, pollinterval time.Duration, accountsChannel chan *gardener.Account, eventsChannel chan<- *[]byte, logger *zap.SugaredLogger, tracelevel int) *Provider {
 	ResourceSkusList = ResourceSkus{
 		skus: make(map[string]*compute.ResourceSku),
 	}
+
+	workqueueMetricsProviderInstance := new(metrics.WorkqueueMetricsProvider)
+	workqueue.SetProvider(workqueueMetricsProviderInstance)
 
 	return &Provider{
 		mu:               sync.RWMutex{},
@@ -83,7 +88,11 @@ func (a *Provider) Collect(ctx context.Context, parentwg *sync.WaitGroup) {
 					if _, ok := a.clients[clientname.(string)]; ok {
 						workerlogger.Debugf("requeuing account in %s", a.pollinterval)
 						a.queue.AddAfter(clientname, a.pollinterval)
+					} else {
+						workerlogger.Warn("can't requeue account, must have been deleted")
 					}
+				} else {
+					workerlogger.Debug("queue is shutting down, can't requeue account")
 				}
 			}
 		}(i)
@@ -97,25 +106,20 @@ func (a *Provider) accountHandler(stopCh <-chan struct{}) {
 	for {
 		select {
 		case account := <-a.accountsChannel:
-			subaccountid := account.Name
-
-			a.mu.RLock()
-
-			if _, ok := a.clients[account.Name]; ok {
-				subaccountid = a.clients[account.Name].Account.SubAccountID
-			}
-
-			a.mu.RUnlock()
-
-			logger := a.logger.With("account", subaccountid)
+			logger := a.logger.With("account", account.TechnicalID)
 			logger.Debugf("received account")
 
 			// account is getting deleted, remove from cache
 			if len(account.CredentialData) == 0 {
 				logger.Warn("account has been mark for deletion")
-				delete(a.clients, account.Name)
 
-				break
+				a.mu.Lock()
+				delete(a.clients, account.TechnicalID)
+				a.mu.Unlock()
+
+				metrics.StoredAccounts.Dec()
+
+				continue
 			}
 
 			// have to decode secrets before mapping
@@ -132,7 +136,7 @@ func (a *Provider) accountHandler(stopCh <-chan struct{}) {
 			err = mapstructure.Decode(decodedSecrets, &conf)
 			if err != nil {
 				a.logger.Error(err)
-				break
+				continue
 			}
 
 			clientID := conf.ClientID
@@ -152,37 +156,7 @@ func (a *Provider) accountHandler(stopCh <-chan struct{}) {
 			authz, err := ccc.Authorizer()
 			if err != nil {
 				a.logger.Error(err)
-				break
-			}
-
-			computeBaseClient := compute.NewWithBaseURI(ccc.Resource, subscriptionID)
-			computeBaseClient.Authorizer = authz
-			computeBaseClient.PollingDuration = maxPollingDuration
-			computeBaseClient.SkipResourceProviderRegistration = true
-
-			if err = computeBaseClient.AddToUserAgent(azureUserAgent); err != nil {
-				a.logger.Error(err)
-				break
-			}
-
-			networkBaseClient := network.NewWithBaseURI(ccc.Resource, subscriptionID)
-			networkBaseClient.Authorizer = authz
-			networkBaseClient.PollingDuration = maxPollingDuration
-			networkBaseClient.SkipResourceProviderRegistration = true
-
-			if err = networkBaseClient.AddToUserAgent(azureUserAgent); err != nil {
-				a.logger.Error(err)
-				break
-			}
-
-			insightsBaseClient := insights.NewWithBaseURI(ccc.Resource, subscriptionID)
-			insightsBaseClient.Authorizer = authz
-			insightsBaseClient.PollingDuration = maxPollingDuration
-			insightsBaseClient.SkipResourceProviderRegistration = true
-
-			if err = insightsBaseClient.AddToUserAgent(azureUserAgent); err != nil {
-				a.logger.Error(err)
-				break
+				continue
 			}
 
 			resourcesBaseClient := resources.NewWithBaseURI(ccc.Resource, subscriptionID)
@@ -192,7 +166,50 @@ func (a *Provider) accountHandler(stopCh <-chan struct{}) {
 
 			if err = resourcesBaseClient.AddToUserAgent(azureUserAgent); err != nil {
 				a.logger.Error(err)
-				break
+				continue
+			}
+
+			// if we can't get the resource group from azure, postpone queing, it may be because cluster is not finish being created
+			rgclient := resources.GroupsClient{BaseClient: resourcesBaseClient}
+
+			resourceGroup, err := rgclient.Get(context.Background(), account.TechnicalID)
+			if err != nil {
+				a.logger.Warnf("could not find resource group %s, shoot is not ready, retrying in %s", account.TechnicalID, retryDuration)
+				time.AfterFunc(retryDuration, func() {
+					a.accountsChannel <- account
+				})
+
+				continue
+			}
+
+			computeBaseClient := compute.NewWithBaseURI(ccc.Resource, subscriptionID)
+			computeBaseClient.Authorizer = authz
+			computeBaseClient.PollingDuration = maxPollingDuration
+			computeBaseClient.SkipResourceProviderRegistration = true
+
+			if err = computeBaseClient.AddToUserAgent(azureUserAgent); err != nil {
+				a.logger.Error(err)
+				continue
+			}
+
+			networkBaseClient := network.NewWithBaseURI(ccc.Resource, subscriptionID)
+			networkBaseClient.Authorizer = authz
+			networkBaseClient.PollingDuration = maxPollingDuration
+			networkBaseClient.SkipResourceProviderRegistration = true
+
+			if err = networkBaseClient.AddToUserAgent(azureUserAgent); err != nil {
+				a.logger.Error(err)
+				continue
+			}
+
+			insightsBaseClient := insights.NewWithBaseURI(ccc.Resource, subscriptionID)
+			insightsBaseClient.Authorizer = authz
+			insightsBaseClient.PollingDuration = maxPollingDuration
+			insightsBaseClient.SkipResourceProviderRegistration = true
+
+			if err = insightsBaseClient.AddToUserAgent(azureUserAgent); err != nil {
+				a.logger.Error(err)
+				continue
 			}
 
 			eventhubBaseClient := eventhub.NewWithBaseURI(ccc.Resource, subscriptionID)
@@ -202,7 +219,7 @@ func (a *Provider) accountHandler(stopCh <-chan struct{}) {
 
 			if err = eventhubBaseClient.AddToUserAgent(azureUserAgent); err != nil {
 				a.logger.Error(err)
-				break
+				continue
 			}
 
 			if a.clientTraceLevel > 0 {
@@ -225,9 +242,11 @@ func (a *Provider) accountHandler(stopCh <-chan struct{}) {
 			}
 
 			a.mu.Lock()
-			a.clients[account.Name] = &Client{
+
+			a.clients[account.TechnicalID] = &Client{
 				Account:             account,
 				SubscriptionID:      subscriptionID,
+				Location:            *resourceGroup.Location,
 				logger:              logger,
 				computeBaseClient:   &computeBaseClient,
 				networkBaseClient:   &networkBaseClient,
@@ -236,14 +255,11 @@ func (a *Provider) accountHandler(stopCh <-chan struct{}) {
 				eventhubBaseClient:  &eventhubBaseClient,
 			}
 
-			resourceGroup, err := a.clients[account.Name].getResourceGroup(context.Background(), account.TechnicalID)
-			if err == nil {
-				a.clients[account.Name].Location = *resourceGroup.Location
-			}
-
 			a.mu.Unlock()
 
-			a.queue.Add(account.Name)
+			a.queue.Add(account.TechnicalID)
+
+			metrics.StoredAccounts.Inc()
 
 		case <-stopCh:
 			a.logger.Debug("stopping account handler")

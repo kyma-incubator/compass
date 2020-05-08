@@ -74,10 +74,6 @@ func (c *fakeClient) ProvisionRuntime(accountID, subAccountID string, config sch
 	}, nil
 }
 
-func (c *fakeClient) UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (string, error) {
-	return "", fmt.Errorf("not implemented")
-}
-
 func (c *fakeClient) DeprovisionRuntime(accountID, runtimeID string) (string, error) {
 	return uuid.New().String(), nil
 }

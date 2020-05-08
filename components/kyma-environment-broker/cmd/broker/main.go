@@ -203,7 +203,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region),
+			step:     provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory),
 			disabled: cfg.LMS.Disabled,
 		},
 		{
@@ -225,7 +225,7 @@ func main() {
 		},
 		{
 			weight:   4,
-			step:     provisioning.NewLmsCertificatesStep(lmsClient, db.Operations()),
+			step:     provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory),
 			disabled: cfg.LMS.Disabled,
 		},
 		{
@@ -318,7 +318,7 @@ func main() {
 
 	// create info endpoints
 	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
-	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), respWriter)
+	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), cfg.DefaultRequestRegion, respWriter)
 	router.Handle("/info/runtimes", runtimesInfoHandler)
 
 	// create OSB API endpoints

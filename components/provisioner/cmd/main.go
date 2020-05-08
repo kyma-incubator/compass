@@ -8,9 +8,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages"
 
-	"github.com/avast/retry-go"
+	retry "github.com/avast/retry-go"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
@@ -20,7 +22,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime/clientbuilder"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
@@ -70,10 +71,11 @@ type config struct {
 	ProvisioningTimeout queue.ProvisioningTimeouts
 
 	Gardener struct {
-		Project                   string `envconfig:"default=gardenerProject"`
-		KubeconfigPath            string `envconfig:"default=./dev/kubeconfig.yaml"`
-		AuditLogsPolicyConfigMap  string `envconfig:"optional"`
-		AuditLogsTenantConfigPath string `envconfig:"optional"`
+		Project                     string `envconfig:"default=gardenerProject"`
+		KubeconfigPath              string `envconfig:"default=./dev/kubeconfig.yaml"`
+		AuditLogsPolicyConfigMap    string `envconfig:"optional"`
+		AuditLogsTenantConfigPath   string `envconfig:"optional"`
+		MaintenanceWindowConfigPath string `envconfig:"optional"`
 	}
 
 	Provisioner string `envconfig:"default=gardener"`
@@ -158,7 +160,9 @@ func main() {
 	directorClient, err := newDirectorClient(cfg)
 	exitOnError(err, "Failed to initialize Director client")
 
-	runtimeConfigurator := runtime.NewRuntimeConfigurator(clientbuilder.NewConfigMapClientBuilder(), directorClient)
+	k8sClientProvider := k8s.NewK8sClientProvider()
+
+	runtimeConfigurator := runtime.NewRuntimeConfigurator(k8sClientProvider, directorClient)
 
 	installationQueue := queue.CreateInstallationQueue(cfg.ProvisioningTimeout, dbsFactory, installationService, runtimeConfigurator, stages.NewCompassConnectionClient, directorClient)
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
@@ -169,7 +173,7 @@ func main() {
 		hydroformSvc := hydroform.NewHydroformService(client.NewHydroformClient(), cfg.Gardener.KubeconfigPath)
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
-		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap)
+		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
 		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, directorClient, installationService, installationQueue, cfg.Gardener.AuditLogsTenantConfigPath)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {

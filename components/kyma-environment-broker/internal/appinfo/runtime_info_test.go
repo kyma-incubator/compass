@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// go test ./internal/appinfo -update -run=TestRuntimeInfoHandlerSuccess
 func TestRuntimeInfoHandlerSuccess(t *testing.T) {
 	tests := map[string]struct {
 		instances     []internal.Instance
@@ -45,6 +46,14 @@ func TestRuntimeInfoHandlerSuccess(t *testing.T) {
 				i.ServiceName = ""
 				// selecting servicePlanName based on existing real planID
 				i.ServicePlanID = broker.GCPPlanID
+				return []internal.Instance{i}
+			}(),
+		},
+		"instances without platform region name should have default": {
+			instances: func() []internal.Instance {
+				i := fixInstance(1)
+				// the platform_region is not specified
+				i.ProvisioningParameters = `{}`
 				return []internal.Instance{i}
 			}(),
 		},
@@ -86,7 +95,7 @@ func TestRuntimeInfoHandlerSuccess(t *testing.T) {
 				memStorage = newInMemoryStorage(t, tc.instances, tc.provisionOp, tc.deprovisionOp)
 			)
 
-			handler := appinfo.NewRuntimeInfoHandler(memStorage.Instances(), writer)
+			handler := appinfo.NewRuntimeInfoHandler(memStorage.Instances(), "default-region", writer)
 
 			// when
 			handler.ServeHTTP(respSpy, fixReq)
@@ -117,7 +126,7 @@ func TestRuntimeInfoHandlerFailures(t *testing.T) {
 	storageMock := &automock.InstanceFinder{}
 	defer storageMock.AssertExpectations(t)
 	storageMock.On("FindAllJoinedWithOperations", mock.Anything).Return(nil, errors.New("ups.. internal info"))
-	handler := appinfo.NewRuntimeInfoHandler(storageMock, writer)
+	handler := appinfo.NewRuntimeInfoHandler(storageMock, "", writer)
 
 	// when
 	handler.ServeHTTP(respSpy, fixReq)
@@ -153,7 +162,7 @@ func fixInstance(idx int) internal.Instance {
 		ServicePlanID:          fmt.Sprintf("ServicePlanID field. IDX: %d", idx),
 		ServicePlanName:        fmt.Sprintf("ServicePlanName field. IDX: %d", idx),
 		DashboardURL:           fmt.Sprintf("DashboardURL field. IDX: %d", idx),
-		ProvisioningParameters: fmt.Sprintf("ProvisioningParameters field. IDX: %d", idx),
+		ProvisioningParameters: fmt.Sprintf(`{"platform_region": "region-value-idx-%d"}`, idx),
 		CreatedAt:              fixTime().Add(time.Duration(idx) * time.Second),
 		UpdatedAt:              fixTime().Add(time.Duration(idx) * time.Minute),
 		DeletedAt:              fixTime().Add(time.Duration(idx) * time.Hour),

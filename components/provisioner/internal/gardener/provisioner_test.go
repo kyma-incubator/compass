@@ -2,6 +2,7 @@ package gardener
 
 import (
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -32,8 +33,12 @@ const (
 func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 	clientset := fake.NewSimpleClientset()
 
-	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{})
+	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{
+		Zones: []string{"zone-1"},
+	})
 	require.NoError(t, err)
+
+	maintWindowConfigPath := filepath.Join("testdata", "maintwindow.json")
 
 	cluster := newClusterConfig("test-cluster", nil, gcpGardenerConfig, region)
 
@@ -41,7 +46,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		// given
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, nil, auditLogsPolicyCMName)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, nil, auditLogsPolicyCMName, maintWindowConfigPath)
 
 		// when
 		err := provisionerClient.ProvisionCluster(cluster, operationId)
@@ -57,6 +62,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig)
 		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy)
 		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef)
+		require.NotNil(t, shoot.Spec.Maintenance.TimeWindow)
 		assert.Equal(t, auditLogsPolicyCMName, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef.Name)
 	})
 }
@@ -116,7 +122,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "")
 
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)
@@ -144,7 +150,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "")
 
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)
@@ -173,7 +179,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "")
 
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)

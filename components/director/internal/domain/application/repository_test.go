@@ -2,8 +2,10 @@ package application_test
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"regexp"
+	"strconv"
 	"testing"
 	"time"
 
@@ -370,24 +372,44 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 						AND "key" = $9 AND "value" ?| array[$10]`
 	applicationScenarioQuery := regexp.QuoteMeta(scenariosQuery)
 
-	pagableQuery := fmt.Sprintf(`SELECT (.+) FROM public\.applications WHERE tenant_id = \$1 AND id IN \(%s\) ORDER BY id LIMIT %d OFFSET %d`,
+	applicationScenarioQueryWithHidingSelectors := regexp.QuoteMeta(
+		fmt.Sprintf(`%s EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND "tenant_id" = $11 AND "key" = $12 AND "value" @> $13 EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND "tenant_id" = $14 AND "key" = $15 AND "value" @> $16`, scenariosQuery),
+	)
+
+	pageableQueryRegex := `SELECT (.+) FROM public\.applications WHERE tenant_id = \$1 AND id IN \(%s\) ORDER BY id LIMIT %d OFFSET %d`
+	pageableQuery := fmt.Sprintf(pageableQueryRegex,
 		applicationScenarioQuery,
 		pageSize,
 		0)
 
-	countQuery := fmt.Sprintf(`SELECT COUNT\(\*\) FROM public\.applications WHERE tenant_id = \$1 AND id IN \(%s\)$`, applicationScenarioQuery)
+	pageableQueryWithHidingSelectors := fmt.Sprintf(pageableQueryRegex,
+		applicationScenarioQueryWithHidingSelectors,
+		pageSize,
+		0)
+
+	countQueryRegex := `SELECT COUNT\(\*\) FROM public\.applications WHERE tenant_id = \$1 AND id IN \(%s\)$`
+	countQuery := fmt.Sprintf(countQueryRegex, applicationScenarioQuery)
+	countQueryWithHidingSelectors := fmt.Sprintf(countQueryRegex, applicationScenarioQueryWithHidingSelectors)
 
 	conv := application.NewConverter(nil, nil)
 	intSysID := repo.NewValidNullableString("iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii")
 
 	testCases := []struct {
-		Name                    string
-		ExpectedApplicationRows *sqlmock.Rows
-		TotalCount              int
-		ExpectedError           error
+		Name                     string
+		InputHidingSelectors     map[string][]string
+		ExpectedPageableQuery    string
+		ExpectedCountQuery       string
+		ExpectedQueriesInputArgs []driver.Value
+		ExpectedApplicationRows  *sqlmock.Rows
+		TotalCount               int
+		ExpectedError            error
 	}{
 		{
-			Name: "Success",
+			Name:                     "Success",
+			InputHidingSelectors:     nil,
+			ExpectedPageableQuery:    pageableQuery,
+			ExpectedCountQuery:       countQuery,
+			ExpectedQueriesInputArgs: []driver.Value{tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir"},
 			ExpectedApplicationRows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id"}).
 				AddRow(app1ID, tenantID, "App ABC", "Description for application ABC", "INITIAL", timestamp, "http://domain.local/app1", intSysID).
 				AddRow(app2ID, tenantID, "App XYZ", "Description for application XYZ", "INITIAL", timestamp, "http://domain.local/app2", intSysID),
@@ -395,10 +417,28 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
-			Name:                    "Return empty page when no application match",
-			ExpectedApplicationRows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id"}),
-			TotalCount:              0,
-			ExpectedError:           nil,
+			Name: "Success with hiding selectors",
+			InputHidingSelectors: map[string][]string{
+				"foo": {"bar", "baz"},
+			},
+			ExpectedPageableQuery:    pageableQueryWithHidingSelectors,
+			ExpectedCountQuery:       countQueryWithHidingSelectors,
+			ExpectedQueriesInputArgs: []driver.Value{tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir", tenantID, "foo", strconv.Quote("bar"), tenantID, "foo", strconv.Quote("baz")},
+			ExpectedApplicationRows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id"}).
+				AddRow(app1ID, tenantID, "App ABC", "Description for application ABC", "INITIAL", timestamp, "http://domain.local/app1", intSysID).
+				AddRow(app2ID, tenantID, "App XYZ", "Description for application XYZ", "INITIAL", timestamp, "http://domain.local/app2", intSysID),
+			TotalCount:    2,
+			ExpectedError: nil,
+		},
+		{
+			Name:                     "Return empty page when no application match",
+			InputHidingSelectors:     nil,
+			ExpectedPageableQuery:    pageableQuery,
+			ExpectedCountQuery:       countQuery,
+			ExpectedQueriesInputArgs: []driver.Value{tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir"},
+			ExpectedApplicationRows:  sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id"}),
+			TotalCount:               0,
+			ExpectedError:            nil,
 		},
 	}
 
@@ -407,13 +447,13 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			//GIVEN
 			sqlxDB, sqlMock := testdb.MockDatabase(t)
 			if testCase.ExpectedApplicationRows != nil {
-				sqlMock.ExpectQuery(pagableQuery).
-					WithArgs(tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir").
+				sqlMock.ExpectQuery(testCase.ExpectedPageableQuery).
+					WithArgs(testCase.ExpectedQueriesInputArgs...).
 					WillReturnRows(testCase.ExpectedApplicationRows)
 
 				countRow := sqlMock.NewRows([]string{"count"}).AddRow(testCase.TotalCount)
-				sqlMock.ExpectQuery(countQuery).
-					WithArgs(tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir").
+				sqlMock.ExpectQuery(testCase.ExpectedCountQuery).
+					WithArgs(testCase.ExpectedQueriesInputArgs...).
 					WillReturnRows(countRow)
 			}
 			repository := application.NewRepository(conv)
@@ -421,7 +461,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 			//WHEN
-			page, err := repository.ListByScenarios(ctx, tenantID, runtimeScenarios, pageSize, cursor)
+			page, err := repository.ListByScenarios(ctx, tenantID, runtimeScenarios, pageSize, cursor, testCase.InputHidingSelectors)
 
 			//THEN
 			if testCase.ExpectedError != nil {

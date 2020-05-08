@@ -135,6 +135,7 @@ func TestRefetchAPISpec(t *testing.T) {
 
 	err := tc.RunOperation(ctx, req, &refetchedSpec)
 	require.NoError(t, err)
-
 	assert.Equal(t, spec, refetchedSpec.Data)
+
+	saveExample(t, req.Query(), "refetch api spec")
 }

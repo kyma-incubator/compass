@@ -29,11 +29,12 @@ type GardenerConfig {
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
 
 type GCPProviderConfig {
-    zone: String
+    zones: [String!]!
 }
 
 type AzureProviderConfig {
     vnetCidr: String
+    zones: [String!]
 }
 
 type AWSProviderConfig {
@@ -167,11 +168,12 @@ input ProviderSpecificInput {
 }
 
 input GCPProviderConfigInput {
-    zone: String!      # Zone in which to create the cluster
+    zones: [String!]!      # Zones in which to create the cluster
 }
 
 input AzureProviderConfigInput {
     vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
+    zones: [String!]      # Zones in which to create the cluster
 }
 
 input AWSProviderConfigInput {

@@ -900,6 +900,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, apiID).Return(modelAPIDefinition, nil).Once()
+				repo.On("Update", ctx, modelAPIDefinition).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -919,6 +920,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, apiID).Return(modelAPIDefinition, nil).Once()
+				repo.On("Update", ctx, modelAPIDefinition).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -970,6 +972,26 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			},
 			ExpectedAPISpec: nil,
 			ExpectedErr:     errors.Wrapf(testErr, "while getting FetchRequest by API Definition ID %s", apiID),
+		},
+		{
+			Name: "Error when updating API Definition failed",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", ctx, tenantID, apiID).Return(modelAPIDefinition, nil).Once()
+				repo.On("Update", ctx, modelAPIDefinition).Return(testErr).Once()
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("GetByReferenceObjectID", ctx, tenantID, model.APIFetchRequestReference, apiID).Return(nil, nil)
+				return repo
+			},
+			FetchRequestSvcFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				return svc
+			},
+			ExpectedAPISpec: nil,
+			ExpectedErr:     errors.Wrap(testErr, "while updating api with api spec"),
 		},
 	}
 
