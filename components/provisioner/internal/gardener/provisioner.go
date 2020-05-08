@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/mitchellh/mapstructure"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/sirupsen/logrus"
