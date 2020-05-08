@@ -1156,6 +1156,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// when
 		_, err := svc.GetFetchRequest(context.TODO(), "dd")
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsNoTenant(err))
 	})
 }

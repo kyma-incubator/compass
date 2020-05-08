@@ -356,7 +356,7 @@ func TestService_CreateToPackage(t *testing.T) {
 		svc := document.NewService(nil, nil, nil)
 		// when
 		_, err := svc.CreateInPackage(context.TODO(), "Dd", model.DocumentInput{})
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsNoTenant(err))
 	})
 }
 func TestService_Delete(t *testing.T) {

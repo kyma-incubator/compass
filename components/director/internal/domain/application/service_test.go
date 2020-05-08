@@ -554,7 +554,7 @@ func TestService_Create(t *testing.T) {
 		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsNoTenant(err))
 	})
 }
 

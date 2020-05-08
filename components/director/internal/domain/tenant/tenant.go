@@ -3,14 +3,12 @@ package tenant
 import (
 	"context"
 
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
 type key int
 
 const TenantContextKey key = iota
-
-var NoTenantError = errors.New("cannot read tenant from context")
 
 func LoadFromContext(ctx context.Context) (string, error) {
 	value := ctx.Value(TenantContextKey)
@@ -18,7 +16,11 @@ func LoadFromContext(ctx context.Context) (string, error) {
 	str, ok := value.(string)
 
 	if !ok {
-		return "", NoTenantError
+		return "", apperrors.NewNoTenantError()
+	}
+
+	if str == "" {
+		return "", apperrors.NewEmptyTenantError()
 	}
 
 	return str, nil

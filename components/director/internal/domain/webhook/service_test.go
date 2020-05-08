@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook/automock"
@@ -93,7 +95,7 @@ func TestService_Create(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		_, err := svc.Create(context.TODO(), givenApplicationID(), *modelInput)
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsNoTenant(err))
 	})
 }
 
@@ -161,7 +163,7 @@ func TestService_Get(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		_, err := svc.Get(context.TODO(), givenApplicationID())
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsNoTenant(err))
 	})
 }
 
@@ -230,7 +232,7 @@ func TestService_List(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		_, err := svc.List(context.TODO(), givenApplicationID())
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsNoTenant(err))
 	})
 }
 
@@ -311,7 +313,7 @@ func TestService_Update(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		err := svc.Update(context.TODO(), givenApplicationID(), *modelInput)
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsNoTenant(err))
 	})
 }
 
@@ -387,6 +389,6 @@ func TestService_Delete(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		err := svc.Delete(context.TODO(), id)
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsNoTenant(err))
 	})
 }
