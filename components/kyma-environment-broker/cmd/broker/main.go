@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -105,6 +106,7 @@ func main() {
 	logger.Info("Starting Kyma Environment Broker")
 
 	logs := logrus.New()
+	logs.SetFormatter(&logrus.JSONFormatter{})
 
 	logger.Info("Registering healthz endpoint for health probes")
 	health.NewServer(cfg.Host, cfg.StatusPort, logs).ServeAsync()
@@ -130,13 +132,13 @@ func main() {
 	if cfg.DbInMemory {
 		db = storage.NewMemoryStorage()
 	} else {
-		db, err = storage.NewFromConfig(cfg.Database, logs)
+		db, err = storage.NewFromConfig(cfg.Database, logs.WithField("service", "storage"))
 		fatalOnError(err)
 	}
 
 	// LMS
 	fatalOnError(cfg.LMS.Validate())
-	lmsClient := lms.NewClient(cfg.LMS, logs)
+	lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
 	lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs.WithField("service", "lmsTenantManager"))
 
 	// Register disabler. Convention:
@@ -168,7 +170,7 @@ func main() {
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, runtimeProvider, cfg.Provisioning, cfg.KymaVersion)
 	fatalOnError(err)
 
-	edpClient := edp.NewClient(cfg.EDP, logs)
+	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
 
 	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
 	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
@@ -179,8 +181,8 @@ func main() {
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
 	// setup operation managers
-	provisionManager := provisioning.NewManager(db.Operations(), logs)
-	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs)
+	provisionManager := provisioning.NewManager(db.Operations(), logs.WithField("provisioning", "manager"))
+	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs.WithField("deprovisioning", "manager"))
 
 	// define steps
 	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
@@ -335,8 +337,10 @@ func main() {
 		route := router.PathPrefix(prefix).Subrouter()
 		broker.AttachRoutes(route, kymaEnvBroker, logger, creds)
 	}
+	svr := handlers.CustomLoggingHandler(os.Stdout, router, func(writer io.Writer, params handlers.LogFormatterParams) {
+		logs.Infof("Call handled: url=%s statusCode=%d size=%d", params.URL.Path, params.StatusCode, params.Size)
+	})
 
-	svr := handlers.LoggingHandler(os.Stdout, router)
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
 }
 

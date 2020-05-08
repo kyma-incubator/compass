@@ -66,8 +66,8 @@ func NewProvision(cfg Config, operationsStorage storage.Operations, instanceStor
 //   PUT /v2/service_instances/{instance_id}
 func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
 	operationID := uuid.New().String()
-	logger := b.log.WithField("instanceID", instanceID).WithField("operationID", operationID)
-	logger.Infof("Provision called: planID=%s", details.PlanID)
+	logger := b.log.WithFields(logrus.Fields{"instanceID": instanceID, "operationID": operationID, "planID": details.PlanID})
+	logger.Info("Provision called")
 	// validation of incoming input
 	ersContext, parameters, err := b.validateAndExtract(details, logger)
 	if err != nil {
@@ -129,7 +129,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot save instance")
 	}
 
-	// add new operation to queue
+	logger.Info("Adding operation to provisioning queue")
 	b.queue.Add(operation.ID)
 
 	return domain.ProvisionedServiceSpec{

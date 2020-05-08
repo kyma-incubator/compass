@@ -20,7 +20,7 @@ func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, error) {
 	log.Infof("Setting DB connection pool params: connectionMaxLifetime=%s "+
 		"maxIdleConnections=%d maxOpenConnections=%d", cfg.ConnMaxLifetime, cfg.MaxIdleConns, cfg.MaxOpenConns)
 
-	connection, err := postsql.InitializeDatabase(cfg.ConnectionURL())
+	connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), log)
 	if err != nil {
 		return nil, err
 	}

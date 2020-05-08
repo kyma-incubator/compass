@@ -17,12 +17,12 @@ type Step interface {
 }
 
 type Manager struct {
-	log              *logrus.Logger
+	log              logrus.FieldLogger
 	steps            map[int][]Step
 	operationStorage storage.Operations
 }
 
-func NewManager(storage storage.Operations, logger *logrus.Logger) *Manager {
+func NewManager(storage storage.Operations, logger logrus.FieldLogger) *Manager {
 	return &Manager{
 		log:              logger,
 		operationStorage: storage,

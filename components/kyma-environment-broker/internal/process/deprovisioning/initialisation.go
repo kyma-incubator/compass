@@ -75,7 +75,7 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 			return operation, 0, nil
 		}
 		log.Info("instance being removed, check operation status")
-		return s.checkRuntimeStatus(operation, instance, log)
+		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
 		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned")
 	default:

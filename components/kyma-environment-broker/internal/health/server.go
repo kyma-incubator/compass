@@ -10,13 +10,13 @@ import (
 
 type Server struct {
 	Address string
-	Log     *log.Logger
+	Log     log.FieldLogger
 }
 
 func NewServer(host, port string, log *log.Logger) *Server {
 	return &Server{
 		Address: fmt.Sprintf("%s:%s", host, port),
-		Log:     log,
+		Log:     log.WithField("server", "health"),
 	}
 }
 

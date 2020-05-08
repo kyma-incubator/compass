@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/lib/pq"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -21,15 +21,15 @@ const (
 )
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
-func InitializeDatabase(connectionURL string) (*dbr.Connection, error) {
-	connection, err := WaitForDatabaseAccess(connectionURL, connectionRetries)
+func InitializeDatabase(connectionURL string, log logrus.FieldLogger) (*dbr.Connection, error) {
+	connection, err := WaitForDatabaseAccess(connectionURL, connectionRetries, log)
 	if err != nil {
 		return nil, err
 	}
 
 	initialized, err := checkIfDatabaseInitialized(connection)
 	if err != nil {
-		closeDBConnection(connection)
+		closeDBConnection(connection, log)
 		return nil, errors.Wrap(err, "Failed to check if database is initialized")
 	}
 	if initialized {
@@ -40,7 +40,7 @@ func InitializeDatabase(connectionURL string) (*dbr.Connection, error) {
 	return connection, nil
 }
 
-func closeDBConnection(db *dbr.Connection) {
+func closeDBConnection(db *dbr.Connection, log logrus.FieldLogger) {
 	err := db.Close()
 	if err != nil {
 		log.Warnf("Failed to close database connection: %s", err.Error())
@@ -70,7 +70,7 @@ func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 	return tableName == InstancesTableName, nil
 }
 
-func WaitForDatabaseAccess(connString string, retryCount int) (*dbr.Connection, error) {
+func WaitForDatabaseAccess(connString string, retryCount int, log logrus.FieldLogger) (*dbr.Connection, error) {
 	var connection *dbr.Connection
 	var err error
 	for ; retryCount > 0; retryCount-- {

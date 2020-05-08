@@ -56,6 +56,7 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 		log.Warn("Runtime not exist")
 		return s.operationManager.OperationSucceeded(operation, "runtime was never provisioned")
 	}
+	log = log.WithField("runtimeID", instance.RuntimeID)
 
 	var provisionerResponse string
 	if operation.ProvisionerOperationID == "" {
@@ -74,7 +75,7 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 		}
 	}
 
-	log.Infof("runtime deletion process initiated successfully, RuntimeID=%s", instance.RuntimeID)
+	log.Infof("runtime deletion process initiated successfully")
 	// return repeat mode (1 sec) to start the initialization step which will now check the runtime status
 	return operation, 1 * time.Second, nil
 }
