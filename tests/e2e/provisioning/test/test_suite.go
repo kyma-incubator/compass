@@ -69,7 +69,6 @@ type Suite struct {
 	DeprovisionTimeout time.Duration
 
 	InstanceID   string
-	SubAccountID string
 
 	ConfigName      string
 	DeployNamespace string
@@ -149,7 +148,6 @@ func newTestSuite(t *testing.T) *Suite {
 		azureClient:      azureClient,
 
 		InstanceID:         instanceID,
-		SubAccountID:       subAccountID,
 		ProvisionTimeout:   cfg.ProvisionTimeout,
 		DeprovisionTimeout: cfg.DeprovisionTimeout,
 

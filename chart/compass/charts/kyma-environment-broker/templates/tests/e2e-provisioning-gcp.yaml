@@ -90,6 +90,10 @@ spec:
         - name: tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e_provisioning.dir }}e2e-provisioning-test:{{ .Values.global.images.tests.e2e_provisioning.version }}
           imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /gardener/kubeconfig
+              name: gardener-kubeconfig
+              readOnly: true
           env:
             - name: APP_PROVISION_TIMEOUT
               value: "105m"
