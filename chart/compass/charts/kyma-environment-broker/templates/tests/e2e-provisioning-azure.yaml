@@ -10,10 +10,10 @@ spec:
     spec:
       serviceAccountName: e2e-provisioning
       volumes:
-      - name: gardener-kubeconfig
-        secret:
-          defaultMode: 420
-          secretName: gardener-credentials
+        - name: gardener-kubeconfig
+          secret:
+            defaultMode: 420
+            secretName: {{ .Values.gardener.secretName }}
       containers:
         - name: tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e_provisioning.dir }}e2e-provisioning-test:{{ .Values.global.images.tests.e2e_provisioning.version }}
@@ -74,11 +74,6 @@ spec:
               value: "true"
           command: ["/bin/sh"]
           args: ["-c", "echo 'Starting e2e-provisioning test on Azure. Waiting 20s for api server...'; sleep 20; ./test.test; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
-          volumes:
-            - name: gardener-kubeconfig
-              secret:
-                defaultMode: 420
-                secretName: {{ .Values.gardener.secretName }}
 
 ---
 apiVersion: "testing.kyma-project.io/v1alpha1"
@@ -92,6 +87,11 @@ spec:
   template:
     spec:
       serviceAccountName: e2e-provisioning
+      volumes:
+        - name: gardener-kubeconfig
+          secret:
+            defaultMode: 420
+            secretName: {{ .Values.gardener.secretName }}
       containers:
         - name: tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e_provisioning.dir }}e2e-provisioning-test:{{ .Values.global.images.tests.e2e_provisioning.version }}
@@ -148,8 +148,3 @@ spec:
               value: "true"
           command: ["/bin/sh"]
           args: ["-c", "echo 'Starting e2e-provisioning cleanup test on Azure. Waiting 20s for api server...'; sleep 20; ./test.test; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
-          volumes:
-            - name: gardener-kubeconfig
-              secret:
-                defaultMode: 420
-                secretName: {{ .Values.gardener.secretName }}
