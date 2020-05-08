@@ -88,7 +88,7 @@ func getK8SSecret(secretsClient corev1.SecretInterface, labelSelector string) (*
 		return nil, fmt.Errorf("no secrets returned for LabelSelector: %s", labelSelector)
 	}
 
-	if len(secrets.Items) > 1 {
+	if len(secrets.Items) < 1 {
 		return nil, fmt.Errorf("no secrets returned for LabelSelector: %s", labelSelector)
 	}
 
