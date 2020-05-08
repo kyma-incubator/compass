@@ -27,7 +27,7 @@ func NewAzureProvider() HyperscalerProvider {
 func (ac *azureProvider) GetClient(config *Config) (AzureInterface, error) {
 	environment, err := config.Environment()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while initializing environment")
 	}
 
 	authorizer, err := ac.getResourceManagementAuthorizer(config, environment)
@@ -81,7 +81,7 @@ func (ac *azureProvider) getResourceManagementAuthorizer(config *Config, environ
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating resource authorizer")
 	}
-	return armAuthorizer, err
+	return armAuthorizer, nil
 }
 
 func (ac *azureProvider) getAuthorizerForResource(config *Config, environment *azure.Environment) (autorest.Authorizer, error) {
@@ -94,5 +94,5 @@ func (ac *azureProvider) getAuthorizerForResource(config *Config, environment *a
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed in NewServicePrincipalToken for clientID: [%s]", config.clientID)
 	}
-	return autorest.NewBearerAuthorizer(token), err
+	return autorest.NewBearerAuthorizer(token), nil
 }
