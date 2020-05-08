@@ -68,7 +68,7 @@ type Suite struct {
 	ProvisionTimeout   time.Duration
 	DeprovisionTimeout time.Duration
 
-	InstanceID   string
+	InstanceID string
 
 	ConfigName      string
 	DeployNamespace string
