@@ -16,13 +16,16 @@ func Test_E2E_Provisioning(t *testing.T) {
 	if ts.IsDummyTest {
 		return
 	}
+	if ts.IsUpgradeTest {
+		return
+	}
 	if ts.IsCleanupPhase {
 		ts.Cleanup()
 		return
 	}
 	configMap := ts.testConfigMap()
 
-	operationID, err := ts.brokerClient.ProvisionRuntime()
+	operationID, err := ts.brokerClient.ProvisionRuntime("")
 	require.NoError(t, err)
 
 	ts.log.Infof("Creating config map %s with test data", ts.ConfigName)

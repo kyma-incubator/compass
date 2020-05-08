@@ -28,8 +28,6 @@ import (
 const tenantHeaderName = "tenant"
 
 type Config struct {
-	ProvisionerURL string `default:"http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"`
-
 	UUAInstanceName      string `default:"uaa-issuer"`
 	UUAInstanceNamespace string `default:"kyma-system"`
 }
@@ -41,14 +39,16 @@ type Client struct {
 	directorClient *director.Client
 	log            logrus.FieldLogger
 
-	instanceID string
-	tenantID   string
+	provisionerURL string
+	instanceID     string
+	tenantID       string
 }
 
-func NewClient(config Config, tenantID, instanceID string, clientHttp http.Client, directorClient *director.Client, log logrus.FieldLogger) *Client {
+func NewClient(config Config, provisionerURL, tenantID, instanceID string, clientHttp http.Client, directorClient *director.Client, log logrus.FieldLogger) *Client {
 	return &Client{
 		tenantID:       tenantID,
 		instanceID:     instanceID,
+		provisionerURL: provisionerURL,
 		config:         config,
 		httpClient:     clientHttp,
 		directorClient: directorClient,
@@ -91,13 +91,14 @@ func (c *Client) newRuntimeClient() (client.Client, error) {
 	return cli, nil
 }
 
+// TODO: consider refactoring to use provisioner client?
 func (c *Client) FetchRuntimeConfig() (*string, error) {
 	runtimeID, err := c.directorClient.GetRuntimeID(c.tenantID, c.instanceID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting runtime id from director for instance ID %s", c.instanceID)
 	}
 	// setup graphql client
-	gCli := graphCli.NewClient(c.config.ProvisionerURL, graphCli.WithHTTPClient(&c.httpClient))
+	gCli := graphCli.NewClient(c.provisionerURL, graphCli.WithHTTPClient(&c.httpClient))
 
 	// create query
 	q := fmt.Sprintf(`query {
