@@ -61,18 +61,18 @@ func (p *secretsAccountPool) Credentials(hyperscalerType HyperscalerType, tenant
 	if err != nil {
 		return Credentials{}, errors.Wrap(err, "failed to fetch k8s secret")
 	}
-	if secret != nil {
-		secret.Labels["tenantName"] = tenantName
-		updatedSecret, err := p.secretsClient.Update(secret)
-		if err != nil {
-			return Credentials{}, errors.Wrapf(err, "accountPool error while updating secret with tenantName: %s", tenantName)
-		}
-		return credentialsFromSecret(updatedSecret, hyperscalerType, tenantName), nil
+	if secret == nil {
+		return Credentials{}, fmt.Errorf("accountPool failed to find unassigned secret for hyperscalerType: %s",
+			hyperscalerType)
 	}
 
-	return Credentials{}, fmt.Errorf("accountPool failed to find unassigned secret for hyperscalerType: %s",
-		hyperscalerType)
+	secret.Labels["tenantName"] = tenantName
+	updatedSecret, err := p.secretsClient.Update(secret)
+	if err != nil {
+		return Credentials{}, errors.Wrapf(err, "accountPool error while updating secret with tenantName: %s", tenantName)
+	}
 
+	return credentialsFromSecret(updatedSecret, hyperscalerType, tenantName), nil
 }
 
 func getK8SSecret(secretsClient corev1.SecretInterface, labelSelector string) (*apiv1.Secret, error) {
@@ -84,9 +84,14 @@ func getK8SSecret(secretsClient corev1.SecretInterface, labelSelector string) (*
 		return nil, errors.Wrapf(err, "accountPool error during secret list for LabelSelector: %s", labelSelector)
 	}
 
-	if secrets != nil && len(secrets.Items) < 1 {
-		return nil, errors.Wrapf(err, "no secrets returned for LabelSelector: %s", labelSelector)
+	if secrets == nil {
+		return nil, fmt.Errorf("no secrets returned for LabelSelector: %s", labelSelector)
 	}
+
+	if len(secrets.Items) > 1 {
+		return nil, fmt.Errorf("no secrets returned for LabelSelector: %s", labelSelector)
+	}
+
 	return &secrets.Items[0], nil
 }
 
