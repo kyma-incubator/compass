@@ -345,7 +345,7 @@ func main() {
 		broker.AttachRoutes(route, kymaEnvBroker, logger, creds)
 	}
 	svr := handlers.CustomLoggingHandler(os.Stdout, router, func(writer io.Writer, params handlers.LogFormatterParams) {
-		logs.Infof("Call handled: url=%s statusCode=%d size=%d", params.URL.Path, params.StatusCode, params.Size)
+		logs.Infof("Call handled: method=%s url=%s statusCode=%d size=%d", params.Request.Method, params.URL.Path, params.StatusCode, params.Size)
 	})
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
