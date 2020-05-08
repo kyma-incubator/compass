@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/json-iterator/go"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -15,8 +15,6 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
-
-var jsonCustom = jsoniter.ConfigCompatibleWithStandardLibrary
 
 //go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
 type DirectorClient interface {
@@ -108,8 +106,6 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	successResponse := SuccessfulCreateResponse{
 		ID: serviceID,
 	}
-
-	h.logger.Infoln("received response. Returning it...")
 
 	err = res.WriteJSONResponse(writer, &successResponse)
 	if err != nil {
@@ -295,34 +291,7 @@ func (h *Handler) closeBody(rq *http.Request) {
 func (h *Handler) decodeAndValidateInput(request *http.Request) (model.ServiceDetails, error) {
 	var details model.ServiceDetails
 
-	h.logger.Infoln("starting decoding request body...")
-
-	h.logger.Infof("headers %+v", request.Header)
-
-	h.logger.Infoln("===headers===")
-
-	for key, val := range request.Header {
-		h.logger.Infof(`-H "%s: %s"`, key, val[0])
-	}
-
-	h.logger.Infoln("=========")
-
-
-	//log.Println("Content length", request.ContentLength)
-	//
-	//bodyBytes, err := ioutil.ReadAll(request.Body)
-	//if err != nil {
-	//	log.Error("read body", err)
-	//	return model.ServiceDetails{}, err
-	//}
-	//
-	//log.Println(">>> body", string(bodyBytes))
-	//log.Println("<<<")
-	//
-	//
-	//request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-
-	err := jsonCustom.NewDecoder(request.Body).Decode(&details)
+	err := json.NewDecoder(request.Body).Decode(&details)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while unmarshalling service")
 		h.logger.Error(wrappedErr)
