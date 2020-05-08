@@ -61,7 +61,7 @@ type Suite struct {
 	secretClient    v1_client.Secrets
 	configMapClient v1_client.ConfigMaps
 	accountProvider hyperscaler.AccountProvider
-	azureClient     *azure.AzureInterface
+	azureClient     *azure.ClientInf
 
 	dashboardChecker *runtime.DashboardChecker
 
@@ -87,7 +87,7 @@ const (
 )
 
 func newTestSuite(t *testing.T) *Suite {
-	var azureClient *azure.AzureInterface
+	var azureClient *azure.ClientInf
 	cfg := &Config{}
 	err := envconfig.InitWithPrefix(cfg, "APP")
 	require.NoError(t, err)
@@ -173,6 +173,7 @@ func (ts *Suite) Cleanup() {
 	assert.NoError(ts.t, err)
 
 	if ts.IsTestAzureEventHubsEnabled {
+		ts.log.Info("Checking the de-provisioned Azure EventHubs")
 		ts.ensureAzureResourceGroupRemoved()
 	}
 }
@@ -247,7 +248,7 @@ func newHTTPClient(insecureSkipVerify bool) *http.Client {
 	}
 }
 
-func newAzureClient(t *testing.T, cfg *Config, globalAccountID string) *azure.AzureInterface {
+func newAzureClient(t *testing.T, cfg *Config, globalAccountID string) *azure.ClientInf {
 	hypType := hyperscaler.Azure
 
 	hyperscalerProvider := azure.NewAzureProvider()

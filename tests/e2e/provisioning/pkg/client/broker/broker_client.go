@@ -147,7 +147,7 @@ func (c *Client) SubAccountID() string {
 	return c.subAccountID
 }
 
-func (c *Client) GetClusterName() string {
+func (c *Client) ClusterName() string {
 	return c.clusterName
 }
 

@@ -7,29 +7,29 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 )
 
-type AzureInterface interface {
+type ClientInf interface {
 	ListResourceGroup(ctx context.Context, filter string, top *int32) (resources.GroupListResultPage, error)
 	ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error)
 }
 
-var _ AzureInterface = (*AzureClient)(nil)
+var _ ClientInf = (*Client)(nil)
 
-type AzureClient struct {
+type Client struct {
 	eventHubNamespaceClient eventhub.NamespacesClient
 	resourceGroupClient     resources.GroupsClient
 }
 
-func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourceGroupClient resources.GroupsClient) *AzureClient {
-	return &AzureClient{
+func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourceGroupClient resources.GroupsClient) *Client {
+	return &Client{
 		eventHubNamespaceClient: namespaceClient,
 		resourceGroupClient:     resourceGroupClient,
 	}
 }
 
-func (nc *AzureClient) ListResourceGroup(ctx context.Context, filter string, top *int32) (resources.GroupListResultPage, error) {
+func (nc *Client) ListResourceGroup(ctx context.Context, filter string, top *int32) (resources.GroupListResultPage, error) {
 	return nc.resourceGroupClient.List(ctx, filter, top)
 }
 
-func (nc *AzureClient) ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error) {
+func (nc *Client) ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error) {
 	return nc.eventHubNamespaceClient.ListByResourceGroup(ctx, resourceGroupName)
 }

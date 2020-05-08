@@ -52,6 +52,7 @@ func Test_E2E_Provisioning(t *testing.T) {
 	assert.NoError(t, err)
 
 	if ts.IsTestAzureEventHubsEnabled {
+		ts.log.Info("Checking the provisioned Azure EventHubs")
 		checkAzureEventHubProperties(ts, t, operationID)
 	}
 }
@@ -68,9 +69,14 @@ func checkAzureEventHubProperties(ts *Suite, t *testing.T, operationID string) {
 	tagsRG := groupListResultPage.Values()[0].Tags
 
 	// Check tags for ResourceGroup
-	assert.Equal(t, operationID, *tagsRG[azure.TagOperationID], "Tag OperationID for ResourceGroup is incorrect")
-	assert.Equal(t, ts.brokerClient.InstanceID(), *tagsRG[azure.TagInstanceID], "Tag InstanceID for ResourceGroup is incorrect")
-	assert.Equal(t, ts.brokerClient.SubAccountID(), *tagsRG[azure.TagSubAccountID], "Tag SubAccountID for ResourceGroup is incorrect")
+	assert.NotNil(t, tagsRG[azure.TagOperationID], "Value for tag OperationID for ResourceGroup is nil")
+	assert.Equal(t, ts.brokerClient.SubAccountID(), *tagsRG[azure.TagSubAccountID], "Value for tag SubAccountID for ResourceGroup is incorrect")
+
+	assert.NotNil(t, tagsRG[azure.TagInstanceID], "Value for tag InstanceID for ResourceGroup is nil")
+	assert.Equal(t, ts.brokerClient.InstanceID(), *tagsRG[azure.TagInstanceID], "Value for tag InstanceID for ResourceGroup is incorrect")
+
+	assert.NotNil(t, tagsRG[azure.TagSubAccountID], "Value for tag SubAccountID for ResourceGroup is nil")
+	assert.Equal(t, ts.brokerClient.SubAccountID(), *tagsRG[azure.TagSubAccountID], "Value for tag SubAccountID for ResourceGroup is incorrect")
 
 	ehNamespaceListResultPage, err := (*ts.azureClient).ListEHNamespaceByResourceGroup(context.TODO(), *rg.Name)
 
@@ -81,8 +87,13 @@ func checkAzureEventHubProperties(ts *Suite, t *testing.T, operationID string) {
 	tagsEHNamespace := ehNamespaceListResultPage.Values()[0].Tags
 
 	// Check tags for EH Namespace
-	assert.Equal(t, operationID, *tagsEHNamespace[azure.TagOperationID], "Tag OperationID for EH Namespace is incorrect")
-	assert.Equal(t, ts.brokerClient.InstanceID(), *tagsEHNamespace[azure.TagInstanceID], "Tag InstanceID for EH Namespace is incorrect")
-	assert.Equal(t, ts.brokerClient.SubAccountID(), *tagsEHNamespace[azure.TagSubAccountID], "Tag SubAccountID for EH Namespace is incorrect")
+	assert.NotNil(t, tagsEHNamespace[azure.TagOperationID], "Value for tag OperationID for EH Namespace is nil")
+	assert.Equal(t, operationID, *tagsEHNamespace[azure.TagOperationID], "Value for Tag OperationID for EH Namespace is incorrect")
+
+	assert.NotNil(t, tagsEHNamespace[azure.TagInstanceID], "Value for tag InstanceID for EH Namespace nil")
+	assert.Equal(t, ts.brokerClient.InstanceID(), *tagsEHNamespace[azure.TagInstanceID], "Value for Tag InstanceID for EH Namespace is incorrect")
+
+	assert.NotNil(t, tagsEHNamespace[azure.TagSubAccountID], "Value for tag SubAccountID for EH Namespace is nil")
+	assert.Equal(t, ts.brokerClient.SubAccountID(), *tagsEHNamespace[azure.TagSubAccountID], "Value for tag SubAccountID for EH Namespace is incorrect")
 
 }

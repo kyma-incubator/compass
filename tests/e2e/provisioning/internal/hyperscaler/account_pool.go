@@ -18,7 +18,7 @@ const (
 )
 
 type Credentials struct {
-	CredentialName  string
+	Name            string
 	TenantName      string
 	HyperscalerType HyperscalerType
 	CredentialData  map[string][]byte
@@ -97,7 +97,7 @@ func getK8SSecret(secretsClient corev1.SecretInterface, labelSelector string) (*
 
 func credentialsFromSecret(secret *apiv1.Secret, hyperscalerType HyperscalerType, tenantName string) Credentials {
 	return Credentials{
-		CredentialName:  secret.Name,
+		Name:            secret.Name,
 		TenantName:      tenantName,
 		HyperscalerType: hyperscalerType,
 		CredentialData:  secret.Data,
