@@ -2,8 +2,8 @@ package azure
 
 import (
 	"fmt"
-	autorestazure "github.com/Azure/go-autorest/autorest/azure"
 
+	autorestazure "github.com/Azure/go-autorest/autorest/azure"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/hyperscaler"
 )
 

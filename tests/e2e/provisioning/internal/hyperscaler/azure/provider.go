@@ -2,6 +2,7 @@ package azure
 
 import (
 	"fmt"
+
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	"github.com/Azure/go-autorest/autorest"
