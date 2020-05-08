@@ -16,7 +16,7 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 			TargetSecret: config.Gardener.GCPSecret,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
-					Zone: "europe-west4-a",
+					Zones: []string{"europe-west4-a", "europe-west4-b", "europe-west4-c"},
 				},
 			},
 		},
@@ -28,6 +28,7 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
+					Zones:    []string{"westeurope-1", "westeurope-2", "westeurope-3"},
 				},
 			},
 		},

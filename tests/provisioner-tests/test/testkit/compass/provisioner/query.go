@@ -100,10 +100,11 @@ func clusterConfig() string {
 func providerSpecificConfig() string {
 	return fmt.Sprint(`
 		... on GCPProviderConfig { 
-			zone 
+			zones 
 		} 
 		... on AzureProviderConfig {
 			vnetCidr
+			zones
 		}
 		... on AWSProviderConfig {
 			zone 

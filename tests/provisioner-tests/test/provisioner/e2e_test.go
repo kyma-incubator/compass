@@ -202,6 +202,7 @@ func verifyProviderConfig(t *testing.T, input gqlschema.ProviderSpecificInput, c
 		require.True(t, ok)
 
 		assertions.AssertNotNilAndEqualString(t, input.AzureConfig.VnetCidr, azureConfig.VnetCidr)
+		assert.ElementsMatch(t, input.AzureConfig.Zones, azureConfig.Zones)
 	}
 
 	if input.AwsConfig != nil {
@@ -218,7 +219,7 @@ func verifyProviderConfig(t *testing.T, input gqlschema.ProviderSpecificInput, c
 		gcpConfig, ok := providerSpecificConfig.(*gqlschema.GCPProviderConfig)
 		require.True(t, ok)
 
-		assertions.AssertNotNilAndEqualString(t, input.GcpConfig.Zone, gcpConfig.Zone)
+		assert.ElementsMatch(t, input.GcpConfig.Zones, gcpConfig.Zones)
 	}
 }
 
