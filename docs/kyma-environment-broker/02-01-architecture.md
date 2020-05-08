@@ -8,7 +8,7 @@ The diagram and steps describe the Kyma Environment Broker (KEB) workflow and th
 
     a. The user sends a request to KEB through [Istio VirtualService](https://istio.io/docs/reference/config/networking/virtual-service/).
     
-    b. Istio redirects the request to the [Ory Hydra](https://www.ory.sh/docs/hydra/), which authorizes the request.
+    b. Istio redirects the request to the [Ory Oathkeeper](https://www.ory.sh/oathkeeper/docs/), which authorizes the request.
     
     c. If the authorization ends with success, the request is redirected to KEB.
     
