@@ -28,7 +28,7 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
-					Zones:    []string{"westeurope-1", "westeurope-2", "westeurope-3"},
+					Zones:    []string{"1", "2", "3"},
 				},
 			},
 		},
