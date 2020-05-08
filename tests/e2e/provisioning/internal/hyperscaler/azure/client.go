@@ -7,12 +7,12 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 )
 
-type ClientInf interface {
+type Interface interface {
 	ListResourceGroup(ctx context.Context, filter string, top *int32) (resources.GroupListResultPage, error)
 	ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error)
 }
 
-var _ ClientInf = (*Client)(nil)
+var _ Interface = (*Client)(nil)
 
 type Client struct {
 	eventHubNamespaceClient eventhub.NamespacesClient

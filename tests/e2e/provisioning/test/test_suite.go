@@ -61,7 +61,7 @@ type Suite struct {
 	secretClient    v1_client.Secrets
 	configMapClient v1_client.ConfigMaps
 	accountProvider hyperscaler.AccountProvider
-	azureClient     *azure.ClientInf
+	azureClient     *azure.Interface
 
 	dashboardChecker *runtime.DashboardChecker
 
@@ -87,7 +87,7 @@ const (
 )
 
 func newTestSuite(t *testing.T) *Suite {
-	var azureClient *azure.ClientInf
+	var azureClient *azure.Interface
 	cfg := &Config{}
 	err := envconfig.InitWithPrefix(cfg, "APP")
 	require.NoError(t, err)
@@ -248,7 +248,7 @@ func newHTTPClient(insecureSkipVerify bool) *http.Client {
 	}
 }
 
-func newAzureClient(t *testing.T, cfg *Config, globalAccountID string) *azure.ClientInf {
+func newAzureClient(t *testing.T, cfg *Config, globalAccountID string) *azure.Interface {
 	hypType := hyperscaler.Azure
 
 	hyperscalerProvider := azure.NewAzureProvider()

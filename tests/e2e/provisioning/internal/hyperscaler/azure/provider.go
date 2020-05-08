@@ -12,7 +12,7 @@ import (
 )
 
 type HyperscalerProvider interface {
-	GetClient(config *Config) (ClientInf, error)
+	GetClient(config *Config) (Interface, error)
 }
 
 var _ HyperscalerProvider = (*azureProvider)(nil)
@@ -24,7 +24,7 @@ func NewAzureProvider() HyperscalerProvider {
 }
 
 // GetClient gets a client for interacting with Azure
-func (ac *azureProvider) GetClient(config *Config) (ClientInf, error) {
+func (ac *azureProvider) GetClient(config *Config) (Interface, error) {
 	environment, err := config.Environment()
 	if err != nil {
 		return nil, errors.Wrapf(err, "while initializing environment")

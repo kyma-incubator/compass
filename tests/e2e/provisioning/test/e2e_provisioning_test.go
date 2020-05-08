@@ -78,6 +78,7 @@ func checkAzureEventHubProperties(ts *Suite, t *testing.T, operationID string) {
 	assert.NotNil(t, tagsRG[azure.TagSubAccountID], "Value for tag SubAccountID for ResourceGroup is nil")
 	assert.Equal(t, ts.brokerClient.SubAccountID(), *tagsRG[azure.TagSubAccountID], "Value for tag SubAccountID for ResourceGroup is incorrect")
 
+	assert.NotNil(t, rg.Name, "Name for ResourceGroup is nil")
 	ehNamespaceListResultPage, err := (*ts.azureClient).ListEHNamespaceByResourceGroup(context.TODO(), *rg.Name)
 
 	assert.NoError(t, err)

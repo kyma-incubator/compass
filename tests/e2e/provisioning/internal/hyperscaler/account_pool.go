@@ -11,21 +11,21 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
-type HyperscalerType string
+type Type string
 
 const (
-	Azure HyperscalerType = "azure"
+	Azure Type = "azure"
 )
 
 type Credentials struct {
 	Name            string
 	TenantName      string
-	HyperscalerType HyperscalerType
+	HyperscalerType Type
 	CredentialData  map[string][]byte
 }
 
 type AccountPool interface {
-	Credentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
+	Credentials(hyperscalerType Type, tenantName string) (Credentials, error)
 }
 
 type secretsAccountPool struct {
@@ -41,7 +41,7 @@ func NewAccountPool(secretsClient corev1.SecretInterface) AccountPool {
 }
 
 // Credentials returns the hyperscaler secret from k8s secret
-func (p *secretsAccountPool) Credentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
+func (p *secretsAccountPool) Credentials(hyperscalerType Type, tenantName string) (Credentials, error) {
 	labelSelector := fmt.Sprintf("tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
 	secret, err := getK8SSecret(p.secretsClient, labelSelector)
 
@@ -95,7 +95,7 @@ func getK8SSecret(secretsClient corev1.SecretInterface, labelSelector string) (*
 	return &secrets.Items[0], nil
 }
 
-func credentialsFromSecret(secret *apiv1.Secret, hyperscalerType HyperscalerType, tenantName string) Credentials {
+func credentialsFromSecret(secret *apiv1.Secret, hyperscalerType Type, tenantName string) Credentials {
 	return Credentials{
 		Name:            secret.Name,
 		TenantName:      tenantName,
