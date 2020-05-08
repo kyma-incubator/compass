@@ -24,7 +24,7 @@ func (r readSession) GetTenant(runtimeID string) (string, dberrors.Error) {
 		LoadOne(&tenant)
 
 	if err != nil {
-		if err != dbr.ErrNotFound {
+		if err == dbr.ErrNotFound {
 			return "", dberrors.NotFound("Cannot find Tenant for runtimeID:'%s", runtimeID)
 		}
 
@@ -44,7 +44,7 @@ func (r readSession) GetTenantForOperation(operationID string) (string, dberrors
 		LoadOne(&tenant)
 
 	if err != nil {
-		if err != dbr.ErrNotFound {
+		if err == dbr.ErrNotFound {
 			return "", dberrors.NotFound("Cannot find Tenant for operationID:'%s", operationID)
 		}
 
@@ -65,7 +65,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 		LoadOne(&cluster)
 
 	if err != nil {
-		if err != dbr.ErrNotFound {
+		if err == dbr.ErrNotFound {
 			return model.Cluster{}, dberrors.NotFound("Cannot find Cluster for runtimeID: %s", runtimeID)
 		}
 		return model.Cluster{}, dberrors.Internal("Failed to get Cluster: %s", err)
@@ -139,7 +139,7 @@ type kymaComponentConfigDTO struct {
 	InstallerYAML       string
 	Component           string
 	Namespace           string
-	SourceURL           string
+	SourceURL           *string
 	Configuration       []byte
 	ComponentOrder      int
 	ClusterID           string

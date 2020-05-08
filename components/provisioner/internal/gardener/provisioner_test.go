@@ -40,7 +40,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 
 	maintWindowConfigPath := filepath.Join("testdata", "maintwindow.json")
 
-	cluster := newClusterConfig("test-cluster", "", gcpGardenerConfig, region)
+	cluster := newClusterConfig("test-cluster", nil, gcpGardenerConfig, region)
 
 	t.Run("should start provisioning", func(t *testing.T) {
 		// given
@@ -67,7 +67,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 	})
 }
 
-func newClusterConfig(name, subAccountId string, providerConfig model.GardenerProviderConfig, region string) model.Cluster {
+func newClusterConfig(name string, subAccountId *string, providerConfig model.GardenerProviderConfig, region string) model.Cluster {
 	return model.Cluster{
 		ID:           runtimeId,
 		Tenant:       tenant,

@@ -58,7 +58,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		KymaConfig:            kymaConfig,
 		ClusterConfig:         providerConfig,
 		Tenant:                tenant,
-		SubAccountId:          subAccountId,
+		SubAccountId:          &subAccountId,
 	}, nil
 }
 
@@ -181,7 +181,7 @@ func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 			ID:             id,
 			Component:      model.KymaComponent(component.Component),
 			Namespace:      component.Namespace,
-			SourceURL:      sourceURLFromInput(component.SourceURL),
+			SourceURL:      component.SourceURL,
 			Configuration:  c.configurationFromInput(component.Configuration),
 			ComponentOrder: i + 1,
 			KymaConfigID:   kymaConfigID,
@@ -197,13 +197,6 @@ func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 		ClusterID:           runtimeID,
 		GlobalConfiguration: c.configurationFromInput(input.Configuration),
 	}, nil
-}
-
-func sourceURLFromInput(sourceURL *string) string {
-	if sourceURL == nil {
-		return ""
-	}
-	return *sourceURL
 }
 
 func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput) model.Configuration {

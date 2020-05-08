@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/mitchellh/mapstructure"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -45,7 +46,7 @@ type GardenerProvisioner struct {
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) error {
-	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace, cluster.Tenant, cluster.SubAccountId)
+	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace, cluster.Tenant, util.UnwrapStr(cluster.SubAccountId))
 	if err != nil {
 		return fmt.Errorf("failed to convert cluster config to Shoot template")
 	}

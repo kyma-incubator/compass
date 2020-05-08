@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
@@ -453,7 +455,7 @@ func fixComponentsConfig() []model.KymaComponentConfig {
 			KymaConfigID:  "id",
 			Component:     "rafter",
 			Namespace:     kymaSystemNamespace,
-			SourceURL:     rafterSourceURL,
+			SourceURL:     util.StringPtr(rafterSourceURL),
 			Configuration: model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
 		},
 		{

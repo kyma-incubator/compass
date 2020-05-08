@@ -440,7 +440,7 @@ func fixKymaComponents() []model.KymaComponentConfig {
 			KymaConfigID:   "id",
 			Component:      rafterComponent,
 			Namespace:      kymaSystemNamespace,
-			SourceURL:      rafterSourceURL,
+			SourceURL:      util.StringPtr(rafterSourceURL),
 			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
 			ComponentOrder: 3,
 		},

@@ -33,3 +33,10 @@ func IntOrStrPtr(intOrStr intstr.IntOrString) *intstr.IntOrString {
 func TimePtr(time time.Time) *time.Time {
 	return &time
 }
+
+func UnwrapStr(strPtr *string) string {
+	if strPtr == nil {
+		return ""
+	}
+	return *strPtr
+}
