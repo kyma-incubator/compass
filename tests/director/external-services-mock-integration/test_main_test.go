@@ -11,10 +11,9 @@ import (
 )
 
 type config struct {
-	DefaultTenant       string
-	Domain              string
-	DirectorURL         string
-	AuditlogMockBaseURL string
+	DefaultTenant               string
+	DirectorURL                 string
+	ExternalServicesMockBaseURL string
 }
 
 var testConfig config

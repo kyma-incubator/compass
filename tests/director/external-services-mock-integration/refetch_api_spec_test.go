@@ -37,7 +37,7 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 				Format: graphql.SpecFormatJSON,
 				Type:   graphql.APISpecTypeOpenAPI,
 				FetchRequest: &graphql.FetchRequestInput{
-					URL: fmt.Sprintf("%s/api/docs", testConfig.Domain),
+					URL: fmt.Sprintf("%sapi/docs", testConfig.ExternalServicesMockBaseURL),
 				},
 			},
 		},
