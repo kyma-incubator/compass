@@ -24,7 +24,7 @@ global:
       version: "PR-1270"
     director:
       dir:
-      version: "PR-1338"
+      version: "PR-1318"
     gateway:
       dir:
       version: "PR-1330"
