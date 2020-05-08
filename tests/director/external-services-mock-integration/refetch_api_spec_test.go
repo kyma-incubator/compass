@@ -2,7 +2,7 @@ package external_services_mock_integration
 
 import (
 	"context"
-	"fmt"
+	"net/url"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
@@ -27,6 +27,10 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 	application := registerApplication(t, ctx, dexGraphQLClient, appName, tenant)
 	defer unregisterApplication(t, dexGraphQLClient, application.ID, tenant)
 
+	externalServicesURL, err := url.Parse(testConfig.ExternalServicesMockBaseURL)
+	require.NoError(t, err)
+	externalServicesURL.Path = "external-api/spec"
+
 	pkgName := "test-package"
 	pkgInput := graphql.PackageCreateInput{
 		Name: pkgName,
@@ -37,7 +41,7 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 				Format: graphql.SpecFormatJSON,
 				Type:   graphql.APISpecTypeOpenAPI,
 				FetchRequest: &graphql.FetchRequestInput{
-					URL: fmt.Sprintf("%sapi/docs", testConfig.ExternalServicesMockBaseURL),
+					URL: externalServicesURL.String(),
 				},
 			},
 		},

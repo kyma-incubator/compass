@@ -64,7 +64,7 @@ func initHTTP(cfg config) http.Handler {
 
 	router.HandleFunc("/audit-log/v2/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
 
-	router.HandleFunc("/api/spec", apispec.HandleFunc)
+	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	return router
 }
 
