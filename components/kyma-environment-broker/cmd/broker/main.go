@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/appinfo"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
@@ -87,6 +88,8 @@ type Config struct {
 	LMS lms.Config
 	IAS ias.Config
 	EDP edp.Config
+
+	AuditLog auditlog.Config
 }
 
 func main() {
@@ -224,6 +227,10 @@ func main() {
 		{
 			weight: 2,
 			step:   provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager),
+		},
+		{
+			weight: 2,
+			step:   provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog),
 		},
 		{
 			weight:   4,

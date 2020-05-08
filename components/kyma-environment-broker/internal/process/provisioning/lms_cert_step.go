@@ -180,19 +180,16 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 		{Key: "fluent-bit.backend.forward.tls.cert", Value: base64.StdEncoding.EncodeToString([]byte(signedCert))},
 		{Key: "fluent-bit.backend.forward.tls.key", Value: base64.StdEncoding.EncodeToString(pKey)},
 
+		// record modifier filter
+		{Key: "fluent-bit.conf.Filter.record_modifier.enabled", Value: "true"},
+		{Key: "fluent-bit.conf.Filter.record_modifier.Match", Value: "kube.*"},
+		{Key: "fluent-bit.conf.Filter.record_modifier.Key", Value: "subaccount_id"},
+		{Key: "fluent-bit.conf.Filter.record_modifier.Value", Value: pp.ErsContext.SubAccountID}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
 		//kubernetes filter should not parse the document to avoid indexing on LMS side
 		{Key: "fluent-bit.conf.Filter.Kubernetes.Merge_Log", Value: "Off"},
-		//input should not conatain dex logs as it contains sensitive data
+		//input should not contain dex logs as it contains sensitive data
 		{Key: "fluent-bit.conf.Input.Kubernetes.Exclude_Path", Value: "/var/log/containers/*_dex-*.log"},
-
-		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
-[FILTER]
-        Name record_modifier
-        Match *
-        Record subaccount_id %s
-`, pp.ErsContext.SubAccountID)}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
 	})
-
 	return operation, 0, nil
 }
 
