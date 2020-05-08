@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
@@ -19,11 +21,17 @@ type idHolder struct {
 	id int64
 }
 
+const dummyStrAvsTest = "dummy"
+
 func TestInternalEvaluationStep_Run(t *testing.T) {
 	// given
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 	provisioningOperation := fixOperationCreateRuntime(t)
+
+	inputCreator := newInputCreator()
+	provisioningOperation.InputCreator = inputCreator
+
 	err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 	assert.NoError(t, err)
 
@@ -49,6 +57,54 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(provisioningOperation.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, inDB.Avs.AvsEvaluationInternalId, idh.id)
+
+	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
+		Key: avs.EvaluationIdKey, Value: strconv.FormatInt(idh.id, 10)})
+	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
+		Key: avs.AvsBridgeAPIKey, Value: dummyStrAvsTest})
+}
+
+func TestInternalEvaluationStep_WhenOperationIsRepeatedWithIdPresent(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+	provisioningOperation := fixOperationCreateRuntime(t)
+	_, id := generateId()
+	provisioningOperation.Avs.AvsEvaluationInternalId = id
+
+	inputCreator := newInputCreator()
+	provisioningOperation.InputCreator = inputCreator
+
+	err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+	assert.NoError(t, err)
+
+	idh := &idHolder{}
+	mockOauthServer := newMockAvsOauthServer()
+	defer mockOauthServer.Close()
+	mockAvsServer := newMockAvsServer(t, idh, true)
+	defer mockAvsServer.Close()
+	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
+	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
+	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
+	ies := NewInternalEvaluationStep(avsDel, internalEvalAssistant)
+
+	// when
+	logger := log.WithFields(logrus.Fields{"step": "TEST"})
+	provisioningOperation, repeat, err := ies.Run(provisioningOperation, logger)
+
+	//then
+	assert.NoError(t, err)
+	assert.Equal(t, 0*time.Second, repeat)
+	assert.Equal(t, idh.id, int64(0))
+
+	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(provisioningOperation.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, inDB.Avs.AvsEvaluationInternalId, id)
+
+	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
+		Key: avs.EvaluationIdKey, Value: strconv.FormatInt(id, 10)})
+	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
+		Key: avs.AvsBridgeAPIKey, Value: dummyStrAvsTest})
 }
 
 func newMockAvsOauthServer() *httptest.Server {
@@ -86,15 +142,16 @@ func newMockAvsServer(t *testing.T, idh *idHolder, isInternal bool) *httptest.Se
 func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server) avs.Config {
 	return avs.Config{
 		OauthTokenEndpoint:     mockOauthServer.URL,
-		OauthUsername:          "dummy",
-		OauthPassword:          "dummy",
-		OauthClientId:          "dummy",
+		OauthUsername:          dummyStrAvsTest,
+		OauthPassword:          dummyStrAvsTest,
+		OauthClientId:          dummyStrAvsTest,
 		ApiEndpoint:            mockAvsServer.URL,
 		DefinitionType:         avs.DefinitionType,
 		InternalTesterAccessId: 1234,
 		ExternalTesterAccessId: 5678,
 		GroupId:                5555,
 		ParentId:               9101112,
+		ApiKey:                 dummyStrAvsTest,
 	}
 }
 
@@ -102,8 +159,7 @@ func createResponseObj(err error, requestObj avs.BasicEvaluationCreateRequest, t
 	parseInt, err := strconv.ParseInt(requestObj.Threshold, 10, 64)
 	assert.NoError(t, err)
 
-	timeUnixEpoch := time.Now().Unix()
-	id := time.Now().Unix()
+	timeUnixEpoch, id := generateId()
 
 	evalCreateResponse := &avs.BasicEvaluationCreateResponse{
 		DefinitionType:             requestObj.DefinitionType,
@@ -135,4 +191,10 @@ func createResponseObj(err error, requestObj avs.BasicEvaluationCreateRequest, t
 		IdOnTester:                 "",
 	}
 	return evalCreateResponse
+}
+
+func generateId() (int64, int64) {
+	timeUnixEpoch := time.Now().Unix()
+	id := time.Now().Unix()
+	return timeUnixEpoch, id
 }

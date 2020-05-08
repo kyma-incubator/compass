@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	evaluationIdKey = "avs_bridge.config.evaluations.cluster.id"
-	avsBridgeAPIKey = "avs_bridge.config.availabilityService.apiKey"
+	EvaluationIdKey = "avs_bridge.config.evaluations.cluster.id"
+	AvsBridgeAPIKey = "avs_bridge.config.availabilityService.apiKey"
+	ComponentName   = "avs-bridge"
 )
 
 type InternalEvalAssistant struct {
@@ -30,13 +31,13 @@ func (iec *InternalEvalAssistant) CreateBasicEvaluationRequest(operations intern
 }
 
 func (iec *InternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64) {
-	inputCreator.AppendOverrides("avs-bridge", []*gqlschema.ConfigEntryInput{
+	inputCreator.AppendOverrides(ComponentName, []*gqlschema.ConfigEntryInput{
 		{
-			Key:   evaluationIdKey,
+			Key:   EvaluationIdKey,
 			Value: strconv.FormatInt(evaluationId, 10),
 		},
 		{
-			Key:   avsBridgeAPIKey,
+			Key:   AvsBridgeAPIKey,
 			Value: iec.avsConfig.ApiKey,
 		},
 	})

@@ -52,27 +52,31 @@ func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Deleg
 func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
 	logger.Infof("starting the step avs internal id [%d] and avs external id [%d]", operation.Avs.AvsEvaluationInternalId, operation.Avs.AVSEvaluationExternalId)
 
+	var updatedOperation internal.ProvisioningOperation
+	d := 0 * time.Second
+
 	if evalAssistant.IsAlreadyCreated(operation.Avs) {
 		logger.Infof("step has already been finished previously")
-		return operation, 0, nil
+		updatedOperation = operation
+	} else {
+		logger.Infof("making avs calls to create the Evaluation")
+		evaluationObject, err := evalAssistant.CreateBasicEvaluationRequest(operation, del.configForModel, url)
+		if err != nil {
+			logger.Errorf("step failed with error %v", err)
+			return operation, 5 * time.Second, nil
+		}
+
+		evalResp, err := del.postRequest(evaluationObject, logger)
+		if err != nil {
+			errMsg := fmt.Sprintf("post to avs failed with error %v", err)
+			retryConfig := evalAssistant.provideRetryConfig()
+			return del.operationManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
+		}
+
+		evalAssistant.SetEvalId(&operation.Avs, evalResp.Id)
+
+		updatedOperation, d = del.operationManager.UpdateOperation(operation)
 	}
-
-	evaluationObject, err := evalAssistant.CreateBasicEvaluationRequest(operation, del.configForModel, url)
-	if err != nil {
-		logger.Errorf("step failed with error %v", err)
-		return operation, 5 * time.Second, nil
-	}
-
-	evalResp, err := del.postRequest(evaluationObject, logger)
-	if err != nil {
-		errMsg := fmt.Sprintf("post to avs failed with error %v", err)
-		retryConfig := evalAssistant.provideRetryConfig()
-		return del.operationManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
-	}
-
-	evalAssistant.SetEvalId(&operation.Avs, evalResp.Id)
-
-	updatedOperation, d := del.operationManager.UpdateOperation(operation)
 
 	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId)
 
