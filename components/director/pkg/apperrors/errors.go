@@ -266,29 +266,29 @@ func IsInsufficientScopes(err error) bool {
 	return ok
 }
 
-type NoTenant interface {
-	NoTenant()
+type CannotReadTenant interface {
+	CannotReadTenant()
 }
 
-type noTenantError struct {
+type cannotReadTenantError struct {
 }
 
-func NewNoTenantError() *noTenantError {
-	return &noTenantError{}
+func NewCannotReadTenantError() *cannotReadTenantError {
+	return &cannotReadTenantError{}
 }
 
-func (e *noTenantError) Error() string {
+func (e *cannotReadTenantError) Error() string {
 	return "cannot read tenant from context"
 }
 
-func (noTenantError) NoTenant() {}
+func (cannotReadTenantError) CannotReadTenant() {}
 
-func IsNoTenant(err error) bool {
+func IsCannotReadTenant(err error) bool {
 	if cause := errors.Cause(err); cause != nil {
 		err = cause
 	}
 
-	_, ok := err.(NoTenant)
+	_, ok := err.(CannotReadTenant)
 	return ok
 }
 

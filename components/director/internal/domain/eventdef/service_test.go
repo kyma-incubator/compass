@@ -820,6 +820,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 		svc := eventdef.NewService(nil, nil, nil)
 		// when
 		_, err := svc.GetFetchRequest(context.TODO(), "dd")
-		assert.True(t, apperrors.IsNoTenant(err))
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }

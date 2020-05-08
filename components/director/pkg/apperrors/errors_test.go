@@ -21,7 +21,7 @@ var isErrorFunctionsTests = []struct {
 	{name: "IsNoScopesInContext", err: NewNoScopesInContextError(), fn: IsNoScopesInContext},
 	{name: "IsRequiredScopesNotDefined", err: NewRequiredScopesNotDefinedError(), fn: IsRequiredScopesNotDefined},
 	{name: "IsInsufficientScopes", err: NewInsufficientScopesError([]string{"test"}, []string{"test"}), fn: IsInsufficientScopes},
-	{name: "IsNoTenant", err: NewNoTenantError(), fn: IsNoTenant},
+	{name: "IsCannotReadTenant", err: NewCannotReadTenantError(), fn: IsCannotReadTenant},
 	{name: "IsEmptyTenant", err: NewEmptyTenantError(), fn: IsEmptyTenant},
 }
 

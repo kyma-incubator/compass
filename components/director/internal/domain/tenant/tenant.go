@@ -16,7 +16,7 @@ func LoadFromContext(ctx context.Context) (string, error) {
 	str, ok := value.(string)
 
 	if !ok {
-		return "", apperrors.NewNoTenantError()
+		return "", apperrors.NewCannotReadTenantError()
 	}
 
 	if str == "" {

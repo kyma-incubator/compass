@@ -95,7 +95,7 @@ func TestService_Create(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		_, err := svc.Create(context.TODO(), givenApplicationID(), *modelInput)
-		assert.True(t, apperrors.IsNoTenant(err))
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
@@ -163,7 +163,7 @@ func TestService_Get(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		_, err := svc.Get(context.TODO(), givenApplicationID())
-		assert.True(t, apperrors.IsNoTenant(err))
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
@@ -232,7 +232,7 @@ func TestService_List(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		_, err := svc.List(context.TODO(), givenApplicationID())
-		assert.True(t, apperrors.IsNoTenant(err))
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
@@ -313,7 +313,7 @@ func TestService_Update(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		err := svc.Update(context.TODO(), givenApplicationID(), *modelInput)
-		assert.True(t, apperrors.IsNoTenant(err))
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
@@ -389,6 +389,6 @@ func TestService_Delete(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		err := svc.Delete(context.TODO(), id)
-		assert.True(t, apperrors.IsNoTenant(err))
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
