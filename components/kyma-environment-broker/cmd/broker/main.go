@@ -44,11 +44,6 @@ import (
 
 // Config holds configuration for the whole application
 type Config struct {
-	Auth struct {
-		Username string
-		Password string
-	}
-
 	DbInMemory bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
@@ -331,18 +326,13 @@ func main() {
 	router.Handle("/info/runtimes", runtimesInfoHandler)
 
 	// create OSB API endpoints
-	basicAuth := &broker.Credentials{
-		Username: cfg.Auth.Username,
-		Password: cfg.Auth.Password,
-	}
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
-	for prefix, creds := range map[string]*broker.Credentials{
-		"/":                basicAuth, // legacy basic auth
-		"/oauth/":          nil,       // oauth2 handled by Ory
-		"/oauth/{region}/": nil,       // oauth2 handled by Ory with region
+	for _, prefix := range []string{
+		"/oauth/",          // oauth2 handled by Ory
+		"/oauth/{region}/", // oauth2 handled by Ory with region
 	} {
 		route := router.PathPrefix(prefix).Subrouter()
-		broker.AttachRoutes(route, kymaEnvBroker, logger, creds)
+		broker.AttachRoutes(route, kymaEnvBroker, logger)
 	}
 	svr := handlers.CustomLoggingHandler(os.Stdout, router, func(writer io.Writer, params handlers.LogFormatterParams) {
 		logs.Infof("Call handled: method=%s url=%s statusCode=%d size=%d", params.Request.Method, params.URL.Path, params.StatusCode, params.Size)
