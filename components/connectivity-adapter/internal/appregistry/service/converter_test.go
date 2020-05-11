@@ -44,7 +44,22 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
-						// TODO out name?
+						TargetURL: "http://target.url",
+					},
+				},
+			},
+		},
+		"API with empty credentials": {
+			given: model.ServiceDetails{
+				Api: &model.API{
+					TargetUrl:   "http://target.url",
+					Credentials: &model.CredentialsWithCSRF{},
+				},
+			},
+			expected: graphql.PackageCreateInput{
+				DefaultInstanceAuth: &graphql.AuthInput{},
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
 						TargetURL: "http://target.url",
 					},
 				},

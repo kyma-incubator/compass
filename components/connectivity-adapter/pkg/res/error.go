@@ -28,6 +28,10 @@ func WriteAppError(writer http.ResponseWriter, err error) {
 }
 
 func WriteErrorMessage(writer http.ResponseWriter, errMessage string, appErrorCode int) {
+	log.WithFields(log.Fields{
+		"errMessage":   errMessage,
+		"appErrorCode": appErrorCode,
+	}).Infof("writing error...")
 	writer.Header().Set(HeaderContentTypeKey, HeaderContentTypeValue)
 	writer.WriteHeader(errorCodeToHTTPStatus(appErrorCode))
 
