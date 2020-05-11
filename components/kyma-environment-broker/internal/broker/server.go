@@ -8,11 +8,6 @@ import (
 	"github.com/pivotal-cf/brokerapi/v7/middlewares"
 )
 
-type Credentials struct {
-	Username string
-	Password string
-}
-
 // copied from github.com/pivotal-cf/brokerapi/api.go
 func AttachRoutes(router *mux.Router, serviceBroker domain.ServiceBroker, logger lager.Logger) *mux.Router {
 	apiHandler := handlers.NewApiHandler(serviceBroker, logger)
