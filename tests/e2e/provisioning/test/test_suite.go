@@ -17,27 +17,16 @@ import (
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/runtime"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/v1_client"
 
-	"github.com/ory/hydra-maester/api/v1alpha1"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director/oauth"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/broker"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/runtime"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/v1_client"
 	gcli "github.com/machinebox/graphql"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
-
-	"github.com/google/uuid"
+	"github.com/ory/hydra-maester/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vrischmann/envconfig"
-
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -98,8 +87,8 @@ const (
 )
 
 func newTestSuite(t *testing.T) *Suite {
-	var azureClient *azure.Interface
 	ctx := context.Background()
+	var azureClient *azure.Interface
 
 	cfg := &Config{}
 	err := envconfig.InitWithPrefix(cfg, "APP")
@@ -146,8 +135,7 @@ func newTestSuite(t *testing.T) *Suite {
 		panic(err)
 	}
 
-	brokerClient := broker.NewClient(cfg.Broker, cfg.TenantID, instanceID, subAccountID, *httpClient, log.WithField("service", "broker_client"))
-	brokerClient := broker.NewClient(ctx, cfg.Broker, cfg.TenantID, instanceID, oAuth2Config, log.WithField("service", "broker_client"))
+	brokerClient := broker.NewClient(ctx, cfg.Broker, cfg.TenantID, instanceID, subAccountID, oAuth2Config, log.WithField("service", "broker_client"))
 
 	directorClient := director.NewDirectorClient(oauthClient, graphQLClient, log.WithField("service", "director_client"))
 

@@ -52,6 +52,7 @@ func NewClient(ctx context.Context, config Config, globalAccountID, instanceID, 
 	}
 	httpClientOAuth := cfg.Client(ctx)
 	httpClientOAuth.Timeout = 30 * time.Second
+
 	return &Client{
 		brokerConfig:    config,
 		instanceID:      instanceID,
