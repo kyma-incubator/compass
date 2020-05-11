@@ -17,17 +17,17 @@ import (
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/runtime"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/v1_client"
 
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/google/uuid"
 	gcli "github.com/machinebox/graphql"
+	"github.com/ory/hydra-maester/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vrischmann/envconfig"
-
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
@@ -87,7 +87,9 @@ const (
 )
 
 func newTestSuite(t *testing.T) *Suite {
+	ctx := context.Background()
 	var azureClient *azure.Interface
+
 	cfg := &Config{}
 	err := envconfig.InitWithPrefix(cfg, "APP")
 	require.NoError(t, err)
@@ -100,6 +102,15 @@ func newTestSuite(t *testing.T) *Suite {
 	}
 
 	cli, err := client.New(k8sConfig, client.Options{})
+	if err != nil {
+		panic(err)
+	}
+
+	oAuth2Config, err := createBrokerOAuthConfig(ctx, cli, cfg)
+	if err != nil {
+		panic(err)
+	}
+
 	secretClient := v1_client.NewSecretClient(cli, log)
 	configMapClient := v1_client.NewConfigMapClient(cli, log)
 
@@ -124,7 +135,7 @@ func newTestSuite(t *testing.T) *Suite {
 		panic(err)
 	}
 
-	brokerClient := broker.NewClient(cfg.Broker, cfg.TenantID, instanceID, subAccountID, *httpClient, log.WithField("service", "broker_client"))
+	brokerClient := broker.NewClient(ctx, cfg.Broker, cfg.TenantID, instanceID, subAccountID, oAuth2Config, log.WithField("service", "broker_client"))
 
 	directorClient := director.NewDirectorClient(oauthClient, graphQLClient, log.WithField("service", "director_client"))
 
@@ -236,6 +247,48 @@ func (ts *Suite) testConfigMap() v1.ConfigMap {
 			instanceIdKey: ts.InstanceID,
 		},
 	}
+}
+
+func createBrokerOAuthConfig(ctx context.Context, k8sclient client.Client, cfg *Config) (broker.BrokerOAuthConfig, error) {
+	var brokerOAuthConfig broker.BrokerOAuthConfig
+
+	err := v1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return brokerOAuthConfig, errors.Wrap(err, "while adding hydra-maester v1alpha1 to schema")
+	}
+
+	oAuth2Client := &v1alpha1.OAuth2Client{}
+	err = k8sclient.Get(ctx, client.ObjectKey{
+		Namespace: cfg.DeployNamespace,
+		Name:      cfg.Broker.ClientName,
+	}, oAuth2Client)
+	if err != nil {
+		return brokerOAuthConfig, errors.Wrapf(err, "while getting oAuth2Client %s", cfg.Broker.ClientName)
+	}
+
+	brokerSecret := &v1.Secret{}
+	err = k8sclient.Get(ctx, client.ObjectKey{
+		Namespace: cfg.DeployNamespace,
+		Name:      oAuth2Client.Spec.SecretName,
+	}, brokerSecret)
+	if err != nil {
+		return brokerOAuthConfig, errors.Wrapf(err, "while getting secret %s", oAuth2Client.Spec.SecretName)
+	}
+
+	clientID, ok := brokerSecret.Data["client_id"]
+	if !ok {
+		return brokerOAuthConfig, errors.Errorf("cannot find client_id key in secret %s", oAuth2Client.Spec.SecretName)
+	}
+	clientSecret, ok := brokerSecret.Data["client_secret"]
+	if !ok {
+		return brokerOAuthConfig, errors.Errorf("cannot find client_secret key in secret %s", oAuth2Client.Spec.SecretName)
+	}
+
+	brokerOAuthConfig.ClientID = string(clientID)
+	brokerOAuthConfig.ClientSecret = string(clientSecret)
+	brokerOAuthConfig.Scope = oAuth2Client.Spec.Scope
+
+	return brokerOAuthConfig, nil
 }
 
 func newHTTPClient(insecureSkipVerify bool) *http.Client {

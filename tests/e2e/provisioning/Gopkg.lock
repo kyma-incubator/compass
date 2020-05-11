@@ -253,6 +253,17 @@
   version = "1.0.1"
 
 [[projects]]
+  digest = "1:9d296a8edc66bcba0943b9f4cc9099879909ab9a6cabe545b4f4337aea2b602e"
+  name = "github.com/ory/hydra-maester"
+  packages = [
+    "api/v1alpha1",
+    "hydra",
+  ]
+  pruneopts = "UT"
+  revision = "85746c8b0bb494f5cc9b45a206ddc5f56bce6d91"
+  version = "v0.0.17"
+
+[[projects]]
   digest = "1:606f32078f27fd7d858c8e7750482e6e29d0b22d13a4e9af5b70d36fdcc3d98e"
   name = "github.com/pivotal-cf/brokerapi"
   packages = ["v7/domain"]
@@ -384,10 +395,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:911b45b658f5fab1a26259e2fd1085ab296f9d3e46117311d25f8dae51efe720"
+  digest = "1:f1d392a89dc9b0d4556b368faa99438ac2dd443fa4d8a6f1742acb3c41f78d1f"
   name = "golang.org/x/oauth2"
   packages = [
     ".",
+    "clientcredentials",
     "internal",
   ]
   pruneopts = "UT"
@@ -664,14 +676,17 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8a5e4720aca8a94c876d960a2b86afcaf98e8ded4b5bd7fe42d920806b292c57"
+  digest = "1:01dbe4c86aa758aaa7502784c7e81642f3f0995c0fd6a094a8daaf5cb962ac73"
   name = "k8s.io/utils"
-  packages = ["integer"]
+  packages = [
+    "integer",
+    "pointer",
+  ]
   pruneopts = "UT"
   revision = "861946025e3491219eaccb1bf693e23df70c2fa8"
 
 [[projects]]
-  digest = "1:6b41fd5562bac43f021d440591d881fc6f53c78ba756fe2ec545a50b0dc9d69f"
+  digest = "1:5f7e1be275043b29057387979ae05ff28fb4c1ab128c3d4042ef0d190bbabfe5"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/client",
@@ -681,6 +696,7 @@
     "pkg/internal/log",
     "pkg/internal/objectutil",
     "pkg/log",
+    "pkg/scheme",
   ]
   pruneopts = "UT"
   revision = "198197fe0fd7553cadd8afcd3338f8ee4b8a7e3f"
@@ -708,6 +724,7 @@
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
     "github.com/machinebox/graphql",
+    "github.com/ory/hydra-maester/api/v1alpha1",
     "github.com/pivotal-cf/brokerapi/v7/domain",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
@@ -715,6 +732,7 @@
     "github.com/stretchr/testify/require",
     "github.com/thanhpk/randstr",
     "github.com/vrischmann/envconfig",
+    "golang.org/x/oauth2/clientcredentials",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
