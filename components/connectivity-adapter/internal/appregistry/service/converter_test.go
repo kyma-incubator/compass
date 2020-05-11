@@ -44,7 +44,6 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
-						// TODO out name?
 						TargetURL: "http://target.url",
 					},
 				},
@@ -61,7 +60,6 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
-						// TODO out name?
 						TargetURL: "http://target.url",
 					},
 				},
