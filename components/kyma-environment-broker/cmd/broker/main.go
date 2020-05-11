@@ -318,12 +318,12 @@ func main() {
 
 	// create OSB API endpoints
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
-	for prefix, creds := range map[string]*broker.Credentials{
-		"/oauth/":          nil, // oauth2 handled by Ory
-		"/oauth/{region}/": nil, // oauth2 handled by Ory with region
+	for _, prefix := range []string{
+		"/oauth/",          // oauth2 handled by Ory
+		"/oauth/{region}/", // oauth2 handled by Ory with region
 	} {
 		route := router.PathPrefix(prefix).Subrouter()
-		broker.AttachRoutes(route, kymaEnvBroker, logger, creds)
+		broker.AttachRoutes(route, kymaEnvBroker, logger)
 	}
 
 	svr := handlers.LoggingHandler(os.Stdout, router)
