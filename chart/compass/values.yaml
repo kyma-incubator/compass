@@ -63,7 +63,7 @@ global:
         version: "PR-1306"
       e2e_provisioning:
         dir:
-        version: "PR-1295"
+        version: "9ccd1568"
       connectivity_adapter:
         dir:
         version: "PR-1270"
