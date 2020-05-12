@@ -66,7 +66,9 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 
 	pkg = getPackage(t, ctx, dexGraphQLClient, tenant, application.ID, pkgID)
 
-	require.NotNil(t, pkg.APIDefinitions.Data[0].Spec.APISpec.Data)
-	assert.Equal(t, *refetchedSpec.APISpec.Data, *pkg.APIDefinitions.Data[0].Spec.APISpec.Data)
+	require.NotNil(t, pkg.APIDefinitions)
+	require.NotNil(t, pkg.APIDefinitions.Data[0].Spec)
+	require.NotNil(t, pkg.APIDefinitions.Data[0].Spec.Data)
+	assert.Equal(t, *refetchedSpec.APISpec.Data, *pkg.APIDefinitions.Data[0].Spec.Data)
 
 }

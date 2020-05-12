@@ -1,6 +1,7 @@
 package apispec
 
 import (
+	"fmt"
 	"math/rand"
 	"net/http"
 
@@ -9,7 +10,7 @@ import (
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-func randSpec(n int) []byte {
+func randString(n int) []byte {
 	b := make([]byte, n)
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]
@@ -17,9 +18,13 @@ func randSpec(n int) []byte {
 	return b
 }
 
+func randSpec() []byte {
+	return []byte(fmt.Sprintf(specTemplate, randString(10)))
+}
+
 func HandleFunc(rw http.ResponseWriter, req *http.Request) {
 	rw.WriteHeader(http.StatusOK)
-	_, err := rw.Write(randSpec(10))
+	_, err := rw.Write(randSpec())
 	if err != nil {
 		logrus.Fatal(err)
 	}
