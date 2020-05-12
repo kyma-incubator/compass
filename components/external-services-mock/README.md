@@ -2,14 +2,14 @@
 
 ## Overview
 
-External services mock is a test component that mocks external APIs for test purposes.
+External Services Mock is a component that mocks external APIs for test purposes. To learn more about tests that use the External Services Mock, read [this](https://github.com/kfurgol/compass/blob/master/tests/director/external-services-mock-integration/README.md) document.
 
 It contains the following mocks:
-* Audit Log service
+* Audit log service
 
 ## Configuration
 
-External services mock binary allows you to override some configuration parameters. You can specify the following basic environment variables:
+External Services Mock binary allows you to override some configuration parameters. You can specify the following basic environment variables:
 
 | Name                             | Description                                                       | Default value            | 
 | ---------------------------------| ----------------------------------------------------------------- | ------------------------ | 
@@ -18,15 +18,15 @@ External services mock binary allows you to override some configuration paramete
 ### Audit log mock API configuration
 | Name                             | Description                                                                       | 
 | -------------------------------- | --------------------------------------------------------------------------------- | 
-| **APP_AUDITLOG_CLIENT_SECRET**   | The expected audit log client secret which is used in obtaining JWT token         | 
-| **APP_AUDITLOG_CLIENT_ID**       | The expected audit log client id which is used in obtaining JWT token              | 
+| **APP_AUDITLOG_CLIENT_SECRET**   | The expected audit log client Secret used to obtain a JWT         | 
+| **APP_AUDITLOG_CLIENT_ID**       | The expected audit log client ID used to obtain a JWT              | 
 
 ## Development
 
-To run the component locally run:
+Use this command to run the component locally:
 
 ```bash
-export APP_AUDITLOG_CLIENT_SECRET=client-secret
-export APP_AUDITLOG_CLIENT_ID=client-id
+export APP_AUDITLOG_CLIENT_SECRET={CLIENT_SECRET}
+export APP_AUDITLOG_CLIENT_ID={CLIENT_ID}
 go run ./cmd/main.go
 ```
