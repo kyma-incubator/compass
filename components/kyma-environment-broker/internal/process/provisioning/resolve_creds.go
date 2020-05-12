@@ -21,7 +21,7 @@ type ResolveCredentialsStep struct {
 	tenant           string
 }
 
-func getHyperscalerTypeForPlanID(planID string) (hyperscaler.HyperscalerType, error) {
+func getHyperscalerTypeForPlanID(planID string) (hyperscaler.Type, error) {
 	switch planID {
 	case broker.GCPPlanID:
 		return hyperscaler.GCP, nil
@@ -84,7 +84,7 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 		return s.operationManager.OperationFailed(operation, errMsg)
 	}
 
-	pp.Parameters.TargetSecret = &credentials.CredentialName
+	pp.Parameters.TargetSecret = &credentials.Name
 	err = operation.SetProvisioningParameters(pp)
 
 	if err != nil {

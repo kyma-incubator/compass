@@ -26,8 +26,8 @@ var _ Interface = (*Client)(nil)
 
 type Client struct {
 	// the actual azure client
-	eventhubNamespaceClient eventhub.NamespacesClient
-	resourcegroupClient     resources.GroupsClient
+	eventHubNamespaceClient eventhub.NamespacesClient
+	resourceGroupClient     resources.GroupsClient
 	logger                  logrus.FieldLogger
 }
 
@@ -43,22 +43,22 @@ func (e ResourceGroupDoesNotExistError) Error() string {
 	return e.message
 }
 
-func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourcegroupClient resources.GroupsClient, logger logrus.FieldLogger) *Client {
+func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourceGroupClient resources.GroupsClient, logger logrus.FieldLogger) *Client {
 	return &Client{
-		eventhubNamespaceClient: namespaceClient,
-		resourcegroupClient:     resourcegroupClient,
+		eventHubNamespaceClient: namespaceClient,
+		resourceGroupClient:     resourceGroupClient,
 		logger:                  logger,
 	}
 }
 
 func (nc *Client) GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error) {
-	return nc.eventhubNamespaceClient.ListKeys(ctx, resourceGroupName, namespaceName, authorizationRuleName)
+	return nc.eventHubNamespaceClient.ListKeys(ctx, resourceGroupName, namespaceName, authorizationRuleName)
 }
 
 func (nc *Client) CreateResourceGroup(ctx context.Context, config *Config, name string, tags Tags) (resources.Group, error) {
 	// we need to use a copy of the location, because the following azure call will modify it
 	locationCopy := config.GetLocation()
-	return nc.resourcegroupClient.CreateOrUpdate(ctx, name, resources.Group{Location: &locationCopy, Tags: tags})
+	return nc.resourceGroupClient.CreateOrUpdate(ctx, name, resources.Group{Location: &locationCopy, Tags: tags})
 }
 
 func (nc *Client) CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags Tags) (*eventhub.EHNamespace, error) {
@@ -81,7 +81,7 @@ func (nc *Client) DeleteResourceGroup(ctx context.Context, tags Tags) (resources
 		return resources.GroupsDeleteFuture{}, fmt.Errorf("resource group name is nil")
 	}
 	nc.logger.Infof("deleting resource group: %s", *resourceGroup.Name)
-	future, err := nc.resourcegroupClient.Delete(ctx, *resourceGroup.Name)
+	future, err := nc.resourceGroupClient.Delete(ctx, *resourceGroup.Name)
 	return future, err
 }
 
@@ -96,7 +96,7 @@ func (nc *Client) GetResourceGroup(ctx context.Context, tags Tags) (resources.Gr
 	filter := fmt.Sprintf("tagName eq 'InstanceID' and tagValue eq '%s'", serviceInstanceID)
 
 	// we only expect one ResourceGroup, so not using pagination here should be fine
-	resourceGroupIterator, err := nc.resourcegroupClient.List(ctx, filter, nil)
+	resourceGroupIterator, err := nc.resourceGroupClient.List(ctx, filter, nil)
 	if err != nil {
 		return resources.Group{}, err
 	}
@@ -113,16 +113,16 @@ func (nc *Client) GetResourceGroup(ctx context.Context, tags Tags) (resources.Gr
 }
 
 func (nc *Client) createNamespaceAndWait(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {
-	future, err := nc.eventhubNamespaceClient.CreateOrUpdate(ctx, resourceGroupName, namespaceName, parameters)
+	future, err := nc.eventHubNamespaceClient.CreateOrUpdate(ctx, resourceGroupName, namespaceName, parameters)
 	if err != nil {
 		return eventhub.EHNamespace{}, err
 	}
 
-	err = future.WaitForCompletionRef(ctx, nc.eventhubNamespaceClient.Client)
+	err = future.WaitForCompletionRef(ctx, nc.eventHubNamespaceClient.Client)
 	if err != nil {
 		return eventhub.EHNamespace{}, err
 	}
 
-	result, err = future.Result(nc.eventhubNamespaceClient)
+	result, err = future.Result(nc.eventHubNamespaceClient)
 	return result, err
 }

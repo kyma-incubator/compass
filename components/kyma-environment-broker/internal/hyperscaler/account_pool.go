@@ -11,34 +11,34 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
-type HyperscalerType string
+type Type string
 
 const (
-	GCP   HyperscalerType = "gcp"
-	Azure HyperscalerType = "azure"
-	AWS   HyperscalerType = "aws"
+	GCP   Type = "gcp"
+	Azure Type = "azure"
+	AWS   Type = "aws"
 )
 
-func HyperscalerTypeFromProviderString(provider string) (HyperscalerType, error) {
+func HyperscalerTypeFromProviderString(provider string) (Type, error) {
 
-	hyperscalerType := HyperscalerType(strings.ToLower(provider))
+	hyperscalerType := Type(strings.ToLower(provider))
 
 	switch hyperscalerType {
 	case GCP, Azure, AWS:
 		return hyperscalerType, nil
 	}
-	return "", errors.Errorf("Unknown Hyperscaler provider type: %s", provider)
+	return "", errors.Errorf("unknown Hyperscaler provider type: %s", provider)
 }
 
 type Credentials struct {
-	CredentialName  string
-	HyperscalerType HyperscalerType
+	Name            string
+	HyperscalerType Type
 	TenantName      string
 	CredentialData  map[string][]byte
 }
 
 type AccountPool interface {
-	Credentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
+	Credentials(hyperscalerType Type, tenantName string) (Credentials, error)
 }
 
 func NewAccountPool(secretsClient corev1.SecretInterface) AccountPool {
@@ -52,10 +52,10 @@ type secretsAccountPool struct {
 	mux           sync.Mutex
 }
 
-func (p *secretsAccountPool) Credentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
+func (p *secretsAccountPool) Credentials(hyperscalerType Type, tenantName string) (Credentials, error) {
 
 	labelSelector := fmt.Sprintf("tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
-	secret, err := getSecret(p.secretsClient, labelSelector)
+	secret, err := getK8SSecret(p.secretsClient, labelSelector)
 
 	if err != nil {
 		return Credentials{}, err
@@ -68,46 +68,45 @@ func (p *secretsAccountPool) Credentials(hyperscalerType HyperscalerType, tenant
 	// lock so that only one thread can fetch an unassigned secret and assign it (update secret with tenantName)
 	p.mux.Lock()
 	defer p.mux.Unlock()
-	secret, err = getSecret(p.secretsClient, labelSelector)
+	secret, err = getK8SSecret(p.secretsClient, labelSelector)
 
 	if err != nil {
 		return Credentials{}, err
 	}
-	if secret != nil {
-		secret.Labels["tenantName"] = tenantName
-		updatedSecret, err := p.secretsClient.Update(secret)
-		if err != nil {
-			return Credentials{},
-				errors.Wrapf(err, "AccountPool error while updating secret with tenantName: %s", tenantName)
-		}
-		return credentialsFromSecret(updatedSecret, hyperscalerType, tenantName), nil
+
+	if secret == nil {
+		return Credentials{}, errors.Errorf("accountPool failed to find unassigned secret for hyperscalerType: %s", hyperscalerType)
 	}
 
-	return Credentials{},
-		errors.Errorf("AccountPool failed to find unassigned secret for hyperscalerType: %s",
-			hyperscalerType)
+	secret.Labels["tenantName"] = tenantName
+	updatedSecret, err := p.secretsClient.Update(secret)
+	if err != nil {
+		return Credentials{}, errors.Wrapf(err, "accountPool error while updating secret with tenantName: %s", tenantName)
+	}
 
+	return credentialsFromSecret(updatedSecret, hyperscalerType, tenantName), nil
 }
 
-func getSecret(secretsClient corev1.SecretInterface, labelSelector string) (*apiv1.Secret, error) {
+func getK8SSecret(secretsClient corev1.SecretInterface, labelSelector string) (*apiv1.Secret, error) {
 	secrets, err := secretsClient.List(metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 
 	if err != nil {
 		return nil,
-			errors.Wrapf(err, "AccountPool error during secret list for LabelSelector: %s", labelSelector)
+			errors.Wrapf(err, "accountPool error during secret list for LabelSelector: %s", labelSelector)
 	}
 
 	if secrets != nil && len(secrets.Items) > 0 {
 		return &secrets.Items[0], nil
 	}
+
 	return nil, nil
 }
 
-func credentialsFromSecret(secret *apiv1.Secret, hyperscalerType HyperscalerType, tenantName string) Credentials {
+func credentialsFromSecret(secret *apiv1.Secret, hyperscalerType Type, tenantName string) Credentials {
 	return Credentials{
-		CredentialName:  secret.Name,
+		Name:            secret.Name,
 		HyperscalerType: hyperscalerType,
 		TenantName:      tenantName,
 		CredentialData:  secret.Data,

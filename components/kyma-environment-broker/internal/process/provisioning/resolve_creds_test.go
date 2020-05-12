@@ -30,7 +30,7 @@ func TestResolveCredentialsStepHappyPath_Run(t *testing.T) {
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
 
 	accountProviderMock.On("GardenerCredentials", hyperscaler.GCP, statusGlobalAccountID).Return(hyperscaler.Credentials{
-		CredentialName:  "gardener-secret-gcp",
+		Name:            "gardener-secret-gcp",
 		HyperscalerType: "gcp",
 		TenantName:      statusGlobalAccountID,
 		CredentialData:  map[string][]byte{},

@@ -33,7 +33,7 @@ func TestHyperscalerTypeFromProviderString(t *testing.T) {
 			expectedError = ""
 		} else {
 			testDescription = fmt.Sprintf("%s is an unknown HyperscalerType", testcase.providerType)
-			expectedError = fmt.Sprintf("Unknown Hyperscaler provider type: %s", testcase.providerType)
+			expectedError = fmt.Sprintf("unknown Hyperscaler provider type: %s", testcase.providerType)
 		}
 		t.Run(testDescription, func(t *testing.T) {
 
@@ -56,7 +56,7 @@ func TestCredentials(t *testing.T) {
 	var testcases = []struct {
 		testDescription        string
 		tenantName             string
-		hyperscalerType        HyperscalerType
+		hyperscalerType        Type
 		expectedCredentialName string
 		expectedError          string
 	}{
@@ -77,7 +77,7 @@ func TestCredentials(t *testing.T) {
 
 		{"No Available credential for tenant5, Azure returns error",
 			"tenant5", Azure, "",
-			"AccountPool failed to find unassigned secret for hyperscalerType: azure"},
+			"accountPool failed to find unassigned secret for hyperscalerType: azure"},
 	}
 	for _, testcase := range testcases {
 
@@ -89,7 +89,7 @@ func TestCredentials(t *testing.T) {
 				actualError = err.Error()
 				assert.Equal(t, testcase.expectedError, actualError)
 			} else {
-				assert.Equal(t, testcase.expectedCredentialName, credentials.CredentialName)
+				assert.Equal(t, testcase.expectedCredentialName, credentials.Name)
 				assert.Equal(t, testcase.hyperscalerType, credentials.HyperscalerType)
 				assert.Equal(t, testcase.tenantName, credentials.TenantName)
 				assert.Equal(t, testcase.expectedCredentialName, string(credentials.CredentialData["credentials"]))
