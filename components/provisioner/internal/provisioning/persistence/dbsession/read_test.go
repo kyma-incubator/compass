@@ -27,7 +27,7 @@ func Test_parseToKymaConfig(t *testing.T) {
 			InstallerYAML:       installerYaml,
 			Component:           name,
 			Namespace:           namespace,
-			ComponentOrder:      order,
+			ComponentOrder:      &order,
 			ClusterID:           runtimeId,
 			GlobalConfiguration: []byte("{}"),
 			Configuration:       []byte("{}"),
