@@ -192,20 +192,6 @@ func (tw TimeWindow) isEmpty() bool {
 	return tw.Begin == "" || tw.End == ""
 }
 
-func setAuditConfig(shoot *gardener_types.Shoot, policyConfigMapName, subAccountId string) {
-	if shoot.Spec.Kubernetes.KubeAPIServer == nil {
-		shoot.Spec.Kubernetes.KubeAPIServer = &gardener_types.KubeAPIServerConfig{}
-	}
-
-	shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig = &gardener_types.AuditConfig{
-		AuditPolicy: &gardener_types.AuditPolicy{
-			ConfigMapRef: &v12.ObjectReference{Name: policyConfigMapName},
-		},
-	}
-
-	annotate(shoot, auditLogsAnnotation, subAccountId)
-}
-
 func getDataFromFile(filepath, region string) (interface{}, error) {
 	file, err := os.Open(filepath)
 
