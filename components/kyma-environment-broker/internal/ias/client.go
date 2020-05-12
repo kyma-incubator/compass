@@ -21,6 +21,7 @@ const (
 	PathAccess            = "/service/sps/%s/rba"
 	PathIdentityProviders = "/service/idp"
 	PathDelete            = "/service/sps/delete"
+	PathDeleteSecret      = "/service/sps/clientSecret"
 )
 
 type (
@@ -135,9 +136,27 @@ func (c *Client) DeleteServiceProvider(spID string) (err error) {
 	return nil
 }
 
+func (c *Client) DeleteSecret(payload DeleteSecrets) (err error) {
+	request, err := c.jsonRequest(PathDeleteSecret, http.MethodDelete, payload)
+	if err != nil {
+		return errors.Wrapf(err, "while creating json request for path %s", PathDeleteSecret)
+	}
+	request.Delete = true
+
+	response, err := c.do(request)
+	defer func() {
+		err = multierror.Append(err, errors.Wrap(c.closeResponseBody(response), "while trying to close body reader")).ErrorOrNil()
+	}()
+	if err != nil {
+		return errors.Wrap(err, "while making request to delete ServiceProvider secrets")
+	}
+
+	return nil
+}
+
 func (c *Client) GenerateServiceProviderSecret(secretCfg SecretConfiguration) (_ *ServiceProviderSecret, err error) {
 	secretResponse := &ServiceProviderSecret{}
-	request, err := c.jsonRequest(PathServiceProviders, secretCfg)
+	request, err := c.jsonRequest(PathServiceProviders, http.MethodPut, secretCfg)
 	if err != nil {
 		return secretResponse, errors.Wrap(err, "while creating request for secret provider")
 	}
@@ -167,7 +186,7 @@ func (c *Client) serviceProviderPath(spID string) string {
 }
 
 func (c *Client) call(path string, payload interface{}) (err error) {
-	request, err := c.jsonRequest(path, payload)
+	request, err := c.jsonRequest(path, http.MethodPut, payload)
 	if err != nil {
 		return errors.Wrapf(err, "while creating json request for path %s", path)
 	}
@@ -183,7 +202,7 @@ func (c *Client) call(path string, payload interface{}) (err error) {
 	return nil
 }
 
-func (c *Client) jsonRequest(path string, payload interface{}) (*Request, error) {
+func (c *Client) jsonRequest(path string, method string, payload interface{}) (*Request, error) {
 	buffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(buffer)
 	err := encoder.Encode(payload)
@@ -192,7 +211,7 @@ func (c *Client) jsonRequest(path string, payload interface{}) (*Request, error)
 	}
 
 	return &Request{
-		Method:  http.MethodPut,
+		Method:  method,
 		Path:    path,
 		Body:    buffer,
 		Headers: map[string]string{"content-type": "application/json"},
@@ -218,7 +237,9 @@ func (c *Client) do(sciReq *Request) (*http.Response, error) {
 	}
 
 	switch {
-	case response.StatusCode == http.StatusOK || response.StatusCode == http.StatusCreated:
+	case response.StatusCode == http.StatusOK ||
+		response.StatusCode == http.StatusCreated ||
+		response.StatusCode == http.StatusNoContent:
 		return response, nil
 	case sciReq.Delete && response.StatusCode == http.StatusNotFound:
 		return response, nil

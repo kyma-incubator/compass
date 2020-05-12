@@ -25,6 +25,7 @@ type IASCLient interface {
 	GetCompany() (*Company, error)
 	CreateServiceProvider(string, string) error
 	DeleteServiceProvider(string) error
+	DeleteSecret(DeleteSecrets) error
 	GenerateServiceProviderSecret(SecretConfiguration) (*ServiceProviderSecret, error)
 	AuthenticationURL(ProviderID) string
 	SetOIDCConfiguration(string, OIDCType) error
@@ -245,8 +246,13 @@ func (b *ServiceProviderBundle) ConfigureServiceProvider() error {
 	return nil
 }
 
-// generateSecret generates new ID and Secret for ServiceProvider
+// GenerateSecret generates new ID and Secret for ServiceProvider, removes already existing secrets
 func (b *ServiceProviderBundle) GenerateSecret() (*ServiceProviderSecret, error) {
+	err := b.removeSecrets()
+	if err != nil {
+		return &ServiceProviderSecret{}, errors.Wrap(err, "while removing existing secrets")
+	}
+
 	secretCfg := SecretConfiguration{
 		Organization: b.organization,
 		ID:           b.serviceProvider.ID,
@@ -262,4 +268,21 @@ func (b *ServiceProviderBundle) GenerateSecret() (*ServiceProviderSecret, error)
 	}
 
 	return sps, nil
+}
+
+func (b *ServiceProviderBundle) removeSecrets() error {
+	if len(b.serviceProvider.Secret) == 0 {
+		return nil
+	}
+
+	var secretsIDs []string
+	for _, s := range b.serviceProvider.Secret {
+		secretsIDs = append(secretsIDs, s.SecretID)
+	}
+
+	deleteSecrets := DeleteSecrets{
+		ClientID:         b.serviceProvider.UserForRest,
+		ClientSecretsIDs: secretsIDs,
+	}
+	return b.client.DeleteSecret(deleteSecrets)
 }
