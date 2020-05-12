@@ -44,7 +44,7 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "33a9188e"
+      version: "PR-1332"
     external_services_mock:
       dir:
       version: "PR-1270"
