@@ -1,4 +1,4 @@
-# External services mock
+# External Services Mock
 
 ## Overview
 
