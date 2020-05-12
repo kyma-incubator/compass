@@ -3,8 +3,9 @@ package dbsession
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"sort"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
