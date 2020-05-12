@@ -40,3 +40,10 @@ func UnwrapStr(strPtr *string) string {
 	}
 	return *strPtr
 }
+
+func UnwrapInt(intPtr *int) int {
+	if intPtr == nil {
+		return 0
+	}
+	return *intPtr
+}

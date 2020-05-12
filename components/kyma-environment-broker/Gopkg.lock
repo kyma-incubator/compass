@@ -504,10 +504,9 @@
   version = "v1.2"
 
 [[projects]]
-  digest = "1:6e4b922386609d8c0de747b071320f5b1bfde0cc33005d27cbf58d393b830644"
+  digest = "1:a4a7e15e43bc64f5c551d18ed4b52a42a9636927ae6c77ac50eb6e0e06c0c380"
   name = "github.com/pivotal-cf/brokerapi"
   packages = [
-    "v7/auth",
     "v7/domain",
     "v7/domain/apiresponses",
     "v7/handlers",
@@ -1107,7 +1106,6 @@
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
     "github.com/machinebox/graphql",
-    "github.com/pivotal-cf/brokerapi/v7/auth",
     "github.com/pivotal-cf/brokerapi/v7/domain",
     "github.com/pivotal-cf/brokerapi/v7/domain/apiresponses",
     "github.com/pivotal-cf/brokerapi/v7/handlers",

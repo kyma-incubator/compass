@@ -13,9 +13,6 @@ manageSecrets: true
 
 broker:
   port: "8080"
-  username: "broker"
-  # password can be set manually by user. If empty then it will be randomized.
-  password: ""
   # serving health probes routes on statusPort
   statusPort: "8071"
   defaultRequestRegion: "cf-eu10"
@@ -49,7 +46,7 @@ provisioner:
     # name of the gardener project
     projectName: "gopher"
 
-additionalRuntimeComponents:
+additionalRuntimeComponents: |-
   - name: "service-manager-proxy"
     namespace: "kyma-system"
   - name: "uaa-activator"

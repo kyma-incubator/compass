@@ -47,11 +47,11 @@ func TestMiddleware(t *testing.T) {
 		cliProvider := &automock.Provider{}
 		cliProvider.On("GQLClient", mock.AnythingOfType("*http.Request")).Return(gqlClient)
 
-		appMidlleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
+		appMiddleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
 
 		router := mux.NewRouter()
 		router.HandleFunc("/{app-name}", assertAppInContext(t, app))
-		router.Use(appMidlleware.Middleware)
+		router.Use(appMiddleware.Middleware)
 		rw := httptest.NewRecorder()
 
 		//WHEN
@@ -75,10 +75,10 @@ func TestMiddleware(t *testing.T) {
 
 		cliProvider := &automock.Provider{}
 		cliProvider.On("GQLClient", mock.AnythingOfType("*http.Request")).Return(gqlClient)
-		appMidlleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
+		appMiddleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
 
 		router := mux.NewRouter()
-		router.Use(appMidlleware.Middleware)
+		router.Use(appMiddleware.Middleware)
 		router.HandleFunc("/{app-name}", fixDummyHandler())
 		rw := httptest.NewRecorder()
 
@@ -108,10 +108,10 @@ func TestMiddleware(t *testing.T) {
 
 		cliProvider := &automock.Provider{}
 		cliProvider.On("GQLClient", mock.AnythingOfType("*http.Request")).Return(gqlClient)
-		appMidlleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
+		appMiddleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
 
 		router := mux.NewRouter()
-		router.Use(appMidlleware.Middleware)
+		router.Use(appMiddleware.Middleware)
 		router.HandleFunc("/{app-name}", fixDummyHandler())
 		rw := httptest.NewRecorder()
 
@@ -140,10 +140,10 @@ func TestMiddleware(t *testing.T) {
 
 		cliProvider := &automock.Provider{}
 		cliProvider.On("GQLClient", mock.AnythingOfType("*http.Request")).Return(gqlClient)
-		appMidlleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
+		appMiddleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
 
 		router := mux.NewRouter()
-		router.Use(appMidlleware.Middleware)
+		router.Use(appMiddleware.Middleware)
 		router.HandleFunc("/{app-name}", fixDummyHandler())
 		rw := httptest.NewRecorder()
 
@@ -153,7 +153,7 @@ func TestMiddleware(t *testing.T) {
 		//THEN
 		assert.Equal(t, http.StatusInternalServerError, rw.Code)
 		mock.AssertExpectationsForObjects(t, gqlClient, cliProvider)
-		assertLogError(t, "while getting service: All attempts fail:\n#1: test error\n#2: test error", hook)
+		assertLastLogEntryError(t, "while getting service: All attempts fail:\n#1: test error\n#2: test error", hook)
 	})
 
 }
@@ -193,8 +193,7 @@ func fixDummyHandler() func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func assertLogError(t *testing.T, errMessage string, hook *test.Hook) {
-	assert.Equal(t, 1, len(hook.AllEntries()))
+func assertLastLogEntryError(t *testing.T, errMessage string, hook *test.Hook) {
 	entry := hook.LastEntry()
 	require.NotNil(t, entry)
 	assert.Equal(t, log.ErrorLevel, entry.Level)

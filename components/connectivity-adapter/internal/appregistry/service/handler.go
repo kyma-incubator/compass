@@ -92,6 +92,8 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	h.logger.Infoln("doing GraphQL request...")
+
 	appID := reqContext.AppID
 	serviceID, err := reqContext.DirectorClient.CreatePackage(appID, converted)
 	if err != nil {
@@ -288,6 +290,7 @@ func (h *Handler) closeBody(rq *http.Request) {
 
 func (h *Handler) decodeAndValidateInput(request *http.Request) (model.ServiceDetails, error) {
 	var details model.ServiceDetails
+
 	err := json.NewDecoder(request.Body).Decode(&details)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while unmarshalling service")
@@ -296,6 +299,8 @@ func (h *Handler) decodeAndValidateInput(request *http.Request) (model.ServiceDe
 		appErr := apperrors.WrongInput(wrappedErr.Error())
 		return model.ServiceDetails{}, appErr
 	}
+
+	h.logger.Infoln("body decoded. validating...")
 
 	appErr := h.validator.Validate(details)
 	if appErr != nil {

@@ -39,6 +39,8 @@ func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 		variables := mux.Vars(r)
 		appName := variables[appNamePathVariable]
 
+		mw.logger.Infof("resolving application with name '%s'...", appName)
+
 		client := mw.cliProvider.GQLClient(r)
 		directorCli := director.NewClient(client, &graphqlizer.Graphqlizer{}, &graphqlizer.GqlFieldsProvider{})
 		query := directorCli.GetApplicationsByNameRequest(appName)
@@ -67,6 +69,9 @@ func (mw *applicationMiddleware) Middleware(next http.Handler) http.Handler {
 		}
 
 		app := apps.Result.Data[0]
+
+		mw.logger.Infof("app '%s' details fetched successfully", appName)
+
 		ctx := SaveToContext(r.Context(), *app)
 		ctxWithCli := gqlcli.SaveToContext(ctx, client)
 		requestWithCtx := r.WithContext(ctxWithCli)

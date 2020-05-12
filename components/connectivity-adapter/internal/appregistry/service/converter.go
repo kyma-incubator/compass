@@ -53,7 +53,7 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 			apiDef.Spec.Format = graphql.SpecFormatYaml
 		}
 
-		if deprecated.Api.Credentials != nil {
+		if deprecated.Api.Credentials != nil && (deprecated.Api.Credentials.OauthWithCSRF != nil || deprecated.Api.Credentials.BasicWithCSRF != nil) {
 			defaultInstanceAuth.Credential = &graphql.CredentialDataInput{}
 
 			if deprecated.Api.Credentials.BasicWithCSRF != nil {
@@ -85,9 +85,7 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 				}
 			}
 
-			if deprecated.Api.Credentials.CertificateGenWithCSRF != nil {
-				// TODO not supported
-			}
+			// TODO deprecated.Api.Credentials.CertificateGenWithCSRF not supported
 		}
 
 		// old way of providing request headers

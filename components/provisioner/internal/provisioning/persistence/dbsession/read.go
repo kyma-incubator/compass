@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -71,15 +73,15 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 		return model.Cluster{}, dberrors.Internal("Failed to get Cluster: %s", err)
 	}
 
-	providerConfig, err := r.getProviderConfig(runtimeID)
-	if err != nil {
-		return model.Cluster{}, dberrors.NotFound("Cannot find Provider config for runtimeID: %s", runtimeID)
+	providerConfig, dberr := r.getProviderConfig(runtimeID)
+	if dberr != nil {
+		return model.Cluster{}, dberr.Append("Cannot get Provider config for runtimeID: %s", runtimeID)
 	}
 	cluster.ClusterConfig = providerConfig
 
-	kymaConfig, err := r.getKymaConfig(runtimeID, cluster.ActiveKymaConfigId)
-	if err != nil {
-		return model.Cluster{}, dberrors.NotFound("Cannot find Kyma config for runtimeID: %s", runtimeID)
+	kymaConfig, dberr := r.getKymaConfig(runtimeID, cluster.ActiveKymaConfigId)
+	if dberr != nil {
+		return model.Cluster{}, dberr.Append("Cannot get Kyma config for runtimeID: %s", runtimeID)
 	}
 	cluster.KymaConfig = kymaConfig
 
@@ -120,9 +122,9 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 	}
 	cluster.ClusterConfig = clusterWithProvider.gardenerConfigRead.GardenerConfig
 
-	kymaConfig, err := r.getKymaConfig(clusterWithProvider.Cluster.ID, cluster.ActiveKymaConfigId)
-	if err != nil {
-		return model.Cluster{}, dberrors.NotFound("Cannot find Kyma config for runtimeID: %s", clusterWithProvider.Cluster.ID)
+	kymaConfig, dberr := r.getKymaConfig(clusterWithProvider.Cluster.ID, cluster.ActiveKymaConfigId)
+	if dberr != nil {
+		return model.Cluster{}, dberr.Append("Cannot get Kyma config for runtimeID: %s", clusterWithProvider.Cluster.ID)
 	}
 	cluster.KymaConfig = kymaConfig
 
@@ -141,7 +143,7 @@ type kymaComponentConfigDTO struct {
 	Namespace           string
 	SourceURL           *string
 	Configuration       []byte
-	ComponentOrder      int
+	ComponentOrder      *int
 	ClusterID           string
 }
 
@@ -164,11 +166,11 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 			SourceURL:      componentCfg.SourceURL,
 			Configuration:  configuration,
 			KymaConfigID:   componentCfg.KymaConfigID,
-			ComponentOrder: componentCfg.ComponentOrder,
+			ComponentOrder: util.UnwrapInt(componentCfg.ComponentOrder),
 		}
 
 		// In case order is 0 for all components map stores slice (it is the case for Runtimes created before migration)
-		kymaModulesOrdered[componentCfg.ComponentOrder] = append(kymaModulesOrdered[componentCfg.ComponentOrder], kymaComponentConfig)
+		kymaModulesOrdered[util.UnwrapInt(componentCfg.ComponentOrder)] = append(kymaModulesOrdered[util.UnwrapInt(componentCfg.ComponentOrder)], kymaComponentConfig)
 	}
 
 	keys := make([]int, 0, len(kymaModulesOrdered))
