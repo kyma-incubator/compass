@@ -4,8 +4,8 @@
 
 External services mock is a test component that mocks external APIs for test purposes.
 
-Implemented external servies:
-* auditlog
+It contains the following mocks:
+* Audit Log service
 
 ## Configuration
 
@@ -23,9 +23,10 @@ External services mock binary allows you to override some configuration paramete
 
 ## Development
 
-To run the component locally, export all mandatory and if needed optional ENVs and run:
+To run the component locally run:
 
 ```bash
-make build-local
-./bin/external-services-mock
+export APP_AUDITLOG_CLIENT_SECRET=client-secret
+export APP_AUDITLOG_CLIENT_ID=client-id
+go run ./cmd/main.go
 ```
