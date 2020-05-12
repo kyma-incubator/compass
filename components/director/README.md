@@ -56,7 +56,7 @@ The Director binary allows to override some configuration parameters. You can sp
 | **APP_DB_SSL**                               | `disable`                       | Database SSL mode. The possible values are `disable` and `enable`. |
 | **APP_DB_MAX_OPEN_CONNECTIONS**              | `2`                             | The maximum number of open connections to the database             |                                                      
 | **APP_DB_MAX_IDLE_CONNECTIONS**              | `2`                             | The maximum number of connections in the idle connection pool      |
-| **APP_DB_CONNECTION_MAX_LIFETIME**           | `30m`                           | The maximum time of keeping connection live                        |
+| **APP_DB_CONNECTION_MAX_LIFETIME**           | `30m`                           | The maximum time of keeping a live connection to database          |
 | **APP_API_ENDPOINT**                         | `/graphql`                      | The endpoint for GraphQL API                                       |
 | **APP_PLAYGROUND_API_ENDPOINT**              | `/graphql`                      | The endpoint of GraphQL API for the Playground                     |
 | **APP_TENANT_MAPPING_ENDPOINT**              | `/tenant-mapping`               | The endpoint of Tenant Mapping Service                             |
