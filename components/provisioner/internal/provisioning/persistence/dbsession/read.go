@@ -81,7 +81,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 
 	kymaConfig, dberr := r.getKymaConfig(runtimeID, cluster.ActiveKymaConfigId)
 	if dberr != nil {
-		return model.Cluster{}, dberr.Append("Cannot get Kyma config for runtimeID: %s", dberr.Error())
+		return model.Cluster{}, dberr.Append("Cannot get Kyma config for runtimeID: %s", runtimeID)
 	}
 	cluster.KymaConfig = kymaConfig
 
