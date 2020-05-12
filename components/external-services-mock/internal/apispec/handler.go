@@ -26,6 +26,7 @@ func HandleFunc(rw http.ResponseWriter, req *http.Request) {
 	rw.WriteHeader(http.StatusOK)
 	_, err := rw.Write(randSpec())
 	if err != nil {
-		logrus.Fatal(err)
+		rw.WriteHeader(503)
+		logrus.Info(err)
 	}
 }
