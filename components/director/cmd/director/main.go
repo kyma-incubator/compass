@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
+
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -29,9 +31,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
-
 	"github.com/kyma-project/kyma/components/console-backend-service/pkg/executor"
 	"github.com/kyma-project/kyma/components/console-backend-service/pkg/signal"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
@@ -85,6 +88,13 @@ func main() {
 	stopCh := signal.SetupChannel()
 	cfgProvider := createAndRunConfigProvider(stopCh, cfg)
 
+	metricsCollector := metrics.NewCollector()
+	mainRouter := mux.NewRouter()
+
+	log.Infof("Registering metrics endpoint...")
+	prometheus.MustRegister(metricsCollector)
+	mainRouter.Handle("/metrics", promhttp.Handler())
+
 	pairingAdapters, err := getPairingAdaptersMapping(cfg.PairingAdapterSrc)
 	exitOnError(err, "Error while reading Pairing Adapters Configuration")
 	gqlCfg := graphql.Config{
@@ -96,8 +106,6 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-
-	mainRouter := mux.NewRouter()
 
 	log.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone)
