@@ -42,13 +42,13 @@ func (ac *azureProvider) GetClient(config *Config, logger logrus.FieldLogger) (I
 	}
 
 	// create resource group client
-	resourcegroupClient, err := ac.getGroupsClient(config, authorizer)
+	resourceGroupClient, err := ac.getGroupsClient(config, authorizer)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating resource group client")
 	}
 
 	// create azure client
-	return NewAzureClient(nsClient, resourcegroupClient, logger), nil
+	return NewAzureClient(nsClient, resourceGroupClient, logger), nil
 }
 
 // getGroupsClient gets a client for handling of Azure Namespaces

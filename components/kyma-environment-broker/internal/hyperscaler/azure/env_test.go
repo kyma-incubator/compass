@@ -13,7 +13,7 @@ import (
 
 func Test_mapRegion(t *testing.T) {
 	type args struct {
-		hyperscalerType hyperscaler.HyperscalerType
+		hyperscalerType hyperscaler.Type
 		planID          string
 		region          string
 	}
