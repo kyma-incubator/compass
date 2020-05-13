@@ -36,6 +36,7 @@ import (
 	"github.com/gorilla/mux"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -324,6 +325,9 @@ func main() {
 	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
 	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), cfg.DefaultRequestRegion, respWriter)
 	router.Handle("/info/runtimes", runtimesInfoHandler)
+
+	// create metrics endpoint
+	router.Handle("/metrics", promhttp.Handler())
 
 	// create OSB API endpoints
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
