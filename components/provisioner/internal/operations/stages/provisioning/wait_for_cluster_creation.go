@@ -1,4 +1,4 @@
-package stages
+package provisioning
 
 import (
 	"fmt"
@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type WaitForClusterCreationStep struct {
@@ -24,7 +25,7 @@ type WaitForClusterCreationStep struct {
 }
 
 type GardenerClient interface {
-	Get(name string) (gardener_types.Shoot, error)
+	Get(name string, options v1.GetOptions) (*gardener_types.Shoot, error)
 }
 
 func NewWaitForClusterCreationStepStep(gardenerClient GardenerClient, dbsFactory dbsession.Factory, directorClient director.DirectorClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterCreationStep {
@@ -53,7 +54,7 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 		return operations.StageResult{}, errors.New("failed to read GardenerConfig")
 	}
 
-	shoot, err := s.gardenerClient.Get(gardenerConfig.Name)
+	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
 	}
@@ -87,7 +88,7 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 }
 
 func (s *WaitForClusterCreationStep) prepareProvisioningUpdateRuntimeInput(
-	runtimeId, tenant string, shoot gardener_types.Shoot) (*graphql.RuntimeInput, error) {
+	runtimeId, tenant string, shoot *gardener_types.Shoot) (*graphql.RuntimeInput, error) {
 
 	runtime, err := s.directorClient.GetRuntime(runtimeId, tenant)
 	if err != nil {
