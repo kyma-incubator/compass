@@ -176,7 +176,7 @@ func (f *FakeClient) DeleteServiceProvider(id string) error {
 	return nil
 }
 
-func (f *FakeClient) DeleteSecret(payload DeleteSecrets) error {
+func (f *FakeClient) DeleteSecret(payload SecretsRef) error {
 	for _, provider := range f.serviceProviders {
 		if provider.UserForRest != payload.ClientID {
 			continue

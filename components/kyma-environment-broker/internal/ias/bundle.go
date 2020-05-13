@@ -25,7 +25,7 @@ type IASCLient interface {
 	GetCompany() (*Company, error)
 	CreateServiceProvider(string, string) error
 	DeleteServiceProvider(string) error
-	DeleteSecret(DeleteSecrets) error
+	DeleteSecret(SecretsRef) error
 	GenerateServiceProviderSecret(SecretConfiguration) (*ServiceProviderSecret, error)
 	AuthenticationURL(ProviderID) string
 	SetOIDCConfiguration(string, OIDCType) error
@@ -280,7 +280,7 @@ func (b *ServiceProviderBundle) removeSecrets() error {
 		secretsIDs = append(secretsIDs, s.SecretID)
 	}
 
-	deleteSecrets := DeleteSecrets{
+	deleteSecrets := SecretsRef{
 		ClientID:         b.serviceProvider.UserForRest,
 		ClientSecretsIDs: secretsIDs,
 	}

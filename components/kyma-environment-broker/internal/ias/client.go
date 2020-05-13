@@ -136,7 +136,7 @@ func (c *Client) DeleteServiceProvider(spID string) (err error) {
 	return nil
 }
 
-func (c *Client) DeleteSecret(payload DeleteSecrets) (err error) {
+func (c *Client) DeleteSecret(payload SecretsRef) (err error) {
 	request, err := c.jsonRequest(PathDeleteSecret, http.MethodDelete, payload)
 	if err != nil {
 		return errors.Wrapf(err, "while creating json request for path %s", PathDeleteSecret)
@@ -236,20 +236,21 @@ func (c *Client) do(sciReq *Request) (*http.Response, error) {
 		return &http.Response{}, errors.Wrap(err, "while making request")
 	}
 
-	switch {
-	case response.StatusCode == http.StatusOK ||
-		response.StatusCode == http.StatusCreated ||
-		response.StatusCode == http.StatusNoContent:
+	switch response.StatusCode {
+	case http.StatusOK, http.StatusCreated, http.StatusNoContent:
 		return response, nil
-	case sciReq.Delete && response.StatusCode == http.StatusNotFound:
-		return response, nil
-	case response.StatusCode == http.StatusRequestTimeout:
+	case http.StatusNotFound:
+		if sciReq.Delete {
+			return response, nil
+		}
+	case http.StatusRequestTimeout:
 		return response, kebError.NewTemporaryError(c.responseErrorMessage(response))
-	case response.StatusCode >= http.StatusInternalServerError:
-		return response, kebError.NewTemporaryError(c.responseErrorMessage(response))
-	default:
-		return response, errors.Errorf("while sending request to IAS: %s", c.responseErrorMessage(response))
 	}
+
+	if response.StatusCode >= http.StatusInternalServerError {
+		return response, kebError.NewTemporaryError(c.responseErrorMessage(response))
+	}
+	return response, errors.Errorf("while sending request to IAS: %s", c.responseErrorMessage(response))
 }
 
 func (c *Client) closeResponseBody(response *http.Response) error {

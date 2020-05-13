@@ -330,7 +330,7 @@ func TestClient_DeleteSecret(t *testing.T) {
 	}
 
 	// when
-	err := client.DeleteSecret(DeleteSecrets{
+	err := client.DeleteSecret(SecretsRef{
 		ClientID:         userForRest,
 		ClientSecretsIDs: []string{fmt.Sprintf("%s-next", clientID)},
 	})
@@ -540,20 +540,20 @@ func (s *server) deleteSP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) deleteSecrets(w http.ResponseWriter, r *http.Request) {
-	var deleteSecrets DeleteSecrets
-	err := json.NewDecoder(r.Body).Decode(&deleteSecrets)
+	var secretsRef SecretsRef
+	err := json.NewDecoder(r.Body).Decode(&secretsRef)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		s.t.Errorf("test server cannot decode request body: %s", err)
 		return
 	}
 
-	if deleteSecrets.ClientID != userForRest {
+	if secretsRef.ClientID != userForRest {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	for _, sID := range deleteSecrets.ClientSecretsIDs {
+	for _, sID := range secretsRef.ClientSecretsIDs {
 		for index, secret := range s.secrets {
 			if secret.ClientID == sID {
 				s.secrets[index] = s.secrets[len(s.secrets)-1]
@@ -562,8 +562,6 @@ func (s *server) deleteSecrets(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-
-	s.t.Log(deleteSecrets)
 }
 
 func (s *server) getServiceProvider(w http.ResponseWriter, r *http.Request) {

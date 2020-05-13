@@ -119,7 +119,7 @@ type RBARules struct {
 	GroupType string `json:"group_type"`
 }
 
-type DeleteSecrets struct {
+type SecretsRef struct {
 	ClientID         string   `json:"clientId"`
 	ClientSecretsIDs []string `json:"clientSecretsIds"`
 }
