@@ -35,7 +35,7 @@ type Metadata struct {
 
 type SecurityEventData struct {
 	ID     map[string]string `json:"id"`
-	Reason string            `json:"reason"`
+	Reason []ErrorMessage    `json:"reason"`
 }
 
 type Object struct {
