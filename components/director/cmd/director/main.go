@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/metrics"
+	"github.com/dlmiddlecote/sqlstats"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain"
@@ -88,18 +88,20 @@ func main() {
 	stopCh := signal.SetupChannel()
 	cfgProvider := createAndRunConfigProvider(stopCh, cfg)
 
-	metricsCollector := metrics.NewCollector()
+	//metricsCollector := metrics.NewCollector()
+
+	dbStatsCollector := sqlstats.NewStatsCollector("director", transact)
 
 	log.Infof("Starting DB connections metrics collector...")
-	dbConnectionsCollector := executor.NewPeriodic(10*time.Second, func(stopCh <-chan struct{}) {
-		metricsCollector.SetDBConnectionsMetrics(transact.Stats())
-	})
-	dbConnectionsCollector.Run(stopCh)
+	//dbConnectionsCollector := executor.NewPeriodic(10*time.Second, func(stopCh <-chan struct{}) {
+	//	metricsCollector.SetDBConnectionsMetrics(transact.Stats())
+	//})
+	//dbConnectionsCollector.Run(stopCh)
 
 	mainRouter := mux.NewRouter()
 
 	log.Infof("Registering metrics endpoint...")
-	prometheus.MustRegister(metricsCollector)
+	prometheus.MustRegister(dbStatsCollector)
 	mainRouter.Handle("/metrics", promhttp.Handler())
 
 	pairingAdapters, err := getPairingAdaptersMapping(cfg.PairingAdapterSrc)

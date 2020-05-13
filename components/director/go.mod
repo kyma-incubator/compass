@@ -12,6 +12,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f
 	github.com/avast/retry-go v2.4.3+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/dlmiddlecote/sqlstats v1.0.0
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/gogo/protobuf v1.3.1 // indirect
