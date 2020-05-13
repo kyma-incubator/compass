@@ -7,7 +7,7 @@ import (
 
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
+	shootUtil "github.com/kyma-incubator/compass/components/provisioner/internal/gardener/shoot"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
@@ -86,7 +86,7 @@ func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLo
 	}
 
 	log.Infof("Getting Kubeconfig")
-	kubeconfig, err := gardener.FetchKubeconfigForShoot(s.secretsClient, shoot.Name)
+	kubeconfig, err := shootUtil.FetchKubeconfigForShoot(s.secretsClient, shoot.Name)
 	if err != nil {
 		log.Errorf("Error fetching kubeconfig for Shoot: %s", err.Error())
 		return operations.StageResult{}, err

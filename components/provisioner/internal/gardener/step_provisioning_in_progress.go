@@ -6,6 +6,7 @@ import (
 
 	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	shootUtil "github.com/kyma-incubator/compass/components/provisioner/internal/gardener/shoot"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/sirupsen/logrus"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -51,7 +52,7 @@ func (r *ProvisioningOperator) ProceedToInstallation(log *logrus.Entry, shoot ga
 	}
 
 	log.Infof("Getting Kubeconfig")
-	kubeconfig, err := FetchKubeconfigForShoot(r.secretsClient, shoot.Name)
+	kubeconfig, err := shootUtil.FetchKubeconfigForShoot(r.secretsClient, shoot.Name)
 	if err != nil {
 		log.Errorf("Error fetching kubeconfig for Shoot: %s", err.Error())
 		return err

@@ -15,8 +15,8 @@ type WaitForClusterDeletionStep struct {
 	timeLimit          time.Duration
 }
 
-func NewWaitForClusterDeletionStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration) *DeleteClusterStep {
-	return &StartClusterDeletionStep{
+func NewWaitForClusterDeletionStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterDeletionStep {
+	return &WaitForClusterDeletionStep{
 		installationClient: installationClient,
 		nextStep:           nextStep,
 		timeLimit:          timeLimit,
