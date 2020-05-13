@@ -145,9 +145,20 @@ func TestServiceProviderBundle_GenerateSecret(t *testing.T) {
 
 	provider, err := client.GetServiceProvider(FakeGrafanaID)
 	assert.NoError(t, err)
+	assert.Len(t, provider.Secret, 1)
 	assert.Equal(t, FakeClientID, provider.Secret[0].SecretID)
 	assert.Equal(t, "SAP Kyma Runtime Secret", provider.Secret[0].Description)
 	assert.ElementsMatch(t, []string{"ManageApp", "ManageUsers", "OAuth"}, provider.Secret[0].Scopes)
+
+	// when
+	err = bundle.FetchServiceProviderData()
+	assert.NoError(t, err)
+	secret, err = bundle.GenerateSecret()
+
+	// then
+	provider, err = client.GetServiceProvider(FakeGrafanaID)
+	assert.NoError(t, err)
+	assert.Len(t, provider.Secret, 1)
 }
 
 func TestServiceProviderBundle_DeleteServiceProvider(t *testing.T) {

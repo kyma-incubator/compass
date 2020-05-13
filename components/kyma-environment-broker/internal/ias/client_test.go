@@ -19,6 +19,7 @@ const (
 	serviceProviderID = "5e8c5e9e5f25d83ebec7e89e"
 	clientID          = "42"
 	clientSecret      = "floda"
+	userForRest       = "22b13c44-a1ae-41a5-b549-0649c4a5bd25"
 )
 
 func TestClient_GetCompany(t *testing.T) {
@@ -308,6 +309,45 @@ func TestClient_DeleteServiceProvider(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestClient_DeleteSecret(t *testing.T) {
+	// given
+	server := fixHTTPServer(t)
+	defer server.Close()
+
+	client := NewClient(server.Client(), ClientConfig{URL: server.URL, ID: "admin", Secret: "admin123"})
+
+	for i := 0; i < 3; i++ {
+		sc := SecretConfiguration{
+			Organization: companyID,
+			ID:           serviceProviderID,
+			RestAPIClientSecret: RestAPIClientSecret{
+				Description: "test",
+				Scopes:      []string{"OAuth"},
+			},
+		}
+		_, err := client.GenerateServiceProviderSecret(sc)
+		assert.NoError(t, err)
+	}
+
+	// when
+	err := client.DeleteSecret(SecretsRef{
+		ClientID:         userForRest,
+		ClientSecretsIDs: []string{fmt.Sprintf("%s-next", clientID)},
+	})
+
+	// then
+	assert.NoError(t, err)
+
+	response, err := server.Client().Get(fmt.Sprintf("%s/getS", server.URL))
+	assert.NoError(t, err)
+
+	var secrets []ServiceProviderSecret
+	err = json.NewDecoder(response.Body).Decode(&secrets)
+	assert.NoError(t, err)
+
+	assert.Len(t, secrets, 2)
+}
+
 var companies = `{
 	"company_id" : "global",
 	"default_sso_domain" : "https://sandbox.accounts400.ondemand.com/service/idp/5e46ar7cc92eec206b93893b",
@@ -335,6 +375,7 @@ type server struct {
 
 	serviceProvider []byte
 	configuration   []byte
+	secrets         []ServiceProviderSecret
 }
 
 func fixHTTPServer(t *testing.T) *httptest.Server {
@@ -347,8 +388,10 @@ func fixHTTPServer(t *testing.T) *httptest.Server {
 	r.HandleFunc("/service/sps/delete", s.authorized(s.deleteSP)).Methods(http.MethodPut)
 	r.HandleFunc("/service/sps/{spID}", s.authorized(s.configureSP)).Methods(http.MethodPut)
 	r.HandleFunc("/service/sps/{spID}/rba", s.authorized(s.configureSP)).Methods(http.MethodPut)
+	r.HandleFunc("/service/sps/clientSecret", s.authorized(s.deleteSecrets)).Methods(http.MethodDelete)
 
 	r.HandleFunc("/getSP", s.getServiceProvider).Methods(http.MethodGet)
+	r.HandleFunc("/getS", s.getSecrets).Methods(http.MethodGet)
 	r.HandleFunc("/get", s.getConfiguration).Methods(http.MethodGet)
 
 	return httptest.NewServer(r)
@@ -433,7 +476,7 @@ func (s *server) configureSPBody(w http.ResponseWriter, r *http.Request) {
 	err2 := json.Unmarshal(body, &sc)
 	if err != nil || err2 != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		s.t.Errorf("test server cannot decode request body: (%s;%s)", err, err2)
+		s.t.Errorf("test server cannot unmarshal request body: (%s;%s)", err, err2)
 		return
 	}
 
@@ -448,7 +491,7 @@ func (s *server) configureSPBody(w http.ResponseWriter, r *http.Request) {
 	} else if sc.RestAPIClientSecret.Description != "" {
 
 		secret := ServiceProviderSecret{
-			ClientID:     clientID,
+			ClientID:     s.generateSecretID(),
 			ClientSecret: clientSecret,
 		}
 		rawSecret, err := json.Marshal(secret)
@@ -457,6 +500,7 @@ func (s *server) configureSPBody(w http.ResponseWriter, r *http.Request) {
 			s.t.Errorf("test server cannot marshal secret struct: %s", err)
 			return
 		}
+		s.secrets = append(s.secrets, secret)
 
 		w.WriteHeader(http.StatusOK)
 		_, err = w.Write(rawSecret)
@@ -467,6 +511,13 @@ func (s *server) configureSPBody(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+}
+
+func (s *server) generateSecretID() string {
+	if len(s.secrets) == 0 {
+		return clientID
+	}
+	return fmt.Sprintf("%s-next", s.secrets[len(s.secrets)-1].ClientID)
 }
 
 func (s *server) deleteSP(w http.ResponseWriter, r *http.Request) {
@@ -488,6 +539,31 @@ func (s *server) deleteSP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (s *server) deleteSecrets(w http.ResponseWriter, r *http.Request) {
+	var secretsRef SecretsRef
+	err := json.NewDecoder(r.Body).Decode(&secretsRef)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		s.t.Errorf("test server cannot decode request body: %s", err)
+		return
+	}
+
+	if secretsRef.ClientID != userForRest {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	for _, sID := range secretsRef.ClientSecretsIDs {
+		for index, secret := range s.secrets {
+			if secret.ClientID == sID {
+				s.secrets[index] = s.secrets[len(s.secrets)-1]
+				s.secrets[len(s.secrets)-1] = ServiceProviderSecret{}
+				s.secrets = s.secrets[:len(s.secrets)-1]
+			}
+		}
+	}
+}
+
 func (s *server) getServiceProvider(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write(s.serviceProvider)
 	if err != nil {
@@ -500,6 +576,23 @@ func (s *server) getServiceProvider(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) getConfiguration(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write(s.configuration)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		s.t.Errorf("test server cannot write response body: %s", err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *server) getSecrets(w http.ResponseWriter, r *http.Request) {
+	data, err := json.Marshal(s.secrets)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		s.t.Errorf("test server cannot marshal secrets: %s", err)
+		return
+	}
+
+	_, err = w.Write(data)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		s.t.Errorf("test server cannot write response body: %s", err)

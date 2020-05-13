@@ -7,6 +7,7 @@ const (
 	FakeIdentityProviderID   = "0dbae593-ab1d-4774-97c1-5118ea22ea2d"
 	FakeGrafanaName          = "GrafanaName"
 	FakeGrafanaID            = "eebb54dd-e4d5-43a1-929a-e98ea2831342"
+	FakeUserForRest          = "874a7fd7-7f0c-482d-ba44-3563b2622586"
 	FakeDexName              = "DexName"
 	FakeDexID                = "dd70d82e-0a30-4931-9171-3a55a0725512"
 	FakeClientID             = "cid"
@@ -29,6 +30,7 @@ func NewFakeClient() *FakeClient {
 						UserAttribute:      "test",
 					},
 				},
+				UserForRest: FakeUserForRest,
 			},
 			{
 				ID:          FakeDexID,
@@ -39,6 +41,7 @@ func NewFakeClient() *FakeClient {
 						UserAttribute:      "test",
 					},
 				},
+				UserForRest: "2f27c57d-1f05-4c0b-b84a-8fdeeb0de6c0",
 			},
 		},
 	}
@@ -171,6 +174,30 @@ func (f *FakeClient) DeleteServiceProvider(id string) error {
 	}
 
 	return nil
+}
+
+func (f *FakeClient) DeleteSecret(payload SecretsRef) error {
+	for _, provider := range f.serviceProviders {
+		if provider.UserForRest != payload.ClientID {
+			continue
+		}
+		for _, scID := range payload.ClientSecretsIDs {
+			f.removeSecrets(provider, scID)
+		}
+	}
+
+	return nil
+}
+
+func (f *FakeClient) removeSecrets(provider *ServiceProvider, secretID string) {
+	var newSecrets []SPSecret
+	for _, secret := range provider.Secret {
+		if secret.SecretID != secretID {
+			newSecrets = append(newSecrets, secret)
+		}
+	}
+
+	provider.Secret = newSecrets
 }
 
 func (f *FakeClient) GetServiceProvider(id string) (*ServiceProvider, error) {
