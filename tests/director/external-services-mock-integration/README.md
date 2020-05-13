@@ -1,6 +1,10 @@
 #  External Services Mock integration tests
 
-External Services Mock tests check a contract between Compass and external services. Currently, the tests cover the audit log scenario. 
+External Services Mock tests check a contract between Compass and external services. 
+
+The tests cover the following scenarios:
+- Audit log scenario
+- API specification scenario
 
 ## Audit log test scenario
 
