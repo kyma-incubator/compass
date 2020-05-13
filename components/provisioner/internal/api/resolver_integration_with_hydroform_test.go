@@ -29,6 +29,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
+	gardener_apis_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
@@ -249,6 +250,9 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 
 			mockK8sClientProvider := &mocks.K8sClientProvider{}
 			fakeK8sClient := fake.NewSimpleClientset()
+
+			fakeShootClient := gardener_apis_fake.NewSimpleClientset().CoreV1beta1().Shoots(namespace)
+
 			mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
 			runtimeConfigurator := runtime.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
@@ -259,11 +263,14 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			installationQueue := queue.CreateInstallationQueue(testProvisioningTimeouts(), dbSessionFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock)
+			installationQueue := queue.CreateProvisioningQueue(testProvisioningTimeouts(), dbSessionFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock, fakeShootClient)
 			installationQueue.Run(ctx.Done())
 
+			deprovisioningQueue := queue.CreateDeprovisioningQueue(dbSessionFactory, installationServiceMock, directorServiceMock, fakeShootClient)
+			deprovisioningQueue.Run(ctx.Done())
+
 			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock, runtimeConfigurator)
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator, installationQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator, installationQueue, nil, nil)
 			validator := NewValidator(dbSessionFactory.NewReadSession())
 			provisioner := NewResolver(provisioningService, validator)
 

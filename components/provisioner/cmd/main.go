@@ -164,8 +164,18 @@ func main() {
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(k8sClientProvider, directorClient)
 
-	installationQueue := queue.CreateInstallationQueue(cfg.ProvisioningTimeout, dbsFactory, installationService, runtimeConfigurator, provisioningStages.NewCompassConnectionClient, directorClient)
+	provisioningQueue := queue.CreateProvisioningQueue(
+		cfg.ProvisioningTimeout,
+		dbsFactory,
+		installationService,
+		runtimeConfigurator,
+		provisioningStages.NewCompassConnectionClient,
+		directorClient,
+		shootClient)
+
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
+
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationService, directorClient, shootClient)
 
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {
@@ -174,7 +184,7 @@ func main() {
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
 		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
-		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, directorClient, installationService, installationQueue, cfg.Gardener.AuditLogsTenantConfigPath)
+		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, directorClient, installationService, provisioningQueue, cfg.Gardener.AuditLogsTenantConfigPath)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {
 			err := shootController.StartShootController()
@@ -191,7 +201,7 @@ func main() {
 		releaseProvider = release.NewOnDemandWrapper(httpClient, releaseRepository)
 	}
 
-	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseProvider, directorClient, upgradeQueue)
+	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseProvider, directorClient, provisioningQueue, deprovisioningQueue, upgradeQueue)
 	validator := api.NewValidator(dbsFactory.NewReadSession())
 
 	resolver := api.NewResolver(provisioningSVC, validator)
@@ -205,7 +215,10 @@ func main() {
 	go downloader.FetchPeriodically(ctx, release.ShortInterval, release.LongInterval)
 
 	// Run installation queue
-	installationQueue.Run(ctx.Done())
+	provisioningQueue.Run(ctx.Done())
+
+	deprovisioningQueue.Run(ctx.Done())
+
 	// Run upgrade queue
 	upgradeQueue.Run(ctx.Done())
 
@@ -238,14 +251,14 @@ func main() {
 	}()
 
 	if cfg.EnqueueInProgressOperations {
-		err = enqueueOperationsInProgress(dbsFactory, installationQueue, upgradeQueue)
+		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, upgradeQueue)
 		exitOnError(err, "Failed to enqueue in progress operations")
 	}
 
 	wg.Wait()
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue, upgradeQueue queue.OperationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue, deprovisioningQueue, upgradeQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	var inProgressOps []model.Operation
@@ -269,6 +282,10 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue,
 		if op.Type == model.Provision && op.Stage != model.ShootProvisioning {
 			installationQueue.Add(op.ID)
 			continue
+		}
+
+		if op.Type == model.Deprovision {
+			deprovisioningQueue.Add(op.ID)
 		}
 
 		if op.Type == model.Upgrade {

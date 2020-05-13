@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type WaitForClusterCreationStep struct {
@@ -28,7 +28,7 @@ type GardenerClient interface {
 	Get(name string, options v1.GetOptions) (*gardener_types.Shoot, error)
 }
 
-func NewWaitForClusterCreationStepStep(gardenerClient GardenerClient, dbsFactory dbsession.Factory, directorClient director.DirectorClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterCreationStep {
+func NewWaitForClusterCreationStep(gardenerClient GardenerClient, dbsFactory dbsession.Factory, directorClient director.DirectorClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterCreationStep {
 	return &WaitForClusterCreationStep{
 		gardenerClient: gardenerClient,
 		dbsFactory:     dbsFactory,
@@ -50,8 +50,9 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 
 	gardenerConfig, ok := cluster.GardenerConfig()
 	if !ok {
-		// Non recoverable error?
-		return operations.StageResult{}, errors.New("failed to read GardenerConfig")
+		log.Error("Error converting to GardenerConfig")
+		err := errors.New("failed to convert to GardenerConfig")
+		return operations.StageResult{}, operations.NewNonRecoverableError(err)
 	}
 
 	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
@@ -64,10 +65,9 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 		return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
 	}
 
-	log.Infof("Updating Runtime in Director with Gardener labels and the status...")
 	tenant, dberr := s.dbsFactory.NewReadSession().GetTenant(cluster.ID)
 	if dberr != nil {
-		log.Errorf("Error getting Gardener cluster by name: %s", dberr.Error())
+		log.Errorf("Error getting Tenant by cluster ID: %s", dberr.Error())
 		return operations.StageResult{}, dberr
 	}
 

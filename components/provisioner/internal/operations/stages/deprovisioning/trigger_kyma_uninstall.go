@@ -14,7 +14,7 @@ import (
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
-type StartClusterDeletionStep struct {
+type TriggerKymaUninstallStep struct {
 	installationClient installation.Service
 	gardenerClient     GardenerClient
 	secretsClient      v1core.SecretInterface
@@ -22,8 +22,8 @@ type StartClusterDeletionStep struct {
 	timeLimit          time.Duration
 }
 
-func NewStartClusterDeletionStep(installationClient installation.Service, gardenerClient GardenerClient, nextStep model.OperationStage, timeLimit time.Duration) *StartClusterDeletionStep {
-	return &StartClusterDeletionStep{
+func NewTriggerKymaUninstallStep(installationClient installation.Service, gardenerClient GardenerClient, nextStep model.OperationStage, timeLimit time.Duration) *TriggerKymaUninstallStep {
+	return &TriggerKymaUninstallStep{
 		installationClient: installationClient,
 		gardenerClient:     gardenerClient,
 		nextStep:           nextStep,
@@ -31,15 +31,15 @@ func NewStartClusterDeletionStep(installationClient installation.Service, garden
 	}
 }
 
-func (s *StartClusterDeletionStep) Name() model.OperationStage {
+func (s *TriggerKymaUninstallStep) Name() model.OperationStage {
 	return model.StartingInstallation
 }
 
-func (s *StartClusterDeletionStep) TimeLimit() time.Duration {
+func (s *TriggerKymaUninstallStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *StartClusterDeletionStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
+func (s *TriggerKymaUninstallStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
 	logger.Debug("Shoot is on deprovisioning in progress step")
 
@@ -54,7 +54,7 @@ func (s *StartClusterDeletionStep) Run(cluster model.Cluster, _ model.Operation,
 		return operations.StageResult{}, err
 	}
 
-	logger.Infof("Starting Uninstall")
+	logger.Debugf("Starting Uninstall")
 	k8sConfig, err := shootUtil.KubeconfigForShoot(s.secretsClient, shoot.Name)
 	if err != nil {
 		logger.Errorf("error fetching kubeconfig: %s", err.Error())

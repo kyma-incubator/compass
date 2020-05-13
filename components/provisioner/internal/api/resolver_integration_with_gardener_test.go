@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener_apis_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
@@ -170,6 +171,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	mockK8sClientProvider := &mocks.K8sClientProvider{}
 	fakeK8sClient := fake.NewSimpleClientset()
+	fakeShootClient := gardener_apis_fake.NewSimpleClientset().CoreV1beta1().Shoots(namespace)
 	mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
 	runtimeConfigurator := runtimeConfig.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
@@ -183,8 +185,12 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	installationQueue := queue.CreateInstallationQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock)
+	installationQueue := queue.CreateProvisioningQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock, fakeShootClient)
 	installationQueue.Run(queueCtx.Done())
+
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationServiceMock, directorServiceMock, shootInterface)
+	deprovisioningQueue.Run(queueCtx.Done())
+
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
@@ -226,7 +232,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project")
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, upgradeQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, installationQueue, deprovisioningQueue, upgradeQueue)
 
 			validator := NewValidator(dbsFactory.NewReadSession())
 
