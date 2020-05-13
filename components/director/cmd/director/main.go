@@ -89,6 +89,13 @@ func main() {
 	cfgProvider := createAndRunConfigProvider(stopCh, cfg)
 
 	metricsCollector := metrics.NewCollector()
+
+	log.Infof("Starting DB connections metrics collector...")
+	dbConnectionsCollector := executor.NewPeriodic(10*time.Second, func(stopCh <-chan struct{}) {
+		metricsCollector.SetDBConnectionsMetrics(transact.Stats())
+	})
+	dbConnectionsCollector.Run(stopCh)
+
 	mainRouter := mux.NewRouter()
 
 	log.Infof("Registering metrics endpoint...")
