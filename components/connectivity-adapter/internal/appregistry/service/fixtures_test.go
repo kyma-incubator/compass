@@ -353,3 +353,9 @@ func fixServiceDetails() model.ServiceDetails {
 		Description: "Test",
 	}
 }
+
+func fixServiceDetailsWithIdentifier() model.ServiceDetails {
+	serviceDetails := fixServiceDetails()
+	serviceDetails.Identifier = "Test"
+	return serviceDetails
+}

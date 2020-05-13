@@ -28,7 +28,9 @@ func RegisterHandler(router *mux.Router, cfg Config) {
 	converter := service.NewConverter()
 	validator := validation.NewServiceDetailsValidator()
 
-	serviceHandler := service.NewHandler(converter, validator, reqContextProvider, logger)
+	labeler := service.NewAppLabeler()
+
+	serviceHandler := service.NewHandler(converter, validator, reqContextProvider, logger, labeler)
 	appMiddleware := appdetails.NewApplicationMiddleware(gqlCliProvider, logger)
 
 	router.Use(appMiddleware.Middleware)

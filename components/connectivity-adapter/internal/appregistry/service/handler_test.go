@@ -39,7 +39,7 @@ func TestHandler_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		expectedError := "while unmarshalling service: EOF"
 
-		handler := service.NewHandler(nil, nil, nil, logrus.New())
+		handler := service.NewHandler(nil, nil, nil, logrus.New(), nil)
 		handler.Create(w, req)
 
 		resp := w.Result()
@@ -58,7 +58,7 @@ func TestHandler_Create(t *testing.T) {
 		mockValid := automock.Validator{}
 		mockValid.On("Validate", mock.Anything).Return(apperrors.WrongInput("test"))
 
-		handler := service.NewHandler(nil, &mockValid, nil, logrus.New())
+		handler := service.NewHandler(nil, &mockValid, nil, logrus.New(), nil)
 		handler.Create(w, req)
 
 		resp := w.Result()
@@ -81,7 +81,7 @@ func TestHandler_Create(t *testing.T) {
 		mockConverter := automock.Converter{}
 		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.PackageCreateInput{}, testErr)
 
-		handler := service.NewHandler(&mockConverter, &mockValid, nil, logrus.New())
+		handler := service.NewHandler(&mockConverter, &mockValid, nil, logrus.New(), nil)
 		handler.Create(w, req)
 
 		resp := w.Result()
@@ -108,7 +108,7 @@ func TestHandler_Create(t *testing.T) {
 		mockContextProvider := automock.RequestContextProvider{}
 		mockContextProvider.On("ForRequest", mock.Anything).Return(service.RequestContext{AppID: "test"}, testErr)
 
-		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), nil)
 		handler.Create(w, req)
 
 		resp := w.Result()
@@ -140,7 +140,7 @@ func TestHandler_Create(t *testing.T) {
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
-		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), nil)
 		handler.Create(w, req)
 
 		resp := w.Result()
@@ -152,6 +152,176 @@ func TestHandler_Create(t *testing.T) {
 		mockConverter.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
 		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("Error when listing legacy service references", func(t *testing.T) {
+		body, err := json.Marshal(fixServiceDetailsWithIdentifier())
+		require.NoError(t, err)
+		labels := graphql.Labels{
+			"foo": map[string]interface{}{
+				"id":         "foo",
+				"identifier": "foo",
+			},
+		}
+
+		expectedError := "while listing legacy services for Application with ID 'test': test"
+
+		req := httptest.NewRequest(http.MethodPost, target, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+
+		mockValid := automock.Validator{}
+		mockValid.On("Validate", mock.Anything).Return(nil)
+
+		mockConverter := automock.Converter{}
+		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.PackageCreateInput{}, nil)
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", AppLabels: labels, DirectorClient: &mockClient}, nil)
+
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("ListServiceReferences", labels).Return(nil, testErr)
+
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.Create(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
+
+		mockValid.AssertExpectations(t)
+		mockConverter.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockClient.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
+	})
+
+	t.Run("Error when legacy service identifier is not unique", func(t *testing.T) {
+		body, err := json.Marshal(fixServiceDetailsWithIdentifier())
+		require.NoError(t, err)
+		labels := graphql.Labels{
+			"foo": map[string]interface{}{
+				"id":         "foo",
+				"identifier": "foo",
+			},
+		}
+
+		expectedError := "Service with Identifier Test already exists"
+
+		req := httptest.NewRequest(http.MethodPost, target, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+
+		mockValid := automock.Validator{}
+		mockValid.On("Validate", mock.Anything).Return(nil)
+
+		mockConverter := automock.Converter{}
+		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.PackageCreateInput{}, nil)
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", AppLabels: labels, DirectorClient: &mockClient}, nil)
+
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("ListServiceReferences", labels).Return([]service.LegacyServiceReference{
+			{
+				ID:         "test",
+				Identifier: "Test",
+			},
+		}, nil)
+
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.Create(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusConflict)
+
+		mockValid.AssertExpectations(t)
+		mockConverter.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockClient.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
+	})
+
+	t.Run("Error when writing legacy service reference", func(t *testing.T) {
+		body, err := json.Marshal(testServiceDetails)
+		require.NoError(t, err)
+
+		expectedError := "while setting Application label with legacy service metadata: while writing Application label: test"
+
+		req := httptest.NewRequest(http.MethodPost, target, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+
+		mockValid := automock.Validator{}
+		mockValid.On("Validate", mock.Anything).Return(nil)
+
+		mockConverter := automock.Converter{}
+		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.PackageCreateInput{}, nil)
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("CreatePackage", mock.Anything, mock.Anything).Return("test", nil)
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("WriteServiceReference", graphql.Labels(nil), service.LegacyServiceReference{
+			ID:         "test",
+			Identifier: "",
+		}).Return(graphql.LabelInput{}, testErr)
+
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.Create(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
+
+		mockValid.AssertExpectations(t)
+		mockConverter.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockClient.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
+	})
+
+	t.Run("Error when setting Application label", func(t *testing.T) {
+		body, err := json.Marshal(testServiceDetails)
+		require.NoError(t, err)
+
+		expectedError := "while setting Application label with legacy service metadata: while setting Application label: test"
+
+		req := httptest.NewRequest(http.MethodPost, target, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+
+		mockValid := automock.Validator{}
+		mockValid.On("Validate", mock.Anything).Return(nil)
+
+		mockConverter := automock.Converter{}
+		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.PackageCreateInput{}, nil)
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("CreatePackage", mock.Anything, mock.Anything).Return("test", nil)
+		mockClient.On("SetApplicationLabel", "test", graphql.LabelInput{}).Return(testErr)
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("WriteServiceReference", graphql.Labels(nil), service.LegacyServiceReference{
+			ID:         "test",
+			Identifier: "",
+		}).Return(graphql.LabelInput{}, nil)
+
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.Create(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
+
+		mockValid.AssertExpectations(t)
+		mockConverter.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockClient.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -172,10 +342,17 @@ func TestHandler_Create(t *testing.T) {
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
 		mockClient.On("CreatePackage", mock.Anything, mock.Anything).Return("test", nil)
+		mockClient.On("SetApplicationLabel", "test", graphql.LabelInput{}).Return(nil)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
-		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New())
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("WriteServiceReference", graphql.Labels(nil), service.LegacyServiceReference{
+			ID:         "test",
+			Identifier: "",
+		}).Return(graphql.LabelInput{}, nil)
+
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), &mockLabeler)
 		handler.Create(w, req)
 
 		resp := w.Result()
@@ -185,6 +362,60 @@ func TestHandler_Create(t *testing.T) {
 		mockConverter.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
 		mockClient.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
+	})
+
+	t.Run("Success when identifier specified", func(t *testing.T) {
+		body, err := json.Marshal(fixServiceDetailsWithIdentifier())
+		require.NoError(t, err)
+		labels := graphql.Labels{
+			"foo": map[string]interface{}{
+				"id":         "foo",
+				"identifier": "foo",
+			},
+		}
+
+		expectedError := ""
+
+		req := httptest.NewRequest(http.MethodPost, target, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+
+		mockValid := automock.Validator{}
+		mockValid.On("Validate", mock.Anything).Return(nil)
+
+		mockConverter := automock.Converter{}
+		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.PackageCreateInput{}, nil)
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("CreatePackage", mock.Anything, mock.Anything).Return("test", nil)
+		mockClient.On("SetApplicationLabel", "test", mock.Anything).Return(nil)
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", AppLabels: labels, DirectorClient: &mockClient}, nil)
+
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("WriteServiceReference", labels, service.LegacyServiceReference{
+			ID:         "test",
+			Identifier: "Test",
+		}).Return(graphql.LabelInput{}, nil)
+		mockLabeler.On("ListServiceReferences", labels).Return([]service.LegacyServiceReference{
+			{
+				ID:         "foo",
+				Identifier: "foo",
+			},
+		}, nil)
+
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.Create(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusOK)
+
+		mockValid.AssertExpectations(t)
+		mockConverter.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockClient.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
 	})
 
 }
@@ -203,7 +434,7 @@ func TestHandler_Get(t *testing.T) {
 		mockContextProvider := automock.RequestContextProvider{}
 		mockContextProvider.On("ForRequest", mock.Anything).Return(service.RequestContext{AppID: "test"}, testErr)
 
-		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New(), nil)
 		handler.Get(w, req)
 
 		resp := w.Result()
@@ -225,7 +456,7 @@ func TestHandler_Get(t *testing.T) {
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
-		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New(), nil)
 		handler.Get(w, req)
 
 		resp := w.Result()
@@ -250,7 +481,7 @@ func TestHandler_Get(t *testing.T) {
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
-		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New(), nil)
 		handler.Get(w, req)
 
 		resp := w.Result()
@@ -273,9 +504,12 @@ func TestHandler_Get(t *testing.T) {
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
 		mockConverter := automock.Converter{}
-		mockConverter.On("GraphQLToServiceDetails", mock.Anything).Return(model.ServiceDetails{}, testErr)
+		mockConverter.On("GraphQLToServiceDetails", mock.Anything, mock.Anything).Return(model.ServiceDetails{}, testErr)
 
-		handler := service.NewHandler(&mockConverter, nil, &mockContextProvider, logrus.New())
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("ReadServiceReference", graphql.Labels(nil), "").Return(service.LegacyServiceReference{}, nil)
+
+		handler := service.NewHandler(&mockConverter, nil, &mockContextProvider, logrus.New(), &mockLabeler)
 		handler.Get(w, req)
 
 		resp := w.Result()
@@ -284,6 +518,37 @@ func TestHandler_Get(t *testing.T) {
 		mockContextProvider.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
 		mockConverter.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
+	})
+
+	t.Run("Error when reading legacy service reference", func(t *testing.T) {
+
+		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+		expectedError := "while reading legacy service reference for Package with ID '': test"
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
+
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+
+		mockConverter := automock.Converter{}
+
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("ReadServiceReference", graphql.Labels(nil), "").Return(service.LegacyServiceReference{}, testErr)
+
+		handler := service.NewHandler(&mockConverter, nil, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.Get(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
+		mockClient.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockConverter.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -300,9 +565,12 @@ func TestHandler_Get(t *testing.T) {
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
 		mockConverter := automock.Converter{}
-		mockConverter.On("GraphQLToServiceDetails", mock.Anything).Return(model.ServiceDetails{}, nil)
+		mockConverter.On("GraphQLToServiceDetails", mock.Anything, mock.Anything).Return(model.ServiceDetails{}, nil)
 
-		handler := service.NewHandler(&mockConverter, nil, &mockContextProvider, logrus.New())
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("ReadServiceReference", graphql.Labels(nil), "").Return(service.LegacyServiceReference{}, nil)
+
+		handler := service.NewHandler(&mockConverter, nil, &mockContextProvider, logrus.New(), &mockLabeler)
 		handler.Get(w, req)
 
 		resp := w.Result()
@@ -311,6 +579,7 @@ func TestHandler_Get(t *testing.T) {
 		mockContextProvider.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
 		mockConverter.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
 	})
 
 }
@@ -329,7 +598,7 @@ func TestHandler_List(t *testing.T) {
 		mockContextProvider := automock.RequestContextProvider{}
 		mockContextProvider.On("ForRequest", mock.Anything).Return(service.RequestContext{AppID: "test"}, testErr)
 
-		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New(), nil)
 		handler.List(w, req)
 
 		resp := w.Result()
@@ -351,7 +620,7 @@ func TestHandler_List(t *testing.T) {
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
-		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New(), nil)
 		handler.List(w, req)
 
 		resp := w.Result()
@@ -360,6 +629,80 @@ func TestHandler_List(t *testing.T) {
 		mockClient.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
+	})
+
+	t.Run("Error when reading legacy service references", func(t *testing.T) {
+
+		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		expectedError := "while reading legacy service reference for Package with ID 'test': test"
+		packages := []*graphql.PackageExt{{
+			Package: graphql.Package{
+				ID:   "test",
+				Name: "test",
+			},
+		}}
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("ListPackages", mock.Anything, mock.Anything).Return(packages, nil)
+
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+		mockConverter := automock.Converter{}
+
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("ReadServiceReference", graphql.Labels(nil), "test").Return(service.LegacyServiceReference{}, testErr)
+
+		handler := service.NewHandler(&mockConverter, nil, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.List(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
+
+		mockClient.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
+	})
+
+	t.Run("Error when converting service details to service", func(t *testing.T) {
+
+		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		expectedError := "while converting detailed service to service: test"
+		packages := []*graphql.PackageExt{{
+			Package: graphql.Package{
+				ID:   "test",
+				Name: "test",
+			},
+		}}
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("ListPackages", mock.Anything, mock.Anything).Return(packages, nil)
+
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+		mockConverter := automock.Converter{}
+		mockConverter.On("GraphQLToServiceDetails", mock.Anything, mock.Anything).Return(model.ServiceDetails{}, nil)
+		mockConverter.On("ServiceDetailsToService", mock.Anything, mock.Anything).Return(model.Service{}, testErr)
+
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("ReadServiceReference", graphql.Labels(nil), "test").Return(service.LegacyServiceReference{}, nil)
+
+		handler := service.NewHandler(&mockConverter, nil, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.List(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
+
+		mockClient.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
 	})
 
 	t.Run("Error when converting services", func(t *testing.T) {
@@ -382,9 +725,12 @@ func TestHandler_List(t *testing.T) {
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 		mockConverter := automock.Converter{}
-		mockConverter.On("GraphQLToServiceDetails", mock.Anything).Return(model.ServiceDetails{}, testErr)
+		mockConverter.On("GraphQLToServiceDetails", mock.Anything, mock.Anything).Return(model.ServiceDetails{}, testErr)
 
-		handler := service.NewHandler(&mockConverter, nil, &mockContextProvider, logrus.New())
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("ReadServiceReference", graphql.Labels(nil), "test").Return(service.LegacyServiceReference{}, nil)
+
+		handler := service.NewHandler(&mockConverter, nil, &mockContextProvider, logrus.New(), &mockLabeler)
 		handler.List(w, req)
 
 		resp := w.Result()
@@ -393,7 +739,9 @@ func TestHandler_List(t *testing.T) {
 		mockClient.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
 	})
+
 	t.Run("Success", func(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
@@ -406,7 +754,7 @@ func TestHandler_List(t *testing.T) {
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
-		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New(), nil)
 		handler.List(w, req)
 
 		resp := w.Result()
@@ -430,7 +778,7 @@ func TestHandler_Update(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
-		handler := service.NewHandler(nil, nil, nil, logrus.New())
+		handler := service.NewHandler(nil, nil, nil, logrus.New(), nil)
 		handler.Update(w, req)
 
 		resp := w.Result()
@@ -448,7 +796,7 @@ func TestHandler_Update(t *testing.T) {
 		mockValid := automock.Validator{}
 		mockValid.On("Validate", mock.Anything).Return(apperrors.WrongInput("test"))
 
-		handler := service.NewHandler(nil, &mockValid, nil, logrus.New())
+		handler := service.NewHandler(nil, &mockValid, nil, logrus.New(), nil)
 		handler.Update(w, req)
 
 		resp := w.Result()
@@ -470,7 +818,7 @@ func TestHandler_Update(t *testing.T) {
 		mockConverter := automock.Converter{}
 		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.PackageCreateInput{}, testErr)
 
-		handler := service.NewHandler(&mockConverter, &mockValid, nil, logrus.New())
+		handler := service.NewHandler(&mockConverter, &mockValid, nil, logrus.New(), nil)
 		handler.Update(w, req)
 
 		resp := w.Result()
@@ -496,7 +844,7 @@ func TestHandler_Update(t *testing.T) {
 		mockContextProvider := automock.RequestContextProvider{}
 		mockContextProvider.On("ForRequest", mock.Anything).Return(service.RequestContext{AppID: "test"}, testErr)
 
-		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), nil)
 		handler.Update(w, req)
 
 		resp := w.Result()
@@ -526,7 +874,7 @@ func TestHandler_Update(t *testing.T) {
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
-		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), nil)
 		handler.Update(w, req)
 
 		resp := w.Result()
@@ -557,7 +905,7 @@ func TestHandler_Update(t *testing.T) {
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
-		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), nil)
 		handler.Update(w, req)
 
 		resp := w.Result()
@@ -590,7 +938,7 @@ func TestHandler_Update(t *testing.T) {
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
-		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), nil)
 		handler.Update(w, req)
 
 		resp := w.Result()
@@ -599,6 +947,156 @@ func TestHandler_Update(t *testing.T) {
 		mockConverter.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
 		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("Error when getting package", func(t *testing.T) {
+		body, err := json.Marshal(testServiceDetails)
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+		expectedError := "while fetching service: test"
+
+		mockValid := automock.Validator{}
+		mockValid.On("Validate", mock.Anything).Return(nil)
+
+		mockConverter := automock.Converter{}
+		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.PackageCreateInput{}, nil)
+		mockConverter.On("GraphQLCreateInputToUpdateInput", mock.Anything).Return(graphql.PackageUpdateInput{}, nil)
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil).Once()
+		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, testErr).Once()
+		mockClient.On("UpdatePackage", mock.Anything, mock.Anything).Return(nil)
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+
+		mockLabeler := automock.AppLabeler{}
+
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.Update(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
+		mockValid.AssertExpectations(t)
+		mockConverter.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockClient.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
+	})
+
+	t.Run("Error when reading legacy service reference", func(t *testing.T) {
+		body, err := json.Marshal(testServiceDetails)
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+		expectedError := "while reading legacy service reference for Package with ID '': test"
+
+		mockValid := automock.Validator{}
+		mockValid.On("Validate", mock.Anything).Return(nil)
+
+		mockConverter := automock.Converter{}
+		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.PackageCreateInput{}, nil)
+		mockConverter.On("GraphQLCreateInputToUpdateInput", mock.Anything).Return(graphql.PackageUpdateInput{}, nil)
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
+		mockClient.On("UpdatePackage", mock.Anything, mock.Anything).Return(nil)
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("ReadServiceReference", mock.Anything, mock.Anything).Return(service.LegacyServiceReference{}, testErr)
+
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.Update(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
+		mockValid.AssertExpectations(t)
+		mockConverter.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockClient.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
+	})
+
+	t.Run("Error when converting graphql to service details", func(t *testing.T) {
+		body, err := json.Marshal(testServiceDetails)
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+		expectedError := "while converting service: test"
+
+		mockValid := automock.Validator{}
+		mockValid.On("Validate", mock.Anything).Return(nil)
+
+		mockConverter := automock.Converter{}
+		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.PackageCreateInput{}, nil)
+		mockConverter.On("GraphQLCreateInputToUpdateInput", mock.Anything).Return(graphql.PackageUpdateInput{}, nil)
+		mockConverter.On("GraphQLToServiceDetails", mock.Anything, mock.Anything).Return(model.ServiceDetails{}, testErr)
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
+		mockClient.On("UpdatePackage", mock.Anything, mock.Anything).Return(nil)
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("ReadServiceReference", mock.Anything, mock.Anything).Return(service.LegacyServiceReference{}, nil)
+
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.Update(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
+		mockValid.AssertExpectations(t)
+		mockConverter.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockClient.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		body, err := json.Marshal(testServiceDetails)
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+		expectedError := ""
+
+		mockValid := automock.Validator{}
+		mockValid.On("Validate", mock.Anything).Return(nil)
+
+		mockConverter := automock.Converter{}
+		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.PackageCreateInput{}, nil)
+		mockConverter.On("GraphQLCreateInputToUpdateInput", mock.Anything).Return(graphql.PackageUpdateInput{}, nil)
+		mockConverter.On("GraphQLToServiceDetails", mock.Anything, mock.Anything).Return(model.ServiceDetails{}, nil)
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
+		mockClient.On("UpdatePackage", mock.Anything, mock.Anything).Return(nil)
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("ReadServiceReference", mock.Anything, mock.Anything).Return(service.LegacyServiceReference{}, nil)
+
+		handler := service.NewHandler(&mockConverter, &mockValid, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.Update(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusOK)
+		mockValid.AssertExpectations(t)
+		mockConverter.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+		mockClient.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
 	})
 
 }
@@ -619,7 +1117,7 @@ func TestHandler_Delete(t *testing.T) {
 		mockContextProvider := automock.RequestContextProvider{}
 		mockContextProvider.On("ForRequest", mock.Anything).Return(service.RequestContext{AppID: "test"}, testErr)
 
-		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New(), nil)
 		handler.Delete(w, req)
 
 		resp := w.Result()
@@ -641,7 +1139,7 @@ func TestHandler_Delete(t *testing.T) {
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
-		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New(), nil)
 		handler.Delete(w, req)
 
 		resp := w.Result()
@@ -664,13 +1162,68 @@ func TestHandler_Delete(t *testing.T) {
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
-		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New(), nil)
 		handler.Delete(w, req)
 
 		resp := w.Result()
 		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
 		mockContextProvider.AssertExpectations(t)
 		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("Error when deleting legacy service reference", func(t *testing.T) {
+		body, err := json.Marshal(testServiceDetails)
+		require.NoError(t, err)
+		expectedError := "while writing Application label: test"
+
+		req := httptest.NewRequest(http.MethodDelete, target, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("DeletePackage", mock.Anything).Return(nil)
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("DeleteServiceReference", graphql.Labels(nil), "").Return(graphql.LabelInput{}, testErr)
+
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.Delete(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
+		mockContextProvider.AssertExpectations(t)
+		mockClient.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
+	})
+
+	t.Run("Error when setting Application label", func(t *testing.T) {
+		body, err := json.Marshal(testServiceDetails)
+		require.NoError(t, err)
+		expectedError := "while setting Application label: test"
+
+		req := httptest.NewRequest(http.MethodDelete, target, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockClient := automock.DirectorClient{}
+		mockClient.On("DeletePackage", mock.Anything).Return(nil)
+		mockClient.On("SetApplicationLabel", "test", graphql.LabelInput{}).Return(testErr)
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("DeleteServiceReference", graphql.Labels(nil), "").Return(graphql.LabelInput{}, nil)
+
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New(), &mockLabeler)
+		handler.Delete(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusInternalServerError)
+		mockContextProvider.AssertExpectations(t)
+		mockClient.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -682,16 +1235,21 @@ func TestHandler_Delete(t *testing.T) {
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
 		mockClient.On("DeletePackage", mock.Anything).Return(nil)
+		mockClient.On("SetApplicationLabel", "test", graphql.LabelInput{}).Return(nil)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
-		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New())
+		mockLabeler := automock.AppLabeler{}
+		mockLabeler.On("DeleteServiceReference", graphql.Labels(nil), "").Return(graphql.LabelInput{}, nil)
+
+		handler := service.NewHandler(nil, nil, &mockContextProvider, logrus.New(), &mockLabeler)
 		handler.Delete(w, req)
 
 		resp := w.Result()
 		assert.Equal(t, resp.StatusCode, http.StatusNoContent)
 		mockContextProvider.AssertExpectations(t)
 		mockClient.AssertExpectations(t)
+		mockLabeler.AssertExpectations(t)
 	})
 
 }
