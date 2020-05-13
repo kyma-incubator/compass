@@ -1,4 +1,4 @@
-package stages
+package upgrade
 
 import (
 	"testing"
@@ -10,6 +10,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	nextStageName model.OperationStage = "NextStage"
 )
 
 func TestNewUpdateUpgradeStateStep(t *testing.T) {

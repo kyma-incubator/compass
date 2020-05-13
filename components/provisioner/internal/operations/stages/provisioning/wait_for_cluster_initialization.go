@@ -1,4 +1,4 @@
-package stages
+package provisioning
 
 import (
 	"errors"
@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	log "github.com/sirupsen/logrus"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
@@ -48,7 +49,7 @@ func (s *WaitForClusterInitializationStep) Run(cluster model.Cluster, operation 
 		return operations.StageResult{}, operations.NewNonRecoverableError(errors.New("failed to read GardenerConfig"))
 	}
 
-	shoot, err := s.gardenerClient.Get(gardenerConfig.Name)
+	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
 	}
@@ -73,7 +74,7 @@ func (s *WaitForClusterInitializationStep) Run(cluster model.Cluster, operation 
 	return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
 }
 
-func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLogger, shoot gardener_types.Shoot, operationId string) (operations.StageResult, error) {
+func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLogger, shoot *gardener_types.Shoot, operationId string) (operations.StageResult, error) {
 	// Provisioning is finished. Start installation.
 	log.Infof("Shoot provisioning finished.")
 
@@ -120,6 +121,6 @@ func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLo
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }
 
-func isShootFailed(shoot gardener_types.Shoot) bool {
+func isShootFailed(shoot *gardener_types.Shoot) bool {
 	return shoot.Status.LastOperation.State == gardencorev1beta1.LastOperationStateFailed
 }

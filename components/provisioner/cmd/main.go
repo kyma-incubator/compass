@@ -10,7 +10,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages"
+	provisioningStages "github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/provisioning"
 
 	retry "github.com/avast/retry-go"
 
@@ -164,7 +164,7 @@ func main() {
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(k8sClientProvider, directorClient)
 
-	installationQueue := queue.CreateInstallationQueue(cfg.ProvisioningTimeout, dbsFactory, installationService, runtimeConfigurator, stages.NewCompassConnectionClient, directorClient)
+	installationQueue := queue.CreateInstallationQueue(cfg.ProvisioningTimeout, dbsFactory, installationService, runtimeConfigurator, provisioningStages.NewCompassConnectionClient, directorClient)
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
 	var provisioner provisioning.Provisioner
