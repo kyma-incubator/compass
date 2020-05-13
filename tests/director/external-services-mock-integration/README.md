@@ -32,6 +32,6 @@ To run the test locally, set these environment variables:
 | **USER_PASSWORD** |    Dex static user password   |  None |
 | **DEFAULT_TENANT** | Default tenant value |    `3e64ebae-38b5-46a0-b1ed-9ccee153a0ae` |
 | **DOMAIN** | Kyma domain name |    `kyma.local` |
-| **EXTERNAL_SERVICES_MOCK_BASE_URL** | URL to the mocked external services service| None |
+| **EXTERNAL_SERVICES_MOCK_BASE_URL** | URL to External Services Mock | None |
 
 After specyfing the environment variables, run `go test ./... -count=1 -v` inside the `./tests/director/external-services-mock-integration` directory.
