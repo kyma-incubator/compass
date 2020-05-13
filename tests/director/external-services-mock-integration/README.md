@@ -13,13 +13,13 @@ The audit log test performs the following operations:
 2. Get an audit log from the mock service based on the application's name
 3. Compare the audit log with the request for registering the application.
 
-## Mock api spec test scenario
+## API specification scenario
 
-The mock api spec test utilises an endpoint that returns a random API Spec on every call. It performs the following operations:
-1. Register an API Definition with fetch request.
-2. Fetch the API Spec.
-3. Refetch API Spec and check if it is different than the previous one.
-4. Get the API Definition and check if the API Spec is equal to the newer one.
+The API specification test uses the endpoint that returns a random API specification on every call. It performs the following operations:
+1. Register an API Definition with a fetch request.
+2. Fetch the API specification.
+3. Refetch the API specification and check if it is different from the previous one.
+4. Get the API Definition and check if the API specification is equal to the new one.
 
 ## Development
 
