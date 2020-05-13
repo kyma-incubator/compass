@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	log "github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
