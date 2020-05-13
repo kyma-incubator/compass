@@ -72,7 +72,6 @@ func (om *DeprovisionOperationManager) RetryOperationOnce(operation internal.Dep
 func (om *DeprovisionOperationManager) RetryOperation(operation internal.DeprovisioningOperation, errorMessage string, retryInterval time.Duration, maxTime time.Duration, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	since := time.Since(operation.UpdatedAt)
 
-	log.Infof("Retry Operation was triggered with message: %s", errorMessage)
 	log.Infof("Retrying for %s in %s steps, error: %s", maxTime.String(), retryInterval.String(), errorMessage)
 	if since < maxTime {
 		return operation, retryInterval, nil
