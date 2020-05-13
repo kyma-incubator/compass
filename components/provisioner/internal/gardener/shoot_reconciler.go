@@ -91,7 +91,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var shoot gardener_types.Shoot
 	if err := r.client.Get(context.Background(), req.NamespacedName, &shoot); err != nil {
 		if errors.IsNotFound(err) {
-			return r.provisioningOperator.HandleShootDeletion(log, req.NamespacedName)
+			return ctrl.Result{}, nil
 		}
 
 		log.Error(err, "unable to get shoot")
@@ -119,46 +119,48 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	// Get operationId from annotation
-	operationId := getOperationId(shoot)
-	if operationId == "" {
-		err := r.handleShootWithoutOperationId(log, shoot)
-		if err != nil {
-			log.Errorf("Error handling shoot without operation Id: %s", err.Error())
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
-	}
+	//operationId := getOperationId(shoot)
+	//if operationId == "" {
+	//	err := r.handleShootWithoutOperationId(log, shoot)
+	//	if err != nil {
+	//		log.Errorf("Error handling shoot without operation Id: %s", err.Error())
+	//		return ctrl.Result{}, err
+	//	}
+	//	return ctrl.Result{}, nil
+	//}
+	//
+	//// Proceed this path only if there is OperationId on Shoot
+	//log = log.WithField("OperationId", operationId)
+	//
+	//if isBeingDeleted(shoot) {
+	//	// TODO - here we can ensure if last operation for cluster is Deprovision
+	//	log.Infof("Shoot is being deleted")
+	//	return ctrl.Result{}, nil
+	//}
+	//
+	//if shoot.Status.LastOperation == nil {
+	//	log.Warnf("Shoot does not have last operation status")
+	//	return ctrl.Result{}, nil
+	//}
+	//
+	//provisioningStep := getProvisioningState(shoot)
+	//
+	//switch provisioningStep {
+	//case Initial:
+	//	return r.provisioningOperator.ProvisioningInitial(log, shoot, operationId, runtimeId)
+	//case Provisioning:
+	//	return r.provisioningOperator.ProvisioningInProgress(log, shoot, operationId, runtimeId)
+	//case Provisioned:
+	//	log.Debug("Shoot provisioned")
+	//	return ctrl.Result{}, nil
+	//case Deprovisioning:
+	//	return r.provisioningOperator.DeprovisioningInProgress(log, shoot, operationId)
+	//default:
+	//	log.Warnf("Unknown state of Shoot")
+	//	return ctrl.Result{}, nil
+	//}
 
-	// Proceed this path only if there is OperationId on Shoot
-	log = log.WithField("OperationId", operationId)
-
-	if isBeingDeleted(shoot) {
-		// TODO - here we can ensure if last operation for cluster is Deprovision
-		log.Infof("Shoot is being deleted")
-		return ctrl.Result{}, nil
-	}
-
-	if shoot.Status.LastOperation == nil {
-		log.Warnf("Shoot does not have last operation status")
-		return ctrl.Result{}, nil
-	}
-
-	provisioningStep := getProvisioningState(shoot)
-
-	switch provisioningStep {
-	case Initial:
-		return r.provisioningOperator.ProvisioningInitial(log, shoot, operationId, runtimeId)
-	case Provisioning:
-		return r.provisioningOperator.ProvisioningInProgress(log, shoot, operationId, runtimeId)
-	case Provisioned:
-		log.Debug("Shoot provisioned")
-		return ctrl.Result{}, nil
-	case Deprovisioning:
-		return r.provisioningOperator.DeprovisioningInProgress(log, shoot, operationId)
-	default:
-		log.Warnf("Unknown state of Shoot")
-		return ctrl.Result{}, nil
-	}
+	return ctrl.Result{}, nil
 }
 
 func (r *Reconciler) handleShootWithoutOperationId(log *logrus.Entry, shoot gardener_types.Shoot) error {

@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	log "github.com/sirupsen/logrus"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
@@ -46,22 +46,25 @@ func (s *WaitForClusterInitializationStep) Run(cluster model.Cluster, operation 
 
 	gardenerConfig, ok := cluster.GardenerConfig()
 	if !ok {
-		return operations.StageResult{}, operations.NewNonRecoverableError(errors.New("failed to read GardenerConfig"))
+		log.Error("Error converting to GardenerConfig")
+		err := errors.New("failed to convert to GardenerConfig")
+		return operations.StageResult{}, operations.NewNonRecoverableError(err)
 	}
 
 	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
+		log.Errorf("Error getting Gardener cluster by name: %s", err.Error())
 		return operations.StageResult{}, err
 	}
 
 	lastOperation := shoot.Status.LastOperation
 
 	if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
-		return s.proceedToInstallation(logger, shoot, operation.ID)
+		return s.proceedToInstallation(logger, cluster, shoot, operation.ID)
 	}
 
 	if isShootFailed(shoot) {
-		log.Infof("Provisioning failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
+		log.Warningf("Provisioning failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
 
 		err := errors.New(fmt.Sprintf("cluster provisioning failed. Last Shoot state: %s, Shoot description: %s", lastOperation.State, lastOperation.Description))
 
@@ -74,17 +77,9 @@ func (s *WaitForClusterInitializationStep) Run(cluster model.Cluster, operation 
 	return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
 }
 
-func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLogger, shoot *gardener_types.Shoot, operationId string) (operations.StageResult, error) {
-	// Provisioning is finished. Start installation.
-	log.Infof("Shoot provisioning finished.")
+func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLogger, cluster model.Cluster, shoot *gardener_types.Shoot, operationId string) (operations.StageResult, error) {
 
 	session := s.dbsFactory.NewReadWriteSession()
-
-	log.Infof("Getting cluster from DB")
-	cluster, dberr := session.GetGardenerClusterByName(shoot.Name)
-	if dberr != nil {
-		return operations.StageResult{}, fmt.Errorf("error getting Gardener cluster by name: %s", dberr.Error())
-	}
 
 	log.Infof("Getting Kubeconfig")
 	kubeconfig, err := shootUtil.FetchKubeconfigForShoot(s.secretsClient, shoot.Name)
@@ -93,18 +88,18 @@ func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLo
 		return operations.StageResult{}, err
 	}
 
-	dberr = session.UpdateCluster(cluster.ID, string(kubeconfig), nil)
+	dberr := session.UpdateCluster(cluster.ID, string(kubeconfig), nil)
 	if dberr != nil {
 		log.Errorf("Error saving kubeconfig in database: %s", dberr.Error())
 		return operations.StageResult{}, dberr
 	}
 
-	// Set Operation stage to Starting Installation so that is properly handled by the queue
-	dberr = session.TransitionOperation(operationId, "Starting installation", model.StartingInstallation, time.Now())
-	if dberr != nil {
-		log.Errorf("Error transitioning operation stage: %s", dberr.Error())
-		return operations.StageResult{}, dberr
-	}
+	//// Set Operation stage to Starting Installation so that is properly handled by the queue
+	//dberr = session.TransitionOperation(operationId, "Starting installation", model.StartingInstallation, time.Now())
+	//if dberr != nil {
+	//	log.Errorf("Error transitioning operation stage: %s", dberr.Error())
+	//	return operations.StageResult{}, dberr
+	//}
 
 	//log.Infof("Adding operation to installation queue")
 	//r.installationQueue.Add(operationId)

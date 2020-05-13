@@ -47,7 +47,9 @@ type service struct {
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
 
-	upgradeQueue queue.OperationQueue
+	provisioningQueue   queue.OperationQueue
+	deprovisioningQueue queue.OperationQueue
+	upgradeQueue        queue.OperationQueue
 }
 
 func NewProvisioningService(
@@ -57,16 +59,20 @@ func NewProvisioningService(
 	factory dbsession.Factory,
 	provisioner Provisioner,
 	generator uuid.UUIDGenerator,
+	provisioningQueue queue.OperationQueue,
+	deprovisioningQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue,
 ) Service {
 	return &service{
-		inputConverter:   inputConverter,
-		graphQLConverter: graphQLConverter,
-		directorService:  directorService,
-		dbSessionFactory: factory,
-		provisioner:      provisioner,
-		uuidGenerator:    generator,
-		upgradeQueue:     upgradeQueue,
+		inputConverter:      inputConverter,
+		graphQLConverter:    graphQLConverter,
+		directorService:     directorService,
+		dbSessionFactory:    factory,
+		provisioner:         provisioner,
+		uuidGenerator:       generator,
+		provisioningQueue:   provisioningQueue,
+		deprovisioningQueue: deprovisioningQueue,
+		upgradeQueue:        upgradeQueue,
 	}
 }
 
@@ -109,6 +115,8 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 		return nil, fmt.Errorf("Failed to commit transaction: %s", err.Error())
 	}
 
+	r.provisioningQueue.Add(operation.ID)
+
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
@@ -142,6 +150,8 @@ func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {
 	if dberr != nil {
 		return "", fmt.Errorf("Failed to insert operation to database: %s", dberr.Error())
 	}
+
+	r.deprovisioningQueue.Add(operation.ID)
 
 	return operation.ID, nil
 }

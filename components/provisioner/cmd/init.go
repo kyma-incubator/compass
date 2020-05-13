@@ -44,13 +44,15 @@ func newProvisioningService(
 	dbsFactory dbsession.Factory,
 	releaseRepo release.Provider,
 	directorService director.DirectorClient,
+	provisioningQueue queue.OperationQueue,
+	deprovisioningQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue) provisioning.Service {
 	uuidGenerator := uuid.NewUUIDGenerator()
 
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo, gardenerProject)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
-	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, upgradeQueue)
+	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue)
 }
 
 func newDirectorClient(config config) (director.DirectorClient, error) {

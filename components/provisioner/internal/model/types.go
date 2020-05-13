@@ -24,11 +24,16 @@ const (
 type OperationStage string
 
 const (
-	ShootProvisioning      OperationStage = "ShootProvisioning"
-	StartingInstallation   OperationStage = "StartingInstallation"
-	WaitingForInstallation OperationStage = "WaitingForInstallation"
-	ConnectRuntimeAgent    OperationStage = "ConnectRuntimeAgent"
-	WaitForAgentToConnect  OperationStage = "WaitForAgentToConnect"
+	ShootProvisioning               OperationStage = "ShootProvisioning"
+	WaitingForClusterCreation       OperationStage = "WaitingForClusterCreation"
+	WaitingForClusterInitialization OperationStage = "WaitingForClusterInitialization"
+	StartingInstallation            OperationStage = "StartingInstallation"
+	WaitingForInstallation          OperationStage = "WaitingForInstallation"
+	ConnectRuntimeAgent             OperationStage = "ConnectRuntimeAgent"
+	WaitForAgentToConnect           OperationStage = "WaitForAgentToConnect"
+
+	DeprovisionCluster     OperationStage = "DeprovisionCluster"
+	WaitForClusterDeletion OperationStage = "WaitForClusterDeletion"
 
 	StartingUpgrade      OperationStage = "StartingUpgrade"
 	UpdatingUpgradeState OperationStage = "UpdatingUpgradeState"
