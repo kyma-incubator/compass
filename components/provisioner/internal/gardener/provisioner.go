@@ -18,6 +18,7 @@ import (
 
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
+	shootUtil "github.com/kyma-incubator/compass/components/provisioner/internal/gardener/shoot"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 )
@@ -108,8 +109,8 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	// TODO: consider adding some annotation and uninstall before deleting shoot
 	annotate(shoot, provisioningAnnotation, Deprovisioning.String())
 	annotate(shoot, operationIdAnnotation, operationId)
-	AnnotateWithConfirmDeletion(shoot)
-	err = UpdateAndDeleteShoot(g.shootClient, shoot)
+	shootUtil.AnnotateWithConfirmDeletion(shoot)
+	err = shootUtil.UpdateAndDeleteShoot(g.shootClient, shoot)
 	if err != nil {
 		return model.Operation{}, fmt.Errorf("error scheduling shoot %s for deletion: %s", shoot.Name, err.Error())
 	}

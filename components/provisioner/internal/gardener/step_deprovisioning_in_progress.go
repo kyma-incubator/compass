@@ -2,6 +2,7 @@ package gardener
 
 import (
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	shootUtil "github.com/kyma-incubator/compass/components/provisioner/internal/gardener/shoot"
 	"github.com/sirupsen/logrus"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -14,7 +15,7 @@ func (r *ProvisioningOperator) DeprovisioningInProgress(log *logrus.Entry, shoot
 	}
 
 	log.Infof("Starting Uninstall")
-	k8sConfig, err := KubeconfigForShoot(r.secretsClient, shoot.Name)
+	k8sConfig, err := shootUtil.KubeconfigForShoot(r.secretsClient, shoot.Name)
 	if err != nil {
 		log.Errorf("error fetching kubeconfig: %s", err.Error())
 		return ctrl.Result{}, err

@@ -15,7 +15,7 @@ type StartClusterDeletionStep struct {
 	timeLimit          time.Duration
 }
 
-func NewStartClusterDeletionStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration) *DeleteClusterStep {
+func NewStartClusterDeletionStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration) *StartClusterDeletionStep {
 	return &StartClusterDeletionStep{
 		installationClient: installationClient,
 		nextStep:           nextStep,
