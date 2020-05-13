@@ -61,6 +61,7 @@ func (om *ProvisionOperationManager) RetryOperationOnce(operation internal.Provi
 func (om *ProvisionOperationManager) RetryOperation(operation internal.ProvisioningOperation, errorMessage string, retryInterval time.Duration, maxTime time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	since := time.Since(operation.UpdatedAt)
 
+	log.Infof("Retry Operation was triggered with message: %s", errorMessage)
 	log.Infof("Retrying for %s in %s steps", maxTime.String(), retryInterval.String())
 	if since < maxTime {
 		return operation, retryInterval, nil
