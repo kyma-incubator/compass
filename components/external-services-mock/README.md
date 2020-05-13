@@ -6,7 +6,7 @@ External Services Mock is a component that mocks external APIs for test purposes
 
 External Services Mock contains the following mocks:
 * Audit log service
-* API Spec service
+* API specification service
 
 ## Configuration
 
