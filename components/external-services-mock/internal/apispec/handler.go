@@ -5,7 +5,9 @@ import (
 	"math/rand"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 )
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -26,7 +28,6 @@ func HandleFunc(rw http.ResponseWriter, req *http.Request) {
 	rw.WriteHeader(http.StatusOK)
 	_, err := rw.Write(randSpec())
 	if err != nil {
-		rw.WriteHeader(503)
-		logrus.Info(err)
+		httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
 	}
 }
