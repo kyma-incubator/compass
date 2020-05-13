@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/apispec"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/configurationchange"
@@ -61,6 +63,8 @@ func initHTTP(cfg config) http.Handler {
 	configurationchange.InitConfigurationChangeHandler(configChangeRouter, configChangeHandler)
 
 	router.HandleFunc("/audit-log/v2/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
+
+	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	return router
 }
 

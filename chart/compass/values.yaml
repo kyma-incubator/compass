@@ -47,14 +47,14 @@ global:
       version: "PR-1332"
     external_services_mock:
       dir:
-      version: "PR-1270"
+      version: "PR-1315"
     metris:
       dir:
       version: "PR-1270"
     tests:
       director:
         dir:
-        version: "PR-1256"
+        version: "PR-1315"
       connector:
         dir:
         version: "PR-1270"

@@ -48,10 +48,10 @@ func TestAuditlogIntegration(t *testing.T) {
 	defer unregisterApplicationInTenant(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
 
 	t.Log("Get auditlog service token")
-	auditlogToken := getAuditlogMockToken(t, &httpClient, testConfig.AuditlogMockBaseURL)
+	auditlogToken := getAuditlogMockToken(t, &httpClient, testConfig.ExternalServicesMockBaseURL)
 
 	t.Log("Get auditlog from external services mock")
-	auditlogs := searchForAuditlogByString(t, &httpClient, testConfig.AuditlogMockBaseURL, auditlogToken, appName)
+	auditlogs := searchForAuditlogByString(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, appName)
 
 	t.Log("Compare request to director with auditlog")
 	requestBody := prepareRegisterAppRequestBody(t, registerRequest)
