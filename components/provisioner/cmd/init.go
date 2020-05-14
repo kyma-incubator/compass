@@ -72,13 +72,6 @@ func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient
 	dbsFactory dbsession.Factory, directorClient director.DirectorClient, installationSvc installation.Service,
 	queue queue.OperationQueue, auditLogTenantConfigPath string) (*gardener.ShootController, error) {
 
-	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
-	if err != nil {
-		return nil, err
-	}
-
-	secretsInterface := gardenerClusterClient.CoreV1().Secrets(gardenerNamespace)
-
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
 	syncPeriod := defaultSyncPeriod
@@ -88,7 +81,7 @@ func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient
 		return nil, fmt.Errorf("unable to create shoot controller manager: %w", err)
 	}
 
-	return gardener.NewShootController(mgr, shootClient, secretsInterface, dbsFactory, directorClient, installationSvc, queue,
+	return gardener.NewShootController(mgr, shootClient, dbsFactory, directorClient, installationSvc, queue,
 		auditLogTenantConfigPath)
 }
 

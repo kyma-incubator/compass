@@ -22,17 +22,18 @@ type TriggerKymaUninstallStep struct {
 	timeLimit          time.Duration
 }
 
-func NewTriggerKymaUninstallStep(installationClient installation.Service, gardenerClient GardenerClient, nextStep model.OperationStage, timeLimit time.Duration) *TriggerKymaUninstallStep {
+func NewTriggerKymaUninstallStep(installationClient installation.Service, gardenerClient GardenerClient, secretsClient v1core.SecretInterface, nextStep model.OperationStage, timeLimit time.Duration) *TriggerKymaUninstallStep {
 	return &TriggerKymaUninstallStep{
 		installationClient: installationClient,
 		gardenerClient:     gardenerClient,
+		secretsClient:      secretsClient,
 		nextStep:           nextStep,
 		timeLimit:          timeLimit,
 	}
 }
 
 func (s *TriggerKymaUninstallStep) Name() model.OperationStage {
-	return model.StartingInstallation
+	return model.TriggerKymaUninstall
 }
 
 func (s *TriggerKymaUninstallStep) TimeLimit() time.Duration {
@@ -67,5 +68,5 @@ func (s *TriggerKymaUninstallStep) Run(cluster model.Cluster, _ model.Operation,
 		return operations.StageResult{}, err
 	}
 
-	return operations.StageResult{Stage: s.nextStep, Delay: 30 * time.Second}, nil
+	return operations.StageResult{Stage: s.nextStep, Delay: 5 * time.Second}, nil
 }

@@ -39,7 +39,7 @@ func NewWaitForClusterCreationStep(gardenerClient GardenerClient, dbsFactory dbs
 }
 
 func (s *WaitForClusterCreationStep) Name() model.OperationStage {
-	return model.StartingInstallation
+	return model.WaitingForClusterCreation
 }
 
 func (s *WaitForClusterCreationStep) TimeLimit() time.Duration {
@@ -57,12 +57,13 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 
 	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
+		log.Errorf("Error getting Gardener Shoot: %s", err.Error())
 		return operations.StageResult{}, err
 	}
 
 	if shoot.Spec.DNS == nil || shoot.Spec.DNS.Domain == nil {
 		log.Warnf("DNS Domain is not set yet for runtime ID: %s", cluster.ID)
-		return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
+		return operations.StageResult{Stage: s.Name(), Delay: 5 * time.Second}, nil
 	}
 
 	tenant, dberr := s.dbsFactory.NewReadSession().GetTenant(cluster.ID)
@@ -84,7 +85,7 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 		return operations.StageResult{}, err
 	}
 
-	return operations.StageResult{Stage: s.nextStep, Delay: 30 * time.Second}, nil
+	return operations.StageResult{Stage: s.nextStep, Delay: 5 * time.Second}, nil
 }
 
 func (s *WaitForClusterCreationStep) prepareProvisioningUpdateRuntimeInput(

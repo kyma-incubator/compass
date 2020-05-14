@@ -72,7 +72,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		dbSession.On("GetOperation", operationId).Return(operation, nil)
 		dbSession.On("GetCluster", clusterId).Return(cluster, nil)
 
-		mockStage := NewErrorStep(model.ShootProvisioning, fmt.Errorf("error"), time.Second*10)
+		mockStage := NewErrorStep(model.WaitingForClusterInitialization, fmt.Errorf("error"), time.Second*10)
 
 		installationStages := map[model.OperationStage]Step{
 			model.WaitingForInstallation: mockStage,
@@ -98,7 +98,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		dbSession.On("UpdateOperationState", operationId, "error", model.Failed, mock.AnythingOfType("time.Time")).
 			Return(nil)
 
-		mockStage := NewErrorStep(model.ShootProvisioning, NewNonRecoverableError(fmt.Errorf("error")), 10*time.Second)
+		mockStage := NewErrorStep(model.WaitingForClusterInitialization, NewNonRecoverableError(fmt.Errorf("error")), 10*time.Second)
 
 		installationStages := map[model.OperationStage]Step{
 			model.WaitingForInstallation: mockStage,
@@ -128,7 +128,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		dbSession.On("UpdateOperationState", operationId, "error", model.Failed, mock.AnythingOfType("time.Time")).
 			Return(nil)
 
-		mockStage := NewErrorStep(model.ShootProvisioning, NewNonRecoverableError(fmt.Errorf("error")), 10*time.Second)
+		mockStage := NewErrorStep(model.WaitingForClusterInitialization, NewNonRecoverableError(fmt.Errorf("error")), 10*time.Second)
 
 		installationStages := map[model.OperationStage]Step{
 			model.WaitingForInstallation: mockStage,

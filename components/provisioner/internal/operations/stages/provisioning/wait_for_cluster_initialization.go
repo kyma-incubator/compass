@@ -24,10 +24,11 @@ type WaitForClusterInitializationStep struct {
 	timeLimit      time.Duration
 }
 
-func NewWaitForClusterInitializationStep(gardenerClient GardenerClient, dbsFactory dbsession.Factory, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterInitializationStep {
+func NewWaitForClusterInitializationStep(gardenerClient GardenerClient, dbsFactory dbsession.Factory, secretsClient v1core.SecretInterface, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterInitializationStep {
 	return &WaitForClusterInitializationStep{
 		gardenerClient: gardenerClient,
 		dbsFactory:     dbsFactory,
+		secretsClient:  secretsClient,
 
 		nextStep:  nextStep,
 		timeLimit: timeLimit,
@@ -35,7 +36,7 @@ func NewWaitForClusterInitializationStep(gardenerClient GardenerClient, dbsFacto
 }
 
 func (s *WaitForClusterInitializationStep) Name() model.OperationStage {
-	return model.StartingInstallation
+	return model.WaitingForClusterInitialization
 }
 
 func (s *WaitForClusterInitializationStep) TimeLimit() time.Duration {
@@ -53,7 +54,7 @@ func (s *WaitForClusterInitializationStep) Run(cluster model.Cluster, operation 
 
 	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
-		log.Errorf("Error getting Gardener cluster by name: %s", err.Error())
+		log.Errorf("Error getting Gardener Shoot: %s", err.Error())
 		return operations.StageResult{}, err
 	}
 
@@ -81,7 +82,7 @@ func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLo
 
 	session := s.dbsFactory.NewReadWriteSession()
 
-	log.Infof("Getting Kubeconfig")
+	log.Debugf("Getting Kubeconfig")
 	kubeconfig, err := shootUtil.FetchKubeconfigForShoot(s.secretsClient, shoot.Name)
 	if err != nil {
 		log.Errorf("Error fetching kubeconfig for Shoot: %s", err.Error())

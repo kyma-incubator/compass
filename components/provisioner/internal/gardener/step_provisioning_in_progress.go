@@ -1,13 +1,8 @@
 package gardener
 
 import (
-	"fmt"
-	"time"
-
 	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	shootUtil "github.com/kyma-incubator/compass/components/provisioner/internal/gardener/shoot"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/sirupsen/logrus"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -41,47 +36,47 @@ func (r *ProvisioningOperator) ProvisioningInProgress(log *logrus.Entry, shoot g
 
 func (r *ProvisioningOperator) ProceedToInstallation(log *logrus.Entry, shoot gardener_types.Shoot, operationId string) error {
 	// Provisioning is finished. Start installation.
-	log.Infof("Shoot provisioning finished.")
-
-	session := r.dbsFactory.NewReadWriteSession()
-
-	log.Infof("Getting cluster from DB")
-	cluster, dberr := session.GetGardenerClusterByName(shoot.Name)
-	if dberr != nil {
-		return fmt.Errorf("error getting Gardener cluster by name: %s", dberr.Error())
-	}
-
-	log.Infof("Getting Kubeconfig")
-	kubeconfig, err := shootUtil.FetchKubeconfigForShoot(r.secretsClient, shoot.Name)
-	if err != nil {
-		log.Errorf("Error fetching kubeconfig for Shoot: %s", err.Error())
-		return err
-	}
-
-	dberr = session.UpdateCluster(cluster.ID, string(kubeconfig), nil)
-	if dberr != nil {
-		log.Errorf("Error saving kubeconfig in database: %s", dberr.Error())
-		return dberr
-	}
-
-	// Set Operation stage to Starting Installation so that is properly handled by the queue
-	dberr = session.TransitionOperation(operationId, "Starting installation", model.StartingInstallation, time.Now())
-	if dberr != nil {
-		log.Errorf("Error transitioning operation stage: %s", dberr.Error())
-		return dberr
-	}
-
-	log.Infof("Adding operation to installation queue")
-	r.installationQueue.Add(operationId)
-
-	log.Infof("Updating Shoot...")
-	err = r.updateShoot(shoot, func(shootToUpdate *gardener_types.Shoot) {
-		annotate(shootToUpdate, provisioningAnnotation, Provisioned.String())
-	})
-	if err != nil {
-		log.Errorf("Error updating Shoot with retries: %s", err.Error())
-		return err
-	}
+	//log.Infof("Shoot provisioning finished.")
+	//
+	//session := r.dbsFactory.NewReadWriteSession()
+	//
+	//log.Infof("Getting cluster from DB")
+	//cluster, dberr := session.GetGardenerClusterByName(shoot.Name)
+	//if dberr != nil {
+	//	return fmt.Errorf("error getting Gardener cluster by name: %s", dberr.Error())
+	//}
+	//
+	//log.Infof("Getting Kubeconfig")
+	//kubeconfig, err := shootUtil.FetchKubeconfigForShoot(r.secretsClient, shoot.Name)
+	//if err != nil {
+	//	log.Errorf("Error fetching kubeconfig for Shoot: %s", err.Error())
+	//	return err
+	//}
+	//
+	//dberr = session.UpdateCluster(cluster.ID, string(kubeconfig), nil)
+	//if dberr != nil {
+	//	log.Errorf("Error saving kubeconfig in database: %s", dberr.Error())
+	//	return dberr
+	//}
+	//
+	//// Set Operation stage to Starting Installation so that is properly handled by the queue
+	//dberr = session.TransitionOperation(operationId, "Starting installation", model.StartingInstallation, time.Now())
+	//if dberr != nil {
+	//	log.Errorf("Error transitioning operation stage: %s", dberr.Error())
+	//	return dberr
+	//}
+	//
+	//log.Infof("Adding operation to installation queue")
+	//r.installationQueue.Add(operationId)
+	//
+	//log.Infof("Updating Shoot...")
+	//err = r.updateShoot(shoot, func(shootToUpdate *gardener_types.Shoot) {
+	//	annotate(shootToUpdate, provisioningAnnotation, Provisioned.String())
+	//})
+	//if err != nil {
+	//	log.Errorf("Error updating Shoot with retries: %s", err.Error())
+	//	return err
+	//}
 
 	return nil
 }
