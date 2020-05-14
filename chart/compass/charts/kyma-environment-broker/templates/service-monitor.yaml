@@ -3,12 +3,11 @@ kind: ServiceMonitor
 metadata:
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
-  name: compass-kyma-environment-broker-pm
+  name: {{ include "kyma-env-broker.fullname" . }}
   namespace: compass-system
 spec:
   endpoints:
    - port: http
-     interval: "30s"
   namespaceSelector:
     matchNames:
     - compass-system
