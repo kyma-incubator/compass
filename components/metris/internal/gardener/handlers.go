@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	gcorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/kyma-incubator/compass/components/metris/internal/metrics"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -82,7 +83,7 @@ func (c *Controller) shootDeleteHandlerFunc(obj interface{}) {
 func (c *Controller) shootAddHandlerFunc(obj interface{}) {
 	shoot, ok := obj.(*gcorev1beta1.Shoot)
 	if !ok {
-		c.logger.Errorf("error getting shoot object from cache")
+		c.logger.Errorf("error decoding shoot object")
 		return
 	}
 
@@ -93,25 +94,35 @@ func (c *Controller) shootAddHandlerFunc(obj interface{}) {
 
 	if strings.EqualFold(c.providertype, pname) {
 		if shoot.Status.TechnicalID == "" {
-			c.logger.Warnf("could not find technical id in Shoot '%s', skipping", shoot.Name)
+			c.logger.Warnf("could not find technical id in shoot '%s', retrying later", shoot.Name)
+			c.shootQueue[shoot.Name] = true
+
+			metrics.ClusterSyncFailureVec.WithLabelValues("no_technicalid").Inc()
+
 			return
 		}
 
 		accountid, ok := shoot.GetLabels()[labelAccountID]
 		if !ok || accountid == "" {
 			c.logger.Warnf("could not find label '%s' in Shoot '%s', skipping", labelAccountID, shoot.Name)
+			metrics.ClusterSyncFailureVec.WithLabelValues("no_accountid").Inc()
+
 			return
 		}
 
 		subaccountid, ok := shoot.GetLabels()[labelSubAccountID]
 		if !ok || subaccountid == "" {
 			c.logger.Warnf("could not find label '%s' in Shoot '%s', skipping", labelSubAccountID, shoot.Name)
+			metrics.ClusterSyncFailureVec.WithLabelValues("no_subaccountid").Inc()
+
 			return
 		}
 
 		secret, err := c.kclientset.CoreV1().Secrets(shoot.Namespace).Get(shoot.Spec.SecretBindingName, metav1.GetOptions{})
 		if err != nil {
 			c.logger.Errorf("error getting shoot secret: %s", err)
+			metrics.ClusterSyncFailureVec.WithLabelValues("no_secret").Inc()
+
 			return
 		}
 
@@ -123,7 +134,10 @@ func (c *Controller) shootAddHandlerFunc(obj interface{}) {
 		shootName := fmt.Sprintf("%s--%s", shoot.Namespace, shoot.Name)
 		shootTechnicalID := shoot.Status.TechnicalID
 
-		c.logger.With("account", shootTechnicalID).Debug("sending account to provider")
+		c.logger.With("account", accountid).
+			With("subaccount", subaccountid).
+			With("shoot", shootTechnicalID).Info("New cluster found")
+
 		c.accountsChan <- &Account{
 			Name:           shootName,
 			ProviderType:   c.providertype,
@@ -135,4 +149,24 @@ func (c *Controller) shootAddHandlerFunc(obj interface{}) {
 			CredentialData: secret.Data,
 		}
 	}
+}
+
+func (c *Controller) shootUpdateFunc(oldObj, newObj interface{}) {
+	newShoot, ok := newObj.(*gcorev1beta1.Shoot)
+	if !ok {
+		c.logger.Error("error decoding shoot, invalid type")
+		return
+	}
+
+	if _, ok := c.shootQueue[newShoot.Name]; !ok {
+		// shoot was not queued, ignoring update
+		return
+	}
+
+	// removing shoot from queue
+	delete(c.shootQueue, newShoot.Name)
+
+	c.logger.Warnf("shoot '%s' was queued, retrying it", newShoot.Name)
+
+	c.shootAddHandlerFunc(newShoot)
 }

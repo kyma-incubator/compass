@@ -11,6 +11,15 @@ const (
 )
 
 var (
+	ClusterSyncFailureVec = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: metricsNamespace,
+			Name:      "cluster_sync_failure_total",
+			Help:      "Total number of failed cluster syncs.",
+		},
+		[]string{"reason"},
+	)
+
 	StoredAccounts = prometheus.NewGauge(
 		prometheus.GaugeOpts{
 			Namespace: metricsNamespace,
@@ -156,6 +165,7 @@ func (WorkqueueMetricsProvider) NewRetriesMetric(name string) workqueue.CounterM
 
 func init() {
 	prometheus.MustRegister(
+		ClusterSyncFailureVec,
 		StoredAccounts,
 		ReceivedSamples,
 		ReceivedSamplesDuration,
