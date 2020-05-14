@@ -137,8 +137,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		assert.Equal(t, model.Deprovision, operation.Type)
 
 		_, err = shootClient.Get(clusterName, v1.GetOptions{})
-		assert.Error(t, err)
-		assert.True(t, errors.IsNotFound(err))
+		assert.NoError(t, err)
 	})
 
 	t.Run("should set operation success and mark shoot as deleted if shoot does not exist", func(t *testing.T) {

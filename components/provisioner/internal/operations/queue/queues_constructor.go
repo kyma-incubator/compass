@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/upgrade"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 type ProvisioningTimeouts struct {
@@ -30,13 +31,14 @@ func CreateProvisioningQueue(
 	configurator runtime.Configurator,
 	ccClientConstructor provisioning.CompassConnectionClientConstructor,
 	directorClient director.DirectorClient,
-	shootClient gardener_apis.ShootInterface) OperationQueue {
+	shootClient gardener_apis.ShootInterface,
+	secretsClient v1core.SecretInterface) OperationQueue {
 
 	waitForAgentToConnectStep := provisioning.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, timeouts.AgentConnection, directorClient)
 	configureAgentStep := provisioning.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
 	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation)
 	installStep := provisioning.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 20*time.Minute)
-	waitForClusterInitializationStep := provisioning.NewWaitForClusterInitializationStep(shootClient, factory, installStep.Name(), 20*time.Minute)
+	waitForClusterInitializationStep := provisioning.NewWaitForClusterInitializationStep(shootClient, factory, secretsClient, installStep.Name(), 20*time.Minute)
 	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory, directorClient, waitForClusterInitializationStep.Name(), 10*time.Minute)
 
 	installSteps := map[model.OperationStage]operations.Step{
@@ -89,20 +91,21 @@ func CreateDeprovisioningQueue(
 	factory dbsession.Factory,
 	installationClient installation.Service,
 	directorClient director.DirectorClient,
-	shootClient gardener_apis.ShootInterface) OperationQueue {
+	shootClient gardener_apis.ShootInterface,
+	secretsClient v1core.SecretInterface) OperationQueue {
 
 	// TODO: consider adding timeouts to the configuration
-	waitForClusterDeletion := deprovisioning.NewDeprovisionClusterStep(installationClient, shootClient, factory, directorClient, model.FinishedStage, 10*time.Second)
-	deprovisionCluster := deprovisioning.NewTriggerKymaUninstallStep(installationClient, shootClient, waitForClusterDeletion.Name(), 10*time.Second)
+	deprovisionCluster := deprovisioning.NewDeprovisionClusterStep(installationClient, shootClient, factory, directorClient, model.FinishedStage, 10*time.Second)
+	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, shootClient, secretsClient, deprovisionCluster.Name(), 10*time.Second)
 
 	deprovisioningSteps := map[model.OperationStage]operations.Step{
-		model.DeprovisionCluster:     deprovisionCluster,
-		model.WaitForClusterDeletion: waitForClusterDeletion,
+		model.DeprovisionCluster:   deprovisionCluster,
+		model.TriggerKymaUninstall: triggerKymaUninstall,
 	}
 
 	deprovisioningExecutor := operations.NewExecutor(
 		factory.NewReadWriteSession(),
-		model.Provision,
+		model.Deprovision,
 		deprovisioningSteps,
 		failure.NewNoopFailureHandler(),
 		directorClient,

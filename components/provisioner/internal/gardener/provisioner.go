@@ -63,7 +63,6 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	}
 
 	annotate(shootTemplate, operationIdAnnotation, operationId)
-	annotate(shootTemplate, provisioningAnnotation, Initial.String())
 	annotate(shootTemplate, runtimeIdAnnotation, cluster.ID)
 
 	if g.policyConfigMapName != "" {
@@ -101,22 +100,21 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 
 	if shoot.DeletionTimestamp != nil {
 		message := fmt.Sprintf("Cluster %s already %s scheduled for deletion.", gardenerCfg.Name, cluster.ID)
-		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeprovisioningStage, shoot.DeletionTimestamp.Time), nil
+		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.TriggerKymaUninstall, shoot.DeletionTimestamp.Time), nil
 	}
 
 	deletionTime := time.Now()
 
 	// TODO: consider adding some annotation and uninstall before deleting shoot
-	annotate(shoot, provisioningAnnotation, Deprovisioning.String())
 	annotate(shoot, operationIdAnnotation, operationId)
+
 	shootUtil.AnnotateWithConfirmDeletion(shoot)
-	err = shootUtil.UpdateAndDeleteShoot(g.shootClient, shoot)
 	if err != nil {
 		return model.Operation{}, fmt.Errorf("error scheduling shoot %s for deletion: %s", shoot.Name, err.Error())
 	}
 
 	message := fmt.Sprintf("Deprovisioning started")
-	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeprovisioningStage, deletionTime), nil
+	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.TriggerKymaUninstall, deletionTime), nil
 }
 
 func (g *GardenerProvisioner) shouldSetMaintenanceWindow() bool {

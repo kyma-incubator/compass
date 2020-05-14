@@ -30,7 +30,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -38,7 +37,6 @@ import (
 func NewReconciler(
 	mgr ctrl.Manager,
 	dbsFactory dbsession.Factory,
-	secretsClient v1core.SecretInterface,
 	shootClient v1beta1.ShootInterface,
 	directorClient director.DirectorClient,
 	installationSvc installation.Service,
@@ -54,7 +52,6 @@ func NewReconciler(
 
 		provisioningOperator: &ProvisioningOperator{
 			dbsFactory:        dbsFactory,
-			secretsClient:     secretsClient,
 			shootClient:       shootClient,
 			directorClient:    directorClient,
 			installationSvc:   installationSvc,
@@ -75,7 +72,6 @@ type Reconciler struct {
 }
 
 type ProvisioningOperator struct {
-	secretsClient   v1core.SecretInterface
 	shootClient     v1beta1.ShootInterface
 	dbsFactory      dbsession.Factory
 	directorClient  director.DirectorClient

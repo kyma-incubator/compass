@@ -34,8 +34,6 @@ func (s KymaInstallationState) String() string {
 }
 
 const (
-	provisioningAnnotation string = "compass.provisioner.kyma-project.io/provisioning"
-
 	uninstallingAnnotation string = "compass.provisioner.kyma-project.io/uninstalling"
 
 	operationIdAnnotation string = "compass.provisioner.kyma-project.io/operation-id"
@@ -74,31 +72,4 @@ func removeAnnotation(shoot *gardener_types.Shoot, annotation string) {
 	}
 
 	delete(shoot.Annotations, annotation)
-}
-
-func getProvisioningState(shoot gardener_types.Shoot) ProvisioningState {
-	provisioningState, found := shoot.Annotations[provisioningAnnotation]
-	if !found {
-		return UnknownProvisioningState
-	}
-
-	switch ProvisioningState(provisioningState) {
-	case Initial, Provisioning, Provisioned, Deprovisioning, ProvisioningFailed:
-		return ProvisioningState(provisioningState)
-	default:
-		return UnknownProvisioningState
-	}
-}
-
-func uninstallTriggered(shoot gardener_types.Shoot) bool {
-	uninstallState, found := shoot.Annotations[uninstallingAnnotation]
-	if !found {
-		return false
-	}
-
-	if uninstallState == "true" {
-		return true
-	}
-
-	return false
 }

@@ -43,7 +43,7 @@ func NewDeprovisionClusterStep(installationClient installation.Service, gardener
 }
 
 func (s *DeprovisionClusterStep) Name() model.OperationStage {
-	return model.StartingInstallation
+	return model.DeprovisionCluster
 }
 
 func (s *DeprovisionClusterStep) TimeLimit() time.Duration {

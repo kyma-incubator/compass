@@ -46,6 +46,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
+	"k8s.io/client-go/kubernetes"
 )
 
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
@@ -145,6 +146,11 @@ func main() {
 	gardenerClientSet, err := gardener.NewClient(gardenerClusterConfig)
 	exitOnError(err, "Failed to create Gardener cluster clientset")
 
+	k8sCoreClientSet, err := kubernetes.NewForConfig(gardenerClusterConfig)
+	exitOnError(err, "Failed to create Kubernetes ")
+
+	secretsInterface := k8sCoreClientSet.CoreV1().Secrets(gardenerNamespace)
+
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
 	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
@@ -171,11 +177,12 @@ func main() {
 		runtimeConfigurator,
 		provisioningStages.NewCompassConnectionClient,
 		directorClient,
-		shootClient)
+		shootClient,
+		secretsInterface)
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationService, directorClient, shootClient)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationService, directorClient, shootClient, secretsInterface)
 
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {
@@ -279,7 +286,7 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue,
 	}
 
 	for _, op := range inProgressOps {
-		if op.Type == model.Provision && op.Stage != model.ShootProvisioning {
+		if op.Type == model.Provision {
 			installationQueue.Add(op.ID)
 			continue
 		}

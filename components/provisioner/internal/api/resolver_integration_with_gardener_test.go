@@ -21,7 +21,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardener_apis_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
@@ -171,7 +170,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	mockK8sClientProvider := &mocks.K8sClientProvider{}
 	fakeK8sClient := fake.NewSimpleClientset()
-	fakeShootClient := gardener_apis_fake.NewSimpleClientset().CoreV1beta1().Shoots(namespace)
 	mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
 	runtimeConfigurator := runtimeConfig.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
@@ -185,16 +183,16 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	installationQueue := queue.CreateProvisioningQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock, fakeShootClient)
+	installationQueue := queue.CreateProvisioningQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock, shootInterface, secretsInterface)
 	installationQueue.Run(queueCtx.Done())
 
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationServiceMock, directorServiceMock, shootInterface)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationServiceMock, directorServiceMock, shootInterface, secretsInterface)
 	deprovisioningQueue.Run(queueCtx.Done())
 
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
-	controler, err := gardener.NewShootController(mgr, shootInterface, secretsInterface, dbsFactory, directorServiceMock, installationServiceMock, installationQueue, auditLogsConfigPath)
+	controler, err := gardener.NewShootController(mgr, shootInterface, dbsFactory, directorServiceMock, installationServiceMock, installationQueue, auditLogsConfigPath)
 	require.NoError(t, err)
 
 	go func() {
@@ -263,20 +261,18 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
 			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
 			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
-			assert.Equal(t, "initial", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
 			assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
 
 			simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot)
 
 			//when
 			//wait for Shoot to update
-			time.Sleep(waitPeriod)
+			time.Sleep(3 * waitPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
 			//then
 			require.NoError(t, err)
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-			assert.Equal(t, "provisioned", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
 
 			// when
 			upgradeRuntimeOp, err := resolver.UpgradeRuntime(ctx, config.runtimeID, gqlschema.UpgradeRuntimeInput{KymaConfig: fixKymaGraphQLConfigInput()})
@@ -330,12 +326,10 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			//then
 			require.NoError(t, err)
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-			assert.Equal(t, deprovisionRuntimeID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
-			assert.Equal(t, "deprovisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
 
 			//when
 			shoot = removeFinalizers(t, shootInterface, shoot)
-			time.Sleep(waitPeriod)
+			time.Sleep(3 * waitPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
 			//then

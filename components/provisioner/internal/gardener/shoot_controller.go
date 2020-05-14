@@ -10,8 +10,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
@@ -26,7 +24,6 @@ import (
 func NewShootController(
 	mgr manager.Manager,
 	shootClient gardener_apis.ShootInterface,
-	secretsClient v1core.SecretInterface,
 	dbsFactory dbsession.Factory,
 	directorClient director.DirectorClient,
 	installationSvc installation.Service,
@@ -40,7 +37,7 @@ func NewShootController(
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&gardener_types.Shoot{}).
-		Complete(NewReconciler(mgr, dbsFactory, secretsClient, shootClient, directorClient, installationSvc, installQueue, auditLogTenantConfigPath))
+		Complete(NewReconciler(mgr, dbsFactory, shootClient, directorClient, installationSvc, installQueue, auditLogTenantConfigPath))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create controller: %w", err)
 	}
