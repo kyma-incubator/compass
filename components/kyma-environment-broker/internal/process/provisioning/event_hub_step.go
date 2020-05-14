@@ -83,7 +83,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	}
 
 	// create hyperscaler client
-	namespaceClient, err := p.EventHub.HyperscalerProvider.GetClient(azureCfg, log)
+	azureClient, err := p.EventHub.HyperscalerProvider.GetClient(azureCfg, log)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
@@ -98,9 +98,8 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	}
 
 	// create Resource Group
-	groupName := pp.Parameters.Name
-	// TODO(nachtmaar): use different resource group name https://github.com/kyma-incubator/compass/issues/967
-	resourceGroup, err := namespaceClient.CreateResourceGroup(p.EventHub.Context, azureCfg, groupName, tags)
+	groupName := operation.InstanceID
+	resourceGroup, err := azureClient.CreateResourceGroup(p.EventHub.Context, azureCfg, groupName, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
@@ -109,8 +108,8 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log.Printf("Persisted Azure Resource Group [%s]", groupName)
 
 	// create EventHubs Namespace
-	eventHubsNamespace := pp.Parameters.Name
-	eventHubNamespace, err := namespaceClient.CreateNamespace(p.EventHub.Context, azureCfg, groupName, eventHubsNamespace, tags)
+	eventHubsNamespace := operation.InstanceID
+	eventHubNamespace, err := azureClient.CreateNamespace(p.EventHub.Context, azureCfg, groupName, eventHubsNamespace, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
@@ -119,7 +118,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
 
 	// get EventHubs Namespace secret
-	accessKeys, err := namespaceClient.GetEventhubAccessKeys(p.EventHub.Context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
+	accessKeys, err := azureClient.GetEventhubAccessKeys(p.EventHub.Context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Unable to retrieve access keys to azure event-hub namespace: %v", err)
@@ -134,9 +133,9 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	kafkaEndpoint := extractEndpoint(accessKeys)
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
-	// set installation overrides
-	operation.InputCreator.SetOverrides(componentNameKnativeEventing, getKnativeEventingOverrides())
-	operation.InputCreator.SetOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, kafkaPort, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
+	// append installation overrides
+	operation.InputCreator.AppendOverrides(componentNameKnativeEventing, getKnativeEventingOverrides())
+	operation.InputCreator.AppendOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, kafkaPort, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
 
 	return operation, 0, nil
 }

@@ -100,3 +100,4 @@ fabric.properties
 *.iml
 hack/scripts/kyma-lite/letsencrypt
 /internal/avs/verify/verify.go
+licenses/
