@@ -23,7 +23,7 @@ import (
 
 const (
 	pollingInterval          = 15 * time.Second
-	certPollingTimeout       = 5 * time.Minute
+	certPollingTimeout       = 10 * time.Minute
 	tenantReadyRetryInterval = 30 * time.Second
 	lmsTimeout               = 30 * time.Minute
 	kibanaURLLabelKey        = "operator_lmsUrl"
