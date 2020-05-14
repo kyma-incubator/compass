@@ -63,6 +63,9 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				a.writeError(w, err.Error(), http.StatusUnauthorized)
 				return
 			}
+			if claims.ExternalTenant == "" && claims.Tenant == "" {
+				a.writeError(w, "Tenant not provided", http.StatusBadRequest)
+			}
 
 			ctx := a.contextWithClaims(r.Context(), claims)
 

@@ -8,22 +8,23 @@ import (
 
 type key int
 
-const TenantContextKey key = iota
+const (
+	TenantContextKey = iota
+	ExternalTenantContextKey
+)
 
 func LoadFromContext(ctx context.Context) (string, error) {
-	value := ctx.Value(TenantContextKey)
-
-	str, ok := value.(string)
+	tenantID, ok := ctx.Value(TenantContextKey).(string)
 
 	if !ok {
 		return "", apperrors.NewCannotReadTenantError()
 	}
 
-	if str == "" {
+	if tenantID == "" {
 		return "", apperrors.NewEmptyTenantError()
 	}
 
-	return str, nil
+	return tenantID, nil
 }
 
 func SaveToContext(ctx context.Context, tenant string) context.Context {
