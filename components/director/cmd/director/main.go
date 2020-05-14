@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
+
 	"github.com/dlmiddlecote/sqlstats"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
@@ -88,26 +90,27 @@ func main() {
 	stopCh := signal.SetupChannel()
 	cfgProvider := createAndRunConfigProvider(stopCh, cfg)
 
-	//metricsCollector := metrics.NewCollector()
-
-	dbStatsCollector := sqlstats.NewStatsCollector("director", transact)
-
-	log.Infof("Starting DB connections metrics collector...")
-	//dbConnectionsCollector := executor.NewPeriodic(10*time.Second, func(stopCh <-chan struct{}) {
-	//	metricsCollector.SetDBConnectionsMetrics(transact.Stats())
-	//})
-	//dbConnectionsCollector.Run(stopCh)
-
 	mainRouter := mux.NewRouter()
 
 	log.Infof("Registering metrics endpoint...")
-	prometheus.MustRegister(dbStatsCollector)
+	metricsCollector := metrics.NewCollector()
+	dbStatsCollector := sqlstats.NewStatsCollector("director", transact)
+
+	prometheus.MustRegister(dbStatsCollector, metricsCollector)
 	mainRouter.Handle("/metrics", promhttp.Handler())
 
 	pairingAdapters, err := getPairingAdaptersMapping(cfg.PairingAdapterSrc)
 	exitOnError(err, "Error while reading Pairing Adapters Configuration")
 	gqlCfg := graphql.Config{
-		Resolvers: domain.NewRootResolver(transact, cfgProvider, cfg.OneTimeToken, cfg.OAuth20, pairingAdapters, cfg.Features),
+		Resolvers: domain.NewRootResolver(
+			transact,
+			cfgProvider,
+			cfg.OneTimeToken,
+			cfg.OAuth20,
+			pairingAdapters,
+			cfg.Features,
+			metricsCollector,
+		),
 		Directives: graphql.DirectiveRoot{
 			HasScopes: scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:  inputvalidation.NewDirective().Validate,
@@ -137,7 +140,7 @@ func main() {
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
-	gqlAPIRouter.HandleFunc("", handler.GraphQL(executableSchema))
+	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema)))
 
 	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
 	tenantMappingHandlerFunc, err := getTenantMappingHanderFunc(transact, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)

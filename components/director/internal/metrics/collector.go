@@ -1,60 +1,75 @@
 package metrics
 
 import (
-	"database/sql"
+	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+const (
+	Namespace = "compass"
+	Subsystem = "director"
 )
 
 type Collector struct {
-	// active goroutines
-	// active DB connections number in connection pool
-
-	// response status codes from Tenant Fetcher (check if we could use k8s job status code) -> k8s metric
-
-	// response status codes from Ory Hydra
-	// average time of GraphQL request handling
-	// average time of DB request handling
-
-	// prometheus-postgres-exporter:
-
-	// number of tenants
-	// number of tenants that have at least one application or runtime
-	// number of runtimes
-	// number of applications
-
-	dbConnections *prometheus.GaugeVec
-}
-
-const (
-	InUseDBConnections = "in_use"
-	IdleDBConnections  = "idle"
-	MaxDBConnections   = "max"
-)
-
-type DBTransactioner interface {
-	Stats() sql.DBStats
+	graphQLRequestTotal    *prometheus.CounterVec
+	graphQLRequestDuration *prometheus.HistogramVec
+	hydraRequestTotal      *prometheus.CounterVec
+	hydraRequestDuration   *prometheus.HistogramVec
 }
 
 func NewCollector() *Collector {
 	return &Collector{
-		dbConnections: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "director_db_connections_total",
-			Help: "Open database connections for Director",
-		}, []string{"type"}),
+		graphQLRequestTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: Namespace,
+			Subsystem: Subsystem,
+			Name:      "graphql_request_total",
+			Help:      "Total handled GraphQL Requests",
+		}, []string{"code", "method"}),
+		graphQLRequestDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: Namespace,
+			Subsystem: Subsystem,
+			Name:      "graphql_request_duration_seconds",
+			Help:      "Duration of handling GraphQL requests",
+		}, []string{"code", "method"}),
+		hydraRequestDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: Namespace,
+			Subsystem: Subsystem,
+			Name:      "hydra_request_duration_seconds",
+			Help:      "Duration of HTTP Requests to Hydra",
+		}, []string{"code", "method"}),
+		hydraRequestTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: Namespace,
+			Subsystem: Subsystem,
+			Name:      "hydra_request_total",
+			Help:      "Total HTTP Requests to Hydra",
+		}, []string{"code", "method"}),
 	}
 }
 
 func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
-	c.dbConnections.Describe(ch)
+	c.graphQLRequestTotal.Describe(ch)
+	c.graphQLRequestDuration.Describe(ch)
+	c.hydraRequestTotal.Describe(ch)
+	c.hydraRequestDuration.Describe(ch)
 }
 
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
-	c.dbConnections.Collect(ch)
+	c.graphQLRequestTotal.Collect(ch)
+	c.graphQLRequestDuration.Collect(ch)
+	c.hydraRequestTotal.Collect(ch)
+	c.hydraRequestDuration.Collect(ch)
 }
 
-func (c *Collector) SetDBConnectionsMetrics(stats sql.DBStats) {
-	c.dbConnections.WithLabelValues(MaxDBConnections).Set(float64(stats.MaxOpenConnections))
-	c.dbConnections.WithLabelValues(InUseDBConnections).Set(float64(stats.InUse))
-	c.dbConnections.WithLabelValues(IdleDBConnections).Set(float64(stats.Idle))
+func (c *Collector) GraphQLHandlerWithInstrumentation(handler http.Handler) http.HandlerFunc {
+	return promhttp.InstrumentHandlerCounter(c.graphQLRequestTotal,
+		promhttp.InstrumentHandlerDuration(c.graphQLRequestDuration, handler),
+	)
+}
+
+func (c *Collector) InstrumentOAuth20HTTPClient(client *http.Client) {
+	client.Transport = promhttp.InstrumentRoundTripperCounter(c.hydraRequestTotal,
+		promhttp.InstrumentRoundTripperDuration(c.hydraRequestDuration, http.DefaultTransport),
+	)
 }
