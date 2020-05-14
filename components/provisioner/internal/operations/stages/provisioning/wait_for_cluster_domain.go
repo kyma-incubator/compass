@@ -16,7 +16,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type WaitForClusterCreationStep struct {
+type WaitForClusterDomainStep struct {
 	gardenerClient GardenerClient
 	dbsFactory     dbsession.Factory
 	directorClient director.DirectorClient
@@ -24,29 +24,29 @@ type WaitForClusterCreationStep struct {
 	timeLimit      time.Duration
 }
 
+//go:generate mockery -name=GardenerClient
 type GardenerClient interface {
 	Get(name string, options v1.GetOptions) (*gardener_types.Shoot, error)
 }
 
-func NewWaitForClusterCreationStep(gardenerClient GardenerClient, dbsFactory dbsession.Factory, directorClient director.DirectorClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterCreationStep {
-	return &WaitForClusterCreationStep{
+func NewWaitForClusterDomainStep(gardenerClient GardenerClient, directorClient director.DirectorClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterDomainStep {
+	return &WaitForClusterDomainStep{
 		gardenerClient: gardenerClient,
-		dbsFactory:     dbsFactory,
 		directorClient: directorClient,
 		nextStep:       nextStep,
 		timeLimit:      timeLimit,
 	}
 }
 
-func (s *WaitForClusterCreationStep) Name() model.OperationStage {
-	return model.WaitingForClusterCreation
+func (s *WaitForClusterDomainStep) Name() model.OperationStage {
+	return model.WaitingForClusterDomain
 }
 
-func (s *WaitForClusterCreationStep) TimeLimit() time.Duration {
+func (s *WaitForClusterDomainStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
+func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
 	gardenerConfig, ok := cluster.GardenerConfig()
 	if !ok {
@@ -66,29 +66,23 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 		return operations.StageResult{Stage: s.Name(), Delay: 5 * time.Second}, nil
 	}
 
-	tenant, dberr := s.dbsFactory.NewReadSession().GetTenant(cluster.ID)
-	if dberr != nil {
-		log.Errorf("Error getting Tenant by cluster ID: %s", dberr.Error())
-		return operations.StageResult{}, dberr
-	}
-
 	// TODO: Consider updating Labels and StatusCondition separately without getting the Runtime
 	//       It'll be possible after this issue implementation:
 	//       - https://github.com/kyma-incubator/compass/issues/1186
-	runtimeInput, err := s.prepareProvisioningUpdateRuntimeInput(cluster.ID, tenant, shoot)
+	runtimeInput, err := s.prepareProvisioningUpdateRuntimeInput(cluster.ID, cluster.Tenant, shoot)
 	if err != nil {
 		log.Errorf("Error preparing Runtime Input: %s", err.Error())
 		return operations.StageResult{}, err
 	}
-	if err := s.directorClient.UpdateRuntime(cluster.ID, runtimeInput, tenant); err != nil {
+	if err := s.directorClient.UpdateRuntime(cluster.ID, runtimeInput, cluster.Tenant); err != nil {
 		log.Errorf("Error updating Runtime in Director: %s", err.Error())
 		return operations.StageResult{}, err
 	}
 
-	return operations.StageResult{Stage: s.nextStep, Delay: 5 * time.Second}, nil
+	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }
 
-func (s *WaitForClusterCreationStep) prepareProvisioningUpdateRuntimeInput(
+func (s *WaitForClusterDomainStep) prepareProvisioningUpdateRuntimeInput(
 	runtimeId, tenant string, shoot *gardener_types.Shoot) (*graphql.RuntimeInput, error) {
 
 	runtime, err := s.directorClient.GetRuntime(runtimeId, tenant)
