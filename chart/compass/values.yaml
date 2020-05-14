@@ -50,7 +50,7 @@ global:
       version: "PR-1315"
     metris:
       dir:
-      version: "PR-1270"
+      version: "PR-1343"
     tests:
       director:
         dir:

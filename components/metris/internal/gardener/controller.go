@@ -51,6 +51,7 @@ type Controller struct {
 	secretInformer          secretsinformer.SecretInformer
 	accountsChan            chan<- *Account
 	logger                  *zap.SugaredLogger
+	shootQueue              map[string]bool
 }
 
 // NewController return a new controller for watching shoots and secrets
@@ -81,11 +82,13 @@ func NewController(client *Client, provider string, accountsChan chan<- *Account
 		secretInformer:          secretInformer,
 		accountsChan:            accountsChan,
 		logger:                  logger.With("component", "gardener"),
+		shootQueue:              make(map[string]bool),
 	}
 
 	// Set up event handlers for Shoot resources
 	shootInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.shootAddHandlerFunc,
+		UpdateFunc: controller.shootUpdateFunc,
 		DeleteFunc: controller.shootDeleteHandlerFunc,
 	})
 
