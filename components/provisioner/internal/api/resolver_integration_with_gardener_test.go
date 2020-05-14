@@ -25,6 +25,7 @@ import (
 
 	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
+	janitormock "github.com/kyma-incubator/compass/components/provisioner/internal/gardener/mocks"
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
@@ -168,6 +169,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	clusterConfigurations := getTestClusterConfigurations()
 	directorServiceMock := &directormock.DirectorClient{}
 
+	resourcesJanitorMock := janitormock.ResourcesJanitor{}
+
 	mockK8sClientProvider := &mocks.K8sClientProvider{}
 	fakeK8sClient := fake.NewSimpleClientset()
 	mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
@@ -217,9 +220,10 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			}, nil)
 			directorServiceMock.On("UpdateRuntime", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			directorServiceMock.On("SetRuntimeStatusCondition", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			resourcesJanitorMock.On("CleanUpShootResources", mock.Anything).Return(nil)
 
 			uuidGenerator := uuid.NewUUIDGenerator()
-			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName, maintenanceWindowConfigPath)
+			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, &resourcesJanitorMock, auditLogPolicyCMName, maintenanceWindowConfigPath)
 
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 

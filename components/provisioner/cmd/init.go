@@ -90,6 +90,24 @@ func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient
 		auditLogTenantConfigPath)
 }
 
+func newShootResourcesJanitor(
+	timeouts gardener.ResourceCleanupTimeouts,
+	gardenerNamespace string,
+	gardenerClusterCfg *restclient.Config,
+	gardenerClientSet *gardener_apis.CoreV1beta1Client) (gardener.ResourcesJanitor, error) {
+
+	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	secretsInterface := gardenerClusterClient.CoreV1().Secrets(gardenerNamespace)
+
+	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
+
+	return gardener.NewResourcesJanitor(timeouts, secretsInterface, shootClient)
+}
+
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {

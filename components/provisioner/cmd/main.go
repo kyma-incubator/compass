@@ -68,7 +68,8 @@ type config struct {
 		SSLMode  string `envconfig:"default=disable"`
 	}
 
-	ProvisioningTimeout queue.ProvisioningTimeouts
+	ProvisioningTimeout    queue.ProvisioningTimeouts
+	ResourceCleanupTimeout gardener.ResourceCleanupTimeouts
 
 	Gardener struct {
 		Project                     string `envconfig:"default=gardenerProject"`
@@ -95,6 +96,7 @@ func (c *config) String() string {
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
+		"ResourcesCleanupTimeoutServiceInstance: %s, "+
 		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
 		"Provisioner: %s, "+
@@ -106,6 +108,7 @@ func (c *config) String() string {
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
 		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
+		c.ResourceCleanupTimeout.ServiceInstance.String(),
 		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
 		c.Provisioner,
@@ -165,7 +168,13 @@ func main() {
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(k8sClientProvider, directorClient)
 
 	installationQueue := queue.CreateInstallationQueue(cfg.ProvisioningTimeout, dbsFactory, installationService, runtimeConfigurator, stages.NewCompassConnectionClient, directorClient)
+
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
+
+	shootResourcesJanitor, err := newShootResourcesJanitor(cfg.ResourceCleanupTimeout, gardenerNamespace, gardenerClusterConfig, gardenerClientSet)
+	if err != nil {
+		log.Errorf("while creating shoot resource janitor: %s", err)
+	}
 
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {
@@ -173,13 +182,14 @@ func main() {
 		hydroformSvc := hydroform.NewHydroformService(client.NewHydroformClient(), cfg.Gardener.KubeconfigPath)
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
-		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
+		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, shootResourcesJanitor, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
 		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, directorClient, installationService, installationQueue, cfg.Gardener.AuditLogsTenantConfigPath)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {
 			err := shootController.StartShootController()
 			exitOnError(err, "Failed to start Shoot Controller")
 		}()
+
 	default:
 		log.Fatalf("Error: invalid provisioner provided: %s", cfg.Provisioner)
 	}

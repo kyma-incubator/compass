@@ -26,11 +26,13 @@ func NewProvisioner(
 	namespace string,
 	shootClient gardener_apis.ShootInterface,
 	factory dbsession.Factory,
+	resourcesJanitor ResourcesJanitor,
 	policyConfigMapName string, maintenanceWindowConfigPath string) *GardenerProvisioner {
 	return &GardenerProvisioner{
 		namespace:                   namespace,
 		shootClient:                 shootClient,
 		dbSessionFactory:            factory,
+		resourcesJanitor:            resourcesJanitor,
 		policyConfigMapName:         policyConfigMapName,
 		maintenanceWindowConfigPath: maintenanceWindowConfigPath,
 	}
@@ -41,6 +43,7 @@ type GardenerProvisioner struct {
 	shootClient                 gardener_apis.ShootInterface
 	dbSessionFactory            dbsession.Factory
 	directorService             director.DirectorClient
+	resourcesJanitor            ResourcesJanitor
 	policyConfigMapName         string
 	maintenanceWindowConfigPath string
 }
@@ -104,6 +107,12 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	}
 
 	deletionTime := time.Now()
+
+	// Cleanup resources on shoot
+	err = g.resourcesJanitor.CleanUpShootResources(shoot.Name)
+	if err != nil {
+		logrus.Errorf("error cleaning up resource on shoot %q: %s", shoot.Name, err)
+	}
 
 	// TODO: consider adding some annotation and uninstall before deleting shoot
 	annotate(shoot, provisioningAnnotation, Deprovisioning.String())

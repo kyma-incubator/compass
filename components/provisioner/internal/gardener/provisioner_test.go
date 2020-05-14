@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener/mocks"
 	"k8s.io/apimachinery/pkg/api/errors"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -45,8 +46,10 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 	t.Run("should start provisioning", func(t *testing.T) {
 		// given
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+		resourcesJanitorMock := mocks.ResourcesJanitor{}
+		resourcesJanitorMock.On("CleanUpShootResources", clusterName).Return(nil)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, nil, auditLogsPolicyCMName, maintWindowConfigPath)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, nil, &resourcesJanitorMock, auditLogsPolicyCMName, maintWindowConfigPath)
 
 		// when
 		err := provisionerClient.ProvisionCluster(cluster, operationId)
@@ -120,9 +123,12 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		sessionFactoryMock := &sessionMocks.Factory{}
 		session := &sessionMocks.WriteSession{}
 
+		resourcesJanitorMock := mocks.ResourcesJanitor{}
+		resourcesJanitorMock.On("CleanUpShootResources", clusterName).Return(nil)
+
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "")
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, &resourcesJanitorMock, auditLogsPolicyCMName, "")
 
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)
@@ -147,10 +153,12 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		sessionFactoryMock := &sessionMocks.Factory{}
 		session := &sessionMocks.WriteSession{}
+		resourcesJanitorMock := mocks.ResourcesJanitor{}
+		resourcesJanitorMock.On("CleanUpShootResources", clusterName).Return(nil)
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "")
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, &resourcesJanitorMock, auditLogsPolicyCMName, "")
 
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)
@@ -177,9 +185,12 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		sessionFactoryMock := &sessionMocks.Factory{}
 		session := &sessionMocks.WriteSession{}
 
+		resourcesJanitorMock := mocks.ResourcesJanitor{}
+		resourcesJanitorMock.On("CleanUpShootResources", clusterName).Return(nil)
+
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "")
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, &resourcesJanitorMock, auditLogsPolicyCMName, "")
 
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)

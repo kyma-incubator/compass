@@ -12,6 +12,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/hashicorp/hil v0.0.0-20190212132231-97b3a9cdfa93 // indirect
 	github.com/hashicorp/terraform v0.12.16
+	github.com/kubernetes-sigs/service-catalog v0.2.2
 	github.com/kubernetes/client-go v11.0.0+incompatible
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283
 	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
@@ -27,7 +28,9 @@ require (
 	github.com/testcontainers/testcontainers-go v0.3.1
 	github.com/vektah/gqlparser v1.2.0
 	github.com/vrischmann/envconfig v1.2.0
+	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b // indirect
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
+	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	google.golang.org/genproto v0.0.0-20190927181202-20e1ac93f88c // indirect
 	google.golang.org/grpc v1.24.0 // indirect
 	k8s.io/api v0.17.2
