@@ -39,14 +39,14 @@ func CreateProvisioningQueue(
 	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation)
 	installStep := provisioning.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 20*time.Minute)
 	waitForClusterInitializationStep := provisioning.NewWaitForClusterInitializationStep(shootClient, factory, secretsClient, installStep.Name(), 20*time.Minute)
-	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory, directorClient, waitForClusterInitializationStep.Name(), 10*time.Minute)
+	waitForClusterCreationStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterInitializationStep.Name(), 10*time.Minute)
 
 	installSteps := map[model.OperationStage]operations.Step{
 		model.WaitForAgentToConnect:           waitForAgentToConnectStep,
 		model.ConnectRuntimeAgent:             configureAgentStep,
 		model.WaitingForInstallation:          waitForInstallStep,
 		model.StartingInstallation:            installStep,
-		model.WaitingForClusterCreation:       waitForClusterCreationStep,
+		model.WaitingForClusterDomain:         waitForClusterCreationStep,
 		model.WaitingForClusterInitialization: waitForClusterInitializationStep,
 	}
 

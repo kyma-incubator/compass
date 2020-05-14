@@ -328,7 +328,7 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, model.WaitingForClusterCreation, timestamp, "Provisioning started")
+	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, model.WaitingForClusterDomain, timestamp, "Provisioning started")
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to set provisioning started: %s")
 	}

@@ -25,7 +25,7 @@ type OperationStage string
 
 const (
 	//ShootProvisioning               OperationStage = "ShootProvisioning"
-	WaitingForClusterCreation       OperationStage = "WaitingForClusterCreation"
+	WaitingForClusterDomain         OperationStage = "WaitingForClusterDomain"
 	WaitingForClusterInitialization OperationStage = "WaitingForClusterInitialization"
 	StartingInstallation            OperationStage = "StartingInstallation"
 	WaitingForInstallation          OperationStage = "WaitingForInstallation"

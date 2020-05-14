@@ -71,7 +71,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		ClusterID: runtimeID,
 		State:     model.InProgress,
 		Type:      model.Provision,
-		Stage:     model.WaitingForClusterCreation,
+		Stage:     model.WaitingForClusterDomain,
 	}
 
 	runtimeInput := &gqlschema.RuntimeInput{
