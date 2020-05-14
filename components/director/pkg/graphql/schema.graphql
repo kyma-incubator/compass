@@ -662,6 +662,11 @@ type CredentialRequestAuth {
 	csrf: CSRFTokenCredentialRequestAuth
 }
 
+type CustomError {
+	statusCode: Int!
+	message: String!
+}
+
 type Document {
 	id: ID!
 	title: String!
@@ -1251,5 +1256,6 @@ type Mutation {
 	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
 	"""
 	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
+	testError(errorID: Int!): CustomError! @hasScopes(path: "graphql.mutation.testError")
 }
 

@@ -158,6 +158,11 @@ type ComplexityRoot struct {
 		Csrf func(childComplexity int) int
 	}
 
+	CustomError struct {
+		Message    func(childComplexity int) int
+		StatusCode func(childComplexity int) int
+	}
+
 	Document struct {
 		Data         func(childComplexity int) int
 		Description  func(childComplexity int) int
@@ -290,6 +295,7 @@ type ComplexityRoot struct {
 		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
 		SetPackageInstanceAuth                        func(childComplexity int, authID string, in PackageInstanceAuthSetInput) int
 		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
+		TestError                                     func(childComplexity int, errorID int) int
 		UnregisterApplication                         func(childComplexity int, id string) int
 		UnregisterIntegrationSystem                   func(childComplexity int, id string) int
 		UnregisterRuntime                             func(childComplexity int, id string) int
@@ -531,6 +537,7 @@ type MutationResolver interface {
 	CreateAutomaticScenarioAssignment(ctx context.Context, in AutomaticScenarioAssignmentSetInput) (*AutomaticScenarioAssignment, error)
 	DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
 	DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
+	TestError(ctx context.Context, errorID int) (*CustomError, error)
 }
 type OneTimeTokenForApplicationResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
@@ -1012,6 +1019,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CredentialRequestAuth.Csrf(childComplexity), true
+
+	case "CustomError.message":
+		if e.complexity.CustomError.Message == nil {
+			break
+		}
+
+		return e.complexity.CustomError.Message(childComplexity), true
+
+	case "CustomError.statusCode":
+		if e.complexity.CustomError.StatusCode == nil {
+			break
+		}
+
+		return e.complexity.CustomError.StatusCode(childComplexity), true
 
 	case "Document.data":
 		if e.complexity.Document.Data == nil {
@@ -1861,6 +1882,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SetRuntimeLabel(childComplexity, args["runtimeID"].(string), args["key"].(string), args["value"].(interface{})), true
+
+	case "Mutation.testError":
+		if e.complexity.Mutation.TestError == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_testError_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.TestError(childComplexity, args["errorID"].(int)), true
 
 	case "Mutation.unregisterApplication":
 		if e.complexity.Mutation.UnregisterApplication == nil {
@@ -3472,6 +3505,11 @@ type CredentialRequestAuth {
 	csrf: CSRFTokenCredentialRequestAuth
 }
 
+type CustomError {
+	statusCode: Int!
+	message: String!
+}
+
 type Document {
 	id: ID!
 	title: String!
@@ -4061,6 +4099,7 @@ type Mutation {
 	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
 	"""
 	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
+	testError(errorID: Int!): CustomError! @hasScopes(path: "graphql.mutation.testError")
 }
 
 `},
@@ -4981,6 +5020,20 @@ func (ec *executionContext) field_Mutation_setRuntimeLabel_args(ctx context.Cont
 		}
 	}
 	args["value"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_testError_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["errorID"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["errorID"] = arg0
 	return args, nil
 }
 
@@ -7908,6 +7961,80 @@ func (ec *executionContext) _CredentialRequestAuth_csrf(ctx context.Context, fie
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOCSRFTokenCredentialRequestAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCSRFTokenCredentialRequestAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CustomError_statusCode(ctx context.Context, field graphql.CollectedField, obj *CustomError) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "CustomError",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StatusCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CustomError_message(ctx context.Context, field graphql.CollectedField, obj *CustomError) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "CustomError",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Document_id(ctx context.Context, field graphql.CollectedField, obj *Document) (ret graphql.Marshaler) {
@@ -13128,6 +13255,70 @@ func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentsForSelec
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_testError(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_testError_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().TestError(rctx, args["errorID"].(int))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.testError")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(*CustomError); ok {
+			return data, nil
+		} else if tmp == nil {
+			return nil, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.CustomError`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*CustomError)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNCustomError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCustomError(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OAuthCredentialData_clientId(ctx context.Context, field graphql.CollectedField, obj *OAuthCredentialData) (ret graphql.Marshaler) {
@@ -19828,6 +20019,38 @@ func (ec *executionContext) _CredentialRequestAuth(ctx context.Context, sel ast.
 	return out
 }
 
+var customErrorImplementors = []string{"CustomError"}
+
+func (ec *executionContext) _CustomError(ctx context.Context, sel ast.SelectionSet, obj *CustomError) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, customErrorImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CustomError")
+		case "statusCode":
+			out.Values[i] = ec._CustomError_statusCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "message":
+			out.Values[i] = ec._CustomError_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var documentImplementors = []string{"Document"}
 
 func (ec *executionContext) _Document(ctx context.Context, sel ast.SelectionSet, obj *Document) graphql.Marshaler {
@@ -20616,6 +20839,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_deleteAutomaticScenarioAssignmentForScenario(ctx, field)
 		case "deleteAutomaticScenarioAssignmentsForSelector":
 			out.Values[i] = ec._Mutation_deleteAutomaticScenarioAssignmentsForSelector(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "testError":
+			out.Values[i] = ec._Mutation_testError(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -22341,6 +22569,20 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNCustomError2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCustomError(ctx context.Context, sel ast.SelectionSet, v CustomError) graphql.Marshaler {
+	return ec._CustomError(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCustomError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCustomError(ctx context.Context, sel ast.SelectionSet, v *CustomError) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._CustomError(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNDocument2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v Document) graphql.Marshaler {

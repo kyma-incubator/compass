@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
 	"net/http"
 	"time"
 
@@ -446,6 +447,10 @@ func (r *mutationResolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx con
 }
 func (r *mutationResolver) CreateAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
 	return r.scenarioAssignment.CreateAutomaticScenarioAssignment(ctx, in)
+}
+
+func (r *mutationResolver) TestError(ctx context.Context, errorID int) (*graphql.CustomError, error) {
+	return customerrors.Resolve(ctx, errorID)
 }
 
 type applicationResolver struct {

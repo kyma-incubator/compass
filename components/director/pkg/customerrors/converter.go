@@ -1,0 +1,5 @@
+package customerrors
+
+func ConvertInternalErrorToGraphql()  {
+	
+}

@@ -73,6 +73,7 @@ graphql:
     createAutomaticScenarioAssignment: ["automatic_scenario_assignment:write"]
     deleteAutomaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:write"]
     deleteAutomaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:write"]
+    testError: []
 
 # Scopes assigned for every new Client Credentials by given object type (Runtime / Application / Integration System)
 clientCredentialsRegistrationScopes:
