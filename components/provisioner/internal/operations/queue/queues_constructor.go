@@ -95,8 +95,8 @@ func CreateDeprovisioningQueue(
 	secretsClient v1core.SecretInterface) OperationQueue {
 
 	// TODO: consider adding timeouts to the configuration
-	deprovisionCluster := deprovisioning.NewDeprovisionClusterStep(installationClient, shootClient, factory, directorClient, model.FinishedStage, 10*time.Second)
-	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, shootClient, secretsClient, deprovisionCluster.Name(), 10*time.Second)
+	deprovisionCluster := deprovisioning.NewDeprovisionClusterStep(installationClient, shootClient, factory, directorClient, model.FinishedStage, 5*time.Minute)
+	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, shootClient, secretsClient, deprovisionCluster.Name(), 5*time.Minute)
 
 	deprovisioningSteps := map[model.OperationStage]operations.Step{
 		model.DeprovisionCluster:   deprovisionCluster,
