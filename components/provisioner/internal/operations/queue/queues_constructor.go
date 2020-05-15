@@ -98,7 +98,7 @@ func CreateDeprovisioningQueue(
 
 	// TODO: consider adding timeouts to the configuration
 	deprovisionCluster := deprovisioning.NewDeprovisionClusterStep(installationClient, shootClient, factory, directorClient, model.FinishedStage, 5*time.Minute)
-	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, gardener.NewKubeconfigProvider(secretsClient), deprovisionCluster.Name(), 5*time.Minute)
+	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, deprovisionCluster.Name(), 5*time.Minute)
 
 	deprovisioningSteps := map[model.OperationStage]operations.Step{
 		model.DeprovisionCluster:   deprovisionCluster,

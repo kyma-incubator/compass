@@ -182,7 +182,7 @@ func (cc *directorClient) RuntimeExists(gardenerClusterName, tenant string) (boo
 		return true, nil
 	}
 
-	if len(runtimes) > 2 {
+	if len(runtimes) > 1 {
 		return false, errors.Errorf("Invalid state: more that one runtime assigned to  Gardener cluster: %s", gardenerClusterName)
 	}
 
