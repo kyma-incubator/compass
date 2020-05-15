@@ -83,7 +83,9 @@ func (s *service) create(ctx context.Context, id string, objectType model.System
 func (s *service) GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
+		if !(apperrors.IsNotFoundError(err) && objectType == model.IntegrationSystemReference) {
+			return nil, errors.Wrapf(err, "while loading tenant from context")
+		}
 	}
 
 	var item *model.SystemAuth
