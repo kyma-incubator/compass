@@ -53,8 +53,14 @@ func (s *DeprovisionClusterStep) TimeLimit() time.Duration {
 func (s *DeprovisionClusterStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
 	if operation.Type == model.Deprovision {
-		// TODO: is the case with Succeeded state possible
+		// TODO: is the case with Succeeded state possible?
 		if operation.State == model.InProgress || operation.State == model.Succeeded {
+
+			gardenerConfig, ok := cluster.GardenerConfig()
+			if !ok {
+				// Non recoverable error?
+				return operations.StageResult{}, errors.New("failed to read GardenerConfig")
+			}
 
 			err := s.deleteShoot(cluster, logger)
 			if err != nil {
@@ -62,7 +68,7 @@ func (s *DeprovisionClusterStep) Run(cluster model.Cluster, operation model.Oper
 				return operations.StageResult{}, err
 			}
 
-			err = s.setDeprovisioningFinished(cluster, operation)
+			err = s.setDeprovisioningFinished(cluster, gardenerConfig.Name, operation)
 			if err != nil {
 				logger.Errorf("Error setting deprovisioning finished: %s", err.Error())
 				return operations.StageResult{}, err
@@ -79,7 +85,7 @@ func (s *DeprovisionClusterStep) Run(cluster model.Cluster, operation model.Oper
 	return operations.StageResult{Stage: s.Name(), Delay: 30 % time.Second}, nil
 }
 
-func (s *DeprovisionClusterStep) setDeprovisioningFinished(cluster model.Cluster, lastOp model.Operation) error {
+func (s *DeprovisionClusterStep) setDeprovisioningFinished(cluster model.Cluster, gardenerClusterName string, lastOp model.Operation) error {
 	session, dberr := s.dbsFactory.NewSessionWithinTransaction()
 	if dberr != nil {
 		return fmt.Errorf("error starting db session with transaction: %s", dberr.Error())
@@ -91,9 +97,9 @@ func (s *DeprovisionClusterStep) setDeprovisioningFinished(cluster model.Cluster
 		return fmt.Errorf("error marking cluster for deletion: %s", dberr.Error())
 	}
 
-	err := s.directorClient.DeleteRuntime(cluster.ID, cluster.Tenant)
+	err := s.deleteRuntime(cluster, gardenerClusterName)
 	if err != nil {
-		return fmt.Errorf("error deleting Runtime form Director: %s", err.Error())
+		return err
 	}
 
 	dberr = session.Commit()
@@ -122,4 +128,18 @@ func (s *DeprovisionClusterStep) deleteShoot(cluster model.Cluster, logger logru
 	}
 
 	return s.gardenerClient.Delete(gardenerConfig.Name, &v1.DeleteOptions{})
+}
+
+func (s *DeprovisionClusterStep) deleteRuntime(cluster model.Cluster, gardenerClusterName string) error {
+	exists, err := s.directorClient.RuntimeExists(gardenerClusterName, cluster.Tenant)
+	if !exists {
+		return nil
+	}
+
+	err = s.directorClient.DeleteRuntime(cluster.ID, cluster.Tenant)
+	if err != nil {
+		return fmt.Errorf("error deleting Runtime form Director: %s", err.Error())
+	}
+
+	return nil
 }

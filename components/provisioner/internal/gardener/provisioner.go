@@ -78,7 +78,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 }
 
 func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error) {
-	session := g.dbSessionFactory.NewWriteSession()
+	//session := g.dbSessionFactory.NewWriteSession()
 
 	gardenerCfg, ok := cluster.GardenerConfig()
 	if !ok {
@@ -90,11 +90,12 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 		if k8sErrors.IsNotFound(err) {
 			message := fmt.Sprintf("Cluster %s does not exist. Nothing to deprovision.", cluster.ID)
 
-			dberr := session.MarkClusterAsDeleted(cluster.ID)
-			if dberr != nil {
-				return newDeprovisionOperation(operationId, cluster.ID, message, model.Failed, model.FinishedStage, time.Now()), dberr
-			}
-			return newDeprovisionOperation(operationId, cluster.ID, message, model.Succeeded, model.FinishedStage, time.Now()), nil
+			// Shoot was deleted. In order to make sure if all clean up actions were performed we need to proceed to DeprovisionCluster state
+			//dberr := session.MarkClusterAsDeleted(cluster.ID)
+			//if dberr != nil {
+			//	return newDeprovisionOperation(operationId, cluster.ID, message, model.Failed, model.FinishedStage, time.Now()), dberr
+			//}
+			return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeprovisionCluster, time.Now()), nil
 		}
 	}
 

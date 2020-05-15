@@ -91,6 +91,27 @@ func (_m *DirectorClient) GetRuntime(id string, tenant string) (graphql.RuntimeE
 	return r0, r1
 }
 
+// RuntimeExists provides a mock function with given fields: gardenerClusterName, tenant
+func (_m *DirectorClient) RuntimeExists(gardenerClusterName string, tenant string) (bool, error) {
+	ret := _m.Called(gardenerClusterName, tenant)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string, string) bool); ok {
+		r0 = rf(gardenerClusterName, tenant)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(gardenerClusterName, tenant)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // SetRuntimeStatusCondition provides a mock function with given fields: id, statusCondition, tenant
 func (_m *DirectorClient) SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) error {
 	ret := _m.Called(id, statusCondition, tenant)

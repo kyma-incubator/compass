@@ -191,7 +191,7 @@ func main() {
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
 		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
-		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, directorClient, installationService, provisioningQueue, cfg.Gardener.AuditLogsTenantConfigPath)
+		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, directorClient, installationService, cfg.Gardener.AuditLogsTenantConfigPath)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {
 			err := shootController.StartShootController()

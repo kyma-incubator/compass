@@ -5,8 +5,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -27,7 +25,6 @@ func NewShootController(
 	dbsFactory dbsession.Factory,
 	directorClient director.DirectorClient,
 	installationSvc installation.Service,
-	installQueue queue.OperationQueue,
 	auditLogTenantConfigPath string) (*ShootController, error) {
 
 	err := gardener_types.AddToScheme(mgr.GetScheme())
@@ -37,7 +34,7 @@ func NewShootController(
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&gardener_types.Shoot{}).
-		Complete(NewReconciler(mgr, dbsFactory, shootClient, directorClient, installationSvc, installQueue, auditLogTenantConfigPath))
+		Complete(NewReconciler(mgr, dbsFactory, shootClient, directorClient, installationSvc, auditLogTenantConfigPath))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create controller: %w", err)
 	}

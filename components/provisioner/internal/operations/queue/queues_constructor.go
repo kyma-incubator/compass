@@ -3,6 +3,8 @@ package queue
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
+
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
@@ -38,7 +40,7 @@ func CreateProvisioningQueue(
 	configureAgentStep := provisioning.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
 	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation)
 	installStep := provisioning.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 20*time.Minute)
-	waitForClusterInitializationStep := provisioning.NewWaitForClusterInitializationStep(shootClient, factory, secretsClient, installStep.Name(), 20*time.Minute)
+	waitForClusterInitializationStep := provisioning.NewWaitForClusterInitializationStep(shootClient, factory, gardener.NewKubeconfigProvider(secretsClient), installStep.Name(), 20*time.Minute)
 	waitForClusterCreationStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterInitializationStep.Name(), 10*time.Minute)
 
 	installSteps := map[model.OperationStage]operations.Step{
@@ -96,7 +98,7 @@ func CreateDeprovisioningQueue(
 
 	// TODO: consider adding timeouts to the configuration
 	deprovisionCluster := deprovisioning.NewDeprovisionClusterStep(installationClient, shootClient, factory, directorClient, model.FinishedStage, 5*time.Minute)
-	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, shootClient, secretsClient, deprovisionCluster.Name(), 5*time.Minute)
+	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, shootClient, gardener.NewKubeconfigProvider(secretsClient), deprovisionCluster.Name(), 5*time.Minute)
 
 	deprovisioningSteps := map[model.OperationStage]operations.Step{
 		model.DeprovisionCluster:   deprovisionCluster,
