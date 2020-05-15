@@ -27,7 +27,7 @@ global:
       version: "PR-1255"
     gateway:
       dir:
-      version: "PR-1270"
+      version: "PR-1330"
     healthchecker:
       dir: pr/
       version: "PR-357"
@@ -44,17 +44,17 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "33a9188e"
+      version: "PR-1332"
     external_services_mock:
       dir:
-      version: "PR-1270"
+      version: "PR-1315"
     metris:
       dir:
-      version: "PR-1270"
+      version: "PR-1343"
     tests:
       director:
         dir:
-        version: "PR-1256"
+        version: "PR-1315"
       connector:
         dir:
         version: "PR-1270"

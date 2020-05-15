@@ -76,7 +76,7 @@ func TestGardenerSecretNameError(t *testing.T) {
 
 	require.Error(t, err)
 
-	assert.Equal(t, "Unknown Hyperscaler provider type: bogus", err.Error())
+	assert.Equal(t, "unknown Hyperscaler provider type: bogus", err.Error())
 }
 
 func TestCompassSecretNameError(t *testing.T) {
@@ -95,7 +95,7 @@ func TestCompassSecretNameError(t *testing.T) {
 
 	require.Error(t, err)
 
-	assert.Contains(t, err.Error(), "Can't determine hyperscaler type")
+	assert.Contains(t, err.Error(), "can't determine hyperscaler type")
 }
 
 func TestGardenerSecretNameNotFound(t *testing.T) {
@@ -113,7 +113,7 @@ func TestGardenerSecretNameNotFound(t *testing.T) {
 
 	require.Error(t, err)
 
-	assert.Equal(t, "AccountPool failed to find unassigned secret for hyperscalerType: azure", err.Error())
+	assert.Equal(t, "accountPool failed to find unassigned secret for hyperscalerType: azure", err.Error())
 }
 
 func TestHyperscalerTypeFromProvisionInput(t *testing.T) {
@@ -188,7 +188,7 @@ func TestHyperscalerTypeFromProvisionInputGardenerError(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Empty(t, hyperscalerType)
-	assert.Equal(t, "Unknown Hyperscaler provider type: bogus", err.Error())
+	assert.Equal(t, "unknown Hyperscaler provider type: bogus", err.Error())
 }
 
 func TestHyperscalerTypeFromProvisionInputError(t *testing.T) {
@@ -197,7 +197,7 @@ func TestHyperscalerTypeFromProvisionInputError(t *testing.T) {
 
 	require.Error(t, err)
 
-	assert.Equal(t, err.Error(), "Can't determine hyperscaler type because ProvisionRuntimeInput not specified (was nil)")
+	assert.Equal(t, err.Error(), "can't determine hyperscaler type because ProvisionRuntimeInput not specified (was nil)")
 
 	input := &gqlschema.ProvisionRuntimeInput{}
 
@@ -205,7 +205,7 @@ func TestHyperscalerTypeFromProvisionInputError(t *testing.T) {
 
 	require.Error(t, err)
 
-	assert.Equal(t, err.Error(), "Can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig not specified (was nil)")
+	assert.Equal(t, err.Error(), "can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig not specified (was nil)")
 
 	input = &gqlschema.ProvisionRuntimeInput{
 		ClusterConfig: &gqlschema.ClusterConfigInput{},
@@ -215,5 +215,5 @@ func TestHyperscalerTypeFromProvisionInputError(t *testing.T) {
 
 	require.Error(t, err)
 
-	assert.Equal(t, err.Error(), "Can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig hyperscaler config not specified")
+	assert.Equal(t, err.Error(), "can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig hyperscaler config not specified")
 }

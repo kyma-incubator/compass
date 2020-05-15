@@ -90,13 +90,8 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 	}
 
 	if svc.hasInsufficientScopeError(graphqlResponse.Errors) {
-		response, err := json.Marshal(&graphqlResponse.Errors)
-		if err != nil {
-			return errors.Wrap(err, "while marshalling graphql err")
-		}
-
 		msg := svc.msgFactory.CreateSecurityEvent()
-		eventData := model.SecurityEventData{ID: fillID(claims, "Security Event"), Reason: string(response)}
+		eventData := model.SecurityEventData{ID: fillID(claims, "Security Event"), Reason: graphqlResponse.Errors}
 		data, err := json.Marshal(&eventData)
 		if err != nil {
 			return errors.Wrap(err, "while marshalling security event data")

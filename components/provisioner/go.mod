@@ -15,7 +15,7 @@ require (
 	github.com/kubernetes/client-go v11.0.0+incompatible
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283
 	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
-	github.com/kyma-incubator/hydroform/install v0.0.0-20200414071650-35d4d6f8c53e
+	github.com/kyma-incubator/hydroform/install v0.0.0-20200514103120-0b6d49693c4d
 	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200422062252-6074323197a6
 	github.com/lib/pq v1.2.0

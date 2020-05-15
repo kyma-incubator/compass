@@ -689,6 +689,8 @@ github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9 h1:YERsmP
 github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9/go.mod h1:AxIzJWwHlpqqSdLjwV+bMBK2dpTaQaVpFRprmum1BB8=
 github.com/kyma-incubator/hydroform/install v0.0.0-20200414071650-35d4d6f8c53e h1:+uM7H7E1BW4TG9k3KnO8PqEWMeDe6q7nFegn0NaeaWg=
 github.com/kyma-incubator/hydroform/install v0.0.0-20200414071650-35d4d6f8c53e/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
+github.com/kyma-incubator/hydroform/install v0.0.0-20200514103120-0b6d49693c4d h1:WW9GT7TOx+hKlCeqOWsdMlYAg8XVJHA1jQwhj5734Dw=
+github.com/kyma-incubator/hydroform/install v0.0.0-20200514103120-0b6d49693c4d/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/kyma-project/kyma v0.5.1-0.20200317154738-0bb20217c2cb/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=

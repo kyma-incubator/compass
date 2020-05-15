@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
@@ -80,4 +82,43 @@ func searchForAuditlogByString(t *testing.T, client *http.Client, baseURL string
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	return auditlogs
+}
+
+//Package
+func fixAddPackageRequest(appID, pkgCreateInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addPackage(applicationID: "%s", in: %s) {
+				%s
+			}}`, appID, pkgCreateInput, tc.gqlFieldsProvider.ForPackage()))
+}
+
+func fixDeletePackageRequest(packageID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deletePackage(id: "%s") {
+				%s
+			}
+		}`, packageID, tc.gqlFieldsProvider.ForPackage()))
+}
+
+func fixRefetchAPISpecRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: refetchAPISpec(apiID: "%s") {
+						%s
+					}
+				}`,
+			id, tc.gqlFieldsProvider.ForApiSpec()))
+}
+
+func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+				%s
+				}
+			}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
+			"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`, packageID, tc.gqlFieldsProvider.ForPackage()),
+		})))
 }

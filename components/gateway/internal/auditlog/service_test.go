@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAuditlogService_LogConfigurationChange(t *testing.T) {
+func TestAuditlogService_Log(t *testing.T) {
 	t.Run("Success mutation", func(t *testing.T) {
 		//GIVEN
 		factory := &automock.AuditlogMessageFactory{}

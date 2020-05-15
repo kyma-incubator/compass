@@ -7,8 +7,8 @@ import (
 
 //go:generate mockery -name=AccountProvider -output=automock -outpkg=automock -case=underscore
 type AccountProvider interface {
-	CompassCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
-	GardenerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
+	CompassCredentials(hyperscalerType Type, tenantName string) (Credentials, error)
+	GardenerCredentials(hyperscalerType Type, tenantName string) (Credentials, error)
 	CompassSecretName(input *gqlschema.ProvisionRuntimeInput, tenantName string) (string, error)
 	GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error)
 }
@@ -26,13 +26,13 @@ func NewAccountProvider(compassPool AccountPool, gardenerPool AccountPool) Accou
 	}
 }
 
-func HyperscalerTypeFromProvisionInput(input *gqlschema.ProvisionRuntimeInput) (HyperscalerType, error) {
+func HyperscalerTypeFromProvisionInput(input *gqlschema.ProvisionRuntimeInput) (Type, error) {
 
 	if input == nil {
-		return HyperscalerType(""), errors.New("Can't determine hyperscaler type because ProvisionRuntimeInput not specified (was nil)")
+		return Type(""), errors.New("can't determine hyperscaler type because ProvisionRuntimeInput not specified (was nil)")
 	}
 	if input.ClusterConfig == nil {
-		return HyperscalerType(""), errors.New("Can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig not specified (was nil)")
+		return Type(""), errors.New("can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig not specified (was nil)")
 	}
 
 	if input.ClusterConfig.GcpConfig != nil {
@@ -43,19 +43,19 @@ func HyperscalerTypeFromProvisionInput(input *gqlschema.ProvisionRuntimeInput) (
 		return HyperscalerTypeFromProviderString(input.ClusterConfig.GardenerConfig.Provider)
 	}
 
-	return HyperscalerType(""), errors.New("Can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig hyperscaler config not specified")
+	return Type(""), errors.New("can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig hyperscaler config not specified")
 }
 
-func (p *accountProvider) CompassCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
+func (p *accountProvider) CompassCredentials(hyperscalerType Type, tenantName string) (Credentials, error) {
 
 	return p.compassPool.Credentials(hyperscalerType, tenantName)
 }
 
-func (p *accountProvider) GardenerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
+func (p *accountProvider) GardenerCredentials(hyperscalerType Type, tenantName string) (Credentials, error) {
 
 	if p.gardenerPool == nil {
 		return Credentials{},
-			errors.New("Failed to get Gardener Credentials. Gardener Account pool is not configured")
+			errors.New("failed to get Gardener Credentials. Gardener Account pool is not configured")
 	}
 
 	return p.gardenerPool.Credentials(hyperscalerType, tenantName)
@@ -77,7 +77,7 @@ func (p *accountProvider) CompassSecretName(input *gqlschema.ProvisionRuntimeInp
 	if err != nil {
 		return "", err
 	}
-	return credential.CredentialName, nil
+	return credential.Name, nil
 
 }
 
@@ -98,6 +98,6 @@ func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInpu
 	if err != nil {
 		return "", err
 	}
-	return credential.CredentialName, nil
+	return credential.Name, nil
 
 }

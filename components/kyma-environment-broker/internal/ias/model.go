@@ -18,6 +18,7 @@ type ServiceProvider struct {
 	AuthenticatingIdp   AuthenticatingIdp    `json:"authenticatingIdp"`
 	Secret              []SPSecret           `json:"clientSecrets"`
 	ACSEndpoints        []ACSEndpoint        `json:"acs_endpoints"`
+	UserForRest         string               `json:"userForRest"`
 }
 
 type AuthenticatingIdp struct {
@@ -116,4 +117,9 @@ type RBARules struct {
 	Action    string `json:"action"`
 	Group     string `json:"group"`
 	GroupType string `json:"group_type"`
+}
+
+type SecretsRef struct {
+	ClientID         string   `json:"clientId"`
+	ClientSecretsIDs []string `json:"clientSecretsIds"`
 }
