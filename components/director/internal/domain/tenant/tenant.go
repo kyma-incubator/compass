@@ -9,8 +9,8 @@ import (
 type key int
 
 const (
-	TenantContextKey = iota
-	ExternalTenantContextKey
+	TenantContextKey         key = iota
+	ExternalTenantContextKey key = iota
 )
 
 func LoadFromContext(ctx context.Context) (string, error) {
@@ -29,4 +29,8 @@ func LoadFromContext(ctx context.Context) (string, error) {
 
 func SaveToContext(ctx context.Context, tenant string) context.Context {
 	return context.WithValue(ctx, TenantContextKey, tenant)
+}
+
+func SaveExternalToContext(ctx context.Context, tenant string) context.Context {
+	return context.WithValue(ctx, ExternalTenantContextKey, tenant)
 }

@@ -304,7 +304,7 @@ func NewEmptyTenantError() *emptyTenantError {
 }
 
 func (e *emptyTenantError) Error() string {
-	return "internal tenantID is empty"
+	return "tenant not found"
 }
 
 func (emptyTenantError) EmptyTenant() {}

@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -63,8 +64,10 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				a.writeError(w, err.Error(), http.StatusUnauthorized)
 				return
 			}
-			if claims.ExternalTenant == "" && claims.Tenant == "" {
-				a.writeError(w, "Tenant not provided", http.StatusBadRequest)
+
+			if claims.Tenant == "" && claims.ExternalTenant != "" {
+				a.writeError(w, fmt.Sprintf("No tenant found for external tenant: %s", claims.ExternalTenant), http.StatusBadRequest)
+				return
 			}
 
 			ctx := a.contextWithClaims(r.Context(), claims)
@@ -122,9 +125,12 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 }
 
 func (a *Authenticator) contextWithClaims(ctx context.Context, claims Claims) context.Context {
+	logrus.Info("CLAIMS")
+	logrus.Infof("%+v", claims)
 	ctxWithTenant := tenant.SaveToContext(ctx, claims.Tenant)
+	ctxWithExternalTenant := tenant.SaveExternalToContext(ctxWithTenant, claims.ExternalTenant)
 	scopesArray := strings.Split(claims.Scopes, " ")
-	ctxWithScopes := scope.SaveToContext(ctxWithTenant, scopesArray)
+	ctxWithScopes := scope.SaveToContext(ctxWithExternalTenant, scopesArray)
 	apiConsumer := consumer.Consumer{ConsumerID: claims.ConsumerID, ConsumerType: claims.ConsumerType}
 	ctxWithConsumerInfo := consumer.SaveToContext(ctxWithScopes, apiConsumer)
 	return ctxWithConsumerInfo

@@ -48,6 +48,9 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 
 	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), scopes, username, consumer.User), nil
+		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
 
