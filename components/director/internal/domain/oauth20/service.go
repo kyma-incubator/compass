@@ -53,7 +53,7 @@ func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Co
 func (s *service) CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
 	scopes, err := s.getClientCredentialScopes(objectType)
 	if err != nil {
-		if !apperrors.IsEmptyTenant(err) && objectType != model.IntegrationSystemReference {
+		if !apperrors.IsEmptyTenant(err) || objectType != model.IntegrationSystemReference {
 			return nil, err
 		}
 	}
