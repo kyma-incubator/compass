@@ -113,6 +113,11 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 		return model.Operation{}, fmt.Errorf("error scheduling shoot %s for deletion: %s", shoot.Name, err.Error())
 	}
 
+	_, err = g.shootClient.Update(shoot)
+	if err != nil {
+		return model.Operation{}, fmt.Errorf("error updating Shoot: %s", err.Error())
+	}
+
 	message := fmt.Sprintf("Deprovisioning started")
 	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.TriggerKymaUninstall, deletionTime), nil
 }
