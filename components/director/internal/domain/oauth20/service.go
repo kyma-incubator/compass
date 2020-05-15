@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -51,7 +53,9 @@ func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Co
 func (s *service) CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
 	scopes, err := s.getClientCredentialScopes(objectType)
 	if err != nil {
-		return nil, err
+		if !apperrors.IsEmptyTenant(err) && objectType != model.IntegrationSystemReference {
+			return nil, err
+		}
 	}
 
 	clientID := s.uidService.Generate()
