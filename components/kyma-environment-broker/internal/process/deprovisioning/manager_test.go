@@ -9,6 +9,11 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
+	"context"
+	"sync"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -22,26 +27,30 @@ const (
 
 func TestManager_Execute(t *testing.T) {
 	for name, tc := range map[string]struct {
-		operationID    string
-		expectedError  bool
-		expectedRepeat time.Duration
-		expectedDesc   string
+		operationID            string
+		expectedError          bool
+		expectedRepeat         time.Duration
+		expectedDesc           string
+		expectedNumberOfEvents int
 	}{
 		"operation successful": {
-			operationID:    operationIDSuccess,
-			expectedError:  false,
-			expectedRepeat: time.Duration(0),
-			expectedDesc:   "init one two final",
+			operationID:            operationIDSuccess,
+			expectedError:          false,
+			expectedRepeat:         time.Duration(0),
+			expectedDesc:           "init one two final",
+			expectedNumberOfEvents: 4,
 		},
 		"operation failed": {
-			operationID:   operationIDFailed,
-			expectedError: true,
+			operationID:            operationIDFailed,
+			expectedError:          true,
+			expectedNumberOfEvents: 1,
 		},
 		"operation repeated": {
-			operationID:    operationIDRepeat,
-			expectedError:  false,
-			expectedRepeat: time.Duration(10),
-			expectedDesc:   "init",
+			operationID:            operationIDRepeat,
+			expectedError:          false,
+			expectedRepeat:         time.Duration(10),
+			expectedDesc:           "init",
+			expectedNumberOfEvents: 1,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -57,7 +66,11 @@ func TestManager_Execute(t *testing.T) {
 			s2 := testStep{t: t, name: "two", storage: operations}
 			sFinal := testStep{t: t, name: "final", storage: operations}
 
-			manager := NewManager(operations, log)
+			eventBroker := event.NewApplicationEventBroker()
+			eventCollector := &collectingEventHandler{}
+			eventBroker.Subscribe(process.DeprovisioningStepProcessed{}, eventCollector.OnEvent)
+
+			manager := NewManager(operations, eventBroker, log)
 			manager.InitStep(&sInit)
 
 			manager.AddStep(2, &sFinal)
@@ -78,6 +91,7 @@ func TestManager_Execute(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.expectedDesc, strings.Trim(operation.Description, " "))
 			}
+			assert.Len(t, eventCollector.Events, tc.expectedNumberOfEvents, fmt.Sprintf("%d", len(eventCollector.Events)))
 		})
 	}
 }
@@ -120,4 +134,17 @@ func (ts *testStep) Run(operation internal.DeprovisioningOperation, logger logru
 	default:
 		return *updated, 0, nil
 	}
+}
+
+type collectingEventHandler struct {
+	mu     sync.Mutex
+	Events []interface{}
+}
+
+func (h *collectingEventHandler) OnEvent(ctx context.Context, ev interface{}) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	h.Events = append(h.Events, ev)
+	return nil
 }

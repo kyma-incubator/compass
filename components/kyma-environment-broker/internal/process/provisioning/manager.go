@@ -7,6 +7,10 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 
+	"context"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 )
@@ -20,13 +24,16 @@ type Manager struct {
 	log              logrus.FieldLogger
 	steps            map[int][]Step
 	operationStorage storage.Operations
+
+	publisher event.Publisher
 }
 
-func NewManager(storage storage.Operations, logger logrus.FieldLogger) *Manager {
+func NewManager(storage storage.Operations, pub event.Publisher, logger logrus.FieldLogger) *Manager {
 	return &Manager{
 		log:              logger,
 		operationStorage: storage,
 		steps:            make(map[int][]Step, 0),
+		publisher:        pub,
 	}
 }
 
@@ -39,6 +46,22 @@ func (m *Manager) AddStep(weight int, step Step) {
 		weight = 1
 	}
 	m.steps[weight] = append(m.steps[weight], step)
+}
+
+func (m *Manager) runStep(step Step, operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	start := time.Now()
+	processedOperation, when, err := step.Run(operation, logger)
+	m.publisher.Publish(context.TODO(), process.ProvisioningStepProcessed{
+		OldOperation: operation,
+		Operation:    processedOperation,
+		StepProcessed: process.StepProcessed{
+			StepName: step.Name(),
+			Duration: time.Since(start),
+			When:     when,
+			Error:    err,
+		},
+	})
+	return processedOperation, when, err
 }
 
 func (m *Manager) Execute(operationID string) (time.Duration, error) {
@@ -59,7 +82,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 			logStep := logOperation.WithField("step", step.Name())
 			logStep.Infof("Start step")
 
-			processedOperation, when, err = step.Run(processedOperation, logStep)
+			processedOperation, when, err = m.runStep(step, processedOperation, logStep)
 			if err != nil {
 				logStep.Errorf("Process operation failed: %s", err)
 				return 0, err

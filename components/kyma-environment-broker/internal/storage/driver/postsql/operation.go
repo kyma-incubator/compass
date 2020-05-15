@@ -282,6 +282,27 @@ func (s *operations) GetOperationsInProgressByType(operationType dbmodel.Operati
 	return toOperations(operations), nil
 }
 
+func (s *operations) GetOperationStats() (internal.OperationStats, error) {
+	entries, err := s.NewReadSession().GetOperationStats()
+	if err != nil {
+		return internal.OperationStats{}, err
+	}
+
+	result := internal.OperationStats{
+		Provisioning:   make(map[domain.LastOperationState]int),
+		Deprovisioning: make(map[domain.LastOperationState]int),
+	}
+	for _, e := range entries {
+		switch dbmodel.OperationType(e.Type) {
+		case dbmodel.OperationTypeProvision:
+			result.Provisioning[domain.LastOperationState(e.State)] = e.Total
+		case dbmodel.OperationTypeDeprovision:
+			result.Deprovisioning[domain.LastOperationState(e.State)] = e.Total
+		}
+	}
+	return result, nil
+}
+
 func toOperation(op *dbmodel.OperationDTO) internal.Operation {
 	return internal.Operation{
 		ID:                     op.ID,

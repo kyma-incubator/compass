@@ -29,3 +29,8 @@ type OperationDTO struct {
 
 	Type OperationType
 }
+type OperationStatEntry struct {
+	Type  string
+	State string
+	Total int
+}

@@ -242,6 +242,12 @@ func TestSchemaInitializer(t *testing.T) {
 
 			assert.Equal(t, "new modified description", gotOperation2.Description)
 
+			// when
+			stats, err := svc.GetOperationStats()
+			require.NoError(t, err)
+
+			assert.Equal(t, 1, stats.Provisioning[domain.InProgress])
+
 		})
 		t.Run("Deprovisioning", func(t *testing.T) {
 			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")

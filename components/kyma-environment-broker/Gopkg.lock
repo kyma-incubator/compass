@@ -451,6 +451,14 @@
   version = "v0.2.2"
 
 [[projects]]
+  digest = "1:41b00533ad3d8b3f54b6a02fc093b211feeffb068a3148a7e7084cd7aeef18ec"
+  name = "github.com/magiconair/properties"
+  packages = ["assert"]
+  pruneopts = "UT"
+  revision = "de8848e004dd33dc07a2947b3d76f618a7fc7ef1"
+  version = "v1.8.1"
+
+[[projects]]
   digest = "1:ff5ebae34cfbf047d505ee150de27e60570e8c394b3b8fdbb720ff6ac71985fc"
   name = "github.com/matttproud/golang_protobuf_extensions"
   packages = ["pbutil"]
@@ -1175,6 +1183,7 @@
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
     "github.com/machinebox/graphql",
+    "github.com/magiconair/properties/assert",
     "github.com/pivotal-cf/brokerapi/v7/domain",
     "github.com/pivotal-cf/brokerapi/v7/domain/apiresponses",
     "github.com/pivotal-cf/brokerapi/v7/handlers",

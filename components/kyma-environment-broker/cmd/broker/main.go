@@ -35,6 +35,8 @@ import (
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/metrics"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -184,9 +186,25 @@ func main() {
 	bundleBuilder := ias.NewBundleBuilder(httpClient, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
+	// metrics collectors
+	opResultCollector := metrics.NewOperationResultCollector()
+	opDurationCollector := metrics.NewOperationDurationCollector()
+	stepResultCollector := metrics.NewStepResultCollector()
+	prometheus.MustRegister(opResultCollector, opDurationCollector, stepResultCollector)
+	prometheus.MustRegister(metrics.NewOperationsCollector(db.Operations()))
+
+	// application event broker
+	eventBroker := event.NewApplicationEventBroker()
+	eventBroker.Subscribe(process.ProvisioningStepProcessed{}, opResultCollector.OnProvisioningStepProcessed)
+	eventBroker.Subscribe(process.DeprovisioningStepProcessed{}, opResultCollector.OnDeprovisioningStepProcessed)
+	eventBroker.Subscribe(process.ProvisioningStepProcessed{}, opDurationCollector.OnProvisioningStepProcessed)
+	eventBroker.Subscribe(process.DeprovisioningStepProcessed{}, opDurationCollector.OnDeprovisioningStepProcessed)
+	eventBroker.Subscribe(process.ProvisioningStepProcessed{}, stepResultCollector.OnProvisioningStepProcessed)
+	eventBroker.Subscribe(process.DeprovisioningStepProcessed{}, stepResultCollector.OnDeprovisioningStepProcessed)
+
 	// setup operation managers
-	provisionManager := provisioning.NewManager(db.Operations(), logs.WithField("provisioning", "manager"))
-	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs.WithField("deprovisioning", "manager"))
+	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
+	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 
 	// define steps
 	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
