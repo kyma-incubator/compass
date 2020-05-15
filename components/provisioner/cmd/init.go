@@ -70,7 +70,7 @@ func newDirectorClient(config config) (director.DirectorClient, error) {
 func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient.Config,
 	gardenerClientSet *gardener_apis.CoreV1beta1Client,
 	dbsFactory dbsession.Factory, directorClient director.DirectorClient, installationSvc installation.Service,
-	queue queue.OperationQueue, auditLogTenantConfigPath string) (*gardener.ShootController, error) {
+	auditLogTenantConfigPath string) (*gardener.ShootController, error) {
 
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
@@ -81,8 +81,7 @@ func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient
 		return nil, fmt.Errorf("unable to create shoot controller manager: %w", err)
 	}
 
-	return gardener.NewShootController(mgr, shootClient, dbsFactory, directorClient, installationSvc, queue,
-		auditLogTenantConfigPath)
+	return gardener.NewShootController(mgr, shootClient, dbsFactory, directorClient, installationSvc, auditLogTenantConfigPath)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {

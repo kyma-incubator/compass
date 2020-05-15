@@ -1,7 +1,22 @@
 package api
 
 import (
+	"context"
+	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s/mocks"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	"k8s.io/client-go/kubernetes/fake"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
+	hydroformmocks "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
+	"github.com/kyma-incubator/hydroform/types"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
@@ -9,10 +24,21 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 
+	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+
+	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -164,180 +190,178 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 
 var providerCredentials = &gqlschema.CredentialsInput{SecretName: "secret_1"}
 
-//func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
-//
-//	mockedTerraformState := []byte(`{"test_key": "test_value"}`)
-//
-//	hydroformServiceMock := &hydroformmocks.Service{}
-//	hydroformServiceMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: mockedKubeconfig, State: mockedTerraformState}, nil).
-//		Run(func(args mock.Arguments) {
-//			time.Sleep(1 * time.Second)
-//		})
-//	hydroformServiceMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil).
-//		Run(func(args mock.Arguments) {
-//			time.Sleep(1 * time.Second)
-//		})
-//
-//	installationServiceMock := &installationMocks.Service{}
-//	installationServiceMock.On(
-//		"InstallKyma",
-//		mock.AnythingOfType("string"),
-//		mock.AnythingOfType("string"),
-//		mock.AnythingOfType("model.Release"),
-//		mock.AnythingOfType("model.Configuration"),
-//		mock.AnythingOfType("[]model.KymaComponentConfig")).
-//		Return(nil)
-//
-//	uuidGenerator := uuid.NewUUIDGenerator()
-//
-//	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
-//
-//	cleanupNetwork, err := testutils.EnsureTestNetworkForDB(t, ctx)
-//	require.NoError(t, err)
-//	defer cleanupNetwork()
-//
-//	containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx, "postgres_database")
-//	require.NoError(t, err)
-//
-//	defer containerCleanupFunc()
-//
-//	connection, err := database.InitializeDatabaseConnection(connString, 5)
-//	require.NoError(t, err)
-//	require.NotNil(t, connection)
-//
-//	defer testutils.CloseDatabase(t, connection)
-//
-//	err = database.SetupSchema(connection, testutils.SchemaFilePath)
-//	require.NoError(t, err)
-//
-//	kymaConfig := fixKymaGraphQLConfigInput()
-//	clusterConfigurations := getTestClusterConfigurations()
-//
-//	for _, cfg := range clusterConfigurations {
-//		t.Run(cfg.description, func(t *testing.T) {
-//
-//			directorServiceMock := &directormock.DirectorClient{}
-//			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(cfg.runtimeID, nil)
-//			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
-//			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
-//
-//			mockK8sClientProvider := &mocks.K8sClientProvider{}
-//			fakeK8sClient := fake.NewSimpleClientset()
-//
-//			fakeShootClient := gardener_apis_fake.NewSimpleClientset().CoreV1beta1().Shoots(namespace)
-//
-//			mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
-//			runtimeConfigurator := runtime.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
-//
-//			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: cfg.runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
-//
-//			dbSessionFactory := dbsession.NewFactory(connection)
-//			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
-//			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject)
-//			graphQLConverter := provisioning.NewGraphQLConverter()
-//
-//			installationQueue := queue.CreateProvisioningQueue(testProvisioningTimeouts(), dbSessionFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock, fakeShootClient, nil)
-//			installationQueue.Run(ctx.Done())
-//
-//			deprovisioningQueue := queue.CreateDeprovisioningQueue(dbSessionFactory, installationServiceMock, directorServiceMock, fakeShootClient, nil)
-//			deprovisioningQueue.Run(ctx.Done())
-//
-//			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock, runtimeConfigurator)
-//			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator, installationQueue, nil, nil)
-//			validator := NewValidator(dbSessionFactory.NewReadSession())
-//			provisioner := NewResolver(provisioningService, validator)
-//
-//			err := insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
-//			require.NoError(t, err)
-//
-//			status, err := provisioner.ProvisionRuntime(ctx, fullConfig)
-//			require.NoError(t, err)
-//
-//			require.NotNil(t, status)
-//			require.NotNil(t, status.RuntimeID)
-//			assert.Equal(t, cfg.runtimeID, *status.RuntimeID)
-//
-//			messageProvisioningStarted := "Provisioning started"
-//
-//			statusForProvisioningStarted := &gqlschema.OperationStatus{
-//				ID:        status.ID,
-//				Operation: gqlschema.OperationTypeProvision,
-//				State:     gqlschema.OperationStateInProgress,
-//				RuntimeID: status.RuntimeID,
-//				Message:   &messageProvisioningStarted,
-//			}
-//
-//			runtimeStatusProvisioningStarted, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
-//			require.NoError(t, err)
-//			require.NotNil(t, runtimeStatusProvisioningStarted)
-//			assert.Equal(t, statusForProvisioningStarted, runtimeStatusProvisioningStarted.LastOperationStatus)
-//			assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioningStarted.RuntimeConfiguration.KymaConfig)
-//
-//			err = waitForOperationCompleted(provisioningService, *status.ID, 3)
-//			require.NoError(t, err)
-//
-//			messageProvisioningSucceeded := "Operation succeeded."
-//
-//			statusForProvisioningSucceeded := &gqlschema.OperationStatus{
-//				ID:        status.ID,
-//				Operation: gqlschema.OperationTypeProvision,
-//				State:     gqlschema.OperationStateSucceeded,
-//				RuntimeID: status.RuntimeID,
-//				Message:   &messageProvisioningSucceeded,
-//			}
-//
-//			runtimeStatusProvisioned, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
-//			require.NoError(t, err)
-//			require.NotNil(t, runtimeStatusProvisioned)
-//			assert.Equal(t, statusForProvisioningSucceeded, runtimeStatusProvisioned.LastOperationStatus)
-//			assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioningStarted.RuntimeConfiguration.KymaConfig)
-//
-//			session := dbSessionFactory.NewReadSession()
-//			clusterData, err := session.GetCluster(cfg.runtimeID)
-//			require.NoError(t, err)
-//			require.NotNil(t, clusterData)
-//			require.NotNil(t, clusterData.Kubeconfig)
-//			assert.Equal(t, mockedTerraformState, clusterData.TerraformState)
-//			assert.Equal(t, mockedKubeconfig, *clusterData.Kubeconfig)
-//
-//			deprovisionID, err := provisioner.DeprovisionRuntime(ctx, cfg.runtimeID)
-//			require.NoError(t, err)
-//
-//			messageDeprovisioningStarted := "Deprovisioning started."
-//
-//			statusForDeprovisioningStarted := &gqlschema.OperationStatus{
-//				ID:        &deprovisionID,
-//				Operation: gqlschema.OperationTypeDeprovision,
-//				State:     gqlschema.OperationStateInProgress,
-//				RuntimeID: &cfg.runtimeID,
-//				Message:   &messageDeprovisioningStarted,
-//			}
-//
-//			runtimeStatusDeprovStarted, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
-//			require.NoError(t, err)
-//			require.NotNil(t, runtimeStatusDeprovStarted)
-//			assert.Equal(t, statusForDeprovisioningStarted, runtimeStatusDeprovStarted.LastOperationStatus)
-//
-//			err = waitForOperationCompleted(provisioningService, deprovisionID, 3)
-//			require.NoError(t, err)
-//
-//			messageDeprovSucceess := "Operation succeeded."
-//
-//			runtimeStatusDeprovSuccess := &gqlschema.OperationStatus{
-//				ID:        &deprovisionID,
-//				Operation: gqlschema.OperationTypeDeprovision,
-//				State:     gqlschema.OperationStateSucceeded,
-//				RuntimeID: &cfg.runtimeID,
-//				Message:   &messageDeprovSucceess,
-//			}
-//
-//			runtimeStatusDeprovisioned, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
-//			require.NoError(t, err)
-//			require.NotNil(t, runtimeStatusDeprovisioned)
-//			assert.Equal(t, runtimeStatusDeprovSuccess, runtimeStatusDeprovisioned.LastOperationStatus)
-//		})
-//	}
-//}
+func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
+
+	mockedTerraformState := []byte(`{"test_key": "test_value"}`)
+
+	hydroformServiceMock := &hydroformmocks.Service{}
+	hydroformServiceMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: mockedKubeconfig, State: mockedTerraformState}, nil).
+		Run(func(args mock.Arguments) {
+			time.Sleep(1 * time.Second)
+		})
+	hydroformServiceMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil).
+		Run(func(args mock.Arguments) {
+			time.Sleep(1 * time.Second)
+		})
+
+	installationServiceMock := &installationMocks.Service{}
+	installationServiceMock.On(
+		"InstallKyma",
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("model.Release"),
+		mock.AnythingOfType("model.Configuration"),
+		mock.AnythingOfType("[]model.KymaComponentConfig")).
+		Return(nil)
+
+	uuidGenerator := uuid.NewUUIDGenerator()
+
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
+
+	cleanupNetwork, err := testutils.EnsureTestNetworkForDB(t, ctx)
+	require.NoError(t, err)
+	defer cleanupNetwork()
+
+	containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx, "postgres_database")
+	require.NoError(t, err)
+
+	defer containerCleanupFunc()
+
+	connection, err := database.InitializeDatabaseConnection(connString, 5)
+	require.NoError(t, err)
+	require.NotNil(t, connection)
+
+	defer testutils.CloseDatabase(t, connection)
+
+	err = database.SetupSchema(connection, testutils.SchemaFilePath)
+	require.NoError(t, err)
+
+	kymaConfig := fixKymaGraphQLConfigInput()
+	clusterConfigurations := getTestClusterConfigurations()
+
+	for _, cfg := range clusterConfigurations {
+		t.Run(cfg.description, func(t *testing.T) {
+
+			directorServiceMock := &directormock.DirectorClient{}
+			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(cfg.runtimeID, nil)
+			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
+			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
+
+			mockK8sClientProvider := &mocks.K8sClientProvider{}
+			fakeK8sClient := fake.NewSimpleClientset()
+
+			mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
+			runtimeConfigurator := runtime.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
+
+			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: cfg.runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
+
+			dbSessionFactory := dbsession.NewFactory(connection)
+			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject)
+			graphQLConverter := provisioning.NewGraphQLConverter()
+
+			provisioningQueue := fixFakeQueue()
+			provisioningQueue.Run(ctx.Done())
+
+			deprovisioningQueue := fixFakeQueue()
+			deprovisioningQueue.Run(ctx.Done())
+
+			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock, runtimeConfigurator)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, nil)
+			validator := NewValidator(dbSessionFactory.NewReadSession())
+			provisioner := NewResolver(provisioningService, validator)
+
+			err := insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
+			require.NoError(t, err)
+
+			status, err := provisioner.ProvisionRuntime(ctx, fullConfig)
+			require.NoError(t, err)
+
+			require.NotNil(t, status)
+			require.NotNil(t, status.RuntimeID)
+			assert.Equal(t, cfg.runtimeID, *status.RuntimeID)
+
+			messageProvisioningStarted := "Provisioning started"
+
+			statusForProvisioningStarted := &gqlschema.OperationStatus{
+				ID:        status.ID,
+				Operation: gqlschema.OperationTypeProvision,
+				State:     gqlschema.OperationStateInProgress,
+				RuntimeID: status.RuntimeID,
+				Message:   &messageProvisioningStarted,
+			}
+
+			runtimeStatusProvisioningStarted, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
+			require.NoError(t, err)
+			require.NotNil(t, runtimeStatusProvisioningStarted)
+			assert.Equal(t, statusForProvisioningStarted, runtimeStatusProvisioningStarted.LastOperationStatus)
+			assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioningStarted.RuntimeConfiguration.KymaConfig)
+
+			err = waitForOperationCompleted(provisioningService, *status.ID, 3)
+			require.NoError(t, err)
+
+			messageProvisioningSucceeded := "Operation succeeded."
+
+			statusForProvisioningSucceeded := &gqlschema.OperationStatus{
+				ID:        status.ID,
+				Operation: gqlschema.OperationTypeProvision,
+				State:     gqlschema.OperationStateSucceeded,
+				RuntimeID: status.RuntimeID,
+				Message:   &messageProvisioningSucceeded,
+			}
+
+			runtimeStatusProvisioned, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
+			require.NoError(t, err)
+			require.NotNil(t, runtimeStatusProvisioned)
+			assert.Equal(t, statusForProvisioningSucceeded, runtimeStatusProvisioned.LastOperationStatus)
+			assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioningStarted.RuntimeConfiguration.KymaConfig)
+
+			session := dbSessionFactory.NewReadSession()
+			clusterData, err := session.GetCluster(cfg.runtimeID)
+			require.NoError(t, err)
+			require.NotNil(t, clusterData)
+			require.NotNil(t, clusterData.Kubeconfig)
+			assert.Equal(t, mockedTerraformState, clusterData.TerraformState)
+			assert.Equal(t, mockedKubeconfig, *clusterData.Kubeconfig)
+
+			deprovisionID, err := provisioner.DeprovisionRuntime(ctx, cfg.runtimeID)
+			require.NoError(t, err)
+
+			messageDeprovisioningStarted := "Deprovisioning started."
+
+			statusForDeprovisioningStarted := &gqlschema.OperationStatus{
+				ID:        &deprovisionID,
+				Operation: gqlschema.OperationTypeDeprovision,
+				State:     gqlschema.OperationStateInProgress,
+				RuntimeID: &cfg.runtimeID,
+				Message:   &messageDeprovisioningStarted,
+			}
+
+			runtimeStatusDeprovStarted, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
+			require.NoError(t, err)
+			require.NotNil(t, runtimeStatusDeprovStarted)
+			assert.Equal(t, statusForDeprovisioningStarted, runtimeStatusDeprovStarted.LastOperationStatus)
+
+			err = waitForOperationCompleted(provisioningService, deprovisionID, 3)
+			require.NoError(t, err)
+
+			messageDeprovSucceess := "Operation succeeded."
+
+			runtimeStatusDeprovSuccess := &gqlschema.OperationStatus{
+				ID:        &deprovisionID,
+				Operation: gqlschema.OperationTypeDeprovision,
+				State:     gqlschema.OperationStateSucceeded,
+				RuntimeID: &cfg.runtimeID,
+				Message:   &messageDeprovSucceess,
+			}
+
+			runtimeStatusDeprovisioned, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
+			require.NoError(t, err)
+			require.NotNil(t, runtimeStatusDeprovisioned)
+			assert.Equal(t, runtimeStatusDeprovSuccess, runtimeStatusDeprovisioned.LastOperationStatus)
+		})
+	}
+}
 
 func insertDummyReleaseIfNotExist(releaseRepo release.Repository, id, version string) error {
 	_, err := releaseRepo.GetReleaseByVersion(version)
@@ -468,4 +492,17 @@ func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
 		Value:  val,
 		Secret: secret,
 	}
+}
+
+func fixFakeQueue() queue.OperationQueue {
+	return fakeQueue{}
+}
+
+type fakeQueue struct {
+}
+
+func (f fakeQueue) Add(_ string) {
+}
+
+func (f fakeQueue) Run(_ <-chan struct{}) {
 }

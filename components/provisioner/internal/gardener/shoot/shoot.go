@@ -55,7 +55,6 @@ func KubeconfigForShoot(secretsClient v12.SecretInterface, shootName string) (*r
 	}
 
 	return ParseToK8sConfig(kubeconfigRaw)
-
 }
 
 func ParseToK8sConfig(kubeconfigRaw []byte) (*restclient.Config, error) {

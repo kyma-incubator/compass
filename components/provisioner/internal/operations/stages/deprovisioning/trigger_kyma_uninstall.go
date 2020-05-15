@@ -5,31 +5,34 @@ import (
 
 	"github.com/pkg/errors"
 
-	shootUtil "github.com/kyma-incubator/compass/components/provisioner/internal/gardener/shoot"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
+	restclient "k8s.io/client-go/rest"
 )
 
 type TriggerKymaUninstallStep struct {
 	installationClient installation.Service
 	gardenerClient     GardenerClient
-	secretsClient      v1core.SecretInterface
+	kubeconfigProvider KubeconfigProvider
 	nextStep           model.OperationStage
 	timeLimit          time.Duration
 }
 
-func NewTriggerKymaUninstallStep(installationClient installation.Service, gardenerClient GardenerClient, secretsClient v1core.SecretInterface, nextStep model.OperationStage, timeLimit time.Duration) *TriggerKymaUninstallStep {
+func NewTriggerKymaUninstallStep(installationClient installation.Service, gardenerClient GardenerClient, kubeconfigProvider KubeconfigProvider, nextStep model.OperationStage, timeLimit time.Duration) *TriggerKymaUninstallStep {
 	return &TriggerKymaUninstallStep{
 		installationClient: installationClient,
 		gardenerClient:     gardenerClient,
-		secretsClient:      secretsClient,
+		kubeconfigProvider: kubeconfigProvider,
 		nextStep:           nextStep,
 		timeLimit:          timeLimit,
 	}
+}
+
+type KubeconfigProvider interface {
+	Fetch(shootName string) (*restclient.Config, error)
 }
 
 func (s *TriggerKymaUninstallStep) Name() model.OperationStage {
@@ -56,7 +59,7 @@ func (s *TriggerKymaUninstallStep) Run(cluster model.Cluster, _ model.Operation,
 	}
 
 	logger.Debugf("Starting Uninstall")
-	k8sConfig, err := shootUtil.KubeconfigForShoot(s.secretsClient, shoot.Name)
+	k8sConfig, err := s.kubeconfigProvider.Fetch(shoot.Name)
 	if err != nil {
 		logger.Errorf("error fetching kubeconfig: %s", err.Error())
 		return operations.StageResult{}, err

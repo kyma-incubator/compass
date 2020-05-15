@@ -192,7 +192,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
-	controler, err := gardener.NewShootController(mgr, shootInterface, dbsFactory, directorServiceMock, installationServiceMock, installationQueue, auditLogsConfigPath)
+	controler, err := gardener.NewShootController(mgr, shootInterface, dbsFactory, directorServiceMock, installationServiceMock, auditLogsConfigPath)
 	require.NoError(t, err)
 
 	go func() {

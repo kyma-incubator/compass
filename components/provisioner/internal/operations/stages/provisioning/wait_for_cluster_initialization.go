@@ -7,28 +7,30 @@ import (
 
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	shootUtil "github.com/kyma-incubator/compass/components/provisioner/internal/gardener/shoot"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 type WaitForClusterInitializationStep struct {
-	gardenerClient GardenerClient
-	dbsFactory     dbsession.Factory
-	secretsClient  v1core.SecretInterface
-	nextStep       model.OperationStage
-	timeLimit      time.Duration
+	gardenerClient     GardenerClient
+	dbsFactory         dbsession.Factory
+	kubeconfigProvider KubeconfigProvider
+	nextStep           model.OperationStage
+	timeLimit          time.Duration
 }
 
-func NewWaitForClusterInitializationStep(gardenerClient GardenerClient, dbsFactory dbsession.Factory, secretsClient v1core.SecretInterface, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterInitializationStep {
+type KubeconfigProvider interface {
+	FetchRaw(shootName string) ([]byte, error)
+}
+
+func NewWaitForClusterInitializationStep(gardenerClient GardenerClient, dbsFactory dbsession.Factory, kubeconfigProvider KubeconfigProvider, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterInitializationStep {
 	return &WaitForClusterInitializationStep{
-		gardenerClient: gardenerClient,
-		dbsFactory:     dbsFactory,
-		secretsClient:  secretsClient,
+		gardenerClient:     gardenerClient,
+		dbsFactory:         dbsFactory,
+		kubeconfigProvider: kubeconfigProvider,
 
 		nextStep:  nextStep,
 		timeLimit: timeLimit,
@@ -83,7 +85,7 @@ func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLo
 	session := s.dbsFactory.NewReadWriteSession()
 
 	log.Debugf("Getting Kubeconfig")
-	kubeconfig, err := shootUtil.FetchKubeconfigForShoot(s.secretsClient, shoot.Name)
+	kubeconfig, err := s.kubeconfigProvider.FetchRaw(shoot.Name)
 	if err != nil {
 		log.Errorf("Error fetching kubeconfig for Shoot: %s", err.Error())
 		return operations.StageResult{}, err
