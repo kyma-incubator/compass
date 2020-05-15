@@ -91,16 +91,6 @@ func (s *DeprovisionClusterStep) setDeprovisioningFinished(cluster model.Cluster
 		return fmt.Errorf("error marking cluster for deletion: %s", dberr.Error())
 	}
 
-	//dberr = session.TransitionOperation(lastOp.ID, "Deprovisioning finished.", model.FinishedStage, time.Now())
-	//if dberr != nil {
-	//	return fmt.Errorf("error trainsitioning deprovision operation state %s: %s", lastOp.ID, dberr.Error())
-	//}
-
-	dberr = session.UpdateOperationState(lastOp.ID, "Operation succeeded.", model.Succeeded, time.Now())
-	if dberr != nil {
-		return fmt.Errorf("error setting deprovisioning operation %s as succeeded: %s", lastOp.ID, dberr.Error())
-	}
-
 	err := s.directorClient.DeleteRuntime(cluster.ID, cluster.Tenant)
 	if err != nil {
 		return fmt.Errorf("error deleting Runtime form Director: %s", err.Error())
