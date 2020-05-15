@@ -52,34 +52,32 @@ func (s *DeprovisionClusterStep) TimeLimit() time.Duration {
 
 func (s *DeprovisionClusterStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
-	if operation.Type == model.Deprovision {
-		// TODO: is the case with Succeeded state possible?
-		if operation.State == model.InProgress || operation.State == model.Succeeded {
+	// TODO: is the case with Succeeded state possible?
+	if operation.State == model.InProgress || operation.State == model.Succeeded {
 
-			gardenerConfig, ok := cluster.GardenerConfig()
-			if !ok {
-				// Non recoverable error?
-				return operations.StageResult{}, errors.New("failed to read GardenerConfig")
-			}
-
-			err := s.deleteShoot(cluster, logger)
-			if err != nil {
-				logger.Errorf("Error deleting shoot: %s", err.Error())
-				return operations.StageResult{}, err
-			}
-
-			err = s.setDeprovisioningFinished(cluster, gardenerConfig.Name, operation)
-			if err != nil {
-				logger.Errorf("Error setting deprovisioning finished: %s", err.Error())
-				return operations.StageResult{}, err
-			}
-
-			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
-		} else {
-			err := fmt.Errorf("invalid state occurred while deprovisioning, last operation: %s, state: %s", operation.Type, operation.State)
-			logger.Errorf("Invalid ", err.Error())
-			return operations.StageResult{}, operations.NewNonRecoverableError(err)
+		gardenerConfig, ok := cluster.GardenerConfig()
+		if !ok {
+			// Non recoverable error?
+			return operations.StageResult{}, errors.New("failed to read GardenerConfig")
 		}
+
+		err := s.deleteShoot(cluster, logger)
+		if err != nil {
+			logger.Errorf("Error deleting shoot: %s", err.Error())
+			return operations.StageResult{}, err
+		}
+
+		err = s.setDeprovisioningFinished(cluster, gardenerConfig.Name, operation)
+		if err != nil {
+			logger.Errorf("Error setting deprovisioning finished: %s", err.Error())
+			return operations.StageResult{}, err
+		}
+
+		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+	} else {
+		err := fmt.Errorf("invalid state occurred while deprovisioning, last operation: %s, state: %s", operation.Type, operation.State)
+		logger.Errorf("Invalid ", err.Error())
+		return operations.StageResult{}, operations.NewNonRecoverableError(err)
 	}
 
 	return operations.StageResult{Stage: s.Name(), Delay: 30 % time.Second}, nil

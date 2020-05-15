@@ -1,38 +1,29 @@
 package deprovisioning
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"github.com/sirupsen/logrus"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	restclient "k8s.io/client-go/rest"
 )
 
 type TriggerKymaUninstallStep struct {
 	installationClient installation.Service
-	gardenerClient     GardenerClient
-	kubeconfigProvider KubeconfigProvider
 	nextStep           model.OperationStage
 	timeLimit          time.Duration
 }
 
-func NewTriggerKymaUninstallStep(installationClient installation.Service, gardenerClient GardenerClient, kubeconfigProvider KubeconfigProvider, nextStep model.OperationStage, timeLimit time.Duration) *TriggerKymaUninstallStep {
+func NewTriggerKymaUninstallStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration) *TriggerKymaUninstallStep {
 	return &TriggerKymaUninstallStep{
 		installationClient: installationClient,
-		gardenerClient:     gardenerClient,
-		kubeconfigProvider: kubeconfigProvider,
 		nextStep:           nextStep,
 		timeLimit:          timeLimit,
 	}
-}
-
-type KubeconfigProvider interface {
-	Fetch(shootName string) (*restclient.Config, error)
 }
 
 func (s *TriggerKymaUninstallStep) Name() model.OperationStage {
@@ -47,22 +38,16 @@ func (s *TriggerKymaUninstallStep) Run(cluster model.Cluster, _ model.Operation,
 
 	logger.Debug("Shoot is on deprovisioning in progress step")
 
-	gardenerConfig, ok := cluster.GardenerConfig()
-	if !ok {
-		// Non recoverable error?
-		return operations.StageResult{}, errors.New("failed to read GardenerConfig")
+	if cluster.Kubeconfig == nil {
+		err := fmt.Errorf("error: kubeconfig is nil")
+
+		return operations.StageResult{}, operations.NewNonRecoverableError(err)
 	}
 
-	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
+	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
-		return operations.StageResult{}, err
-	}
-
-	logger.Debugf("Starting Uninstall")
-	k8sConfig, err := s.kubeconfigProvider.Fetch(shoot.Name)
-	if err != nil {
-		logger.Errorf("error fetching kubeconfig: %s", err.Error())
-		return operations.StageResult{}, err
+		err := fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
+		return operations.StageResult{}, operations.NewNonRecoverableError(err)
 	}
 
 	err = s.installationClient.TriggerUninstall(k8sConfig)
