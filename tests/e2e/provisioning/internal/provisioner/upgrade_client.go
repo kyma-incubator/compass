@@ -37,8 +37,6 @@ type RuntimeUpgradeClient struct {
 	log                logrus.FieldLogger
 }
 
-// TODO: more logs
-
 func (c RuntimeUpgradeClient) UpgradeRuntimeToVersion(kymaVersion string) (string, error) {
 	runtimeID, err := c.directorClient.GetRuntimeID(c.tenantID, c.instanceID)
 	if err != nil {

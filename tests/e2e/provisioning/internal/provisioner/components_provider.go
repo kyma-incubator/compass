@@ -2,7 +2,9 @@ package provisioner
 
 import (
 	"fmt"
+	"github.com/avast/retry-go"
 	log "github.com/sirupsen/logrus"
+	"time"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
@@ -13,7 +15,8 @@ import (
 	"strings"
 )
 
-// This is temporary solution copied from KEB. Should be removed when upgrade will be handled by KEB.
+// This is code is copied from KEB
+// This is temporary solution until the upgrade endpoint will be implemented in KEB itself
 
 const (
 	releaseInstallerURLFormat  = "https://github.com/kyma-project/kyma/releases/download/%s/kyma-installer-cluster.yaml"
@@ -49,7 +52,17 @@ func (r *ComponentsListProvider) AllComponents(kymaVersion string) ([]v1alpha1.K
 	}
 
 	// Read Kyma installer yaml (url)
-	openSourceKymaComponents, err := r.getOpenSourceKymaComponents(kymaVersion)
+
+	var openSourceKymaComponents []v1alpha1.KymaComponent
+	err := retry.Do(func() error {
+		var err error
+		openSourceKymaComponents, err = r.getOpenSourceKymaComponents(kymaVersion)
+		if err != nil {
+			log.Errorf("error getting open source Kyma components: %s", err.Error())
+			return err
+		}
+		return nil
+	}, retry.Delay(2*time.Second), retry.Attempts(10), retry.DelayType(retry.FixedDelay))
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting open source kyma components")
 	}
@@ -79,8 +92,9 @@ func (r *ComponentsListProvider) getOpenSourceKymaComponents(version string) (co
 
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
-		//return nil, kebError.AsTemporaryError(err, "while making request for Kyma components list")
+		return nil, errors.Wrap(err, "while making request for Kyma components list")
 	}
+
 	defer func() {
 		drainAndClose(resp.Body)
 	}()

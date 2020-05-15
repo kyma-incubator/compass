@@ -91,7 +91,6 @@ func (c *Client) newRuntimeClient() (client.Client, error) {
 	return cli, nil
 }
 
-// TODO: consider refactoring to use provisioner client?
 func (c *Client) FetchRuntimeConfig() (*string, error) {
 	runtimeID, err := c.directorClient.GetRuntimeID(c.tenantID, c.instanceID)
 	if err != nil {
