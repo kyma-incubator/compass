@@ -160,6 +160,14 @@
   version = "v3.2.0"
 
 [[projects]]
+  digest = "1:c48b8363344f0913ad04ccc2fc2a43ff8c241090c75adc949f62f81cd33d1fdd"
+  name = "github.com/dlmiddlecote/sqlstats"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "8821336e9736dd1260b0e85d4a31b371807d22ee"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:5d7f88f9487f370e3ae52155465156370fc5798102d811d2d4448d2385ccaf67"
   name = "github.com/docker/distribution"
   packages = [
@@ -1154,6 +1162,7 @@
     "github.com/Azure/go-autorest/autorest/adal",
     "github.com/Azure/go-autorest/autorest/azure",
     "github.com/Masterminds/sprig",
+    "github.com/dlmiddlecote/sqlstats",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
     "github.com/gocraft/dbr",
     "github.com/google/uuid",
@@ -1171,6 +1180,7 @@
     "github.com/pivotal-cf/brokerapi/v7/handlers",
     "github.com/pivotal-cf/brokerapi/v7/middlewares",
     "github.com/pkg/errors",
+    "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",
     "github.com/sebdah/goldie",
     "github.com/sirupsen/logrus",
