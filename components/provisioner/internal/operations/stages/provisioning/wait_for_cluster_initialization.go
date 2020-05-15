@@ -97,25 +97,6 @@ func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLo
 		return operations.StageResult{}, dberr
 	}
 
-	//// Set Operation stage to Starting Installation so that is properly handled by the queue
-	//dberr = session.TransitionOperation(operationId, "Starting installation", model.StartingInstallation, time.Now())
-	//if dberr != nil {
-	//	log.Errorf("Error transitioning operation stage: %s", dberr.Error())
-	//	return operations.StageResult{}, dberr
-	//}
-
-	//log.Infof("Adding operation to installation queue")
-	//r.installationQueue.Add(operationId)
-	//
-	//log.Infof("Updating Shoot...")
-	//err = r.updateShoot(shoot, func(shootToUpdate *gardener_types.Shoot) {
-	//	annotate(shootToUpdate, ProvisioningAnnotation, Provisioned.String())
-	//})
-	//if err != nil {
-	//	log.Errorf("Error updating Shoot with retries: %s", err.Error())
-	//	return err
-	//}
-
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }
 

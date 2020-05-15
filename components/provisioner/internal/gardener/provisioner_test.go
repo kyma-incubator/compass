@@ -9,14 +9,13 @@ import (
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	sessionMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -140,7 +139,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("should set operation success and mark shoot as deleted if shoot does not exist", func(t *testing.T) {
+	t.Run("should proceed to DeleteCluster step if shoot does not exist", func(t *testing.T) {
 		// given
 		clientset := fake.NewSimpleClientset()
 
@@ -159,7 +158,8 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		require.NoError(t, err)
 
 		// then
-		assert.Equal(t, model.Succeeded, operation.State)
+		assert.Equal(t, model.InProgress, operation.State)
+		assert.Equal(t, model.DeprovisionCluster, operation.Stage)
 		assert.Equal(t, operationId, operation.ID)
 		assert.Equal(t, runtimeId, operation.ClusterID)
 		assert.Equal(t, model.Deprovision, operation.Type)
@@ -169,34 +169,34 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		assert.True(t, errors.IsNotFound(err))
 	})
 
-	t.Run("should set operation failed if shoot does not exist and making it as deleted fails", func(t *testing.T) {
-		// given
-		clientset := fake.NewSimpleClientset()
-
-		sessionFactoryMock := &sessionMocks.Factory{}
-		session := &sessionMocks.WriteSession{}
-
-		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
-
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "")
-
-		// when
-		sessionFactoryMock.On("NewWriteSession").Return(session)
-		session.On("MarkClusterAsDeleted", cluster.ID).Return(dberrors.Internal("some db error"))
-
-		operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
-		require.Error(t, err)
-
-		// then
-		assert.Equal(t, model.Failed, operation.State)
-		assert.Equal(t, operationId, operation.ID)
-		assert.Equal(t, runtimeId, operation.ClusterID)
-		assert.Equal(t, model.Deprovision, operation.Type)
-
-		_, err = shootClient.Get(clusterName, v1.GetOptions{})
-		assert.Error(t, err)
-		assert.True(t, errors.IsNotFound(err))
-	})
+	//t.Run("should set operation failed if shoot does not exist and making it as deleted fails", func(t *testing.T) {
+	//	// given
+	//	clientset := fake.NewSimpleClientset()
+	//
+	//	sessionFactoryMock := &sessionMocks.Factory{}
+	//	session := &sessionMocks.WriteSession{}
+	//
+	//	shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+	//
+	//	provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "")
+	//
+	//	// when
+	//	sessionFactoryMock.On("NewWriteSession").Return(session)
+	//	session.On("MarkClusterAsDeleted", cluster.ID).Return(dberrors.Internal("some db error"))
+	//
+	//	operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
+	//	require.Error(t, err)
+	//
+	//	// then
+	//	assert.Equal(t, model.Failed, operation.State)
+	//	assert.Equal(t, operationId, operation.ID)
+	//	assert.Equal(t, runtimeId, operation.ClusterID)
+	//	assert.Equal(t, model.Deprovision, operation.Type)
+	//
+	//	_, err = shootClient.Get(clusterName, v1.GetOptions{})
+	//	assert.Error(t, err)
+	//	assert.True(t, errors.IsNotFound(err))
+	//})
 }
 
 func assertAnnotation(t *testing.T, shoot *gardener_types.Shoot, name, value string) {
