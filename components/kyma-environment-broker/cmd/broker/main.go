@@ -134,10 +134,10 @@ func main() {
 		db = storage.NewMemoryStorage()
 	} else {
 		storage, conn, err := storage.NewFromConfig(cfg.Database, logs.WithField("service", "storage"))
+		fatalOnError(err)
 		db = storage
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 		prometheus.MustRegister(dbStatsCollector)
-		fatalOnError(err)
 	}
 
 	// LMS
