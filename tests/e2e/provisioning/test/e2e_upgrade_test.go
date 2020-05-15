@@ -46,5 +46,4 @@ func Test_E2E_Upgrade(t *testing.T) {
 	err = ts.upgradeSuite.upgradeClient.AwaitOperationFinished(upgradeOperationID, ts.upgradeSuite.UpgradeTimeout)
 	require.NoError(t, err, "error waiting for upgrade to finish")
 
-	// TODO: Assert cluster is ok
 }

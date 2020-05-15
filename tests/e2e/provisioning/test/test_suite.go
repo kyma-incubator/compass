@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/google/uuid"
 	"net/http"
 	"testing"
 	"time"
@@ -17,7 +18,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/runtime"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/v1_client"
 
-	"github.com/google/uuid"
 	gcli "github.com/machinebox/graphql"
 	"github.com/ory/hydra-maester/api/v1alpha1"
 	"github.com/pkg/errors"

@@ -12,8 +12,8 @@ import (
 type UpgradeConfig struct {
 	ManagedRuntimeComponentsYAMLPath string
 	UpgradeTimeout                   time.Duration `default:"3h"`
-	PreUpgradeKymaVersion            string        `default:""` // If empty default version should be used
-	UpgradeKymaVersion               string        `default:""` // TODO: get latest master?
+	PreUpgradeKymaVersion            string        `envconfig:"optional"` // If empty default version should be used
+	UpgradeKymaVersion               string        `default:""`
 }
 
 func WithUpgrade() options {
@@ -39,8 +39,6 @@ func newUpgradeSuite(t *testing.T, baseConfig Config, suite *Suite) *UpgradeSuit
 	require.NoError(t, err)
 
 	log := logrus.New()
-
-	// TODO: if upgrade empty fetch lateste master?
 
 	httpClient := newHTTPClient(baseConfig.SkipCertVerification)
 	provisionerClient := provisioner.NewProvisionerClient(baseConfig.ProvisionerURL, baseConfig.TenantID, log.WithField("service", "provisioner_client"), httpClient)

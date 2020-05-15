@@ -79,7 +79,7 @@ func (c RuntimeUpgradeClient) UpgradeRuntimeToVersion(kymaVersion string) (strin
 func (c RuntimeUpgradeClient) AwaitOperationFinished(operationId string, timeout time.Duration) error {
 	c.log.Infof("Waiting for operation at most %s", timeout.String())
 
-	err := wait.Poll(1*time.Minute, timeout, func() (bool, error) {
+	err := wait.Poll(2*time.Minute, timeout, func() (bool, error) {
 		operationStatus, err := c.provisionerClient.RuntimeOperationStatus(operationId)
 		if err != nil {
 			c.log.Warn(errors.Wrap(err, "while getting Runtime operation status").Error())
@@ -108,17 +108,17 @@ func (c RuntimeUpgradeClient) AwaitOperationFinished(operationId string, timeout
 
 func mapComponentsToGQLInput(kymaComponents []v1alpha1.KymaComponent) []*schema.ComponentConfigurationInput {
 	componentsGQLInput := make([]*schema.ComponentConfigurationInput, len(kymaComponents))
-	for _, component := range kymaComponents {
+	for i, component := range kymaComponents {
 		var sourceURL *string
 		if component.Source != nil {
 			sourceURL = &component.Source.URL
 		}
 
-		componentsGQLInput = append(componentsGQLInput, &schema.ComponentConfigurationInput{
+		componentsGQLInput[i] = &schema.ComponentConfigurationInput{
 			Component: component.Name,
 			Namespace: component.Namespace,
 			SourceURL: sourceURL,
-		})
+		}
 	}
 	return componentsGQLInput
 }
