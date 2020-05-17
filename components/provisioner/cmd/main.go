@@ -68,8 +68,13 @@ type config struct {
 		SSLMode  string `envconfig:"default=disable"`
 	}
 
-	ProvisioningTimeout    queue.ProvisioningTimeouts
-	ResourceCleanupTimeout gardener.ResourceCleanupTimeouts
+	ProvisioningTimeout queue.ProvisioningTimeouts
+
+	ResourceJanitor struct {
+		Enabled         bool `envconfig:"default=true"`
+		CleanupTimeouts gardener.ResourceCleanupTimeouts
+		Selectors       gardener.ResourceSelectors
+	}
 
 	Gardener struct {
 		Project                     string `envconfig:"default=gardenerProject"`
@@ -96,7 +101,9 @@ func (c *config) String() string {
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
-		"ResourcesCleanupTimeoutServiceInstance: %s, "+
+		"ResourceJanitorEnabled: %t, "+
+		"ResourceJanitorCleanupTimeoutServiceInstanceCleanupTimeout: %s, "+
+		"ResourceJanitorSelectorsBrokerUrlPrefix: %s, "+
 		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
 		"Provisioner: %s, "+
@@ -108,7 +115,9 @@ func (c *config) String() string {
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
 		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
-		c.ResourceCleanupTimeout.ServiceInstance.String(),
+		c.ResourceJanitor.Enabled,
+		c.ResourceJanitor.CleanupTimeouts.ServiceInstanceCleanupTimeout.String(),
+		c.ResourceJanitor.Selectors.BrokerUrlPrefix,
 		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
 		c.Provisioner,
@@ -171,7 +180,7 @@ func main() {
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
-	shootResourcesJanitor, err := newShootResourcesJanitor(cfg.ResourceCleanupTimeout, gardenerNamespace, gardenerClusterConfig, gardenerClientSet)
+	shootResourcesJanitor, err := newShootResourcesJanitor(cfg.ResourceJanitor.Enabled, cfg.ResourceJanitor.CleanupTimeouts, cfg.ResourceJanitor.Selectors, gardenerNamespace, gardenerClusterConfig)
 	if err != nil {
 		log.Errorf("while creating shoot resource janitor: %s", err)
 	}

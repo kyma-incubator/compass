@@ -113,6 +113,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	if err != nil {
 		logrus.Errorf("error cleaning up resource on shoot %q: %s", shoot.Name, err)
 	}
+	logrus.Infof("Successfully deleted resources for shoot %q", shoot.Name)
 
 	// TODO: consider adding some annotation and uninstall before deleting shoot
 	annotate(shoot, provisioningAnnotation, Deprovisioning.String())

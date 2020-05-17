@@ -91,10 +91,11 @@ func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient
 }
 
 func newShootResourcesJanitor(
+	isEnabled bool,
 	timeouts gardener.ResourceCleanupTimeouts,
+	selectors gardener.ResourceSelectors,
 	gardenerNamespace string,
-	gardenerClusterCfg *restclient.Config,
-	gardenerClientSet *gardener_apis.CoreV1beta1Client) (gardener.ResourcesJanitor, error) {
+	gardenerClusterCfg *restclient.Config) (gardener.ResourcesJanitor, error) {
 
 	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
 	if err != nil {
@@ -103,9 +104,7 @@ func newShootResourcesJanitor(
 
 	secretsInterface := gardenerClusterClient.CoreV1().Secrets(gardenerNamespace)
 
-	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
-
-	return gardener.NewResourcesJanitor(timeouts, secretsInterface, shootClient)
+	return gardener.NewResourcesJanitor(isEnabled, timeouts, selectors, secretsInterface)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
