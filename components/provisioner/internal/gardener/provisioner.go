@@ -86,7 +86,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	shoot, err := g.shootClient.Get(gardenerCfg.Name, v1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
-			message := fmt.Sprintf("Cluster %s already deletede. Proceeding to DeprovisionCluster stage.", cluster.ID)
+			message := fmt.Sprintf("Cluster %s already deleted. Proceeding to DeprovisionCluster stage.", cluster.ID)
 
 			// Shoot was deleted. In order to make sure if all clean up actions were performed we need to proceed to DeprovisionCluster state
 			return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeprovisionCluster, time.Now()), nil
@@ -94,6 +94,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	}
 
 	if shoot.DeletionTimestamp != nil {
+		annotate(shoot, operationIdAnnotation, operationId)
 		message := fmt.Sprintf("Cluster %s already %s scheduled for deletion.", gardenerCfg.Name, cluster.ID)
 		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.TriggerKymaUninstall, shoot.DeletionTimestamp.Time), nil
 	}

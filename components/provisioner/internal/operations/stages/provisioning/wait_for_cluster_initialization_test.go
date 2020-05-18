@@ -47,7 +47,16 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInProcessingState(clusterName), nil)
 			},
 			expectedStage: model.WaitingForClusterInitialization,
-			expectedDelay: 30 * time.Second,
+			expectedDelay: 20 * time.Second,
+		},
+		{
+			description: "should continue waiting if last operation not set",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInUnknownState(clusterName), nil)
+			},
+			expectedStage: model.WaitingForClusterInitialization,
+			expectedDelay: 20 * time.Second,
 		},
 		{
 			description: "should go to the next stage if cluster was created",
@@ -163,26 +172,34 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 }
 
 func fixShootInSucceededState(name string) *gardener_types.Shoot {
-	return fixShoot(name, gardencorev1beta1.LastOperationStateSucceeded)
+	return fixShoot(name, &gardener_types.LastOperation{
+		State: gardencorev1beta1.LastOperationStateSucceeded,
+	})
 }
 
 func fixShootInFailedState(name string) *gardener_types.Shoot {
-	return fixShoot(name, gardencorev1beta1.LastOperationStateFailed)
+	return fixShoot(name, &gardener_types.LastOperation{
+		State: gardencorev1beta1.LastOperationStateFailed,
+	})
 }
 
 func fixShootInProcessingState(name string) *gardener_types.Shoot {
-	return fixShoot(name, gardencorev1beta1.LastOperationStateProcessing)
+	return fixShoot(name, &gardener_types.LastOperation{
+		State: gardencorev1beta1.LastOperationStateProcessing,
+	})
 }
 
-func fixShoot(name string, state gardencorev1beta1.LastOperationState) *gardener_types.Shoot {
+func fixShootInUnknownState(name string) *gardener_types.Shoot {
+	return fixShoot(name, nil)
+}
+
+func fixShoot(name string, lastOperation *gardener_types.LastOperation) *gardener_types.Shoot {
 	return &gardener_types.Shoot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 		Status: gardener_types.ShootStatus{
-			LastOperation: &gardener_types.LastOperation{
-				State: state,
-			},
+			LastOperation: lastOperation,
 		},
 	}
 }

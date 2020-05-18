@@ -63,21 +63,21 @@ func (s *WaitForClusterInitializationStep) Run(cluster model.Cluster, operation 
 
 	lastOperation := shoot.Status.LastOperation
 
-	if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
-		return s.proceedToInstallation(logger, cluster, shoot, operation.ID)
+	if lastOperation != nil {
+		if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
+			return s.proceedToInstallation(logger, cluster, shoot, operation.ID)
+		}
+
+		if lastOperation.State == gardencorev1beta1.LastOperationStateFailed {
+			log.Warningf("Provisioning failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
+
+			err := errors.New(fmt.Sprintf("cluster provisioning failed. Last Shoot state: %s, Shoot description: %s", lastOperation.State, lastOperation.Description))
+
+			return operations.StageResult{}, operations.NewNonRecoverableError(err)
+		}
 	}
 
-	if shoot.Status.LastOperation.State == gardencorev1beta1.LastOperationStateFailed {
-		log.Warningf("Provisioning failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
-
-		err := errors.New(fmt.Sprintf("cluster provisioning failed. Last Shoot state: %s, Shoot description: %s", lastOperation.State, lastOperation.Description))
-
-		return operations.StageResult{}, operations.NewNonRecoverableError(err)
-	}
-
-	log.Debugf("Provisioning in progress. Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
-
-	return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
+	return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 }
 
 func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLogger, cluster model.Cluster, shoot *gardener_types.Shoot, operationId string) (operations.StageResult, error) {
