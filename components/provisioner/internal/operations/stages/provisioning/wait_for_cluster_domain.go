@@ -82,8 +82,7 @@ func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation,
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }
 
-func (s *WaitForClusterDomainStep) prepareProvisioningUpdateRuntimeInput(
-	runtimeId, tenant string, shoot *gardener_types.Shoot) (*graphql.RuntimeInput, error) {
+func (s *WaitForClusterDomainStep) prepareProvisioningUpdateRuntimeInput(runtimeId, tenant string, shoot *gardener_types.Shoot) (*graphql.RuntimeInput, error) {
 
 	runtime, err := s.directorClient.GetRuntime(runtimeId, tenant)
 	if err != nil {

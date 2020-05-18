@@ -182,7 +182,7 @@ func main() {
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationService, directorClient, shootClient, secretsInterface)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationService, directorClient, shootClient)
 
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {

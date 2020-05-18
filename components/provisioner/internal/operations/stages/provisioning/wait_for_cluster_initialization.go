@@ -22,6 +22,7 @@ type WaitForClusterInitializationStep struct {
 	timeLimit          time.Duration
 }
 
+//go:generate mockery -name=KubeconfigProvider
 type KubeconfigProvider interface {
 	FetchRaw(shootName string) ([]byte, error)
 }
@@ -66,18 +67,17 @@ func (s *WaitForClusterInitializationStep) Run(cluster model.Cluster, operation 
 		return s.proceedToInstallation(logger, cluster, shoot, operation.ID)
 	}
 
-	if isShootFailed(shoot) {
+	if shoot.Status.LastOperation.State == gardencorev1beta1.LastOperationStateFailed {
 		log.Warningf("Provisioning failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
 
 		err := errors.New(fmt.Sprintf("cluster provisioning failed. Last Shoot state: %s, Shoot description: %s", lastOperation.State, lastOperation.Description))
 
-		// return non-recoverable error
 		return operations.StageResult{}, operations.NewNonRecoverableError(err)
 	}
 
 	log.Debugf("Provisioning in progress. Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
 
-	return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
+	return operations.StageResult{Stage: s.Name(), Delay: 10 * time.Second}, nil
 }
 
 func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLogger, cluster model.Cluster, shoot *gardener_types.Shoot, operationId string) (operations.StageResult, error) {
@@ -98,8 +98,4 @@ func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLo
 	}
 
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
-}
-
-func isShootFailed(shoot *gardener_types.Shoot) bool {
-	return shoot.Status.LastOperation.State == gardencorev1beta1.LastOperationStateFailed
 }
