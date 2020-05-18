@@ -268,7 +268,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			//when
 			//wait for Shoot to update
-			time.Sleep(3 * waitPeriod)
+			time.Sleep(2 * waitPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
 			//then
