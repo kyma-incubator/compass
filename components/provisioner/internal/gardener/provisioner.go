@@ -18,7 +18,6 @@ import (
 
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
-	shootUtil "github.com/kyma-incubator/compass/components/provisioner/internal/gardener/shoot"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 )
@@ -87,7 +86,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	shoot, err := g.shootClient.Get(gardenerCfg.Name, v1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
-			message := fmt.Sprintf("Cluster %s does not exist. Nothing to deprovision.", cluster.ID)
+			message := fmt.Sprintf("Cluster %s already deletede. Proceeding to DeprovisionCluster stage.", cluster.ID)
 
 			// Shoot was deleted. In order to make sure if all clean up actions were performed we need to proceed to DeprovisionCluster state
 			return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeprovisionCluster, time.Now()), nil
@@ -103,7 +102,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 
 	annotate(shoot, operationIdAnnotation, operationId)
 
-	shootUtil.AnnotateWithConfirmDeletion(shoot)
+	annotateWithConfirmDeletion(shoot)
 	if err != nil {
 		return model.Operation{}, fmt.Errorf("error scheduling shoot %s for deletion: %s", shoot.Name, err.Error())
 	}
@@ -115,6 +114,14 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 
 	message := fmt.Sprintf("Deprovisioning started")
 	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.TriggerKymaUninstall, deletionTime), nil
+}
+
+func annotateWithConfirmDeletion(shoot *gardener_types.Shoot) {
+	if shoot.Annotations == nil {
+		shoot.Annotations = map[string]string{}
+	}
+
+	shoot.Annotations["confirmation.garden.sapcloud.io/deletion"] = "true"
 }
 
 func (g *GardenerProvisioner) shouldSetMaintenanceWindow() bool {
