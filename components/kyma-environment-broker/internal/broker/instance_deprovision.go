@@ -40,7 +40,6 @@ func NewDeprovision(instancesStorage storage.Instances, operationsStorage storag
 // Deprovision deletes an existing service instance
 //  DELETE /v2/service_instances/{instance_id}
 func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string, details domain.DeprovisionDetails, asyncAllowed bool) (domain.DeprovisionServiceSpec, error) {
-
 	logger := b.log.WithFields(logrus.Fields{"instanceID": instanceID})
 	logger.Infof("Deprovisioning triggered, details: %+v", details)
 
