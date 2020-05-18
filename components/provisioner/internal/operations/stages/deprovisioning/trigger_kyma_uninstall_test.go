@@ -42,32 +42,64 @@ users:
 
 func TestTriggerKymaUninstall_Run(t *testing.T) {
 
-	cluster := model.Cluster{
+	clusterWithKubeconfig := model.Cluster{
 		ClusterConfig: model.GardenerConfig{
 			Name: clusterName,
 		},
 		Kubeconfig: util.StringPtr(kubeconfig),
 	}
 
+	clusterWithoutKubeconfig := model.Cluster{
+		ClusterConfig: model.GardenerConfig{
+			Name: clusterName,
+		},
+	}
+
 	invalidKubeconfig := "invalid"
 
-	t.Run("should go to the next step when if unistall was trigerred successfully", func(t *testing.T) {
-		// given
-		installationSvc := &installationMocks.Service{}
+	for _, testCase := range []struct {
+		description   string
+		mockFunc      func(installationSvc *installationMocks.Service)
+		expectedStage model.OperationStage
+		expectedDelay time.Duration
+		cluster       model.Cluster
+	}{
+		{
+			description: "should go to the next step when kubeconfig is empty",
+			mockFunc: func(installationSvc *installationMocks.Service) {
+			},
+			expectedStage: nextStageName,
+			expectedDelay: 0,
+			cluster:       clusterWithoutKubeconfig,
+		},
+		{
+			description: "should go to the next step when unistall was trigerred successfully",
+			mockFunc: func(installationSvc *installationMocks.Service) {
+				installationSvc.On("TriggerUninstall", mock.AnythingOfType("*rest.Config")).Return(nil)
+			},
+			expectedStage: nextStageName,
+			expectedDelay: 5 * time.Second,
+			cluster:       clusterWithKubeconfig,
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// given
+			installationSvc := &installationMocks.Service{}
 
-		installationSvc.On("TriggerUninstall", mock.AnythingOfType("*rest.Config")).Return(nil)
+			testCase.mockFunc(installationSvc)
 
-		waitForInstallationStep := NewTriggerKymaUninstallStep(installationSvc, nextStageName, 10*time.Minute)
+			waitForInstallationStep := NewTriggerKymaUninstallStep(installationSvc, nextStageName, 10*time.Minute)
 
-		// when
-		result, err := waitForInstallationStep.Run(cluster, model.Operation{}, logrus.New())
+			// when
+			result, err := waitForInstallationStep.Run(testCase.cluster, model.Operation{}, logrus.New())
 
-		// then
-		require.NoError(t, err)
-		assert.Equal(t, nextStageName, result.Stage)
-		assert.Equal(t, 5*time.Second, result.Delay)
-		installationSvc.AssertExpectations(t)
-	})
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, testCase.expectedStage, result.Stage)
+			assert.Equal(t, testCase.expectedDelay, result.Delay)
+			installationSvc.AssertExpectations(t)
+		})
+	}
 
 	for _, testCase := range []struct {
 		description        string
@@ -75,13 +107,6 @@ func TestTriggerKymaUninstall_Run(t *testing.T) {
 		cluster            model.Cluster
 		unrecoverableError bool
 	}{
-		{
-			description: "should return error when kubeconfig is nil",
-			mockFunc: func(installationSvc *installationMocks.Service) {
-			},
-			cluster:            model.Cluster{},
-			unrecoverableError: true,
-		},
 		{
 			description: "should return error is failed to parse kubeconfig",
 			mockFunc: func(installationSvc *installationMocks.Service) {
@@ -96,7 +121,7 @@ func TestTriggerKymaUninstall_Run(t *testing.T) {
 			mockFunc: func(installationSvc *installationMocks.Service) {
 				installationSvc.On("TriggerUninstall", mock.AnythingOfType("*rest.Config")).Return(errors.New("some error"))
 			},
-			cluster:            cluster,
+			cluster:            clusterWithKubeconfig,
 			unrecoverableError: false,
 		},
 	} {
