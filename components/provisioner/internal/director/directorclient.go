@@ -186,7 +186,7 @@ func (cc *directorClient) RuntimeExists(gardenerClusterName, tenant string) (boo
 	//	return false, errors.Errorf("Invalid state: more that one runtime assigned to  Gardener cluster: %s", gardenerClusterName)
 	//}
 
-	return false, nil
+	return true, nil
 }
 
 func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) error {
