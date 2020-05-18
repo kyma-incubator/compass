@@ -47,7 +47,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInProcessingState(clusterName), nil)
 			},
 			expectedStage: model.WaitingForClusterInitialization,
-			expectedDelay: 10 * time.Second,
+			expectedDelay: 30 * time.Second,
 		},
 		{
 			description: "should go to the next stage if cluster was created",

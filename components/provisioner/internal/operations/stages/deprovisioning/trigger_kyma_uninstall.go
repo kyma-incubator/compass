@@ -54,5 +54,6 @@ func (s *TriggerKymaUninstallStep) Run(cluster model.Cluster, _ model.Operation,
 		return operations.StageResult{}, err
 	}
 
+	// TODO: Increase delay
 	return operations.StageResult{Stage: s.nextStep, Delay: 5 * time.Second}, nil
 }

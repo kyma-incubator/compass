@@ -59,14 +59,6 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 					"label": "value",
 				})
 				directorClient.On("GetRuntime", runtimeID, tenant).Return(runtime, nil)
-
-				// TODO: update comparison
-				//runtimeUpdated := fixRuntimeInput(clusterName, map [string]interface{}{
-				//	"label" : "value",
-				//	"gardenerClusterName": clusterName,
-				//	"gardenerClusterDomain":domain,
-				//})
-
 				directorClient.On("UpdateRuntime", runtimeID, mock.Anything, tenant).Return(nil)
 			},
 			expectedStage: nextStageName,
@@ -133,7 +125,6 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 					"label": "value",
 				})
 				directorClient.On("GetRuntime", runtimeID, tenant).Return(runtime, nil)
-				// TODO: update comparison
 				directorClient.On("UpdateRuntime", runtimeID, mock.Anything, tenant).Return(errors.New("some error"))
 			},
 			unrecoverableError: false,

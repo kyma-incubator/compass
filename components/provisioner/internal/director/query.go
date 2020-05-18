@@ -41,7 +41,7 @@ func (qp queryProvider) getRuntimesQuery(gardenerClusterName string) string {
 	return fmt.Sprintf(`query {
 		result: runtimes(filter: {
 					key : "gardenerClusterName",
-					query : "%s"
+					query: "\"%s\""
 				}) 
 				{
 					data {

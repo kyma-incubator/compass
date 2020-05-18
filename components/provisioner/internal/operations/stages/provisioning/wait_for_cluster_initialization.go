@@ -77,7 +77,7 @@ func (s *WaitForClusterInitializationStep) Run(cluster model.Cluster, operation 
 
 	log.Debugf("Provisioning in progress. Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
 
-	return operations.StageResult{Stage: s.Name(), Delay: 10 * time.Second}, nil
+	return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
 }
 
 func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLogger, cluster model.Cluster, shoot *gardener_types.Shoot, operationId string) (operations.StageResult, error) {

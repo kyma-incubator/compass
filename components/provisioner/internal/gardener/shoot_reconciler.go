@@ -17,7 +17,6 @@ import (
 
 	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -103,48 +102,6 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 	}
 
-	// Get operationId from annotation
-	//operationId := getOperationId(shoot)
-	//if operationId == "" {
-	//	err := r.handleShootWithoutOperationId(log, shoot)
-	//	if err != nil {
-	//		log.Errorf("Error handling shoot without operation Id: %s", err.Error())
-	//		return ctrl.Result{}, err
-	//	}
-	//	return ctrl.Result{}, nil
-	//}
-	//
-	//// Proceed this path only if there is OperationId on Shoot
-	//log = log.WithField("OperationId", operationId)
-	//
-	//if isBeingDeleted(shoot) {
-	//	// TODO - here we can ensure if last operation for cluster is Deprovision
-	//	log.Infof("Shoot is being deleted")
-	//	return ctrl.Result{}, nil
-	//}
-	//
-	//if shoot.Status.LastOperation == nil {
-	//	log.Warnf("Shoot does not have last operation status")
-	//	return ctrl.Result{}, nil
-	//}
-	//
-	//provisioningStep := getProvisioningState(shoot)
-	//
-	//switch provisioningStep {
-	//case Initial:
-	//	return r.provisioningOperator.ProvisioningInitial(log, shoot, operationId, runtimeId)
-	//case Provisioning:
-	//	return r.provisioningOperator.ProvisioningInProgress(log, shoot, operationId, runtimeId)
-	//case Provisioned:
-	//	log.Debug("Shoot provisioned")
-	//	return ctrl.Result{}, nil
-	//case Deprovisioning:
-	//	return r.provisioningOperator.DeprovisioningInProgress(log, shoot, operationId)
-	//default:
-	//	log.Warnf("Unknown state of Shoot")
-	//	return ctrl.Result{}, nil
-	//}
-
 	return ctrl.Result{}, nil
 }
 
@@ -169,53 +126,6 @@ func (r *Reconciler) shouldReconcileShoot(shoot gardener_types.Shoot) (bool, err
 	return true, nil
 }
 
-func isShootFailed(shoot gardener_types.Shoot) bool {
-	return shoot.Status.LastOperation.State == gardencorev1beta1.LastOperationStateFailed
-}
-
-func isBeingDeleted(shoot gardener_types.Shoot) bool {
-	return shoot.DeletionTimestamp != nil
-}
-
-//func (r *ProvisioningOperator) HandleShootDeletion(log *logrus.Entry, name types.NamespacedName) (ctrl.Result, error) {
-//	log.Info("Shoot deleted")
-//
-//	session := r.dbsFactory.NewReadSession()
-//
-//	cluster, dberr := session.GetGardenerClusterByName(name.Name)
-//	if dberr != nil {
-//		log.Errorf("error getting Gardener cluster by name: %s", dberr.Error())
-//		return ctrl.Result{}, dberr
-//	}
-//
-//	lastOperation, dberr := session.GetLastOperation(cluster.ID)
-//	if dberr != nil {
-//		log.Errorf("error getting last operation for %s Runtime: %s", cluster.ID, dberr.Error())
-//		return ctrl.Result{}, dberr
-//	}
-//
-//	if lastOperation.Type == model.Deprovision {
-//		if lastOperation.State == model.InProgress || lastOperation.State == model.Succeeded {
-//			err := r.setDeprovisioningFinished(cluster, lastOperation)
-//			if err != nil {
-//				log.Errorf("error setting deprovisioning finished: %s", err.Error())
-//				return ctrl.Result{}, err
-//			}
-//		} else {
-//			// TODO: we can implement some more cases here
-//			err := fmt.Errorf("Error: Invalid state. Shoot deleted, last operation: %s, state: %s", lastOperation.Type, lastOperation.State)
-//			log.Errorf(err.Error())
-//			return ctrl.Result{}, err
-//		}
-//		return ctrl.Result{}, nil
-//	}
-//
-//	// TODO: here we can implement some logic to recover from such state
-//	err := fmt.Errorf("Error: Invalid state. Shoot deleted, last operation: %s, state: %s", lastOperation.Type, lastOperation.State)
-//	log.Errorf(err.Error())
-//	return ctrl.Result{}, err
-//}
-
 func (r *ProvisioningOperator) updateShoot(shoot gardener_types.Shoot, modifyShootFn func(s *gardener_types.Shoot)) error {
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		refetchedShoot, err := r.shootClient.Get(shoot.Name, v1.GetOptions{})
@@ -233,41 +143,6 @@ func (r *ProvisioningOperator) updateShoot(shoot gardener_types.Shoot, modifySho
 		return nil
 	})
 }
-
-//func (r *ProvisioningOperator) setDeprovisioningFinished(cluster model.Cluster, lastOp model.Operation) error {
-//	session, dberr := r.dbsFactory.NewSessionWithinTransaction()
-//	if dberr != nil {
-//		return fmt.Errorf("error starting db session with transaction: %s", dberr.Error())
-//	}
-//	defer session.RollbackUnlessCommitted()
-//
-//	dberr = session.MarkClusterAsDeleted(cluster.ID)
-//	if dberr != nil {
-//		return fmt.Errorf("error marking cluster for deletion: %s", dberr.Error())
-//	}
-//
-//	dberr = session.TransitionOperation(lastOp.ID, "Deprovisioning finished.", model.FinishedStage, time.Now())
-//	if dberr != nil {
-//		return fmt.Errorf("error trainsitioning deprovision operation state %s: %s", lastOp.ID, dberr.Error())
-//	}
-//
-//	dberr = session.UpdateOperationState(lastOp.ID, "Operation succeeded.", model.Succeeded, time.Now())
-//	if dberr != nil {
-//		return fmt.Errorf("error setting deprovisioning operation %s as succeeded: %s", lastOp.ID, dberr.Error())
-//	}
-//
-//	err := r.directorClient.DeleteRuntime(cluster.ID, cluster.Tenant)
-//	if err != nil {
-//		return fmt.Errorf("error deleting Runtime form Director: %s", err.Error())
-//	}
-//
-//	dberr = session.Commit()
-//	if dberr != nil {
-//		return fmt.Errorf("error commiting transaction: %s", dberr.Error())
-//	}
-//
-//	return nil
-//}
 
 func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_types.Shoot, seed string) error {
 	logger.Info("Enabling audit logs")
