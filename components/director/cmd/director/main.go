@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 
 	"github.com/dlmiddlecote/sqlstats"
@@ -35,7 +37,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 	"github.com/kyma-project/kyma/components/console-backend-service/pkg/executor"
 	"github.com/kyma-project/kyma/components/console-backend-service/pkg/signal"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/99designs/gqlgen/handler"
@@ -55,6 +56,8 @@ type config struct {
 	PlaygroundAPIEndpoint   string `envconfig:"default=/graphql"`
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
+
+	MetricsAddress string `envconfig:"default=127.0.0.1:3001"`
 
 	JWKSEndpoint        string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
@@ -90,14 +93,10 @@ func main() {
 	stopCh := signal.SetupChannel()
 	cfgProvider := createAndRunConfigProvider(stopCh, cfg)
 
-	mainRouter := mux.NewRouter()
-
-	log.Infof("Registering metrics endpoint...")
+	log.Infof("Registering metrics collectors...")
 	metricsCollector := metrics.NewCollector()
 	dbStatsCollector := sqlstats.NewStatsCollector("director", transact)
-
-	prometheus.MustRegister(dbStatsCollector, metricsCollector)
-	mainRouter.Handle("/metrics", promhttp.Handler())
+	prometheus.MustRegister(metricsCollector, dbStatsCollector)
 
 	pairingAdapters, err := getPairingAdaptersMapping(cfg.PairingAdapterSrc)
 	exitOnError(err, "Error while reading Pairing Adapters Configuration")
@@ -135,6 +134,7 @@ func main() {
 
 	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository(), log.New())
 
+	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
@@ -143,13 +143,13 @@ func main() {
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema)))
 
 	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHanderFunc(transact, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
+	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	log.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHanderFunc(transact, cfg.JWKSSyncPeriod, stopCh, cfg.Features.DefaultScenarioEnabled)
+	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, stopCh, cfg.Features.DefaultScenarioEnabled)
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
@@ -163,19 +163,21 @@ func main() {
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
 
-	srv := &http.Server{Addr: cfg.Address, Handler: mainRouter}
-	log.Infof("Listening on %s...", cfg.Address)
+	metricsSrv := createMetricsServer(cfg.MetricsAddress)
+	mainSrv := &http.Server{Addr: cfg.Address, Handler: mainRouter}
+
 	go func() {
 		<-stopCh
-		// Interrupt signal received - shut down the server
-		if err := srv.Shutdown(context.Background()); err != nil {
-			log.Errorf("HTTP server Shutdown: %v", err)
-		}
+		// Interrupt signal received - shut down the servers
+		shutdownServer(metricsSrv, "main")
+		shutdownServer(metricsSrv, "metrics")
 	}()
 
-	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-		log.Errorf("HTTP server ListenAndServe: %v", err)
-	}
+	log.Infof("Running metrics server on %s...", cfg.MetricsAddress)
+	go runServer(metricsSrv, "metrics")
+
+	log.Infof("Listening on %s...", cfg.Address)
+	runServer(mainSrv, "main")
 }
 
 func getPairingAdaptersMapping(filePath string) (map[string]string, error) {
@@ -233,7 +235,7 @@ func configureLogger() {
 	log.SetReportCaller(true)
 }
 
-func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -260,7 +262,7 @@ func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersS
 	return tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
 }
 
-func getRuntimeMappingHanderFunc(transact persistence.Transactioner, cachePeriod time.Duration, stopCh <-chan struct{}, defaultScenarioEnabled bool) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, stopCh <-chan struct{}, defaultScenarioEnabled bool) (func(writer http.ResponseWriter, request *http.Request), error) {
 	logger := log.WithField("component", "runtime-mapping-handler").Logger
 
 	uidSvc := uid.NewService()
@@ -300,4 +302,23 @@ func getRuntimeMappingHanderFunc(transact persistence.Transactioner, cachePeriod
 		tokenVerifier,
 		runtimeSvc,
 		tenantSvc).ServeHTTP, nil
+}
+
+func createMetricsServer(metricsAddress string) *http.Server {
+	metricsHandler := http.NewServeMux()
+	metricsHandler.Handle("/metrics", promhttp.Handler())
+
+	return &http.Server{Addr: metricsAddress, Handler: metricsHandler}
+}
+
+func runServer(srv *http.Server, name string) {
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		log.Errorf("%s HTTP server ListenAndServe: %v", name, err)
+	}
+}
+
+func shutdownServer(srv *http.Server, name string) {
+	if err := srv.Shutdown(context.Background()); err != nil {
+		log.Errorf("%s HTTP server Shutdown: %v", name, err)
+	}
 }
