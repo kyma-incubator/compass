@@ -1140,15 +1140,7 @@ func TestDirectorClient_SetApplicationLabel(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Run(func(args mock.Arguments) {
-					arg := args.Get(2)
-					res, ok := arg.(*director.CreateDocumentResult)
-					if !ok {
-						return
-					}
-
-					res.Result = graphql.Document{ID: "resID"}
-				}).Return(nil).Once()
+				).Return(nil).Once()
 				return am
 			},
 		},
@@ -1165,15 +1157,7 @@ func TestDirectorClient_SetApplicationLabel(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Run(func(args mock.Arguments) {
-					arg := args.Get(2)
-					res, ok := arg.(*director.CreateDocumentResult)
-					if !ok {
-						return
-					}
-
-					res.Result = graphql.Document{ID: "resID"}
-				}).Return(nil).Once()
+				).Return(nil).Once()
 				return am
 			},
 		},

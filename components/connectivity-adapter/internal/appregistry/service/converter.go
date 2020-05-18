@@ -298,7 +298,7 @@ func toNewSpecType(apiType string) graphql.APISpecType {
 	}
 }
 
-func (c *converter) GraphQLToServiceDetails(in graphql.PackageExt, legacyServiceRefenence LegacyServiceReference) (model.ServiceDetails, error) {
+func (c *converter) GraphQLToServiceDetails(in graphql.PackageExt, legacyServiceReference LegacyServiceReference) (model.ServiceDetails, error) {
 	var desc string
 	if in.Description != nil {
 		desc = *in.Description
@@ -306,7 +306,7 @@ func (c *converter) GraphQLToServiceDetails(in graphql.PackageExt, legacyService
 	outDeprecated := model.ServiceDetails{
 		Name:        in.Name,
 		Description: desc,
-		Identifier:  legacyServiceRefenence.Identifier,
+		Identifier:  legacyServiceReference.Identifier,
 		Labels:      &map[string]string{},
 	}
 	if in.APIDefinitions.Data != nil && len(in.APIDefinitions.Data) > 0 {

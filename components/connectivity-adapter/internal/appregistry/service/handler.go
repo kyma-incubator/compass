@@ -290,6 +290,9 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	// Legacy service reference should be updated, but right now it contains only identifier field
+	// which has to preserved during update (to match old metadata service behaviour), so there's nothing to update.
+
 	h.getAndWriteServiceByID(writer, pkgID, reqContext)
 }
 

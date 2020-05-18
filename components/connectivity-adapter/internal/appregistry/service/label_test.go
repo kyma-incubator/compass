@@ -29,7 +29,7 @@ func TestLabeler_WriteServiceReference(t *testing.T) {
 		{
 			Name: "Success",
 			InputLabels: graphql.Labels{
-				legacyServicesLabelKey: "{\"foo\":{\"id\":\"foo\",\"identifier\":\"bar\"}}",
+				legacyServicesLabelKey: `{"foo":{"id":"foo","identifier":"bar"}}`,
 			},
 			InputSvcReference: service.LegacyServiceReference{
 				ID:         "biz",
@@ -37,7 +37,7 @@ func TestLabeler_WriteServiceReference(t *testing.T) {
 			},
 			ExpectedOutput: graphql.LabelInput{
 				Key:   legacyServicesLabelKey,
-				Value: "\"{\\\"biz\\\":{\\\"id\\\":\\\"biz\\\",\\\"identifier\\\":\\\"baz\\\"},\\\"foo\\\":{\\\"id\\\":\\\"foo\\\",\\\"identifier\\\":\\\"bar\\\"}}\"",
+				Value: `"{\"biz\":{\"id\":\"biz\",\"identifier\":\"baz\"},\"foo\":{\"id\":\"foo\",\"identifier\":\"bar\"}}"`,
 			},
 			ExpectedError: nil,
 		},
@@ -50,7 +50,7 @@ func TestLabeler_WriteServiceReference(t *testing.T) {
 			},
 			ExpectedOutput: graphql.LabelInput{
 				Key:   legacyServicesLabelKey,
-				Value: "\"{\\\"foo\\\":{\\\"id\\\":\\\"foo\\\",\\\"identifier\\\":\\\"bar\\\"}}\"",
+				Value: `"{\"foo\":{\"id\":\"foo\",\"identifier\":\"bar\"}}"`,
 			},
 			ExpectedError: nil,
 		},
@@ -98,7 +98,7 @@ func TestLabeler_ReadServiceReference(t *testing.T) {
 		{
 			Name: "Success",
 			InputLabels: graphql.Labels{
-				legacyServicesLabelKey: fmt.Sprintf("{\"%[1]s\":{\"id\":\"%[1]s\",\"identifier\":\"%s\"}}", svcID, svcIdentifier),
+				legacyServicesLabelKey: fmt.Sprintf(`{"%[1]s":{"id":"%[1]s","identifier":"%s"}}`, svcID, svcIdentifier),
 			},
 			ExpectedOutput: service.LegacyServiceReference{
 				ID:         svcID,
@@ -150,7 +150,7 @@ func TestLabeler_ListServiceReferences(t *testing.T) {
 		{
 			Name: "Success",
 			InputLabels: graphql.Labels{
-				legacyServicesLabelKey: "{\"foo\":{\"id\":\"foo\",\"identifier\":\"foo\"}, \"bar\":{\"id\":\"bar\",\"identifier\":\"bar\"}}",
+				legacyServicesLabelKey: `{"foo":{"id":"foo","identifier":"foo"}, "bar":{"id":"bar","identifier":"bar"}}`,
 			},
 			ExpectedOutput: []service.LegacyServiceReference{
 				{
@@ -209,11 +209,11 @@ func TestLabeler_DeleteServiceReference(t *testing.T) {
 		{
 			Name: "Success",
 			InputLabels: graphql.Labels{
-				legacyServicesLabelKey: "{\"foo\":{\"id\":\"foo\",\"identifier\":\"foo\"}, \"bar\":{\"id\":\"bar\",\"identifier\":\"bar\"}}",
+				legacyServicesLabelKey: `{"foo":{"id":"foo","identifier":"foo"}, "bar":{"id":"bar","identifier":"bar"}}`,
 			},
 			ExpectedOutput: graphql.LabelInput{
 				Key:   "legacy_servicesMetadata",
-				Value: "\"{\\\"bar\\\":{\\\"id\\\":\\\"bar\\\",\\\"identifier\\\":\\\"bar\\\"}}\"",
+				Value: `"{\"bar\":{\"id\":\"bar\",\"identifier\":\"bar\"}}"`,
 			},
 			ExpectedError: nil,
 		},
@@ -222,7 +222,7 @@ func TestLabeler_DeleteServiceReference(t *testing.T) {
 			InputLabels: graphql.Labels{},
 			ExpectedOutput: graphql.LabelInput{
 				Key:   "legacy_servicesMetadata",
-				Value: "\"{}\"",
+				Value: `"{}"`,
 			},
 			ExpectedError: nil,
 		},
