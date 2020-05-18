@@ -32,10 +32,12 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 
 	"code.cloudfoundry.org/lager"
+	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
@@ -131,8 +133,11 @@ func main() {
 	if cfg.DbInMemory {
 		db = storage.NewMemoryStorage()
 	} else {
-		db, err = storage.NewFromConfig(cfg.Database, logs.WithField("service", "storage"))
+		storage, conn, err := storage.NewFromConfig(cfg.Database, logs.WithField("service", "storage"))
 		fatalOnError(err)
+		db = storage
+		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
+		prometheus.MustRegister(dbStatsCollector)
 	}
 
 	// LMS

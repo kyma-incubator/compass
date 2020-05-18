@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/driver/memory"
 	postgres "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/driver/postsql"
@@ -16,13 +17,13 @@ type BrokerStorage interface {
 	LMSTenants() LMSTenants
 }
 
-func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, error) {
+func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, *dbr.Connection, error) {
 	log.Infof("Setting DB connection pool params: connectionMaxLifetime=%s "+
 		"maxIdleConnections=%d maxOpenConnections=%d", cfg.ConnMaxLifetime, cfg.MaxIdleConns, cfg.MaxOpenConns)
 
 	connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), log)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	connection.SetConnMaxLifetime(cfg.ConnMaxLifetime)
@@ -35,7 +36,7 @@ func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, error) {
 		instance:   postgres.NewInstance(fact),
 		operation:  postgres.NewOperation(fact),
 		lmsTenants: postgres.NewLMSTenants(fact),
-	}, nil
+	}, connection, nil
 }
 
 func NewMemoryStorage() BrokerStorage {

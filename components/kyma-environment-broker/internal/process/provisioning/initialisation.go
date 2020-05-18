@@ -128,7 +128,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 
 	_, err = url.ParseRequestURI(instance.DashboardURL)
 	if err == nil {
-		return s.launchPostActions(operation, instance, log, "URL dashboard already exist")
+		return s.launchPostActions(operation, instance, log, "Operation succeeded")
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
