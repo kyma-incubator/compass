@@ -34,6 +34,7 @@ const (
 	TriggerKymaUninstall   OperationStage = "TriggerKymaUninstall"
 	WaitForClusterDeletion OperationStage = "WaitForClusterDeletion"
 	DeleteCluster          OperationStage = "DeprovisionCluster"
+	CleanupCluster         OperationStage = "CleanupCluster"
 
 	StartingUpgrade      OperationStage = "StartingUpgrade"
 	UpdatingUpgradeState OperationStage = "UpdatingUpgradeState"

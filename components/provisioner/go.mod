@@ -12,6 +12,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/hashicorp/hil v0.0.0-20190212132231-97b3a9cdfa93 // indirect
 	github.com/hashicorp/terraform v0.12.25-0.20200512183839-7c646ddeced3
+	github.com/kubernetes-sigs/service-catalog v0.2.2
 	github.com/kubernetes/client-go v11.0.0+incompatible
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283
 	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
@@ -34,6 +35,7 @@ require (
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible // tag kubernetes-1.15.6
+	k8s.io/klog v1.0.0
 	sigs.k8s.io/controller-runtime v0.5.0
 )
 
