@@ -48,6 +48,7 @@ func (s *WaitForClusterInitializationStep) TimeLimit() time.Duration {
 
 func (s *WaitForClusterInitializationStep) Run(cluster model.Cluster, operation model.Operation, logger log.FieldLogger) (operations.StageResult, error) {
 
+	logger.Info("Started waiting for cluster initialization")
 	gardenerConfig, ok := cluster.GardenerConfig()
 	if !ok {
 		log.Error("Error converting to GardenerConfig")
@@ -55,12 +56,14 @@ func (s *WaitForClusterInitializationStep) Run(cluster model.Cluster, operation 
 		return operations.StageResult{}, operations.NewNonRecoverableError(err)
 	}
 
+	logger.Info("Getting Shoot")
 	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
 		log.Errorf("Error getting Gardener Shoot: %s", err.Error())
 		return operations.StageResult{}, err
 	}
 
+	logger.Info("Checking Shoot state")
 	lastOperation := shoot.Status.LastOperation
 
 	if lastOperation != nil {
@@ -77,25 +80,30 @@ func (s *WaitForClusterInitializationStep) Run(cluster model.Cluster, operation 
 		}
 	}
 
+	logger.Info("Cluster not initialized yet.")
+
 	return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 }
 
-func (s *WaitForClusterInitializationStep) proceedToInstallation(log log.FieldLogger, cluster model.Cluster, shoot *gardener_types.Shoot, operationId string) (operations.StageResult, error) {
+func (s *WaitForClusterInitializationStep) proceedToInstallation(logger log.FieldLogger, cluster model.Cluster, shoot *gardener_types.Shoot, operationId string) (operations.StageResult, error) {
 
+	logger.Info("Proceeding to installation")
 	session := s.dbsFactory.NewReadWriteSession()
 
-	log.Debugf("Getting Kubeconfig")
+	log.Info("Getting Kubeconfig")
 	kubeconfig, err := s.kubeconfigProvider.FetchRaw(shoot.Name)
 	if err != nil {
 		log.Errorf("Error fetching kubeconfig for Shoot: %s", err.Error())
 		return operations.StageResult{}, err
 	}
 
+	log.Info("Updating cluster")
 	dberr := session.UpdateCluster(cluster.ID, string(kubeconfig), nil)
 	if dberr != nil {
 		log.Errorf("Error saving kubeconfig in database: %s", dberr.Error())
 		return operations.StageResult{}, dberr
 	}
 
+	log.Info("Ready to start installation")
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }
