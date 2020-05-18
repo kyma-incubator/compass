@@ -2,11 +2,12 @@ package provisioner
 
 import (
 	"context"
-	"github.com/avast/retry-go"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"reflect"
 	"time"
+
+	"github.com/avast/retry-go"
+	"github.com/sirupsen/logrus"
 
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"

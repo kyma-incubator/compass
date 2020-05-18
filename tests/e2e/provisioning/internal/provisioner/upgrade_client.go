@@ -1,6 +1,8 @@
 package provisioner
 
 import (
+	"time"
+
 	"github.com/avast/retry-go"
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"
@@ -8,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"time"
 )
 
 func NewRuntimeUpgradeClient(

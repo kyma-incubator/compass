@@ -2,17 +2,19 @@ package provisioner
 
 import (
 	"fmt"
-	"github.com/avast/retry-go"
-	log "github.com/sirupsen/logrus"
 	"time"
 
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
-	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
+	"github.com/avast/retry-go"
+	log "github.com/sirupsen/logrus"
+
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 // This is code is copied from KEB
