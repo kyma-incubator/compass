@@ -94,7 +94,7 @@ func (c RuntimeUpgradeClient) AwaitOperationFinished(operationId string, timeout
 			return false, nil
 		case schema.OperationStateFailed:
 			c.log.Info("Operation failed!")
-			return true, errors.Errorf("upgrade failed with message: %s", operationStatus.Message)
+			return true, errors.Errorf("upgrade failed with message: %s", unwrapStr(operationStatus.Message))
 		default:
 			return false, nil
 		}
@@ -120,4 +120,11 @@ func mapComponentsToGQLInput(kymaComponents []v1alpha1.KymaComponent) []*schema.
 		}
 	}
 	return componentsGQLInput
+}
+
+func unwrapStr(str *string) string {
+	if str == nil {
+		return ""
+	}
+	return *str
 }
