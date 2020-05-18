@@ -164,27 +164,27 @@ func (cc *directorClient) DeleteRuntime(id, tenant string) error {
 }
 
 func (cc *directorClient) RuntimeExists(gardenerClusterName, tenant string) (bool, error) {
-	runtimesQuery := cc.queryProvider.getRuntimesQuery(gardenerClusterName)
-
-	var response GetRuntimesResponse
-	err := cc.executeDirectorGraphQLCall(runtimesQuery, tenant, response)
-	if err != nil {
-		return false, errors.Wrap(err, "Failed to get runtimes list from Director")
-	}
-
-	if response.Result == nil {
-		return false, errors.New("Failed to get runtimes list from Director: received nil response.")
-	}
-
-	runtimes := response.Result.Data
-
-	if len(runtimes) == 1 {
-		return true, nil
-	}
-
-	if len(runtimes) > 1 {
-		return false, errors.Errorf("Invalid state: more that one runtime assigned to  Gardener cluster: %s", gardenerClusterName)
-	}
+	//runtimesQuery := cc.queryProvider.getRuntimesQuery(gardenerClusterName)
+	//
+	//var response GetRuntimesResponse
+	//err := cc.executeDirectorGraphQLCall(runtimesQuery, tenant, response)
+	//if err != nil {
+	//	return false, errors.Wrap(err, "Failed to get runtimes list from Director")
+	//}
+	//
+	//if response.Result == nil {
+	//	return false, errors.New("Failed to get runtimes list from Director: received nil response.")
+	//}
+	//
+	//runtimes := response.Result.Data
+	//
+	//if len(runtimes) == 1 {
+	//	return true, nil
+	//}
+	//
+	//if len(runtimes) > 1 {
+	//	return false, errors.Errorf("Invalid state: more that one runtime assigned to  Gardener cluster: %s", gardenerClusterName)
+	//}
 
 	return false, nil
 }
