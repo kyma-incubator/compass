@@ -37,9 +37,8 @@ func (s *TriggerKymaUninstallStep) TimeLimit() time.Duration {
 func (s *TriggerKymaUninstallStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
-		err := fmt.Errorf("error: kubeconfig is nil")
-
-		return operations.StageResult{}, operations.NewNonRecoverableError(err)
+		// Kubeconfig can be nil if Gardener failed to create cluster. We must go to the next step to finalize deprovisioning
+		return operations.StageResult{Stage: s.nextStep, Delay: 0 * time.Second}, nil
 	}
 
 	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))

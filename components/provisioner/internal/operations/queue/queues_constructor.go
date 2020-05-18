@@ -40,7 +40,7 @@ func CreateProvisioningQueue(
 	configureAgentStep := provisioning.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
 	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation)
 	installStep := provisioning.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 20*time.Minute)
-	waitForClusterInitializationStep := provisioning.NewWaitForClusterInitializationStep(shootClient, factory, gardener.NewKubeconfigProvider(secretsClient), installStep.Name(), 20*time.Minute)
+	waitForClusterInitializationStep := provisioning.NewWaitForClusterInitializationStep(shootClient, factory, gardener.NewKubeconfigProvider(secretsClient), installStep.Name(), 40*time.Minute)
 	waitForClusterCreationStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterInitializationStep.Name(), 10*time.Minute)
 
 	installSteps := map[model.OperationStage]operations.Step{
