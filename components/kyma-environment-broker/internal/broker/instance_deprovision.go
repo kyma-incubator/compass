@@ -40,8 +40,8 @@ func NewDeprovision(instancesStorage storage.Instances, operationsStorage storag
 // Deprovision deletes an existing service instance
 //  DELETE /v2/service_instances/{instance_id}
 func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string, details domain.DeprovisionDetails, asyncAllowed bool) (domain.DeprovisionServiceSpec, error) {
-	operationID := uuid.New().String()
-	logger := b.log.WithFields(logrus.Fields{"instanceID": instanceID, "operationID": operationID})
+
+	logger := b.log.WithFields(logrus.Fields{"instanceID": instanceID})
 	logger.Infof("Deprovisioning triggered, details: %+v", details)
 
 	instance, err := b.instancesStorage.GetByID(instanceID)
@@ -66,6 +66,7 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		logger.Errorf("cannot get existing operation from storage %s", errStorage)
 		return domain.DeprovisionServiceSpec{}, errors.New("cannot get existing operation from storage")
 	case existingOperation != nil && !dberr.IsNotFound(errStorage):
+		logger = logger.WithField("operationID", existingOperation.ID)
 		if existingOperation.State == domain.Failed {
 			// reprocess operation again
 			existingOperation.State = domain.InProgress
@@ -76,7 +77,7 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 
 			logger.Info("Reprocessing failed deprovisioning of runtime")
 
-			b.queue.Add(operationID)
+			b.queue.Add(existingOperation.ID)
 		}
 		// return existing operation
 		return domain.DeprovisionServiceSpec{
@@ -85,6 +86,8 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		}, nil
 	}
 	// create and save new operation
+	operationID := uuid.New().String()
+	logger = logger.WithField("operationID", operationID)
 	operation, err := internal.NewDeprovisioningOperationWithID(operationID, instanceID)
 	if err != nil {
 		logger.Errorf("cannot create new operation: %s", err)
