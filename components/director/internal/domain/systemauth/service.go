@@ -50,7 +50,9 @@ func (s *service) CreateWithCustomID(ctx context.Context, id string, objectType 
 func (s *service) create(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return "", err
+		if !(apperrors.IsEmptyTenant(err) && objectType == model.IntegrationSystemReference) {
+			return "", err
+		}
 	}
 
 	systemAuth := model.SystemAuth{
@@ -83,7 +85,7 @@ func (s *service) create(ctx context.Context, id string, objectType model.System
 func (s *service) GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		if !(apperrors.IsNotFoundError(err) && objectType == model.IntegrationSystemReference) {
+		if !(apperrors.IsEmptyTenant(err) && objectType == model.IntegrationSystemReference) {
 			return nil, errors.Wrapf(err, "while loading tenant from context")
 		}
 	}
@@ -114,7 +116,7 @@ func (s *service) GetGlobal(ctx context.Context, id string) (*model.SystemAuth, 
 func (s *service) ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		if !apperrors.IsEmptyTenant(err) {
+		if !(apperrors.IsEmptyTenant(err) && objectType == model.IntegrationSystemReference) {
 			return nil, err
 		}
 	}
@@ -136,7 +138,9 @@ func (s *service) ListForObject(ctx context.Context, objectType model.SystemAuth
 func (s *service) DeleteByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return err
+		if !(apperrors.IsEmptyTenant(err) && objectType == model.IntegrationSystemReference) {
+			return err
+		}
 	}
 
 	if objectType == model.IntegrationSystemReference {

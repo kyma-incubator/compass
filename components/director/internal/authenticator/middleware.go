@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -125,8 +124,6 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 }
 
 func (a *Authenticator) contextWithClaims(ctx context.Context, claims Claims) context.Context {
-	logrus.Info("CLAIMS")
-	logrus.Infof("%+v", claims)
 	ctxWithTenant := tenant.SaveToContext(ctx, claims.Tenant)
 	ctxWithExternalTenant := tenant.SaveExternalToContext(ctxWithTenant, claims.ExternalTenant)
 	scopesArray := strings.Split(claims.Scopes, " ")
