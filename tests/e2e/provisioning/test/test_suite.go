@@ -4,10 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/google/uuid"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director/oauth"

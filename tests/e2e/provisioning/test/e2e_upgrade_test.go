@@ -1,8 +1,9 @@
 package test
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func Test_E2E_Upgrade(t *testing.T) {
