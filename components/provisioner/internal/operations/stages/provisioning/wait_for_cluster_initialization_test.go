@@ -1,137 +1,188 @@
 package provisioning
 
 import (
+	"errors"
 	"testing"
+	"time"
+
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
+	gardener_mocks "github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/deprovisioning/mocks"
+	provisioning_mocks "github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/provisioning/mocks"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	dbMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestWaitForClusterInitialization_Run(t *testing.T) {
 
-	//clusterName := "name"
-	//runtimeID := "runtimeID"
-	//tenant := "tenant"
-	//domain := "cluster.kymaa.com"
-	//
-	//cluster := model.Cluster{
-	//	ID:     runtimeID,
-	//	Tenant: tenant,
-	//	ClusterConfig: model.GardenerConfig{
-	//		Name: clusterName,
-	//	},
-	//	Kubeconfig: util.StringPtr(kubeconfig),
-	//}
-	//
-	//for _, testCase := range []struct {
-	//	description   string
-	//	mockFunc      func(gardenerClient *mocks.GardenerClient)
-	//	expectedStage model.OperationStage
-	//	expectedDelay time.Duration
-	//}{
-	//	{
-	//		description: "should continue waiting if domain name is not set",
-	//		mockFunc: func(gardenerClient *mocks.GardenerClient) {
-	//			gardenerClient.On("Get", clusterName, mock.Anything).Return(&gardener_types.Shoot{}, nil)
-	//		},
-	//		expectedStage: model.WaitingForClusterDomain,
-	//		expectedDelay: 5 * time.Second,
-	//	},
-	//	{
-	//		description: "should go to the next stage if domain name is available",
-	//		mockFunc: func(gardenerClient *mocks.GardenerClient) {
-	//			gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
-	//
-	//
-	//		},
-	//		expectedStage: nextStageName,
-	//		expectedDelay: 0,
-	//	},
-	//} {
-	//	t.Run(testCase.description, func(t *testing.T) {
-	//		// given
-	//		gardenerClient := &mocks.GardenerClient{}
-	//		dbSession := &dbSessionMocks.Factory{}
-	//		secretClient := &mocks.
-	//		testCase.mockFunc(gardenerClient)
-	//
-	//		waitForClusterInitializationStep := NewWaitForClusterInitializationStep(gardenerClient, dbSession, nextStageName, 10*time.Minute)
-	//
-	//		// when
-	//		result, err := waitForClusterInitializationStep.Run(cluster, model.Operation{}, logrus.New())
-	//
-	//		// then
-	//		require.NoError(t, err)
-	//		assert.Equal(t, testCase.expectedStage, result.Stage)
-	//		assert.Equal(t, testCase.expectedDelay, result.Delay)
-	//		gardenerClient.AssertExpectations(t)
-	//	})
-	//}
-	//
-	//for _, testCase := range []struct {
-	//	description        string
-	//	mockFunc           func(gardenerClient *mocks.GardenerClient, directorClient *directormock.DirectorClient)
-	//	cluster            model.Cluster
-	//	unrecoverableError bool
-	//}{
-	//	{
-	//		description: "should return unrecoverable error when failed to get GardenerConfig",
-	//		mockFunc: func(gardenerClient *mocks.GardenerClient, directorClient *directormock.DirectorClient) {
-	//
-	//		},
-	//		unrecoverableError: true,
-	//	},
-	//	{
-	//		description: "should return error if failed to read Shoot",
-	//		mockFunc: func(gardenerClient *mocks.GardenerClient, directorClient *directormock.DirectorClient) {
-	//			gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, errors.New("some error"))
-	//		},
-	//		unrecoverableError: false,
-	//		cluster:            cluster,
-	//	},
-	//	{
-	//		description: "should return error if failed to get Runtime from Director",
-	//		mockFunc: func(gardenerClient *mocks.GardenerClient, directorClient *directormock.DirectorClient) {
-	//			gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
-	//
-	//			directorClient.On("GetRuntime", runtimeID, tenant).Return(graphql.RuntimeExt{}, errors.New("some error"))
-	//
-	//		},
-	//		unrecoverableError: false,
-	//		cluster:            cluster,
-	//	},
-	//	{
-	//		description: "should return error if failed to update Runtime in Director",
-	//		mockFunc: func(gardenerClient *mocks.GardenerClient, directorClient *directormock.DirectorClient) {
-	//			gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
-	//
-	//			runtime := fixRuntime(runtimeID, clusterName, map[string]interface{}{
-	//				"label": "value",
-	//			})
-	//			directorClient.On("GetRuntime", runtimeID, tenant).Return(runtime, nil)
-	//
-	//			directorClient.On("UpdateRuntime", runtimeID, mock.Anything, tenant).Return(errors.New("some error"))
-	//		},
-	//		unrecoverableError: false,
-	//		cluster:            cluster,
-	//	},
-	//} {
-	//	t.Run(testCase.description, func(t *testing.T) {
-	//		// given
-	//		gardenerClient := &mocks.GardenerClient{}
-	//		directorClient := &directormock.DirectorClient{}
-	//
-	//		testCase.mockFunc(gardenerClient, directorClient)
-	//
-	//		waitForClusterDomainStep := NewWaitForClusterDomainStep(gardenerClient, directorClient, nextStageName, 10*time.Minute)
-	//
-	//		// when
-	//		_, err := waitForClusterDomainStep.Run(testCase.cluster, model.Operation{}, logrus.New())
-	//
-	//		// then
-	//		require.Error(t, err)
-	//		nonRecoverable := operations.NonRecoverableError{}
-	//		require.Equal(t, testCase.unrecoverableError, errors.As(err, &nonRecoverable))
-	//
-	//		gardenerClient.AssertExpectations(t)
-	//		directorClient.AssertExpectations(t)
-	//	})
-	//}
+	clusterName := "name"
+	runtimeID := "runtimeID"
+	tenant := "tenant"
+
+	cluster := model.Cluster{
+		ID:     runtimeID,
+		Tenant: tenant,
+		ClusterConfig: model.GardenerConfig{
+			Name: clusterName,
+		},
+	}
+
+	for _, testCase := range []struct {
+		description   string
+		mockFunc      func(ardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, kubeconfigProvider *provisioning_mocks.KubeconfigProvider)
+		expectedStage model.OperationStage
+		expectedDelay time.Duration
+	}{
+		{
+			description: "should continue waiting if cluster not created",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInProcessingState(clusterName), nil)
+			},
+			expectedStage: model.WaitingForClusterInitialization,
+			expectedDelay: 10 * time.Second,
+		},
+		{
+			description: "should go to the next stage if cluster was created",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInSucceededState(clusterName), nil)
+				kubeconfigProvider.On("FetchRaw", clusterName).Return([]byte("kubeconfig"), nil)
+
+				dbSession := &dbMocks.ReadWriteSession{}
+				dbSession.On("UpdateCluster", cluster.ID, "kubeconfig", []byte(nil)).Return(nil)
+				dbSessionFactory.On("NewReadWriteSession").Return(dbSession, nil)
+
+			},
+			expectedStage: nextStageName,
+			expectedDelay: 0,
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// given
+			gardenerClient := &gardener_mocks.GardenerClient{}
+			dbSessionFactory := &dbMocks.Factory{}
+			kubeconfigProvider := &provisioning_mocks.KubeconfigProvider{}
+
+			testCase.mockFunc(gardenerClient, dbSessionFactory, kubeconfigProvider)
+
+			waitForClusterInitializationStep := NewWaitForClusterInitializationStep(gardenerClient, dbSessionFactory, kubeconfigProvider, nextStageName, 10*time.Minute)
+			// when
+			result, err := waitForClusterInitializationStep.Run(cluster, model.Operation{}, logrus.New())
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, testCase.expectedStage, result.Stage)
+			assert.Equal(t, testCase.expectedDelay, result.Delay)
+			gardenerClient.AssertExpectations(t)
+		})
+	}
+
+	for _, testCase := range []struct {
+		description        string
+		mockFunc           func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, kubeconfigProvider *provisioning_mocks.KubeconfigProvider)
+		cluster            model.Cluster
+		unrecoverableError bool
+	}{
+		{
+			description: "should return unrecoverable error when failed to get GardenerConfig",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+			},
+			unrecoverableError: true,
+			cluster:            model.Cluster{},
+		},
+		{
+			description: "should return error if failed to read Shoot",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, errors.New("some error"))
+			},
+			unrecoverableError: false,
+			cluster:            cluster,
+		},
+		{
+			description: "should return error if failed to fetch kubeconfig",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInSucceededState(clusterName), nil)
+				kubeconfigProvider.On("FetchRaw", clusterName).Return(nil, errors.New("some error"))
+				dbSessionFactory.On("NewReadWriteSession").Return(nil, nil)
+			},
+			unrecoverableError: false,
+			cluster:            cluster,
+		},
+		{
+			description: "should return unrecoverable error if Shoot is in failed state",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInFailedState(clusterName), nil)
+			},
+			unrecoverableError: true,
+			cluster:            cluster,
+		},
+		{
+			description: "should return error if failed to update data in database",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInSucceededState(clusterName), nil)
+				kubeconfigProvider.On("FetchRaw", clusterName).Return([]byte("kubeconfig"), nil)
+
+				dbSession := &dbMocks.ReadWriteSession{}
+				dbSession.On("UpdateCluster", cluster.ID, "kubeconfig", []byte(nil)).Return(dberrors.Internal("some error"))
+				dbSessionFactory.On("NewReadWriteSession").Return(dbSession, nil)
+			},
+			unrecoverableError: false,
+			cluster:            cluster,
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// given
+			gardenerClient := &gardener_mocks.GardenerClient{}
+			dbSessionFactory := &dbMocks.Factory{}
+			kubeconfigProvider := &provisioning_mocks.KubeconfigProvider{}
+
+			testCase.mockFunc(gardenerClient, dbSessionFactory, kubeconfigProvider)
+
+			waitForClusterInitializationStep := NewWaitForClusterInitializationStep(gardenerClient, dbSessionFactory, kubeconfigProvider, nextStageName, 10*time.Minute)
+
+			// when
+			_, err := waitForClusterInitializationStep.Run(testCase.cluster, model.Operation{}, logrus.New())
+
+			// then
+			require.Error(t, err)
+			nonRecoverable := operations.NonRecoverableError{}
+			require.Equal(t, testCase.unrecoverableError, errors.As(err, &nonRecoverable))
+
+			gardenerClient.AssertExpectations(t)
+			dbSessionFactory.AssertExpectations(t)
+			kubeconfigProvider.AssertExpectations(t)
+		})
+	}
+}
+
+func fixShootInSucceededState(name string) *gardener_types.Shoot {
+	return fixShoot(name, gardencorev1beta1.LastOperationStateSucceeded)
+}
+
+func fixShootInFailedState(name string) *gardener_types.Shoot {
+	return fixShoot(name, gardencorev1beta1.LastOperationStateFailed)
+}
+
+func fixShootInProcessingState(name string) *gardener_types.Shoot {
+	return fixShoot(name, gardencorev1beta1.LastOperationStateProcessing)
+}
+
+func fixShoot(name string, state gardencorev1beta1.LastOperationState) *gardener_types.Shoot {
+	return &gardener_types.Shoot{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Status: gardener_types.ShootStatus{
+			LastOperation: &gardener_types.LastOperation{
+				State: state,
+			},
+		},
+	}
 }

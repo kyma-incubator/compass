@@ -36,8 +36,6 @@ func (s *TriggerKymaUninstallStep) TimeLimit() time.Duration {
 
 func (s *TriggerKymaUninstallStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
-	logger.Debug("Shoot is on deprovisioning in progress step")
-
 	if cluster.Kubeconfig == nil {
 		err := fmt.Errorf("error: kubeconfig is nil")
 

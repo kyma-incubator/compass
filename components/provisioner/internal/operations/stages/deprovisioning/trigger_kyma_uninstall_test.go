@@ -51,7 +51,7 @@ func TestTriggerKymaUninstall_Run(t *testing.T) {
 
 	invalidKubeconfig := "invalid"
 
-	t.Run("should return error if installation not started", func(t *testing.T) {
+	t.Run("should go to the next step when if unistall was trigerred successfully", func(t *testing.T) {
 		// given
 		installationSvc := &installationMocks.Service{}
 

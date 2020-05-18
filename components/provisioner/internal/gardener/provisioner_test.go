@@ -168,35 +168,6 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		assert.Error(t, err)
 		assert.True(t, errors.IsNotFound(err))
 	})
-
-	//t.Run("should set operation failed if shoot does not exist and making it as deleted fails", func(t *testing.T) {
-	//	// given
-	//	clientset := fake.NewSimpleClientset()
-	//
-	//	sessionFactoryMock := &sessionMocks.Factory{}
-	//	session := &sessionMocks.WriteSession{}
-	//
-	//	shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
-	//
-	//	provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "")
-	//
-	//	// when
-	//	sessionFactoryMock.On("NewWriteSession").Return(session)
-	//	session.On("MarkClusterAsDeleted", cluster.ID).Return(dberrors.Internal("some db error"))
-	//
-	//	operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
-	//	require.Error(t, err)
-	//
-	//	// then
-	//	assert.Equal(t, model.Failed, operation.State)
-	//	assert.Equal(t, operationId, operation.ID)
-	//	assert.Equal(t, runtimeId, operation.ClusterID)
-	//	assert.Equal(t, model.Deprovision, operation.Type)
-	//
-	//	_, err = shootClient.Get(clusterName, v1.GetOptions{})
-	//	assert.Error(t, err)
-	//	assert.True(t, errors.IsNotFound(err))
-	//})
 }
 
 func assertAnnotation(t *testing.T, shoot *gardener_types.Shoot, name, value string) {
@@ -213,16 +184,4 @@ func assertAnnotation(t *testing.T, shoot *gardener_types.Shoot, name, value str
 	}
 
 	assert.Equal(t, value, val, fmt.Sprintf("invalid value for %s annotation", name))
-}
-
-func assertNoAnnotation(t *testing.T, shoot *gardener_types.Shoot, name string) {
-	annotations := shoot.Annotations
-	if annotations == nil {
-		return
-	}
-
-	_, found := annotations[name]
-	if found {
-		t.Errorf("annotation %s found when not expected", name)
-	}
 }

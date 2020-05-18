@@ -93,11 +93,10 @@ func CreateDeprovisioningQueue(
 	factory dbsession.Factory,
 	installationClient installation.Service,
 	directorClient director.DirectorClient,
-	shootClient gardener_apis.ShootInterface,
-	secretsClient v1core.SecretInterface) OperationQueue {
+	shootClient gardener_apis.ShootInterface) OperationQueue {
 
 	// TODO: consider adding timeouts to the configuration
-	deprovisionCluster := deprovisioning.NewDeprovisionClusterStep(installationClient, shootClient, factory, directorClient, model.FinishedStage, 5*time.Minute)
+	deprovisionCluster := deprovisioning.NewDeprovisionClusterStep(shootClient, factory, directorClient, model.FinishedStage, 5*time.Minute)
 	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, deprovisionCluster.Name(), 5*time.Minute)
 
 	deprovisioningSteps := map[model.OperationStage]operations.Step{

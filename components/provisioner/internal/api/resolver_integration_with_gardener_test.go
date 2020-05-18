@@ -63,7 +63,7 @@ var mgr ctrl.Manager
 const (
 	namespace  = "default"
 	syncPeriod = 5 * time.Second
-	waitPeriod = syncPeriod + 3*time.Second
+	waitPeriod = 10 * time.Second
 
 	mockedKubeconfig = `apiVersion: v1
 clusters:
@@ -186,7 +186,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	installationQueue := queue.CreateProvisioningQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock, shootInterface, secretsInterface)
 	installationQueue.Run(queueCtx.Done())
 
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationServiceMock, directorServiceMock, shootInterface, secretsInterface)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationServiceMock, directorServiceMock, shootInterface)
 	deprovisioningQueue.Run(queueCtx.Done())
 
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
@@ -251,7 +251,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			//when
 			//wait for Shoot to update
-			time.Sleep(waitPeriod)
+			time.Sleep(2 * syncPeriod)
 
 			list, err := shootInterface.List(metav1.ListOptions{})
 			require.NoError(t, err)
@@ -268,7 +268,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			//when
 			//wait for Shoot to update
-			time.Sleep(3 * waitPeriod)
+			time.Sleep(2 * waitPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
 			//then

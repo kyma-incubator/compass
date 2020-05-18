@@ -93,6 +93,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 			directorClient.AssertExpectations(t)
 		})
 	}
+
 	for _, testCase := range []struct {
 		description        string
 		mockFunc           func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient)
@@ -102,7 +103,6 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 		{
 			description: "should return unrecoverable error when failed to get GardenerConfig",
 			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
-
 			},
 			unrecoverableError: true,
 		},
@@ -118,7 +118,6 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 			description: "should return error if failed to get Runtime from Director",
 			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
-
 				directorClient.On("GetRuntime", runtimeID, tenant).Return(graphql.RuntimeExt{}, errors.New("some error"))
 
 			},
@@ -134,7 +133,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 					"label": "value",
 				})
 				directorClient.On("GetRuntime", runtimeID, tenant).Return(runtime, nil)
-
+				// TODO: update comparison
 				directorClient.On("UpdateRuntime", runtimeID, mock.Anything, tenant).Return(errors.New("some error"))
 			},
 			unrecoverableError: false,
@@ -184,16 +183,5 @@ func fixRuntime(runtimeId, name string, labels map[string]interface{}) graphql.R
 			Name: name,
 		},
 		Labels: labels,
-	}
-}
-
-func fixRuntimeInput(name string, labels map[string]interface{}) graphql.RuntimeInput {
-	l := graphql.Labels(labels)
-	statusCondition := graphql.RuntimeStatusConditionProvisioning
-
-	return graphql.RuntimeInput{
-		Name:            name,
-		Labels:          &l,
-		StatusCondition: &statusCondition,
 	}
 }
