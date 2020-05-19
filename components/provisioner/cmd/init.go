@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
@@ -24,7 +22,6 @@ import (
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -67,12 +64,7 @@ func newDirectorClient(config config) (director.DirectorClient, error) {
 	return director.NewDirectorClient(gqlClient, oauthClient), nil
 }
 
-func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient.Config,
-	gardenerClientSet *gardener_apis.CoreV1beta1Client,
-	dbsFactory dbsession.Factory, directorClient director.DirectorClient, installationSvc installation.Service,
-	auditLogTenantConfigPath string) (*gardener.ShootController, error) {
-
-	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
+func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient.Config, dbsFactory dbsession.Factory, auditLogTenantConfigPath string) (*gardener.ShootController, error) {
 
 	syncPeriod := defaultSyncPeriod
 
@@ -81,7 +73,7 @@ func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient
 		return nil, fmt.Errorf("unable to create shoot controller manager: %w", err)
 	}
 
-	return gardener.NewShootController(mgr, shootClient, dbsFactory, directorClient, installationSvc, auditLogTenantConfigPath)
+	return gardener.NewShootController(mgr, dbsFactory, auditLogTenantConfigPath)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {

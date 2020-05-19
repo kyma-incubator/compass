@@ -182,7 +182,7 @@ func main() {
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationService, directorClient, shootClient)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationService, directorClient, shootClient, 10*time.Minute)
 
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {
@@ -191,7 +191,7 @@ func main() {
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
 		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
-		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, directorClient, installationService, cfg.Gardener.AuditLogsTenantConfigPath)
+		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {
 			err := shootController.StartShootController()
@@ -265,7 +265,7 @@ func main() {
 	wg.Wait()
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue, deprovisioningQueue, upgradeQueue queue.OperationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, upgradeQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	var inProgressOps []model.Operation
@@ -287,7 +287,7 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue,
 
 	for _, op := range inProgressOps {
 		if op.Type == model.Provision {
-			installationQueue.Add(op.ID)
+			provisioningQueue.Add(op.ID)
 			continue
 		}
 

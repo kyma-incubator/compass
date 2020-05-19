@@ -3,14 +3,9 @@ package gardener
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 
-	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/sirupsen/logrus"
 
@@ -21,10 +16,7 @@ import (
 
 func NewShootController(
 	mgr manager.Manager,
-	shootClient gardener_apis.ShootInterface,
 	dbsFactory dbsession.Factory,
-	directorClient director.DirectorClient,
-	installationSvc installation.Service,
 	auditLogTenantConfigPath string) (*ShootController, error) {
 
 	err := gardener_types.AddToScheme(mgr.GetScheme())
@@ -34,14 +26,13 @@ func NewShootController(
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&gardener_types.Shoot{}).
-		Complete(NewReconciler(mgr, dbsFactory, shootClient, directorClient, installationSvc, auditLogTenantConfigPath))
+		Complete(NewReconciler(mgr, dbsFactory, auditLogTenantConfigPath))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create controller: %w", err)
 	}
 
 	return &ShootController{
 		controllerManager: mgr,
-		shootClient:       shootClient,
 		log:               logrus.WithField("Component", "ShootController"),
 	}, nil
 }
@@ -49,7 +40,6 @@ func NewShootController(
 type ShootController struct {
 	namespace         string
 	controllerManager ctrl.Manager
-	shootClient       gardener_apis.ShootInterface
 	log               *logrus.Entry
 }
 

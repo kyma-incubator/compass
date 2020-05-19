@@ -63,7 +63,7 @@ var mgr ctrl.Manager
 const (
 	namespace  = "default"
 	syncPeriod = 5 * time.Second
-	waitPeriod = 10 * time.Second
+	waitPeriod = 5 * time.Second
 
 	mockedKubeconfig = `apiVersion: v1
 clusters:
@@ -183,16 +183,16 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	installationQueue := queue.CreateProvisioningQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock, shootInterface, secretsInterface)
-	installationQueue.Run(queueCtx.Done())
+	provisioningQueue := queue.CreateProvisioningQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock, shootInterface, secretsInterface)
+	provisioningQueue.Run(queueCtx.Done())
 
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationServiceMock, directorServiceMock, shootInterface)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
 	deprovisioningQueue.Run(queueCtx.Done())
 
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
-	controler, err := gardener.NewShootController(mgr, shootInterface, dbsFactory, directorServiceMock, installationServiceMock, auditLogsConfigPath)
+	controler, err := gardener.NewShootController(mgr, dbsFactory, auditLogsConfigPath)
 	require.NoError(t, err)
 
 	go func() {
@@ -231,7 +231,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project")
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, installationQueue, deprovisioningQueue, upgradeQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue)
 
 			validator := NewValidator(dbsFactory.NewReadSession())
 
@@ -575,7 +575,7 @@ func setupSecretsClient(t *testing.T, config *rest.Config) v1core.SecretInterfac
 	return coreClient.Secrets(namespace)
 }
 
-func fakeCompassConnectionClientConstructor(k8sConfig *rest.Config) (v1alpha1.CompassConnectionInterface, error) {
+func fakeCompassConnectionClientConstructor() (v1alpha1.CompassConnectionInterface, error) {
 	fakeClient := compass_connection_fake.NewSimpleClientset(&v1alpha12.CompassConnection{
 		ObjectMeta: metav1.ObjectMeta{Name: "compass-connection"},
 		Status: v1alpha12.CompassConnectionStatus{

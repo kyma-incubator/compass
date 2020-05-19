@@ -56,13 +56,11 @@ func (s *DeprovisionClusterStep) Run(cluster model.Cluster, operation model.Oper
 
 	err := s.deleteShoot(gardenerConfig.Name, logger)
 	if err != nil {
-		logger.Errorf("Error deleting shoot: %s", err.Error())
 		return operations.StageResult{}, err
 	}
 
 	err = s.setDeprovisioningFinished(cluster, operation)
 	if err != nil {
-		logger.Errorf("Error setting deprovisioning finished: %s", err.Error())
 		return operations.StageResult{}, err
 	}
 

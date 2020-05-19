@@ -14,12 +14,6 @@ func (s ProvisioningState) String() string {
 	return string(s)
 }
 
-const (
-	Provisioned  ProvisioningState = "provisioned"
-	Provisioning ProvisioningState = "provisioning"
-	Initial      ProvisioningState = "initial"
-)
-
 type KymaInstallationState string
 
 func (s KymaInstallationState) String() string {
