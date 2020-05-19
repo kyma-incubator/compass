@@ -37,6 +37,7 @@ type Transactioner interface {
 	Begin() (PersistenceTx, error)
 	RollbackUnlessCommited(tx PersistenceTx)
 	PingContext(ctx context.Context) error
+	Stats() sql.DBStats
 }
 
 type db struct {
@@ -46,6 +47,10 @@ type db struct {
 
 func (db *db) PingContext(ctx context.Context) error {
 	return db.sqlDB.PingContext(ctx)
+}
+
+func (db *db) Stats() sql.DBStats {
+	return db.sqlDB.Stats()
 }
 
 func (db *db) Begin() (PersistenceTx, error) {

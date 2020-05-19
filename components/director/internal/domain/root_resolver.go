@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
@@ -63,7 +65,18 @@ type RootResolver struct {
 	scenarioAssignment  *scenarioassignment.Resolver
 }
 
-func NewRootResolver(transact persistence.Transactioner, cfgProvider *configprovider.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, pairingAdaptersMapping map[string]string, featuresConfig features.Config) *RootResolver {
+func NewRootResolver(
+	transact persistence.Transactioner,
+	cfgProvider *configprovider.Provider,
+	oneTimeTokenCfg onetimetoken.Config,
+	oAuth20Cfg oauth20.Config,
+	pairingAdaptersMapping map[string]string,
+	featuresConfig features.Config,
+	metricsCollector *metrics.Collector,
+) *RootResolver {
+	oAuth20HTTPClient := &http.Client{Timeout: oAuth20Cfg.HTTPClientTimeout}
+	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
+
 	authConverter := auth.NewConverter()
 	runtimeConverter := runtime.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
@@ -121,7 +134,7 @@ func NewRootResolver(transact persistence.Transactioner, cfgProvider *configprov
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, scenariosSvc, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
-	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg)
+	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg, oAuth20HTTPClient)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
 	packageSvc := mp_package.NewService(packageRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
