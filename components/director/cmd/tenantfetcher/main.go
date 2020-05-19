@@ -18,7 +18,7 @@ type config struct {
 	FieldMapping tenantfetcher.TenantFieldMapping
 
 	TenantProvider      string `envconfig:"APP_TENANT_PROVIDER"`
-	MetricsPushEndpoint string `envconfig:"APP_METRICS_PUSH_ENDPOINT"`
+	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 }
 
 func main() {
@@ -28,7 +28,10 @@ func main() {
 
 	configureLogger()
 
-	metricsPusher := metrics.NewPusher(cfg.MetricsPushEndpoint)
+	var metricsPusher *metrics.Pusher
+	if cfg.MetricsPushEndpoint != "" {
+		metricsPusher = metrics.NewPusher(cfg.MetricsPushEndpoint)
+	}
 
 	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
@@ -41,7 +44,9 @@ func main() {
 	tenantFetcherSvc := createTenantFetcherSvc(cfg, transact, metricsPusher)
 	err = tenantFetcherSvc.SyncTenants()
 
-	metricsPusher.Push()
+	if metricsPusher != nil {
+		metricsPusher.Push()
+	}
 
 	exitOnError(err, "Error while synchronizing tenants in database with tenant changes from events")
 
@@ -62,7 +67,10 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, metr
 	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
 	tenantStorageSvc := tenant.NewService(tenantStorageRepo, uidSvc)
 
-	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig, metricsPusher)
+	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig)
+	if metricsPusher != nil {
+		eventAPIClient.SetMetricsPusher(metricsPusher)
+	}
 
 	tenantFetcherConverter := tenantfetcher.NewConverter(cfg.TenantProvider, cfg.FieldMapping)
 	return tenantfetcher.NewService(transact, tenantFetcherConverter, eventAPIClient, tenantStorageSvc)

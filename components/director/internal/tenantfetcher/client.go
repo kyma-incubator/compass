@@ -41,7 +41,7 @@ const (
 	pageSize = 1000
 )
 
-func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig, metricsPusher MetricsPusher) Client {
+func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) Client {
 	cfg := clientcredentials.Config{
 		ClientID:     oAuth2Config.ClientID,
 		ClientSecret: oAuth2Config.ClientSecret,
@@ -51,10 +51,13 @@ func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig, metricsPusher Met
 	httpClient := cfg.Client(context.Background())
 
 	return Client{
-		httpClient:    httpClient,
-		apiConfig:     apiConfig,
-		metricsPusher: metricsPusher,
+		httpClient: httpClient,
+		apiConfig:  apiConfig,
 	}
+}
+
+func (c Client) SetMetricsPusher(metricsPusher MetricsPusher) {
+	c.metricsPusher = metricsPusher
 }
 
 func (c Client) FetchTenantEventsPage(eventsType EventsType, pageNumber int) (*TenantEventsResponse, error) {
@@ -79,7 +82,9 @@ func (c Client) FetchTenantEventsPage(eventsType EventsType, pageNumber int) (*T
 		}
 	}()
 
-	c.metricsPusher.RecordEventingRequest(http.MethodGet, res)
+	if c.metricsPusher != nil {
+		c.metricsPusher.RecordEventingRequest(http.MethodGet, res)
+	}
 
 	var tenantEvents TenantEventsResponse
 	err = json.NewDecoder(res.Body).Decode(&tenantEvents)

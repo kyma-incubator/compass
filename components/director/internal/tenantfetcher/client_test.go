@@ -28,7 +28,8 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointTenantDeleted: endpoint + "/deleted",
 		EndpointTenantUpdated: endpoint + "/updated",
 	}
-	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, metricsPusherMock)
+	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg)
+	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
 	t.Run("Success fetching creation events", func(t *testing.T) {
@@ -69,7 +70,8 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointTenantDeleted: "http://127.0.0.1:8111/badpath",
 		EndpointTenantUpdated: endpoint + "/empty",
 	}
-	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, metricsPusherMock)
+	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg)
+	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
 	t.Run("Success when no content", func(t *testing.T) {
