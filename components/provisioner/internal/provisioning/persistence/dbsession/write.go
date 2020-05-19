@@ -192,6 +192,26 @@ func (ws writeSession) TransitionOperation(operationID string, message string, s
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))
 }
 
+// Remove this method when cleaning up code replacing ShootProvisioning stage
+func (ws writeSession) FixShootProvisioningStage(message string, newStage model.OperationStage, transitionTime time.Time) dberrors.Error {
+	legacyStageCondition := dbr.Eq("stage", "ShootProvisioning")
+	provisioningOperation := dbr.Eq("type", model.Provision)
+	inProgressOperation := dbr.Eq("state", model.InProgress)
+
+	res, err := ws.update("operation").
+		Where(dbr.And(legacyStageCondition, provisioningOperation, inProgressOperation)).
+		Set("stage", newStage).
+		Set("message", message).
+		Set("last_transition", transitionTime).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to set stage: %s for operations", err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to set stage: %s for operations", err))
+}
+
 func (ws writeSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).

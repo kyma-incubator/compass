@@ -43,6 +43,7 @@ type WriteSession interface {
 	DeleteCluster(runtimeID string) dberrors.Error
 	MarkClusterAsDeleted(runtimeID string) dberrors.Error
 	InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) dberrors.Error
+	FixShootProvisioningStage(message string, newStage model.OperationStage, transitionTime time.Time) dberrors.Error
 }
 
 //go:generate mockery -name=ReadWriteSession

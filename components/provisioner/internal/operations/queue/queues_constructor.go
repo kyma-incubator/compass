@@ -20,10 +20,15 @@ import (
 )
 
 type ProvisioningTimeouts struct {
+	ClusterCreation    time.Duration `envconfig:"default=60m"`
 	Installation       time.Duration `envconfig:"default=60m"`
 	Upgrade            time.Duration `envconfig:"default=60m"`
 	AgentConfiguration time.Duration `envconfig:"default=15m"`
 	AgentConnection    time.Duration `envconfig:"default=15m"`
+}
+
+type DeprovisioningTimeouts struct {
+	ClusterDeletion time.Duration `envconfig:"default=60m"`
 }
 
 func CreateProvisioningQueue(
@@ -40,7 +45,7 @@ func CreateProvisioningQueue(
 	configureAgentStep := provisioning.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
 	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation)
 	installStep := provisioning.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 20*time.Minute)
-	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), installStep.Name(), 40*time.Minute)
+	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), installStep.Name(), timeouts.ClusterCreation)
 	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), 10*time.Minute)
 
 	provisionSteps := map[model.OperationStage]operations.Step{
@@ -90,6 +95,7 @@ func CreateUpgradeQueue(
 }
 
 func CreateDeprovisioningQueue(
+	timeouts DeprovisioningTimeouts,
 	factory dbsession.Factory,
 	installationClient installation.Service,
 	directorClient director.DirectorClient,
@@ -97,7 +103,7 @@ func CreateDeprovisioningQueue(
 	deleteDelay time.Duration) OperationQueue {
 
 	// TODO: consider adding timeouts to the configuration
-	waitForClusterDeletion := deprovisioning.NewWaitForClusterDeletionStep(shootClient, factory, directorClient, model.FinishedStage, 5*time.Minute)
+	waitForClusterDeletion := deprovisioning.NewWaitForClusterDeletionStep(shootClient, factory, directorClient, model.FinishedStage, timeouts.ClusterDeletion)
 	deleteCluster := deprovisioning.NewDeleteClusterStep(shootClient, waitForClusterDeletion.Name(), 5*time.Minute)
 	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, deleteCluster.Name(), 5*time.Minute, deleteDelay)
 

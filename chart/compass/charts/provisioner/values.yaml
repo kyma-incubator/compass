@@ -22,6 +22,8 @@ gardener:
   secretName: "gardener-credentials"
   auditLogsPolicyConfigMap: ""
   manageSecrets: true
+  clusterCreationTimeout: 2h
+  clusterDeletionTimeout: 2h
 
 provisioner: "gardener"
 

@@ -186,7 +186,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	provisioningQueue := queue.CreateProvisioningQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock, shootInterface, secretsInterface)
 	provisioningQueue.Run(queueCtx.Done())
 
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
 	deprovisioningQueue.Run(queueCtx.Done())
 
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
@@ -389,10 +389,17 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 	return queue.ProvisioningTimeouts{
+		ClusterCreation:    5 * time.Minute,
 		Installation:       5 * time.Minute,
 		Upgrade:            5 * time.Minute,
 		AgentConfiguration: 5 * time.Minute,
 		AgentConnection:    5 * time.Minute,
+	}
+}
+
+func testDeprovisioningTimeouts() queue.DeprovisioningTimeouts {
+	return queue.DeprovisioningTimeouts{
+		ClusterDeletion: 5 * time.Minute,
 	}
 }
 
