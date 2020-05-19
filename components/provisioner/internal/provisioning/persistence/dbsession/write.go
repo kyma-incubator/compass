@@ -206,10 +206,10 @@ func (ws writeSession) FixShootProvisioningStage(message string, newStage model.
 		Exec()
 
 	if err != nil {
-		return dberrors.Internal("Failed to set stage: %s for operations", err)
+		return dberrors.Internal("Failed to set stage: %v for operations", err)
 	}
 
-	return ws.updateSucceeded(res, fmt.Sprintf("Failed to set stage: %s for operations", err))
+	return nil
 }
 
 func (ws writeSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
