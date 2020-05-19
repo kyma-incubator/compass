@@ -163,21 +163,21 @@ func main() {
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
 
-	metricsSrv := createMetricsServer(cfg.MetricsAddress)
-	mainSrv := &http.Server{Addr: cfg.Address, Handler: mainRouter}
+	metricsHandler := http.NewServeMux()
+	metricsHandler.Handle("/metrics", promhttp.Handler())
+
+	runMetricsSrv, shutdownMetricsSrv := createServer(cfg.MetricsAddress, metricsHandler, "metrics")
+	runMainSrv, shutdownMainSrv := createServer(cfg.Address, mainRouter, "main")
 
 	go func() {
 		<-stopCh
 		// Interrupt signal received - shut down the servers
-		shutdownServer(metricsSrv, "main")
-		shutdownServer(metricsSrv, "metrics")
+		shutdownMetricsSrv()
+		shutdownMainSrv()
 	}()
 
-	log.Infof("Running metrics server on %s...", cfg.MetricsAddress)
-	go runServer(metricsSrv, "metrics")
-
-	log.Infof("Listening on %s...", cfg.Address)
-	runServer(mainSrv, "main")
+	go runMetricsSrv()
+	runMainSrv()
 }
 
 func getPairingAdaptersMapping(filePath string) (map[string]string, error) {
@@ -304,21 +304,22 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 		tenantSvc).ServeHTTP, nil
 }
 
-func createMetricsServer(metricsAddress string) *http.Server {
-	metricsHandler := http.NewServeMux()
-	metricsHandler.Handle("/metrics", promhttp.Handler())
+func createServer(address string, handler http.Handler, name string) (func(), func()) {
+	srv := &http.Server{Addr: address, Handler: handler}
 
-	return &http.Server{Addr: metricsAddress, Handler: metricsHandler}
-}
-
-func runServer(srv *http.Server, name string) {
-	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-		log.Errorf("%s HTTP server ListenAndServe: %v", name, err)
+	runFn := func() {
+		log.Infof("Running %s server on %s...", name, address)
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			log.Errorf("%s HTTP server ListenAndServe: %v", name, err)
+		}
 	}
-}
 
-func shutdownServer(srv *http.Server, name string) {
-	if err := srv.Shutdown(context.Background()); err != nil {
-		log.Errorf("%s HTTP server Shutdown: %v", name, err)
+	shutdownFn := func() {
+		log.Infof("Shutting down %s server...", name)
+		if err := srv.Shutdown(context.Background()); err != nil {
+			log.Errorf("%s HTTP server Shutdown: %v", name, err)
+		}
 	}
+
+	return runFn, shutdownFn
 }

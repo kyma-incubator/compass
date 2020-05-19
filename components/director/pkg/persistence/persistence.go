@@ -46,7 +46,6 @@ type db struct {
 }
 
 func (db *db) PingContext(ctx context.Context) error {
-	db.sqlDB.Stats()
 	return db.sqlDB.PingContext(ctx)
 }
 
