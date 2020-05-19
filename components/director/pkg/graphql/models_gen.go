@@ -214,11 +214,6 @@ type CredentialRequestAuthInput struct {
 	Csrf *CSRFTokenCredentialRequestAuthInput `json:"csrf"`
 }
 
-type CustomError struct {
-	StatusCode int    `json:"statusCode"`
-	Message    string `json:"message"`
-}
-
 type DocumentInput struct {
 	// **Validation:** max=128
 	Title string `json:"title"`

@@ -1,12 +1,13 @@
 package customerrors
 
-type StatusCode int
+type ErrorCode int
 
 const (
-	ExternalError = iota
+	UnhandledError ErrorCode = iota
 	InternalError
 	NotFound
 	NotUnique
 	TenantNotFound
 	InvalidData
+	ConstaintVolation
 )

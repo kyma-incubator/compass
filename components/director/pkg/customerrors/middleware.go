@@ -4,43 +4,35 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	gqgraphql "github.com/99designs/gqlgen/graphql"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
-func HandlerErrors(ctx context.Context, next gqgraphql.Resolver) (res interface{}, err error) {
-	//TODO: Tutaj zapnij mapowanie errorów
+func HandlerErrors(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
 	val, err := next(ctx)
 	if err != nil {
-		//TODO: Map this error
-		fmt.Printf("Found error: %s", err.Error())
+		customErr := &Error{}
+		found := errors.As(err, customErr)
 
-
-		if ok := errors.Is(err, InternalErr); ok {
-			fmt.Printf("Internal Error: %v\n", err.Error())
-			return val, GraphqlError{
-				StatusCode: InternalError,
-				Message:    "Internal error in director",
-			}
-		}
-
-		var customErr Error
-		for ; ; {
-			val, ok := err.(Error)
-			if ok {
-				customErr = val
-				break
-			}
-			if err = errors.Unwrap(err); err == nil {
-				break
+		if !found {
+			//TODO: Use Logger
+			fmt.Printf("Not handled error yet: %v\n", err)
+			return val, err
+		} else {
+			if customErr.errorCode == InternalError {
+				fmt.Printf("Internal Error: %v\n", err.Error())
+				return val, GraphqlError{
+					StatusCode: InternalError,
+					Message:    "Internal error in director",
+				}
 			}
 
+			graphqlErr := GraphqlError{
+				StatusCode: customErr.errorCode,
+				Message:    customErr.Error(),
+			}
+			return val, graphqlErr
 		}
-		graphqlErr := GraphqlError{
-			StatusCode: customErr.statusCode,
-			Message:    customErr.Error(),
-		}
-
-		return val, graphqlErr
 	}
 	return val, err
 }

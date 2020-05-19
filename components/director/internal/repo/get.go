@@ -2,10 +2,9 @@ package repo
 
 import (
 	"context"
-	"database/sql"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
@@ -67,11 +66,9 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Condit
 	}
 
 	err = persist.Get(dest, query, args...)
-	switch {
-	case err == sql.ErrNoRows:
-		return apperrors.NewNotFoundError("")
-	case err != nil:
-		return errors.Wrap(err, "while getting object from DB")
+
+	if err != nil {
+		return customerrors.MapSQLError(err)
 	}
 	return nil
 }

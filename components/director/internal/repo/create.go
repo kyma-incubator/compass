@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
@@ -46,11 +45,9 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 	stmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
 
 	_, err = persist.NamedExec(stmt, dbEntity)
-	if pqerr, ok := err.(*pq.Error); ok {
-		if pqerr.Code == persistence.UniqueViolation {
-			return apperrors.NewNotUniqueError("")
-		}
-	}
+	if err != nil {
+		return customerrors.MapSQLError(err)
 
+	}
 	return errors.Wrapf(err, "while inserting row to '%s' table", c.tableName)
 }

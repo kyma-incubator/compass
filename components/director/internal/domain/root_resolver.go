@@ -2,9 +2,10 @@ package domain
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/tmp_resolver"
 
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 
@@ -449,8 +450,8 @@ func (r *mutationResolver) CreateAutomaticScenarioAssignment(ctx context.Context
 	return r.scenarioAssignment.CreateAutomaticScenarioAssignment(ctx, in)
 }
 
-func (r *mutationResolver) TestError(ctx context.Context, errorID int) (*graphql.CustomError, error) {
-	return customerrors.Resolve(ctx, errorID)
+func (r *mutationResolver) TestError(ctx context.Context, errorID int) (*graphql.Tenant, error) {
+	return tmp_resolver.Resolve(ctx, errorID)
 }
 
 type applicationResolver struct {
