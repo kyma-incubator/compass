@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	wrongTenant = "b1e46bd5-18ba-4a02-b96d-631a9e803504"
-	emptyTenant = ""
+	wrongTenant        = "b1e46bd5-18ba-4a02-b96d-631a9e803504"
+	emptyTenant        = ""
+	noTenantMessage    = "tenant not found"
+	wrongTenantMessage = "No tenant found for"
 )
 
 func TestTenantErrors(t *testing.T) {
@@ -33,9 +35,11 @@ func TestTenantErrors(t *testing.T) {
 	}
 	_, err = registerApplicationWithinTenant(t, ctx, dexGraphQLClient, wrongTenant, appInput)
 	require.Error(t, err)
+	require.Contains(t, err.Error(), wrongTenantMessage)
 
 	_, err = registerApplicationWithinTenant(t, ctx, dexGraphQLClient, emptyTenant, appInput)
 	require.Error(t, err)
+	require.Contains(t, err.Error(), noTenantMessage)
 
 	is := registerIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "test")
 
@@ -44,8 +48,9 @@ func TestTenantErrors(t *testing.T) {
 	var credentials graphql.SystemAuth
 	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, wrongTenant, req, &credentials)
 	require.Error(t, err)
+	require.Contains(t, err.Error(), wrongTenantMessage)
 
 	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, emptyTenant, req, &credentials)
 	require.NoError(t, err)
-
+	require.NotNil(t, credentials)
 }
