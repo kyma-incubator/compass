@@ -30,6 +30,7 @@ const (
 	kafkaProvider                     = "azure"
 
 	// prefix is added before the created Azure resources
+	// to satisfy Azure naming validation: https://docs.microsoft.com/en-us/rest/api/servicebus/create-namespace
 	prefix = "k"
 )
 
