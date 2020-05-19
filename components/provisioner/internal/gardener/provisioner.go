@@ -88,8 +88,8 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 		if k8sErrors.IsNotFound(err) {
 			message := fmt.Sprintf("Cluster %s already deleted. Proceeding to DeprovisionCluster stage.", cluster.ID)
 
-			// Shoot was deleted. In order to make sure if all clean up actions were performed we need to proceed to DeprovisionCluster state
-			return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeprovisionCluster, time.Now()), nil
+			// Shoot was deleted. In order to make sure if all clean up actions were performed we need to proceed to WaitForClusterDeletion state
+			return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.WaitForClusterDeletion, time.Now()), nil
 		}
 	}
 

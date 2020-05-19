@@ -139,7 +139,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("should proceed to DeleteCluster step if shoot does not exist", func(t *testing.T) {
+	t.Run("should proceed to WaitForClusterDeletion step if shoot does not exist", func(t *testing.T) {
 		// given
 		clientset := fake.NewSimpleClientset()
 
@@ -159,7 +159,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		// then
 		assert.Equal(t, model.InProgress, operation.State)
-		assert.Equal(t, model.DeprovisionCluster, operation.Stage)
+		assert.Equal(t, model.WaitForClusterDeletion, operation.Stage)
 		assert.Equal(t, operationId, operation.ID)
 		assert.Equal(t, runtimeId, operation.ClusterID)
 		assert.Equal(t, model.Deprovision, operation.Type)

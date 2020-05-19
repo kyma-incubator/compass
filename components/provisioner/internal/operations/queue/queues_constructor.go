@@ -94,15 +94,17 @@ func CreateDeprovisioningQueue(
 	installationClient installation.Service,
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,
-	deprovisioningDelay time.Duration) OperationQueue {
+	deleteDelay time.Duration) OperationQueue {
 
 	// TODO: consider adding timeouts to the configuration
-	deprovisionCluster := deprovisioning.NewDeprovisionClusterStep(shootClient, factory, directorClient, model.FinishedStage, 5*time.Minute)
-	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, deprovisionCluster.Name(), 5*time.Minute, deprovisioningDelay)
+	waitForClusterDeletion := deprovisioning.NewWaitForClusterDeletionStep(shootClient, factory, directorClient, model.FinishedStage, 5*time.Minute)
+	deleteCluster := deprovisioning.NewDeleteClusterStep(shootClient, waitForClusterDeletion.Name(), 5*time.Minute)
+	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, deleteCluster.Name(), 5*time.Minute, deleteDelay)
 
 	deprovisioningSteps := map[model.OperationStage]operations.Step{
-		model.DeprovisionCluster:   deprovisionCluster,
-		model.TriggerKymaUninstall: triggerKymaUninstall,
+		model.DeleteCluster:          deleteCluster,
+		model.WaitForClusterDeletion: waitForClusterDeletion,
+		model.TriggerKymaUninstall:   triggerKymaUninstall,
 	}
 
 	deprovisioningExecutor := operations.NewExecutor(

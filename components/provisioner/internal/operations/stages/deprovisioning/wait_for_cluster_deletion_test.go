@@ -7,6 +7,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	directorMocks "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -21,12 +22,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-const (
-	runtimeID = "runtimeID"
-	tenant    = "tenant"
-)
-
-func TestDeprovisionCluster_Run(t *testing.T) {
+func TestWaitForClusterDeletion_Run(t *testing.T) {
 
 	cluster := model.Cluster{
 		ID: "runtimeID",
@@ -43,9 +39,9 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 		expectedDelay time.Duration
 	}{
 		{
-			description: "should go to the next step when Shoot was deleted successfully and Runtime unregistered",
+			description: "should go to the next step when Shoot was deleted successfully and Runtime exists",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
-				gardenerClient.On("Delete", clusterName, mock.Anything).Return(k8serrors.NewNotFound(schema.GroupResource{}, ""))
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, k8serrors.NewNotFound(schema.GroupResource{}, ""))
 				dbSession := &dbMocks.WriteSessionWithinTransaction{}
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
@@ -58,9 +54,9 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 			expectedDelay: 0,
 		},
 		{
-			description: "should go to the next step when Shoot and Runtime not exists",
+			description: "should go to the next step when Shoot was deleted successfully and Runtime not exists",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
-				gardenerClient.On("Delete", clusterName, mock.Anything).Return(nil)
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, k8serrors.NewNotFound(schema.GroupResource{}, ""))
 				dbSession := &dbMocks.WriteSessionWithinTransaction{}
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
@@ -71,6 +67,14 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 			expectedStage: nextStageName,
 			expectedDelay: 0,
 		},
+		{
+			description: "should continue waiting if shoot not deleted",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(&gardener_types.Shoot{}, nil)
+			},
+			expectedStage: model.WaitForClusterDeletion,
+			expectedDelay: 20 * time.Second,
+		},
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
 			// given
@@ -80,7 +84,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient, dbSessionFactory, directorClient)
 
-			deprovisionClusterStep := NewDeprovisionClusterStep(gardenerClient, dbSessionFactory, directorClient, nextStageName, 10*time.Minute)
+			deprovisionClusterStep := NewWaitForClusterDeletionStep(gardenerClient, dbSessionFactory, directorClient, nextStageName, 10*time.Minute)
 
 			// when
 			result, err := deprovisionClusterStep.Run(cluster, model.Operation{}, logrus.New())
@@ -108,9 +112,9 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 			unrecoverableError: true,
 		},
 		{
-			description: "should return error when failed to delete shoot",
+			description: "should return error when failed to get shoot",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
-				gardenerClient.On("Delete", clusterName, mock.Anything).Return(errors.New("some error"))
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, errors.New("some error"))
 			},
 			cluster:            cluster,
 			unrecoverableError: false,
@@ -118,7 +122,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 		{
 			description: "should return error when failed to start database transaction",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
-				gardenerClient.On("Delete", clusterName, mock.Anything).Return(nil)
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, k8serrors.NewNotFound(schema.GroupResource{}, ""))
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(nil, dberrors.Internal("some error"))
 			},
 			cluster:            cluster,
@@ -127,7 +131,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 		{
 			description: "should return error when failed to mark cluster as deleted",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
-				gardenerClient.On("Delete", clusterName, mock.Anything).Return(nil)
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, k8serrors.NewNotFound(schema.GroupResource{}, ""))
 				dbSession := &dbMocks.WriteSessionWithinTransaction{}
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(dberrors.Internal("some error"))
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
@@ -139,7 +143,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 		{
 			description: "should return error when failed to check if Runtime exists",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
-				gardenerClient.On("Delete", clusterName, mock.Anything).Return(nil)
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, k8serrors.NewNotFound(schema.GroupResource{}, ""))
 				dbSession := &dbMocks.WriteSessionWithinTransaction{}
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
@@ -152,7 +156,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 		{
 			description: "should return error when failed to delete Runtime",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
-				gardenerClient.On("Delete", clusterName, mock.Anything).Return(nil)
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, k8serrors.NewNotFound(schema.GroupResource{}, ""))
 				dbSession := &dbMocks.WriteSessionWithinTransaction{}
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
@@ -166,7 +170,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 		{
 			description: "should return error when failed to commit database transaction",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
-				gardenerClient.On("Delete", clusterName, mock.Anything).Return(nil)
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, k8serrors.NewNotFound(schema.GroupResource{}, ""))
 				dbSession := &dbMocks.WriteSessionWithinTransaction{}
 				dbSession.On("MarkClusterAsDeleted", mock.AnythingOfType("string")).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
@@ -188,7 +192,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient, dbSessionFactory, directorClient)
 
-			deprovisionClusterStep := NewDeprovisionClusterStep(gardenerClient, dbSessionFactory, directorClient, nextStageName, 10*time.Minute)
+			deprovisionClusterStep := NewWaitForClusterDeletionStep(gardenerClient, dbSessionFactory, directorClient, nextStageName, 10*time.Minute)
 
 			// when
 			_, err := deprovisionClusterStep.Run(testCase.cluster, model.Operation{}, logrus.New())

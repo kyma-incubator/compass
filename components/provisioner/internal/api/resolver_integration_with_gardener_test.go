@@ -63,7 +63,7 @@ var mgr ctrl.Manager
 const (
 	namespace  = "default"
 	syncPeriod = 5 * time.Second
-	waitPeriod = 5 * time.Second
+	waitPeriod = 10 * time.Second
 
 	mockedKubeconfig = `apiVersion: v1
 clusters:
@@ -330,7 +330,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			//when
 			shoot = removeFinalizers(t, shootInterface, shoot)
-			time.Sleep(3 * waitPeriod)
+			time.Sleep(4 * waitPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
 			//then
@@ -575,7 +575,7 @@ func setupSecretsClient(t *testing.T, config *rest.Config) v1core.SecretInterfac
 	return coreClient.Secrets(namespace)
 }
 
-func fakeCompassConnectionClientConstructor() (v1alpha1.CompassConnectionInterface, error) {
+func fakeCompassConnectionClientConstructor(k8sConfig *rest.Config) (v1alpha1.CompassConnectionInterface, error) {
 	fakeClient := compass_connection_fake.NewSimpleClientset(&v1alpha12.CompassConnection{
 		ObjectMeta: metav1.ObjectMeta{Name: "compass-connection"},
 		Status: v1alpha12.CompassConnectionStatus{
