@@ -4,7 +4,7 @@ Applications and Runtimes in the Director use the `Status` field to inform the u
 - `INITIAL` - used for newly created Applications and Runtimes that have not performed any calls to the Director yet
 - `PROVISIONING` - used for Runtimes that are being provisioned
 - `CONNECTED` - used for connected Applications and Runtimes
-- `FAILED` - used for Applications and Runtimes whose connection with the Director failed
+- `FAILED` - used for Applications and Runtimes whose attempt to connect with the Director failed
 
 ## Automatic status update
 
