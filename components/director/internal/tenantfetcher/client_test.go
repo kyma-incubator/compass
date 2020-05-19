@@ -6,6 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher/automock"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 
 	"github.com/stretchr/testify/assert"
@@ -16,12 +19,16 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	// GIVEN
 	mockClient, mockServerCloseFn, endpoint := fixHTTPClient(t)
 	defer mockServerCloseFn()
+
+	metricsPusherMock := fixMetricsPusherMock()
+	defer metricsPusherMock.AssertExpectations(t)
+
 	apiCfg := tenantfetcher.APIConfig{
 		EndpointTenantCreated: endpoint + "/created",
 		EndpointTenantDeleted: endpoint + "/deleted",
 		EndpointTenantUpdated: endpoint + "/updated",
 	}
-	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg)
+	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
 	t.Run("Success fetching creation events", func(t *testing.T) {
@@ -62,7 +69,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointTenantDeleted: "http://127.0.0.1:8111/badpath",
 		EndpointTenantUpdated: endpoint + "/empty",
 	}
-	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg)
+	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
 	t.Run("Success when no content", func(t *testing.T) {
@@ -199,4 +206,11 @@ func fixDeletedTenantsJSON() string {
   "totalResults": 2,
   "totalPages": 1
 }`
+}
+
+func fixMetricsPusherMock() *automock.MetricsPusher {
+	metricsPusherMock := &automock.MetricsPusher{}
+	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, mock.Anything).Maybe()
+
+	return metricsPusherMock
 }

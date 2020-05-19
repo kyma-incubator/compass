@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -16,7 +17,8 @@ type config struct {
 	APIConfig    tenantfetcher.APIConfig
 	FieldMapping tenantfetcher.TenantFieldMapping
 
-	TenantProvider string `envconfig:"APP_TENANT_PROVIDER"`
+	TenantProvider      string `envconfig:"APP_TENANT_PROVIDER"`
+	MetricsPushEndpoint string `envconfig:"APP_METRICS_PUSH_ENDPOINT"`
 }
 
 func main() {
@@ -26,6 +28,8 @@ func main() {
 
 	configureLogger()
 
+	metricsPusher := metrics.NewPusher(cfg.MetricsPushEndpoint)
+
 	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
@@ -34,8 +38,11 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	tenantFetcherSvc := createTenantFetcherSvc(cfg, transact)
+	tenantFetcherSvc := createTenantFetcherSvc(cfg, transact, metricsPusher)
 	err = tenantFetcherSvc.SyncTenants()
+
+	metricsPusher.Push()
+
 	exitOnError(err, "Error while synchronizing tenants in database with tenant changes from events")
 
 	log.Info("Successfully synchronized tenants")
@@ -48,14 +55,14 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func createTenantFetcherSvc(cfg config, transact persistence.Transactioner) *tenantfetcher.Service {
+func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, metricsPusher *metrics.Pusher) *tenantfetcher.Service {
 	uidSvc := uid.NewService()
 
 	tenantStorageConv := tenant.NewConverter()
 	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
 	tenantStorageSvc := tenant.NewService(tenantStorageRepo, uidSvc)
 
-	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig)
+	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig, metricsPusher)
 
 	tenantFetcherConverter := tenantfetcher.NewConverter(cfg.TenantProvider, cfg.FieldMapping)
 	return tenantfetcher.NewService(transact, tenantFetcherConverter, eventAPIClient, tenantStorageSvc)

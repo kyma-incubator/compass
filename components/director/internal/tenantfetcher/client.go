@@ -25,8 +25,14 @@ type APIConfig struct {
 	EndpointTenantUpdated string `envconfig:"APP_ENDPOINT_TENANT_UPDATED"`
 }
 
+//go:generate mockery -name=MetricsPusher -output=automock -outpkg=automock -case=underscore
+type MetricsPusher interface {
+	RecordEventingRequest(method string, res *http.Response)
+}
+
 type Client struct {
-	httpClient *http.Client
+	httpClient    *http.Client
+	metricsPusher MetricsPusher
 
 	apiConfig APIConfig
 }
@@ -35,17 +41,19 @@ const (
 	pageSize = 1000
 )
 
-func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) Client {
+func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig, metricsPusher MetricsPusher) Client {
 	cfg := clientcredentials.Config{
 		ClientID:     oAuth2Config.ClientID,
 		ClientSecret: oAuth2Config.ClientSecret,
 		TokenURL:     oAuth2Config.OAuthTokenEndpoint,
 	}
+
 	httpClient := cfg.Client(context.Background())
 
 	return Client{
-		httpClient: httpClient,
-		apiConfig:  apiConfig,
+		httpClient:    httpClient,
+		apiConfig:     apiConfig,
+		metricsPusher: metricsPusher,
 	}
 }
 
@@ -70,6 +78,8 @@ func (c Client) FetchTenantEventsPage(eventsType EventsType, pageNumber int) (*T
 			log.Warnf("Unable to close response body. Cause: %v", err)
 		}
 	}()
+
+	c.metricsPusher.RecordEventingRequest(http.MethodGet, res)
 
 	var tenantEvents TenantEventsResponse
 	err = json.NewDecoder(res.Body).Decode(&tenantEvents)

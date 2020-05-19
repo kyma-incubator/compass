@@ -11,8 +11,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=TenantStorageService -output=automock -outpkg=automock -case=underscore
 type TenantStorageService interface {
+	//go:generate mockery -name=TenantStorageService -output=automock -outpkg=automock -case=underscore
 	CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
