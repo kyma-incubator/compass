@@ -40,22 +40,22 @@ func CreateProvisioningQueue(
 	configureAgentStep := provisioning.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
 	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation)
 	installStep := provisioning.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 20*time.Minute)
-	waitForClusterInitializationStep := provisioning.NewWaitForClusterInitializationStep(shootClient, factory, gardener.NewKubeconfigProvider(secretsClient), installStep.Name(), 40*time.Minute)
-	waitForClusterCreationStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterInitializationStep.Name(), 10*time.Minute)
+	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), installStep.Name(), 40*time.Minute)
+	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), 10*time.Minute)
 
-	installSteps := map[model.OperationStage]operations.Step{
-		model.WaitForAgentToConnect:           waitForAgentToConnectStep,
-		model.ConnectRuntimeAgent:             configureAgentStep,
-		model.WaitingForInstallation:          waitForInstallStep,
-		model.StartingInstallation:            installStep,
-		model.WaitingForClusterDomain:         waitForClusterCreationStep,
-		model.WaitingForClusterInitialization: waitForClusterInitializationStep,
+	provisionSteps := map[model.OperationStage]operations.Step{
+		model.WaitForAgentToConnect:     waitForAgentToConnectStep,
+		model.ConnectRuntimeAgent:       configureAgentStep,
+		model.WaitingForInstallation:    waitForInstallStep,
+		model.StartingInstallation:      installStep,
+		model.WaitingForClusterDomain:   waitForClusterDomainStep,
+		model.WaitingForClusterCreation: waitForClusterCreationStep,
 	}
 
 	provisioningExecutor := operations.NewExecutor(
 		factory.NewReadWriteSession(),
 		model.Provision,
-		installSteps,
+		provisionSteps,
 		failure.NewNoopFailureHandler(),
 		directorClient,
 	)
@@ -93,11 +93,12 @@ func CreateDeprovisioningQueue(
 	factory dbsession.Factory,
 	installationClient installation.Service,
 	directorClient director.DirectorClient,
-	shootClient gardener_apis.ShootInterface) OperationQueue {
+	shootClient gardener_apis.ShootInterface,
+	deprovisioningDelay time.Duration) OperationQueue {
 
 	// TODO: consider adding timeouts to the configuration
 	deprovisionCluster := deprovisioning.NewDeprovisionClusterStep(shootClient, factory, directorClient, model.FinishedStage, 5*time.Minute)
-	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, deprovisionCluster.Name(), 5*time.Minute)
+	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, deprovisionCluster.Name(), 5*time.Minute, deprovisioningDelay)
 
 	deprovisioningSteps := map[model.OperationStage]operations.Step{
 		model.DeprovisionCluster:   deprovisionCluster,

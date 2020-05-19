@@ -24,13 +24,12 @@ const (
 type OperationStage string
 
 const (
-	//ShootProvisioning               OperationStage = "ShootProvisioning"
-	WaitingForClusterDomain         OperationStage = "WaitingForClusterDomain"
-	WaitingForClusterInitialization OperationStage = "WaitingForClusterInitialization"
-	StartingInstallation            OperationStage = "StartingInstallation"
-	WaitingForInstallation          OperationStage = "WaitingForInstallation"
-	ConnectRuntimeAgent             OperationStage = "ConnectRuntimeAgent"
-	WaitForAgentToConnect           OperationStage = "WaitForAgentToConnect"
+	WaitingForClusterDomain   OperationStage = "WaitingForClusterDomain"
+	WaitingForClusterCreation OperationStage = "WaitingForClusterCreation"
+	StartingInstallation      OperationStage = "StartingInstallation"
+	WaitingForInstallation    OperationStage = "WaitingForInstallation"
+	ConnectRuntimeAgent       OperationStage = "ConnectRuntimeAgent"
+	WaitForAgentToConnect     OperationStage = "WaitForAgentToConnect"
 
 	DeprovisionCluster   OperationStage = "DeprovisionCluster"
 	TriggerKymaUninstall OperationStage = "TriggerKymaUninstall"

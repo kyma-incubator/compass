@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
@@ -18,7 +17,6 @@ import (
 
 type WaitForClusterDomainStep struct {
 	gardenerClient GardenerClient
-	dbsFactory     dbsession.Factory
 	directorClient director.DirectorClient
 	nextStep       model.OperationStage
 	timeLimit      time.Duration
@@ -50,14 +48,12 @@ func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation,
 
 	gardenerConfig, ok := cluster.GardenerConfig()
 	if !ok {
-		log.Error("Error converting to GardenerConfig")
 		err := errors.New("failed to convert to GardenerConfig")
 		return operations.StageResult{}, operations.NewNonRecoverableError(err)
 	}
 
 	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
-		log.Errorf("Error getting Gardener Shoot: %s", err.Error())
 		return operations.StageResult{}, err
 	}
 
@@ -71,11 +67,9 @@ func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation,
 	//       - https://github.com/kyma-incubator/compass/issues/1186
 	runtimeInput, err := s.prepareProvisioningUpdateRuntimeInput(cluster.ID, cluster.Tenant, shoot)
 	if err != nil {
-		log.Errorf("Error preparing Runtime Input: %s", err.Error())
 		return operations.StageResult{}, err
 	}
 	if err := s.directorClient.UpdateRuntime(cluster.ID, runtimeInput, cluster.Tenant); err != nil {
-		log.Errorf("Error updating Runtime in Director: %s", err.Error())
 		return operations.StageResult{}, err
 	}
 

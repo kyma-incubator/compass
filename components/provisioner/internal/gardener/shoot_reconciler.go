@@ -5,22 +5,17 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 
 	"k8s.io/client-go/util/retry"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 
-	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,24 +24,14 @@ import (
 func NewReconciler(
 	mgr ctrl.Manager,
 	dbsFactory dbsession.Factory,
-	shootClient v1beta1.ShootInterface,
-	directorClient director.DirectorClient,
-	installationSvc installation.Service,
 	auditLogTenantConfigPath string) *Reconciler {
 	return &Reconciler{
-		client:     mgr.GetClient(),
-		scheme:     mgr.GetScheme(),
-		log:        logrus.WithField("Component", "ShootReconciler"),
-		dbsFactory: dbsFactory,
+		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		log:    logrus.WithField("Component", "ShootReconciler"),
 
+		dbsFactory:               dbsFactory,
 		auditLogTenantConfigPath: auditLogTenantConfigPath,
-
-		provisioningOperator: &ProvisioningOperator{
-			dbsFactory:      dbsFactory,
-			shootClient:     shootClient,
-			directorClient:  directorClient,
-			installationSvc: installationSvc,
-		},
 	}
 }
 
@@ -55,17 +40,9 @@ type Reconciler struct {
 	scheme     *runtime.Scheme
 	dbsFactory dbsession.Factory
 
-	log                  *logrus.Entry
-	provisioningOperator *ProvisioningOperator
+	log *logrus.Entry
 
 	auditLogTenantConfigPath string
-}
-
-type ProvisioningOperator struct {
-	shootClient     v1beta1.ShootInterface
-	dbsFactory      dbsession.Factory
-	directorClient  director.DirectorClient
-	installationSvc installation.Service
 }
 
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
@@ -96,19 +73,13 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	seed := getSeed(shoot)
 	if seed != "" {
-		err := r.enableAuditLogs(log, &shoot, seed)
+		err := r.enableAuditLogs(log, req.NamespacedName, &shoot, seed)
 		if err != nil {
 			log.Errorf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
 		}
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *Reconciler) handleShootWithoutOperationId(log *logrus.Entry, shoot gardener_types.Shoot) error {
-	// TODO: We can verify shoot status here - ensure it is ok
-	log.Debug("Shoot without operation ID is ignored for now")
-	return nil
 }
 
 func (r *Reconciler) shouldReconcileShoot(shoot gardener_types.Shoot) (bool, error) {
@@ -126,16 +97,17 @@ func (r *Reconciler) shouldReconcileShoot(shoot gardener_types.Shoot) (bool, err
 	return true, nil
 }
 
-func (r *ProvisioningOperator) updateShoot(shoot gardener_types.Shoot, modifyShootFn func(s *gardener_types.Shoot)) error {
+func (r *Reconciler) updateShoot(namespacedName types.NamespacedName, modifyShootFn func(s *gardener_types.Shoot)) error {
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		refetchedShoot, err := r.shootClient.Get(shoot.Name, v1.GetOptions{})
+		var refetchedShoot gardener_types.Shoot
+		err := r.client.Get(context.Background(), namespacedName, &refetchedShoot)
 		if err != nil {
 			return err
 		}
 
-		modifyShootFn(refetchedShoot)
+		modifyShootFn(&refetchedShoot)
 
-		refetchedShoot, err = r.shootClient.Update(refetchedShoot)
+		err = r.client.Update(context.Background(), &refetchedShoot)
 		if err != nil {
 			return err
 		}
@@ -144,7 +116,7 @@ func (r *ProvisioningOperator) updateShoot(shoot gardener_types.Shoot, modifySho
 	})
 }
 
-func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_types.Shoot, seed string) error {
+func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, namespacedName types.NamespacedName, shoot *gardener_types.Shoot, seed string) error {
 	logger.Info("Enabling audit logs")
 	tenant, err := r.getAuditLogTenant(seed)
 	if err != nil {
@@ -161,7 +133,7 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_
 
 	logger.Infof("Modifying Audit Log Tenant")
 
-	return r.provisioningOperator.updateShoot(*shoot, func(s *gardener_types.Shoot) {
+	return r.updateShoot(namespacedName, func(s *gardener_types.Shoot) {
 		annotate(s, auditLogsAnnotation, tenant)
 	})
 }

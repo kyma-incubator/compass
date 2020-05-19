@@ -19,6 +19,7 @@ import (
 const (
 	nextStageName model.OperationStage = "NextStage"
 	clusterName                        = "my cluster"
+	delay                              = 1 * time.Second
 	kubeconfig                         = `apiVersion: v1
 clusters:
 - cluster:
@@ -78,7 +79,7 @@ func TestTriggerKymaUninstall_Run(t *testing.T) {
 				installationSvc.On("TriggerUninstall", mock.AnythingOfType("*rest.Config")).Return(nil)
 			},
 			expectedStage: nextStageName,
-			expectedDelay: 5 * time.Second,
+			expectedDelay: delay,
 			cluster:       clusterWithKubeconfig,
 		},
 	} {
@@ -88,7 +89,7 @@ func TestTriggerKymaUninstall_Run(t *testing.T) {
 
 			testCase.mockFunc(installationSvc)
 
-			waitForInstallationStep := NewTriggerKymaUninstallStep(installationSvc, nextStageName, 10*time.Minute)
+			waitForInstallationStep := NewTriggerKymaUninstallStep(installationSvc, nextStageName, 10*time.Minute, delay)
 
 			// when
 			result, err := waitForInstallationStep.Run(testCase.cluster, model.Operation{}, logrus.New())
@@ -131,7 +132,7 @@ func TestTriggerKymaUninstall_Run(t *testing.T) {
 
 			testCase.mockFunc(installationSvc)
 
-			waitForInstallationStep := NewTriggerKymaUninstallStep(installationSvc, nextStageName, 10*time.Minute)
+			waitForInstallationStep := NewTriggerKymaUninstallStep(installationSvc, nextStageName, 10*time.Minute, delay)
 
 			// when
 			_, err := waitForInstallationStep.Run(testCase.cluster, model.Operation{}, logrus.New())

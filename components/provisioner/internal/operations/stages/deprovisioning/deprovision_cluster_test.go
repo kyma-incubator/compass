@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	directorMocks "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -16,6 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 const (
@@ -42,7 +45,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 		{
 			description: "should go to the next step when Shoot was deleted successfully and Runtime unregistered",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
-				gardenerClient.On("Delete", clusterName, mock.Anything).Return(nil)
+				gardenerClient.On("Delete", clusterName, mock.Anything).Return(k8serrors.NewNotFound(schema.GroupResource{}, ""))
 				dbSession := &dbMocks.WriteSessionWithinTransaction{}
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)

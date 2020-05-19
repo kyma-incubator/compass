@@ -16,13 +16,15 @@ type TriggerKymaUninstallStep struct {
 	installationClient installation.Service
 	nextStep           model.OperationStage
 	timeLimit          time.Duration
+	delay              time.Duration
 }
 
-func NewTriggerKymaUninstallStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration) *TriggerKymaUninstallStep {
+func NewTriggerKymaUninstallStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration, delay time.Duration) *TriggerKymaUninstallStep {
 	return &TriggerKymaUninstallStep{
 		installationClient: installationClient,
 		nextStep:           nextStep,
 		timeLimit:          timeLimit,
+		delay:              delay,
 	}
 }
 
@@ -38,7 +40,7 @@ func (s *TriggerKymaUninstallStep) Run(cluster model.Cluster, _ model.Operation,
 
 	if cluster.Kubeconfig == nil {
 		// Kubeconfig can be nil if Gardener failed to create cluster. We must go to the next step to finalize deprovisioning
-		return operations.StageResult{Stage: s.nextStep, Delay: 0 * time.Second}, nil
+		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
 
 	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
@@ -49,10 +51,8 @@ func (s *TriggerKymaUninstallStep) Run(cluster model.Cluster, _ model.Operation,
 
 	err = s.installationClient.TriggerUninstall(k8sConfig)
 	if err != nil {
-		logger.Errorf("error triggering uninstalling: %s", err.Error())
 		return operations.StageResult{}, err
 	}
 
-	// TODO: Increase delay
-	return operations.StageResult{Stage: s.nextStep, Delay: 5 * time.Second}, nil
+	return operations.StageResult{Stage: s.nextStep, Delay: s.delay}, nil
 }
