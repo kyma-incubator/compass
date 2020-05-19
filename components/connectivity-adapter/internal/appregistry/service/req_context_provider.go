@@ -3,6 +3,8 @@ package service
 import (
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/director"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
@@ -13,6 +15,7 @@ import (
 
 type RequestContext struct {
 	AppID          string
+	AppLabels      graphql.Labels
 	DirectorClient DirectorClient
 }
 
@@ -43,6 +46,7 @@ func (s *requestContextProvider) ForRequest(r *http.Request) (RequestContext, er
 
 	return RequestContext{
 		AppID:          appDetails.ID,
+		AppLabels:      appDetails.Labels,
 		DirectorClient: directorClient,
 	}, nil
 }
