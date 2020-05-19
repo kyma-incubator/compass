@@ -42,6 +42,30 @@
   version = "v14.0.1"
 
 [[projects]]
+  digest = "1:3b10c6fd33854dc41de2cf78b7bae105da94c2789b6fa5b9ac9e593ea43484ac"
+  name = "github.com/Masterminds/goutils"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "41ac8693c5c10a92ea1ff5ac3a7f95646f6123b0"
+  version = "v1.1.0"
+
+[[projects]]
+  digest = "1:3eb77aef9ca7828bd0f81166688176a411d0ef87b89a66c43d49b06b9eb48101"
+  name = "github.com/Masterminds/semver"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "60c7ae8a99210a90a9457d5de5f6dcbc4dab8e64"
+  version = "v3.1.0"
+
+[[projects]]
+  digest = "1:b565deb585c50ab8e94fe5d6c9903f1495970b97814803e4ab0e70c0a9c87a30"
+  name = "github.com/Masterminds/sprig"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "e4c0945838d570720d876a6ad9b4568ed32317b4"
+  version = "v2.22.0"
+
+[[projects]]
   digest = "1:35a3c0cb74b67330a1593e1ca2bca87d914c372eb60ebccc0902743d8466e3d6"
   name = "github.com/agnivade/levenshtein"
   packages = ["."]
@@ -56,6 +80,14 @@
   pruneopts = "UT"
   revision = "475eaeb164960a651e97470412a7d3b0c5036105"
   version = "v10"
+
+[[projects]]
+  digest = "1:49bb655587fa61c5b986d03c0b5b2a7c163683bc5d1379f32927bbb86f461115"
+  name = "github.com/avast/retry-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a8f6dc7e8f46a5d11c01d9da1e887bb5a51fd107"
+  version = "v2.6.0"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -170,6 +202,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:b933e00500e18d7e4c9ae09f7ff119b0a16353b776c6538a01bdff284ea6a5a6"
+  name = "github.com/huandu/xstrings"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "2d07d6354d7a6d8f940a16a9a98ca38f6b17254c"
+  version = "v1.3.1"
+
+[[projects]]
   digest = "1:78d28d5b84a26159c67ea51996a230da4bc07cac648adaae1dfb5fc0ec8e40d3"
   name = "github.com/imdario/mergo"
   packages = ["."]
@@ -229,12 +269,36 @@
   revision = "c8c00d22a01b64380d7da84ef6246c9c33b2d41e"
 
 [[projects]]
+  digest = "1:49f1c5f12d36c5529f52e6b1aa3ae3673039f186be3115b8254020fafd6aa8eb"
+  name = "github.com/kyma-project/kyma"
+  packages = ["components/kyma-operator/pkg/apis/installer/v1alpha1"]
+  pruneopts = "UT"
+  revision = "5eee35eeecc1161a1a9ac29d2d464cda7db71f1c"
+  version = "1.12.0"
+
+[[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
   name = "github.com/machinebox/graphql"
   packages = ["."]
   pruneopts = "UT"
   revision = "05b17f3157491bbfa5d6fc2006443a272d960d15"
   version = "v0.2.2"
+
+[[projects]]
+  digest = "1:09ca328575f38b80969ccf857f6d7302f2ce09d53778ea7aaba526cfd2cec739"
+  name = "github.com/mitchellh/copystructure"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "9a1b6f44e8da0e0e374624fb0a825a231b00c537"
+  version = "v1.0.0"
+
+[[projects]]
+  digest = "1:2a7e6f8bebdca6bd8bc359c37f01ae1c4ea4f8481eaabf93b1ae4863f15b72c7"
+  name = "github.com/mitchellh/reflectwalk"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3e2c75dfad4fbf904b58782a80fd595c760ad185"
+  version = "v1.0.1"
 
 [[projects]]
   digest = "1:33422d238f147d247752996a26574ac48dcf472976eda7f5134015f06bf16563"
@@ -372,9 +436,15 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c8b0363634b7f813bd07d829fa98af420d99c68d9e88077a7c86fad8e6e31e27"
+  digest = "1:eb908895ef7c0947ac2ea0f0622e2cb41606496f94701e045546da51a89d08d7"
   name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
+  packages = [
+    "bcrypt",
+    "blowfish",
+    "pbkdf2",
+    "scrypt",
+    "ssh/terminal",
+  ]
   pruneopts = "UT"
   revision = "69ecbb4d6d5dab05e49161c6e77ea40a030884e1"
 
@@ -719,10 +789,13 @@
     "github.com/Azure/go-autorest/autorest",
     "github.com/Azure/go-autorest/autorest/adal",
     "github.com/Azure/go-autorest/autorest/azure",
+    "github.com/Masterminds/sprig",
+    "github.com/avast/retry-go",
     "github.com/google/uuid",
     "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
+    "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/machinebox/graphql",
     "github.com/ory/hydra-maester/api/v1alpha1",
     "github.com/pivotal-cf/brokerapi/v7/domain",
@@ -733,6 +806,7 @@
     "github.com/thanhpk/randstr",
     "github.com/vrischmann/envconfig",
     "golang.org/x/oauth2/clientcredentials",
+    "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
