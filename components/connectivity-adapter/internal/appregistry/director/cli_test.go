@@ -1118,3 +1118,82 @@ func TestDirectorClient_DeleteDocument(t *testing.T) {
 		})
 	}
 }
+
+func TestDirectorClient_SetApplicationLabel(t *testing.T) {
+	appID := "foo"
+	labelInput := graphql.LabelInput{
+		Key:   "testKey",
+		Value: "testVal",
+	}
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: setApplicationLabel(applicationID: \"foo\", key: \"testKey\", value: testVal) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
+
+	tests := []struct {
+		Name        string
+		GQLClientFn func() *gcliautomock.GraphQLClient
+		ExpectedErr error
+	}{
+		{
+			Name: "Success",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
+				).Return(nil).Once()
+				return am
+			},
+		},
+		{
+			Name: "Success - retry",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
+				).Return(testErr).Once()
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
+				).Return(nil).Once()
+				return am
+			},
+		},
+		{
+			Name: "Error - GraphQL client",
+			GQLClientFn: func() *gcliautomock.GraphQLClient {
+				am := &gcliautomock.GraphQLClient{}
+				am.On("Run",
+					mock.Anything,
+					gqlRequest,
+					mock.Anything,
+				).Return(testErr).Twice()
+				return am
+			},
+			ExpectedErr: testErr,
+		},
+	}
+	for _, tC := range tests {
+		t.Run(tC.Name, func(t *testing.T) {
+			gqlCli := tC.GQLClientFn()
+
+			gqlFieldsProvider := &automock.GqlFieldsProvider{}
+			gqlFieldsProvider.On("ForLabel").Return("fields").Maybe()
+
+			dirCli := director.NewClient(gqlCli, nil, gqlFieldsProvider)
+
+			err := dirCli.SetApplicationLabel(appID, labelInput)
+
+			if tC.ExpectedErr == nil {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tC.ExpectedErr.Error())
+			}
+
+			mock.AssertExpectationsForObjects(t, gqlCli, gqlFieldsProvider)
+		})
+	}
+}

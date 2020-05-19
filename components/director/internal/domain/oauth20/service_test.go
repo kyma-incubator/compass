@@ -160,7 +160,7 @@ func TestService_CreateClient(t *testing.T) {
 			if httpServer != nil {
 				url = httpServer.URL
 			}
-			svc := oauth20.NewService(scopeCfgProvider, uidService, oauth20.Config{ClientEndpoint: url, PublicAccessTokenEndpoint: publicEndpoint})
+			svc := oauth20.NewService(scopeCfgProvider, uidService, oauth20.Config{ClientEndpoint: url, PublicAccessTokenEndpoint: publicEndpoint}, &http.Client{})
 
 			// when
 			oauthData, err := svc.CreateClientCredentials(ctx, objType)
@@ -237,7 +237,7 @@ func TestService_DeleteClientCredentials(t *testing.T) {
 			if httpServer != nil {
 				url = httpServer.URL
 			}
-			svc := oauth20.NewService(nil, nil, oauth20.Config{ClientEndpoint: url})
+			svc := oauth20.NewService(nil, nil, oauth20.Config{ClientEndpoint: url}, &http.Client{})
 
 			// when
 			err := svc.DeleteClientCredentials(ctx, id)

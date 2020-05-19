@@ -512,6 +512,11 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 	}
 	conv := service.NewConverter()
 
+	testSvcRef := service.LegacyServiceReference{
+		ID:         "foo",
+		Identifier: "",
+	}
+
 	for name, tc := range map[string]testCase{
 		"name and description is loaded from Package": {
 			given: graphql.PackageExt{
@@ -790,12 +795,42 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			// WHEN
-			actual, err := conv.GraphQLToServiceDetails(tc.given)
+			actual, err := conv.GraphQLToServiceDetails(tc.given, testSvcRef)
 			// THEN
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
+
+	t.Run("identifier provided", func(t *testing.T) {
+		in := graphql.PackageExt{
+			APIDefinitions: graphql.APIDefinitionPageExt{
+				Data: []*graphql.APIDefinitionExt{
+					{
+						APIDefinition: graphql.APIDefinition{
+							TargetURL: "http://target.url",
+						},
+					},
+				},
+			},
+		}
+		inSvcRef := service.LegacyServiceReference{
+			ID:         "foo",
+			Identifier: "test",
+		}
+		expected := model.ServiceDetails{
+			Identifier: "test",
+			Api: &model.API{
+				TargetUrl: "http://target.url",
+			},
+			Labels: emptyLabels(),
+		}
+		// WHEN
+		actual, err := conv.GraphQLToServiceDetails(in, inSvcRef)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
 }
 
 func TestConverter_ServiceDetailsToService(t *testing.T) {

@@ -7,6 +7,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
+
+	"github.com/dlmiddlecote/sqlstats"
+
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -29,9 +35,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
-
 	"github.com/kyma-project/kyma/components/console-backend-service/pkg/executor"
 	"github.com/kyma-project/kyma/components/console-backend-service/pkg/signal"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
@@ -50,6 +56,8 @@ type config struct {
 	PlaygroundAPIEndpoint   string `envconfig:"default=/graphql"`
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
+
+	MetricsAddress string `envconfig:"default=127.0.0.1:3001"`
 
 	JWKSEndpoint        string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
@@ -85,10 +93,23 @@ func main() {
 	stopCh := signal.SetupChannel()
 	cfgProvider := createAndRunConfigProvider(stopCh, cfg)
 
+	log.Infof("Registering metrics collectors...")
+	metricsCollector := metrics.NewCollector()
+	dbStatsCollector := sqlstats.NewStatsCollector("director", transact)
+	prometheus.MustRegister(metricsCollector, dbStatsCollector)
+
 	pairingAdapters, err := getPairingAdaptersMapping(cfg.PairingAdapterSrc)
 	exitOnError(err, "Error while reading Pairing Adapters Configuration")
 	gqlCfg := graphql.Config{
-		Resolvers: domain.NewRootResolver(transact, cfgProvider, cfg.OneTimeToken, cfg.OAuth20, pairingAdapters, cfg.Features),
+		Resolvers: domain.NewRootResolver(
+			transact,
+			cfgProvider,
+			cfg.OneTimeToken,
+			cfg.OAuth20,
+			pairingAdapters,
+			cfg.Features,
+			metricsCollector,
+		),
 		Directives: graphql.DirectiveRoot{
 			HasScopes: scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:  inputvalidation.NewDirective().Validate,
@@ -96,8 +117,6 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-
-	mainRouter := mux.NewRouter()
 
 	log.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone)
@@ -115,21 +134,22 @@ func main() {
 
 	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository(), log.New())
 
+	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
-	gqlAPIRouter.HandleFunc("", handler.GraphQL(executableSchema))
+	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema)))
 
 	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHanderFunc(transact, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
+	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	log.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHanderFunc(transact, cfg.JWKSSyncPeriod, stopCh, cfg.Features.DefaultScenarioEnabled)
+	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, stopCh, cfg.Features.DefaultScenarioEnabled)
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
@@ -143,19 +163,21 @@ func main() {
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
 
-	srv := &http.Server{Addr: cfg.Address, Handler: mainRouter}
-	log.Infof("Listening on %s...", cfg.Address)
+	metricsHandler := http.NewServeMux()
+	metricsHandler.Handle("/metrics", promhttp.Handler())
+
+	runMetricsSrv, shutdownMetricsSrv := createServer(cfg.MetricsAddress, metricsHandler, "metrics")
+	runMainSrv, shutdownMainSrv := createServer(cfg.Address, mainRouter, "main")
+
 	go func() {
 		<-stopCh
-		// Interrupt signal received - shut down the server
-		if err := srv.Shutdown(context.Background()); err != nil {
-			log.Errorf("HTTP server Shutdown: %v", err)
-		}
+		// Interrupt signal received - shut down the servers
+		shutdownMetricsSrv()
+		shutdownMainSrv()
 	}()
 
-	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-		log.Errorf("HTTP server ListenAndServe: %v", err)
-	}
+	go runMetricsSrv()
+	runMainSrv()
 }
 
 func getPairingAdaptersMapping(filePath string) (map[string]string, error) {
@@ -213,7 +235,7 @@ func configureLogger() {
 	log.SetReportCaller(true)
 }
 
-func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -240,7 +262,7 @@ func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersS
 	return tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
 }
 
-func getRuntimeMappingHanderFunc(transact persistence.Transactioner, cachePeriod time.Duration, stopCh <-chan struct{}, defaultScenarioEnabled bool) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, stopCh <-chan struct{}, defaultScenarioEnabled bool) (func(writer http.ResponseWriter, request *http.Request), error) {
 	logger := log.WithField("component", "runtime-mapping-handler").Logger
 
 	uidSvc := uid.NewService()
@@ -280,4 +302,24 @@ func getRuntimeMappingHanderFunc(transact persistence.Transactioner, cachePeriod
 		tokenVerifier,
 		runtimeSvc,
 		tenantSvc).ServeHTTP, nil
+}
+
+func createServer(address string, handler http.Handler, name string) (func(), func()) {
+	srv := &http.Server{Addr: address, Handler: handler}
+
+	runFn := func() {
+		log.Infof("Running %s server on %s...", name, address)
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			log.Errorf("%s HTTP server ListenAndServe: %v", name, err)
+		}
+	}
+
+	shutdownFn := func() {
+		log.Infof("Shutting down %s server...", name)
+		if err := srv.Shutdown(context.Background()); err != nil {
+			log.Errorf("%s HTTP server Shutdown: %v", name, err)
+		}
+	}
+
+	return runFn, shutdownFn
 }

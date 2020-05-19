@@ -1,7 +1,7 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: e2e-provisioning-azure
+  name: e2e-upgrade-azure
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
@@ -14,6 +14,9 @@ spec:
           secret:
             defaultMode: 420
             secretName: {{ .Values.gardener.secretName }}
+        - name: config-volume
+          configMap:
+            name: {{ include "kyma-env-broker.fullname" . }}
       containers:
         - name: tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e_provisioning.dir }}e2e-provisioning-test:{{ .Values.global.images.tests.e2e_provisioning.version }}
@@ -22,6 +25,9 @@ spec:
             - mountPath: /gardener/kubeconfig
               name: gardener-kubeconfig
               readOnly: true
+            - name: config-volume
+              configMap:
+                name: {{ include "kyma-env-broker.fullname" . }}
           env:
             - name: APP_PROVISION_TIMEOUT
               value: "105m"
@@ -69,14 +75,24 @@ spec:
               value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_TEST_AZURE_EVENT_HUBS_ENABLED
               value: "true"
+            - name: APP_UPGRADE_TEST
+              value: "true"
+            - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_PATH
+              value: /config/additionalRuntimeComponents.yaml
+            - name: APP_UPGRADE_TIMEOUT
+              value: "100m"
+            - name: APP_PRE_UPGRADE_KYMA_VERSION
+              value: {{ .Values.e2e.upgrade.preUpgradeVersion }}
+            - name: APP_UPGRADE_KYMA_VERSION
+              value: {{ .Values.e2e.upgrade.targetVersion }}
           command: ["/bin/sh"]
-          args: ["-c", "echo 'Starting e2e-provisioning test on Azure. Waiting 20s for api server...'; sleep 20; ./test.test; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          args: ["-c", "echo 'Starting e2e-upgrade test on Azure. Waiting 20s for api server...'; sleep 20; ./test.test; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
 
 ---
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: e2e-provisioning-azure-cleanup
+  name: e2e-upgrade-azure-cleanup
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
@@ -89,6 +105,9 @@ spec:
           secret:
             defaultMode: 420
             secretName: {{ .Values.gardener.secretName }}
+        - name: config-volume
+          configMap:
+            name: {{ include "kyma-env-broker.fullname" . }}
       containers:
         - name: tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e_provisioning.dir }}e2e-provisioning-test:{{ .Values.global.images.tests.e2e_provisioning.version }}
@@ -96,6 +115,9 @@ spec:
           volumeMounts:
             - mountPath: /gardener/kubeconfig
               name: gardener-kubeconfig
+              readOnly: true
+            - mountPath: /config
+              name: config-volume
               readOnly: true
           env:
             - name: APP_PROVISION_TIMEOUT
@@ -140,5 +162,15 @@ spec:
               value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_TEST_AZURE_EVENT_HUBS_ENABLED
               value: "true"
+            - name: APP_UPGRADE_TEST
+              value: "true"
+            - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_PATH
+              value: /config/additionalRuntimeComponents.yaml
+            - name: APP_UPGRADE_TIMEOUT
+              value: "100m"
+            - name: APP_PRE_UPGRADE_KYMA_VERSION
+              value: {{ .Values.e2e.upgrade.preUpgradeVersion }}
+            - name: APP_UPGRADE_KYMA_VERSION
+              value: {{ .Values.e2e.upgrade.targetVersion }}
           command: ["/bin/sh"]
-          args: ["-c", "echo 'Starting e2e-provisioning cleanup test on Azure. Waiting 20s for api server...'; sleep 20; ./test.test; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          args: ["-c", "echo 'Starting e2e-upgrade cleanup test on Azure. Waiting 20s for api server...'; sleep 20; ./test.test; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]

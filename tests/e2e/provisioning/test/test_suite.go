@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director/oauth"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/gardener"
@@ -17,7 +19,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/runtime"
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/v1_client"
 
-	"github.com/google/uuid"
 	gcli "github.com/machinebox/graphql"
 	"github.com/ory/hydra-maester/api/v1alpha1"
 	"github.com/pkg/errors"
@@ -41,11 +42,13 @@ type Config struct {
 	TenantID             string `default:"d9994f8f-7e46-42a8-b2c1-1bfff8d2fe05"`
 	SkipCertVerification bool   `envconfig:"default=true"`
 
+	ProvisionerURL     string        `default:"http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"`
 	ProvisionTimeout   time.Duration `default:"3h"`
 	DeprovisionTimeout time.Duration `default:"1h"`
 	ConfigName         string        `default:"e2e-runtime-config"`
 	DeployNamespace    string        `default:"compass-system"`
 
+	UpgradeTest               bool `default:"false"`
 	DummyTest                 bool `default:"false"`
 	CleanupPhase              bool `default:"false"`
 	TestAzureEventHubsEnabled bool `default:"true"`
@@ -54,6 +57,8 @@ type Config struct {
 // Suite provides set of clients able to provision and test Kyma runtime
 type Suite struct {
 	t *testing.T
+
+	upgradeSuite *UpgradeSuite
 
 	log             logrus.FieldLogger
 	brokerClient    *broker.Client
@@ -65,6 +70,8 @@ type Suite struct {
 
 	dashboardChecker *runtime.DashboardChecker
 
+	directorClient *director.Client
+
 	ProvisionTimeout   time.Duration
 	DeprovisionTimeout time.Duration
 
@@ -73,6 +80,7 @@ type Suite struct {
 	ConfigName      string
 	DeployNamespace string
 
+	IsUpgradeTest               bool
 	IsDummyTest                 bool
 	IsCleanupPhase              bool
 	IsTestAzureEventHubsEnabled bool
@@ -86,10 +94,11 @@ const (
 	DefaultAzureEHRegion = "westeurope"
 )
 
-func newTestSuite(t *testing.T) *Suite {
+type options func(t *testing.T, config Config, suite *Suite)
+
+func newTestSuite(t *testing.T, options ...options) *Suite {
 	ctx := context.Background()
 	var azureClient *azure.Interface
-
 	cfg := &Config{}
 	err := envconfig.InitWithPrefix(cfg, "APP")
 	require.NoError(t, err)
@@ -139,7 +148,7 @@ func newTestSuite(t *testing.T) *Suite {
 
 	directorClient := director.NewDirectorClient(oauthClient, graphQLClient, log.WithField("service", "director_client"))
 
-	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.TenantID, instanceID, *httpClient, directorClient, log.WithField("service", "runtime_client"))
+	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.ProvisionerURL, cfg.TenantID, instanceID, *httpClient, directorClient, log.WithField("service", "runtime_client"))
 
 	dashboardChecker := runtime.NewDashboardChecker(*httpClient, log.WithField("service", "dashboard_checker"))
 
@@ -147,7 +156,7 @@ func newTestSuite(t *testing.T) *Suite {
 		azureClient = newAzureClient(t, cfg, brokerClient.GlobalAccountID())
 	}
 
-	return &Suite{
+	suite := &Suite{
 		t:   t,
 		log: log,
 
@@ -158,6 +167,8 @@ func newTestSuite(t *testing.T) *Suite {
 		configMapClient:  configMapClient,
 		azureClient:      azureClient,
 
+		directorClient: directorClient,
+
 		InstanceID:         instanceID,
 		ProvisionTimeout:   cfg.ProvisionTimeout,
 		DeprovisionTimeout: cfg.DeprovisionTimeout,
@@ -165,10 +176,17 @@ func newTestSuite(t *testing.T) *Suite {
 		ConfigName:      cfg.ConfigName,
 		DeployNamespace: cfg.DeployNamespace,
 
+		IsUpgradeTest:               cfg.UpgradeTest,
 		IsDummyTest:                 cfg.DummyTest,
 		IsCleanupPhase:              cfg.CleanupPhase,
 		IsTestAzureEventHubsEnabled: cfg.TestAzureEventHubsEnabled,
 	}
+
+	for _, opt := range options {
+		opt(t, *cfg, suite)
+	}
+
+	return suite
 }
 
 // Cleanup removes all data associated with the test along with runtime
@@ -298,6 +316,7 @@ func newHTTPClient(insecureSkipVerify bool) *http.Client {
 				InsecureSkipVerify: insecureSkipVerify,
 			},
 		},
+		Timeout: 30 * time.Second,
 	}
 }
 

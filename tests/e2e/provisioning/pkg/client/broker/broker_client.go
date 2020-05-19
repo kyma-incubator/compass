@@ -91,13 +91,16 @@ type instanceDetailsResponse struct {
 }
 
 type provisionParameters struct {
-	Name       string   `json:"name"`
-	Components []string `json:"components"`
+	Name        string   `json:"name"`
+	Components  []string `json:"components"`
+	KymaVersion string   `json:"kymaVersion,omitempty"`
 }
 
-func (c *Client) ProvisionRuntime() (string, error) {
+// ProvisionRuntime requests Runtime provisioning in KEB
+// kymaVersion is optional, if it is empty, the default KEB version will be used
+func (c *Client) ProvisionRuntime(kymaVersion string) (string, error) {
 	c.log.Infof("Provisioning Runtime [instanceID: %s, NAME: %s]", c.instanceID, c.clusterName)
-	requestByte, err := c.prepareProvisionDetails()
+	requestByte, err := c.prepareProvisionDetails(kymaVersion)
 	if err != nil {
 		return "", errors.Wrap(err, "while preparing provision details")
 	}
@@ -225,10 +228,11 @@ func (c *Client) FetchDashboardURL() (string, error) {
 	return response.DashboardURL, nil
 }
 
-func (c *Client) prepareProvisionDetails() ([]byte, error) {
+func (c *Client) prepareProvisionDetails(customVersion string) ([]byte, error) {
 	parameters := provisionParameters{
-		Name:       c.clusterName,
-		Components: []string{}, // fill with optional components
+		Name:        c.clusterName,
+		Components:  []string{},    // fill with optional components
+		KymaVersion: customVersion, // If empty filed will be omitted
 	}
 	ctx := inputContext{
 		TenantID:        "1eba80dd-8ff6-54ee-be4d-77944d17b10b",

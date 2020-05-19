@@ -38,12 +38,12 @@ type service struct {
 	uidService                UIDService
 }
 
-func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Config) *service {
+func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Config, httpCli *http.Client) *service {
 	return &service{
 		scopeCfgProvider:          scopeCfgProvider,
 		clientEndpoint:            cfg.ClientEndpoint,
 		publicAccessTokenEndpoint: cfg.PublicAccessTokenEndpoint,
-		httpCli:                   &http.Client{},
+		httpCli:                   httpCli,
 		uidService:                uidService,
 	}
 }

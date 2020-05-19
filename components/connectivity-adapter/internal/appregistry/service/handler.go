@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -30,13 +29,15 @@ type DirectorClient interface {
 	DeleteAPIDefinition(apiID string) error
 	DeleteEventDefinition(eventID string) error
 	DeleteDocument(documentID string) error
+
+	SetApplicationLabel(appID string, label graphql.LabelInput) error
 }
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
 	DetailsToGraphQLCreateInput(deprecated model.ServiceDetails) (graphql.PackageCreateInput, error)
 	GraphQLCreateInputToUpdateInput(in graphql.PackageCreateInput) graphql.PackageUpdateInput
-	GraphQLToServiceDetails(converted graphql.PackageExt) (model.ServiceDetails, error)
+	GraphQLToServiceDetails(converted graphql.PackageExt, legacyServiceReference LegacyServiceReference) (model.ServiceDetails, error)
 	ServiceDetailsToService(in model.ServiceDetails, serviceID string) (model.Service, error)
 }
 
@@ -50,6 +51,14 @@ type Validator interface {
 	Validate(details model.ServiceDetails) apperrors.AppError
 }
 
+//go:generate mockery -name=AppLabeler -output=automock -outpkg=automock -case=underscore
+type AppLabeler interface {
+	WriteServiceReference(appLabels graphql.Labels, serviceReference LegacyServiceReference) (graphql.LabelInput, error)
+	DeleteServiceReference(appLabels graphql.Labels, serviceID string) (graphql.LabelInput, error)
+	ReadServiceReference(appLabels graphql.Labels, serviceID string) (LegacyServiceReference, error)
+	ListServiceReferences(appLabels graphql.Labels) ([]LegacyServiceReference, error)
+}
+
 const serviceIDVarKey = "serviceId"
 
 type Handler struct {
@@ -57,14 +66,16 @@ type Handler struct {
 	validator          Validator
 	converter          Converter
 	reqContextProvider RequestContextProvider
+	appLabeler         AppLabeler
 }
 
-func NewHandler(converter Converter, validator Validator, reqContextProvider RequestContextProvider, logger *log.Logger) *Handler {
+func NewHandler(converter Converter, validator Validator, reqContextProvider RequestContextProvider, logger *log.Logger, appLabeler AppLabeler) *Handler {
 	return &Handler{
 		converter:          converter,
 		validator:          validator,
 		reqContextProvider: reqContextProvider,
 		logger:             logger,
+		appLabeler:         appLabeler,
 	}
 }
 
@@ -92,12 +103,31 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	if err := h.ensureUniqueIdentifier(serviceDetails.Identifier, reqContext); err != nil {
+		h.logger.Error(errors.Wrap(err, "while ensuring legacy service identifier is unique"))
+		res.WriteAppError(writer, err)
+		return
+	}
+
 	h.logger.Infoln("doing GraphQL request...")
 
 	appID := reqContext.AppID
 	serviceID, err := reqContext.DirectorClient.CreatePackage(appID, converted)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while creating Service")
+		h.logger.Error(wrappedErr)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	legacyServiceRef := LegacyServiceReference{
+		ID:         serviceID,
+		Identifier: serviceDetails.Identifier,
+	}
+
+	err = h.setAppLabelWithServiceRef(legacyServiceRef, reqContext)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while setting Application label with legacy service metadata")
 		h.logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
@@ -159,7 +189,15 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 			continue
 		}
 
-		detailedService, err := h.converter.GraphQLToServiceDetails(*pkg)
+		legacyServiceReference, err := h.appLabeler.ReadServiceReference(reqContext.AppLabels, pkg.ID)
+		if err != nil {
+			wrappedErr := errors.Wrapf(err, "while reading legacy service reference for Package with ID '%s'", pkg.ID)
+			h.logger.Error(wrappedErr)
+			res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+			return
+		}
+
+		detailedService, err := h.converter.GraphQLToServiceDetails(*pkg, legacyServiceReference)
 		if err != nil {
 			wrappedErr := errors.Wrap(err, "while converting graphql to detailed service")
 			h.logger.Error(wrappedErr)
@@ -252,6 +290,9 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	// Legacy service reference should be updated, but right now it contains only identifier field
+	// which has to preserved during update (to match old metadata service behaviour), so there's nothing to update.
+
 	h.getAndWriteServiceByID(writer, pkgID, reqContext)
 }
 
@@ -275,6 +316,22 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 
 		h.logger.WithField("ID", id).Error(errors.Wrap(err, "while deleting service"))
 		res.WriteError(writer, err, apperrors.CodeInternal)
+		return
+	}
+
+	label, err := h.appLabeler.DeleteServiceReference(reqContext.AppLabels, id)
+	if err != nil {
+		wrappedError := errors.Wrap(err, "while writing Application label")
+		h.logger.Error(wrappedError)
+		res.WriteError(writer, wrappedError, apperrors.CodeInternal)
+		return
+	}
+
+	err = reqContext.DirectorClient.SetApplicationLabel(reqContext.AppID, label)
+	if err != nil {
+		wrappedError := errors.Wrap(err, "while setting Application label")
+		h.logger.Error(wrappedError)
+		res.WriteError(writer, wrappedError, apperrors.CodeInternal)
 		return
 	}
 
@@ -424,7 +481,15 @@ func (h *Handler) getAndWriteServiceByID(writer http.ResponseWriter, serviceID s
 		return
 	}
 
-	service, err := h.converter.GraphQLToServiceDetails(output)
+	legacyServiceReference, err := h.appLabeler.ReadServiceReference(reqContext.AppLabels, serviceID)
+	if err != nil {
+		wrappedErr := errors.Wrapf(err, "while reading legacy service reference for Package with ID '%s'", serviceID)
+		h.logger.Error(wrappedErr)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
+		return
+	}
+
+	service, err := h.converter.GraphQLToServiceDetails(output, legacyServiceReference)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while converting service")
 		h.logger.Error(wrappedErr)
@@ -439,4 +504,38 @@ func (h *Handler) getAndWriteServiceByID(writer http.ResponseWriter, serviceID s
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
+}
+
+func (h *Handler) ensureUniqueIdentifier(identifier string, reqContext RequestContext) apperrors.AppError {
+	if identifier == "" {
+		return nil
+	}
+
+	services, err := h.appLabeler.ListServiceReferences(reqContext.AppLabels)
+	if err != nil {
+		wrappedError := errors.Wrapf(err, "while listing legacy services for Application with ID '%s'", reqContext.AppID)
+		return apperrors.Internal(wrappedError.Error())
+	}
+
+	for _, svc := range services {
+		if svc.Identifier == identifier {
+			return apperrors.AlreadyExists("Service with Identifier %s already exists", identifier)
+		}
+	}
+
+	return nil
+}
+
+func (h *Handler) setAppLabelWithServiceRef(serviceRef LegacyServiceReference, reqContext RequestContext) error {
+	label, err := h.appLabeler.WriteServiceReference(reqContext.AppLabels, serviceRef)
+	if err != nil {
+		return errors.Wrap(err, "while writing Application label")
+	}
+
+	err = reqContext.DirectorClient.SetApplicationLabel(reqContext.AppID, label)
+	if err != nil {
+		return errors.Wrap(err, "while setting Application label")
+	}
+
+	return nil
 }

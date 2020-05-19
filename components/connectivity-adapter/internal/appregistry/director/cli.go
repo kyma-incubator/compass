@@ -289,3 +289,20 @@ func (c *directorClient) DeleteDocument(documentID string) error {
 	}
 	return nil
 }
+
+func (c *directorClient) SetApplicationLabel(appID string, label graphql.LabelInput) error {
+	gqlRequest := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: setApplicationLabel(applicationID: "%s", key: "%s", value: %s) {
+					%s
+				}
+			}`,
+			appID, label.Key, label.Value, c.gqlFieldsProvider.ForLabel()))
+
+	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, nil)
+	if err != nil {
+		return errors.Wrap(err, "while doing GraphQL request")
+	}
+
+	return nil
+}

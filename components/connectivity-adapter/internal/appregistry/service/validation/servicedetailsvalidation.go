@@ -69,7 +69,7 @@ func validateApiCredentials(credentials *model.CredentialsWithCSRF) apperrors.Ap
 		}
 
 		if validateCredentials(basic, oauth, cert) {
-			return apperrors.WrongInput("api.CredentialsWithCSRF is invalid: to many authentication methods provided")
+			return apperrors.WrongInput("api.CredentialsWithCSRF is invalid: too many authentication methods provided")
 		}
 	}
 
@@ -82,7 +82,7 @@ func validateSpecificationCredentials(credentials *model.Credentials) apperrors.
 		oauth := credentials.Oauth
 
 		if validateCredentials(basic, oauth, nil) {
-			return apperrors.WrongInput("api.CredentialsWithCSRF is invalid: to many authentication methods provided")
+			return apperrors.WrongInput("api.CredentialsWithCSRF is invalid: too many authentication methods provided")
 		}
 	}
 
