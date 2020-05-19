@@ -31,8 +31,9 @@ const (
 	ConnectRuntimeAgent       OperationStage = "ConnectRuntimeAgent"
 	WaitForAgentToConnect     OperationStage = "WaitForAgentToConnect"
 
-	DeprovisionCluster   OperationStage = "DeprovisionCluster"
-	TriggerKymaUninstall OperationStage = "TriggerKymaUninstall"
+	TriggerKymaUninstall   OperationStage = "TriggerKymaUninstall"
+	WaitForClusterDeletion OperationStage = "WaitForClusterDeletion"
+	DeleteCluster          OperationStage = "DeprovisionCluster"
 
 	StartingUpgrade      OperationStage = "StartingUpgrade"
 	UpdatingUpgradeState OperationStage = "UpdatingUpgradeState"

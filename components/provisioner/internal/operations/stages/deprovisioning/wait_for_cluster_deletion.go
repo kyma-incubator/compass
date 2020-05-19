@@ -15,7 +15,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type DeprovisionClusterStep struct {
+type WaitForClusterDeletionStep struct {
 	gardenerClient GardenerClient
 	dbsFactory     dbsession.Factory
 	directorClient director.DirectorClient
@@ -23,13 +23,8 @@ type DeprovisionClusterStep struct {
 	timeLimit      time.Duration
 }
 
-//go:generate mockery -name=GardenerClient
-type GardenerClient interface {
-	Delete(name string, options *v1.DeleteOptions) error
-}
-
-func NewDeprovisionClusterStep(gardenerClient GardenerClient, dbsFactory dbsession.Factory, directorClient director.DirectorClient, nextStep model.OperationStage, timeLimit time.Duration) *DeprovisionClusterStep {
-	return &DeprovisionClusterStep{
+func NewWaitForClusterDeletionStep(gardenerClient GardenerClient, dbsFactory dbsession.Factory, directorClient director.DirectorClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterDeletionStep {
+	return &WaitForClusterDeletionStep{
 		gardenerClient: gardenerClient,
 		dbsFactory:     dbsFactory,
 		directorClient: directorClient,
@@ -38,15 +33,15 @@ func NewDeprovisionClusterStep(gardenerClient GardenerClient, dbsFactory dbsessi
 	}
 }
 
-func (s *DeprovisionClusterStep) Name() model.OperationStage {
-	return model.DeprovisionCluster
+func (s *WaitForClusterDeletionStep) Name() model.OperationStage {
+	return model.WaitForClusterDeletion
 }
 
-func (s *DeprovisionClusterStep) TimeLimit() time.Duration {
+func (s *WaitForClusterDeletionStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *DeprovisionClusterStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
+func (s *WaitForClusterDeletionStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
 	gardenerConfig, ok := cluster.GardenerConfig()
 	if !ok {
@@ -54,9 +49,13 @@ func (s *DeprovisionClusterStep) Run(cluster model.Cluster, operation model.Oper
 		return operations.StageResult{}, operations.NewNonRecoverableError(err)
 	}
 
-	err := s.deleteShoot(gardenerConfig.Name, logger)
+	shootExists, err := s.shootExists(gardenerConfig.Name, logger)
 	if err != nil {
 		return operations.StageResult{}, err
+	}
+
+	if shootExists {
+		return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 	}
 
 	err = s.setDeprovisioningFinished(cluster, operation)
@@ -67,19 +66,19 @@ func (s *DeprovisionClusterStep) Run(cluster model.Cluster, operation model.Oper
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }
 
-func (s *DeprovisionClusterStep) deleteShoot(gardenerClusterName string, logger logrus.FieldLogger) error {
-	err := s.gardenerClient.Delete(gardenerClusterName, &v1.DeleteOptions{})
+func (s *WaitForClusterDeletionStep) shootExists(gardenerClusterName string, logger logrus.FieldLogger) (bool, error) {
+	_, err := s.gardenerClient.Get(gardenerClusterName, v1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			return nil
+			return false, nil
 		}
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
 
-func (s *DeprovisionClusterStep) setDeprovisioningFinished(cluster model.Cluster, lastOp model.Operation) error {
+func (s *WaitForClusterDeletionStep) setDeprovisioningFinished(cluster model.Cluster, lastOp model.Operation) error {
 	session, dberr := s.dbsFactory.NewSessionWithinTransaction()
 	if dberr != nil {
 		return fmt.Errorf("error starting db session with transaction: %s", dberr.Error())
@@ -104,7 +103,7 @@ func (s *DeprovisionClusterStep) setDeprovisioningFinished(cluster model.Cluster
 	return nil
 }
 
-func (s *DeprovisionClusterStep) deleteRuntime(cluster model.Cluster) error {
+func (s *WaitForClusterDeletionStep) deleteRuntime(cluster model.Cluster) error {
 	exists, err := s.directorClient.RuntimeExists(cluster.ID, cluster.Tenant)
 	if err != nil {
 		return fmt.Errorf("error checking Runtime exists in Director: %s", err.Error())
