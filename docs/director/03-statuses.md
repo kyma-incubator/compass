@@ -1,6 +1,7 @@
 # Application and Runtime status
 
 Applications and Runtimes in the Director use the `Status` field to inform the user about their condition. The possible conditions are:
+
 - `INITIAL` - used for newly created Applications and Runtimes that have not performed any calls to the Director yet
 - `PROVISIONING` - used for Runtimes that are being provisioned
 - `CONNECTED` - used for connected Applications and Runtimes
