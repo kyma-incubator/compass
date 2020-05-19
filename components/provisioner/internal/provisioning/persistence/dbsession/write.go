@@ -198,7 +198,7 @@ func (ws writeSession) FixShootProvisioningStage(message string, newStage model.
 	provisioningOperation := dbr.Eq("type", model.Provision)
 	inProgressOperation := dbr.Eq("state", model.InProgress)
 
-	res, err := ws.update("operation").
+	_, err := ws.update("operation").
 		Where(dbr.And(legacyStageCondition, provisioningOperation, inProgressOperation)).
 		Set("stage", newStage).
 		Set("message", message).
