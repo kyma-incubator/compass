@@ -124,7 +124,7 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 }
 
 func (a *Authenticator) contextWithClaims(ctx context.Context, claims Claims) context.Context {
-	ctxWithTenant := tenant.SaveToContext(ctx, claims.Tenant)
+	ctxWithTenant := tenant.SaveInternalToContext(ctx, claims.Tenant)
 	ctxWithExternalTenant := tenant.SaveExternalToContext(ctxWithTenant, claims.ExternalTenant)
 	scopesArray := strings.Split(claims.Scopes, " ")
 	ctxWithScopes := scope.SaveToContext(ctxWithExternalTenant, scopesArray)

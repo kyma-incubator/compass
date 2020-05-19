@@ -18,7 +18,7 @@ import (
 
 func TestService_Create(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 	uidSvcFn := func() *automock.UIDService {
 		uidSvc := &automock.UIDService{}
 		uidSvc.On("Generate").Return(testID).Once()
@@ -80,7 +80,7 @@ func TestService_Create(t *testing.T) {
 
 func TestService_Get(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 	modelIntSys := fixModelIntegrationSystem(testID, testName)
 
 	testCases := []struct {
@@ -133,7 +133,7 @@ func TestService_Get(t *testing.T) {
 
 func TestService_Exists(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 
 	testCases := []struct {
 		Name           string
@@ -186,7 +186,7 @@ func TestService_Exists(t *testing.T) {
 
 func TestService_List(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 	modelIntSys := fixModelIntegrationSystemPage([]*model.IntegrationSystem{
 		fixModelIntegrationSystem("foo1", "bar1"),
 		fixModelIntegrationSystem("foo2", "bar2"),
@@ -266,7 +266,7 @@ func TestService_List(t *testing.T) {
 
 func TestService_Update(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 	modelIntSys := fixModelIntegrationSystem(testID, testName)
 	modelIntSysInput := fixModelIntegrationSystemInput(testName)
 
@@ -317,7 +317,7 @@ func TestService_Update(t *testing.T) {
 
 func TestService_Delete(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 
 	testCases := []struct {
 		Name          string

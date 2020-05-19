@@ -28,7 +28,7 @@ func TestService_Get(t *testing.T) {
 	eventAPIDefinition := fixMinModelEventAPIDefinition(id, "placeholder")
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveInternalToContext(ctx, tenantID)
 
 	testCases := []struct {
 		Name               string
@@ -100,7 +100,7 @@ func TestService_GetForPackage(t *testing.T) {
 	eventAPIDefinition := fixMinModelEventAPIDefinition(id, "placeholder")
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveInternalToContext(ctx, tenantID)
 
 	testCases := []struct {
 		Name               string
@@ -193,7 +193,7 @@ func TestService_ListForPackage(t *testing.T) {
 	after := "test"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveInternalToContext(ctx, tenantID)
 
 	testCases := []struct {
 		Name               string
@@ -313,7 +313,7 @@ func TestService_CreateToPackage(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveInternalToContext(ctx, tenantID)
 
 	testCases := []struct {
 		Name               string
@@ -454,7 +454,7 @@ func TestService_Update(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveInternalToContext(ctx, tenantID)
 
 	testCases := []struct {
 		Name               string
@@ -575,7 +575,7 @@ func TestService_Delete(t *testing.T) {
 	id := "foo"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveInternalToContext(ctx, tenantID)
 
 	testCases := []struct {
 		Name         string
@@ -643,7 +643,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 	apiID := "foo"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveInternalToContext(ctx, tenantID)
 
 	dataBytes := "data"
 	modelAPISpec := &model.EventSpec{
@@ -712,7 +712,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 func TestService_GetFetchRequest(t *testing.T) {
 	// given
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveInternalToContext(ctx, tenantID)
 
 	testErr := errors.New("Test error")
 

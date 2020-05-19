@@ -57,7 +57,7 @@ func TestSaveToLoadFromContext(t *testing.T) {
 	ctx := context.TODO()
 
 	// when
-	result := tenant.SaveToContext(ctx, value)
+	result := tenant.SaveInternalToContext(ctx, value)
 
 	// then
 	assert.Equal(t, value, result.Value(tenant.TenantContextKey))

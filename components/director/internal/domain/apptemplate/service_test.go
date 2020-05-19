@@ -19,7 +19,7 @@ import (
 
 func TestService_Create(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 	uidSvcFn := func() *automock.UIDService {
 		uidSvc := &automock.UIDService{}
 		uidSvc.On("Generate").Return(testID).Once()
@@ -83,7 +83,7 @@ func TestService_Create(t *testing.T) {
 
 func TestService_Get(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 	modelAppTemplate := fixModelAppTemplate(testID, testName)
 
 	testCases := []struct {
@@ -136,7 +136,7 @@ func TestService_Get(t *testing.T) {
 
 func TestService_GetByName(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 	modelAppTemplate := fixModelAppTemplate(testID, testName)
 
 	testCases := []struct {
@@ -189,7 +189,7 @@ func TestService_GetByName(t *testing.T) {
 
 func TestService_Exists(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 
 	testCases := []struct {
 		Name              string
@@ -242,7 +242,7 @@ func TestService_Exists(t *testing.T) {
 
 func TestService_List(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 	modelAppTemplate := fixModelAppTemplatePage([]*model.ApplicationTemplate{
 		fixModelAppTemplate("foo1", "bar1"),
 		fixModelAppTemplate("foo2", "bar2"),
@@ -322,7 +322,7 @@ func TestService_List(t *testing.T) {
 
 func TestService_Update(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 	modelAppTemplate := fixModelAppTemplate(testID, testName)
 
 	testCases := []struct {
@@ -375,7 +375,7 @@ func TestService_Update(t *testing.T) {
 
 func TestService_Delete(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 
 	testCases := []struct {
 		Name              string

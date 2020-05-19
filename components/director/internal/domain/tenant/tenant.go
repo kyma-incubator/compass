@@ -27,7 +27,7 @@ func LoadFromContext(ctx context.Context) (string, error) {
 	return tenantID, nil
 }
 
-func SaveToContext(ctx context.Context, tenant string) context.Context {
+func SaveInternalToContext(ctx context.Context, tenant string) context.Context {
 	return context.WithValue(ctx, TenantContextKey, tenant)
 }
 

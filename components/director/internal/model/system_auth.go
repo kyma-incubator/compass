@@ -1,6 +1,9 @@
 package model
 
-import "github.com/pkg/errors"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/pkg/errors"
+)
 
 type SystemAuth struct {
 	ID                  string
@@ -50,3 +53,10 @@ const (
 	ApplicationReference       SystemAuthReferenceObjectType = "Application"
 	IntegrationSystemReference SystemAuthReferenceObjectType = "Integration System"
 )
+
+func IsIntegrationSystemNoTenantFlow(err error, objectType SystemAuthReferenceObjectType) bool {
+	if apperrors.IsEmptyTenant(err) && objectType == IntegrationSystemReference {
+		return true
+	}
+	return false
+}

@@ -22,7 +22,7 @@ import (
 
 func TestResolver_ApplicationTemplate(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
@@ -154,7 +154,7 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 
 func TestResolver_ApplicationTemplates(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 	txGen := txtest.NewTransactionContextGenerator(testError)
 	modelAppTemplates := []*model.ApplicationTemplate{
 		fixModelAppTemplate("i1", "n1"),
@@ -281,7 +281,7 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 
 func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
@@ -438,7 +438,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 
 func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
@@ -740,7 +740,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 
 func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
@@ -897,7 +897,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 
 func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 

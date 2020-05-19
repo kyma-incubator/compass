@@ -28,7 +28,7 @@ const (
 
 func fixCtxWithTenant() context.Context {
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID.String())
+	ctx = tenant.SaveInternalToContext(ctx, tenantID.String())
 
 	return ctx
 }

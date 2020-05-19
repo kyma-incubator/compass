@@ -17,7 +17,7 @@ func TestLabelUpsertService_UpsertMultipleLabels(t *testing.T) {
 	// given
 	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveInternalToContext(ctx, tnt)
 	id := "foo"
 	emptyStringSchema := &model.LabelDefinition{
 		Key:    "string",
@@ -180,7 +180,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 	// given
 	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveInternalToContext(ctx, tnt)
 	id := "foo"
 	emptyStringSchema := &model.LabelDefinition{
 		Key:    "string",
