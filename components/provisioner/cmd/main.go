@@ -69,7 +69,8 @@ type config struct {
 		SSLMode  string `envconfig:"default=disable"`
 	}
 
-	ProvisioningTimeout queue.ProvisioningTimeouts
+	ProvisioningTimeout   queue.ProvisioningTimeouts
+	DeprovisioningTimeout queue.DeprovisioningTimeouts
 
 	Gardener struct {
 		Project                     string `envconfig:"default=gardenerProject"`
@@ -182,7 +183,7 @@ func main() {
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(dbsFactory, installationService, directorClient, shootClient, 10*time.Minute)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, installationService, directorClient, shootClient, 10*time.Minute)
 
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {
@@ -283,6 +284,12 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 	}, retry.Attempts(30), retry.DelayType(retry.FixedDelay), retry.Delay(5*time.Second))
 	if err != nil {
 		return fmt.Errorf("error enqueuing in progress operations: %s", err.Error())
+	}
+
+	err = migrateOperationsInShootProvisioningStage(dbFactory.NewWriteSession())
+	if err != nil {
+
+		return fmt.Errorf("error migrating operations in ShootProvisioning stage: %s", err.Error())
 	}
 
 	for _, op := range inProgressOps {
