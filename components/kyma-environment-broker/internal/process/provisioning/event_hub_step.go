@@ -28,6 +28,10 @@ const (
 	componentNameKnativeEventing      = "knative-eventing"
 	componentNameKnativeEventingKafka = "knative-eventing-kafka"
 	kafkaProvider                     = "azure"
+
+	// prefix is added before the created Azure resources
+	// to satisfy Azure naming validation: https://docs.microsoft.com/en-us/rest/api/servicebus/create-namespace
+	prefix = "k"
 )
 
 // ensure the interface is implemented
@@ -97,8 +101,11 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 		azure.TagOperationID:  &operation.ID,
 	}
 
+	// prepare a valid unique name for Azure resources
+	uniqueName := addPrefix(operation.InstanceID)
+
 	// create Resource Group
-	groupName := operation.InstanceID
+	groupName := uniqueName
 	resourceGroup, err := azureClient.CreateResourceGroup(p.EventHub.Context, azureCfg, groupName, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
@@ -108,7 +115,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log.Printf("Persisted Azure Resource Group [%s]", groupName)
 
 	// create EventHubs Namespace
-	eventHubsNamespace := operation.InstanceID
+	eventHubsNamespace := uniqueName
 	eventHubNamespace, err := azureClient.CreateNamespace(p.EventHub.Context, azureCfg, groupName, eventHubsNamespace, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
@@ -198,4 +205,8 @@ func getKafkaChannelOverrides(brokerHostname, brokerPort, namespace, username, p
 			Secret: ptr.Bool(true),
 		},
 	}
+}
+
+func addPrefix(name string) string {
+	return fmt.Sprintf("%s%s", prefix, name)
 }
