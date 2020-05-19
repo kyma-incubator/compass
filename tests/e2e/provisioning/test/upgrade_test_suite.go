@@ -14,7 +14,7 @@ type UpgradeConfig struct {
 	ManagedRuntimeComponentsYAMLPath string
 	UpgradeTimeout                   time.Duration `default:"3h"`
 	PreUpgradeKymaVersion            string        `envconfig:"optional"` // If empty default version should be used
-	UpgradeKymaVersion               string        `default:""`
+	UpgradeKymaVersion               string
 }
 
 func WithUpgrade() options {
