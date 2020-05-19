@@ -1,12 +1,6 @@
-# Director Component
+# Architecture
 
-## Overview
-
-This document describes the Director's architecture.
-
-## Architecture
-
-The following diagram illustrates the overall architecture of this application:
+The following diagram illustrates the overall architecture of the Director:
 
 ![](./assets/director-architecture.svg)
 

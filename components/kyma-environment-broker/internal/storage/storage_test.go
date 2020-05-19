@@ -77,7 +77,7 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NoError(t, err)
 
 			// when
-			brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
 
 			require.NoError(t, err)
 			require.NotNil(t, brokerStorage)
@@ -130,7 +130,7 @@ func TestSchemaInitializer(t *testing.T) {
 			err = InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			psqlStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+			psqlStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 			require.NotNil(t, psqlStorage)
 
@@ -207,7 +207,7 @@ func TestSchemaInitializer(t *testing.T) {
 			err = InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 
 			svc := brokerStorage.Operations()
@@ -265,7 +265,7 @@ func TestSchemaInitializer(t *testing.T) {
 			err = InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 
 			svc := brokerStorage.Operations()
@@ -327,7 +327,7 @@ func TestSchemaInitializer(t *testing.T) {
 			err = InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
 			svc := brokerStorage.Provisioning()
 
 			require.NoError(t, err)
@@ -380,7 +380,7 @@ func TestSchemaInitializer(t *testing.T) {
 			err = InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 
 			svc := brokerStorage.Deprovisioning()
@@ -427,7 +427,7 @@ func TestSchemaInitializer(t *testing.T) {
 		err = InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
 
-		brokerStorage, err := NewFromConfig(cfg, logrus.StandardLogger())
+		brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
 		svc := brokerStorage.LMSTenants()
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
