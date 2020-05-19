@@ -36,17 +36,3 @@ func (qp queryProvider) requestOneTimeTokeneMutation(runtimeID string) string {
 		token connectorURL
 }}`, runtimeID)
 }
-
-func (qp queryProvider) getRuntimesQuery(gardenerClusterName string) string {
-	return fmt.Sprintf(`query {
-		result: runtimes(filter: {
-					key : "gardenerClusterName",
-					query: "\"%s\""
-				}) 
-				{
-					data {
-					    id
-					}
-				}
-		}`, gardenerClusterName)
-}

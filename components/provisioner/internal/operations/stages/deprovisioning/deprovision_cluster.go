@@ -60,7 +60,7 @@ func (s *DeprovisionClusterStep) Run(cluster model.Cluster, operation model.Oper
 		return operations.StageResult{}, err
 	}
 
-	err = s.setDeprovisioningFinished(cluster, gardenerConfig.Name, operation)
+	err = s.setDeprovisioningFinished(cluster, operation)
 	if err != nil {
 		logger.Errorf("Error setting deprovisioning finished: %s", err.Error())
 		return operations.StageResult{}, err
@@ -81,7 +81,7 @@ func (s *DeprovisionClusterStep) deleteShoot(gardenerClusterName string, logger 
 	return nil
 }
 
-func (s *DeprovisionClusterStep) setDeprovisioningFinished(cluster model.Cluster, gardenerClusterName string, lastOp model.Operation) error {
+func (s *DeprovisionClusterStep) setDeprovisioningFinished(cluster model.Cluster, lastOp model.Operation) error {
 	session, dberr := s.dbsFactory.NewSessionWithinTransaction()
 	if dberr != nil {
 		return fmt.Errorf("error starting db session with transaction: %s", dberr.Error())
@@ -93,7 +93,7 @@ func (s *DeprovisionClusterStep) setDeprovisioningFinished(cluster model.Cluster
 		return fmt.Errorf("error marking cluster for deletion: %s", dberr.Error())
 	}
 
-	err := s.deleteRuntime(cluster, gardenerClusterName)
+	err := s.deleteRuntime(cluster)
 	if err != nil {
 		return err
 	}
@@ -106,8 +106,8 @@ func (s *DeprovisionClusterStep) setDeprovisioningFinished(cluster model.Cluster
 	return nil
 }
 
-func (s *DeprovisionClusterStep) deleteRuntime(cluster model.Cluster, gardenerClusterName string) error {
-	exists, err := s.directorClient.RuntimeExists(gardenerClusterName, cluster.Tenant)
+func (s *DeprovisionClusterStep) deleteRuntime(cluster model.Cluster) error {
+	exists, err := s.directorClient.RuntimeExists(cluster.ID, cluster.Tenant)
 	if err != nil {
 		return fmt.Errorf("error checking Runtime exists in Director: %s", err.Error())
 	}

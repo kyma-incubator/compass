@@ -163,30 +163,20 @@ func (cc *directorClient) DeleteRuntime(id, tenant string) error {
 	return nil
 }
 
-func (cc *directorClient) RuntimeExists(gardenerClusterName, tenant string) (bool, error) {
-	runtimesQuery := cc.queryProvider.getRuntimesQuery(gardenerClusterName)
+func (cc *directorClient) RuntimeExists(id, tenant string) (bool, error) {
+	runtimeQuery := cc.queryProvider.getRuntimeQuery(id)
 
-	var response GetRuntimesResponse
-	err := cc.executeDirectorGraphQLCall(runtimesQuery, tenant, response)
+	var response GetRuntimeResponse
+	err := cc.executeDirectorGraphQLCall(runtimeQuery, tenant, &response)
 	if err != nil {
-		return false, errors.Wrap(err, "Failed to get runtimes list from Director")
+		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtime %s from Director", id))
 	}
 
 	if response.Result == nil {
-		return false, errors.New("Failed to get runtimes list from Director: received nil response.")
+		return false, nil
 	}
 
-	runtimes := response.Result.Data
-
-	if len(runtimes) == 1 {
-		return true, nil
-	}
-
-	if len(runtimes) > 1 {
-		return false, errors.Errorf("Invalid state: more that one runtime assigned to  Gardener cluster: %s", gardenerClusterName)
-	}
-
-	return false, nil
+	return true, nil
 }
 
 func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) error {

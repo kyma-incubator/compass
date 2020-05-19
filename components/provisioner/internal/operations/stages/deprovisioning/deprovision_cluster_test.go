@@ -46,7 +46,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 				dbSession := &dbMocks.WriteSessionWithinTransaction{}
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
-				directorClient.On("RuntimeExists", clusterName, tenant).Return(true, nil)
+				directorClient.On("RuntimeExists", runtimeID, tenant).Return(true, nil)
 				directorClient.On("DeleteRuntime", runtimeID, tenant).Return(nil)
 				dbSession.On("Commit").Return(nil)
 				dbSession.On("RollbackUnlessCommitted").Return()
@@ -61,7 +61,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 				dbSession := &dbMocks.WriteSessionWithinTransaction{}
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
-				directorClient.On("RuntimeExists", clusterName, tenant).Return(false, nil)
+				directorClient.On("RuntimeExists", runtimeID, tenant).Return(false, nil)
 				dbSession.On("Commit").Return(nil)
 				dbSession.On("RollbackUnlessCommitted").Return()
 			},
@@ -141,7 +141,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
 				dbSession.On("RollbackUnlessCommitted").Return()
-				directorClient.On("RuntimeExists", clusterName, tenant).Return(false, errors.New("some error"))
+				directorClient.On("RuntimeExists", runtimeID, tenant).Return(false, errors.New("some error"))
 			},
 			cluster:            cluster,
 			unrecoverableError: false,
@@ -154,7 +154,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
 				dbSession.On("RollbackUnlessCommitted").Return()
-				directorClient.On("RuntimeExists", clusterName, tenant).Return(true, nil)
+				directorClient.On("RuntimeExists", runtimeID, tenant).Return(true, nil)
 				directorClient.On("DeleteRuntime", runtimeID, tenant).Return(errors.New("some error"))
 			},
 			cluster:            cluster,
@@ -167,7 +167,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 				dbSession := &dbMocks.WriteSessionWithinTransaction{}
 				dbSession.On("MarkClusterAsDeleted", mock.AnythingOfType("string")).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
-				directorClient.On("RuntimeExists", clusterName, tenant).Return(true, nil)
+				directorClient.On("RuntimeExists", runtimeID, tenant).Return(true, nil)
 				directorClient.On("DeleteRuntime", runtimeID, tenant).Return(nil)
 				dbSession.On("Commit").Return(dberrors.Internal("some error"))
 				dbSession.On("RollbackUnlessCommitted").Return()
