@@ -3,6 +3,7 @@ package metrics
 import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 )
 
 type InstancesStatsGetter interface {
@@ -35,12 +36,14 @@ func NewInstancesCollector(statsGetter InstancesStatsGetter) *InstancesCollector
 
 func (c *InstancesCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.instancesDesc
+	ch <- c.instancesPerGAIDDesc
 }
 
 // Collect implements the prometheus.Collector interface.
 func (c *InstancesCollector) Collect(ch chan<- prometheus.Metric) {
 	stats, err := c.statsGetter.GetInstanceStats()
 	if err != nil {
+		logrus.Error(err)
 		return
 	}
 
