@@ -102,7 +102,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	}
 
 	// prepare a valid unique name for Azure resources
-	uniqueName := addPrefix(operation.InstanceID)
+	uniqueName := getAzureResourceName(operation.InstanceID)
 
 	// create Resource Group
 	groupName := uniqueName
@@ -207,6 +207,9 @@ func getKafkaChannelOverrides(brokerHostname, brokerPort, namespace, username, p
 	}
 }
 
-func addPrefix(name string) string {
-	return fmt.Sprintf("%s%s", prefix, name)
+// getAzureResourceName returns a valid Azure resource name that is in lower case and starts with a letter.
+func getAzureResourceName(name string) string {
+	name = fmt.Sprintf("%s%s", prefix, name)
+	name = strings.ToLower(name)
+	return name
 }
