@@ -8,7 +8,7 @@ import (
 
 func Test_E2E_Upgrade(t *testing.T) {
 
-	ts := newTestSuite(t, WithUpgrade())
+	ts := newTestSuite(t)
 	if ts.IsDummyTest {
 		return
 	}
