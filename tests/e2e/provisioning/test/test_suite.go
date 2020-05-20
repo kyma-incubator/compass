@@ -181,7 +181,7 @@ func newTestSuite(t *testing.T) *Suite {
 	}
 
 	if suite.IsUpgradeTest {
-		WithUpgrade(t, *cfg, suite)
+		suite.upgradeSuite = newUpgradeSuite(t, *cfg, suite)
 	}
 
 	return suite
