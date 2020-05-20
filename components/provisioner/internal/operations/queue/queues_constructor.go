@@ -28,7 +28,8 @@ type ProvisioningTimeouts struct {
 }
 
 type DeprovisioningTimeouts struct {
-	ClusterDeletion time.Duration `envconfig:"default=60m"`
+	ClusterDeletion           time.Duration `envconfig:"default=30m"`
+	WaitingForClusterDeletion time.Duration `envconfig:"default=60m"`
 }
 
 func CreateProvisioningQueue(
@@ -103,8 +104,8 @@ func CreateDeprovisioningQueue(
 	deleteDelay time.Duration) OperationQueue {
 
 	// TODO: consider adding timeouts to the configuration
-	waitForClusterDeletion := deprovisioning.NewWaitForClusterDeletionStep(shootClient, factory, directorClient, model.FinishedStage, timeouts.ClusterDeletion)
-	deleteCluster := deprovisioning.NewDeleteClusterStep(shootClient, waitForClusterDeletion.Name(), 5*time.Minute)
+	waitForClusterDeletion := deprovisioning.NewWaitForClusterDeletionStep(shootClient, factory, directorClient, model.FinishedStage, timeouts.WaitingForClusterDeletion)
+	deleteCluster := deprovisioning.NewDeleteClusterStep(shootClient, waitForClusterDeletion.Name(), timeouts.ClusterDeletion)
 	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, deleteCluster.Name(), 5*time.Minute, deleteDelay)
 
 	deprovisioningSteps := map[model.OperationStage]operations.Step{
