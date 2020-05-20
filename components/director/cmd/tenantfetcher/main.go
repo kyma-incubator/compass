@@ -45,6 +45,7 @@ func main() {
 	err = tenantFetcherSvc.SyncTenants()
 
 	if metricsPusher != nil {
+		log.Info("Pushing metrics...")
 		metricsPusher.Push()
 	}
 

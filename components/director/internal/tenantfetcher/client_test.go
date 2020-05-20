@@ -6,10 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher/automock"
-	"github.com/stretchr/testify/mock"
-
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher/automock"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -212,7 +210,9 @@ func fixDeletedTenantsJSON() string {
 
 func fixMetricsPusherMock() *automock.MetricsPusher {
 	metricsPusherMock := &automock.MetricsPusher{}
-	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, mock.Anything).Maybe()
+	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, http.StatusOK, "200 OK")
+	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, http.StatusNoContent, "204 No Content").Once()
+	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, 0, "connect: connection refused").Once()
 
 	return metricsPusherMock
 }

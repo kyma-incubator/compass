@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"net/http"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -20,9 +20,11 @@ func NewPusher(endpoint string) *Pusher {
 		Subsystem: TenantFetcherSubsystem,
 		Name:      "eventing_request_total",
 		Help:      "Total Eventing Requests",
-	}, []string{"code", "method"})
+	}, []string{"method", "code", "desc"})
 
-	pusher := push.New(endpoint, TenantFetcherJobName).Collector(eventingRequestTotal)
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(eventingRequestTotal)
+	pusher := push.New(endpoint, TenantFetcherJobName).Gatherer(registry)
 
 	return &Pusher{
 		eventingRequestTotal: eventingRequestTotal,
@@ -30,15 +32,12 @@ func NewPusher(endpoint string) *Pusher {
 	}
 }
 
-func (p *Pusher) RecordEventingRequest(method string, res *http.Response) {
-	p.eventingRequestTotal.With(prometheus.Labels{
-		"method": method,
-		"code":   string(res.StatusCode),
-	}).Inc()
+func (p *Pusher) RecordEventingRequest(method string, statusCode int, desc string) {
+	p.eventingRequestTotal.WithLabelValues(method, strconv.Itoa(statusCode), desc).Inc()
 }
 
 func (p *Pusher) Push() {
-	err := p.pusher.Push()
+	err := p.pusher.Add()
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while pushing metrics to Pushgateway")
 		log.Error(wrappedErr)

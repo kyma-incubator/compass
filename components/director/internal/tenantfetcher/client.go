@@ -4,11 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
-	"github.com/pkg/errors"
+	"errors"
+
+	pkgErrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/clientcredentials"
 )
@@ -27,7 +31,7 @@ type APIConfig struct {
 
 //go:generate mockery -name=MetricsPusher -output=automock -outpkg=automock -case=underscore
 type MetricsPusher interface {
-	RecordEventingRequest(method string, res *http.Response)
+	RecordEventingRequest(method string, statusCode int, desc string)
 }
 
 type Client struct {
@@ -41,7 +45,7 @@ const (
 	pageSize = 1000
 )
 
-func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) Client {
+func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) *Client {
 	cfg := clientcredentials.Config{
 		ClientID:     oAuth2Config.ClientID,
 		ClientSecret: oAuth2Config.ClientSecret,
@@ -50,17 +54,17 @@ func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) Client {
 
 	httpClient := cfg.Client(context.Background())
 
-	return Client{
+	return &Client{
 		httpClient: httpClient,
 		apiConfig:  apiConfig,
 	}
 }
 
-func (c Client) SetMetricsPusher(metricsPusher MetricsPusher) {
+func (c *Client) SetMetricsPusher(metricsPusher MetricsPusher) {
 	c.metricsPusher = metricsPusher
 }
 
-func (c Client) FetchTenantEventsPage(eventsType EventsType, pageNumber int) (*TenantEventsResponse, error) {
+func (c *Client) FetchTenantEventsPage(eventsType EventsType, pageNumber int) (*TenantEventsResponse, error) {
 	endpoint, err := c.getEndpointForEventsType(eventsType)
 	if err != nil {
 		return nil, err
@@ -73,7 +77,20 @@ func (c Client) FetchTenantEventsPage(eventsType EventsType, pageNumber int) (*T
 
 	res, err := c.httpClient.Get(reqURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "while sending get request")
+		if c.metricsPusher != nil {
+			log.Info("Recording failed request...")
+
+			var desc string
+			var e *net.OpError
+			if errors.As(err, &e) && e.Err != nil {
+				desc = e.Err.Error()
+			} else {
+				errParts := strings.Split(err.Error(), ":")
+				desc = errParts[len(errParts)-1]
+			}
+			c.metricsPusher.RecordEventingRequest(http.MethodGet, 0, desc)
+		}
+		return nil, pkgErrors.Wrap(err, "while sending get request")
 	}
 	defer func() {
 		err := res.Body.Close()
@@ -83,7 +100,8 @@ func (c Client) FetchTenantEventsPage(eventsType EventsType, pageNumber int) (*T
 	}()
 
 	if c.metricsPusher != nil {
-		c.metricsPusher.RecordEventingRequest(http.MethodGet, res)
+		log.Info("Recording successful request...")
+		c.metricsPusher.RecordEventingRequest(http.MethodGet, res.StatusCode, res.Status)
 	}
 
 	var tenantEvents TenantEventsResponse
@@ -92,13 +110,13 @@ func (c Client) FetchTenantEventsPage(eventsType EventsType, pageNumber int) (*T
 		if err == io.EOF {
 			return nil, nil
 		}
-		return nil, errors.Wrap(err, "while decoding response body")
+		return nil, pkgErrors.Wrap(err, "while decoding response body")
 	}
 
 	return &tenantEvents, nil
 }
 
-func (c Client) getEndpointForEventsType(eventsType EventsType) (string, error) {
+func (c *Client) getEndpointForEventsType(eventsType EventsType) (string, error) {
 	switch eventsType {
 	case CreatedEventsType:
 		return c.apiConfig.EndpointTenantCreated, nil
@@ -111,7 +129,7 @@ func (c Client) getEndpointForEventsType(eventsType EventsType) (string, error) 
 	}
 }
 
-func (c Client) buildRequestURL(endpoint string, pageNumber int) (string, error) {
+func (c *Client) buildRequestURL(endpoint string, pageNumber int) (string, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return "", err
