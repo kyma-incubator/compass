@@ -20,7 +20,7 @@ import (
 
 func TestService_Create(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testTenant)
 
 	sysAuthID := "foo"
 	objID := "bar"
@@ -155,7 +155,7 @@ func TestService_Create(t *testing.T) {
 // Just happy path, as it is the same as Create method
 func TestService_CreateWithCustomID(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testTenant)
 
 	sysAuthID := "bla"
 	objID := "bar"
@@ -179,7 +179,7 @@ func TestService_CreateWithCustomID(t *testing.T) {
 
 func TestService_ListForObject(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testTenant)
 
 	objID := "bar"
 
@@ -316,7 +316,7 @@ func TestService_ListForObject(t *testing.T) {
 
 func TestService_GetByIDForObject(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testTenant)
 
 	sysAuthID := "foo"
 	modelSysAuth := fixModelSystemAuth(sysAuthID, model.RuntimeReference, "bar", nil)
@@ -408,8 +408,7 @@ func TestService_GetByIDForObject(t *testing.T) {
 
 func TestService_DeleteByIDForObject(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveInternalToContext(context.TODO(), testTenant)
-
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testTenant)
 	sysAuthID := "foo"
 
 	testCases := []struct {

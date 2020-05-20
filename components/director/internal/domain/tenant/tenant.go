@@ -9,28 +9,29 @@ import (
 type key int
 
 const (
-	TenantContextKey         key = iota
-	ExternalTenantContextKey key = iota
+	TenantContextKey key = iota
 )
 
+type TenantCtx struct {
+	InternalID string
+	ExternalID string
+}
+
 func LoadFromContext(ctx context.Context) (string, error) {
-	tenantID, ok := ctx.Value(TenantContextKey).(string)
+	tenant, ok := ctx.Value(TenantContextKey).(TenantCtx)
 
 	if !ok {
 		return "", apperrors.NewCannotReadTenantError()
 	}
 
-	if tenantID == "" {
+	if tenant.InternalID == "" {
 		return "", apperrors.NewEmptyTenantError()
 	}
 
-	return tenantID, nil
+	return tenant.InternalID, nil
 }
 
-func SaveInternalToContext(ctx context.Context, tenant string) context.Context {
-	return context.WithValue(ctx, TenantContextKey, tenant)
-}
-
-func SaveExternalToContext(ctx context.Context, tenant string) context.Context {
-	return context.WithValue(ctx, ExternalTenantContextKey, tenant)
+func SaveToContext(ctx context.Context, internalID, externalID string) context.Context {
+	tenantCtx := TenantCtx{InternalID: internalID, ExternalID: externalID}
+	return context.WithValue(ctx, TenantContextKey, tenantCtx)
 }

@@ -21,7 +21,7 @@ func TestScenariosService_EnsureScenariosLabelDefinitionExists(t *testing.T) {
 
 	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveInternalToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, tnt)
 
 	var scenariosSchema interface{} = model.ScenariosSchema
 	scenariosLD := model.LabelDefinition{

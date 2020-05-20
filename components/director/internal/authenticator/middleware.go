@@ -124,10 +124,9 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 }
 
 func (a *Authenticator) contextWithClaims(ctx context.Context, claims Claims) context.Context {
-	ctxWithTenant := tenant.SaveInternalToContext(ctx, claims.Tenant)
-	ctxWithExternalTenant := tenant.SaveExternalToContext(ctxWithTenant, claims.ExternalTenant)
+	ctxWithTenants := tenant.SaveToContext(ctx, claims.Tenant, claims.ExternalTenant)
 	scopesArray := strings.Split(claims.Scopes, " ")
-	ctxWithScopes := scope.SaveToContext(ctxWithExternalTenant, scopesArray)
+	ctxWithScopes := scope.SaveToContext(ctxWithTenants, scopesArray)
 	apiConsumer := consumer.Consumer{ConsumerID: claims.ConsumerID, ConsumerType: claims.ConsumerType}
 	ctxWithConsumerInfo := consumer.SaveToContext(ctxWithScopes, apiConsumer)
 	return ctxWithConsumerInfo

@@ -1452,7 +1452,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 	// GIVEN
 	tnt := "tnt"
 	ctx := context.TODO()
-	ctx = tenant.SaveInternalToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, tnt)
 
 	applicationID := uuid.New()
 	gqlApp := fixGQLApplication(applicationID.String(), "bar", "baz")

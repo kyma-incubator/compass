@@ -117,7 +117,7 @@ func fixError() error {
 }
 
 func fixCtxWithTenant() context.Context {
-	return tenant.SaveInternalToContext(context.TODO(), tenantID)
+	return tenant.SaveToContext(context.TODO(), tenantID, tenantID)
 }
 
 func fixLabelSelector() model.LabelSelector {

@@ -27,7 +27,7 @@ func TestService_Get(t *testing.T) {
 	tnt := documentModel.Tenant
 
 	ctx := context.TODO()
-	ctx = tenant.SaveInternalToContext(ctx, documentModel.Tenant)
+	ctx = tenant.SaveToContext(ctx, documentModel.Tenant, documentModel.Tenant)
 
 	testCases := []struct {
 		Name               string
@@ -94,7 +94,7 @@ func TestService_GetForPackage(t *testing.T) {
 	doc := fixModelDocument(id, pkgID)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveInternalToContext(ctx, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
 
 	testCases := []struct {
 		Name               string
@@ -187,7 +187,7 @@ func TestService_ListForPackage(t *testing.T) {
 	after := "test"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveInternalToContext(ctx, modelDocuments[0].Tenant)
+	ctx = tenant.SaveToContext(ctx, modelDocuments[0].Tenant, modelDocuments[0].Tenant)
 
 	testCases := []struct {
 		Name               string
@@ -245,7 +245,7 @@ func TestService_CreateToPackage(t *testing.T) {
 
 	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveInternalToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, tnt)
 
 	id := "foo"
 	packageID := "foo"
@@ -370,7 +370,7 @@ func TestService_Delete(t *testing.T) {
 	tnt := documentModel.Tenant
 
 	ctx := context.TODO()
-	ctx = tenant.SaveInternalToContext(ctx, documentModel.Tenant)
+	ctx = tenant.SaveToContext(ctx, documentModel.Tenant, documentModel.Tenant)
 
 	testCases := []struct {
 		Name               string
@@ -427,7 +427,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 	// given
 	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveInternalToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, tnt)
 
 	testErr := errors.New("Test error")
 
