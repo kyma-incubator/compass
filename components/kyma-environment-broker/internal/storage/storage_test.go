@@ -121,6 +121,40 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.NoError(t, err, "deletion non existing instance must not cause any error")
 		})
 
+		t.Run("Should fetch instance statistics", func(t *testing.T) {
+			// given
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			require.NoError(t, err)
+			defer containerCleanupFunc()
+
+			err = InitTestDBTables(t, cfg.ConnectionURL())
+			require.NoError(t, err)
+
+			psqlStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			require.NoError(t, err)
+			require.NotNil(t, psqlStorage)
+
+			// populate database with samples
+			fixInstances := []internal.Instance{
+				fixInstanceWithGAID("A1", "A"),
+				fixInstanceWithGAID("A2", "A"),
+				fixInstanceWithGAID("C1", "C")}
+			for _, i := range fixInstances {
+				err = psqlStorage.Instances().Insert(i)
+				require.NoError(t, err)
+			}
+
+			// when
+			stats, err := psqlStorage.Instances().GetInstanceStats()
+			require.NoError(t, err)
+			t.Logf("%+v", stats)
+			assert.Equal(t, internal.InstanceStats{
+				TotalNumberOfInstances: 3,
+				PerGlobalAccountID:     map[string]int{"A": 2, "C": 1},
+			}, stats)
+
+		})
+
 		t.Run("Should fetch instances along with their operations", func(t *testing.T) {
 			// given
 			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
@@ -523,6 +557,21 @@ func fixInstance(testData string) *internal.Instance {
 		InstanceID:             testData,
 		RuntimeID:              testData,
 		GlobalAccountID:        testData,
+		SubAccountID:           testData,
+		ServiceID:              testData,
+		ServiceName:            testData,
+		ServicePlanID:          testData,
+		ServicePlanName:        testData,
+		DashboardURL:           testData,
+		ProvisioningParameters: testData,
+	}
+}
+
+func fixInstanceWithGAID(testData, globalAccountID string) internal.Instance {
+	return internal.Instance{
+		InstanceID:             testData,
+		RuntimeID:              testData,
+		GlobalAccountID:        globalAccountID,
 		SubAccountID:           testData,
 		ServiceID:              testData,
 		ServiceName:            testData,

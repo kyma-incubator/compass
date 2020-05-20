@@ -104,3 +104,19 @@ func (s *Instance) Delete(instanceID string) error {
 	sess := s.NewWriteSession()
 	return sess.DeleteInstance(instanceID)
 }
+
+func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
+	entries, err := s.NewReadSession().GetInstanceStats()
+	if err != nil {
+		return internal.InstanceStats{}, err
+	}
+
+	result := internal.InstanceStats{
+		PerGlobalAccountID: make(map[string]int),
+	}
+	for _, e := range entries {
+		result.PerGlobalAccountID[e.GlobalAccountID] = e.Total
+		result.TotalNumberOfInstances = result.TotalNumberOfInstances + e.Total
+	}
+	return result, nil
+}

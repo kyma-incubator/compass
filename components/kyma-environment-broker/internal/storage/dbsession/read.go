@@ -149,3 +149,10 @@ func (r readSession) GetOperationStats() ([]dbmodel.OperationStatEntry, error) {
 		postsql.OperationTableName)).Load(&rows)
 	return rows, err
 }
+
+func (r readSession) GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error) {
+	var rows []dbmodel.InstanceByGlobalAccountIDStatEntry
+	_, err := r.session.SelectBySql(fmt.Sprintf("select global_account_id, count(*) as total from %s group by global_account_id",
+		postsql.InstancesTableName)).Load(&rows)
+	return rows, err
+}

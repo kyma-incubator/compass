@@ -192,6 +192,7 @@ func main() {
 	stepResultCollector := metrics.NewStepResultCollector()
 	prometheus.MustRegister(opResultCollector, opDurationCollector, stepResultCollector)
 	prometheus.MustRegister(metrics.NewOperationsCollector(db.Operations()))
+	prometheus.MustRegister(metrics.NewInstancesCollector(db.Instances()))
 
 	// application event broker
 	eventBroker := event.NewApplicationEventBroker()

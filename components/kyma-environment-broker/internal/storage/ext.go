@@ -12,6 +12,7 @@ type Instances interface {
 	Insert(instance internal.Instance) error
 	Update(instance internal.Instance) error
 	Delete(instanceID string) error
+	GetInstanceStats() (internal.InstanceStats, error)
 }
 
 type Operations interface {

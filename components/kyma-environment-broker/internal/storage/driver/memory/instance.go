@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"sync"
 
+	"fmt"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -94,4 +96,8 @@ func (s *Instance) Update(instance internal.Instance) error {
 	s.instances[instance.InstanceID] = instance
 
 	return nil
+}
+
+func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
+	return internal.InstanceStats{}, fmt.Errorf("not implemented")
 }
