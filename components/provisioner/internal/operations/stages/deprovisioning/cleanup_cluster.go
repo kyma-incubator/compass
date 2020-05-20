@@ -12,15 +12,16 @@ import (
 )
 
 type CleanupClusterStep struct {
-	resourceClient installation.ResourceClient
-	nextStep       model.OperationStage
-	timeLimit      time.Duration
+	installationService installation.Service
+	nextStep            model.OperationStage
+	timeLimit           time.Duration
 }
 
-func NewCleanupClusterStep(nextStep model.OperationStage, timeLimit time.Duration) *CleanupClusterStep {
+func NewCleanupClusterStep(installationService installation.Service, nextStep model.OperationStage, timeLimit time.Duration) *CleanupClusterStep {
 	return &CleanupClusterStep{
-		nextStep:  nextStep,
-		timeLimit: timeLimit,
+		installationService: installationService,
+		nextStep:            nextStep,
+		timeLimit:           timeLimit,
 	}
 }
 
@@ -33,9 +34,8 @@ func (s *CleanupClusterStep) TimeLimit() time.Duration {
 }
 
 func (s *CleanupClusterStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
-	logger.Infof("Starting cleanup cluster step for %s ...", cluster.ID)
+	logger.Debugf("Starting cleanup cluster step for %s ...", cluster.ID)
 	if cluster.Kubeconfig == nil {
-		logger.Errorf("got nil kubeconfig while trying to cleanup cluster")
 		// Kubeconfig can be nil if Gardener failed to create cluster. We must go to the next step to finalize deprovisioning
 		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
@@ -46,15 +46,8 @@ func (s *CleanupClusterStep) Run(cluster model.Cluster, _ model.Operation, logge
 		return operations.StageResult{}, operations.NewNonRecoverableError(err)
 	}
 
-	cli, err := installation.NewServiceCatalogClient(k8sConfig)
+	err = s.installationService.PerformCleanup(k8sConfig)
 	if err != nil {
-		logger.Errorf("error creating Service Catalog Client for cluster id %q: %s", cluster.ID, err.Error())
-		return operations.StageResult{}, err
-	}
-
-	err = cli.PerformCleanup()
-	if err != nil {
-		logger.Errorf("while performing resource cleanup for cluster id: %q: %s", cluster.ID, err.Error())
 		return operations.StageResult{}, err
 	}
 

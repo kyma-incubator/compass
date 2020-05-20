@@ -25,10 +25,6 @@ const (
 	ClusterServiceClassRefNameLabel      = "servicecatalog.k8s.io/spec.clusterServiceClassRef.name"
 )
 
-type ResourceClient interface {
-	PerformCleanup() error
-}
-
 type ServiceCatalogClient interface {
 	PerformCleanup() error
 	ListClusterServiceBroker(metav1.ListOptions) (*v1beta1.ClusterServiceBrokerList, error)

@@ -52,6 +52,20 @@ func (_m *Service) InstallKyma(runtimeId string, kubeconfigRaw string, release m
 	return r0
 }
 
+// PerformCleanup provides a mock function with given fields: kubeconfig
+func (_m *Service) PerformCleanup(kubeconfig *rest.Config) error {
+	ret := _m.Called(kubeconfig)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*rest.Config) error); ok {
+		r0 = rf(kubeconfig)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // TriggerInstallation provides a mock function with given fields: kubeconfigRaw, release, globalConfig, componentsConfig
 func (_m *Service) TriggerInstallation(kubeconfigRaw *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
 	ret := _m.Called(kubeconfigRaw, release, globalConfig, componentsConfig)
