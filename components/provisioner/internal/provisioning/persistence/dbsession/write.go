@@ -192,7 +192,7 @@ func (ws writeSession) TransitionOperation(operationID string, message string, s
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))
 }
 
-// Remove this method when cleaning up code replacing ShootProvisioning stage
+// Clean up this code when not needed (https://github.com/kyma-incubator/compass/issues/1371)
 func (ws writeSession) FixShootProvisioningStage(message string, newStage model.OperationStage, transitionTime time.Time) dberrors.Error {
 	legacyStageCondition := dbr.Eq("stage", "ShootProvisioning")
 	provisioningOperation := dbr.Eq("type", model.Provision)
