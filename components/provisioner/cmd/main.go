@@ -99,7 +99,7 @@ func (c *config) String() string {
 		"ProvisioningTimeoutClusterCreation: %s"+
 		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
 		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
-		"DeprovisioningTimeoutWaitingForClusterDeletion: %s"+
+		"DeprovisioningTimeoutClusterDeletion: %s, DeprovisioningTimeoutWaitingForClusterDeletion: %s"+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
 		"Provisioner: %s, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, SupportOnDemandReleases: %v, "+
@@ -112,7 +112,7 @@ func (c *config) String() string {
 		c.ProvisioningTimeout.ClusterCreation.String(),
 		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
 		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
-		c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
+		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
 		c.Provisioner,
 		c.LatestDownloadedReleases, c.DownloadPreReleases, c.SupportOnDemandReleases,
