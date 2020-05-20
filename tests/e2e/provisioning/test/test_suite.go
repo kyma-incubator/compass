@@ -48,7 +48,7 @@ type Config struct {
 	ConfigName         string        `default:"e2e-runtime-config"`
 	DeployNamespace    string        `default:"compass-system"`
 
-	UpgradeTest               bool `default:"false"`
+	UpgradeTest               bool `envconfig:"default=false"`
 	DummyTest                 bool `default:"false"`
 	CleanupPhase              bool `default:"false"`
 	TestAzureEventHubsEnabled bool `default:"true"`
