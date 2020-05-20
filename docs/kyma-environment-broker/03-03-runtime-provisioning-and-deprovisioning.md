@@ -6,6 +6,10 @@ Both provisioning and deprovisioning operation consist of several steps. Each st
 - Return an error, which interrupts the entire provisioning or deprovisioning process, or 
 - Repeat the entire operation after the specified period. 
 
+The provisioning and deprovisioning timeouts for processing an operation are set to `24h`.
+
+> **NOTE:** It's important to have lower timeouts for the Kyma installation in the Provisioner .
+
 ## Provisioning
 
 Each provisioning step is responsible for a separate part of preparing Runtime parameters. For example, in a step you can provide tokens, credentials, or URLs to integrate Kyma Runtime with external systems. All data collected in provisioning steps are used in the step called [`create_runtime`](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
