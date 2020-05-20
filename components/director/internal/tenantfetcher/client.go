@@ -3,14 +3,13 @@ package tenantfetcher
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-
-	"errors"
 
 	pkgErrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -78,16 +77,7 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, pageNumber int) (*
 	res, err := c.httpClient.Get(reqURL)
 	if err != nil {
 		if c.metricsPusher != nil {
-			log.Info("Recording failed request...")
-
-			var desc string
-			var e *net.OpError
-			if errors.As(err, &e) && e.Err != nil {
-				desc = e.Err.Error()
-			} else {
-				errParts := strings.Split(err.Error(), ":")
-				desc = errParts[len(errParts)-1]
-			}
+			desc := c.failedRequestDesc(err)
 			c.metricsPusher.RecordEventingRequest(http.MethodGet, 0, desc)
 		}
 		return nil, pkgErrors.Wrap(err, "while sending get request")
@@ -100,7 +90,6 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, pageNumber int) (*
 	}()
 
 	if c.metricsPusher != nil {
-		log.Info("Recording successful request...")
 		c.metricsPusher.RecordEventingRequest(http.MethodGet, res.StatusCode, res.Status)
 	}
 
@@ -147,4 +136,15 @@ func (c *Client) buildRequestURL(endpoint string, pageNumber int) (string, error
 	u.RawQuery = q.Encode()
 
 	return u.String(), nil
+}
+
+func (c *Client) failedRequestDesc(err error) string {
+	var e *net.OpError
+	if errors.As(err, &e) && e.Err != nil {
+		return e.Err.Error()
+	}
+
+	// not all errors are actually wrapped, sometimes the error message is just concatenated with ":"
+	errParts := strings.Split(err.Error(), ":")
+	return errParts[len(errParts)-1]
 }
