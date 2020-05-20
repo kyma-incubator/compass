@@ -158,9 +158,10 @@ func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
 }
 
 const (
-	packageID = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
-	appID     = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	tenantID  = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
+	packageID        = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
+	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 )
 
 func fixPackageModel(t *testing.T, name, desc string) *model.Package {

@@ -88,6 +88,9 @@ func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(ctx context
 
 	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return NewTenantContext(externalTenantID, ""), scopes, nil
+		}
 		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
 
@@ -129,6 +132,9 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx cont
 
 	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return NewTenantContext(externalTenantID, ""), scopes, nil
+		}
 		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
 

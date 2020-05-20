@@ -29,7 +29,7 @@ func TestService_Create(t *testing.T) {
 	})
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, givenTenant(), givenTenant())
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
 
 	testCases := []struct {
 		Name         string
@@ -109,7 +109,7 @@ func TestService_Get(t *testing.T) {
 	webhookModel := fixModelWebhook("1", id, givenTenant(), url)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, givenTenant(), givenTenant())
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
 
 	testCases := []struct {
 		Name               string
@@ -178,7 +178,7 @@ func TestService_List(t *testing.T) {
 	applicationID := "foo"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, givenTenant(), givenTenant())
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
 
 	testCases := []struct {
 		Name               string
@@ -251,7 +251,7 @@ func TestService_Update(t *testing.T) {
 	webhookModel := fixModelWebhook("1", id, givenTenant(), url)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, givenTenant(), givenTenant())
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
 
 	testCases := []struct {
 		Name               string
@@ -327,7 +327,7 @@ func TestService_Delete(t *testing.T) {
 	webhookModel := fixModelWebhook("1", id, givenTenant(), url)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, givenTenant(), givenTenant())
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
 
 	testCases := []struct {
 		Name               string

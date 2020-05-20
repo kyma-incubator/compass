@@ -15,6 +15,7 @@ import (
 
 var (
 	testTenant           = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+	testExternalTenant   = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	testMarshalledSchema = "{\"Credential\":{\"Basic\":{\"Username\":\"foo\",\"Password\":\"bar\"},\"Oauth\":null},\"AdditionalHeaders\":{\"test\":[\"foo\",\"bar\"]},\"AdditionalQueryParams\":{\"test\":[\"foo\",\"bar\"]},\"RequestAuth\":{\"Csrf\":{\"TokenEndpointURL\":\"foo.url\",\"Credential\":{\"Basic\":{\"Username\":\"boo\",\"Password\":\"far\"},\"Oauth\":null},\"AdditionalHeaders\":{\"test\":[\"foo\",\"bar\"]},\"AdditionalQueryParams\":{\"test\":[\"foo\",\"bar\"]}}}}"
 	testErr              = errors.New("test error")
 )

@@ -66,7 +66,7 @@ func TestService_Create(t *testing.T) {
 		DefaultInstanceAuth:            &model.Auth{},
 	}
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	modelFr := fixFetchRequest("api.foo.bar", model.APIFetchRequestReference, timestamp)
 
@@ -483,7 +483,7 @@ func TestService_Update(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name         string
@@ -567,7 +567,7 @@ func TestService_Delete(t *testing.T) {
 	id := "foo"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name         string
@@ -632,7 +632,7 @@ func TestService_Delete(t *testing.T) {
 func TestService_Exist(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
-	ctx := tenant.SaveToContext(context.TODO(), tenantID, tenantID)
+	ctx := tenant.SaveToContext(context.TODO(), tenantID, externalTenantID)
 	id := "foo"
 
 	testCases := []struct {
@@ -704,7 +704,7 @@ func TestService_Get(t *testing.T) {
 	pkg := fixPackageModel(t, name, desc)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name               string
@@ -780,7 +780,7 @@ func TestService_GetForApplication(t *testing.T) {
 	pkg := fixPackageModel(t, name, desc)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name               string
@@ -858,7 +858,7 @@ func TestService_GetByInstanceAuthID(t *testing.T) {
 	pkg := fixPackageModel(t, name, desc)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name               string
@@ -948,7 +948,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 	after := "test"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name               string

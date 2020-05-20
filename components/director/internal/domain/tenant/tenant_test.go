@@ -55,11 +55,12 @@ func TestLoadFromContext(t *testing.T) {
 func TestSaveToLoadFromContext(t *testing.T) {
 	// given
 	value := "foo"
+	externalValue := "bar"
 	ctx := context.TODO()
 
-	tenants := tenant.TenantCtx{InternalID: value, ExternalID: value}
+	tenants := tenant.TenantCtx{InternalID: value, ExternalID: externalValue}
 	// when
-	result := tenant.SaveToContext(ctx, value, value)
+	result := tenant.SaveToContext(ctx, value, externalValue)
 
 	// then
 	assert.Equal(t, tenants, result.Value(tenant.TenantContextKey))

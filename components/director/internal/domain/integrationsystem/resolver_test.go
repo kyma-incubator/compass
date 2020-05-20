@@ -21,7 +21,7 @@ import (
 
 func TestResolver_IntegrationSystem(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
@@ -138,7 +138,7 @@ func TestResolver_IntegrationSystem(t *testing.T) {
 
 func TestResolver_IntegrationSystems(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 	txGen := txtest.NewTransactionContextGenerator(testError)
 	modelIntSys := []*model.IntegrationSystem{
 		fixModelIntegrationSystem("i1", "n1"),
@@ -250,7 +250,7 @@ func TestResolver_IntegrationSystems(t *testing.T) {
 
 func TestResolver_CreateIntegrationSystem(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
@@ -377,7 +377,7 @@ func TestResolver_CreateIntegrationSystem(t *testing.T) {
 
 func TestResolver_UpdateIntegrationSystem(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
@@ -503,7 +503,7 @@ func TestResolver_UpdateIntegrationSystem(t *testing.T) {
 
 func TestResolver_UnregisterIntegrationSystem(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
@@ -725,7 +725,7 @@ func TestResolver_UnregisterIntegrationSystem(t *testing.T) {
 
 func TestResolver_Auths(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	parentIntegrationSystem := fixGQLIntegrationSystem(testID, testName)
 

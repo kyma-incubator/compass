@@ -495,6 +495,10 @@ func givenTenant() string {
 	return "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 }
 
+func givenExternalTenant() string {
+	return "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+}
+
 func givenApplicationID() string {
 	return "cccccccc-cccc-cccc-cccc-cccccccccccc"
 }

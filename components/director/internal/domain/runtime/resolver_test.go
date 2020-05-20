@@ -1124,8 +1124,9 @@ func TestResolver_Labels(t *testing.T) {
 func TestResolver_Auths(t *testing.T) {
 	// GIVEN
 	tnt := "tnt"
+	externalTnt := "external-tnt"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	parentRuntime := fixGQLRuntime(t, "foo", "bar", "baz")
 
@@ -1256,8 +1257,9 @@ func TestResolver_Auths(t *testing.T) {
 func TestResolver_EventingConfiguration(t *testing.T) {
 	// GIVEN
 	tnt := "tnt"
+	externalTnt := "external-tnt"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	runtimeID := uuid.New()
 	gqlRuntime := fixGQLRuntime(t, runtimeID.String(), "bar", "baz")
