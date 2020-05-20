@@ -46,6 +46,7 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 	stmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
 
 	_, err = persist.NamedExec(stmt, dbEntity)
+	fmt.Println(err)
 	if pqerr, ok := err.(*pq.Error); ok {
 		if pqerr.Code == persistence.UniqueViolation {
 			return apperrors.NewNotUniqueError("")
