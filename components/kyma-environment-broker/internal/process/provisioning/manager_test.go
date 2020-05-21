@@ -95,8 +95,6 @@ func TestManager_Execute(t *testing.T) {
 			assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 2*time.Second, func() (bool, error) {
 				return len(eventCollector.Events) == tc.expectedNumberOfEvents, nil
 			}))
-
-			assert.Len(t, eventCollector.Events, tc.expectedNumberOfEvents, fmt.Sprintf("%d", len(eventCollector.Events)))
 		})
 	}
 }
