@@ -7,11 +7,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-const (
-	Namespace = "compass"
-	Subsystem = "director"
-)
-
 type Collector struct {
 	graphQLRequestTotal    *prometheus.CounterVec
 	graphQLRequestDuration *prometheus.HistogramVec
@@ -23,25 +18,25 @@ func NewCollector() *Collector {
 	return &Collector{
 		graphQLRequestTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: Namespace,
-			Subsystem: Subsystem,
+			Subsystem: DirectorSubsystem,
 			Name:      "graphql_request_total",
 			Help:      "Total handled GraphQL Requests",
 		}, []string{"code", "method"}),
 		graphQLRequestDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: Namespace,
-			Subsystem: Subsystem,
+			Subsystem: DirectorSubsystem,
 			Name:      "graphql_request_duration_seconds",
 			Help:      "Duration of handling GraphQL requests",
 		}, []string{"code", "method"}),
 		hydraRequestDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: Namespace,
-			Subsystem: Subsystem,
+			Subsystem: DirectorSubsystem,
 			Name:      "hydra_request_duration_seconds",
 			Help:      "Duration of HTTP Requests to Hydra",
 		}, []string{"code", "method"}),
 		hydraRequestTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: Namespace,
-			Subsystem: Subsystem,
+			Subsystem: DirectorSubsystem,
 			Name:      "hydra_request_total",
 			Help:      "Total HTTP Requests to Hydra",
 		}, []string{"code", "method"}),
