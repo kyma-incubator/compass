@@ -44,22 +44,18 @@ type serviceCatalogClient struct {
 }
 
 func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
-	// Fetch all ClusterServiceBrokers
 	clusterServiceBrokers, err := s.listClusterServiceBroker(metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "while listing ClusterServiceBrokers")
 	}
 
-	// Filter the list based on ClusterServiceBroker's URL prefix
 	brokersWithUrlPrefix := s.filterCsbWithUrlPrefix(clusterServiceBrokers, resourceSelector)
 
-	// Get all ClusterServiceClasses from filtered ClusterServiceBrokers
 	cscWithMatchingLabel, err := s.getClusterServiceClassesForBrokers(brokersWithUrlPrefix)
 	if err != nil {
 		return errors.Wrapf(err, "while getting ClusterServiceClasses")
 	}
 
-	// Get ServiceInstances for each ClusterServiceClass
 	serviceInstances, err := s.getServiceInstancesForClusterServiceClasses(cscWithMatchingLabel)
 	if err != nil {
 		return errors.Wrapf(err, "while getting ServiceInstances")
@@ -144,11 +140,9 @@ func (s *serviceCatalogClient) getClusterServiceClassesForBrokers(brokers []v1be
 	var cscWithMatchingLabel []v1beta1.ClusterServiceClass
 
 	for _, csb := range brokers {
-		// Generate label value from ClusterServiceBroker's name
 		labelValue := GenerateSHA(csb.Name)
 		csbListOptions := fixListOptionsWithLabelSelector(ClusterServiceBrokerNameLabel, labelValue)
 
-		// Fetch all ClusterServiceClasses for single ClusterServiceBroker
 		clusterServiceClasses, err := s.listClusterServiceClass(csbListOptions)
 		if err != nil {
 			return []v1beta1.ClusterServiceClass{}, errors.Wrapf(err, "while listing ClusterServiceClasses for ClusterServiceBroker %q", csb.Name)
@@ -167,12 +161,10 @@ func (s *serviceCatalogClient) getServiceInstancesForClusterServiceClasses(servi
 	var serviceInstances []v1beta1.ServiceInstance
 
 	for _, clusterServiceClass := range serviceClasses {
-		// Get ClusterServiceClassExternalName label for single ClusterServiceClass
 		labelValue := clusterServiceClass.Labels[ClusterServiceClassExternalNameLabel]
 
 		options := fixListOptionsWithLabelSelector(ClusterServiceClassRefNameLabel, labelValue)
 
-		// Get all ServiceInstances with label referencing to single ClusterServiceClass
 		serviceInstancesList, err := s.listServiceInstance(options)
 		if err != nil {
 			return []v1beta1.ServiceInstance{}, errors.Wrapf(err, "while listing ServiceInstances")
