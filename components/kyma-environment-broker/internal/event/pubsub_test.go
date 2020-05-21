@@ -3,13 +3,11 @@ package event_test
 import (
 	"context"
 	"testing"
-
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event"
-	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func TestPubSub(t *testing.T) {
@@ -42,7 +40,7 @@ func TestPubSub(t *testing.T) {
 	time.Sleep(1 * time.Millisecond)
 
 	// then
-	assert.NoError(t, wait.PollImmediate(20 * time.Millisecond, 2*time.Second, func() (bool, error) {
+	assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 2*time.Second, func() (bool, error) {
 		return eventA{msg: "first event"} == gotEventAList1[0] &&
 			eventA{msg: "first event"} == gotEventAList2[0] &&
 			eventA{msg: "third event"} == gotEventAList1[1] &&
