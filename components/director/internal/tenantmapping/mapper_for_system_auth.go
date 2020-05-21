@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -88,6 +90,9 @@ func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(ctx context
 
 	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return NewTenantContext(externalTenantID, ""), scopes, nil
+		}
 		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
 
@@ -129,11 +134,15 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx cont
 
 	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return NewTenantContext(externalTenantID, ""), scopes, nil
+		}
 		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
 
 	if tenantMapping.ID != *sysAuth.TenantID {
-		return TenantContext{}, scopes, errors.New("tenant mismatch")
+		logrus.Errorf("while fetching the tenant and scopes for object of type %s: tenant mismatch", refObjType)
+		return NewTenantContext(externalTenantID, ""), scopes, nil
 	}
 
 	return NewTenantContext(externalTenantID, *sysAuth.TenantID), scopes, nil

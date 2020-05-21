@@ -217,7 +217,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
 
-	t.Run("returns error when underlying tenant specified in the ReqData differs from the on defined in SystemAuth in the Application or Runtime SystemAuth case", func(t *testing.T) {
+	t.Run("returns empty tenant when underlying tenant specified in the ReqData differs from the on defined in SystemAuth in the Application or Runtime SystemAuth case", func(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		externalTenantID := uuid.New().String()
@@ -249,10 +249,10 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, tenantRepoMock)
 
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
+		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: tenant mismatch")
-
+		require.Equal(t, objCtx.TenantID, "")
+		require.Nil(t, err)
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
 

@@ -33,7 +33,7 @@ func TestService_Get(t *testing.T) {
 	apiDefinition := fixAPIDefinitionModel(id, packageID, name, desc)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name               string
@@ -109,7 +109,7 @@ func TestService_GetForPackage(t *testing.T) {
 	apiDefinition := fixAPIDefinitionModel(id, pkgID, name, desc)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name               string
@@ -203,7 +203,7 @@ func TestService_ListForPackage(t *testing.T) {
 	after := "test"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name               string
@@ -335,7 +335,7 @@ func TestService_CreateToPackage(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name                  string
@@ -579,7 +579,7 @@ func TestService_Update(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	modelFr := fixModelFetchRequest(frID, frURL, timestamp)
 
@@ -799,7 +799,7 @@ func TestService_Delete(t *testing.T) {
 	id := "foo"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name         string
@@ -868,7 +868,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 	apiID := "foo"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	dataBytes := "data"
 	modelAPISpec := &model.APISpec{
@@ -1031,7 +1031,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 func TestService_GetFetchRequest(t *testing.T) {
 	// given
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testErr := errors.New("Test error")
 
@@ -1156,6 +1156,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// when
 		_, err := svc.GetFetchRequest(context.TODO(), "dd")
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }

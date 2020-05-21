@@ -182,6 +182,7 @@ query {
                 filter
                 status {
                   condition
+                  message
                   timestamp
                 }
               }
@@ -251,6 +252,7 @@ query {
                 filter
                 status {
                   condition
+                  message
                   timestamp
                 }
               }
@@ -317,6 +319,7 @@ query {
               filter
               status {
                 condition
+                message
                 timestamp
               }
             }

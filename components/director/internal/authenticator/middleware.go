@@ -64,6 +64,13 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
+			if claims.Tenant == "" && claims.ExternalTenant != "" {
+				msg := fmt.Sprintf("Tenant not found: %s", claims.ExternalTenant)
+				log.Error(msg)
+				a.writeError(w, msg, http.StatusBadRequest)
+				return
+			}
+
 			ctx := a.contextWithClaims(r.Context(), claims)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
@@ -119,9 +126,9 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 }
 
 func (a *Authenticator) contextWithClaims(ctx context.Context, claims Claims) context.Context {
-	ctxWithTenant := tenant.SaveToContext(ctx, claims.Tenant)
+	ctxWithTenants := tenant.SaveToContext(ctx, claims.Tenant, claims.ExternalTenant)
 	scopesArray := strings.Split(claims.Scopes, " ")
-	ctxWithScopes := scope.SaveToContext(ctxWithTenant, scopesArray)
+	ctxWithScopes := scope.SaveToContext(ctxWithTenants, scopesArray)
 	apiConsumer := consumer.Consumer{ConsumerID: claims.ConsumerID, ConsumerType: claims.ConsumerType}
 	ctxWithConsumerInfo := consumer.SaveToContext(ctxWithScopes, apiConsumer)
 	return ctxWithConsumerInfo

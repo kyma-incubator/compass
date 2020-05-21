@@ -18,6 +18,7 @@ import (
 )
 
 var tenantID = uuid.New()
+var externalTenantID = uuid.New()
 var runtimeID = uuid.New()
 var applicationID = uuid.New()
 
@@ -28,7 +29,7 @@ const (
 
 func fixCtxWithTenant() context.Context {
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID.String())
+	ctx = tenant.SaveToContext(ctx, tenantID.String(), externalTenantID.String())
 
 	return ctx
 }

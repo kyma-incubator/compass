@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook/automock"
@@ -27,7 +29,7 @@ func TestService_Create(t *testing.T) {
 	})
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, givenTenant())
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
 
 	testCases := []struct {
 		Name         string
@@ -93,7 +95,7 @@ func TestService_Create(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		_, err := svc.Create(context.TODO(), givenApplicationID(), *modelInput)
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
@@ -107,7 +109,7 @@ func TestService_Get(t *testing.T) {
 	webhookModel := fixModelWebhook("1", id, givenTenant(), url)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, givenTenant())
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
 
 	testCases := []struct {
 		Name               string
@@ -161,7 +163,7 @@ func TestService_Get(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		_, err := svc.Get(context.TODO(), givenApplicationID())
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
@@ -176,7 +178,7 @@ func TestService_List(t *testing.T) {
 	applicationID := "foo"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, givenTenant())
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
 
 	testCases := []struct {
 		Name               string
@@ -230,7 +232,7 @@ func TestService_List(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		_, err := svc.List(context.TODO(), givenApplicationID())
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
@@ -249,7 +251,7 @@ func TestService_Update(t *testing.T) {
 	webhookModel := fixModelWebhook("1", id, givenTenant(), url)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, givenTenant())
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
 
 	testCases := []struct {
 		Name               string
@@ -311,7 +313,7 @@ func TestService_Update(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		err := svc.Update(context.TODO(), givenApplicationID(), *modelInput)
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
@@ -325,7 +327,7 @@ func TestService_Delete(t *testing.T) {
 	webhookModel := fixModelWebhook("1", id, givenTenant(), url)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, givenTenant())
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
 
 	testCases := []struct {
 		Name               string
@@ -387,6 +389,6 @@ func TestService_Delete(t *testing.T) {
 		svc := webhook.NewService(nil, nil)
 		// when
 		err := svc.Delete(context.TODO(), id)
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }

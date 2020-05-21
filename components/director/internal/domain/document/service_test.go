@@ -25,9 +25,10 @@ func TestService_Get(t *testing.T) {
 
 	documentModel := fixModelDocument("1", id)
 	tnt := documentModel.Tenant
+	externalTnt := "external-tnt"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, documentModel.Tenant)
+	ctx = tenant.SaveToContext(ctx, documentModel.Tenant, externalTnt)
 
 	testCases := []struct {
 		Name               string
@@ -90,11 +91,13 @@ func TestService_GetForPackage(t *testing.T) {
 	id := "foo"
 	pkgID := pkgID()
 	tenantID := "bar"
+	externalTenantID := "external-tenant"
+
 	packageID := "test"
 	doc := fixModelDocument(id, pkgID)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name               string
@@ -185,9 +188,10 @@ func TestService_ListForPackage(t *testing.T) {
 
 	first := 2
 	after := "test"
+	externalTenantID := "external-tnt"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, modelDocuments[0].Tenant)
+	ctx = tenant.SaveToContext(ctx, modelDocuments[0].Tenant, externalTenantID)
 
 	testCases := []struct {
 		Name               string
@@ -244,8 +248,10 @@ func TestService_CreateToPackage(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	tnt := "tenant"
+	externalTnt := "external-tenant"
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	id := "foo"
 	packageID := "foo"
@@ -356,7 +362,7 @@ func TestService_CreateToPackage(t *testing.T) {
 		svc := document.NewService(nil, nil, nil)
 		// when
 		_, err := svc.CreateInPackage(context.TODO(), "Dd", model.DocumentInput{})
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 func TestService_Delete(t *testing.T) {
@@ -368,9 +374,10 @@ func TestService_Delete(t *testing.T) {
 	documentModel := fixModelDocument(id, packageID)
 
 	tnt := documentModel.Tenant
+	externalTnt := "external-tnt"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, documentModel.Tenant)
+	ctx = tenant.SaveToContext(ctx, documentModel.Tenant, externalTnt)
 
 	testCases := []struct {
 		Name               string
@@ -426,8 +433,10 @@ func TestService_Delete(t *testing.T) {
 func TestService_GetFetchRequest(t *testing.T) {
 	// given
 	tnt := "tenant"
+	externalTnt := "external-tenant"
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testErr := errors.New("Test error")
 

@@ -6,10 +6,11 @@ import (
 )
 
 type Claims struct {
-	Tenant       string                `json:"tenant"`
-	Scopes       string                `json:"scopes"`
-	ConsumerID   string                `json:"consumerID"`
-	ConsumerType consumer.ConsumerType `json:"consumerType"`
+	Tenant         string                `json:"tenant"`
+	ExternalTenant string                `json:"externalTenant"`
+	Scopes         string                `json:"scopes"`
+	ConsumerID     string                `json:"consumerID"`
+	ConsumerType   consumer.ConsumerType `json:"consumerType"`
 	jwt.StandardClaims
 }
 

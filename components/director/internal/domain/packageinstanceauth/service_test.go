@@ -20,8 +20,9 @@ import (
 func TestService_Get(t *testing.T) {
 	// GIVEN
 	tnt := testTenant
+	externalTnt := "external-tnt"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	id := "foo"
 
@@ -94,8 +95,10 @@ func TestService_Get(t *testing.T) {
 func TestService_GetForPackage(t *testing.T) {
 	// GIVEN
 	tnt := testTenant
+	externalTnt := testExternalTenant
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	id := "foo"
 	packageID := "bar"
@@ -169,8 +172,10 @@ func TestService_GetForPackage(t *testing.T) {
 func TestService_Delete(t *testing.T) {
 	// GIVEN
 	tnt := testTenant
+	externalTnt := testExternalTenant
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	id := "foo"
 
@@ -236,7 +241,7 @@ func TestService_Delete(t *testing.T) {
 
 func TestService_SetAuth(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.Background(), testTenant)
+	ctx := tenant.SaveToContext(context.Background(), testTenant, testExternalTenant)
 
 	modelInstanceAuthFn := func() *model.PackageInstanceAuth {
 		return fixModelPackageInstanceAuth(testID, testPackageID, testTenant, nil, fixModelStatusPending())
@@ -387,7 +392,7 @@ func TestService_SetAuth(t *testing.T) {
 
 func TestService_Create(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.Background(), testTenant)
+	ctx := tenant.SaveToContext(context.Background(), testTenant, testExternalTenant)
 
 	modelAuth := fixModelAuth()
 	modelExpectedInstanceAuth := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, modelAuth, fixModelStatusSucceeded())
@@ -587,6 +592,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 
 	id := "foo"
 	tnt := testTenant
+	externalTnt := testExternalTenant
 
 	packageInstanceAuths := []*model.PackageInstanceAuth{
 		fixSimpleModelPackageInstanceAuth(id),
@@ -595,7 +601,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
 		Name               string
@@ -659,8 +665,10 @@ func TestService_ListByApplicationID(t *testing.T) {
 func TestService_RequestDeletion(t *testing.T) {
 	// GIVEN
 	tnt := testTenant
+	externalTnt := testExternalTenant
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	id := "foo"
 	timestampNow := time.Now()

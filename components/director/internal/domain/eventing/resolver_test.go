@@ -18,7 +18,7 @@ import (
 func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID.String())
+	ctx = tenant.SaveToContext(ctx, tenantID.String(), externalTenantID.String())
 
 	testErr := errors.New("this is a test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -170,7 +170,7 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID.String())
+	ctx = tenant.SaveToContext(ctx, tenantID.String(), externalTenantID.String())
 
 	app := fixApplicationModel("test-app")
 

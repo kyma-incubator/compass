@@ -15,7 +15,7 @@ import (
 
 func TestService_GetExternalTenant(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), "test")
+	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 	tenantMappingModel := newModelBusinessTenantMapping(testID, testName)
 
 	testCases := []struct {
@@ -69,7 +69,7 @@ func TestService_GetExternalTenant(t *testing.T) {
 
 func TestService_GetInternalTenant(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), "test")
+	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 	tenantMappingModel := newModelBusinessTenantMapping(testID, testName)
 
 	testCases := []struct {
@@ -123,7 +123,7 @@ func TestService_GetInternalTenant(t *testing.T) {
 
 func TestService_List(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), "test")
+	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 	modelTenantMappings := []*model.BusinessTenantMapping{
 		newModelBusinessTenantMapping("foo1", "bar1"),
 		newModelBusinessTenantMapping("foo2", "bar2"),
@@ -180,7 +180,7 @@ func TestService_List(t *testing.T) {
 
 func TestService_DeleteMany(t *testing.T) {
 	//GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), "test")
+	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 	tenantInput := newModelBusinessTenantMappingInput(testName)
 	testErr := errors.New("test")
 	testCases := []struct {
@@ -232,7 +232,7 @@ func TestService_DeleteMany(t *testing.T) {
 
 func TestService_CreateManyIfNotExists(t *testing.T) {
 	//GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), "test")
+	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 
 	tenantInputs := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1"),
 		newModelBusinessTenantMappingInput("test1").WithExternalTenant("external2")}

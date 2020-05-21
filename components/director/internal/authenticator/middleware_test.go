@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/lestrrat-go/jwx/jwk"
@@ -274,7 +276,9 @@ func createMiddleware(t *testing.T, allowJWTSigningNone bool) func(next http.Han
 func testHandler(t *testing.T, expectedTenant string, scopes string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tenantFromContext, err := tenant.LoadFromContext(r.Context())
-		require.NoError(t, err)
+		if !apperrors.IsEmptyTenant(err) {
+			require.NoError(t, err)
+		}
 		scopesFromContext, err := scope.LoadFromContext(r.Context())
 		require.NoError(t, err)
 

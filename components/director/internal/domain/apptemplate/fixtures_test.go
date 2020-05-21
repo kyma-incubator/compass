@@ -19,6 +19,7 @@ import (
 
 const (
 	testTenant         = "tnt"
+	testExternalTenant = "external-tnt"
 	testID             = "foo"
 	testName           = "bar"
 	testPageSize       = 3

@@ -51,7 +51,9 @@ func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Co
 func (s *service) CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
 	scopes, err := s.getClientCredentialScopes(objectType)
 	if err != nil {
-		return nil, err
+		if !model.IsIntegrationSystemNoTenantFlow(err, objectType) {
+			return nil, err
+		}
 	}
 
 	clientID := s.uidService.Generate()

@@ -245,7 +245,7 @@ func TestService_List(t *testing.T) {
 	after := "test"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID)
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name               string

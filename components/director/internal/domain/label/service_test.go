@@ -16,8 +16,9 @@ import (
 func TestLabelUpsertService_UpsertMultipleLabels(t *testing.T) {
 	// given
 	tnt := "tenant"
+	externalTnt := "external-tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 	id := "foo"
 	emptyStringSchema := &model.LabelDefinition{
 		Key:    "string",
@@ -179,8 +180,9 @@ func TestLabelUpsertService_UpsertMultipleLabels(t *testing.T) {
 func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 	// given
 	tnt := "tenant"
+	externalTnt := "external-tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 	id := "foo"
 	emptyStringSchema := &model.LabelDefinition{
 		Key:    "string",

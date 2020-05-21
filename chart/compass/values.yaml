@@ -24,7 +24,7 @@ global:
       version: "PR-1270"
     director:
       dir:
-      version: "PR-1338"
+      version: "PR-1318"
     gateway:
       dir:
       version: "PR-1330"
@@ -54,7 +54,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1315"
+        version: "PR-1318"
       connector:
         dir:
         version: "PR-1270"
@@ -212,7 +212,7 @@ global:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
     port: 4455
     idTokenConfig:
-      claims: "{\"scopes\": \"{{ print .Extra.scope }}\", \"tenant\": \"{{ print .Extra.tenant }}\", \"consumerID\": \"{{ print .Extra.consumerID}}\", \"consumerType\": \"{{ print .Extra.consumerType }}\"}"
+      claims: "{\"scopes\": \"{{ print .Extra.scope }}\", \"tenant\": \"{{ print .Extra.tenant }}\", \"externalTenant\": \"{{ print .Extra.externalTenant }}\", \"consumerID\": \"{{ print .Extra.consumerID}}\", \"consumerType\": \"{{ print .Extra.consumerType }}\"}"
     mutators:
       runtimeMappingService:
         config:

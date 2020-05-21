@@ -16,9 +16,10 @@ import (
 )
 
 const (
-	tenantID     = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	scenarioName = "scenario-A"
-	errMsg       = "some error"
+	tenantID         = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	externalTenantID = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+	scenarioName     = "scenario-A"
+	errMsg           = "some error"
 )
 
 func fixModel() model.AutomaticScenarioAssignment {
@@ -117,7 +118,7 @@ func fixError() error {
 }
 
 func fixCtxWithTenant() context.Context {
-	return tenant.SaveToContext(context.TODO(), tenantID)
+	return tenant.SaveToContext(context.TODO(), tenantID, externalTenantID)
 }
 
 func fixLabelSelector() model.LabelSelector {

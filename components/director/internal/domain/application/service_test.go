@@ -82,10 +82,12 @@ func TestService_Create(t *testing.T) {
 	id := "foo"
 
 	tnt := "tenant"
+	externalTnt := "external-tnt"
+
 	appModel := modelFromInput(modelInput, tnt, id)
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	labelScenarios := &model.LabelInput{
 		Key:        model.ScenariosKey,
@@ -554,7 +556,7 @@ func TestService_Create(t *testing.T) {
 		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
-		assert.Equal(t, tenant.NoTenantError, err)
+		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
@@ -564,6 +566,8 @@ func TestService_Update(t *testing.T) {
 
 	id := "foo"
 	tnt := "tenant"
+	externalTnt := "external-tnt"
+
 	conditionTimestamp := time.Now()
 	timestampGenFunc := func() time.Time { return conditionTimestamp }
 
@@ -576,7 +580,7 @@ func TestService_Update(t *testing.T) {
 	intSysLabel := fixLabelInput("integrationSystemID", intSysID, id, model.ApplicationLabelableObject)
 	nameLabel := fixLabelInput("name", appName, id, model.ApplicationLabelableObject)
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
 		Name               string
@@ -791,6 +795,8 @@ func TestService_Delete(t *testing.T) {
 	id := "foo"
 	desc := "Lorem ipsum"
 	tnt := "tenant"
+	externalTnt := "external-tnt"
+
 	applicationModel := &model.Application{
 		ID:          id,
 		Name:        "foo",
@@ -799,7 +805,7 @@ func TestService_Delete(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
 		Name               string
@@ -866,8 +872,10 @@ func TestService_Get(t *testing.T) {
 	}
 
 	tnt := "tenant"
+	externalTnt := "external-tnt"
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
 		Name                string
@@ -947,8 +955,10 @@ func TestService_List(t *testing.T) {
 	filter := []*labelfilter.LabelFilter{{Key: ""}}
 
 	tnt := "tenant"
+	externalTnt := "external-tnt"
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
 		Name               string
@@ -1033,8 +1043,9 @@ func TestService_ListByRuntimeID(t *testing.T) {
 	runtimeUUID := uuid.New()
 	testError := errors.New("test error")
 	tenantUUID := uuid.New()
+	externalTenantUUID := uuid.New()
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantUUID.String())
+	ctx = tenant.SaveToContext(ctx, tenantUUID.String(), externalTenantUUID.String())
 
 	first := 10
 	cursor := "test"
@@ -1314,8 +1325,10 @@ func TestService_ListByRuntimeID(t *testing.T) {
 
 func TestService_Exist(t *testing.T) {
 	tnt := "tenant"
+	externalTnt := "external-tnt"
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 	testError := errors.New("Test error")
 
 	applicationID := "id"
@@ -1388,8 +1401,10 @@ func TestService_Exist(t *testing.T) {
 func TestService_SetLabel(t *testing.T) {
 	// given
 	tnt := "tenant"
+	externalTnt := "external-tnt"
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testErr := errors.New("Test error")
 
@@ -1487,8 +1502,10 @@ func TestService_SetLabel(t *testing.T) {
 func TestService_GetLabel(t *testing.T) {
 	// given
 	tnt := "tenant"
+	externalTnt := "external-tnt"
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testErr := errors.New("Test error")
 
@@ -1600,8 +1617,10 @@ func TestService_GetLabel(t *testing.T) {
 func TestService_ListLabel(t *testing.T) {
 	// given
 	tnt := "tenant"
+	externalTnt := "external-tnt"
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testErr := errors.New("Test error")
 
@@ -1714,8 +1733,10 @@ func TestService_ListLabel(t *testing.T) {
 func TestService_DeleteLabel(t *testing.T) {
 	// given
 	tnt := "tenant"
+	externalTnt := "external-tnt"
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testErr := errors.New("Test error")
 

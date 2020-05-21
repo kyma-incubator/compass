@@ -19,14 +19,15 @@ import (
 )
 
 var (
-	testID           = "foo"
-	testPackageID    = "bar"
-	testTenant       = "baz"
-	testContext      = `{"foo": "bar"}`
-	testInputParams  = `{"bar": "baz"}`
-	testError        = errors.New("test")
-	testTime         = time.Now()
-	testTableColumns = []string{"id", "tenant_id", "package_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
+	testID             = "foo"
+	testPackageID      = "bar"
+	testTenant         = "baz"
+	testExternalTenant = "foobaz"
+	testContext        = `{"foo": "bar"}`
+	testInputParams    = `{"bar": "baz"}`
+	testError          = errors.New("test")
+	testTime           = time.Now()
+	testTableColumns   = []string{"id", "tenant_id", "package_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
 )
 
 func fixModelPackageInstanceAuth(id, packageID, tenant string, auth *model.Auth, status *model.PackageInstanceAuthStatus) *model.PackageInstanceAuth {

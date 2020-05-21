@@ -13,6 +13,7 @@ import (
 
 func TestLoadFromContext(t *testing.T) {
 	value := "foo"
+	tenants := tenant.TenantCtx{InternalID: value, ExternalID: value}
 
 	testCases := []struct {
 		Name    string
@@ -23,7 +24,7 @@ func TestLoadFromContext(t *testing.T) {
 	}{
 		{
 			Name:               "Success",
-			Context:            context.WithValue(context.TODO(), tenant.TenantContextKey, value),
+			Context:            context.WithValue(context.TODO(), tenant.TenantContextKey, tenants),
 			ExpectedResult:     value,
 			ExpectedErrMessage: "",
 		},
@@ -54,11 +55,13 @@ func TestLoadFromContext(t *testing.T) {
 func TestSaveToLoadFromContext(t *testing.T) {
 	// given
 	value := "foo"
+	externalValue := "bar"
 	ctx := context.TODO()
 
+	tenants := tenant.TenantCtx{InternalID: value, ExternalID: externalValue}
 	// when
-	result := tenant.SaveToContext(ctx, value)
+	result := tenant.SaveToContext(ctx, value, externalValue)
 
 	// then
-	assert.Equal(t, value, result.Value(tenant.TenantContextKey))
+	assert.Equal(t, tenants, result.Value(tenant.TenantContextKey))
 }

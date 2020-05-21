@@ -14,10 +14,11 @@ import (
 )
 
 const (
-	eventAPIID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	appID      = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	tenantID   = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
-	packageID  = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
+	eventAPIID       = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
+	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 )
 
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {

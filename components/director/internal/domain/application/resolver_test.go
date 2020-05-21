@@ -1451,8 +1451,9 @@ func TestResolver_Auths(t *testing.T) {
 func TestResolver_EventingConfiguration(t *testing.T) {
 	// GIVEN
 	tnt := "tnt"
+	externalTnt := "ex-tnt"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	applicationID := uuid.New()
 	gqlApp := fixGQLApplication(applicationID.String(), "bar", "baz")

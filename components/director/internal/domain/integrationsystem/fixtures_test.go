@@ -13,11 +13,12 @@ import (
 )
 
 const (
-	testTenant   = "tnt"
-	testID       = "foo"
-	testName     = "bar"
-	testPageSize = 3
-	testCursor   = ""
+	testTenant         = "tnt"
+	testExternalTenant = "external-tnt"
+	testID             = "foo"
+	testName           = "bar"
+	testPageSize       = 3
+	testCursor         = ""
 )
 
 var (

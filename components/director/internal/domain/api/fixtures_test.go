@@ -17,9 +17,10 @@ import (
 )
 
 const (
-	apiDefID  = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
-	tenantID  = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
-	packageID = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
+	apiDefID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
+	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 )
 
 func fixAPIDefinitionModel(id string, pkgID string, name, targetURL string) *model.APIDefinition {
