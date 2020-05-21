@@ -42,16 +42,18 @@ type Service interface {
 	PerformCleanup(kubeconfig *rest.Config) error
 }
 
-func NewInstallationService(installationTimeout time.Duration, installationHandler InstallationHandler) Service {
+func NewInstallationService(installationTimeout time.Duration, installationHandler InstallationHandler, clusterCleanupResourceSelector string) Service {
 	return &installationService{
-		kymaInstallationTimeout: installationTimeout,
-		installationHandler:     installationHandler,
+		kymaInstallationTimeout:        installationTimeout,
+		installationHandler:            installationHandler,
+		clusterCleanupResourceSelector: clusterCleanupResourceSelector,
 	}
 }
 
 type installationService struct {
-	kymaInstallationTimeout time.Duration
-	installationHandler     InstallationHandler
+	kymaInstallationTimeout        time.Duration
+	installationHandler            InstallationHandler
+	clusterCleanupResourceSelector string
 }
 
 func (s *installationService) PerformCleanup(kubeconfig *rest.Config) error {
@@ -59,7 +61,7 @@ func (s *installationService) PerformCleanup(kubeconfig *rest.Config) error {
 	if err != nil {
 		return err
 	}
-	return cli.PerformCleanup()
+	return cli.PerformCleanup(s.clusterCleanupResourceSelector)
 }
 
 func (s *installationService) TriggerInstallation(kubeconfig *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {

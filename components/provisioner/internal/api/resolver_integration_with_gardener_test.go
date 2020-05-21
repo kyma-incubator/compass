@@ -400,6 +400,7 @@ func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 
 func testDeprovisioningTimeouts() queue.DeprovisioningTimeouts {
 	return queue.DeprovisioningTimeouts{
+		ClusterCleanup:            5 * time.Minute,
 		ClusterDeletion:           5 * time.Minute,
 		WaitingForClusterDeletion: 5 * time.Minute,
 	}

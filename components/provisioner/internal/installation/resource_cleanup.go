@@ -3,30 +3,28 @@ package installation
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
-	"k8s.io/klog"
 )
 
 const (
-	BrokerUrlPrefix                      = "https://service-manager."
 	ClusterServiceBrokerNameLabel        = "servicecatalog.k8s.io/spec.clusterServiceBrokerName"
 	ClusterServiceClassExternalNameLabel = "servicecatalog.k8s.io/spec.externalName"
 	ClusterServiceClassRefNameLabel      = "servicecatalog.k8s.io/spec.clusterServiceClassRef.name"
 )
 
 type ServiceCatalogClient interface {
-	PerformCleanup() error
+	PerformCleanup(resourceSelector string) error
 	ListClusterServiceBroker(metav1.ListOptions) (*v1beta1.ClusterServiceBrokerList, error)
 	ListClusterServiceClass(metav1.ListOptions) (*v1beta1.ClusterServiceClassList, error)
 	ListServiceInstance(metav1.ListOptions) (*v1beta1.ServiceInstanceList, error)
@@ -45,16 +43,15 @@ type serviceCatalogClient struct {
 	client sc.Interface
 }
 
-func (s *serviceCatalogClient) PerformCleanup() error {
+func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
 	// Fetch all ClusterServiceBrokers
-	//TODO: Add retries for listing resources in case api-server fails to respond
 	clusterServiceBrokers, err := s.ListClusterServiceBroker(metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "while listing ClusterServiceBrokers")
 	}
 
 	// Filter the list based on ClusterServiceBroker's URL prefix
-	brokersWithUrlPrefix := s.FilterCsbWithUrlPrefix(clusterServiceBrokers, BrokerUrlPrefix)
+	brokersWithUrlPrefix := s.FilterCsbWithUrlPrefix(clusterServiceBrokers, resourceSelector)
 
 	// Get all ClusterServiceClasses from filtered ClusterServiceBrokers
 	cscWithMatchingLabel, err := s.GetClusterServiceClassesForBrokers(brokersWithUrlPrefix)
@@ -77,15 +74,59 @@ func (s *serviceCatalogClient) PerformCleanup() error {
 }
 
 func (s *serviceCatalogClient) ListClusterServiceBroker(options metav1.ListOptions) (*v1beta1.ClusterServiceBrokerList, error) {
-	return s.client.ServicecatalogV1beta1().ClusterServiceBrokers().List(options)
+	result := &v1beta1.ClusterServiceBrokerList{}
+
+	err := wait.Poll(10*time.Second, 2*time.Minute, func() (done bool, err error) {
+		csbList, err := s.client.ServicecatalogV1beta1().ClusterServiceBrokers().List(options)
+		if err != nil {
+			if apiErrors.IsNotFound(err) {
+				return true, nil
+			}
+			logrus.Errorf("while listing ClusterServiceBrokers: %s", err.Error())
+			return false, nil
+		}
+		result = csbList
+		return true, nil
+	})
+	return result, err
 }
 
 func (s *serviceCatalogClient) ListClusterServiceClass(options metav1.ListOptions) (*v1beta1.ClusterServiceClassList, error) {
-	return s.client.ServicecatalogV1beta1().ClusterServiceClasses().List(options)
+	result := &v1beta1.ClusterServiceClassList{}
+
+	err := wait.Poll(10*time.Second, 2*time.Minute, func() (done bool, err error) {
+		cscList, err := s.client.ServicecatalogV1beta1().ClusterServiceClasses().List(options)
+		if err != nil {
+			if apiErrors.IsNotFound(err) {
+				result = nil
+				return true, nil
+			}
+			logrus.Errorf("while listing ClusterServiceClasses: %s", err.Error())
+			return false, nil
+		}
+		result = cscList
+		return true, nil
+	})
+	return result, err
 }
 
 func (s *serviceCatalogClient) ListServiceInstance(options metav1.ListOptions) (*v1beta1.ServiceInstanceList, error) {
-	return s.client.ServicecatalogV1beta1().ServiceInstances(metav1.NamespaceAll).List(options)
+	result := &v1beta1.ServiceInstanceList{}
+
+	err := wait.Poll(10*time.Second, 2*time.Minute, func() (done bool, err error) {
+		siList, err := s.client.ServicecatalogV1beta1().ServiceInstances(metav1.NamespaceAll).List(options)
+		if err != nil {
+			if apiErrors.IsNotFound(err) {
+				result = nil
+				return true, nil
+			}
+			logrus.Errorf("while listing ServiceInstances: %s", err.Error())
+			return false, nil
+		}
+		result = siList
+		return true, nil
+	})
+	return result, err
 }
 
 func (s *serviceCatalogClient) FilterCsbWithUrlPrefix(csbList *v1beta1.ClusterServiceBrokerList, urlPrefix string) []v1beta1.ClusterServiceBroker {
@@ -108,15 +149,13 @@ func (s *serviceCatalogClient) GetClusterServiceClassesForBrokers(brokers []v1be
 		csbListOptions := fixListOptionsWithLabelSelector(ClusterServiceBrokerNameLabel, labelValue)
 
 		// Fetch all ClusterServiceClasses for single ClusterServiceBroker
-		//TODO: Add retries for listing resources in case api-server fails to respond
 		clusterServiceClasses, err := s.ListClusterServiceClass(csbListOptions)
 		if err != nil {
 			return []v1beta1.ClusterServiceClass{}, errors.Wrapf(err, "while listing ClusterServiceClasses for ClusterServiceBroker %q", csb.Name)
 		}
 
 		for _, serviceClass := range clusterServiceClasses.Items {
-			//TODO: remove this or switch to logger.Debug
-			fmt.Println(fmt.Sprintf("found ClusterServiceClass with label %q: %s", labelValue, serviceClass.Name))
+			logrus.Debugf("found ClusterServiceClass with label %q: %s", labelValue, serviceClass.Name)
 			cscWithMatchingLabel = append(cscWithMatchingLabel, serviceClass)
 		}
 	}
@@ -134,15 +173,13 @@ func (s *serviceCatalogClient) GetServiceInstancesForClusterServiceClasses(servi
 		options := fixListOptionsWithLabelSelector(ClusterServiceClassRefNameLabel, labelValue)
 
 		// Get all ServiceInstances with label referencing to single ClusterServiceClass
-		//TODO: Add retries for listing resources in case api-server fails to respond
 		serviceInstancesList, err := s.ListServiceInstance(options)
 		if err != nil {
 			return []v1beta1.ServiceInstance{}, errors.Wrapf(err, "while listing ServiceInstances")
 		}
 
 		for _, serviceInstance := range serviceInstancesList.Items {
-			//TODO: remove this or switch to logger.Debug
-			fmt.Println(fmt.Sprintf("found ServiceInstance with label %q: %s", labelValue, serviceInstance.Name))
+			logrus.Debugf("found ServiceInstance with label %q: %s", labelValue, serviceInstance.Name)
 			serviceInstances = append(serviceInstances, serviceInstance)
 		}
 	}
@@ -150,22 +187,19 @@ func (s *serviceCatalogClient) GetServiceInstancesForClusterServiceClasses(servi
 }
 
 func (s *serviceCatalogClient) DeleteServiceInstances(serviceInstances []v1beta1.ServiceInstance) error {
-	for _, instance := range serviceInstances {
-		//TODO: remove this or switch to logger.Debug
-		fmt.Println(fmt.Sprintf("trying to delete ServiceInstance %q", instance.Name))
+	for _, serviceInstance := range serviceInstances {
+		logrus.Debugf("trying to delete ServiceInstance %q", serviceInstance.Name)
 
-		err := wait.Poll(10*time.Second, 2*time.Minute, func() (bool, error) {
-			if err := s.client.ServicecatalogV1beta1().ServiceInstances(instance.Namespace).Delete(instance.Name, &metav1.DeleteOptions{}); err != nil {
+		_ = wait.Poll(10*time.Second, 2*time.Minute, func() (done bool, err error) {
+			if err := s.client.ServicecatalogV1beta1().ServiceInstances(serviceInstance.Namespace).Delete(serviceInstance.Name, &metav1.DeleteOptions{}); err != nil {
 				if apiErrors.IsNotFound(err) {
 					return true, nil
 				}
-				fmt.Println(errors.Wrap(err, "while removing instance").Error())
+				logrus.Errorf("while removing ServiceInstance %s: %s", serviceInstance.Name, err.Error())
 				return false, nil
 			}
 			return true, nil
 		})
-
-		return err
 	}
 
 	return nil
@@ -184,12 +218,12 @@ func fixListOptionsWithLabelSelector(labelName, labelValue string) metav1.ListOp
 // GenerateSHA generates the sha224 value from the given string
 // the function is used to provide a string length less than 63 characters, this string is used in label of resource
 // sha algorithm cannot be changed in the future because of backward compatibles
-// TODO: remove this and import from "github.com/kubernetes-sigs/service-catalog/pkg/util" when service-catalog v0.3 is released
 func GenerateSHA(input string) string {
+	// TODO: remove this and import from "github.com/kubernetes-sigs/service-catalog/pkg/util" when service-catalog v0.3 is released
 	h := sha256.New224()
 	_, err := h.Write([]byte(input))
 	if err != nil {
-		klog.Errorf("cannot generate SHA224 from string %q: %s", input, err)
+		logrus.Errorf("cannot generate SHA224 from string %q: %s", input, err)
 		return ""
 	}
 
