@@ -15,7 +15,7 @@ const (
 	wrongTenant        = "b1e46bd5-18ba-4a02-b96d-631a9e803504"
 	emptyTenant        = ""
 	noTenantMessage    = "tenant is required"
-	wrongTenantMessage = "No tenant found :"
+	wrongTenantMessage = "Tenant not found:"
 )
 
 func TestTenantErrors(t *testing.T) {

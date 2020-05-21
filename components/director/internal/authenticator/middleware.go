@@ -65,7 +65,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			}
 
 			if claims.Tenant == "" && claims.ExternalTenant != "" {
-				msg := fmt.Sprintf("No tenant found : %s", claims.ExternalTenant)
+				msg := fmt.Sprintf("Tenant not found: %s", claims.ExternalTenant)
 				log.Error(msg)
 				a.writeError(w, msg, http.StatusBadRequest)
 				return
