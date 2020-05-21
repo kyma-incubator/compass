@@ -12,16 +12,16 @@ import (
 )
 
 type Pusher struct {
-	eventingRequestTotal *prometheus.CounterVec
+	eventingRequestTotal *prometheus.GaugeVec
 	pusher               *push.Pusher
 	instanceID           uuid.UUID
 }
 
 func NewPusher(endpoint string) *Pusher {
-	eventingRequestTotal := prometheus.NewCounterVec(prometheus.CounterOpts{
+	eventingRequestTotal := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: Namespace,
 		Subsystem: TenantFetcherSubsystem,
-		Name:      "eventing_request_total",
+		Name:      "eventing_requests_total",
 		Help:      "Total Eventing Requests",
 	}, []string{"method", "code", "desc"})
 
@@ -30,7 +30,7 @@ func NewPusher(endpoint string) *Pusher {
 
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(eventingRequestTotal)
-	pusher := push.New(endpoint, TenantFetcherJobName).Grouping(InstanceIDKeyName, instanceID.String()).Gatherer(registry)
+	pusher := push.New(endpoint, TenantFetcherJobName).Gatherer(registry)
 
 	return &Pusher{
 		eventingRequestTotal: eventingRequestTotal,
