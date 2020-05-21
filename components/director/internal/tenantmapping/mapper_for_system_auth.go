@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -139,7 +141,8 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx cont
 	}
 
 	if tenantMapping.ID != *sysAuth.TenantID {
-		return TenantContext{}, scopes, errors.New("tenant mismatch")
+		logrus.Errorf("while fetching the tenant and scopes for object of type %s: tenant mismatch", refObjType)
+		return NewTenantContext(externalTenantID, ""), scopes, nil
 	}
 
 	return NewTenantContext(externalTenantID, *sysAuth.TenantID), scopes, nil
