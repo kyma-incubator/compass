@@ -4,11 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"time"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event"
-	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func TestNewApplicationEventBroker(t *testing.T) {
+func TestPubSub(t *testing.T) {
 	// given
 	var gotEventAList1 []eventA
 	var gotEventAList2 []eventA
@@ -25,7 +28,7 @@ func TestNewApplicationEventBroker(t *testing.T) {
 		gotEventBList = append(gotEventBList, ev.(eventB))
 		return nil
 	}
-	svc := event.NewApplicationEventBroker()
+	svc := event.NewPubSub()
 	svc.Subscribe(eventA{}, handlerA1)
 	svc.Subscribe(eventB{}, handlerB)
 	svc.Subscribe(eventA{}, handlerA2)
@@ -35,13 +38,16 @@ func TestNewApplicationEventBroker(t *testing.T) {
 	svc.Publish(context.TODO(), eventB{msg: "second event"})
 	svc.Publish(context.TODO(), eventA{msg: "third event"})
 
-	// then
-	assert.Equal(t, eventA{msg: "first event"}, gotEventAList1[0])
-	assert.Equal(t, eventA{msg: "first event"}, gotEventAList2[0])
-	assert.Equal(t, eventA{msg: "third event"}, gotEventAList1[1])
-	assert.Equal(t, eventA{msg: "third event"}, gotEventAList2[1])
+	time.Sleep(1 * time.Millisecond)
 
-	assert.Equal(t, eventB{msg: "second event"}, gotEventBList[0])
+	// then
+	require.NoError(t, wait.PollImmediate(5*time.Millisecond, time.Second, func() (bool, error) {
+		return eventA{msg: "first event"} == gotEventAList1[0] &&
+			eventA{msg: "first event"} == gotEventAList2[0] &&
+			eventA{msg: "third event"} == gotEventAList1[1] &&
+			eventA{msg: "third event"} == gotEventAList2[1] &&
+			eventB{msg: "second event"} == gotEventBList[0], nil
+	}))
 }
 
 type eventA struct {

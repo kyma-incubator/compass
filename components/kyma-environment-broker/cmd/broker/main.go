@@ -187,21 +187,11 @@ func main() {
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
 	// metrics collectors
-	opResultCollector := metrics.NewOperationResultCollector()
-	opDurationCollector := metrics.NewOperationDurationCollector()
-	stepResultCollector := metrics.NewStepResultCollector()
-	prometheus.MustRegister(opResultCollector, opDurationCollector, stepResultCollector)
-	prometheus.MustRegister(metrics.NewOperationsCollector(db.Operations()))
-	prometheus.MustRegister(metrics.NewInstancesCollector(db.Instances()))
 
 	// application event broker
-	eventBroker := event.NewApplicationEventBroker()
-	eventBroker.Subscribe(process.ProvisioningStepProcessed{}, opResultCollector.OnProvisioningStepProcessed)
-	eventBroker.Subscribe(process.DeprovisioningStepProcessed{}, opResultCollector.OnDeprovisioningStepProcessed)
-	eventBroker.Subscribe(process.ProvisioningStepProcessed{}, opDurationCollector.OnProvisioningStepProcessed)
-	eventBroker.Subscribe(process.DeprovisioningStepProcessed{}, opDurationCollector.OnDeprovisioningStepProcessed)
-	eventBroker.Subscribe(process.ProvisioningStepProcessed{}, stepResultCollector.OnProvisioningStepProcessed)
-	eventBroker.Subscribe(process.DeprovisioningStepProcessed{}, stepResultCollector.OnDeprovisioningStepProcessed)
+	eventBroker := event.NewPubSub()
+
+	metrics.RegisterAll(eventBroker, db.Operations(), db.Instances())
 
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
